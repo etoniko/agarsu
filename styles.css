@@ -1,0 +1,661 @@
+   @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap");
+:root {
+	--vs-primary: 29 92 255;
+}
+
+#recaptcha {
+    display: none;
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 3;
+}
+
+.grecaptcha-badge {
+    display: none !important;
+}
+
+#recaptcha-log, #recaptcha-reg, #recaptcha-reset, #recaptcha-reset-confirm {
+    padding: 5px 7px;
+}
+
+/*Dialog Styles*/
+dialog {
+	padding: 1rem 3rem;
+	background: white;
+	width: 400px;
+	padding-top: 2rem;
+	border-radius: 20px;
+	border: 0;
+	box-shadow: 0 5px 30px 0 rgb(0 0 0 / 10%);
+	animation: fadeIn 1s ease both;
+	&::backdrop {
+		animation: fadeIn 0.5s ease both;
+		background: rgb(0 0 0 / 40%);
+		z-index: 2;
+		backdrop-filter: blur(20px);
+	}
+	.x {
+		filter: grayscale(1);
+		border: none;
+		background: none;
+		position: absolute;
+		top: 15px;
+		right: 10px;
+		transition: ease filter, transform 0.3s;
+		cursor: pointer;
+		transform-origin: center;
+		&:hover {
+			filter: grayscale(0);
+			transform: scale(1.1);
+		}
+	}
+	h2 {
+		font-weight: 600;
+		font-size: 2rem;
+		padding-bottom: 1rem;
+	}
+	p {
+		font-size: 1rem;
+		line-height: 1.3rem;
+		padding: 0.5rem 0;
+		a {
+			&:visited {
+				color: rgb(var(--vs-primary));
+			}
+		}
+	}
+}
+
+/*General Styles*/
+button.primary {
+	display: inline-block;
+	font-size: 0.8rem;
+	color: #fff !important;
+	background: rgb(var(--vs-primary) / 100%);
+	padding: 13px 25px;
+	border-radius: 17px;
+	transition: background-color 0.1s ease;
+	box-sizing: border-box;
+	transition: all 0.25s ease;
+	border: 0;
+	cursor: pointer;
+	box-shadow: 0 10px 20px -10px rgb(var(--vs-primary) / 100%);
+	&:hover {
+		box-shadow: 0 20px 20px -10px rgb(var(--vs-primary) / 100%);
+		transform: translateY(-5px);
+	}
+}
+button:focus { outline: none; }
+.g-recaptcha {
+    transform:scale(0.77);
+    transform-origin:0 0;
+	padding-top: 60px;
+    padding-left: 10px;
+}
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+	
+	
+	
+	
+	body {
+	font-family: Arial,sans-serif;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+}
+	.overlays{
+		z-index: 1;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+	display: flex;
+    align-items: center;
+    justify-content: center;
+	}
+.center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 430px;
+  width: 820px;
+  gap: 5px;
+}
+
+/* Масштаб для экранов шириной менее 600px */
+@media (max-width: 599px) {
+  .center {
+    transform: scale(0.5);
+  }
+}
+
+/* Масштаб для экранов шириной от 600px до 899px */
+@media (min-width: 600px) and (max-width: 899px) {
+  .center {
+    transform: scale(0.8);
+  }
+}
+	.b {
+	    background: rgb(48 48 48 / 1);
+		border-radius: 5px;
+		
+	}
+    .b1 {
+        height: 430px;
+        width: 270px;
+    }
+    .b2 {
+        width: 270px;
+    }
+    .b3 {
+        height: 238px;
+        width: 270px;
+        margin-top: 5px;
+    }
+    .b4 {
+        height: 150px;
+        width: 270px;	
+    }
+    .b5 {
+        height: 275px;
+        width: 270px;	
+        margin-top: 5px;
+    }
+	#chat_textbox {
+    -webkit-transition: all .5s ease-in-out;
+    -moz-transition: all .5s ease-in-out;
+    -o-transition: all .5s ease-in-out;
+    transition: all .5s ease-in-out;
+    position: absolute;
+    bottom: 10px;
+    background: rgba(0, 0, 0, .2);
+    border: 0px;
+    outline: none;
+    color: #FFF;
+    height: 30px;
+    text-indent: 12px;
+    left: 10px;
+    width: 300px;
+}
+
+#chat_textbox:focus {
+    background: rgba(0, 0, 0, .5);
+}
+
+
+#skinss {
+    list-style-type: none;
+    width: 45px;
+    height: 45px;
+    background-size: 45px 45px;
+    border-radius: 50px;
+    cursor: pointer;
+    background-image: url(https://i.imgur.com/vN2i3Go.png);
+    transition: ease filter, transform 0.5s;
+    margin-right: 5px;
+}
+#skinss:hover {
+	transition: ease filter, transform 0.5s;transform: scale(1.1);
+	opacity: 0.9;
+}
+
+.input-container {
+    position: relative; /* Для абсолютного позиционирования вложенного поля */
+    width: 162.5px; /* Общая ширина контейнера */
+}
+
+#nick {
+    width: 162.5px; /* Длина поля для ника */
+    padding-right: 65px; /* Отступ справа для поля пароля */
+    margin-top: 10px;
+    outline: none; /* Убирает обводку при фокусировке */
+    border: 1px solid #ccc; /* Пример рамки, вы можете настроить цвет и стиль */
+    border-radius: 4px; /* Добавляет округлость углов */
+	height: 25px;
+}
+
+#pass {
+    position: absolute; /* Абсолютное позиционирование */
+    top: 0; /* Положение сверху */
+    right: 0; /* Положение справа */
+    width: 62.5px; /* Длина поля для пароля */
+    display: none; /* Изначально скрыто */
+    margin-top: 10px;
+	 border: 1px solid #ccc; /* Пример рамки, вы можете настроить цвет и стиль */
+     border-radius: 0 4px 4px 0;
+	 height: 25px;
+	
+}
+
+.input-container input {
+    box-sizing: border-box; /* Учитывать отступы и границы в ширине */
+    outline: none; /* Убирает обводку при фокусировке */
+}
+
+
+i:hover{
+	cursor: pointer;
+}
+
+.play{width: 170px;color: #fff;background: #ff3f58;transition: background 0.3s ease;height: 29px;font-size: 15px;font-weight: 700;cursor: pointer;border: 1px solid transparent;border-radius: 4px;transition: ease filter, transform 0.5s;	}
+.play:hover{background: #c4293d;transition: ease filter, transform 0.5s;transform: scale(1.05);}
+
+.spec{color: #fff;background: #006cf1;transition: background 0.3s ease;font-size: 15px;font-weight: 700;cursor: pointer;border: 1px solid transparent;border-radius: 4px;margin-left: 7px;transition: ease filter, transform 0.5s;}
+.spec:hover{background: #0257c0;transition: ease filter, transform 0.5s;transform: scale(1.1);}
+
+.photo-gallery {
+display: flex;
+    align-items: center;
+    justify-content: center;
+
+}
+
+.thumbnail {
+    margin: 5px;
+    width: 50px;
+    height: 20px;
+    font-weight: bold;
+    padding-top: 75px;
+    cursor: pointer;
+    line-height: 11px;
+    text-align: center;
+    color: white;
+    border-radius: 4px;
+}
+
+.ffa {
+background: #E2E2E2 url(https://i.imgur.com/J6RSops.png) top 20px center no-repeat;
+background-size: 50px auto;
+transition: ease filter, transform 0.5s;
+}
+
+.ffa:hover {
+    background-color: #ff3f58;
+	transition: ease filter, transform 0.5s;
+	transform: scale(1.1);
+}
+
+.br {
+    background: #E2E2E2 url(https://i.imgur.com/5J9FUmL.png) top 20px center no-repeat;
+	transition: ease filter, transform 0.5s;
+    background-size: 50px auto;
+}
+
+.br:hover {
+    background-color: #00c1f1;
+	transition: ease filter, transform 0.5s;
+	transform: scale(1.1);
+}
+
+.teams {
+    background: #E2E2E2 url(https://i.imgur.com/J8BL7ta.png) top -5px center no-repeat;
+	transition: ease filter, transform 0.5s;
+background-size: 50px auto;
+}
+
+.teams:hover {
+    background-color: #ffaa00;
+	transition: ease filter, transform 0.5s;
+}
+
+.exp {
+	
+    background: #E2E2E2 url(https://i.imgur.com/v7xO2Ta.png) top 20px center no-repeat;
+	transition: ease filter, transform 0.5s;
+    background-size: 50px auto;
+}
+
+.exp:hover {
+    background-color: #1e67e0;
+	transition: ease filter, transform 0.5s;
+	transform: scale(1.1);
+}
+
+.thumbnail.ffa {
+    --thumbnail-bg-color: #ff3f58; /* Цвет фона для FFA */
+	transition: ease filter, transform 0.5s;
+}
+
+.thumbnail.br {
+    --thumbnail-bg-color: #00c1f1; /* Цвет фона для BR */
+}
+
+.thumbnail.teams {
+    --thumbnail-bg-color: #ffaa00; /* Цвет фона для TEAM */
+}
+
+.thumbnail.exp {
+    --thumbnail-bg-color: #1e67e0; /* Цвет фона для EXP */
+}
+.active {
+    background-color: var(--thumbnail-bg-color);
+	transition: ease filter, transform 0.5s;
+	transform: scale(1.1);
+}
+
+.online{
+    display: grid;
+    padding-top: 10px;
+    text-align: center;
+    font-size: 10px;
+    top: 65px;
+    left: 138px;
+    color: #0000006e;
+    font-family: 'Ubuntu';
+    padding-bottom: 10px;
+    cursor: context-menu;
+	text-shadow: 0px -1px 0px #000000, -1px 0px 0px #000000, 1px 0px 0px #000000, 0px 1px 0px #000000, 1px 1px 0px #000000, -1px -1px 0px #000000, -1px 1px 0px #000000, 1px -1px 0px #000000, 0px 2px 0px #000000;
+    color: #6c757d !important;
+
+}
+.top-players-header {
+    text-align: center;
+    font-family: 'ubuntu';
+	padding-top: 7px;
+    padding-bottom: 2px;
+	font-size: 20px;
+	text-shadow: 0px -1px 0px #000000, -1px 0px 0px #000000, 1px 0px 0px #000000, 0px 1px 0px #000000, 1px 1px 0px #000000, -1px -1px 0px #000000, -1px 1px 0px #000000, 1px -1px 0px #000000, 0px 2px 0px #000000;
+    color: #ffffff;
+}
+
+#table-container {
+    height: 217px;
+    overflow-y: auto;
+    margin-top: 1.3px;
+}
+#table-container::-webkit-scrollbar {
+  width: 10px;
+}
+
+
+
+#table-container::-webkit-scrollbar-thumb {
+  border-radius: 5px;
+  background: silver;
+}
+
+.header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'Ubuntu';
+    font-size: 12px;
+    text-shadow: 0px -1px 0px #000000, -1px 0px 0px #000000, 1px 0px 0px #000000, 0px 1px 0px #000000, 1px 1px 0px #000000, -1px -1px 0px #000000, -1px 1px 0px #000000, 1px -1px 0px #000000, 0px 2px 0px #000000;
+    color: #6c757d !important;
+}
+
+.cell1, .cell2, .cell3, .cell4, .rank, .score, .skkin {
+    flex-basis: 14%; /* Уменьшаем базовый размер для компенсации увеличения .nick */
+    text-align: center;
+    padding: 2px 0;
+}
+.cell3{
+text-align: right;
+    flex-basis: 34%;
+}
+.cell4{
+	flex-basis: 26%;
+}
+.cell2{
+	    flex-basis: 20%;
+    text-align: right;
+}
+.cell1{
+flex-basis: 11%;
+}
+.rank {
+    flex-basis: 10%; /* Уменьшаем размер для .rank */
+    font-size: 11px; /* Уменьшаем шрифт для .rank */
+	font-size: 14px;
+}
+.nick {
+    flex-basis: 40%; /* Увеличиваем базовый размер для .nick */
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+	font-size: 14px;
+}
+.score {
+    text-align: right;
+    font-size: 13px; /* Уменьшаем шрифт для .score */
+}
+.skkin{
+	flex-basis: 20%;
+}
+
+.top-player {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+	color: white;
+	font-weight: 600;
+	font-family: monospace;
+}
+.crown {
+    position: absolute;
+    top: -10px; /* Поднимаем корону над скин */
+    right: 50%; /* Центрируем корону относительно скина */
+    transform: translateX(50%); /* Дополнительное центрирование короны */
+    font-size: 24px; /* Увеличиваем размер короны */
+    color: gold; /* Золотой цвет для короны */
+    text-shadow: 0 0 5px #000; /* Тень для лучшей видимости на разных фонах */
+}
+/* Добавляем стили для топ-1, топ-2 и топ-3 игроков */
+.top-player:nth-child(1) {
+    color: #ffd700; /* Золотой цвет для топ-1 */
+	font-weight:bold;
+}
+#table-container > div:nth-child(1) > div.skkin::after {
+  content: "👑";
+  position: absolute;
+  top: 14%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+}
+
+#table-container > div:nth-child(1) > div.skkin {
+  position: relative;
+}
+.top-player:nth-child(2) {
+    color: #2579e7;
+}
+
+.top-player:nth-child(3) {
+    color: #fc6579; 
+}
+
+/* Стили для остальных игроков */
+
+.skkinn {
+        max-width: 25px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    border-radius: 4px;
+}
+
+.update-time {
+        float: right;
+    color: #0000006e;
+    font-family: 'Ubuntu';
+    cursor: context-menu;
+    font-size: 11px;
+    padding-top: 5px;
+    padding-right: 3px;
+	    text-shadow: 0px -1px 0px #000000, -1px 0px 0px #000000, 1px 0px 0px #000000, 0px 1px 0px #000000, 1px 1px 0px #000000, -1px -1px 0px #000000, -1px 1px 0px #000000, 1px -1px 0px #000000, 0px 2px 0px #000000;
+    color: #6c757d !important;
+}
+
+.ads{
+	height: 170px;
+    padding-left: 0px;
+    padding-right: 0px;
+    margin-left: 10px;
+    margin-right: 11px;
+    border-top-width: 5px;
+    margin-top: 10px;
+    background: #E2E2E2 url(https://i.imgur.com/qXwmDxO.png) center no-repeat;
+    background-size: 200px auto;
+    border-radius: 4px;
+	transition: ease filter, transform 0.5s;
+	cursor: pointer;
+	transform: scale(0.9);
+}
+.ads:hover {
+	background-color: #d5d5d5;
+	transition: ease filter, transform 0.5s;
+	transform: scale(1);
+}
+
+.gallery {
+  --s: 150px; /* control the size */
+  --g: 10px;  /* control the gap */
+  --f: 1.5;   /* control the scale factor */
+  
+  display: grid;
+  gap: var(--g);
+  width: calc(6*var(--s) + 2*var(--g));
+  aspect-ratio: 2;
+  grid-template-columns: repeat(6,auto);
+}
+
+.gallery > img {
+  width: 0;
+  height: 0;
+  min-height: 100%;
+  min-width: 100%;
+  object-fit: cover;
+  cursor: pointer;
+  filter: grayscale(80%);
+  transition: .30s linear;
+}
+
+.gallery img:hover{
+  filter: grayscale(0);
+  width:  calc(var(--s)*var(--f));
+  height: calc(var(--s)*var(--f));
+}
+
+.adminhref{
+	outline:none;color: gold;text-decoration: none;
+}
+.adminhref:hover{
+	border: 2px solid white;
+  box-shadow: inset 0px 0px 81px 17px  green, 0px 0px 20px 4px green;
+	transition: ease filter, transform 0.5s;
+	font-size: 20px;
+}
+
+.officialnews{
+	text-align: center;margin-bottom: 5px;font-family: 'Ubuntu';margin-top: 10px;text-shadow: 0px -1px 0px #000000, -1px 0px 0px #000000, 1px 0px 0px #000000, 0px 1px 0px #000000, 1px 1px 0px #000000, -1px -1px 0px #000000, -1px 1px 0px #000000, 1px -1px 0px #000000, 0px 2px 0px #000000;color: #ffffff !important;font-size: 20px;
+}
+.officialnewss{
+	padding-left: 20px;overflow: auto;margin-bottom: 0px;margin-top: 0px;padding-right: 10px;height:375px;font-family: 'Ubuntu';font-size: smaller;padding-top: 10px;text-shadow: 0px -1px 0px #000000, -1px 0px 0px #000000, 1px 0px 0px #000000, 0px 1px 0px #000000, 1px 1px 0px #000000, -1px -1px 0px #000000, -1px 1px 0px #000000, 1px -1px 0px #000000, 0px 2px 0px #000000;color: #6c757d !important;
+}
+#connecting{
+	position: absolute; z-index: 1; display: block;
+}
+.conn{
+	width: 250px;background-color: rgb(48 48 48 / 1);border-radius: 5px;padding-left: 10px;padding-right: 10px;padding-top: 10px;padding-bottom: 10px;height: 165px;
+}
+.connn{
+	text-align: center;text-shadow: 0px -1px 0px #000000, -1px 0px 0px #000000, 1px 0px 0px #000000, 0px 1px 0px #000000, 1px 1px 0px #000000, -1px -1px 0px #000000, -1px 1px 0px #000000, 1px -1px 0px #000000, 0px 2px 0px #000000;color: #ffffff !important;font-size: 20px;
+}
+.connnn{
+	position: absolute;margin-left: auto;margin-right: auto;left: 0;right: 0;top: 0;
+}
+.setting{
+	color:white;position: absolute;padding-left: 10px;padding-top: 15px;
+}
+
+.agariosu{
+	text-align: center;font-family: 'Ubuntu';padding-top: 30px;font-size: 30px;text-shadow: 0px -1px 0px #000000, -1px 0px 0px #000000, 1px 0px 0px #000000, 0px 1px 0px #000000, 1px 1px 0px #000000, -1px -1px 0px #000000, -1px 1px 0px #000000, 1px -1px 0px #000000, 0px 2px 0px #000000;color: #ffffff !important;
+}
+.version{
+	text-align: center;font-size: 10px;top: 65px;left: 138px;color: #fffffff0;font-family: 'Ubuntu';padding-bottom: 10px;padding-top: 2px;text-shadow: 0px -1px 0px #000000, -1px 0px 0px #000000, 1px 0px 0px #000000, 0px 1px 0px #000000, 1px 1px 0px #000000, -1px -1px 0px #000000, -1px 1px 0px #000000, 1px -1px 0px #000000, 0px 2px 0px #000000;color: #e4c719 !important;
+}
+.st{
+	display: flex;justify-content: center;
+}
+
+#skins{
+	width:1000px;padding-right: 0px;padding-left: 0px;padding-top: 0px;padding-bottom: 0px;overflow: hidden;height: 550px;background: rgb(48 48 48 / 1);
+}
+.opsn{
+	padding-left: 37px;margin-bottom: 0px;padding-bottom: 0px;text-shadow: 0px -1px 0px #000000, -1px 0px 0px #000000, 1px 0px 0px #000000, 0px 1px 0px #000000, 1px 1px 0px #000000, -1px -1px 0px #000000, -1px 1px 0px #000000, 1px -1px 0px #000000, 0px 2px 0px #000000;color: #ffffff !important;font-size: larger;margin-top: 20px;
+}
+.butt{
+	display: flex;padding-top: 10px;justify-content: center;padding-bottom: 15px;
+}
+.adv{
+text-align: center;font-family: 'Ubuntu';padding-top: 13px;text-shadow: 0px -1px 0px #000000, -1px 0px 0px #000000, 1px 0px 0px #000000, 0px 1px 0px #000000, 1px 1px 0px #000000, -1px -1px 0px #000000, -1px 1px 0px #000000, 1px -1px 0px #000000, 0px 2px 0px #000000;color: #ffffff !important;
+}
+.sgm{
+	text-align: center;font-family: 'Ubuntu';padding-top: 10px;text-shadow: 0px -1px 0px #000000, -1px 0px 0px #000000, 1px 0px 0px #000000, 0px 1px 0px #000000, 1px 1px 0px #000000, -1px -1px 0px #000000, -1px 1px 0px #000000, 1px -1px 0px #000000, 0px 2px 0px #000000;color: #ffffff !important;
+}
+
+.social{
+	position: absolute;width: 70px;height: 170px;background: #303030;right: 0;font-size: 40px;display: flex;align-items: center;justify-content: center;flex-direction: column;gap: 10px;border-radius: 10px 0 0 10px;
+}
+.soc{
+	color: white;
+	cursor: default !important;
+}
+.tg{
+	color:#006cf1;
+transition: ease filter, transform 0.5s;
+}
+.tg:hover{
+	color:#035dcb;
+	transform: scale(1.1);
+	transition: ease filter, transform 0.5s;
+}
+
+.chat-message {
+  margin-bottom: 5px;
+}
+
+.chat-skin {
+  display: inline-block; /* Or any other appropriate display value */
+  transform: translateY(4px);
+  width: 20px; /* Adjust width as needed */
+  height: 20px; /* Adjust height as needed */
+  background-size: cover;
+  margin-right: 5px;
+}
+
+.chat-name {
+  font-weight: bold;
+}
+
+.chat-text {
+  color: #666666;
+  font-family: arial;
+  font-size: 16px;
+}
+#chat-container {
+    position: fixed;
+    bottom: 42px;
+    left: 10px;
+    width: 305px;
+    overflow-y: auto;
+	flex-direction: column-reverse;
+}
