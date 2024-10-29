@@ -177,26 +177,6 @@ button:focus { outline: none; }
         width: 270px;	
         margin-top: 5px;
     }
-	#chat_textbox {
-    -webkit-transition: all .5s ease-in-out;
-    -moz-transition: all .5s ease-in-out;
-    -o-transition: all .5s ease-in-out;
-    transition: all .5s ease-in-out;
-    position: absolute;
-    bottom: 10px;
-    background: rgba(0, 0, 0, .2);
-    border: 0px;
-    outline: none;
-    color: #FFF;
-    height: 30px;
-    text-indent: 12px;
-    left: 10px;
-    width: 300px;
-}
-
-#chat_textbox:focus {
-    background: rgba(0, 0, 0, .5);
-}
 
 
 #skinss {
@@ -629,33 +609,66 @@ transition: ease filter, transform 0.5s;
 	transition: ease filter, transform 0.5s;
 }
 
-.chat-message {
-  margin-bottom: 5px;
-}
-
-.chat-skin {
-  display: inline-block; /* Or any other appropriate display value */
-  transform: translateY(4px);
-  width: 20px; /* Adjust width as needed */
-  height: 20px; /* Adjust height as needed */
-  background-size: cover;
-  margin-right: 5px;
-}
-
-.chat-name {
-  font-weight: bold;
-}
-
-.chat-text {
-  color: #666666;
-  font-family: arial;
-  font-size: 16px;
-}
 #chat-container {
     position: fixed;
     bottom: 42px;
     left: 10px;
-    width: 305px;
+    width: 320px;
+    max-height: 300px; /* Added max-height for better scrolling */
     overflow-y: auto;
-	flex-direction: column-reverse;
+    background: rgba(30, 30, 30, 0.8); /* Dark background with some opacity */
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column-reverse;
+}
+
+.chat-message {
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center; /* Vertically center the items */
+}
+
+.welcome-message {
+    background: rgba(255, 0, 0, 0.7); /* Semi-transparent red background */
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.chat-name {
+    font-weight: bold;
+    color: gold; /* Gold color for names */
+}
+
+.chat-text {
+    color: white; /* White color for message text */
+    margin-left: 5px; /* Space between name and text */
+    font-size: 14px; /* Smaller font size for messages */
+}
+
+.chat-skin {
+    width: 24px; /* Adjusted size for avatar */
+    height: 24px; /* Adjusted size for avatar */
+    background-size: cover;
+    margin-right: 8px; /* Space between avatar and text */
+}
+
+#chat_textbox {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    width: 300px;
+    height: 40px; /* Increased height for better usability */
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 5px;
+    color: white;
+    padding-left: 10px; /* Added padding for input text */
+    outline: none;
+    transition: background 0.3s ease;
+}
+
+#chat_textbox:focus {
+    background: rgba(255, 255, 255, 0.3); /* Focus effect */
 }
