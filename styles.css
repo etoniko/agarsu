@@ -129,104 +129,6 @@ button:focus { outline: none; }
     align-items: center;
     justify-content: center;
 	}
-.center {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 430px;
-  width: 820px;
-  gap: 5px;
-}
-
-/* Масштаб для экранов шириной менее 600px */
-@media (max-width: 599px) {
-  .center {
-    transform: scale(0.5);
-  }
-}
-
-/* Масштаб для экранов шириной от 600px до 899px */
-@media (min-width: 600px) and (max-width: 899px) {
-  .center {
-    transform: scale(0.8);
-  }
-}
-	.b {
-	    background: rgb(48 48 48 / 1);
-		border-radius: 5px;
-		
-	}
-    .b1 {
-        height: 430px;
-        width: 270px;
-    }
-    .b2 {
-        width: 270px;
-    }
-    .b3 {
-        height: 238px;
-        width: 270px;
-        margin-top: 5px;
-    }
-    .b4 {
-        height: 150px;
-        width: 270px;	
-    }
-    .b5 {
-        height: 275px;
-        width: 270px;	
-        margin-top: 5px;
-    }
-
-
-#skinss {
-    list-style-type: none;
-    width: 45px;
-    height: 45px;
-    background-size: 45px 45px;
-    border-radius: 50px;
-    cursor: pointer;
-    background-image: url(https://i.imgur.com/vN2i3Go.png);
-    transition: ease filter, transform 0.5s;
-    margin-right: 5px;
-}
-#skinss:hover {
-	transition: ease filter, transform 0.5s;transform: scale(1.1);
-	opacity: 0.9;
-}
-
-.input-container {
-    position: relative; /* Для абсолютного позиционирования вложенного поля */
-    width: 162.5px; /* Общая ширина контейнера */
-}
-
-#nick {
-    width: 162.5px; /* Длина поля для ника */
-    padding-right: 65px; /* Отступ справа для поля пароля */
-    margin-top: 10px;
-    outline: none; /* Убирает обводку при фокусировке */
-    border: 1px solid #ccc; /* Пример рамки, вы можете настроить цвет и стиль */
-    border-radius: 4px; /* Добавляет округлость углов */
-	height: 25px;
-}
-
-#pass {
-    position: absolute; /* Абсолютное позиционирование */
-    top: 0; /* Положение сверху */
-    right: 0; /* Положение справа */
-    width: 62.5px; /* Длина поля для пароля */
-    display: none; /* Изначально скрыто */
-    margin-top: 10px;
-	 border: 1px solid #ccc; /* Пример рамки, вы можете настроить цвет и стиль */
-     border-radius: 0 4px 4px 0;
-	 height: 25px;
-	
-}
-
-.input-container input {
-    box-sizing: border-box; /* Учитывать отступы и границы в ширине */
-    outline: none; /* Убирает обводку при фокусировке */
-}
 
 
 i:hover{
@@ -236,8 +138,16 @@ i:hover{
 .play{width: 170px;color: #fff;background: #ff3f58;transition: background 0.3s ease;height: 29px;font-size: 15px;font-weight: 700;cursor: pointer;border: 1px solid transparent;border-radius: 4px;transition: ease filter, transform 0.5s;	}
 .play:hover{background: #c4293d;transition: ease filter, transform 0.5s;transform: scale(1.05);}
 
-.spec{color: #fff;background: #006cf1;transition: background 0.3s ease;font-size: 15px;font-weight: 700;cursor: pointer;border: 1px solid transparent;border-radius: 4px;margin-left: 7px;transition: ease filter, transform 0.5s;}
-.spec:hover{background: #0257c0;transition: ease filter, transform 0.5s;transform: scale(1.1);}
+.spec {
+    color: #ffffff;
+    border-radius: 20px;
+    font-size: 12px;
+    cursor: pointer;
+    margin-left: -42px;
+    background: #0e172c;
+    height: 19px;
+    padding: 4px;
+}
 
 .photo-gallery {
 display: flex;
@@ -246,104 +156,7 @@ display: flex;
 
 }
 
-.thumbnail {
-    margin: 5px;
-    width: 50px;
-    height: 20px;
-    font-weight: bold;
-    padding-top: 75px;
-    cursor: pointer;
-    line-height: 11px;
-    text-align: center;
-    color: white;
-    border-radius: 4px;
-}
 
-.ffa {
-background: #E2E2E2 url(https://i.imgur.com/J6RSops.png) top 20px center no-repeat;
-background-size: 50px auto;
-transition: ease filter, transform 0.5s;
-}
-
-.ffa:hover {
-    background-color: #ff3f58;
-	transition: ease filter, transform 0.5s;
-	transform: scale(1.1);
-}
-
-.br {
-    background: #E2E2E2 url(https://i.imgur.com/5J9FUmL.png) top 20px center no-repeat;
-	transition: ease filter, transform 0.5s;
-    background-size: 50px auto;
-}
-
-.br:hover {
-    background-color: #00c1f1;
-	transition: ease filter, transform 0.5s;
-	transform: scale(1.1);
-}
-
-.teams {
-    background: #E2E2E2 url(https://i.imgur.com/J8BL7ta.png) top -5px center no-repeat;
-	transition: ease filter, transform 0.5s;
-background-size: 50px auto;
-}
-
-.teams:hover {
-    background-color: #ffaa00;
-	transition: ease filter, transform 0.5s;
-}
-
-.exp {
-	
-    background: #E2E2E2 url(https://i.imgur.com/v7xO2Ta.png) top 20px center no-repeat;
-	transition: ease filter, transform 0.5s;
-    background-size: 50px auto;
-}
-
-.exp:hover {
-    background-color: #1e67e0;
-	transition: ease filter, transform 0.5s;
-	transform: scale(1.1);
-}
-
-.thumbnail.ffa {
-    --thumbnail-bg-color: #ff3f58; /* Цвет фона для FFA */
-	transition: ease filter, transform 0.5s;
-}
-
-.thumbnail.br {
-    --thumbnail-bg-color: #00c1f1; /* Цвет фона для BR */
-}
-
-.thumbnail.teams {
-    --thumbnail-bg-color: #ffaa00; /* Цвет фона для TEAM */
-}
-
-.thumbnail.exp {
-    --thumbnail-bg-color: #1e67e0; /* Цвет фона для EXP */
-}
-.active {
-    background-color: var(--thumbnail-bg-color);
-	transition: ease filter, transform 0.5s;
-	transform: scale(1.1);
-}
-
-.online{
-    display: grid;
-    padding-top: 10px;
-    text-align: center;
-    font-size: 10px;
-    top: 65px;
-    left: 138px;
-    color: #0000006e;
-    font-family: 'Ubuntu';
-    padding-bottom: 10px;
-    cursor: context-menu;
-	text-shadow: 0px -1px 0px #000000, -1px 0px 0px #000000, 1px 0px 0px #000000, 0px 1px 0px #000000, 1px 1px 0px #000000, -1px -1px 0px #000000, -1px 1px 0px #000000, 1px -1px 0px #000000, 0px 2px 0px #000000;
-    color: #6c757d !important;
-
-}
 .top-players-header {
     text-align: center;
     font-family: 'ubuntu';
@@ -355,9 +168,9 @@ background-size: 50px auto;
 }
 
 #table-container {
-    height: 217px;
+    height: 340px;
     overflow-y: auto;
-    margin-top: 1.3px;
+    margin-top: 5px;
 }
 #table-container::-webkit-scrollbar {
   width: 10px;
@@ -371,63 +184,11 @@ background-size: 50px auto;
 }
 
 .header-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-family: 'Ubuntu';
-    font-size: 12px;
-    text-shadow: 0px -1px 0px #000000, -1px 0px 0px #000000, 1px 0px 0px #000000, 0px 1px 0px #000000, 1px 1px 0px #000000, -1px -1px 0px #000000, -1px 1px 0px #000000, 1px -1px 0px #000000, 0px 2px 0px #000000;
-    color: #6c757d !important;
+display: flex;
+    justify-content: space-around;
 }
 
-.cell1, .cell2, .cell3, .cell4, .rank, .score, .skkin {
-    flex-basis: 14%; /* Уменьшаем базовый размер для компенсации увеличения .nick */
-    text-align: center;
-    padding: 2px 0;
-}
-.cell3{
-text-align: right;
-    flex-basis: 34%;
-}
-.cell4{
-	flex-basis: 26%;
-}
-.cell2{
-	    flex-basis: 20%;
-    text-align: right;
-}
-.cell1{
-flex-basis: 11%;
-}
-.rank {
-    flex-basis: 10%; /* Уменьшаем размер для .rank */
-    font-size: 11px; /* Уменьшаем шрифт для .rank */
-	font-size: 14px;
-}
-.nick {
-    flex-basis: 40%; /* Увеличиваем базовый размер для .nick */
-    text-align: left;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-	font-size: 14px;
-}
-.score {
-    text-align: right;
-    font-size: 13px; /* Уменьшаем шрифт для .score */
-}
-.skkin{
-	flex-basis: 20%;
-}
 
-.top-player {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-	color: white;
-	font-weight: 600;
-	font-family: monospace;
-}
 .crown {
     position: absolute;
     top: -10px; /* Поднимаем корону над скин */
@@ -442,6 +203,28 @@ flex-basis: 11%;
     color: #ffd700; /* Золотой цвет для топ-1 */
 	font-weight:bold;
 }
+.top-player{
+    display: flex;
+    justify-content: space-around;
+	}
+	.cell{
+		width: 100px;
+	}
+	.rank{
+		width: 100px;
+		margin-top: 10px;
+	}
+	.nick{
+		width: 100px;
+		margin-top: 10px;
+		text-overflow: ellipsis;
+    overflow: hidden;
+	}
+	.score{
+		width: 100px;
+		margin-top: 10px;
+	}
+
 #table-container > div:nth-child(1) > div.skkin::after {
   content: "👑";
   position: absolute;
@@ -465,13 +248,19 @@ flex-basis: 11%;
 /* Стили для остальных игроков */
 
 .skkinn {
-        max-width: 25px;
-    height: auto;
-    display: block;
-    margin: 0 auto;
-    border-radius: 4px;
+    width: 50px;
+    height: 50px;
+    background-size: cover;
+    border-radius: 50%;
+    border: solid 2px;
+	margin: 0px 15px 5px 21px;
 }
-
+.time{
+	margin-top: 10px;
+	font-size: 13px;
+    color: #8e8e8e;
+	width: 100px;
+}
 .update-time {
         float: right;
     color: #0000006e;
@@ -483,36 +272,19 @@ flex-basis: 11%;
 	    text-shadow: 0px -1px 0px #000000, -1px 0px 0px #000000, 1px 0px 0px #000000, 0px 1px 0px #000000, 1px 1px 0px #000000, -1px -1px 0px #000000, -1px 1px 0px #000000, 1px -1px 0px #000000, 0px 2px 0px #000000;
     color: #6c757d !important;
 }
-
-.ads{
-	height: 170px;
-    padding-left: 0px;
-    padding-right: 0px;
-    margin-left: 10px;
-    margin-right: 11px;
-    border-top-width: 5px;
-    margin-top: 10px;
-    background: #E2E2E2 url(https://i.imgur.com/qXwmDxO.png) center no-repeat;
-    background-size: 200px auto;
-    border-radius: 4px;
-	transition: ease filter, transform 0.5s;
-	cursor: pointer;
-	transform: scale(0.9);
-}
-.ads:hover {
-	background-color: #d5d5d5;
-	transition: ease filter, transform 0.5s;
-	transform: scale(1);
+.gall{
+    margin-bottom: 10px;
+	justify-content: space-around;
 }
 
 .gallery {
+	    width: 680px;
   --s: 150px; /* control the size */
   --g: 10px;  /* control the gap */
   --f: 1.5;   /* control the scale factor */
   
   display: grid;
   gap: var(--g);
-  width: calc(6*var(--s) + 2*var(--g));
   aspect-ratio: 2;
   grid-template-columns: repeat(6,auto);
 }
@@ -592,9 +364,6 @@ text-align: center;font-family: 'Ubuntu';padding-top: 13px;text-shadow: 0px -1px
 	text-align: center;font-family: 'Ubuntu';padding-top: 10px;text-shadow: 0px -1px 0px #000000, -1px 0px 0px #000000, 1px 0px 0px #000000, 0px 1px 0px #000000, 1px 1px 0px #000000, -1px -1px 0px #000000, -1px 1px 0px #000000, 1px -1px 0px #000000, 0px 2px 0px #000000;color: #ffffff !important;
 }
 
-.social{
-	position: absolute;width: 70px;height: 170px;background: #303030;right: 0;font-size: 40px;display: flex;align-items: center;justify-content: center;flex-direction: column;gap: 10px;border-radius: 10px 0 0 10px;
-}
 .soc{
 	color: white;
 	cursor: default !important;
@@ -609,66 +378,505 @@ transition: ease filter, transform 0.5s;
 	transition: ease filter, transform 0.5s;
 }
 
-#chat-container {
-    position: fixed;
-    bottom: 42px;
-    left: 10px;
-    width: 320px;
-    max-height: 300px; /* Added max-height for better scrolling */
-    overflow-y: auto;
-    background: rgba(30, 30, 30, 0.8); /* Dark background with some opacity */
-    border-radius: 8px;
-    padding: 10px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    display: flex;
-    flex-direction: column-reverse;
-}
-
 .chat-message {
-    margin-bottom: 10px;
-    display: flex;
-    align-items: center; /* Vertically center the items */
-}
-
-.welcome-message {
-    background: rgba(255, 0, 0, 0.7); /* Semi-transparent red background */
-    padding: 10px;
-    border-radius: 8px;
-}
-
-.chat-name {
-    font-weight: bold;
-    color: gold; /* Gold color for names */
-}
-
-.chat-text {
-    color: white; /* White color for message text */
-    margin-left: 5px; /* Space between name and text */
-    font-size: 14px; /* Smaller font size for messages */
+  margin-bottom: 5px;
 }
 
 .chat-skin {
-    width: 24px; /* Adjusted size for avatar */
-    height: 24px; /* Adjusted size for avatar */
+    width: 50px;
+    height: 50px;
     background-size: cover;
-    margin-right: 8px; /* Space between avatar and text */
+    border: solid 2px white;
+    border-radius: 50%;
 }
 
-#chat_textbox {
+.chat-name {
+  font-weight: bold;
+}
+.chat-time{
+    position: fixed;
+    right: 10px;
+    font-size: 10px;
+    color: #8e8e8e;
+}
+.chat-text {
+  color: #ffffff;
+  font-family: arial;
+  font-size: 16px;
+}
+#chat-container {
+    position: fixed;
+    bottom: 30px;
+    width: 290px;
+    max-height: 300px;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    scroll-behavior: smooth;
+	margin-bottom: 10px;
+	transform: scale(0.9);
+}
+	#chat_textbox {
+transition: all .5s ease-in-out;
     position: absolute;
     bottom: 10px;
-    left: 10px;
-    width: 300px;
-    height: 40px; /* Increased height for better usability */
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 5px;
-    color: white;
-    padding-left: 10px; /* Added padding for input text */
+    background: rgb(133 133 133 / 20%);
+    border: solid 1px #ffffff3d;
     outline: none;
-    transition: background 0.3s ease;
+    color: #ffffff;
+    height: 30px;
+    text-indent: 12px;
+    width: 270px;
+    border-radius: 20px;
+	left: 10px;
 }
 
-#chat_textbox:focus {
-    background: rgba(255, 255, 255, 0.3); /* Focus effect */
+
+
+.scoreshint{
+    border: 0px solid #d3d3d357;
+    padding: 5px;
+    background-color: #80808057;
+    border-radius: 0px 10px 10px 10px;
+    padding-bottom: 8px;
+    padding-left: 9px;
+    position: relative;
+    margin-bottom: 0px;
+    overflow-wrap: anywhere;
+    width: 230px;
+    display: flex;
+    flex-direction: column;
+	margin-bottom: 10px;
+}
+.scoreshint:after {
+content: "";
+    border: solid transparent;
+    position: absolute;
+    right: 100%;
+    top: 0px;
+    border-right-color: #80808057;
+    border-width: 0px 13px 9px 0;
+}
+
+/* Убираем полосу прокрутки */
+::-webkit-scrollbar {
+    width: 3px; /* Для вертикальной полосы */
+    height: 0; /* Для горизонтальной полосы */
+}
+
+/* Добавляем стили для индикации прокрутки */
+::-webkit-scrollbar-thumb {
+    background-color: #ffffff3b;
+    border-radius: 10px; /* Закругленные углы */
+}
+
+/* Задаем стиль для области прокрутки */
+::-webkit-scrollbar-track {
+    background: transparent; /* Прозрачный фон для области прокрутки */
+}
+
+
+
+
+
+
+.center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 430px;
+  width: 820px;
+}
+
+/* Масштаб для экранов шириной менее 600px */
+@media (max-width: 599px) {
+  .center {transform: scale(0.45);}
+  .social {
+	position: absolute !important;
+    width: 140px !important;
+    height: 40px !important;
+    background: #0e172c !important;
+    font-size: 25px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-direction: row !important;
+    gap: 10px !important;
+    border-radius: 0px 0 25px 25px !important;
+    border: #ffffff14 solid 1px !important;
+    border-right: none !important;
+    top: 0px !important;
+	right: auto !important;
+	}
+	#leaderboard{
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    font-size: 9px;
+    padding: 10px 10px 10px 10px;
+    border-radius: 20px 20px 20px 20px;
+    border: solid #ffffff26 1px;
+    background: rgba(0, 0, 0, .3);
+}
+}
+
+/* Масштаб для экранов шириной от 600px до 899px */
+@media (min-width: 600px) and (max-width: 899px) {
+  .center {transform: scale(0.7);}
+  .social {opacity: 0;}
+  #leaderboard,
+  #chat-container,
+  #chat_textbox{display: none !important;}
+}
+
+    /* Base Reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Roboto', sans-serif;
+      display: flex;
+      height: 100%;
+      width: 100%;
+      background-color: #0e172c;
+      color: white;
+      overflow: hidden;
+      touch-action: manipulation;
+    }
+    /* Sidebar */
+    .sidebar {
+      width: 100px; /* Fixed width to match the image */
+      background-color: #016bef;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+	  justify-content: space-evenly;
+	  height: 100%;
+	  user-select: none;
+	  border-radius: 25px 0 0 25px;
+    }
+    .sidebar .menu-item {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+	  flex-direction: column;
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+	  gap: 5px;
+	  padding: 10px;
+    }
+    .sidebar .menu-item.active {
+      background-color: #171717;
+	  border-right: solid;
+    }
+    .sidebar .menu-item i {
+      font-size: 20px;
+    }
+    .sidebar .menu-item .label {
+      font-size: 16px;
+    }
+    /* Main Content */
+    .main-content {
+      height: 430px;
+      width: 820px;
+      padding: 20px;
+      background-color: #0e172c;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow: hidden;
+      position: relative;
+	  height: 100%;
+	  border-radius: 0px 25px 25px 0px;
+	    border: #ffffff14 solid 1px;
+    border-left: none;
+    }
+    .content {
+      display: none;
+      text-align: center;
+    }
+    .content.active {
+      display: block;
+      width: 100%;
+    }
+    /* Top Info Bar */
+    .top-info {
+    display: flex;
+    justify-content: center;
+    font-size: 18px;
+	margin-bottom: 5px;
+    }
+    .top-info div {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .top-info span {
+      background-color: #1b263b;
+      padding: 8px 15px;
+      border-radius: 15px;
+    }
+#process{
+    font-size: 13px;
+	color: #8e8e8e;
+}
+    /* Avatar Section */
+    .avatar-containers {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+	  margin-top: 20px;
+    }
+    /* Navigation Buttons */
+    .nav-buttons {
+      display: flex;
+      gap: 20px;
+      margin-top: 20px;
+	  justify-content: center;
+    }
+    .nav-button {
+      background-color: white;
+      color: #016bef;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+	.spec:hover{
+		transform: scale(1.1);
+	}
+	.serv-button:hover{
+      background-color: #016bef;
+      color: white;
+	}
+    .play-button {
+      background-color: #016bef;
+      color: white;
+    }
+	    .play-button:hover {
+      background-color: white;
+      color: #016bef;
+    }
+	
+	.input-container {
+    position: relative; /* Для абсолютного позиционирования вложенного поля */
+    width: 190px; /* Общая ширина контейнера */
+}
+
+.input-container input {
+    box-sizing: border-box; /* Учитывать отступы и границы в ширине */
+    outline: none; /* Убирает обводку при фокусировке */
+}
+
+#nick {
+    width: 190px; /* Длина поля для ника */
+    padding-right: 70px; /* Отступ справа для поля пароля */
+    margin-top: 20px;
+    outline: none; /* Убирает обводку при фокусировке */
+    border: 1px solid #ccc; /* Пример рамки, вы можете настроить цвет и стиль */
+    border-radius: 20px; /* Добавляет округлость углов */
+	height: 30px;
+	padding-left: 5px;
+}
+
+#pass {
+    position: absolute; /* Абсолютное позиционирование */
+    top: 0; /* Положение сверху */
+    right: 0; /* Положение справа */
+    width: 80px; /* Длина поля для пароля */
+    display: none; /* Изначально скрыто */
+    margin-top: 20px;
+	 border: 1px solid #ccc; /* Пример рамки, вы можете настроить цвет и стиль */
+     border-radius: 0 20px 20px 0;
+	 height: 30px;
+	 padding-left: 5px;
+	
+}
+
+#skinss {
+    width: 150px;
+    height: 150px;
+    background-size: cover;
+    border-radius: 50%;
+    cursor: pointer;
+    background-image: url(https://i.imgur.com/vN2i3Go.png);
+    transition: ease filter, transform 0.5s;
+	border: solid;
+}
+
+
+/* Стили для контейнера скинов */
+.avatar-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+/* Стили для основного скина */
+.main-skin {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background-size: cover;
+    background-position: center;
+    border: 2px solid #0d84fb;
+    margin: 0 20px;
+    transition: transform 0.3s ease;
+}
+
+
+/* Стили для полупрозрачных предыдущих скинов */
+.previous-skin, .next-skin {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-size: cover;
+    background-position: center;
+    opacity: 0.5;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    cursor: pointer;
+}
+
+.previous-skin:hover, .next-skin:hover {
+    transform: scale(1.1);
+    opacity: 0.8;
+}
+
+/* Стили для стрелок */
+.arrow {
+    font-size: 24px;
+    cursor: pointer;
+    color: #0d84fb;
+    user-select: none;
+    padding: 5px;
+}
+
+.arrow:hover {
+    color: #0073e6;
+}
+/* Scaling animation for the main skin */
+.scale-down {
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+}
+
+.social{
+position: absolute;
+    width: 70px;
+    height: 170px;
+    background: #0e172c;
+    right: 0;
+    font-size: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 10px;
+    border-radius: 25px 0 0 25px;
+    border: #ffffff14 solid 1px;
+    border-right: none;
+}
+.checkbox-container{
+display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+#leaderboard{
+position: absolute;
+    right: 10px;
+    top: 10px;
+    font-size: 14px;
+    padding: 10px 10px 10px 10px;
+    border-radius: 20px 20px 20px 20px;
+    border: solid #ffffff26 1px;
+    background: rgba(0, 0, 0, .3);
+}
+.homemenu{
+    position: absolute;
+    top: 10px;
+    left: 10px;
+	padding: 7px;
+    border-radius: 50%;
+    font-size: 15px;
+	color: #fff;
+    border: solid #ffffff26 1px;
+    background: rgba(0, 0, 0, .3);
+}
+
+.score-info{
+position: absolute;
+font-size: 12px;
+display: flex;
+left: 50%;
+transform: translate(-50%);
+top: 10px;
+gap: 5px;
+}
+
+.scorr{
+	padding: 5px 10px 5px 10px;
+    border-radius: 20px 20px 20px 20px;
+    border: solid #ffffff26 1px;
+    background: rgba(0, 0, 0, .3);
+}
+.cell-length{
+    background: #1a73e8;
+    padding: 0px 4px 0px 4px;
+    height: 11px;
+    border-radius: 10px 10px 10px 10px;
+    font-size: 8px;
+    margin-left: -13px;
+}
+
+
+
+
+.server-containers {
+    position: fixed;
+    width: 350px;
+    background-color: rgb(255, 255, 255);
+    z-index: 1000;
+    transition: height 0.3s ease, transform 0.3s ease;
+    height: 0px;
+	color: black;
+	align-items: center;
+}
+
+.server-containers.visible {
+    display: flex; /* Показываем элемент */
+    height: 200px;
+    transform: translateX(0);
+}
+
+.avatar-container {
+    transition: opacity 0.3s ease; /* Плавный переход для opacity */
+}
+
+.avatar-container.hidden {
+    opacity: 0; /* Скрываем элемент */
+}
+
+.avatar-container.visible {
+    opacity: 1; /* Показываем элемент */
+}
+.input-container {
+    transition: opacity 0.3s ease; /* Плавный переход для opacity */
+}
+
+.input-container.hidden {
+    opacity: 0; /* Скрываем элемент */
+}
+
+.input-container.visible {
+    opacity: 1; /* Показываем элемент */
 }
