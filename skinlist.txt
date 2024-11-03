@@ -1,5 +1,5 @@
 root:P8m3PpB
-agario.su:PPFtwqH
+agar.su:PPFtwqH
 behemoth:2K6lmMW
 berserker:IgxwB8R
 captainskull:CYOffVf
