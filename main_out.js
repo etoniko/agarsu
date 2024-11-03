@@ -4,7 +4,7 @@ var skinList = {};
 var lastModified = null; // Переменная для хранения времени последнего изменения файла
 
 function fetchSkinList() {
-  fetch('https://raw.githubusercontent.com/etoniko/agarsu/refs/heads/main/skinlist.txt')
+  fetch('https://raw.githubusercontent.com/etoniko/agarsu/refs/heads/main/skinlist.txt?v=<?= time(); ?>')
     .then(response => {
       if (!response.ok) {
         throw new Error('Ошибка сети: ' + response.status);
