@@ -901,26 +901,35 @@ function drawChatBoard() {
     }
   }
 
-  function sendNickName() {
-    if (wsIsOpen() && null != userNickName) {
-      var maxLength = 16; // Ограничение на максимальную ширину символов
-      var totalLength = 0;
-      var msg = prepareData(1 + 2 * maxLength);
-      msg.setUint8(0, 0);
+function sendNickName() {
+  if (wsIsOpen() && userNickName != null) {
+    var maxLength = 16; // Ограничение на максимальную ширину символов
+    var totalLength = 0;
+    var msg = prepareData(1 + 2 * maxLength);
+    msg.setUint8(0, 0);
 
-      for (var i = 0; i < userNickName.length && totalLength < maxLength; ++i) {
-        var char = userNickName.charAt(i);
-        var charCode = char.codePointAt(0);
+    for (var i = 0; i < userNickName.length && totalLength < maxLength; ++i) {
+      var char = userNickName.charAt(i);
+      var charCode = char.codePointAt(0);
 
-        // Исключаем символ "✅🔒" с кодом 9989
-        if (charCode !== 9989 && charCode >= 0 && charCode <= 70000) {
-          msg.setUint16(1 + 2 * totalLength, charCode, true);
-          totalLength++;
+      // Проверка на широкие символы и исключение определенных кодов
+      if (
+        charCode !== 9989 && // Исключаем символ "✅"
+        (charCode < 0x1100 || charCode > 0x2FF0) && // Исключаем диапазоны широких символов
+        charCode >= 0 && charCode <= 70000
+      ) {
+        // Увеличиваем счетчик для широких символов и обычных символов
+        totalLength += charCode > 0x2FF0 ? 2 : 1;
+        
+        if (totalLength <= maxLength) {
+          msg.setUint16(1 + 2 * (totalLength - 1), charCode, true);
         }
       }
-      wsSend(msg);
     }
+    wsSend(msg);
   }
+}
+
 
 
 
