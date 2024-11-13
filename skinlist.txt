@@ -1,19 +1,19 @@
 root:P8m3PpB
 console:zt0uI2g
 игрок:PPFtwqH
-бегемот:2K6lmMW
+горила:2K6lmMW
 берсерк:IgxwB8R
-капитанчереп:CYOffVf
+капитан череп:CYOffVf
 колосс:LdCHRM5
-крутойагент:i0prgo7
-сумасшедшийсомбреро:0fYxTvG
+крутой агент:i0prgo7
+еспаниола:0fYxTvG
 детектив:t34UiBP
 дива:sT9JDtB
 дракон:B70foG5
-докторкосмос:BPP5EFR
+доктор космос:BPP5EFR
 дроид:QLcCKv0
-докторстатик:MOkSwJ9
-злоймастер:IBbtF2B
+доктор статик:MOkSwJ9
+злой мастер:IBbtF2B
 падший:wCXzJnN
 фаун:57BzylL
 бабушка:rPlbHK7
@@ -28,16 +28,15 @@ console:zt0uI2g
 плутон:CjLApQd
 первобытный:wRiL4Jx
 путин:tUt1FqL
-енотдзюцу:IxEjLhz
-самурайразбойник:B4yLQTf
+енотдзе:IxEjLhz
+самурай разбойник:B4yLQTf
 самба:UINxrlJ
 сатурн:LSwRDx6
-кожа:F0km7t6
-самурайчереп:lxpKpi0
+скин:F0km7t6
+самурай череп:lxpKpi0
 теннисистка:4faALdC
 уран:76BQTGG
 венера:Ubk2YFY
 мага:AcIFBBR
 дерзкий:72KWdnZ
 рулетка:qKtYFTi
-
