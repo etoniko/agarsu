@@ -2,6 +2,43 @@
 // Загружаем список скинов из skinList.txt
 var skinList = {};
 var lastModified = null; // Переменная для хранения времени последнего изменения файла
+// Функция для проверки, что игра работает на платформе Яндекс Игр
+function isYandexGamesPlatform() {
+    try {
+        // Проверка, что родительский домен - это Яндекс Игры
+        return window.location !== window.parent.location && document.referrer.includes('yandex');
+    } catch (e) {
+        return false;
+    }
+}
+
+// Асинхронная функция для инициализации SDK Яндекс Игр
+async function initYandexSDK() {
+    if (isYandexGamesPlatform()) {
+        try {
+            // Инициализация SDK Яндекс Игр
+            const ysdk = await YaGames.init();
+            console.log('Yandex SDK initialized');
+            window.ysdk = ysdk;
+
+            // Проверяем, доступен ли LoadingAPI и ожидаем, что он будет готов
+            if (ysdk.features && ysdk.features.LoadingAPI) {
+                await ysdk.features.LoadingAPI.ready();
+                console.log('Платформа готова, игра может начаться');
+            } else {
+                console.warn('LoadingAPI не доступен');
+            }
+
+        } catch (err) {
+            console.error('Ошибка инициализации SDK Яндекс Игр:', err);
+        }
+    } else {
+        console.warn('SDK Яндекс Игр доступен только на платформе Яндекс Игр');
+    }
+}
+
+// Вызываем инициализацию SDK
+initYandexSDK();
 
 function fetchSkinList() {
   fetch('https://raw.githubusercontent.com/etoniko/agarsu/refs/heads/main/skinlist.txt')
@@ -29,7 +66,7 @@ function fetchSkinList() {
 }
 
 // Периодически проверяем изменения в skinList.txt
-setInterval(fetchSkinList, 60000); // Проверяем каждые 60 секунд
+//setInterval(fetchSkinList, 60000); // Проверяем каждые 60 секунд
 
 // Функция для загрузки данных о топ-1 игроке
 async function chekstats() {
@@ -45,6 +82,40 @@ async function chekstats() {
     console.error('Ошибка загрузки данных о топ-1 игроке:', error);
   }
 }
+// Загружаем файл words.txt с GitHub и сохраняем матерные слова в массив mat
+let mat = [];
+
+fetch('https://raw.githubusercontent.com/etoniko/agarsu/refs/heads/main/word.txt')
+  .then(response => response.text()) // Получаем текст файла
+  .then(data => {
+    // Разделяем текст на строки, обрезаем лишние пробелы и фильтруем пустые строки
+    mat = data.split('\n').map(word => word.trim()).filter(word => word.length > 0);
+    console.log('word.txt успешно загружен');
+    console.log(mat); // Выводим матерные слова в консоль
+  })
+  .catch(error => {
+    console.error('Ошибка при загрузке words.txt:', error);
+  });
+
+// Функция для замены матерных слов на ***
+function makeItCultural(text) {
+  // Проверяем, что массив mat уже загружен
+  if (mat.length === 0) {
+    console.log('Ожидаем загрузку слов...');
+    return text;
+  }
+
+  // Заменяем каждое матерное слово на *** (с сохранением первой буквы)
+  mat.forEach(word => {
+    const regex = new RegExp(`(${word[0]})${word.slice(1)}`, 'gi'); // Создаём регулярное выражение для слова
+    text = text.replace(regex, (match, p1) => p1 + '***'); // Сохраняем первую букву, остальные заменяем на 3 звезды
+  });
+
+  return text; // Возвращаем обработанный текст
+}
+
+
+
 
   // Установка параметров подключения
   ONLY_CLIENT = false;
@@ -133,10 +204,8 @@ wHandle.onkeydown = function (event) {
                 if (chattxt.length > 0) sendChat(chattxt);
                 document.getElementById("chat_textbox").value = "";
             } else {
-                if (!hasOverlay) {
                     document.getElementById("chat_textbox").focus();
                     isTyping = true;
-                }
             }
             break;
         case 32: // space
@@ -694,8 +763,15 @@ function formatTime(date) {
   return `${hours}:${minutes}`; // Возвращаем строку в формате HH:MM
 }
 
+// Список администраторов
+const admins = ["нико"]; // Укажите ники администраторов
+
+function filterChatMessage(message) {
+  return makeItCultural(message);
+}
+
+// Использование при обработке чата
 function drawChatBoard() {
-  // Скрываем чат, если нужно
   if (hideChat) {
     return;
   }
@@ -716,15 +792,21 @@ function drawChatBoard() {
     const messageDiv = document.createElement('div');
     messageDiv.classList.add('scoreshint');
 
+    // Проверяем, является ли отправитель администратором
+    if (admins.includes(message.name.toLowerCase())) {
+      messageDiv.classList.add('admin'); // Применяем класс админа
+    }
+
     // Создаем текстовые элементы для имени, сообщения и времени
-    const nameSpan = document.createElement('span');
-    nameSpan.classList.add('chat-name');
-    nameSpan.style.color = message.color; // Устанавливаем цвет имени
-    nameSpan.textContent = message.name.toLowerCase() + ': '; // Добавляем двоеточие
+// Создаем текстовые элементы для имени, сообщения и времени
+const nameSpan = document.createElement('span');
+nameSpan.classList.add('chat-name');
+nameSpan.style.color = admins.includes(message.name.toLowerCase()) ? 'gold' : message.color; // Устанавливаем цвет имени
+nameSpan.textContent = message.name.toLowerCase() + ': '; // Добавляем двоеточие
 
     const messageSpan = document.createElement('span');
     messageSpan.classList.add('chat-text');
-    messageSpan.textContent = message.message; // Добавляем текст сообщения
+    messageSpan.textContent = filterChatMessage(message.message); // Применяем фильтр
 
     const timeSpan = document.createElement('span'); // Создаем элемент для времени
     timeSpan.classList.add('chat-time');
@@ -773,6 +855,25 @@ function drawChatBoard() {
 
 
 
+
+async function showSDK() {
+    // Проверяем, что SDK инициализирован и игра запущена на платформе Яндекс Игр
+    if (window.ysdk && isYandexGamesPlatform()) {
+        try {
+            // Показываем рекламу и ждем, пока она загрузится
+            await window.ysdk.adv.showFullscreenAdv();
+            console.log("Реклама показана успешно");
+
+            // Останавливаем геймплей и ждем завершения
+            await window.ysdk.features.GameplayAPI?.stop();
+            console.log("Геймплей остановлен");
+        } catch (err) {
+            console.error("Ошибка при работе с SDK Яндекс Игр:", err);
+        }
+    } else {
+        console.warn("SDK Яндекс Игр не инициализирован или игра не на платформе Яндекс Игр");
+    }
+}
 
 
   function updateNodes(view, offset) {
@@ -880,7 +981,10 @@ function drawChatBoard() {
       node = nodes[nodeId];
       null != node && node.destroy();
     }
-    ua && 0 == playerCells.length && showOverlays(false)
+    if (ua && playerCells.length === 0) {
+    showOverlays(false);  // Hide overlays
+    showSDK();  // Show SDK ad
+}
   }
 
   function sendMouseMove() {
@@ -901,8 +1005,14 @@ function drawChatBoard() {
     }
   }
 
+function filterNickName(nickName) {
+  return makeItCultural(nickName);
+}
+
+// Использование при отправке никнейма
 function sendNickName() {
   if (wsIsOpen() && userNickName != null) {
+    userNickName = filterNickName(userNickName); // Применяем фильтр
     var maxLength = 16; // Ограничение на максимальную ширину символов
     var totalLength = 0;
     var msg = prepareData(1 + 2 * maxLength);
@@ -929,6 +1039,7 @@ function sendNickName() {
     wsSend(msg);
   }
 }
+
 
 
 
@@ -1343,7 +1454,7 @@ function drawLeaderBoard() {
     // Проверяем, есть ли данные для отображения
     if ((teamScores && teamScores.length > 0) || (leaderBoard.length > 0)) {
         const header = document.createElement("h2");
-        header.innerText = "Leaderboard"; // Заголовок
+        header.innerText = "Топ Сейчас"; // Заголовок
         leaderboardDiv.appendChild(header);
 
         const displayedPlayers = 10; // Лимит на отображение 10 игроков
@@ -1352,9 +1463,9 @@ function drawLeaderBoard() {
         if (!teamScores || teamScores.length === 0) {
             // Если не нужно отображать командные очки
             for (let b = 0; b < leaderBoard.length; ++b) {
-                let name = leaderBoard[b].name || "An unnamed cell"; // Имя игрока
+                let name = leaderBoard[b].name; // Имя игрока
                 if (!showName) {
-                    name = "An unnamed cell"; // Если имя не отображается
+                    name = ""; // Если имя не отображается
                 }
 
                 const isMe = nodesOnScreen.indexOf(leaderBoard[b].id) !== -1; // Проверка, мой ли это игрок
@@ -1376,7 +1487,7 @@ function drawLeaderBoard() {
             if (myRank && myRank > displayedPlayers) {
                 const myRankDiv = document.createElement("div");
                 myRankDiv.style.color = "#FFAAAA"; // Цвет строки для isMe в 11-й позиции
-                myRankDiv.innerText = `${myRank}. ${playerCells[0].name || "An unnamed cell"}`; // Показываем мой ранг и имя
+                myRankDiv.innerText = `${myRank}. ${playerCells[0].name}`; // Показываем мой ранг и имя
                 leaderboardDiv.appendChild(myRankDiv);
             }
         } else {
@@ -1446,7 +1557,7 @@ function drawLeaderBoard() {
     ua = false,
     userScore = 0,
     showDarkTheme = true,
-    showMass = false,
+    showMass = true,
     hideChat = false,
     smoothRender = .4,
     posX = nodeX = ~~((leftPos + rightPos) / 2),
@@ -1547,8 +1658,7 @@ function drawLeaderBoard() {
   var data = {
     "action": "test"
   };
-  var square = ["dragon"];
-  var transparent = ["neznakomka", "dragon"];
+  var transparent = ["незнакомка"];
   var delay = 500,
     oldX = -1,
     oldY = -1,
