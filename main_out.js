@@ -47,8 +47,6 @@ async function initYandexSDK() {
 
 // Вызываем инициализацию SDK
 initYandexSDK();
-
-
 function fetchSkinList() {
   fetch('https://raw.githubusercontent.com/etoniko/agarsu/refs/heads/main/skinlist.txt')
     .then(response => {
@@ -1327,36 +1325,33 @@ function drawClassicGrid() {
 // Инициализация изображений
 const innerImage = new Image();
 const centerBackground = new Image();
-centerBackground.src = "https://i.imgur.com/vuzgzMa.png"; // Фоновое изображение
+centerBackground.src = "https://cdn.jsdelivr.net/gh/etoniko/agarsu/Resurs_1.svg"; // Фоновое изображение
 
 // Переменные для хранения данных топ-1 игрока
 let topPlayerNick = '';
 let topPlayerScore = 0;
 let topPlayerSkin = '';
 
+// Переменные для изменения размеров изображений
+let backgroundWidth = 512;  // Ширина фонового изображения
+let backgroundHeight = 470; // Высота фонового изображения
+let innerImageWidth = 510;  // Ширина скина игрока
+let innerImageHeight = 510; // Высота скина игрока
+
 // Функция для загрузки данных о топ-1 игроке
 function loadTopPlayerData(stat) {
   try {
-    // Проверяем, есть ли данные
     if (stat.length > 0) {
       const topPlayer = stat[0]; // Топ-1 игрок
-      // Получаем ник и рекорд игрока
-      topPlayerNick = topPlayer.nick; 
+      topPlayerNick = topPlayer.nick;
       topPlayerScore = topPlayer.score;
 
-      // Получаем ID скина из skinList
       const skinId = skinList[topPlayerNick]; 
+      innerImage.src = skinId 
+        ? `https://i.imgur.com/${skinId}.png` 
+        : "https://i.imgur.com/PPFtwqH.png";
 
-      // Устанавливаем изображение скина игрока
-      if (skinId) {
-        innerImage.src = `https://i.imgur.com/${skinId}.png`; // Скин игрока
-      } else {
-        innerImage.src = "https://i.imgur.com/PPFtwqH.png"; // Скин по умолчанию
-      }
-
-      // Задаем ID скина (можно использовать значение по умолчанию, если скин не найден)
       topPlayerSkin = skinId || 'default';
-    } else {
     }
   } catch (error) {
     console.error('Ошибка обработки данных о топ-1 игроке:', error);
@@ -1370,17 +1365,16 @@ let isInnerImageLoaded = false;
 centerBackground.onload = function () {
   isBackgroundLoaded = true;
   console.log('Фоновое изображение загружено');
-  drawCenterBackground(); // Вызываем отрисовку, когда фон загружен
+  drawCenterBackground();
 };
 
 innerImage.onload = function () {
   isInnerImageLoaded = true;
   console.log('Внутреннее изображение (скин игрока) загружено');
-  drawCenterBackground(); // Вызываем отрисовку, когда скин игрока загружен
+  drawCenterBackground();
 };
 
 function drawCenterBackground() {
-  // Проверка, загружены ли изображения
   if (!isBackgroundLoaded || !isInnerImageLoaded) {
     return;
   }
@@ -1391,36 +1385,57 @@ function drawCenterBackground() {
   const screenX = (mapCenterX - nodeX) * viewZoom + canvasWidth / 2;
   const screenY = (mapCenterY - nodeY) * viewZoom + canvasHeight / 2;
 
-  const imageSize = 512 * viewZoom;
-  const innerImageSize = 365 * viewZoom;
+  const scaledBackgroundWidth = backgroundWidth * viewZoom;
+  const scaledBackgroundHeight = backgroundHeight * viewZoom;
+  const scaledInnerImageWidth = innerImageWidth * viewZoom;
+  const scaledInnerImageHeight = innerImageHeight * viewZoom;
 
-  // Сначала рисуем внутреннее изображение (скин игрока) с закругленными углами
-  ctx.save(); // Сохраняем текущее состояние контекста
+  // Сначала рисуем внутреннее изображение (скин игрока) в форме шестиугольника
+  ctx.save();
+  const radius = Math.min(scaledInnerImageWidth, scaledInnerImageHeight) / 2; // Радиус шестиугольника
+  const halfHeight = radius * Math.sqrt(3) / 2; // Половина высоты шестиугольника
 
-  // Создаем круглый путь для закругления углов
-  const radius = innerImageSize / 2; // Радиус круга
+  // Создаём шестиугольник с горизонтальными верхней и нижней сторонами
   ctx.beginPath();
-  ctx.arc(screenX, screenY, radius, 0, Math.PI * 2, true);
+  ctx.moveTo(screenX - radius, screenY); // Левый угол
+  ctx.lineTo(screenX - radius / 2, screenY - halfHeight); // Верхний левый
+  ctx.lineTo(screenX + radius / 2, screenY - halfHeight); // Верхний правый
+  ctx.lineTo(screenX + radius, screenY); // Правый угол
+  ctx.lineTo(screenX + radius / 2, screenY + halfHeight); // Нижний правый
+  ctx.lineTo(screenX - radius / 2, screenY + halfHeight); // Нижний левый
   ctx.closePath();
-  ctx.clip(); // Применяем маску
+  ctx.clip();
 
-  // Рисуем скин игрока
-  ctx.drawImage(innerImage, screenX - radius, screenY - radius, innerImageSize, innerImageSize);
+  ctx.drawImage(
+    innerImage,
+    screenX - scaledInnerImageWidth / 2,
+    screenY - scaledInnerImageHeight / 2,
+    scaledInnerImageWidth,
+    scaledInnerImageHeight
+  );
 
-  ctx.restore(); // Восстанавливаем состояние контекста, чтобы удалить маску
+  ctx.restore();
 
-  // Затем рисуем фон, чтобы он был над всеми изображениями
-  ctx.drawImage(centerBackground, screenX - imageSize / 2, screenY - imageSize / 2, imageSize, imageSize);
+  // Затем рисуем фон
+  ctx.drawImage(
+    centerBackground,
+    screenX - scaledBackgroundWidth / 2,
+    screenY - scaledBackgroundHeight / 2,
+    scaledBackgroundWidth,
+    scaledBackgroundHeight
+  );
 
-  // Устанавливаем стиль для текста
-  ctx.fillStyle = "white"; // Цвет текста
-  ctx.font = `${24 * viewZoom}px Ubuntu`; // Шрифт и размер текста, изменяемый по зуму
-  ctx.textAlign = "center"; // Выравнивание по центру
+  // Устанавливаем стиль текста
+  ctx.fillStyle = "white";
+  ctx.font = `${22 * viewZoom}px Ubuntu`;
+  ctx.textAlign = "center";
 
-  // Отображаем ник и рекорд игрока под скином с учетом зума
-  ctx.fillText(topPlayerNick, screenX, screenY + radius + 5 * viewZoom); // Ник под изображением
-  ctx.fillText(`${topPlayerScore}`, screenX, screenY + radius + 35 * viewZoom); // Рекорд под ником
+  ctx.fillText(topPlayerNick, screenX, screenY + radius - 440 * viewZoom);
+  ctx.fillText(`${topPlayerScore}`, screenX, screenY + radius - 37 * viewZoom);
 }
+
+
+
 
 
 
