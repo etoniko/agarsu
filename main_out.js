@@ -25,6 +25,14 @@ async function initYandexSDK() {
             if (ysdk.features && ysdk.features.LoadingAPI) {
                 await ysdk.features.LoadingAPI.ready();
                 console.log('Платформа готова, игра может начаться');
+
+                // Показываем рекламу сразу после загрузки SDK
+                if (ysdk.adv) {
+                    await ysdk.adv.showFullscreenAdv();
+                    console.log('Реклама показана');
+                } else {
+                    console.warn('Реклама недоступна');
+                }
             } else {
                 console.warn('LoadingAPI не доступен');
             }
@@ -39,6 +47,7 @@ async function initYandexSDK() {
 
 // Вызываем инициализацию SDK
 initYandexSDK();
+
 
 function fetchSkinList() {
   fetch('https://raw.githubusercontent.com/etoniko/agarsu/refs/heads/main/skinlist.txt')
@@ -860,10 +869,6 @@ async function showSDK() {
     // Проверяем, что SDK инициализирован и игра запущена на платформе Яндекс Игр
     if (window.ysdk && isYandexGamesPlatform()) {
         try {
-            // Показываем рекламу и ждем, пока она загрузится
-            await window.ysdk.adv.showFullscreenAdv();
-            console.log("Реклама показана успешно");
-
             // Останавливаем геймплей и ждем завершения
             await window.ysdk.features.GameplayAPI?.stop();
             console.log("Геймплей остановлен");
@@ -1013,32 +1018,26 @@ function filterNickName(nickName) {
 function sendNickName() {
   if (wsIsOpen() && userNickName != null) {
     userNickName = filterNickName(userNickName); // Применяем фильтр
-    var maxLength = 16; // Ограничение на максимальную ширину символов
-    var totalLength = 0;
-    var msg = prepareData(1 + 2 * maxLength);
+    var maxWidth = 100; // Ограничение на максимальную ширину
+    var totalWidth = 0;
+    var msg = prepareData(1 + 2 * maxWidth); // Подготовка сообщения с учетом ограничения ширины
     msg.setUint8(0, 0);
 
-    for (var i = 0; i < userNickName.length && totalLength < maxLength; ++i) {
+    for (var i = 0; i < userNickName.length && totalWidth < maxWidth; ++i) {
       var char = userNickName.charAt(i);
-      var charCode = char.codePointAt(0);
 
-      // Проверка на широкие символы и исключение определенных кодов
-      if (
-        charCode !== 9989 && // Исключаем символ "✅"
-        (charCode < 0x1100 || charCode > 0x2FF0) && // Исключаем диапазоны широких символов
-        charCode >= 0 && charCode <= 70000
-      ) {
-        // Увеличиваем счетчик для широких символов и обычных символов
-        totalLength += charCode > 0x2FF0 ? 2 : 1;
-        
-        if (totalLength <= maxLength) {
-          msg.setUint16(1 + 2 * (totalLength - 1), charCode, true);
-        }
+      // Определение ширины символа
+      var charWidth = (char.codePointAt(0) > 0x2FF0) ? 2 : 1;
+
+      if (totalWidth + charWidth <= maxWidth) {
+        msg.setUint16(1 + 2 * totalWidth, char.codePointAt(0), true);
+        totalWidth += charWidth;
       }
     }
     wsSend(msg);
   }
 }
+
 
 
 
@@ -1977,7 +1976,7 @@ function drawLeaderBoard() {
             var massImage = this.sizeCache.render(),
               massWidth = Math.floor(massImage.width * invZoomRatio),
               massHeight = Math.floor(massImage.height * invZoomRatio);
-            ctx.drawImage(massImage, x - Math.floor(massWidth / 2), y + Math.floor(massHeight * 0.7), massWidth, massHeight);
+            ctx.drawImage(massImage, x - Math.floor(massWidth / 2), y + Math.floor(massHeight * 0.8), massWidth, massHeight);
           }
         }
         ctx.restore();
