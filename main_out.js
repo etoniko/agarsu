@@ -72,7 +72,7 @@ function fetchSkinList() {
 }
 fetchSkinList();
 // Периодически проверяем изменения в skinList.txt
-//setInterval(fetchSkinList, 60000); // Проверяем каждые 60 секунд
+setInterval(fetchSkinList, 300 000); // Проверяем каждые 60 секунд
 
 // Функция для загрузки данных о топ-1 игроке
 async function chekstats() {
