@@ -526,6 +526,7 @@ content: "";
     border: solid #ffffff26 1px;
     background: rgba(0, 0, 0, .3);
     width: 140px;
+    max-width: 160px !important;
     margin-top: 10px;
     text-overflow: ellipsis;
     overflow: hidden;
