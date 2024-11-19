@@ -11,7 +11,6 @@ function isYandexGamesPlatform() {
         return false;
     }
 }
-
 // Асинхронная функция для инициализации SDK Яндекс Игр
 async function initYandexSDK() {
     if (isYandexGamesPlatform()) {
@@ -71,7 +70,7 @@ function fetchSkinList() {
       console.error('Ошибка загрузки skinList.txt:', error);
     });
 }
-
+fetchSkinList();
 // Периодически проверяем изменения в skinList.txt
 //setInterval(fetchSkinList, 60000); // Проверяем каждые 60 секунд
 
@@ -458,7 +457,6 @@ function handleWheel(event) {
   }
 
   function showConnecting() {
-    fetchSkinList();
 	chekstats();
     if (ma) {
       wjQuery("#connecting").show();
@@ -1012,29 +1010,19 @@ function filterNickName(nickName) {
   return makeItCultural(nickName);
 }
 
-// Использование при отправке никнейма
 function sendNickName() {
-  if (wsIsOpen() && userNickName != null) {
-    userNickName = filterNickName(userNickName); // Применяем фильтр
-    var maxWidth = 100; // Ограничение на максимальную ширину
-    var totalWidth = 0;
-    var msg = prepareData(1 + 2 * maxWidth); // Подготовка сообщения с учетом ограничения ширины
-    msg.setUint8(0, 0);
+    if (wsIsOpen() && userNickName != null) {
+        const sanitizedNickName = userNickName.replace(/[\uFDFD\u1242B\u12219\u2E3B\uA9C5\u102A\u0BF5\u0BF8\u2031\u0300-\u036F\u0483\u1AB0-\u1AFF\u1DC0-\u1DFF\u20D0-\u20FF\u2DE0-\u2DFF\uA66F-\uA6FF\uFE20-\uFE2F]/g, "");
 
-    for (var i = 0; i < userNickName.length && totalWidth < maxWidth; ++i) {
-      var char = userNickName.charAt(i);
-
-      // Определение ширины символа
-      var charWidth = (char.codePointAt(0) > 0x2FF0) ? 2 : 1;
-
-      if (totalWidth + charWidth <= maxWidth) {
-        msg.setUint16(1 + 2 * totalWidth, char.codePointAt(0), true);
-        totalWidth += charWidth;
-      }
+        var msg = prepareData(1 + 2 * sanitizedNickName.length);
+        msg.setUint8(0, 0);
+        for (var i = 0; i < sanitizedNickName.length; ++i) {
+            msg.setUint16(1 + 2 * i, sanitizedNickName.charCodeAt(i), true);
+        }
+        wsSend(msg);
     }
-    wsSend(msg);
-  }
 }
+
 
 
 
