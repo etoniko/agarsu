@@ -1,4 +1,5 @@
 (function (wHandle, wjQuery) {
+	let isConnected = false; // Флаг для отслеживания состояния подключения
 // Загружаем список скинов из skinList.txt
 var skinList = {};
 var lastModified = null; // Переменная для хранения времени последнего изменения файла
@@ -72,7 +73,7 @@ function fetchSkinList() {
 }
 fetchSkinList();
 // Периодически проверяем изменения в skinList.txt
-setInterval(fetchSkinList, 300 000); // Проверяем каждые 60 секунд
+setInterval(fetchSkinList, 300000); // Проверяем каждые 60 секунд
 
 // Функция для загрузки данных о топ-1 игроке
 async function chekstats() {
@@ -508,23 +509,28 @@ function handleWheel(event) {
   }
 
 
-  function onWsOpen() {
-    var msg;
-    delay = 500;
-    wjQuery("#connecting").hide();
-    msg = prepareData(5);
-    msg.setUint8(0, 254);
-    msg.isSpectating = true;
-    sendUint8(1);
-    msg.setUint32(1, 5, true); // Protocol 5
-    wsSend(msg);
-    msg = prepareData(5);
-    msg.setUint8(0, 255);
-    msg.setUint32(1, 0, true);
-    wsSend(msg);
-    sendNickName();
-    log.info("Connection successful!")
-  }
+
+
+function onWsOpen() {
+  var msg;
+  delay = 500;
+  wjQuery("#connecting").hide();
+  msg = prepareData(5);
+  msg.setUint8(0, 254);
+  msg.isSpectating = true;
+  sendUint8(1);
+  msg.setUint32(1, 5, true); // Protocol 5
+  wsSend(msg);
+  msg = prepareData(5);
+  msg.setUint8(0, 255);
+  msg.setUint32(1, 0, true);
+  wsSend(msg);
+  sendNickName();
+  log.info("Connection successful!");
+  setTimeout(() => {
+  isConnected = true; // Устанавливаем флаг, что соединение успешно
+  }, 2000); // Задержка перед повторной попыткой
+}
 
   function onWsClose() {
     setTimeout(showConnecting, delay);
@@ -1586,12 +1592,17 @@ function drawLeaderBoard() {
   var wCanvas = document.createElement("canvas");
   var playerStat = null;
   wHandle.isSpectating = false;
-  wHandle.setNick = function (arg) {
+// Обновленный setNick
+wHandle.setNick = function (arg) {
+  if (isConnected) { // Проверка, что соединение установлено
     $('#overlays').hide();
     userNickName = arg;
     sendNickName();
-    userScore = 0
-  };
+    userScore = 0;
+  } else {
+    log.info("Не удалось установить ник, соединение еще не готово.");
+  }
+};
   wHandle.setSkins = function (arg) {
     showSkin = arg
   };
