@@ -10,27 +10,29 @@
                                   supported by Chrome, Edge, Opera and Firefox */
 }
 
-#recaptcha {
-    display: none;
-    position: absolute;
-    height: 100%;
-    width: 100%;
-    left: 0;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    z-index: 3;
+
+/* Фон полупрозрачный */
+#captcha-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* Черный фон с прозрачностью */
+  display: flex;
+  justify-content: center; /* Центрируем по горизонтали */
+  align-items: center; /* Центрируем по вертикали */
+  z-index: 9999; /* Чтобы фон был поверх всех элементов */
 }
 
-.grecaptcha-badge {
-    display: none !important;
+/* Стили для CAPTCHA контейнера */
+#captcha-container {
+  z-index: 10000; /* Обеспечиваем, чтобы CAPTCHA была поверх фона */
 }
 
-#recaptcha-log, #recaptcha-reg, #recaptcha-reset, #recaptcha-reset-confirm {
-    padding: 5px 7px;
+#canvas {
+    touch-action: none; /* Disable browser's default touch handling */
 }
-
 /*Dialog Styles*/
 dialog {
 	padding: 1rem 3rem;
@@ -99,12 +101,6 @@ button.primary {
 	}
 }
 button:focus { outline: none; }
-.g-recaptcha {
-    transform:scale(0.77);
-    transform-origin:0 0;
-	padding-top: 60px;
-    padding-left: 10px;
-}
 
 @keyframes fadeIn {
 	from {
@@ -124,18 +120,6 @@ button:focus { outline: none; }
     margin: 0;
     overflow: hidden;
 }
-	.overlays{
-		z-index: 1;
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-	display: flex;
-    align-items: center;
-    justify-content: center;
-	}
 
 
 i:hover{
@@ -154,6 +138,7 @@ i:hover{
     background: #0e172c;
     height: 19px;
     padding: 4px;
+	border: 0;
 }
 
 .photo-gallery {
@@ -163,7 +148,7 @@ display: flex;
 
 }
 
-
+	
 .top-players-header {
     text-align: center;
     font-family: 'ubuntu';
@@ -175,7 +160,6 @@ display: flex;
 }
 
 #table-container {
-    height: 340px;
     overflow-y: auto;
     margin-top: 5px;
 }
@@ -208,7 +192,6 @@ display: flex;
 /* Добавляем стили для топ-1, топ-2 и топ-3 игроков */
 .top-player:nth-child(1) {
     color: #ffd700; /* Золотой цвет для топ-1 */
-	font-weight:bold;
 }
 .top-player{
     display: flex;
@@ -222,10 +205,11 @@ display: flex;
 		margin-top: 10px;
 	}
 	.nick{
-		width: 100px;
-		margin-top: 10px;
-		text-overflow: ellipsis;
+    width: 150px;
+    margin-top: 10px;
+    text-overflow: ellipsis;
     overflow: hidden;
+    height: 20px;
 	}
 	.score{
 		width: 100px;
@@ -255,16 +239,14 @@ display: flex;
 /* Стили для остальных игроков */
 
 .skkinn {
-    width: 50px;
-    height: 50px;
     background-size: cover;
-    border-radius: 50%;
+    border-radius: 100%;
     border: solid 2px;
 	margin: 0px 15px 5px 21px;
 }
 .time{
+	font-size: 11px !important;
 	margin-top: 10px;
-	font-size: 13px;
     color: #8e8e8e;
 	width: 100px;
 }
@@ -285,17 +267,13 @@ display: flex;
 }
 
 .gallery {
-	    width: 680px;
   --s: 150px; /* control the size */
   --g: 10px;  /* control the gap */
   --f: 1.5;   /* control the scale factor */
   
   display: grid;
   gap: var(--g);
-  aspect-ratio: 2;
-  grid-template-columns: repeat(6,auto);
 }
-
 .gallery > img {
   width: 0;
   height: 0;
@@ -487,18 +465,10 @@ content: "";
 
 
 
-
-.center {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 430px;
-  width: 820px;
-}
-
-/* Масштаб для экранов шириной менее 600px */
 @media (max-width: 599px) {
-  .center {transform: scale(0.45);}
+	.score-info{left: 40%;}
+	#table-container {height: 375px;}
+	.skkinn {height: 32px; width: 50px;}
   .social {
 	position: absolute !important;
     width: 140px !important;
@@ -516,25 +486,95 @@ content: "";
     top: 0px !important;
 	right: auto !important;
 	}
-	#leaderboard{
+    .sidebar {
+        background-color: #016bef;
+        display: flex;
+        user-select: none;
+        justify-content: space-evenly;
+        align-items: center;
+        width: 100%;
+		border-radius: 0px 0px 25px 25px;
+		padding: 0px 25px 0px 25px;
+    }
+    .sidebar .menu-item {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+	  flex-direction: column;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s;
+	  padding: 5px;
+    }
+	    /* Main Content */
+    .main-content {
+        width: 100%;
+        background-color: #0e172c;
+        border-radius: 25px 25px 0px 0px;
+        border: #ffffff14 solid 1px;
+        height: 100%;
+		padding: 20px 5px 0px 5px;
+    }
+	.center {
+  padding: 5px;
+  flex-direction: column-reverse;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 530px;
+  width: 100%;
+}
+	.overlays{
+		z-index: 1;
     position: absolute;
-    right: 10px;
-    top: 10px;
-    font-size: 9px;
-    padding: 10px 10px 10px 10px;
-    border-radius: 20px 20px 20px 20px;
-    border: solid #ffffff26 1px;
-    background: rgba(0, 0, 0, .3);
-    width-max: 140px;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+-webkit-backdrop-filter: blur(20px);
+backdrop-filter: blur(20px);
+	display: flex;
+    align-items: center;
+	}
+	    .sidebar .menu-item i {
+      font-size: 18px;
+	  padding: 5px;
+    }
+    .sidebar .menu-item .label {
+      font-size: 11px;
+    }
+	    .sidebar .menu-item.active {
+      background-color: #171717;
+	  border-bottom: solid;
+    }
+		    .avatar-containers {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+	  margin-top: 40px;
+    }
+	#process{
     margin-top: 10px;
-    text-overflow: ellipsis;
-    overflow: hidden;
+}
+	.gallery {
+		width: 100%;
+		height: 390px;
+    aspect-ratio: 4 / 6;
+    grid-template-columns: repeat(4, auto);
+}
+#leaderboard{
+    right: 5px;
+    top: 5px;
+    font-size: 11px;
 }
 }
 
-/* Масштаб для экранов шириной от 600px до 899px */
+
 @media (min-width: 600px) and (max-width: 899px) {
-  .center {transform: scale(0.7);}
+	.center {transform: scale(0.7);}
   .social {opacity: 0;}
   #leaderboard,
   #chat-container,
@@ -557,6 +597,10 @@ content: "";
       overflow: hidden;
       touch-action: manipulation;
     }
+	@media (min-width: 600px) {
+		.score-info{left: 50%;}
+		#table-container {height: 340px;}
+		.skkinn {height: 50px; width: 50px;}
     /* Sidebar */
     .sidebar {
       width: 100px; /* Fixed width to match the image */
@@ -582,17 +626,7 @@ content: "";
 	  gap: 5px;
 	  padding: 10px;
     }
-    .sidebar .menu-item.active {
-      background-color: #171717;
-	  border-right: solid;
-    }
-    .sidebar .menu-item i {
-      font-size: 20px;
-    }
-    .sidebar .menu-item .label {
-      font-size: 16px;
-    }
-    /* Main Content */
+	    /* Main Content */
     .main-content {
       height: 430px;
       width: 820px;
@@ -605,9 +639,58 @@ content: "";
       position: relative;
 	  height: 100%;
 	  border-radius: 0px 25px 25px 0px;
-	    border: #ffffff14 solid 1px;
-    border-left: none;
+	  border: #ffffff14 solid 1px;
+      border-left: none;
     }
+	 .center {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+       height: 430px;
+       width: 820px;
+}
+	.overlays{
+		z-index: 1;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+	display: flex;
+    align-items: center;
+    justify-content: center;
+	}
+	    .sidebar .menu-item i {
+      font-size: 20px;
+    }
+    .sidebar .menu-item .label {
+      font-size: 16px;
+    }
+	    .sidebar .menu-item.active {
+      background-color: #171717;
+	  border-right: solid;
+    }
+	.main-skin {margin: 0 10px;}
+	    .avatar-containers {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+	  margin-top: 20px;
+    }
+		.gallery {
+			width: 680px;
+    aspect-ratio: 2;
+    grid-template-columns: repeat(6, auto);
+}
+#leaderboard{
+    right: 10px;
+    top: 10px;
+    font-size: 14px;
+}
+}
+
     .content {
       display: none;
       text-align: center;
@@ -637,14 +720,7 @@ content: "";
     font-size: 13px;
 	color: #8e8e8e;
 }
-    /* Avatar Section */
-    .avatar-containers {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      position: relative;
-	  margin-top: 20px;
-    }
+
     /* Navigation Buttons */
     .nav-buttons {
       display: flex;
@@ -662,6 +738,7 @@ content: "";
       display: flex;
       align-items: center;
       gap: 10px;
+	  border: 0;
     }
 	.spec:hover{
 		transform: scale(1.1);
@@ -687,6 +764,9 @@ content: "";
 .input-container input {
     box-sizing: border-box; /* Учитывать отступы и границы в ширине */
     outline: none; /* Убирает обводку при фокусировке */
+}
+input{
+	font-size: 16px;
 }
 
 #nick {
@@ -718,7 +798,7 @@ content: "";
     width: 150px;
     height: 150px;
     background-size: cover;
-    border-radius: 50%;
+    border-radius: 100%;
     cursor: pointer;
     background-image: url(https://i.imgur.com/4tui4GP.png);
     transition: ease filter, transform 0.5s;
@@ -734,17 +814,6 @@ content: "";
     position: relative;
 }
 
-/* Стили для основного скина */
-.main-skin {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    background-size: cover;
-    background-position: center;
-    border: 2px solid #0d84fb;
-    margin: 0 20px;
-    transition: transform 0.3s ease;
-}
 
 
 /* Стили для полупрозрачных предыдущих скинов */
@@ -805,10 +874,6 @@ display: flex;
 }
 #leaderboard{
 position: absolute;
-    right: 10px;
-    top: 10px;
-    width-max: 160px;
-    font-size: 14px;
     padding: 10px 10px 10px 10px;
     border-radius: 20px 20px 20px 20px;
     border: solid #ffffff26 1px;
@@ -830,7 +895,6 @@ position: absolute;
 position: absolute;
 font-size: 12px;
 display: flex;
-left: 50%;
 transform: translate(-50%);
 top: 10px;
 gap: 5px;
