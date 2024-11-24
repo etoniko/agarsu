@@ -149,11 +149,20 @@
 
 // Функция получения токена капчи xxxevexxx
 let captchaTokenCloudflare = null;
+let captchaSuccessHandled = false; // Флаг, указывающий, что капча уже пройдена
+
 console.log("text 1");
 
 wHandle.onCaptchaSuccess = function (token) {
+    // Проверяем, была ли капча уже успешно пройдена
+    if (captchaSuccessHandled) {
+        return; // Если капча уже была пройдена, не выполняем дальнейшие действия
+    }
+
     console.log("Captcha успешна:", token);
     captchaTokenCloudflare = token;
+    captchaSuccessHandled = true; // Устанавливаем флаг, что капча пройдена
+
     // Не вызываем showConnecting() здесь
     captchaPassed();
     document.getElementById("button-text").disabled = false;
@@ -613,9 +622,7 @@ function showConnecting(token) {
     }
 
 function onWsClose() {
-    console.warn("WebSocket connection closed. Retrying...");
-    setTimeout(() => showConnecting(token), delay);
-    delay *= 1.5; // Увеличиваем интервал перед следующей попыткой
+ setTimeout(() => { window.location.reload(); }, 3000); // Задержка перед повторной попыткой
 }
 
 
