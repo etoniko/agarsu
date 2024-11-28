@@ -133,7 +133,13 @@
 
     // Установка параметров подключения
     ONLY_CLIENT = false;
-    var CONNECTION_URL = location.host;
+    let CONNECTION_URL = "agar.su";
+	const hash = location.hash;
+if (hash === "#ffa") {
+  CONNECTION_URL = "agar.su"; //  Остаётся agar.su для #ffa
+} else if (hash === "#crazy") {
+  CONNECTION_URL = "itana.pw";
+}
     var touchX, touchY,
         touchable = 'createTouch' in document,
         touches = [];
@@ -162,7 +168,7 @@ wHandle.onCaptchaSuccess = function (token) {
     console.log("Captcha успешна:", token);
     captchaTokenCloudflare = token;
     captchaSuccessHandled = true; // Устанавливаем флаг, что капча пройдена
-
+showConnecting(captchaTokenCloudflare);
     // Не вызываем showConnecting() здесь
     captchaPassed();
     document.getElementById("button-text").disabled = false;
@@ -173,7 +179,18 @@ wHandle.onCaptchaSuccess = function (token) {
 wHandle.setserver = function(arg) {
     if (arg !== CONNECTION_URL) {
         CONNECTION_URL = arg;
-        // Вручную запускаем showConnecting с токеном капчи
+        // Update the hash based on the new server
+        if (arg === "itana.pw") {
+            window.location.hash = "#crazy";
+        } else if (arg === "agar.su") {
+            window.location.hash = "#ffa";
+        } else {
+            // Handle cases where arg is neither itana.pw nor agar.su.  Perhaps log an error or set a default hash?
+            console.warn("Unknown server URL:", arg);
+            window.location.hash = ""; // Or some default hash
+        }
+
+        // Attempt to reconnect with the new server.
         if (captchaTokenCloudflare) {
             showConnecting(captchaTokenCloudflare);
         } else {
@@ -279,6 +296,13 @@ wHandle.setserver = function(arg) {
                         sendMouseMove();
                         sendUint8(22);
                         ePressed = true; // Added missing ePressed flag
+                    }
+                    break;
+				case 82: // R
+                    if (!rPressed && !isTyping) {
+                        sendMouseMove();
+                        sendUint8(23);
+                        rPressed = true; // Added missing rPressed flag
                     }
                     break;
                 case 84: // T
@@ -538,18 +562,26 @@ function isMouseOverElement(element) {
         wjQuery("#overlays").fadeIn(arg ? 200 : 3E3);
     }
 
+let currentWebSocketUrl = null;
+
 function showConnecting(token) {
-    // Убедитесь, что соединение уже не установлено
-    if (ws && ws.readyState === WebSocket.OPEN) {
-        console.log("Соединение уже активно, пропускаем повторное подключение.");
+	chekstats(); 
+    // Формируем полный URL для WebSocket
+    const wsUrl = (useHttps ? "wss://" : "ws://") + CONNECTION_URL;
+
+    // Проверяем, что соединение не установлено и что текущий URL не совпадает с уже подключенным
+    if (ws && ws.readyState === WebSocket.OPEN && currentWebSocketUrl === wsUrl) {
+        console.log("Соединение уже активно для этого URL, пропускаем повторное подключение.");
         return;
     }
 
     if (ma) {
         wjQuery("#connecting").show();
-        wsConnect((useHttps ? "wss://" : "ws://") + CONNECTION_URL, token);
+        currentWebSocketUrl = wsUrl; // Запоминаем текущий URL
+        wsConnect(wsUrl, token);
     }
 };
+
 
     function wsConnect(wsUrl, token) {
         if (ws) {
@@ -622,7 +654,7 @@ function showConnecting(token) {
     }
 
 function onWsClose() {
- setTimeout(() => { window.location.reload(); }, 3000); // Задержка перед повторной попыткой
+ setTimeout(() => { window.location.reload(); }, 2000); // Задержка перед повторной попыткой
 }
 
 
