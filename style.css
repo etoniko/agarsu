@@ -274,7 +274,9 @@ display: flex;
   display: grid;
   gap: var(--g);
 }
-.gallery > img {
+.gallery > li {
+	list-style: none;
+	    background-size: cover;
   width: 0;
   height: 0;
   min-height: 100%;
@@ -285,7 +287,7 @@ display: flex;
   transition: .30s linear;
 }
 
-.gallery img:hover{
+.gallery li:hover{
   filter: grayscale(0);
   width:  calc(var(--s)*var(--f));
   height: calc(var(--s)*var(--f));
@@ -344,9 +346,6 @@ display: flex;
 }
 .adv{
 text-align: center;font-family: 'Ubuntu';padding-top: 13px;text-shadow: 0px -1px 0px #000000, -1px 0px 0px #000000, 1px 0px 0px #000000, 0px 1px 0px #000000, 1px 1px 0px #000000, -1px -1px 0px #000000, -1px 1px 0px #000000, 1px -1px 0px #000000, 0px 2px 0px #000000;color: #ffffff !important;
-}
-.sgm{
-	text-align: center;font-family: 'Ubuntu';padding-top: 10px;text-shadow: 0px -1px 0px #000000, -1px 0px 0px #000000, 1px 0px 0px #000000, 0px 1px 0px #000000, 1px 1px 0px #000000, -1px -1px 0px #000000, -1px 1px 0px #000000, 1px -1px 0px #000000, 0px 2px 0px #000000;color: #ffffff !important;
 }
 
 .soc{
@@ -777,7 +776,7 @@ input{
     border: 1px solid #ccc; /* Пример рамки, вы можете настроить цвет и стиль */
     border-radius: 20px; /* Добавляет округлость углов */
 	height: 30px;
-	padding-left: 5px;
+	padding-left: 8px;
 }
 
 #pass {
@@ -919,9 +918,12 @@ gap: 5px;
 
 
 .server-containers {
+	border-radius: 25px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     position: fixed;
     width: 350px;
-    background-color: rgb(255, 255, 255);
     z-index: 1000;
     transition: height 0.3s ease, transform 0.3s ease;
     height: 0px;
@@ -930,7 +932,6 @@ gap: 5px;
 }
 
 .server-containers.visible {
-    display: flex; /* Показываем элемент */
     height: 200px;
     transform: translateX(0);
 }
@@ -957,6 +958,21 @@ gap: 5px;
 .input-container.visible {
     opacity: 1; /* Показываем элемент */
 }
+.sgm, .photo-gallery {
+    opacity: 0; /* Изначально скрыто */
+    transform: translateY(-20px); /* Начальная позиция для анимации */
+    transition: opacity 0.1s ease, transform 0.1s ease; /* Переход для плавности */
+}
+
+.sgm.visible, .photo-gallery.visible {
+    opacity: 1; /* Показываем элемент */
+    transform: translateY(0); /* Возвращаем на место */
+}
+
+.sgm.hidden, .photo-gallery.hidden {
+    opacity: 0; /* Скрываем элемент */
+    transform: translateY(-20px); /* Сдвигаем вверх при исчезновении */
+}
 
 .scoreshint.admin {
   background: #b51e1e87;
@@ -974,3 +990,103 @@ gap: 5px;
 	color: gold;
     text-shadow: #FC0 1px 0 10px;
 }
+
+
+.gamemode {
+display: flex;
+    align-items: center;
+    justify-content: center;
+
+}
+.thumbnails {
+    margin: 5px;
+    width: 70px;
+    font-weight: bold;
+    padding-top: 85px;
+    cursor: pointer;
+    text-align: center;
+    color: white;
+    border-radius: 4px;
+}
+.thumbnail {
+    margin: 5px;
+    width: 70px;
+    font-weight: bold;
+    padding-top: 85px;
+    cursor: pointer;
+    text-align: center;
+    color: white;
+    border-radius: 4px;
+}
+
+.ffa {
+background: #E2E2E2 url(https://i.imgur.com/J6RSops.png) top 20px center no-repeat;
+background-size: 50px auto;
+transition: ease filter, transform 0.5s;
+}
+
+.ffa:hover {
+    background-color: #ff3f58;
+	transition: ease filter, transform 0.5s;
+	transform: scale(1.1);
+}
+
+.crazy {
+    background: #E2E2E2 url(https://i.imgur.com/5J9FUmL.png) top 20px center no-repeat;
+	transition: ease filter, transform 0.5s;
+    background-size: 50px auto;
+}
+
+.crazy:hover {
+    background-color: #00c1f1;
+	transition: ease filter, transform 0.5s;
+	transform: scale(1.1);
+}
+
+.teams {
+    background: #E2E2E2 url(https://i.imgur.com/J8BL7ta.png) top -5px center no-repeat;
+	transition: ease filter, transform 0.5s;
+background-size: 50px auto;
+}
+
+/*.teams:hover {
+    background-color: #ffaa00;
+	transition: ease filter, transform 0.5s;
+	transform: scale(1.1);
+}*/
+
+.exp {
+	
+    background: #E2E2E2 url(https://i.imgur.com/v7xO2Ta.png) top 20px center no-repeat;
+	transition: ease filter, transform 0.5s;
+    background-size: 50px auto;
+}
+
+/*.exp:hover {
+    background-color: #1e67e0;
+	transition: ease filter, transform 0.5s;
+	transform: scale(1.1);
+}*/
+
+.thumbnail.ffa {
+    --thumbnail-bg-color: #ff3f58; /* Цвет фона для FFA */
+	transition: ease filter, transform 0.5s;
+}
+
+.thumbnail.crazy {
+    --thumbnail-bg-color: #00c1f1; /* Цвет фона для crazy*/
+}
+
+/*.thumbnail.teams {
+    --thumbnail-bg-color: #ffaa00; 
+}*/
+
+/*.thumbnail.exp {
+    --thumbnail-bg-color: #1e67e0; 
+}*/
+.actives {
+    background-color: var(--thumbnail-bg-color);
+	transition: ease filter, transform 0.5s;
+	transform: scale(1.1);
+}
+.sgm{padding-bottom: 10px;font-family: 'ubuntu';color: #ffffff;font-size: 20px;};
