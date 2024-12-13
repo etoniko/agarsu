@@ -148,7 +148,7 @@ wHandle.chekstats = async function() {
     let CONNECTION_URL = "itana.pw:6001";
 	const hash = location.hash;
 if (hash === "#ffa") {
-  CONNECTION_URL = "itana:6001"; 
+  CONNECTION_URL = "itana.pw:6001"; 
 } else if (hash === "#crazy") {
   CONNECTION_URL = "itana.pw:6002";
 }
