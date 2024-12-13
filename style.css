@@ -565,6 +565,7 @@ backdrop-filter: blur(20px);
     grid-template-columns: repeat(4, auto);
 }
 #leaderboard{
+	max-width: 140px;
     right: 5px;
     top: 5px;
     font-size: 11px;
@@ -872,6 +873,7 @@ display: flex;
     align-items: flex-start;
 }
 #leaderboard{
+	max-width: 150px;
 position: absolute;
     padding: 10px 10px 10px 10px;
     border-radius: 20px 20px 20px 20px;
