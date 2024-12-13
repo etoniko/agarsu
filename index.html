@@ -1,17 +1,14 @@
 <html lang="ru">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="description"
-          content="agar.su - захватывающая онлайн-игра, где вам предстоит выживать, поглощая других игроков и избегая опасных врагов. Боритесь за лидерство и испытайте свои навыки!">
-    <meta name="keywords"
-          content="игры, game, браузерная игра, агарио, agario, онлайн игра, клетка, выживание, agar.io">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"content="Агарсу - захватывающая онлайн-игра, где вам предстоит выживать, поглощая других игроков и избегая опасных врагов. Боритесь за лидерство и испытайте свои навыки!">
+    <meta name="keywords"content="agar, agario, agar io, agar su, agar fun, agar live, агар су, агарсу, agarsu">
     <meta name="author" content="Agar.su Team">
 
     <!-- Open Graph для социальных сетей -->
     <meta property="og:title" content="Agar.su - захватывающая браузерная игра">
-    <meta property="og:description"
-          content="Играйте в agar.su — мир клеток, где нужно выживать, поглощая других игроков и избегая опасностей.">
+    <meta property="og:description"content="Играйте в агарсу — мир клеток, где нужно выживать, поглощая других игроков и избегая опасностей.">
     <meta property="og:image" content="https://i.imgur.com/Z81Lldp.jpg">
     <meta property="og:url" content="https://agar.su">
     <meta property="og:type" content="website">
@@ -23,8 +20,6 @@
     <meta name="twitter:image" content="https://i.imgur.com/Z81Lldp.jpg">
     <!-- Подтверждение права на сайт -->
     <meta name="yandex-verification" content="ae692c51c9b8486f">
-    <!-- Yandex Games SDK -->
-    <script src="https://sdk.games.s3.yandex.net/sdk.js"></script>
 
     <!-- Canonical URL -->
     <link rel="canonical" href="https://agar.su">
@@ -40,30 +35,101 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=new_releases" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+	
     <link href="./style.css" rel="stylesheet">
 
     <!-- Скрипты -->
     <script src="https://cdn.jsdelivr.net/gh/etoniko/agarsu/jquery.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/etoniko/agarsu/log.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/etoniko/agarsu/vector.js"></script>
+	
     <script src="./main_out.js"></script>
-
+	
     <!--  CloudFlare captcha xxxevexxx -->
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+	
+<!-- VK Games Bridge -->
+<script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+    try {
+        // Инициализация VK Bridge
+        await vkBridge.send("VKWebAppInit");
+
+        // Получение информации о пользователе
+        const userInfo = await vkBridge.send("VKWebAppGetUserInfo");
+
+        // Проверка на наличие аватарки и передача в глобальную переменную
+        if (userInfo.photo_200) {
+            window.userPhoto = userInfo.photo_200;
+        }
+
+        // Дополнительно, можно передать другие данные, если они нужны
+        window.userName = `${userInfo.first_name} ${userInfo.last_name}`;
+
+        // Создание пользовательского события для оповещения о завершении загрузки данных
+        const event = new CustomEvent('userInfoLoaded', { detail: userInfo });
+        document.dispatchEvent(event); // Оповещаем другие скрипты
+    } catch (error) {
+        console.error("Ошибка при взаимодействии с VK Bridge:", error);
+    }
+});
+</script>
 </head>
-
-
 <body oncontextmenu="return false;">
+
                <!-- Turnstile captcha xxxevexxx -->
                     <div id="captcha-overlay">
   <div id="captcha-container" class="cf-turnstile" data-sitekey="0x4AAAAAAA0keHJ56_KNR0MU" data-callback="onCaptchaSuccess"></div>
 </div>
 
+
+    <div id="infoBlock">
+        <h2>Добро пожаловать в AGARSU!</h2>
+		<h1>как играть?</h1>
+        <div class="info-section">
+            <div class="info-box">
+                <img src="mouse.gif" alt="Move cell">
+                <p>Двигайте курсор, чтобы управлять своей клеткой.</p>
+            </div>
+            <div class="info-box">
+                <img src="space.gif" alt="Split cell">
+                <p>Нажмите клавишу <strong>Space</strong>, чтобы разделить клетку.</p>
+            </div>
+            <div class="info-box">
+                <img src="w.gif" alt="Eject mass">
+                <p>Нажмите клавишу <strong>W</strong>, чтобы выбросить немного массы.</p>
+            </div>
+        </div>
+        <button id="closeBtn">Понятно!</button>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const infoBlock = document.getElementById("infoBlock");
+            const closeBtn = document.getElementById("closeBtn");
+
+            const isInfoShown = localStorage.getItem("infoBlockShown");
+
+            if (!isInfoShown) {
+                infoBlock.style.display = "block";
+            }
+
+            closeBtn.addEventListener("click", () => {
+                infoBlock.style.display = "none";
+                localStorage.setItem("infoBlockShown", "true");
+            });
+        });
+    </script>
+
+
+
+
 <div id="overlays" class="overlays">
     <!-- <div class="social">
          <a href="https://t.me/agarsu" target="_blank" class="tg"><i
                  style="background: radial-gradient(white 9px, #1e90ff00 50%);border-radius: 50%;" class="fab fa-telegram"></i></a>
-         <a href="https://vk.com/nikkkkkkko" class="soc"><i style="cursor: not-allowed;" class="fab fa-vk"></i></a>
+         <a href="#" class="soc"><i style="cursor: not-allowed;" class="fab fa-vk"></i></a>
          <a href="#" class="soc"><i style="cursor: not-allowed;" class="fab fa-discord"></i></a>
      </div>-->
     <div class="center">
@@ -152,7 +218,7 @@ document.getElementById('sst').addEventListener('click', function() {
             <!-- Home Content -->
             <div id="home" class="content active">
                 <div class="top-info">
-                    <div><span>agar su</span></div>
+                    <div><span>agarsu</span></div>
                 </div>
                 <div id="process">Онлайн: 0</div>
                 <script>
@@ -177,6 +243,23 @@ document.getElementById('sst').addEventListener('click', function() {
                         <div class="previous-skin" id="prevSkin" onclick="showPrevious()"></div>
                         <div class="arrow" id="previous" onclick="showPrevious()">&#10094;</div>
                         <div onclick="showContent('skinslist')" id="skinss" class="main-skin"></div>
+						<script>
+						document.addEventListener('userInfoLoaded', (event) => {
+    // Получаем информацию о пользователе из события
+    const userInfo = event.detail;
+
+    // Применяем фотографию пользователя
+    if (userInfo.photo_200) {
+        // Например, использовать photo_200 как фоновое изображение
+        const skinElement = document.getElementById("skinss");
+        if (skinElement) {
+            skinElement.style.backgroundImage = `url('${userInfo.photo_200}')`;
+            skinElement.style.backgroundSize = "cover";
+            skinElement.style.backgroundPosition = "center";
+        }
+    }
+});
+</script>
                         <div class="arrow" id="next" onclick="showNext()">&#10095;</div>
                         <div class="next-skin" id="nextSkin" onclick="showNext()"></div>
                     </div>
@@ -227,6 +310,31 @@ document.getElementById('sst').addEventListener('click', function() {
                     <div class="input-container">
                         <form>
                             <input type="text" placeholder="name" name="name" maxlength="15" id="nick" required autocomplete="username"/>
+<script>
+    document.addEventListener("DOMContentLoaded", async () => {
+        const nickInput = document.getElementById("nick");
+        const savedNick = localStorage.getItem("nick");
+
+        if (!savedNick) {
+            try {
+                // Получаем данные пользователя через VK Bridge
+                const user = await vkBridge.send("VKWebAppGetUserInfo");
+
+                // Если удалось получить имя пользователя, заполняем input
+                nickInput.value = `${user.first_name} ${user.last_name}`;
+            } catch (error) {
+                console.error("Ошибка получения данных VK:", error);
+
+                // Если данные VK недоступны, заполняем input стандартным текстом
+                nickInput.value = "VK: Игрок";
+            }
+        } else {
+            // Если ник сохранен, заполняем поле сохраненным значением
+            nickInput.value = savedNick;
+        }
+    });
+</script>
+
                             <input type="password" placeholder="pass" name="pass" id="pass" required autocomplete="current-password"/>
                         </form>
                     </div>
@@ -277,13 +385,13 @@ async function selectSkin(nick) {
 
 // Функция получения текущего индекса игрока из localStorage
 function getCurrentPlayerIndex(nick) {
-    const players = JSON.parse(localStorage.getItem('players') || '[]');
+    const players = JSON.parse(localStorage.getItem('players6') || '[]');
     return players.findIndex(player => normalizeNick(player.nick) === normalizeNick(nick));
 }
 
 // Функция сохранения данных игрока в localStorage
 function savePlayerData(nick, id) {
-    const players = JSON.parse(localStorage.getItem('players') || '[]');
+    const players = JSON.parse(localStorage.getItem('players6') || '[]');
     const playerData = { nick, id }; // Сохраняем ник и скин
 
     // Удаление дубликатов
@@ -296,12 +404,12 @@ function savePlayerData(nick, id) {
     // Ограничение хранения последних 3 игроков
     if (players.length > 3) players.pop();
 
-    localStorage.setItem('players', JSON.stringify(players)); // Сохранение в localStorage
+    localStorage.setItem('players6', JSON.stringify(players)); // Сохранение в localStorage
 }
 
 // Функция обновления отображения аватаров
 function updateAvatarDisplay() {
-    const players = JSON.parse(localStorage.getItem('players') || '[]');
+    const players = JSON.parse(localStorage.getItem('players6') || '[]');
     const mainSkin = document.querySelector("#skinss");
     const previousSkin = document.querySelector("#prevSkin");
     const nextSkin = document.querySelector("#nextSkin");
@@ -332,7 +440,7 @@ function updateAvatarDisplay() {
 
 // Показ следующего игрока
 function showNext() {
-    const players = JSON.parse(localStorage.getItem('players') || '[]');
+    const players = JSON.parse(localStorage.getItem('players6') || '[]');
     if (players.length > 0) {
         currentIndex = (currentIndex + 1) % players.length;
         changeSkin();
@@ -341,7 +449,7 @@ function showNext() {
 
 // Показ предыдущего игрока
 function showPrevious() {
-    const players = JSON.parse(localStorage.getItem('players') || '[]');
+    const players = JSON.parse(localStorage.getItem('players6') || '[]');
     if (players.length > 0) {
         currentIndex = (currentIndex - 1 + players.length) % players.length;
         changeSkin();
@@ -369,7 +477,7 @@ document.getElementById('nick').addEventListener('input', function () {
 
 // Загрузка сохранённых данных при загрузке страницы
 window.addEventListener("load", function () {
-    const players = JSON.parse(localStorage.getItem('players') || '[]');
+    const players = JSON.parse(localStorage.getItem('players6') || '[]');
 
     if (players.length > 0) {
         currentIndex = 0;
@@ -384,43 +492,67 @@ window.addEventListener("load", function () {
                     <div onclick="toggleServer();" class="nav-button serv-button"><i class="fas fa-server"></i> СЕРВЕРА
                     </div>
                     <!-- change div -> button | Disabled button xxxevexxx -->
-                    <button id="button-text" onclick="startGame(); return false;"class="nav-button play-button"><i class="fas fa-play"></i> ИГРАТЬ</button>
+                    <button id="button-text" class="nav-button play-button">
+    <i class="fas fa-play"></i> ИГРАТЬ
+</button>
 
-                    <script>
-let playButtonClickCount = 0; // Счётчик нажатий
-let serverSet = false; // Флаг, чтобы вызвать setserver только один раз
+<script>
+let gameCount = 0;
+let lastAdTimestamp = 0; // Последнее время показа рекламы
 
 async function startGame() {
+    const currentTime = Date.now();
 
-    setNick(document.getElementById('nick').value);
+    gameCount++;
+    console.log(`Игровой счетчик: ${gameCount}`);
 
-    // Проверяем, инициализирован ли Yandex SDK, и запускаем геймплей
-    if (window.ysdk) {
-        window.ysdk.features.GameplayAPI?.start();
-        console.log("Геймплей начат");
-    } else {
-        console.warn("SDK Яндекс Игр не инициализирован");
-    }
-
-    playButtonClickCount++; // Увеличиваем счётчик
-
-    const buttonText = document.getElementById("button-text");
-
-    if (playButtonClickCount === 2) {
-    }
-
-    if (playButtonClickCount === 3) {
-        playButtonClickCount = 0; // Сбрасываем счётчик после третьего нажатия
-
-        try {
-            await window.ysdk.adv.showFullscreenAdv(); // Показ рекламы
-            console.log("Реклама показана успешно");
-        } catch (error) {
-            console.error("Ошибка при показе рекламы:", error);
-        } finally {
+    // Проверяем, нужно ли показать рекламу
+    if (gameCount % 3 === 0 && (currentTime - lastAdTimestamp >= 60000)) { // 10 секунд таймаут
+        const adShown = await showVkAds();
+        if (adShown) {
+            lastAdTimestamp = currentTime; // Обновляем время показа рекламы
         }
     }
+
+    executeSetNick();
 }
+
+function executeSetNick() {
+    const nickInput = document.getElementById('nick');
+    if (nickInput) {
+        setNick(nickInput.value);
+        console.log('setNick выполнен.');
+    } else {
+        console.error('Поле nick не найдено.');
+    }
+}
+
+async function showVkAds() {
+    console.log('Попытка показа рекламы');
+    try {
+        const result = await vkBridge.send('VKWebAppShowNativeAds', {
+            ad_format: 'interstitial'
+        });
+
+        if (result.result) {
+            console.log('Реклама показана. Ждем закрытия.');
+            return true;
+        } else {
+            console.error('Ошибка показа рекламы:', result.error);
+        }
+    } catch (error) {
+        console.error('Ошибка при показе рекламы:', error);
+    }
+
+    return false;
+}
+
+const playButton = document.getElementById('button-text');
+if (playButton) {
+    console.log('Обработчик нажатия добавлен.');
+    playButton.addEventListener('click', startGame);
+}
+</script>
                     </script>
                     <!-- change div -> button | Disabled button xxxevexxx -->
                     <button id="button-spec" class="spec" onclick="spectate();"><i class="fas fa-eye"></i>
@@ -581,7 +713,6 @@ function closeServer() {
         // Передаем событие канвасу
         canvas.dispatchEvent(canvasEvent);
     });
-
 </script>
 <div id="chat-container"></div>
 <input type="text" autocomplete="off" id="chat_textbox" maxlength="120" placeholder="Напишите сообщение...">

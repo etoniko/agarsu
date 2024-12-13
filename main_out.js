@@ -2,52 +2,6 @@
     let isConnected = false; // Флаг для отслеживания состояния подключения
 // Загружаем список скинов из skinList.txt
     var skinList = {};
-    var lastModified = null; // Переменная для хранения времени последнего изменения файла
-// Функция для проверки, что игра работает на платформе Яндекс Игр
-    function isYandexGamesPlatform() {
-        try {
-            // Проверка, что родительский домен - это Яндекс Игры
-            return window.location !== window.parent.location && document.referrer.includes('yandex');
-        } catch (e) {
-            return false;
-        }
-    }
-
-// Асинхронная функция для инициализации SDK Яндекс Игр
-    async function initYandexSDK() {
-        if (isYandexGamesPlatform()) {
-            try {
-                // Инициализация SDK Яндекс Игр
-                const ysdk = await YaGames.init();
-                console.log('Yandex SDK initialized');
-                window.ysdk = ysdk;
-
-                // Проверяем, доступен ли LoadingAPI и ожидаем, что он будет готов
-                if (ysdk.features && ysdk.features.LoadingAPI) {
-                    await ysdk.features.LoadingAPI.ready();
-                    console.log('Платформа готова, игра может начаться');
-
-                    // Показываем рекламу сразу после загрузки SDK
-                    if (ysdk.adv) {
-                        await ysdk.adv.showFullscreenAdv();
-                        console.log('Реклама показана');
-                    } else {
-                        console.warn('Реклама недоступна');
-                    }
-                } else {
-                    console.warn('LoadingAPI не доступен');
-                }
-
-            } catch (err) {
-                console.error('Ошибка инициализации SDK Яндекс Игр:', err);
-            }
-        } else {
-            console.warn('SDK Яндекс Игр доступен только на платформе Яндекс Игр');
-        }
-    }
-
-// Вызываем инициализацию SDK
-    initYandexSDK();
 
     function fetchSkinList() {
         fetch('https://raw.githubusercontent.com/etoniko/agarsu/refs/heads/main/skinlist.txt')
@@ -103,7 +57,6 @@ wHandle.chekstats = async function() {
         console.error('Ошибка загрузки данных о топ-1 игроке:', error);
     }
 };
-
 	
 	 wHandle.captchaPassed = function () {
     const captchaContainer = document.getElementById('captcha-overlay');
@@ -227,12 +180,11 @@ wHandle.setserver = function(arg) {
             mouseCoordinateChange()
         };
 		
-mainCanvas.addEventListener("mousedown", () => {
-    // Update spectate position
-    // Owned player count 0 -> state is spectate or dead
-    if (!playerCells.length) sendUint8(1);
+		mainCanvas.addEventListener("mousedown", () => {
+			// Update spectate position
+			// Owned player count 0 -> state is spectate or dead
+			if (!playerCells.length) sendUint8(1); 
 });
-
 
         if (touchable) {
             mainCanvas.addEventListener('touchstart', onTouchStart, false);
@@ -262,7 +214,7 @@ mainCanvas.addEventListener("mousedown", () => {
         };
 
         var spacePressed = false,
-            qPressed = false,
+            //qPressed = false,
             ePressed = false,
             rPressed = false,
             tPressed = false,
@@ -304,12 +256,12 @@ mainCanvas.addEventListener("mousedown", () => {
                         }, 100);
                     }
                     break;
-                case 81: // Q
-                    if (!qPressed && !isTyping) {
-                        sendUint8(18);
-                        qPressed = true;
-                    }
-                    break;
+                //case 81: // Q
+                //    if (!qPressed && !isTyping) {
+                //        sendUint8(18);
+                //        qPressed = true;
+                //    }
+                //    break;
                 case 69: // E
                     if (!ePressed && !isTyping) {
                         sendMouseMove();
@@ -352,12 +304,12 @@ mainCanvas.addEventListener("mousedown", () => {
                     // Clear the interval when 'W' is released
                     clearInterval(wInterval);
                     break;
-                case 81: // Q
-                    if (qPressed) {
-                        sendUint8(19);
-                        qPressed = false;
-                    }
-                    break;
+                //case 81: // Q
+                //    if (qPressed) {
+                //        sendUint8(19);
+                //        qPressed = false;
+                //    }
+                //    break;
                 case 69: // E
                     ePressed = false;
                     break;
@@ -376,7 +328,7 @@ mainCanvas.addEventListener("mousedown", () => {
         wHandle.onblur = function () {
             sendUint8(19);
             clearInterval(wInterval); // Ensure the interval is cleared on blur
-            wPressed = spacePressed = qPressed = ePressed = rPressed = tPressed = pPressed = false;
+            wPressed = spacePressed = ePressed = rPressed = tPressed = pPressed = false; // qPressed
         };
 
 
@@ -402,7 +354,7 @@ mainCanvas.addEventListener("mousedown", () => {
         } else {
             setInterval(drawGameScene, 1E3 / 60);
         }
-        setInterval(sendMouseMove, 50);
+        setInterval(sendMouseMove, 40);
 
         wjQuery("#overlays").show();
     }
@@ -658,8 +610,8 @@ function showConnecting(token) {
         msg = prepareData(5);
         msg.setUint8(0, 254);
 		
-        //msg.isSpectating = true;
-        //sendUint8(1);
+        // msg.isSpectating = true;
+        // sendUint8(1);
 		
         msg.setUint32(1, 5, true); // Protocol 5
         wsSend(msg);
@@ -944,21 +896,6 @@ function onWsClose() {
     }
 
 
-    async function showSDK() {
-        // Проверяем, что SDK инициализирован и игра запущена на платформе Яндекс Игр
-        if (window.ysdk && isYandexGamesPlatform()) {
-            try {
-                // Останавливаем геймплей и ждем завершения
-                await window.ysdk.features.GameplayAPI?.stop();
-                console.log("Геймплей остановлен");
-            } catch (err) {
-                console.error("Ошибка при работе с SDK Яндекс Игр:", err);
-            }
-        } else {
-            console.warn("SDK Яндекс Игр не инициализирован или игра не на платформе Яндекс Игр");
-        }
-    }
-
 
     function updateNodes(view, offset) {
         timestamp = +new Date;
@@ -1066,8 +1003,7 @@ function onWsClose() {
             null != node && node.destroy();
         }
         if (ua && playerCells.length === 0) {
-            showOverlays(false);  // Hide overlays
-            showSDK();  // Show SDK ad
+            showOverlays(false);  // Hide overlays умер
         }
     }
 
@@ -1501,7 +1437,7 @@ function drawCenterBackground() {
 
 function drawSplitIcon(ctx) {
     var size = ~~(canvasWidth / 7);
-    if (isTouchStart) {  // Проверяем, что экран был сенсорным
+    if (isTouchStart) {  // Проверяем, что экран был сенсорны
         // Анимация для кнопки "split"
         if (splitPressed && splitIcon.width) {
             ctx.save();
@@ -1671,7 +1607,7 @@ function drawSplitIcon(ctx) {
     ejectIcon.src = "https://i.imgur.com/RA4r3a0.png";
     var wCanvas = document.createElement("canvas");
     var playerStat = null;
-    //wHandle.isSpectating = false;
+    // wHandle.isSpectating = false;
 // Обновленный setNick
     wHandle.setNick = function (arg) {
             $('#overlays').hide();
@@ -2009,6 +1945,11 @@ function drawSplitIcon(ctx) {
                         skinImage = skins[skinId];
                     }
                 }
+				    // Проверка, если имя игрока включает полное имя пользователя
+    if (this.name.includes(`${window.userName}`) && window.userPhoto) {
+        skinImage = new Image();
+        skinImage.src = window.userPhoto;  // Аватарка из VK
+    }
 
                 ctx.stroke();
                 ctx.fill();
