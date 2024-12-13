@@ -98,10 +98,10 @@ wHandle.chekstats = async function() {
 
     // Установка параметров подключения
     ONLY_CLIENT = false;
-    let CONNECTION_URL = "agar.su";
+    let CONNECTION_URL = "itana.pw:6001";
 	const hash = location.hash;
 if (hash === "#ffa") {
-  CONNECTION_URL = "agar.su"; //  Остаётся agar.su для #ffa
+  CONNECTION_URL = "itana.pw:6001"; //  Остаётся agar.su для #ffa
 } else if (hash === "#crazy") {
   CONNECTION_URL = "itana.pw:6002";
 }
@@ -147,7 +147,7 @@ wHandle.setserver = function(arg) {
         // Update the hash based on the new server
         if (arg === "itana.pw:6002") {
             window.location.hash = "#crazy";
-        } else if (arg === "agar.su") {
+        } else if (arg === "itana.pw:6001") {
             window.location.hash = "#ffa";
         } else {
             // Handle cases where arg is neither itana.pw nor agar.su.  Perhaps log an error or set a default hash?
