@@ -150,7 +150,7 @@ wHandle.chekstats = async function() {
 if (hash === "#ffa") {
   CONNECTION_URL = "agar.su"; //  Остаётся agar.su для #ffa
 } else if (hash === "#crazy") {
-  CONNECTION_URL = "itana.pw";
+  CONNECTION_URL = "itana.pw:6002";
 }
     var touchX, touchY,
         touchable = 'createTouch' in window || navigator.maxTouchPoints > 0,
@@ -192,7 +192,7 @@ wHandle.setserver = function(arg) {
     if (arg !== CONNECTION_URL) {
         CONNECTION_URL = arg;
         // Update the hash based on the new server
-        if (arg === "itana.pw") {
+        if (arg === "itana.pw:6002") {
             window.location.hash = "#crazy";
         } else if (arg === "agar.su") {
             window.location.hash = "#ffa";
