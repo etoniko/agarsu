@@ -79,19 +79,31 @@
    // setInterval(fetchSkinList, 10000); // Проверяем каждые 60 секунд
 
 // Функция для загрузки данных о топ-1 игроке
-     wHandle.chekstats = async function(arg) {
-        try {
-            const response = await fetch('/checkStats');
-            const stat = await response.json();
+wHandle.chekstats = async function() {
+    try {
+        // Получаем текущий домен из CONNECTION_URL (или другого источника)
+        const domain = CONNECTION_URL || window.location.hostname; // Используем текущий домен если CONNECTION_URL не задан
 
-            // Выводим данные в консоль
-            console.log(stat);
-            loadTopPlayerData(stat);
-            fetchStats(stat);
-        } catch (error) {
-            console.error('Ошибка загрузки данных о топ-1 игроке:', error);
+        // Формируем URL для запроса статистики
+        const statsUrl = `https://${domain}/checkStats`;
+
+        // Выполняем запрос
+        const response = await fetch(statsUrl, { method: 'GET' });
+        if (!response.ok) {
+            throw new Error(`Ошибка запроса: ${response.status}`);
         }
+
+        const stat = await response.json();
+
+        // Выводим данные в консоль и выполняем обработку
+        console.log(stat);
+        loadTopPlayerData(stat);
+        fetchStats(stat);
+    } catch (error) {
+        console.error('Ошибка загрузки данных о топ-1 игроке:', error);
     }
+};
+
 	
 	 wHandle.captchaPassed = function () {
     const captchaContainer = document.getElementById('captcha-overlay');
@@ -141,7 +153,7 @@ if (hash === "#ffa") {
   CONNECTION_URL = "itana.pw";
 }
     var touchX, touchY,
-        touchable = 'createTouch' in document,
+        touchable = 'createTouch' in window || navigator.maxTouchPoints > 0,
         touches = [];
 
     var leftTouchID = -1,
@@ -214,6 +226,13 @@ wHandle.setserver = function(arg) {
             rawMouseY = event.clientY * dpr;
             mouseCoordinateChange()
         };
+		
+mainCanvas.addEventListener("mousedown", () => {
+    // Update spectate position
+    // Owned player count 0 -> state is spectate or dead
+    if (!playerCells.length) sendUint8(1);
+});
+
 
         if (touchable) {
             mainCanvas.addEventListener('touchstart', onTouchStart, false);
@@ -383,7 +402,7 @@ wHandle.setserver = function(arg) {
         } else {
             setInterval(drawGameScene, 1E3 / 60);
         }
-        setInterval(sendMouseMove, 40);
+        setInterval(sendMouseMove, 50);
 
         wjQuery("#overlays").show();
     }
@@ -400,7 +419,7 @@ function onTouchStart(e) {
     for (var i = 0; i < e.changedTouches.length; i++) {
         var touch = e.changedTouches[i];
 
-        var size = ~~(canvasWidth / 5);
+        var size = ~~(canvasWidth / 7);
 
         // Проверяем, касается ли нажатие кнопки "split"
         if (
@@ -594,8 +613,8 @@ function showConnecting(token) {
             }
             ws = null
         }
-        var c = CONNECTION_URL;
-        wsUrl = (useHttps ? "wss://" : "ws://") + c;
+        var c = CONNECTION_URL; // local
+        wsUrl = (useHttps ? "wss://" : "ws://") + c; // local
         nodesOnScreen = [];
         playerCells = [];
         nodes = {};
@@ -638,8 +657,10 @@ function showConnecting(token) {
         wjQuery("#connecting").hide();
         msg = prepareData(5);
         msg.setUint8(0, 254);
-        msg.isSpectating = true;
-        sendUint8(1);
+		
+        //msg.isSpectating = true;
+        //sendUint8(1);
+		
         msg.setUint32(1, 5, true); // Protocol 5
         wsSend(msg);
         msg = prepareData(5);
@@ -690,9 +711,12 @@ function onWsClose() {
                 posX = msg.getFloat32(offset, true);
                 offset += 4;
                 posY = msg.getFloat32(offset, true);
-                offset += 4;
-                posSize = msg.getFloat32(offset, true);
-                offset += 4;
+				
+				posSize = 0.15;
+				
+                // offset += 4;
+                // posSize = msg.getFloat32(offset, true);
+                // offset += 4;
                 break;
             case 20:
                 // Clear nodes
@@ -1476,7 +1500,7 @@ function drawCenterBackground() {
 
 
 function drawSplitIcon(ctx) {
-    var size = ~~(canvasWidth / 5);
+    var size = ~~(canvasWidth / 7);
     if (isTouchStart) {  // Проверяем, что экран был сенсорным
         // Анимация для кнопки "split"
         if (splitPressed && splitIcon.width) {
@@ -1647,7 +1671,7 @@ function drawSplitIcon(ctx) {
     ejectIcon.src = "https://i.imgur.com/RA4r3a0.png";
     var wCanvas = document.createElement("canvas");
     var playerStat = null;
-    wHandle.isSpectating = false;
+    //wHandle.isSpectating = false;
 // Обновленный setNick
     wHandle.setNick = function (arg) {
             $('#overlays').hide();
@@ -1682,10 +1706,10 @@ function drawSplitIcon(ctx) {
         }
     }
     wHandle.spectate = function () {
-		showConnecting(captchaTokenCloudflare);
+		showConnecting(captchaTokenCloudflare); // local
         userNickName = null;
-        wHandle.isSpectating = true;
-        sendUint8(1);
+        // wHandle.isSpectating = true;
+        // sendUint8(1);
         hideOverlays()
     };
     wHandle.setAcid = function (arg) {
