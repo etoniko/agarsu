@@ -565,7 +565,6 @@ backdrop-filter: blur(20px);
     grid-template-columns: repeat(4, auto);
 }
 #leaderboard{
-	max-width: 140px;
     right: 5px;
     top: 5px;
     font-size: 11px;
@@ -771,7 +770,7 @@ input{
 
 #nick {
     width: 190px; /* Длина поля для ника */
-    padding-right: 70px; /* Отступ справа для поля пароля */
+    /*padding-right: 70px;  Отступ справа для поля пароля */
     margin-top: 20px;
     outline: none; /* Убирает обводку при фокусировке */
     border: 1px solid #ccc; /* Пример рамки, вы можете настроить цвет и стиль */
@@ -873,7 +872,6 @@ display: flex;
     align-items: flex-start;
 }
 #leaderboard{
-	max-width: 150px;
 position: absolute;
     padding: 10px 10px 10px 10px;
     border-radius: 20px 20px 20px 20px;
@@ -1091,4 +1089,105 @@ background-size: 50px auto;
 	transition: ease filter, transform 0.5s;
 	transform: scale(1.1);
 }
-.sgm{padding-bottom: 10px;font-family: 'ubuntu';color: #ffffff;font-size: 20px;};
+.sgm{padding-bottom: 10px;font-family: 'ubuntu';color: #ffffff;font-size: 20px;
+}
+
+
+        #infoBlock {
+			z-index:1000;
+			
+    font-family: Arial, sans-serif;
+    color: white;
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(145deg, #202020, #1a1a1a);
+    border: 1px solid #676d72a6;
+    border-radius: 15px;
+	 box-shadow: 0 8px 20px rgba(0, 0, 0, 0.8), 0 4px 40px rgba(0, 0, 0, 0.5);
+    padding: 20px;
+    width: 90%;
+    max-width: 800px;
+    animation: slideIn 0.8s ease-in-out;
+        }
+
+        #infoBlock h2 {
+            margin: 0 0 20px;
+            color: #0d84fb;
+            font-size: 22px;
+            text-align: center;
+        }
+		#infoBlock h1 {
+            margin: 0 0 15px;
+            font-size: 20px;
+            text-align: center;
+        }
+
+        .info-section {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .info-box {
+            flex: 1;
+            background: #242424;
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .info-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .info-box img {
+            width: 100%;
+            max-height: 150px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .info-box p {
+            margin: 0;
+            font-size: 14px;
+        }
+
+        #closeBtn {
+    margin-top: 20px;
+    display: block;
+    background: #016bef;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background 0.3s;
+    text-align: center;
+    float: right;
+    margin-right: 10px;
+        }
+
+        #closeBtn:hover {
+            background: white;
+			color: #016bef;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -60%);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+        }
