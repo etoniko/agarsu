@@ -224,7 +224,7 @@ document.getElementById('sst').addEventListener('click', function() {
                 <script>
                     async function updateOnlineCount() {
                         try {
-                            const response = await fetch('/process'); // Запрос к серверу по /process
+                            const response = await fetch('https://itana.pw:6001/process'); // Запрос к серверу по /process
                             if (response.ok) {
                                 const data = await response.json(); // Преобразуем ответ в JSON
                                 document.getElementById('process').textContent = `Онлайн: ${data.online}`; // Обновляем текст в div
