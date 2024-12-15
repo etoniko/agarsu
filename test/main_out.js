@@ -198,13 +198,6 @@ wHandle.setserver = function(arg) {
             console.warn("Unknown server URL:", arg);
             window.location.hash = ""; // Or some default hash
         }
-
-        // Attempt to reconnect with the new server.
-        if (captchaTokenCloudflare) {
-            showConnecting(token);
-        } else {
-            console.log("Captcha token is not available yet.");
-        }
     }
 };
 
