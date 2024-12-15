@@ -66,39 +66,6 @@
         // document.getElementById('captcha-overlay').remove();
     }
 
-    // Загружаем файл words.txt с GitHub и сохраняем матерные слова в массив mat
-    let mat = [];
-
-    fetch('https://raw.githubusercontent.com/etoniko/agarsu/refs/heads/main/word.txt')
-        .then(response => response.text()) // Получаем текст файла
-        .then(data => {
-            // Разделяем текст на строки, обрезаем лишние пробелы и фильтруем пустые строки
-            mat = data.split('\n').map(word => word.trim()).filter(word => word.length > 0);
-            console.log('word.txt успешно загружен');
-            console.log(mat); // Выводим матерные слова в консоль
-        })
-        .catch(error => {
-            console.error('Ошибка при загрузке words.txt:', error);
-        });
-
-    // Функция для замены матерных слов на ***
-    function makeItCultural(text) {
-        // Проверяем, что массив mat уже загружен
-        if (mat.length === 0) {
-            console.log('Ожидаем загрузку слов...');
-            return text;
-        }
-
-        // Заменяем каждое матерное слово на *** (с сохранением первой буквы)
-        mat.forEach(word => {
-            const regex = new RegExp(`(${word[0]})${word.slice(1)}`, 'gi'); // Создаём регулярное выражение для слова
-            text = text.replace(regex, (match, p1) => p1 + '***'); // Сохраняем первую букву, остальные заменяем на 3 звезды
-        });
-
-        return text; // Возвращаем обработанный текст
-    }
-
-
     // Установка параметров подключения
     ONLY_CLIENT = false;
     let CONNECTION_URL = "itana.pw:6001";
@@ -871,9 +838,6 @@
     // Список администраторов
     const admins = ["нико"]; // Укажите ники администраторов
 
-    function filterChatMessage(message) {
-        return makeItCultural(message);
-    }
 
     // Использование при обработке чата
     function drawChatBoard() {
@@ -911,7 +875,7 @@
 
             const messageSpan = document.createElement('span');
             messageSpan.classList.add('chat-text');
-            messageSpan.textContent = filterChatMessage(message.message); // Применяем фильтр
+            messageSpan.textContent = message.message; // Применяем фильтр
 
             const timeSpan = document.createElement('span'); // Создаем элемент для времени
             timeSpan.classList.add('chat-time');
@@ -1089,9 +1053,6 @@
         }
     }
 
-    function filterNickName(nickName) {
-        return makeItCultural(nickName);
-    }
 
     function sendNickName() {
         if (wsIsOpen() && userNickName != null) {
