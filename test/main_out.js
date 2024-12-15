@@ -180,7 +180,9 @@ wHandle.onCaptchaSuccess = function (token) {
     console.log("Captcha успешна:", token);
     captchaTokenCloudflare = token;
     captchaSuccessHandled = true; // Устанавливаем флаг, что капча пройдена
+showConnecting(captchaTokenCloudflare);
     // Не вызываем showConnecting() здесь
+    captchaPassed();
     document.getElementById("button-text").disabled = false;
     document.getElementById("button-spec").disabled = false;
 };
@@ -197,6 +199,13 @@ wHandle.setserver = function(arg) {
         } else {
             console.warn("Unknown server URL:", arg);
             window.location.hash = ""; // Or some default hash
+        }
+
+        // Attempt to reconnect with the new server.
+        if (captchaTokenCloudflare) {
+            showConnecting(captchaTokenCloudflare);
+        } else {
+            console.log("Captcha token is not available yet.");
         }
     }
 };
@@ -573,9 +582,7 @@ function isMouseOverElement(element) {
 
 let currentWebSocketUrl = null;
 
-function showConnecting(captchaTokenCloudflare) {
-onCaptchaSuccess();
-captchaPassed();
+function showConnecting(token) {
 	chekstats(); 
     // Формируем полный URL для WebSocket
     const wsUrl = (useHttps ? "wss://" : "ws://") + CONNECTION_URL;
