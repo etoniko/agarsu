@@ -57,14 +57,6 @@
         }
     };
 
-
-    /*wHandle.captchaPassed = function () {
-        const captchaContainer = document.getElementById('captcha-overlay');
-        captchaContainer.style.display = 'none';
-
-        // document.getElementById('captcha-overlay').remove();
-    }*/
-
     // Установка параметров подключения
     ONLY_CLIENT = false;
     let CONNECTION_URL = "itana.pw:6001";
@@ -88,21 +80,14 @@
 
 
 
-    // Функция получения токена капчи xxxevexxx
-    //  let captchaTokenCloudflare = null;
-    //let captchaSuccessHandled = false; // Флаг, указывающий, что капча уже пройдена
+    // Функция получения токена капчи 
+    wHandle.captchaPassed = function () {
+        const captchaContainer = document.getElementById('captcha-overlay');
+        captchaContainer.style.display = 'none';
+    }
 
     wHandle.onCaptchaSuccess = function (token) {
-        // Проверяем, была ли капча уже успешно пройдена
-        // if (captchaSuccessHandled) {
-        //     return; // Если капча уже была пройдена, не выполняем дальнейшие действия
-        // }
-
-        //   console.log("Captcha успешна:", token);
-        //    captchaTokenCloudflare = token;
-        //  captchaSuccessHandled = true; // Устанавливаем флаг, что капча пройдена
         showConnecting(token);
-        // Не вызываем showConnecting() здесь
         captchaPassed();
         document.getElementById("button-text").disabled = false;
         document.getElementById("button-spec").disabled = false;
