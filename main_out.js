@@ -2,52 +2,6 @@
     let isConnected = false; // Флаг для отслеживания состояния подключения
     // Загружаем список скинов из skinList.txt
     var skinList = {};
-    var lastModified = null; // Переменная для хранения времени последнего изменения файла
-    // Функция для проверки, что игра работает на платформе Яндекс Игр
-    function isYandexGamesPlatform() {
-        try {
-            // Проверка, что родительский домен - это Яндекс Игры
-            return window.location !== window.parent.location && document.referrer.includes('yandex');
-        } catch (e) {
-            return false;
-        }
-    }
-
-    // Асинхронная функция для инициализации SDK Яндекс Игр
-    async function initYandexSDK() {
-        if (isYandexGamesPlatform()) {
-            try {
-                // Инициализация SDK Яндекс Игр
-                const ysdk = await YaGames.init();
-                console.log('Yandex SDK initialized');
-                window.ysdk = ysdk;
-
-                // Проверяем, доступен ли LoadingAPI и ожидаем, что он будет готов
-                if (ysdk.features && ysdk.features.LoadingAPI) {
-                    await ysdk.features.LoadingAPI.ready();
-                    console.log('Платформа готова, игра может начаться');
-
-                    // Показываем рекламу сразу после загрузки SDK
-                    if (ysdk.adv) {
-                        await ysdk.adv.showFullscreenAdv();
-                        console.log('Реклама показана');
-                    } else {
-                        console.warn('Реклама недоступна');
-                    }
-                } else {
-                    console.warn('LoadingAPI не доступен');
-                }
-
-            } catch (err) {
-                console.error('Ошибка инициализации SDK Яндекс Игр:', err);
-            }
-        } else {
-            console.warn('SDK Яндекс Игр доступен только на платформе Яндекс Игр');
-        }
-    }
-
-    // Вызываем инициализацию SDK
-    initYandexSDK();
 
     function fetchSkinList() {
         fetch('https://raw.githubusercontent.com/etoniko/agarsu/refs/heads/main/skinlist.txt')
@@ -1005,20 +959,6 @@
     }
 
 
-    async function showSDK() {
-        // Проверяем, что SDK инициализирован и игра запущена на платформе Яндекс Игр
-        if (window.ysdk && isYandexGamesPlatform()) {
-            try {
-                // Останавливаем геймплей и ждем завершения
-                await window.ysdk.features.GameplayAPI?.stop();
-                console.log("Геймплей остановлен");
-            } catch (err) {
-                console.error("Ошибка при работе с SDK Яндекс Игр:", err);
-            }
-        } else {
-            console.warn("SDK Яндекс Игр не инициализирован или игра не на платформе Яндекс Игр");
-        }
-    }
 
 
     function updateNodes(view, offset) {
@@ -1128,7 +1068,6 @@
         }
         if (ua && playerCells.length === 0) {
             showOverlays(false);  // Hide overlays
-            showSDK();  // Show SDK ad
         }
     }
 
