@@ -23,9 +23,6 @@
     <meta name="twitter:image" content="https://i.imgur.com/Z81Lldp.jpg">
     <!-- Подтверждение права на сайт -->
     <meta name="yandex-verification" content="ae692c51c9b8486f">
-    <!-- Yandex Games SDK -->
-    <script src="https://sdk.games.s3.yandex.net/sdk.js"></script>
-
     <!-- Canonical URL -->
     <link rel="canonical" href="https://agar.su">
 
@@ -380,47 +377,11 @@ window.addEventListener("load", function () {
                     <div onclick="toggleServer();" class="nav-button serv-button"><i class="fas fa-server"></i> СЕРВЕРА
                     </div>
                     <!-- change div -> button | Disabled button xxxevexxx -->
-                    <button id="button-text" onclick="startGame(); return false;"class="nav-button play-button"><i class="fas fa-play"></i> ИГРАТЬ</button>
+                    <button id="button-text" onclick="setNick(document.getElementById('nick').value); return false;"class="nav-button play-button"><i class="fas fa-play"></i> ИГРАТЬ</button>
 
-                    <script>
-let playButtonClickCount = 0; // Счётчик нажатий
-let serverSet = false; // Флаг, чтобы вызвать setserver только один раз
-
-async function startGame() {
-
-    setNick(document.getElementById('nick').value);
-
-    // Проверяем, инициализирован ли Yandex SDK, и запускаем геймплей
-    if (window.ysdk) {
-        window.ysdk.features.GameplayAPI?.start();
-        console.log("Геймплей начат");
-    } else {
-        console.warn("SDK Яндекс Игр не инициализирован");
-    }
-
-    playButtonClickCount++; // Увеличиваем счётчик
-
-    const buttonText = document.getElementById("button-text");
-
-    if (playButtonClickCount === 2) {
-    }
-
-    if (playButtonClickCount === 3) {
-        playButtonClickCount = 0; // Сбрасываем счётчик после третьего нажатия
-
-        try {
-            await window.ysdk.adv.showFullscreenAdv(); // Показ рекламы
-            console.log("Реклама показана успешно");
-        } catch (error) {
-            console.error("Ошибка при показе рекламы:", error);
-        } finally {
-        }
-    }
-}
-                    </script>
+                   
                     <!-- change div -> button | Disabled button xxxevexxx -->
-                    <button id="button-spec" class="spec" onclick="spectate();"><i class="fas fa-eye"></i>
-                    </button>
+                    <button id="button-spec" class="spec" onclick="spectate();"><i class="fas fa-eye"></i></button>
                 </div>
                 <script>
                     let isServerOpen = false; // Переменная для отслеживания состояния сервера
