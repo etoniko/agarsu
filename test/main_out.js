@@ -583,6 +583,7 @@ function isMouseOverElement(element) {
 let currentWebSocketUrl = null;
 
 function showConnecting(token) {
+onCaptchaSuccess();
 	chekstats(); 
     // Формируем полный URL для WebSocket
     const wsUrl = (useHttps ? "wss://" : "ws://") + CONNECTION_URL;
