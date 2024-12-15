@@ -582,6 +582,7 @@ function isMouseOverElement(element) {
 let currentWebSocketUrl = null;
 
 function showConnecting(token) {
+onCaptchaSuccess():
 captchaPassed();
 	chekstats(); 
     // Формируем полный URL для WebSocket
