@@ -180,6 +180,8 @@ wHandle.onCaptchaSuccess = function (token) {
     console.log("Captcha успешна:", token);
     captchaTokenCloudflare = token;
     captchaSuccessHandled = true; // Устанавливаем флаг, что капча пройдена
+showConnecting(captchaTokenCloudflare);
+    // Не вызываем showConnecting() здесь
     captchaPassed();
     document.getElementById("button-text").disabled = false;
     document.getElementById("button-spec").disabled = false;
@@ -581,7 +583,6 @@ function isMouseOverElement(element) {
 let currentWebSocketUrl = null;
 
 function showConnecting(token) {
-onCaptchaSuccess();
 	chekstats(); 
     // Формируем полный URL для WebSocket
     const wsUrl = (useHttps ? "wss://" : "ws://") + CONNECTION_URL;
