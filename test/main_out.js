@@ -201,7 +201,7 @@ wHandle.setserver = function(arg) {
 
         // Attempt to reconnect with the new server.
         if (captchaTokenCloudflare) {
-            showConnecting(captchaTokenCloudflare);
+            showConnecting(token);
         } else {
             console.log("Captcha token is not available yet.");
         }
