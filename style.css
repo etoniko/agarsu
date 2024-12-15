@@ -1,16 +1,4 @@
    @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap");
-:root {
-	--vs-primary: 29 92 255;
-  -webkit-touch-callout: none; /* iOS Safari */
-    -webkit-user-select: none; /* Safari */
-     -khtml-user-select: none; /* Konqueror HTML */
-       -moz-user-select: none; /* Old versions of Firefox */
-        -ms-user-select: none; /* Internet Explorer/Edge */
-            user-select: none; /* Non-prefixed version, currently
-                                  supported by Chrome, Edge, Opera and Firefox */
-}
-
-
 /* Фон полупрозрачный */
 #captcha-overlay {
   position: fixed;
