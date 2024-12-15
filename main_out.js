@@ -1,5 +1,4 @@
 (function (wHandle, wjQuery) {
-    let isConnected = false; // Флаг для отслеживания состояния подключения
     // Загружаем список скинов из skinList.txt
     var skinList = {};
 
@@ -59,12 +58,12 @@
     };
 
 
-    wHandle.captchaPassed = function () {
+    /*wHandle.captchaPassed = function () {
         const captchaContainer = document.getElementById('captcha-overlay');
         captchaContainer.style.display = 'none';
 
         // document.getElementById('captcha-overlay').remove();
-    }
+    }*/
 
     // Установка параметров подключения
     ONLY_CLIENT = false;
@@ -651,9 +650,6 @@
         wsSend(msg);
         sendNickName();
         log.info("Connection successful!");
-        setTimeout(() => {
-            isConnected = true; // Устанавливаем флаг, что соединение успешно
-        }, 2000); // Задержка перед повторной попыткой
     }
 
     function onWsClose(evt) {
