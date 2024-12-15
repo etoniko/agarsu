@@ -180,7 +180,6 @@ wHandle.onCaptchaSuccess = function (token) {
     console.log("Captcha успешна:", token);
     captchaTokenCloudflare = token;
     captchaSuccessHandled = true; // Устанавливаем флаг, что капча пройдена
-showConnecting(captchaTokenCloudflare);
     // Не вызываем showConnecting() здесь
     document.getElementById("button-text").disabled = false;
     document.getElementById("button-spec").disabled = false;
@@ -581,7 +580,7 @@ function isMouseOverElement(element) {
 
 let currentWebSocketUrl = null;
 
-function showConnecting(token) {
+function showConnecting(captchaTokenCloudflare) {
 onCaptchaSuccess();
 captchaPassed();
 	chekstats(); 
