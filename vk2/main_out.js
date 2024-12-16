@@ -754,7 +754,6 @@
                 posSize = 1;
 
                 if (playerCells.length === 0) {
-                    sendUint8(1);
                     nodeX = posX;
                     nodeY = posY;
                     viewZoom = posSize;
