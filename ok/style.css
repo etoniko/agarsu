@@ -1,0 +1,1082 @@
+   @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap");
+/* Фон полупрозрачный */
+#captcha-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* Черный фон с прозрачностью */
+  display: flex;
+  justify-content: center; /* Центрируем по горизонтали */
+  align-items: center; /* Центрируем по вертикали */
+  z-index: 9999; /* Чтобы фон был поверх всех элементов */
+}
+
+/* Стили для CAPTCHA контейнера */
+#captcha-container {
+  z-index: 10000; /* Обеспечиваем, чтобы CAPTCHA была поверх фона */
+}
+
+#canvas {
+    touch-action: none; /* Disable browser's default touch handling */
+}
+/*Dialog Styles*/
+dialog {
+	padding: 1rem 3rem;
+	background: white;
+	width: 400px;
+	padding-top: 2rem;
+	border-radius: 20px;
+	border: 0;
+	box-shadow: 0 5px 30px 0 rgb(0 0 0 / 10%);
+	animation: fadeIn 1s ease both;
+	&::backdrop {
+		animation: fadeIn 0.5s ease both;
+		background: rgb(0 0 0 / 40%);
+		z-index: 2;
+		backdrop-filter: blur(20px);
+	}
+	.x {
+		filter: grayscale(1);
+		border: none;
+		background: none;
+		position: absolute;
+		top: 15px;
+		right: 10px;
+		transition: ease filter, transform 0.3s;
+		cursor: pointer;
+		transform-origin: center;
+		&:hover {
+			filter: grayscale(0);
+			transform: scale(1.1);
+		}
+	}
+	h2 {
+		font-weight: 600;
+		font-size: 2rem;
+		padding-bottom: 1rem;
+	}
+	p {
+		font-size: 1rem;
+		line-height: 1.3rem;
+		padding: 0.5rem 0;
+		a {
+			&:visited {
+				color: rgb(var(--vs-primary));
+			}
+		}
+	}
+}
+
+/*General Styles*/
+button.primary {
+	display: inline-block;
+	font-size: 0.8rem;
+	color: #fff !important;
+	background: rgb(var(--vs-primary) / 100%);
+	padding: 13px 25px;
+	border-radius: 17px;
+	transition: background-color 0.1s ease;
+	box-sizing: border-box;
+	transition: all 0.25s ease;
+	border: 0;
+	cursor: pointer;
+	box-shadow: 0 10px 20px -10px rgb(var(--vs-primary) / 100%);
+	&:hover {
+		box-shadow: 0 20px 20px -10px rgb(var(--vs-primary) / 100%);
+		transform: translateY(-5px);
+	}
+}
+button:focus { outline: none; }
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+	
+	
+	
+	
+	body {
+	font-family: Arial,sans-serif;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+}
+
+
+i:hover{
+	cursor: pointer;
+}
+
+.play{width: 170px;color: #fff;background: #ff3f58;transition: background 0.3s ease;height: 29px;font-size: 15px;font-weight: 700;cursor: pointer;border: 1px solid transparent;border-radius: 4px;transition: ease filter, transform 0.5s;	}
+.play:hover{background: #c4293d;transition: ease filter, transform 0.5s;transform: scale(1.05);}
+
+.spec {
+    color: #ffffff;
+    border-radius: 20px;
+    font-size: 12px;
+    cursor: pointer;
+    margin-left: -42px;
+    background: #0e172c;
+    height: 19px;
+    padding: 4px;
+	border: 0;
+}
+
+.photo-gallery {
+display: flex;
+    align-items: center;
+    justify-content: center;
+
+}
+
+	
+.top-players-header {
+    text-align: center;
+    font-family: 'ubuntu';
+	padding-top: 7px;
+    padding-bottom: 2px;
+	font-size: 20px;
+	text-shadow: 0px -1px 0px #000000, -1px 0px 0px #000000, 1px 0px 0px #000000, 0px 1px 0px #000000, 1px 1px 0px #000000, -1px -1px 0px #000000, -1px 1px 0px #000000, 1px -1px 0px #000000, 0px 2px 0px #000000;
+    color: #ffffff;
+}
+
+#table-container {
+    overflow-y: auto;
+    margin-top: 5px;
+}
+#table-container::-webkit-scrollbar {
+  width: 10px;
+}
+
+
+
+#table-container::-webkit-scrollbar-thumb {
+  border-radius: 5px;
+  background: silver;
+}
+
+.header-row {
+display: flex;
+    justify-content: space-around;
+}
+
+
+.crown {
+    position: absolute;
+    top: -10px; /* Поднимаем корону над скин */
+    right: 50%; /* Центрируем корону относительно скина */
+    transform: translateX(50%); /* Дополнительное центрирование короны */
+    font-size: 24px; /* Увеличиваем размер короны */
+    color: gold; /* Золотой цвет для короны */
+    text-shadow: 0 0 5px #000; /* Тень для лучшей видимости на разных фонах */
+}
+/* Добавляем стили для топ-1, топ-2 и топ-3 игроков */
+.top-player:nth-child(1) {
+    color: #ffd700; /* Золотой цвет для топ-1 */
+}
+.top-player{
+    display: flex;
+    justify-content: space-around;
+	}
+	.cell{
+		width: 100px;
+	}
+	.rank{
+		width: 100px;
+		margin-top: 10px;
+	}
+	.nick{
+    width: 150px;
+    margin-top: 10px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    height: 20px;
+	}
+	.score{
+		width: 100px;
+		margin-top: 10px;
+	}
+
+#table-container > div:nth-child(1) > div.skkin::after {
+  content: "👑";
+  position: absolute;
+  top: 14%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+}
+
+#table-container > div:nth-child(1) > div.skkin {
+  position: relative;
+}
+.top-player:nth-child(2) {
+    color: #2579e7;
+}
+
+.top-player:nth-child(3) {
+    color: #fc6579; 
+}
+
+/* Стили для остальных игроков */
+
+.skkinn {
+    background-size: cover;
+    border-radius: 100%;
+    border: solid 2px;
+	margin: 0px 15px 5px 21px;
+}
+.time{
+	font-size: 11px !important;
+	margin-top: 10px;
+    color: #8e8e8e;
+	width: 100px;
+}
+.update-time {
+        float: right;
+    color: #0000006e;
+    font-family: 'Ubuntu';
+    cursor: context-menu;
+    font-size: 11px;
+    padding-top: 5px;
+    padding-right: 3px;
+	    text-shadow: 0px -1px 0px #000000, -1px 0px 0px #000000, 1px 0px 0px #000000, 0px 1px 0px #000000, 1px 1px 0px #000000, -1px -1px 0px #000000, -1px 1px 0px #000000, 1px -1px 0px #000000, 0px 2px 0px #000000;
+    color: #6c757d !important;
+}
+.gall{
+    margin-bottom: 10px;
+	justify-content: space-around;
+}
+
+.gallery {
+  --s: 150px; /* control the size */
+  --g: 10px;  /* control the gap */
+  --f: 1.5;   /* control the scale factor */
+  
+  display: grid;
+  gap: var(--g);
+}
+.gallery > li {
+	list-style: none;
+	    background-size: cover;
+  width: 0;
+  height: 0;
+  min-height: 100%;
+  min-width: 100%;
+  object-fit: cover;
+  cursor: pointer;
+  filter: grayscale(80%);
+  transition: .30s linear;
+}
+
+.gallery li:hover{
+  filter: grayscale(0);
+  width:  calc(var(--s)*var(--f));
+  height: calc(var(--s)*var(--f));
+}
+
+.adminhref{
+	outline:none;color: gold;text-decoration: none;
+}
+.adminhref:hover{
+	border: 2px solid white;
+  box-shadow: inset 0px 0px 81px 17px  green, 0px 0px 20px 4px green;
+	transition: ease filter, transform 0.5s;
+	font-size: 20px;
+}
+
+.officialnews{
+	text-align: center;margin-bottom: 5px;font-family: 'Ubuntu';margin-top: 10px;text-shadow: 0px -1px 0px #000000, -1px 0px 0px #000000, 1px 0px 0px #000000, 0px 1px 0px #000000, 1px 1px 0px #000000, -1px -1px 0px #000000, -1px 1px 0px #000000, 1px -1px 0px #000000, 0px 2px 0px #000000;color: #ffffff !important;font-size: 20px;
+}
+.officialnewss{
+	padding-left: 20px;overflow: auto;margin-bottom: 0px;margin-top: 0px;padding-right: 10px;height:375px;font-family: 'Ubuntu';font-size: smaller;padding-top: 10px;text-shadow: 0px -1px 0px #000000, -1px 0px 0px #000000, 1px 0px 0px #000000, 0px 1px 0px #000000, 1px 1px 0px #000000, -1px -1px 0px #000000, -1px 1px 0px #000000, 1px -1px 0px #000000, 0px 2px 0px #000000;color: #6c757d !important;
+}
+#connecting{
+	position: absolute; z-index: 1; display: block;
+}
+.conn{
+	width: 250px;background-color: rgb(48 48 48 / 1);border-radius: 5px;padding-left: 10px;padding-right: 10px;padding-top: 10px;padding-bottom: 10px;height: 165px;
+}
+.connn{
+	text-align: center;text-shadow: 0px -1px 0px #000000, -1px 0px 0px #000000, 1px 0px 0px #000000, 0px 1px 0px #000000, 1px 1px 0px #000000, -1px -1px 0px #000000, -1px 1px 0px #000000, 1px -1px 0px #000000, 0px 2px 0px #000000;color: #ffffff !important;font-size: 20px;
+}
+.connnn{
+	position: absolute;margin-left: auto;margin-right: auto;left: 0;right: 0;top: 0;
+}
+.setting{
+	color:white;position: absolute;padding-left: 10px;padding-top: 15px;
+}
+
+.agariosu{
+	text-align: center;font-family: 'Ubuntu';padding-top: 30px;font-size: 30px;text-shadow: 0px -1px 0px #000000, -1px 0px 0px #000000, 1px 0px 0px #000000, 0px 1px 0px #000000, 1px 1px 0px #000000, -1px -1px 0px #000000, -1px 1px 0px #000000, 1px -1px 0px #000000, 0px 2px 0px #000000;color: #ffffff !important;
+}
+.version{
+	text-align: center;font-size: 10px;top: 65px;left: 138px;color: #fffffff0;font-family: 'Ubuntu';padding-bottom: 10px;padding-top: 2px;text-shadow: 0px -1px 0px #000000, -1px 0px 0px #000000, 1px 0px 0px #000000, 0px 1px 0px #000000, 1px 1px 0px #000000, -1px -1px 0px #000000, -1px 1px 0px #000000, 1px -1px 0px #000000, 0px 2px 0px #000000;color: #e4c719 !important;
+}
+.st{
+	display: flex;justify-content: center;
+}
+
+#skins{
+	width:1000px;padding-right: 0px;padding-left: 0px;padding-top: 0px;padding-bottom: 0px;overflow: hidden;height: 550px;background: rgb(48 48 48 / 1);
+}
+.opsn{
+	padding-left: 37px;margin-bottom: 0px;padding-bottom: 0px;text-shadow: 0px -1px 0px #000000, -1px 0px 0px #000000, 1px 0px 0px #000000, 0px 1px 0px #000000, 1px 1px 0px #000000, -1px -1px 0px #000000, -1px 1px 0px #000000, 1px -1px 0px #000000, 0px 2px 0px #000000;color: #ffffff !important;font-size: larger;margin-top: 20px;
+}
+.butt{
+	display: flex;padding-top: 10px;justify-content: center;padding-bottom: 15px;
+}
+.adv{
+text-align: center;font-family: 'Ubuntu';padding-top: 13px;text-shadow: 0px -1px 0px #000000, -1px 0px 0px #000000, 1px 0px 0px #000000, 0px 1px 0px #000000, 1px 1px 0px #000000, -1px -1px 0px #000000, -1px 1px 0px #000000, 1px -1px 0px #000000, 0px 2px 0px #000000;color: #ffffff !important;
+}
+
+.soc{
+	color: white;
+	cursor: default !important;
+}
+.tg{
+	color:#006cf1;
+transition: ease filter, transform 0.5s;
+}
+.tg:hover{
+	color:#035dcb;
+	transform: scale(1.1);
+	transition: ease filter, transform 0.5s;
+}
+
+.chat-message {
+  margin-bottom: 5px;
+}
+
+.chat-skin {
+    width: 50px;
+    height: 50px;
+    background-size: cover;
+    border: solid 2px white;
+    border-radius: 50%;
+}
+
+.chat-name {
+  font-weight: bold;
+}
+.chat-time{
+    position: fixed;
+    right: 10px;
+    font-size: 10px;
+    color: #8e8e8e;
+}
+.chat-text {
+  color: #ffffff;
+  font-family: arial;
+  font-size: 16px;
+}
+#chat-container {
+    position: fixed;
+    bottom: 30px;
+    width: 290px;
+    max-height: 300px;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    scroll-behavior: smooth;
+	margin-bottom: 10px;
+	transform: scale(0.9);
+}
+	#chat_textbox {
+transition: all .5s ease-in-out;
+    position: absolute;
+    bottom: 10px;
+    background: rgb(133 133 133 / 20%);
+    border: solid 1px #ffffff3d;
+    outline: none;
+    color: #ffffff;
+    height: 30px;
+    text-indent: 12px;
+    width: 270px;
+    border-radius: 20px;
+	left: 10px;
+}
+
+
+
+.scoreshint{
+    border: 0px solid #d3d3d357;
+    padding: 5px;
+    background-color: #80808057;
+    border-radius: 0px 10px 10px 10px;
+    padding-bottom: 8px;
+    padding-left: 9px;
+    position: relative;
+    margin-bottom: 0px;
+    overflow-wrap: anywhere;
+    width: 227px;
+    display: flex;
+    flex-direction: column;
+	margin-bottom: 10px;
+	margin-right: 3px;
+}
+.scoreshint:after {
+content: "";
+    border: solid transparent;
+    position: absolute;
+    right: 100%;
+    top: 0px;
+    border-right-color: #80808057;
+    border-width: 0px 13px 9px 0;
+}
+
+/* Убираем полосу прокрутки */
+::-webkit-scrollbar {
+    width: 3px; /* Для вертикальной полосы */
+    height: 0; /* Для горизонтальной полосы */
+}
+
+/* Добавляем стили для индикации прокрутки */
+::-webkit-scrollbar-thumb {
+    background-color: #ffffff3b;
+    border-radius: 10px; /* Закругленные углы */
+}
+
+/* Задаем стиль для области прокрутки */
+::-webkit-scrollbar-track {
+    background: transparent; /* Прозрачный фон для области прокрутки */
+}
+
+
+
+
+
+@media (max-width: 599px) {
+	.score-info{left: 40%;}
+	#table-container {height: 375px;}
+	.skkinn {height: 32px; width: 50px;}
+  .social {
+	position: absolute !important;
+    width: 140px !important;
+    height: 40px !important;
+    background: #0e172c !important;
+    font-size: 25px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-direction: row !important;
+    gap: 10px !important;
+    border-radius: 0px 0 25px 25px !important;
+    border: #ffffff14 solid 1px !important;
+    border-right: none !important;
+    top: 0px !important;
+	right: auto !important;
+	}
+    .sidebar {
+        background-color: #016bef;
+        display: flex;
+        user-select: none;
+        justify-content: space-evenly;
+        align-items: center;
+        width: 100%;
+		border-radius: 0px 0px 25px 25px;
+		padding: 0px 25px 0px 25px;
+    }
+    .sidebar .menu-item {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+	  flex-direction: column;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s;
+	  padding: 5px;
+    }
+	    /* Main Content */
+    .main-content {
+        width: 100%;
+        background-color: #0e172c;
+        border-radius: 25px 25px 0px 0px;
+        border: #ffffff14 solid 1px;
+        height: 100%;
+		padding: 20px 5px 0px 5px;
+    }
+	.center {
+  padding: 5px;
+  flex-direction: column-reverse;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 530px;
+  width: 100%;
+}
+	.overlays{
+		z-index: 1;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+-webkit-backdrop-filter: blur(20px);
+backdrop-filter: blur(20px);
+	display: flex;
+    align-items: center;
+	}
+	    .sidebar .menu-item i {
+      font-size: 18px;
+	  padding: 5px;
+    }
+    .sidebar .menu-item .label {
+      font-size: 11px;
+    }
+	    .sidebar .menu-item.active {
+      background-color: #171717;
+	  border-bottom: solid;
+    }
+		    .avatar-containers {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+	  margin-top: 40px;
+    }
+	#process{
+    margin-top: 10px;
+}
+	.gallery {
+		width: 100%;
+		height: 390px;
+    aspect-ratio: 4 / 6;
+    grid-template-columns: repeat(4, auto);
+}
+#leaderboard{
+	max-width: 140px;
+    right: 5px;
+    top: 5px;
+    font-size: 11px;
+}
+}
+
+
+@media (min-width: 600px) and (max-width: 899px) {
+	.center {transform: scale(0.7);}
+  .social {opacity: 0;}
+  #leaderboard,
+  #chat-container,
+  #chat_textbox{display: none !important;}
+}
+
+    /* Base Reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Roboto', sans-serif;
+      display: flex;
+      height: 100%;
+      width: 100%;
+      background-color: #0e172c;
+      color: white;
+      overflow: hidden;
+      touch-action: manipulation;
+    }
+	@media (min-width: 600px) {
+		.score-info{left: 50%;}
+		#table-container {height: 340px;}
+		.skkinn {height: 50px; width: 50px;}
+    /* Sidebar */
+    .sidebar {
+      width: 100px; /* Fixed width to match the image */
+      background-color: #016bef;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+	  justify-content: space-evenly;
+	  height: 100%;
+	  user-select: none;
+	  border-radius: 25px 0 0 25px;
+    }
+    .sidebar .menu-item {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+	  flex-direction: column;
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+	  gap: 5px;
+	  padding: 10px;
+    }
+	    /* Main Content */
+    .main-content {
+      height: 430px;
+      width: 820px;
+      padding: 20px;
+      background-color: #0e172c;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow: hidden;
+      position: relative;
+	  height: 100%;
+	  border-radius: 0px 25px 25px 0px;
+	  border: #ffffff14 solid 1px;
+      border-left: none;
+    }
+	 .center {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+       height: 430px;
+       width: 820px;
+}
+	.overlays{
+		z-index: 1;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+	display: flex;
+    align-items: center;
+    justify-content: center;
+	}
+	    .sidebar .menu-item i {
+      font-size: 20px;
+    }
+    .sidebar .menu-item .label {
+      font-size: 16px;
+    }
+	    .sidebar .menu-item.active {
+      background-color: #171717;
+	  border-right: solid;
+    }
+	.main-skin {margin: 0 10px;}
+	    .avatar-containers {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+	  margin-top: 20px;
+    }
+		.gallery {
+			width: 680px;
+    aspect-ratio: 2;
+    grid-template-columns: repeat(6, auto);
+}
+#leaderboard{
+    right: 10px;
+    top: 10px;
+    font-size: 14px;
+}
+}
+
+    .content {
+      display: none;
+      text-align: center;
+    }
+    .content.active {
+      display: block;
+      width: 100%;
+    }
+    /* Top Info Bar */
+    .top-info {
+    display: flex;
+    justify-content: center;
+    font-size: 18px;
+	margin-bottom: 5px;
+    }
+    .top-info div {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .top-info span {
+      background-color: #1b263b;
+      padding: 8px 15px;
+      border-radius: 15px;
+    }
+#process{
+    font-size: 13px;
+	color: #8e8e8e;
+}
+
+    /* Navigation Buttons */
+    .nav-buttons {
+      display: flex;
+      gap: 20px;
+      margin-top: 20px;
+	  justify-content: center;
+    }
+    .nav-button {
+      background-color: white;
+      color: #016bef;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+	  border: 0;
+    }
+	.spec:hover{
+		transform: scale(1.1);
+	}
+	.serv-button:hover{
+      background-color: #016bef;
+      color: white;
+	}
+    .play-button {
+      background-color: #016bef;
+      color: white;
+    }
+	    .play-button:hover {
+      background-color: white;
+      color: #016bef;
+    }
+	
+	.input-container {
+    position: relative; /* Для абсолютного позиционирования вложенного поля */
+    width: 190px; /* Общая ширина контейнера */
+}
+
+.input-container input {
+    box-sizing: border-box; /* Учитывать отступы и границы в ширине */
+    outline: none; /* Убирает обводку при фокусировке */
+}
+input{
+	font-size: 16px;
+}
+
+#nick {
+    width: 190px; /* Длина поля для ника */
+    padding-right: 70px; /* Отступ справа для поля пароля */
+    margin-top: 20px;
+    outline: none; /* Убирает обводку при фокусировке */
+    border: 1px solid #ccc; /* Пример рамки, вы можете настроить цвет и стиль */
+    border-radius: 20px; /* Добавляет округлость углов */
+	height: 30px;
+	padding-left: 8px;
+}
+
+#pass {
+    position: absolute; /* Абсолютное позиционирование */
+    top: 0; /* Положение сверху */
+    right: 0; /* Положение справа */
+    width: 80px; /* Длина поля для пароля */
+    display: none; /* Изначально скрыто */
+    margin-top: 20px;
+	 border: 1px solid #ccc; /* Пример рамки, вы можете настроить цвет и стиль */
+     border-radius: 0 20px 20px 0;
+	 height: 30px;
+	 padding-left: 5px;
+	
+}
+
+#skinss {
+    width: 150px;
+    height: 150px;
+    background-size: cover;
+    border-radius: 100%;
+    cursor: pointer;
+    background-image: url(https://i.imgur.com/4tui4GP.png);
+    transition: ease filter, transform 0.5s;
+	border: solid;
+}
+
+
+/* Стили для контейнера скинов */
+.avatar-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+
+
+/* Стили для полупрозрачных предыдущих скинов */
+.previous-skin, .next-skin {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-size: cover;
+    background-position: center;
+    opacity: 0.5;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    cursor: pointer;
+}
+
+.previous-skin:hover, .next-skin:hover {
+    transform: scale(1.1);
+    opacity: 0.8;
+}
+
+/* Стили для стрелок */
+.arrow {
+    font-size: 24px;
+    cursor: pointer;
+    color: #0d84fb;
+    user-select: none;
+    padding: 5px;
+}
+
+.arrow:hover {
+    color: #0073e6;
+}
+/* Scaling animation for the main skin */
+.scale-down {
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+}
+
+.social{
+position: absolute;
+    width: 70px;
+    height: 170px;
+    background: #0e172c;
+    right: 0;
+    font-size: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 10px;
+    border-radius: 25px 0 0 25px;
+    border: #ffffff14 solid 1px;
+    border-right: none;
+}
+.checkbox-container{
+display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+#leaderboard{
+	max-width: 150px;
+position: absolute;
+    padding: 10px 10px 10px 10px;
+    border-radius: 20px 20px 20px 20px;
+    border: solid #ffffff26 1px;
+    background: rgba(0, 0, 0, .3);
+}
+.homemenu{
+    position: absolute;
+    top: 10px;
+    left: 10px;
+	padding: 7px;
+    border-radius: 50%;
+    font-size: 15px;
+	color: #fff;
+    border: solid #ffffff26 1px;
+    background: rgba(0, 0, 0, .3);
+}
+
+.score-info{
+position: absolute;
+font-size: 12px;
+display: flex;
+transform: translate(-50%);
+top: 10px;
+gap: 5px;
+}
+
+.scorr{
+	padding: 5px 10px 5px 10px;
+    border-radius: 20px 20px 20px 20px;
+    border: solid #ffffff26 1px;
+    background: rgba(0, 0, 0, .3);
+}
+.cell-length{
+    background: #1a73e8;
+    padding: 0px 4px 0px 4px;
+    height: 11px;
+    border-radius: 10px 10px 10px 10px;
+    font-size: 8px;
+    margin-left: -13px;
+}
+
+
+
+
+.server-containers {
+	border-radius: 25px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    width: 350px;
+    z-index: 1000;
+    transition: height 0.3s ease, transform 0.3s ease;
+    height: 0px;
+	color: black;
+	align-items: center;
+}
+
+.server-containers.visible {
+    height: 200px;
+    transform: translateX(0);
+}
+
+.avatar-container {
+    transition: opacity 0.3s ease; /* Плавный переход для opacity */
+}
+
+.avatar-container.hidden {
+    opacity: 0; /* Скрываем элемент */
+}
+
+.avatar-container.visible {
+    opacity: 1; /* Показываем элемент */
+}
+.input-container {
+    transition: opacity 0.3s ease; /* Плавный переход для opacity */
+}
+
+.input-container.hidden {
+    opacity: 0; /* Скрываем элемент */
+}
+
+.input-container.visible {
+    opacity: 1; /* Показываем элемент */
+}
+.sgm, .photo-gallery {
+    opacity: 0; /* Изначально скрыто */
+    transform: translateY(-20px); /* Начальная позиция для анимации */
+    transition: opacity 0.1s ease, transform 0.1s ease; /* Переход для плавности */
+}
+
+.sgm.visible, .photo-gallery.visible {
+    opacity: 1; /* Показываем элемент */
+    transform: translateY(0); /* Возвращаем на место */
+}
+
+.sgm.hidden, .photo-gallery.hidden {
+    opacity: 0; /* Скрываем элемент */
+    transform: translateY(-20px); /* Сдвигаем вверх при исчезновении */
+}
+
+.scoreshint.admin {
+  background: #b51e1e87;
+}
+
+.scoreshint.admin:after {
+  border-right-color: #b51e1e87;
+}
+
+.scoreshint.admin .chat-name {
+  color: gold;
+  text-shadow: #FC0 1px 0 10px;
+}
+.fa-star{
+	color: gold;
+    text-shadow: #FC0 1px 0 10px;
+}
+
+
+.gamemode {
+display: flex;
+    align-items: center;
+    justify-content: center;
+
+}
+.thumbnails {
+    margin: 5px;
+    width: 70px;
+    font-weight: bold;
+    padding-top: 85px;
+    cursor: pointer;
+    text-align: center;
+    color: white;
+    border-radius: 4px;
+}
+.thumbnail {
+    margin: 5px;
+    width: 70px;
+    font-weight: bold;
+    padding-top: 85px;
+    cursor: pointer;
+    text-align: center;
+    color: white;
+    border-radius: 4px;
+}
+
+.ffa {
+background: #E2E2E2 url(https://i.imgur.com/J6RSops.png) top 20px center no-repeat;
+background-size: 50px auto;
+transition: ease filter, transform 0.5s;
+}
+
+.ffa:hover {
+    background-color: #ff3f58;
+	transition: ease filter, transform 0.5s;
+	transform: scale(1.1);
+}
+
+.crazy {
+    background: #E2E2E2 url(https://i.imgur.com/5J9FUmL.png) top 20px center no-repeat;
+	transition: ease filter, transform 0.5s;
+    background-size: 50px auto;
+}
+
+.crazy:hover {
+    background-color: #00c1f1;
+	transition: ease filter, transform 0.5s;
+	transform: scale(1.1);
+}
+
+.teams {
+    background: #E2E2E2 url(https://i.imgur.com/J8BL7ta.png) top -5px center no-repeat;
+	transition: ease filter, transform 0.5s;
+background-size: 50px auto;
+}
+
+/*.teams:hover {
+    background-color: #ffaa00;
+	transition: ease filter, transform 0.5s;
+	transform: scale(1.1);
+}*/
+
+.exp {
+	
+    background: #E2E2E2 url(https://i.imgur.com/v7xO2Ta.png) top 20px center no-repeat;
+	transition: ease filter, transform 0.5s;
+    background-size: 50px auto;
+}
+
+/*.exp:hover {
+    background-color: #1e67e0;
+	transition: ease filter, transform 0.5s;
+	transform: scale(1.1);
+}*/
+
+.thumbnail.ffa {
+    --thumbnail-bg-color: #ff3f58; /* Цвет фона для FFA */
+	transition: ease filter, transform 0.5s;
+}
+
+.thumbnail.crazy {
+    --thumbnail-bg-color: #00c1f1; /* Цвет фона для crazy*/
+}
+
+/*.thumbnail.teams {
+    --thumbnail-bg-color: #ffaa00; 
+}*/
+
+/*.thumbnail.exp {
+    --thumbnail-bg-color: #1e67e0; 
+}*/
+.actives {
+    background-color: var(--thumbnail-bg-color);
+	transition: ease filter, transform 0.5s;
+	transform: scale(1.1);
+}
+.sgm{padding-bottom: 10px;font-family: 'ubuntu';color: #ffffff;font-size: 20px;};
