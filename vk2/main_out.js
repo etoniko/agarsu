@@ -180,11 +180,25 @@ wHandle.setserver = function(arg) {
             mouseCoordinateChange()
         };
 		
-		mainCanvas.addEventListener("mousedown", () => {
-			// Update spectate position
-			// Owned player count 0 -> state is spectate or dead
-			if (!playerCells.length) sendUint8(1); 
-});
+		        const updateMouseAim = () => {
+            // border limit
+            let x = X < rightPos ? X : rightPos;
+            let y = Y < bottomPos ? Y : bottomPos;
+            x = -leftPos > x ? -leftPos : x;
+            y = -topPos > y ? -topPos : y;
+
+            // change cords
+            posX = x;
+            posY = y;
+        };
+		
+        mainCanvas.addEventListener("mousedown", () => {
+            // Owned player count 0 -> is spectate or dead
+            if (!playerCells.length) { // Update spectate position
+                updateMouseAim();
+                sendUint8(1);
+            }
+        });
 
         if (touchable) {
             mainCanvas.addEventListener('touchstart', onTouchStart, false);
