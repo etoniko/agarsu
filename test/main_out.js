@@ -1,53 +1,6 @@
 (function (wHandle, wjQuery) {
-    let isConnected = false; // Флаг для отслеживания состояния подключения
-// Загружаем список скинов из skinList.txt
+    // Загружаем список скинов из skinList.txt
     var skinList = {};
-    var lastModified = null; // Переменная для хранения времени последнего изменения файла
-// Функция для проверки, что игра работает на платформе Яндекс Игр
-    function isYandexGamesPlatform() {
-        try {
-            // Проверка, что родительский домен - это Яндекс Игры
-            return window.location !== window.parent.location && document.referrer.includes('yandex');
-        } catch (e) {
-            return false;
-        }
-    }
-
-// Асинхронная функция для инициализации SDK Яндекс Игр
-    async function initYandexSDK() {
-        if (isYandexGamesPlatform()) {
-            try {
-                // Инициализация SDK Яндекс Игр
-                const ysdk = await YaGames.init();
-                console.log('Yandex SDK initialized');
-                window.ysdk = ysdk;
-
-                // Проверяем, доступен ли LoadingAPI и ожидаем, что он будет готов
-                if (ysdk.features && ysdk.features.LoadingAPI) {
-                    await ysdk.features.LoadingAPI.ready();
-                    console.log('Платформа готова, игра может начаться');
-
-                    // Показываем рекламу сразу после загрузки SDK
-                    if (ysdk.adv) {
-                        await ysdk.adv.showFullscreenAdv();
-                        console.log('Реклама показана');
-                    } else {
-                        console.warn('Реклама недоступна');
-                    }
-                } else {
-                    console.warn('LoadingAPI не доступен');
-                }
-
-            } catch (err) {
-                console.error('Ошибка инициализации SDK Яндекс Игр:', err);
-            }
-        } else {
-            console.warn('SDK Яндекс Игр доступен только на платформе Яндекс Игр');
-        }
-    }
-
-// Вызываем инициализацию SDK
-    initYandexSDK();
 
     function fetchSkinList() {
         fetch('https://raw.githubusercontent.com/etoniko/agarsu/refs/heads/main/skinlist.txt')
@@ -75,84 +28,46 @@
     }
 
     fetchSkinList();
-// Периодически проверяем изменения в skinList.txt
-   // setInterval(fetchSkinList, 10000); // Проверяем каждые 60 секунд
+    // Периодически проверяем изменения в skinList.txt
+    // setInterval(fetchSkinList, 10000); // Проверяем каждые 60 секунд
 
-// Функция для загрузки данных о топ-1 игроке
-wHandle.chekstats = async function() {
-    try {
-        // Получаем текущий домен из CONNECTION_URL (или другого источника)
-        const domain = CONNECTION_URL || window.location.hostname; // Используем текущий домен если CONNECTION_URL не задан
+    // Функция для загрузки данных о топ-1 игроке
+    wHandle.chekstats = async function () {
+        try {
+            // Получаем текущий домен из CONNECTION_URL (или другого источника)
+            const domain = CONNECTION_URL || window.location.hostname; // Используем текущий домен если CONNECTION_URL не задан
 
-        // Формируем URL для запроса статистики
-        const statsUrl = `https://${domain}/checkStats`;
+            // Формируем URL для запроса статистики
+            const statsUrl = `https://${domain}/checkStats`;
 
-        // Выполняем запрос
-        const response = await fetch(statsUrl, { method: 'GET' });
-        if (!response.ok) {
-            throw new Error(`Ошибка запроса: ${response.status}`);
+            // Выполняем запрос
+            const response = await fetch(statsUrl, { method: 'GET' });
+            if (!response.ok) {
+                throw new Error(`Ошибка запроса: ${response.status}`);
+            }
+
+            const stat = await response.json();
+
+            // Выводим данные в консоль и выполняем обработку
+            console.log(stat);
+            loadTopPlayerData(stat);
+            fetchStats(stat);
+        } catch (error) {
+            console.error('Ошибка загрузки данных о топ-1 игроке:', error);
         }
-
-        const stat = await response.json();
-
-        // Выводим данные в консоль и выполняем обработку
-        console.log(stat);
-        loadTopPlayerData(stat);
-        fetchStats(stat);
-    } catch (error) {
-        console.error('Ошибка загрузки данных о топ-1 игроке:', error);
-    }
-};
-
-	
-	 wHandle.captchaPassed = function () {
-    const captchaContainer = document.getElementById('captcha-overlay');
-    captchaContainer.style.display = 'none';
-}
-
-// Загружаем файл words.txt с GitHub и сохраняем матерные слова в массив mat
-    let mat = [];
-
-    fetch('https://raw.githubusercontent.com/etoniko/agarsu/refs/heads/main/word.txt')
-        .then(response => response.text()) // Получаем текст файла
-        .then(data => {
-            // Разделяем текст на строки, обрезаем лишние пробелы и фильтруем пустые строки
-            mat = data.split('\n').map(word => word.trim()).filter(word => word.length > 0);
-            console.log('word.txt успешно загружен');
-            console.log(mat); // Выводим матерные слова в консоль
-        })
-        .catch(error => {
-            console.error('Ошибка при загрузке words.txt:', error);
-        });
-
-// Функция для замены матерных слов на ***
-    function makeItCultural(text) {
-        // Проверяем, что массив mat уже загружен
-        if (mat.length === 0) {
-            console.log('Ожидаем загрузку слов...');
-            return text;
-        }
-
-        // Заменяем каждое матерное слово на *** (с сохранением первой буквы)
-        mat.forEach(word => {
-            const regex = new RegExp(`(${word[0]})${word.slice(1)}`, 'gi'); // Создаём регулярное выражение для слова
-            text = text.replace(regex, (match, p1) => p1 + '***'); // Сохраняем первую букву, остальные заменяем на 3 звезды
-        });
-
-        return text; // Возвращаем обработанный текст
-    }
-
+    };
 
     // Установка параметров подключения
     ONLY_CLIENT = false;
     let CONNECTION_URL = "itana.pw:6001";
-	const hash = location.hash;
-if (hash === "#ffa") {
-  CONNECTION_URL = "itana.pw:6001"; 
-} else if (hash === "#crazy") {
-  CONNECTION_URL = "itana.pw:6002";
-}
-    var touchX, touchY,
+    const hash = location.hash;
+    if (hash === "#ffa") {
+        CONNECTION_URL = "itana.pw:6001";
+    } else if (hash === "#crazy") {
+        CONNECTION_URL = "itana.pw:6002";
+    }
+    var
+        // touchX, touchY,
         touchable = 'createTouch' in window || navigator.maxTouchPoints > 0,
         touches = [];
 
@@ -161,55 +76,93 @@ if (hash === "#ffa") {
         leftTouchStartPos = new Vector2(0, 0),
         leftVector = new Vector2(0, 0);
 
-    var useHttps = "https:" == wHandle.location.protocol;
+    var useHttps = "https:" === wHandle.location.protocol;
 
 
 
-// Функция получения токена капчи xxxevexxx
-let captchaTokenCloudflare = null;
-let captchaSuccessHandled = false; // Флаг, указывающий, что капча уже пройдена
-
-console.log("text 1");
-
-wHandle.onCaptchaSuccess = function (token) {
-    // Проверяем, была ли капча уже успешно пройдена
-    if (captchaSuccessHandled) {
-        return; // Если капча уже была пройдена, не выполняем дальнейшие действия
+    // Функция получения токена капчи 
+    wHandle.captchaPassed = function () {
+        const captchaContainer = document.getElementById('captcha-overlay');
+        captchaContainer.style.display = 'none';
     }
 
-    console.log("Captcha успешна:", token);
-    captchaTokenCloudflare = token;
-    captchaSuccessHandled = true; // Устанавливаем флаг, что капча пройдена
-showConnecting(captchaTokenCloudflare);
-    // Не вызываем showConnecting() здесь
-    captchaPassed();
-    document.getElementById("button-text").disabled = false;
-    document.getElementById("button-spec").disabled = false;
-};
+    wHandle.onCaptchaSuccess = function (token) {
+        showConnecting(token);
+        captchaPassed();
+        document.getElementById("button-text").disabled = false;
+        document.getElementById("button-spec").disabled = false;
+    };
 
-// Обновляем setserver функцию для вызова showConnecting() вручную
-wHandle.setserver = function(arg) {
-    if (arg !== CONNECTION_URL) {
-        CONNECTION_URL = arg;
-        // Update the hash based on the new server
-        if (arg === "itana.pw:6002") {
-            window.location.hash = "#crazy";
-        } else if (arg === "itana.pw:6001") {
-            window.location.hash = "#ffa";
-        } else {
-            console.warn("Unknown server URL:", arg);
-            window.location.hash = ""; // Or some default hash
+    let captchaId = null;
+
+    const renderCaptcha = () => {
+        if (captchaId !== null) { // Сбрасываем капчу если она уже создана
+            document.getElementById('captcha-overlay').style.display = '';
+            turnstile.reset(captchaId);
+            return;
         }
 
-        // Attempt to reconnect with the new server.
-        if (captchaTokenCloudflare) {
-            showConnecting(captchaTokenCloudflare);
-        } else {
-            console.log("Captcha token is not available yet.");
-        }
-    }
-};
+        const overlay = document.createElement("div");
+        overlay.id = "captcha-overlay";
 
+        const container = document.createElement("div");
+        container.id = "captcha-container";
+
+        overlay.appendChild(container);
+
+        document.body.prepend(overlay);
+
+        captchaId = turnstile.render(container, {
+            sitekey: "0x4AAAAAAA0keHJ56_KNR0MU",
+            callback: onCaptchaSuccess
+        });
+
+    };
+
+    const showCaptcha = () => {
+        // Перенаправляем на рендер если библиотека уже загружена
+        if (window.turnstile) return renderCaptcha();
+
+        // Загружаем библиотеку
+        const node = document.createElement('script');
+        node.setAttribute('src', 'https://challenges.cloudflare.com/turnstile/v0/api.js');
+        node.setAttribute('async', 'async');
+        node.setAttribute('defer', 'defer');
+        node.onload = () => {
+            renderCaptcha();
+        };
+        node.onerror = () => {
+            alert("Не удалось загрузить библиотеку Captcha. Попробуйте обновить браузер");
+        };
+
+        document.head.appendChild(node);
+    };
+
+    // Обновляем setserver функцию для вызова showConnecting() вручную
+    wHandle.setserver = function (arg) {
+        if (arg !== CONNECTION_URL) {
+            CONNECTION_URL = arg;
+            // Update the hash based on the new server
+            if (arg === "itana.pw:6002") {
+                window.location.hash = "#crazy";
+            } else if (arg === "itana.pw:6001") {
+                window.location.hash = "#ffa";
+            } else {
+                console.warn("Unknown server URL:", arg);
+                window.location.hash = ""; // Or some default hash
+            }
+
+            // Открываем ввод капчи на экран
+            showCaptcha();
+
+            // Attempt to reconnect with the new server.
+            // if (captchaTokenCloudflare) {
+            //     showConnecting(captchaTokenCloudflare);
+            // } else {
+            //     console.log("Captcha token is not available yet.");
+            // }
+        }
+    };
 
     function gameLoop() {
         ma = true;
@@ -225,12 +178,26 @@ wHandle.setserver = function(arg) {
             rawMouseY = event.clientY * dpr;
             mouseCoordinateChange()
         };
-		
-mainCanvas.addEventListener("mousedown", () => {
-    // Update spectate position
-    // Owned player count 0 -> state is spectate or dead
-    if (!playerCells.length) sendUint8(1);
-});
+
+        const updateMouseAim = () => {
+            // border limit
+            let x = X < rightPos ? X : rightPos;
+            let y = Y < bottomPos ? Y : bottomPos;
+            x = -leftPos > x ? -leftPos : x;
+            y = -topPos > y ? -topPos : y;
+
+            // change cords
+            posX = x;
+            posY = y;
+        };
+
+        mainCanvas.addEventListener("mousedown", () => {
+            // Owned player count 0 -> is spectate or dead
+            if (!playerCells.length) { // Update spectate position
+                updateMouseAim();
+                sendUint8(1);
+            }
+        });
 
 
         if (touchable) {
@@ -316,7 +283,7 @@ mainCanvas.addEventListener("mousedown", () => {
                         ePressed = true; // Added missing ePressed flag
                     }
                     break;
-				case 82: // R
+                case 82: // R
                     if (!rPressed && !isTyping) {
                         sendMouseMove();
                         sendUint8(23);
@@ -404,124 +371,127 @@ mainCanvas.addEventListener("mousedown", () => {
         setInterval(sendMouseMove, 50);
 
         wjQuery("#overlays").show();
+
+        showCaptcha();
+        // wsConnect();
     }
 
     const dpr = window.devicePixelRatio;
 
-const joystickRadius = 360; // Максимальное расстояние точки от центра джойстика
-const cursorSize = 20; // Размер квадрата курсора
-// Добавляем переменные для анимации
-let splitPressed = false;
-let ejectPressed = false;
+    const joystickRadius = 360; // Максимальное расстояние точки от центра джойстика
+    const cursorSize = 20; // Размер квадрата курсора
+    // Добавляем переменные для анимации
+    let splitPressed = false;
+    let ejectPressed = false;
 
-function onTouchStart(e) {
-    for (var i = 0; i < e.changedTouches.length; i++) {
-        var touch = e.changedTouches[i];
+    function onTouchStart(e) {
+        for (var i = 0; i < e.changedTouches.length; i++) {
+            var touch = e.changedTouches[i];
 
-        var size = ~~(canvasWidth / 7);
+            var size = ~~(canvasWidth / 7);
 
-        // Проверяем, касается ли нажатие кнопки "split"
-        if (
-            touch.clientX * dpr > canvasWidth - size &&
-            touch.clientY * dpr > canvasHeight - size
-        ) {
-            sendMouseMove();
-            sendUint8(17); // split
-            splitPressed = true; // Активируем анимацию для split
-            continue;
-        }
-
-        // Проверяем, касается ли нажатие кнопки "eject"
-        if (
-            touch.clientX * dpr > canvasWidth - size &&
-            touch.clientY * dpr > canvasHeight - 2 * size - 10 &&
-            touch.clientY * dpr < canvasHeight - size - 10
-        ) {
-            sendMouseMove();
-            sendUint8(21); // eject
-            ejectPressed = true; // Активируем анимацию для eject
-            continue;
-        }
-
-        // Если это не кнопка, обрабатываем как джойстик
-        if (leftTouchID < 0) {
-            leftTouchID = touch.identifier;
-            leftTouchStartPos.reset(touch.clientX * dpr, touch.clientY * dpr);
-            leftTouchPos.copyFrom(leftTouchStartPos);
-            leftVector.reset(0, 0);
-        }
-    }
-    touches = e.touches;
-}
-
-function onTouchMove(e) {
-    e.preventDefault();
-    for (var i = 0; i < e.changedTouches.length; i++) {
-        var touch = e.changedTouches[i];
-
-        // Обрабатываем движение только для leftTouchID
-        if (leftTouchID === touch.identifier) {
-            leftTouchPos.reset(touch.clientX * dpr, touch.clientY * dpr);
-            leftVector.copyFrom(leftTouchPos);
-            leftVector.minusEq(leftTouchStartPos);
-
-            // Ограничиваем расстояние точки от центра
-            const distance = Math.sqrt(leftVector.x ** 2 + leftVector.y ** 2);
-            if (distance > joystickRadius) {
-                const scale = joystickRadius / distance;
-                leftVector.x *= scale;
-                leftVector.y *= scale;
-                leftTouchPos.x = leftTouchStartPos.x + leftVector.x;
-                leftTouchPos.y = leftTouchStartPos.y + leftVector.y;
+            // Проверяем, касается ли нажатие кнопки "split"
+            if (
+                touch.clientX * dpr > canvasWidth - size &&
+                touch.clientY * dpr > canvasHeight - size
+            ) {
+                sendMouseMove();
+                sendUint8(17); // split
+                splitPressed = true; // Активируем анимацию для split
+                continue;
             }
 
-            rawMouseX = leftVector.x * 3 + canvasWidth / 2;
-            rawMouseY = leftVector.y * 3 + canvasHeight / 2;
-            mouseCoordinateChange();
-            sendMouseMove();
+            // Проверяем, касается ли нажатие кнопки "eject"
+            if (
+                touch.clientX * dpr > canvasWidth - size &&
+                touch.clientY * dpr > canvasHeight - 2 * size - 10 &&
+                touch.clientY * dpr < canvasHeight - size - 10
+            ) {
+                sendMouseMove();
+                sendUint8(21); // eject
+                ejectPressed = true; // Активируем анимацию для eject
+                continue;
+            }
+
+            // Если это не кнопка, обрабатываем как джойстик
+            if (leftTouchID < 0) {
+                leftTouchID = touch.identifier;
+                leftTouchStartPos.reset(touch.clientX * dpr, touch.clientY * dpr);
+                leftTouchPos.copyFrom(leftTouchStartPos);
+                leftVector.reset(0, 0);
+            }
         }
+        touches = e.touches;
     }
-    touches = e.touches;
-}
 
-function onTouchEnd(e) {
-    for (var i = 0; i < e.changedTouches.length; i++) {
-        var touch = e.changedTouches[i];
+    function onTouchMove(e) {
+        e.preventDefault();
+        for (var i = 0; i < e.changedTouches.length; i++) {
+            var touch = e.changedTouches[i];
 
-        // Сбрасываем leftTouchID только если идентификатор совпадает
-        if (leftTouchID === touch.identifier) {
-            leftTouchID = -1;
-            leftVector.reset(0, 0);
+            // Обрабатываем движение только для leftTouchID
+            if (leftTouchID === touch.identifier) {
+                leftTouchPos.reset(touch.clientX * dpr, touch.clientY * dpr);
+                leftVector.copyFrom(leftTouchPos);
+                leftVector.minusEq(leftTouchStartPos);
+
+                // Ограничиваем расстояние точки от центра
+                const distance = Math.sqrt(leftVector.x ** 2 + leftVector.y ** 2);
+                if (distance > joystickRadius) {
+                    const scale = joystickRadius / distance;
+                    leftVector.x *= scale;
+                    leftVector.y *= scale;
+                    leftTouchPos.x = leftTouchStartPos.x + leftVector.x;
+                    leftTouchPos.y = leftTouchStartPos.y + leftVector.y;
+                }
+
+                rawMouseX = leftVector.x * 3 + canvasWidth / 2;
+                rawMouseY = leftVector.y * 3 + canvasHeight / 2;
+                mouseCoordinateChange();
+                sendMouseMove();
+            }
         }
-    }
-    touches = e.touches;
-}
-
-
-function handleWheel(event) {
-    const overlay = $('#overlays'); // Get the overlay element
-    const chatContainer = $('#chat-container'); // Get the chat container element
-
-    // Check if the overlay is visible or if the mouse is over the chat container
-    if (overlay.is(':visible') || isMouseOverElement(chatContainer)) {
-        return; // Stop zooming if the overlay is open or mouse is over chat container
+        touches = e.touches;
     }
 
-    zoom *= Math.pow(.9, event.wheelDelta / -120 || event.detail || 0);
-    if (zoom < 0) zoom = 1;
-    if (zoom > 4 / viewZoom) zoom = 4 / viewZoom;
-    if (zoom < 0.6) zoom = 0.6;
-}
+    function onTouchEnd(e) {
+        for (var i = 0; i < e.changedTouches.length; i++) {
+            var touch = e.changedTouches[i];
 
-function isMouseOverElement(element) {
-    const mouseX = event.clientX; // Get mouse X position
-    const mouseY = event.clientY; // Get mouse Y position
-    const offset = element.offset(); // Get the position of the element
+            // Сбрасываем leftTouchID только если идентификатор совпадает
+            if (leftTouchID === touch.identifier) {
+                leftTouchID = -1;
+                leftVector.reset(0, 0);
+            }
+        }
+        touches = e.touches;
+    }
 
-    // Check if the mouse is within the bounds of the element
-    return mouseX >= offset.left && mouseX <= offset.left + element.width() &&
-           mouseY >= offset.top && mouseY <= offset.top + element.height();
-}
+
+    function handleWheel(event) {
+        const overlay = $('#overlays'); // Get the overlay element
+        const chatContainer = $('#chat-container'); // Get the chat container element
+
+        // Check if the overlay is visible or if the mouse is over the chat container
+        if (overlay.is(':visible') || isMouseOverElement(chatContainer)) {
+            return; // Stop zooming if the overlay is open or mouse is over chat container
+        }
+
+        zoom *= Math.pow(.9, event.wheelDelta / -120 || event.detail || 0);
+        if (zoom < 0) zoom = 1;
+        if (zoom > 4 / viewZoom) zoom = 4 / viewZoom;
+        if (zoom < 0.6) zoom = 0.6;
+    }
+
+    function isMouseOverElement(element) {
+        const mouseX = event.clientX; // Get mouse X position
+        const mouseY = event.clientY; // Get mouse Y position
+        const offset = element.offset(); // Get the position of the element
+
+        // Check if the mouse is within the bounds of the element
+        return mouseX >= offset.left && mouseX <= offset.left + element.width() &&
+            mouseY >= offset.top && mouseY <= offset.top + element.height();
+    }
 
 
 
@@ -570,39 +540,38 @@ function isMouseOverElement(element) {
     }
 
     function hideOverlays() {
-        hasOverlay = false;
+        // hasOverlay = false;
         wjQuery("#overlays").hide();
     }
 
     function showOverlays(arg) {
-        hasOverlay = true;
+        // hasOverlay = true;
         userNickName = null;
         wjQuery("#overlays").fadeIn(arg ? 200 : 3E3);
     }
 
-let currentWebSocketUrl = null;
+    let currentWebSocketUrl = null;
 
-function showConnecting(token) {
-onCaptchaSuccess();
-	chekstats(); 
-    // Формируем полный URL для WebSocket
-    const wsUrl = (useHttps ? "wss://" : "ws://") + CONNECTION_URL;
+    function showConnecting(token) {
+        chekstats();
+        // Формируем полный URL для WebSocket
+        const wsUrl = (useHttps ? "wss://" : "ws://") + CONNECTION_URL;
 
-    // Проверяем, что соединение не установлено и что текущий URL не совпадает с уже подключенным
-    if (ws && ws.readyState === WebSocket.OPEN && currentWebSocketUrl === wsUrl) {
-        console.log("Соединение уже активно для этого URL, пропускаем повторное подключение.");
-        return;
-    }
+        // Проверяем, что соединение не установлено и что текущий URL не совпадает с уже подключенным
+        if (ws && ws.readyState === WebSocket.OPEN && currentWebSocketUrl === wsUrl) {
+            console.log("Соединение уже активно для этого URL, пропускаем повторное подключение.");
+            return;
+        }
 
-    if (ma) {
-        wjQuery("#connecting").show();
-        currentWebSocketUrl = wsUrl; // Запоминаем текущий URL
-        wsConnect(wsUrl, token);
-    }
-};
+        if (ma) {
+            wjQuery("#connecting").show();
+            currentWebSocketUrl = wsUrl; // Запоминаем текущий URL
+            wsConnect(wsUrl, token);
+        }
+    };
 
 
-    function wsConnect(wsUrl, token) {
+    function wsConnect(undefined, token) {
         if (ws) {
             ws.onopen = null;
             ws.onmessage = null;
@@ -613,8 +582,8 @@ onCaptchaSuccess();
             }
             ws = null
         }
-        var c = CONNECTION_URL; // local
-        wsUrl = (useHttps ? "wss://" : "ws://") + c; // local
+        var c = CONNECTION_URL; // CONNECTION_URL // "localhost:3000/"
+        wsUrl = (useHttps ? "wss://" : "ws://") + c;
         nodesOnScreen = [];
         playerCells = [];
         nodes = {};
@@ -622,9 +591,8 @@ onCaptchaSuccess();
         Cells = [];
         leaderBoard = [];
         mainCanvas = teamScores = null;
-        userScore = 0;
+        // userScore = 0;
         log.info("Connecting to " + wsUrl + "..");
-
 
         // Передаем токен при подключении xxxevexxx
         const params = `?token=${encodeURIComponent(token)}`;
@@ -650,33 +618,30 @@ onCaptchaSuccess();
         return xmlHttp.responseText;
     }
 
-
     function onWsOpen() {
         var msg;
-        delay = 500;
+        // delay = 500;
         wjQuery("#connecting").hide();
+
+        sendAccountToken();
+
         msg = prepareData(5);
         msg.setUint8(0, 254);
-		
-        //msg.isSpectating = true;
-        //sendUint8(1);
-		
         msg.setUint32(1, 5, true); // Protocol 5
         wsSend(msg);
+
         msg = prepareData(5);
         msg.setUint8(0, 255);
         msg.setUint32(1, 0, true);
         wsSend(msg);
+
         sendNickName();
         log.info("Connection successful!");
-        setTimeout(() => {
-            isConnected = true; // Устанавливаем флаг, что соединение успешно
-        }, 2000); // Задержка перед повторной попыткой
     }
 
-function onWsClose() {
- setTimeout(() => { window.location.reload(); }, 2000); // Задержка перед повторной попыткой
-}
+    function onWsClose(evt) {
+        console.log(evt);
+    }
 
 
     function onWsMessage(msg) {
@@ -708,12 +673,12 @@ function onWsClose() {
                 break;
             case 17:
                 // Update position
-                posX = msg.getFloat32(offset, true);
-                offset += 4;
-                posY = msg.getFloat32(offset, true);
-				
-				posSize = 0.15;
-				
+                // posX = msg.getFloat32(offset, true);
+                // offset += 4;
+                // posY = msg.getFloat32(offset, true);
+
+                posSize = 0.15;
+
                 // offset += 4;
                 // posSize = msg.getFloat32(offset, true);
                 // offset += 4;
@@ -756,10 +721,17 @@ function onWsClose() {
                 for (let i = 0; i < LBplayerNum; ++i) {
                     const nodeId = msg.getUint32(offset, true);
                     offset += 4;
+
                     const playerName = getString();
+
+                    const playerXp = msg.getUint32(offset, true);
+                    offset += 4;
+                    const level = playerXp ? getLevel(playerXp) : -1;
+
                     leaderBoard.push({
                         id: nodeId,
-                        name: playerName
+                        name: playerName,
+                        level
                     });
                 }
                 drawLeaderBoard();
@@ -799,6 +771,11 @@ function onWsClose() {
             case 99:
                 // Add chat message
                 addChat(msg, offset);
+                break;
+            case 114:
+                // Update eXP
+                const xp = msg.getUint32(offset, true);
+                onUpdateXp(xp);
                 break;
         }
     }
@@ -853,14 +830,11 @@ function onWsClose() {
         return `${hours}:${minutes}`; // Возвращаем строку в формате HH:MM
     }
 
-// Список администраторов
+    // Список администраторов
     const admins = ["нико"]; // Укажите ники администраторов
 
-    function filterChatMessage(message) {
-        return makeItCultural(message);
-    }
 
-// Использование при обработке чата
+    // Использование при обработке чата
     function drawChatBoard() {
         if (hideChat) {
             return;
@@ -888,7 +862,7 @@ function onWsClose() {
             }
 
             // Создаем текстовые элементы для имени, сообщения и времени
-// Создаем текстовые элементы для имени, сообщения и времени
+            // Создаем текстовые элементы для имени, сообщения и времени
             const nameSpan = document.createElement('span');
             nameSpan.classList.add('chat-name');
             nameSpan.style.color = admins.includes(message.name) ? 'gold' : message.color; // Устанавливаем цвет имени
@@ -896,7 +870,7 @@ function onWsClose() {
 
             const messageSpan = document.createElement('span');
             messageSpan.classList.add('chat-text');
-            messageSpan.textContent = filterChatMessage(message.message); // Применяем фильтр
+            messageSpan.textContent = message.message; // Применяем фильтр
 
             const timeSpan = document.createElement('span'); // Создаем элемент для времени
             timeSpan.classList.add('chat-time');
@@ -944,20 +918,6 @@ function onWsClose() {
     }
 
 
-    async function showSDK() {
-        // Проверяем, что SDK инициализирован и игра запущена на платформе Яндекс Игр
-        if (window.ysdk && isYandexGamesPlatform()) {
-            try {
-                // Останавливаем геймплей и ждем завершения
-                await window.ysdk.features.GameplayAPI?.stop();
-                console.log("Геймплей остановлен");
-            } catch (err) {
-                console.error("Ошибка при работе с SDK Яндекс Игр:", err);
-            }
-        } else {
-            console.warn("SDK Яндекс Игр не инициализирован или игра не на платформе Яндекс Игр");
-        }
-    }
 
 
     function updateNodes(view, offset) {
@@ -997,7 +957,7 @@ function onWsClose() {
             offset += 2;
 
             for (var r = view.getUint8(offset++), g = view.getUint8(offset++), b = view.getUint8(offset++),
-                     color = (r << 16 | g << 8 | b).toString(16); 6 > color.length;) color = "0" + color;
+                color = (r << 16 | g << 8 | b).toString(16); 6 > color.length;) color = "0" + color;
             var colorstr = "#" + color,
                 flags = view.getUint8(offset++),
                 flagVirus = !!(flags & 0x01),
@@ -1067,7 +1027,6 @@ function onWsClose() {
         }
         if (ua && playerCells.length === 0) {
             showOverlays(false);  // Hide overlays
-            showSDK();  // Show SDK ad
         }
     }
 
@@ -1089,9 +1048,15 @@ function onWsClose() {
         }
     }
 
-    function filterNickName(nickName) {
-        return makeItCultural(nickName);
-    }
+    const sendAccountToken = () => {
+        const token = localStorage.accountToken;
+        if (wsIsOpen() && token) {
+            const msg = prepareData(1 + 2 * token.length);
+            msg.setUint8(0, 114);
+            for (var i = 0; i < token.length; ++i) msg.setUint16(1 + 2 * i, token.charCodeAt(i), true);
+            wsSend(msg);
+        }
+    };
 
     function sendNickName() {
         if (wsIsOpen() && userNickName != null) {
@@ -1291,41 +1256,41 @@ function onWsClose() {
     }
 
 
-function drawTouch(ctx) {
-    ctx.save();
-    if (touchable) {
-        for (var i = 0; i < touches.length; i++) {
-            var touch = touches[i];
-            if (touch.identifier == leftTouchID) {
-                // Джойстик
-                ctx.beginPath();
-                ctx.strokeStyle = "#0096ff";
-                ctx.lineWidth = 6;
-                ctx.arc(leftTouchStartPos.x, leftTouchStartPos.y, 40, 0, Math.PI * 2, true);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.strokeStyle = "#0096ff";
-                ctx.lineWidth = 2;
-                ctx.arc(leftTouchStartPos.x, leftTouchStartPos.y, 140, 0, Math.PI * 2, true);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.strokeStyle = "#0096ff";
-                ctx.arc(leftTouchPos.x, leftTouchPos.y, 40, 0, Math.PI * 2, true);
-                ctx.stroke();
+    function drawTouch(ctx) {
+        ctx.save();
+        if (touchable) {
+            for (var i = 0; i < touches.length; i++) {
+                var touch = touches[i];
+                if (touch.identifier == leftTouchID) {
+                    // Джойстик
+                    ctx.beginPath();
+                    ctx.strokeStyle = "#0096ff";
+                    ctx.lineWidth = 6;
+                    ctx.arc(leftTouchStartPos.x, leftTouchStartPos.y, 40, 0, Math.PI * 2, true);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.strokeStyle = "#0096ff";
+                    ctx.lineWidth = 2;
+                    ctx.arc(leftTouchStartPos.x, leftTouchStartPos.y, 140, 0, Math.PI * 2, true);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.strokeStyle = "#0096ff";
+                    ctx.arc(leftTouchPos.x, leftTouchPos.y, 40, 0, Math.PI * 2, true);
+                    ctx.stroke();
 
-                // Курсор
-                ctx.fillStyle = "#0096ff";
-                ctx.fillRect(
-                    rawMouseX - cursorSize / 2,
-                    rawMouseY - cursorSize / 2,
-                    cursorSize,
-                    cursorSize
-                );
+                    // Курсор
+                    ctx.fillStyle = "#0096ff";
+                    ctx.fillRect(
+                        rawMouseX - cursorSize / 2,
+                        rawMouseY - cursorSize / 2,
+                        cursorSize,
+                        cursorSize
+                    );
+                }
             }
         }
+        ctx.restore();
     }
-    ctx.restore();
-}
 
     function drawGrid() {
         if (showDarkTheme) {
@@ -1335,7 +1300,7 @@ function drawTouch(ctx) {
         }
     }
 
-// Новая версия с градиентом
+    // Новая версия с градиентом
     function drawGradientGrid() {
         // Позиции центра карты
         const mapCenterX = (leftPos + rightPos) / 2;
@@ -1363,7 +1328,7 @@ function drawTouch(ctx) {
         ctx.fillRect(0, 0, canvasWidth, canvasHeight);
     }
 
-// Старая версия сетки
+    // Старая версия сетки
     function drawClassicGrid() {
         ctx.fillStyle = "#F2FBFF";
         ctx.fillRect(0, 0, canvasWidth, canvasHeight);
@@ -1391,23 +1356,23 @@ function drawTouch(ctx) {
     }
 
 
-// Инициализация изображений
+    // Инициализация изображений
     const innerImage = new Image();
     const centerBackground = new Image();
     centerBackground.src = "https://cdn.jsdelivr.net/gh/etoniko/agarsu/center.png"; // Фоновое изображение
 
-// Переменные для хранения данных топ-1 игрока
+    // Переменные для хранения данных топ-1 игрока
     let topPlayerNick = '';
     let topPlayerScore = 0;
     let topPlayerSkin = '';
 
-// Переменные для изменения размеров изображений
+    // Переменные для изменения размеров изображений
     let backgroundWidth = 512;  // Ширина фонового изображения
     let backgroundHeight = 512; // Высота фонового изображения
     let innerImageWidth = 450;  // Ширина скина игрока
     let innerImageHeight = 450; // Высота скина игрока
 
-// Функция для загрузки данных о топ-1 игроке
+    // Функция для загрузки данных о топ-1 игроке
     function loadTopPlayerData(stat) {
         try {
             if (stat.length > 0) {
@@ -1427,7 +1392,7 @@ function drawTouch(ctx) {
         }
     }
 
-// Загрузка изображений
+    // Загрузка изображений
     let isBackgroundLoaded = false;
     let isInnerImageLoaded = false;
 
@@ -1443,92 +1408,92 @@ function drawTouch(ctx) {
         drawCenterBackground();
     };
 
-function drawCenterBackground() {
-    if (!isBackgroundLoaded || !isInnerImageLoaded) {
-        return;
+    function drawCenterBackground() {
+        if (!isBackgroundLoaded || !isInnerImageLoaded) {
+            return;
+        }
+
+        const mapCenterX = (leftPos + rightPos) / 2;
+        const mapCenterY = (topPos + bottomPos) / 2;
+
+        const screenX = (mapCenterX - nodeX) * viewZoom + canvasWidth / 2;
+        const screenY = (mapCenterY - nodeY) * viewZoom + canvasHeight / 2;
+
+        const scaledBackgroundWidth = backgroundWidth * viewZoom;
+        const scaledBackgroundHeight = backgroundHeight * viewZoom;
+        const scaledInnerImageWidth = innerImageWidth * viewZoom;
+        const scaledInnerImageHeight = innerImageHeight * viewZoom;
+
+        // Сначала рисуем внутреннее изображение (скин игрока) в виде круга
+        ctx.save();
+        const radius = Math.min(scaledInnerImageWidth, scaledInnerImageHeight) / 2; // Радиус круга
+
+        // Создаём круг
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, radius, 0, 2 * Math.PI);
+        ctx.closePath();
+        ctx.clip();
+
+        ctx.drawImage(
+            innerImage,
+            screenX - scaledInnerImageWidth / 2,
+            screenY - scaledInnerImageHeight / 2,
+            scaledInnerImageWidth,
+            scaledInnerImageHeight
+        );
+
+        ctx.restore();
+
+        // Затем рисуем фон
+        ctx.drawImage(
+            centerBackground,
+            screenX - scaledBackgroundWidth / 2,
+            screenY - scaledBackgroundHeight / 2,
+            scaledBackgroundWidth,
+            scaledBackgroundHeight
+        );
+
+        // Устанавливаем стиль текста
+        ctx.fillStyle = "white";
+        ctx.font = `${22 * viewZoom}px Ubuntu`;
+        ctx.textAlign = "center";
+
+        ctx.fillText(topPlayerNick, screenX, screenY + radius - 415 * viewZoom);
+        ctx.fillText(`${topPlayerScore}`, screenX, screenY + radius - 15 * viewZoom);
     }
 
-    const mapCenterX = (leftPos + rightPos) / 2;
-    const mapCenterY = (topPos + bottomPos) / 2;
-
-    const screenX = (mapCenterX - nodeX) * viewZoom + canvasWidth / 2;
-    const screenY = (mapCenterY - nodeY) * viewZoom + canvasHeight / 2;
-
-    const scaledBackgroundWidth = backgroundWidth * viewZoom;
-    const scaledBackgroundHeight = backgroundHeight * viewZoom;
-    const scaledInnerImageWidth = innerImageWidth * viewZoom;
-    const scaledInnerImageHeight = innerImageHeight * viewZoom;
-
-    // Сначала рисуем внутреннее изображение (скин игрока) в виде круга
-    ctx.save();
-    const radius = Math.min(scaledInnerImageWidth, scaledInnerImageHeight) / 2; // Радиус круга
-
-    // Создаём круг
-    ctx.beginPath();
-    ctx.arc(screenX, screenY, radius, 0, 2 * Math.PI);
-    ctx.closePath();
-    ctx.clip();
-
-    ctx.drawImage(
-        innerImage,
-        screenX - scaledInnerImageWidth / 2,
-        screenY - scaledInnerImageHeight / 2,
-        scaledInnerImageWidth,
-        scaledInnerImageHeight
-    );
-
-    ctx.restore();
-
-    // Затем рисуем фон
-    ctx.drawImage(
-        centerBackground,
-        screenX - scaledBackgroundWidth / 2,
-        screenY - scaledBackgroundHeight / 2,
-        scaledBackgroundWidth,
-        scaledBackgroundHeight
-    );
-
-    // Устанавливаем стиль текста
-    ctx.fillStyle = "white";
-    ctx.font = `${22 * viewZoom}px Ubuntu`;
-    ctx.textAlign = "center";
-
-    ctx.fillText(topPlayerNick, screenX, screenY + radius - 415 * viewZoom);
-    ctx.fillText(`${topPlayerScore}`, screenX, screenY + radius - 15 * viewZoom);
-}
 
 
+    function drawSplitIcon(ctx) {
+        var size = ~~(canvasWidth / 7);
+        if (isTouchStart) {  // Проверяем, что экран был сенсорным
+            // Анимация для кнопки "split"
+            if (splitPressed && splitIcon.width) {
+                ctx.save();
+                ctx.scale(1.1, 0);
+            }
+            if (splitIcon.width) {
+                ctx.drawImage(splitIcon, canvasWidth - size, canvasHeight - size, size, size);
+            }
+            if (splitPressed) {
+                ctx.restore();
+                setTimeout(() => splitPressed = false, 150);
+            }
 
-function drawSplitIcon(ctx) {
-    var size = ~~(canvasWidth / 7);
-    if (isTouchStart) {  // Проверяем, что экран был сенсорным
-        // Анимация для кнопки "split"
-        if (splitPressed && splitIcon.width) {
-            ctx.save();
-            ctx.scale(1.1, 0); 
-        }
-        if (splitIcon.width) {
-            ctx.drawImage(splitIcon, canvasWidth - size, canvasHeight - size, size, size);
-        }
-        if (splitPressed) {
-            ctx.restore();
-            setTimeout(() => splitPressed = false, 150); 
-        }
-
-        // Анимация для кнопки "eject"
-        if (ejectPressed && ejectIcon.width) {
-            ctx.save();
-            ctx.scale(1.1, 0); // Увеличиваем на 10% при нажатии
-        }
-        if (ejectIcon.width) {
-            ctx.drawImage(ejectIcon, canvasWidth - size, canvasHeight - 2 * size - 20, size, size);
-        }
-        if (ejectPressed) {
-            ctx.restore();
-            setTimeout(() => ejectPressed = false, 150); // Восстановление после анимации через 150ms
+            // Анимация для кнопки "eject"
+            if (ejectPressed && ejectIcon.width) {
+                ctx.save();
+                ctx.scale(1.1, 0); // Увеличиваем на 10% при нажатии
+            }
+            if (ejectIcon.width) {
+                ctx.drawImage(ejectIcon, canvasWidth - size, canvasHeight - 2 * size - 20, size, size);
+            }
+            if (ejectPressed) {
+                ctx.restore();
+                setTimeout(() => ejectPressed = false, 150); // Восстановление после анимации через 150ms
+            }
         }
     }
-}
     function calcUserScore() {
         let score = 0;
         for (let i = 0; i < playerCells.length; i++) {
@@ -1554,6 +1519,7 @@ function drawSplitIcon(ctx) {
                 // Если не нужно отображать командные очки
                 for (let b = 0; b < leaderBoard.length; ++b) {
                     let name = leaderBoard[b].name; // Имя игрока
+                    const level = leaderBoard[b].level; // Level игрока
                     if (!showName) {
                         name = ""; // Если имя не отображается
                     }
@@ -1568,16 +1534,17 @@ function drawSplitIcon(ctx) {
                     if (b < displayedPlayers) {
                         const entryDiv = document.createElement("div");
                         entryDiv.style.color = isMe ? "#FFAAAA" : "#FFFFFF"; // Цвет строки для isMe
-                        entryDiv.innerText = (!noRanking ? `${b + 1}. ` : "") + name; // Добавляем ранг
+                        entryDiv.innerHTML = (!noRanking ? `${b + 1}. ` : "") + (level !== -1 ? "<span style='padding:0 1px;background:#e7b539;color:#000;border-radius:45%'>" + level + "</span>" : "") + name; // Добавляем ранг
                         leaderboardDiv.appendChild(entryDiv); // Добавляем запись в leaderboardDiv
                     }
                 }
 
                 // Если мой ранг больше 10, показываем его на 11-й строке
                 if (myRank && myRank > displayedPlayers) {
+                    const level = accountData ? getLevel(accountData.xp) : -1;
                     const myRankDiv = document.createElement("div");
                     myRankDiv.style.color = "#FFAAAA"; // Цвет строки для isMe в 11-й позиции
-                    myRankDiv.innerText = `${myRank}. ${playerCells[0].name}`; // Показываем мой ранг и имя
+                    myRankDiv.innerHTML = myRank + "." + (level !== -1 ? "<span style='padding:0 1px;background:#e7b539;color:#000;border-radius:45%'>" + level + "</span>" : "") + playerCells[0].name; // Показываем мой ранг и имя
                     leaderboardDiv.appendChild(myRankDiv);
                 }
             } else {
@@ -1613,9 +1580,6 @@ function drawSplitIcon(ctx) {
         ustrokecolor && (this._strokeColor = ustrokecolor)
     }
 
-
-    var localProtocol = wHandle.location.protocol,
-        localProtocolHttps = "https:" == localProtocol;
     var nCanvas, ctx, mainCanvas, lbCanvas, chatCanvas, canvasWidth, canvasHeight, qTree = null,
         ws = null,
         nodeX = 0,
@@ -1641,9 +1605,9 @@ function drawSplitIcon(ctx) {
         viewZoom = 1,
         showSkin = true,
         showName = true,
-        showColor = false,
+        // showColor = false,
         ua = false,
-        userScore = 0,
+        // userScore = 0,
         showDarkTheme = true,
         showMass = true,
         hideChat = false,
@@ -1653,13 +1617,13 @@ function drawSplitIcon(ctx) {
         posSize = 1,
         teamScores = null,
         ma = false,
-        hasOverlay = true,
+        // hasOverlay = true,
         drawLine = false,
         lineX = 0,
         lineY = 0,
         drawLineX = 0,
         drawLineY = 0,
-        Ra = 0,
+        // Ra = 0,
         teamColor = ["#333333", "#FF3333", "#33FF33", "#3333FF"],
         xa = false,
         zoom = 1,
@@ -1669,15 +1633,15 @@ function drawSplitIcon(ctx) {
         noRanking = false;
     splitIcon.src = "https://i.imgur.com/b3KFHHK.png";
     ejectIcon.src = "https://i.imgur.com/RA4r3a0.png";
-    var wCanvas = document.createElement("canvas");
-    var playerStat = null;
+    // var wCanvas = document.createElement("canvas");
+    // var playerStat = null;
     //wHandle.isSpectating = false;
-// Обновленный setNick
+    // Обновленный setNick
     wHandle.setNick = function (arg) {
-            $('#overlays').hide();
-            userNickName = arg;
-            sendNickName();
-            userScore = 0;
+        $('#overlays').hide();
+        userNickName = arg;
+        sendNickName();
+        // userScore = 0;
     };
     wHandle.setSkins = function (arg) {
         showSkin = arg
@@ -1689,7 +1653,7 @@ function drawSplitIcon(ctx) {
         showDarkTheme = arg
     };
     wHandle.setColors = function (arg) {
-        showColor = arg
+        // showColor = arg
     };
     wHandle.setShowMass = function (arg) {
         showMass = arg
@@ -1706,7 +1670,6 @@ function drawSplitIcon(ctx) {
         }
     }
     wHandle.spectate = function () {
-		showConnecting(captchaTokenCloudflare); // local
         userNickName = null;
         // wHandle.isSpectating = true;
         // sendUint8(1);
@@ -1739,27 +1702,29 @@ function drawSplitIcon(ctx) {
         }
     }
 
-    setTimeout(function () {
-    }, 3E5);
-    var T = {
-        ZW: "EU-London"
-    };
+    // setTimeout(function () {
+    // }, 3E5);
+    // var T = {
+    //     ZW: "EU-London"
+    // };
     wHandle.connect = wsConnect;
 
-    var data = {
-        "action": "test"
-    };
+    // var data = {
+    //     "action": "test"
+    // };
     var transparent = ["незнакомка"];
-    var delay = 500,
+    var
+        // delay = 500,
         oldX = -1,
         oldY = -1,
-        Canvas = null,
+        // Canvas = null,
         z = 1,
-        scoreText = null,
-        skins = {},
-        knownNameDict = "".split(";"),
-        knownNameDict_noDisp = [],
-        ib = ["_canvas'blob"];
+        // scoreText = null,
+        skins = {};
+    // knownNameDict = "".split(";"),
+    // knownNameDict_noDisp = [],
+    // ib = ["_canvas'blob"]
+    // ;
     Cell.prototype = {
         id: 0,
         points: null,
@@ -2259,5 +2224,104 @@ function drawSplitIcon(ctx) {
             }
         }
     };
-    wHandle.onload = gameLoop
+
+    const onLogout = () => {
+        if (confirm("Ты действительно хочешь выйти из учетной записи?")) {
+            /*wHandle.*/userXP.textContent = /*wHandle.*/userLevel.textContent = "";
+            accountData = null;
+            clearAccountToken();
+
+            /*wHandle.*/logoutButton.style.display = "none";
+            /*wHandle.*/loginButton.style.display = "";
+        }
+    };
+
+    wHandle.logoutAccount = async () => {
+        if (localStorage.accountToken) {
+            const res = await accountApiGet("me/logout");
+            if (res.ok) {
+                const data = await res.json();
+                if (data.ok || 401 == data.status) onLogout();
+                if (data.error) alert(data.error);
+            }
+        }
+        else onLogout();
+    }
+
+    // wHandle.openLoginAccountWith = name => {
+    //     /*wHandle.*/open("/api/login/" + name, "", "width=400, height=500");
+    //     const listener = evt => {
+    //         /*wHandle.*/removeEventListener("message", listener);
+    //         onAccountLoggedIn(evt.data.token);
+    //     }
+    //     /*wHandle.*/addEventListener("message", listener);
+    // };
+
+    wHandle.onUloginToken = tokenUlogin => {
+        /*wHandle.*/open("/auth/ulogin/?token=" + tokenUlogin, "", "width=400, height=500");
+        const listener = evt => {
+            /*wHandle.*/removeEventListener("message", listener);
+            onAccountLoggedIn(evt.data.token);
+        }
+        /*wHandle.*/addEventListener("message", listener);
+    };
+
+    const setAccountToken = token => {
+        /*wHandle.*/localStorage.accountToken = token;
+    };
+
+    const clearAccountToken = () => {
+        delete /*wHandle.*/localStorage.accountToken;
+    };
+
+    const accountApiGet = tag => fetch("/api/" + tag, { headers: { Authorization: `Game ${/*wHandle.*/localStorage.accountToken}` } });
+
+    wHandle.onAccountLoggedIn = token => {
+        setAccountToken(token);
+        loadAccountUserData();
+        sendAccountToken();
+    };
+
+    let accountData;
+
+    const setAccountData = data => {
+        accountData = data;
+        displayAccountData();
+        document.querySelectorAll(".menu-item")[2].click(); // На главную меню
+
+        /*wHandle.*/logoutButton.style.display = "";
+        /*wHandle.*/loginButton.style.display = "none";
+    };
+
+    const loadAccountUserData = async () => {
+        const res = await accountApiGet("me/login");
+        if (res.ok) {
+            const data = await res.json();
+            if (data.error) {
+                if (401 == data.status) clearAccountToken();
+                else alert(data.error);
+            }
+            else setAccountData(data);
+        }
+    };
+
+    if (/*wHandle.*/localStorage.accountToken) loadAccountUserData();
+
+    const getXp = level => ~~(100 * (level ** 2 / 2));
+    const getLevel = xp => ~~((xp / 100 * 2) ** .5);
+
+    const displayAccountData = () => {
+        const currLevel = getLevel(accountData.xp);
+        /*wHandle.*/userXP.textContent = " | XP " + accountData.xp + "/" + getXp(currLevel + 1);
+        /*wHandle.*/userLevel.textContent = " | Level " + currLevel;
+    };
+
+    const onUpdateXp = xp => {
+        if (accountData) {
+            accountData.xp = xp;
+            displayAccountData();
+        }
+    };
+
+    wHandle.onload = gameLoop;
 })(window, window.jQuery);
