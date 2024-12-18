@@ -59,7 +59,7 @@
 
     // Установка параметров подключения
     ONLY_CLIENT = false;
-    let CONNECTION_URL = "itana.pw:6001";
+    let CONNECTION_URL = "itana.pw:6002";
     const hash = location.hash;
     if (hash === "#ffa") {
         CONNECTION_URL = "itana.pw:6001";
