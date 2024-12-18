@@ -1,0 +1,14 @@
+<html></html>
+
+<head>
+    <script>
+        opener.postMessage({
+            token: new URLSearchParams(location.search).get("token")
+        }, "*");
+        close();
+    </script>
+</head>
+
+<body></body>
+
+</html>
