@@ -2258,7 +2258,7 @@
     // };
 
     wHandle.onUloginToken = tokenUlogin => {
-        /*wHandle.*/open("/auth/ulogin/?token=" + tokenUlogin, "", "width=400, height=500");
+        /*wHandle.*/open("http://itana.pw:6003/auth/ulogin/?token=" + tokenUlogin, "", "width=400, height=500");
         const listener = evt => {
             /*wHandle.*/removeEventListener("message", listener);
             onAccountLoggedIn(evt.data.token);
@@ -2274,7 +2274,7 @@
         delete /*wHandle.*/localStorage.accountToken;
     };
 
-    const accountApiGet = tag => fetch("/api/" + tag, { headers: { Authorization: `Game ${/*wHandle.*/localStorage.accountToken}` } });
+    const accountApiGet = tag => fetch("http://itana.pw:6003/api/" + tag, { headers: { Authorization: `Game ${/*wHandle.*/localStorage.accountToken}` } });
 
     wHandle.onAccountLoggedIn = token => {
         setAccountToken(token);
