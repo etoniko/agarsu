@@ -94,7 +94,7 @@
                 </script>
                 <div class="menu-item" onclick="showContent('store')">
                     <i class="fas fa-user"></i>
-                    <span class="label">Портфель</span>
+                    <span class="label">Войти</span>
                 </div>
             </div>
 
@@ -181,10 +181,20 @@
                         <div><span>agar su</span></div>
                     </div>
                     <div>
+					<div class="line"></div>
                         <span id="process">Онлайн: 0</span>
                         <span id="userXP"></span>
                         <span id="userLevel"></span>
                     </div>
+<div class="progress-container">
+  <div class="progress-bar">
+    <div class="level-circle" id="levelCircle">0</div>
+    <div class="progress-fill"></div>
+    <div class="progress-text" id="progressText">0% (0/0)</div>
+  </div>
+</div>
+<span id="accountID">ID: 0000</span>
+
                     <script>
                         async function updateOnlineCount() {
                             try {
@@ -575,13 +585,10 @@
                 </div>
                 <div id="store" class="content">
                     <div class="top-info">
-                        <div><span>Профиль</span></div>
+                        <div><span>Кабинет</span></div>
                     </div>
                     <div class="header-row">
-                        <div>Авторизуйтесь с помощью:</div>
-                        <!-- <button onclick="openLoginAccountWith('Discord')" disabled>Discord</button>
-                        <button onclick="openLoginAccountWith('Google')">Google</button> -->
-                        <button style="display:none" id="logoutButton" onclick="logoutAccount()">Logout</button>
+                        <button style="display:none" id="logoutButton" onclick="logoutAccount()">Выход</button>
 
                         <script src="//ulogin.ru/js/ulogin.js"></script>
                         <div id="loginButton" id="uLogin"
