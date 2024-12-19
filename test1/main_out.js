@@ -373,7 +373,6 @@
         wjQuery("#overlays").show();
 
         showCaptcha();
-        // wsConnect();
     }
 
     const dpr = window.devicePixelRatio;
@@ -582,7 +581,7 @@
             }
             ws = null
         }
-        var c = CONNECTION_URL; // CONNECTION_URL // "localhost:3000/"
+        var c = CONNECTION_URL;
         wsUrl = (useHttps ? "wss://" : "ws://") + c;
         nodesOnScreen = [];
         playerCells = [];
@@ -1534,7 +1533,7 @@
                     if (b < displayedPlayers) {
                         const entryDiv = document.createElement("div");
                         entryDiv.style.color = isMe ? "#FFAAAA" : "#FFFFFF"; // Цвет строки для isMe
-                        entryDiv.innerHTML = (!noRanking ? `${b + 1}. ` : "") + (level !== -1 ? "<span style='padding:0 1px;background:#e7b539;color:#000;border-radius:45%'>" + level + "</span>" : "") + name; // Добавляем ранг
+                        entryDiv.innerHTML = (!noRanking ? `${b + 1}. ` : "") + (level !== -1 ? "<div class='star-container'><i class='fas fa-star'></i><span class='levelme'>" + level + "</span></div>" : "") + name; // Добавляем ранг
                         leaderboardDiv.appendChild(entryDiv); // Добавляем запись в leaderboardDiv
                     }
                 }
@@ -1544,7 +1543,7 @@
                     const level = accountData ? getLevel(accountData.xp) : -1;
                     const myRankDiv = document.createElement("div");
                     myRankDiv.style.color = "#FFAAAA"; // Цвет строки для isMe в 11-й позиции
-                    myRankDiv.innerHTML = myRank + "." + (level !== -1 ? "<span style='padding:0 1px;background:#e7b539;color:#000;border-radius:45%'>" + level + "</span>" : "") + playerCells[0].name; // Показываем мой ранг и имя
+                    myRankDiv.innerHTML = myRank + "." + (level !== -1 ? "<div class='star-container'><i class='fas fa-star'></i><span class='levelme'>" + level + "</span></div>" : "") + playerCells[0].name; // Показываем мой ранг и имя
                     leaderboardDiv.appendChild(myRankDiv);
                 }
             } else {
@@ -2257,13 +2256,14 @@
     //     /*wHandle.*/addEventListener("message", listener);
     // };
 
-    wHandle.onUloginToken = tokenUlogin => {
-        /*wHandle.*/open("http://itana.pw:6003/auth/ulogin/?token=" + tokenUlogin, "", "width=400, height=500");
-        const listener = evt => {
-            /*wHandle.*/removeEventListener("message", listener);
-            onAccountLoggedIn(evt.data.token);
+    wHandle.onUloginToken = async tokenUlogin => {
+        // /*wHandle.*/open("/auth/ulogin/?token=" + tokenUlogin, "", "width=400, height=500");
+        const res = await accountApiGet("auth/ulogin?token=" + tokenUlogin);
+        if (res.ok) {
+            const data = await res.json();
+            if (data.error) alert(data.error);
+            else onAccountLoggedIn(data.token);
         }
-        /*wHandle.*/addEventListener("message", listener);
     };
 
     const setAccountToken = token => {
@@ -2274,7 +2274,7 @@
         delete /*wHandle.*/localStorage.accountToken;
     };
 
-    const accountApiGet = tag => fetch("http://itana.pw:6003/api/" + tag, { headers: { Authorization: `Game ${/*wHandle.*/localStorage.accountToken}` } });
+    const accountApiGet = tag => fetch("https://itana.pw:6003/api/" + tag, { headers: { Authorization: `Game ${/*wHandle.*/localStorage.accountToken}` } });
 
     wHandle.onAccountLoggedIn = token => {
         setAccountToken(token);
@@ -2310,11 +2310,50 @@
     const getXp = level => ~~(100 * (level ** 2 / 2));
     const getLevel = xp => ~~((xp / 100 * 2) ** .5);
 
-    const displayAccountData = () => {
-        const currLevel = getLevel(accountData.xp);
-        /*wHandle.*/userXP.textContent = " | XP " + accountData.xp + "/" + getXp(currLevel + 1);
-        /*wHandle.*/userLevel.textContent = " | Level " + currLevel;
-    };
+const displayAccountData = () => {
+    const currLevel = getLevel(accountData.xp); // Получаем текущий уровень
+    const nextXp = getXp(currLevel + 1); // Получаем XP для следующего уровня
+    const progressPercent = (accountData.xp / nextXp) * 100; // Рассчитываем процент прогресса
+
+    // Обновляем текст с XP
+    const userXPElement = document.getElementById("userXP")?.querySelector(".status-value");
+    if (userXPElement) {
+        userXPElement.textContent = `${accountData.xp}/${nextXp}`;
+    }
+
+    // Обновляем текст с уровнем
+    const userLevelElement = document.getElementById("userLevel")?.querySelector(".status-value");
+    if (userLevelElement) {
+        userLevelElement.textContent = currLevel;
+    }
+
+    // Обновляем прогресс бар
+    const progressBar = document.querySelector(".progress-fill");
+    if (progressBar) {
+        progressBar.style.width = `${progressPercent}%`;
+    }
+
+    // Обновляем круг с уровнем
+    const levelCircle = document.getElementById("levelCircle");
+    if (levelCircle) {
+        levelCircle.textContent = currLevel;
+    }
+
+    // Обновляем текст с прогрессом
+    const progressText = document.getElementById("progressText");
+    if (progressText) {
+        progressText.textContent = `${Math.round(progressPercent)}% (${accountData.xp}/${nextXp})`;
+    }
+
+    // Отображаем account_id, если элемент существует
+    const accountIDElement = document.getElementById("accountID");
+    if (accountIDElement) {
+        accountIDElement.textContent = `ID: ${accountData.account_id}`;
+    }
+};
+
+
+
 
     const onUpdateXp = xp => {
         if (accountData) {
