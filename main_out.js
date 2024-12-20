@@ -833,7 +833,7 @@
     const admins = ["нико"]; // Укажите ники администраторов
 
 
-    // Использование при обработке чата
+// Использование при обработке чата
 function drawChatBoard() {
     if (hideChat) {
         return;
@@ -866,17 +866,10 @@ function drawChatBoard() {
 
         // Добавляем уровень перед именем
         const currLevel = getLevel(message.xp); // Получаем уровень игрока
-        const levelSpan = document.createElement('span');
-        levelSpan.classList.add('chat-level');
-        levelSpan.textContent = `${currLevel} `; // Добавляем текст с уровнем
+        nameSpan.innerHTML = `<span class="chat-level">${currLevel} </span>${message.name}: `;
 
         // Устанавливаем цвет имени в зависимости от администратора
         nameSpan.style.color = admins.includes(message.name) ? 'gold' : message.color;
-        nameSpan.textContent = message.name + ': '; // Добавляем двоеточие
-
-        // Добавляем уровень и имя в div сообщения
-        messageDiv.appendChild(levelSpan); // Добавляем уровень
-        messageDiv.appendChild(nameSpan); // Добавляем имя
 
         const messageSpan = document.createElement('span');
         messageSpan.classList.add('chat-text');
@@ -887,6 +880,7 @@ function drawChatBoard() {
         timeSpan.textContent = message.time; // Добавляем время к сообщению
 
         // Добавляем текстовые элементы в div сообщения
+        messageDiv.appendChild(nameSpan); // Добавляем имя с уровнем
         messageDiv.appendChild(messageSpan);
         messageDiv.appendChild(timeSpan); // Добавляем время в сообщение
 
@@ -925,6 +919,7 @@ function drawChatBoard() {
     // Устанавливаем прокрутку в самый низ
     chatDiv.scrollTop = chatDiv.scrollHeight;
 }
+
 
 
 
