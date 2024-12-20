@@ -834,6 +834,7 @@
 
 
     // Использование при обработке чата
+// Использование при обработке чата
 function drawChatBoard() {
     if (hideChat) {
         return;
@@ -860,16 +861,17 @@ function drawChatBoard() {
             messageDiv.classList.add('admin'); // Применяем класс админа
         }
 
-        // Создаем элемент для уровня и звездочки
-        const levelSpan = document.createElement('span');
-        levelSpan.classList.add('star-container');
-        levelSpan.innerHTML = `<i class='fas fa-star'></i><span class='levelme'>${message.level}</span>`; // Добавляем уровень
+        // Создаем элемент для уровня и звездочки, только если уровень существует
+        let levelSpan = '';
+        if (message.level) {
+            levelSpan = `<span class="star-container"><i class="fas fa-star"></i><span class="levelme">${message.level}</span></span>`;
+        }
 
         // Создаем текстовые элементы для имени, сообщения и времени
         const nameSpan = document.createElement('span');
         nameSpan.classList.add('chat-name');
         nameSpan.style.color = admins.includes(message.name) ? 'gold' : message.color; // Устанавливаем цвет имени
-        nameSpan.textContent = `${levelSpan.outerHTML} ${message.name}: `; // Добавляем уровень слева от имени
+        nameSpan.innerHTML = `${levelSpan} ${message.name}: `; // Добавляем уровень слева от имени
 
         const messageSpan = document.createElement('span');
         messageSpan.classList.add('chat-text');
