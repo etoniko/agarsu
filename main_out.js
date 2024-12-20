@@ -780,49 +780,61 @@
     }
 
 
-    function addChat(view, offset) {
-        function getString() {
-            var text = '',
-                char;
-            while ((char = view.getUint16(offset, true)) != 0) {
-                offset += 2;
-                text += String.fromCharCode(char);
-            }
+function addChat(view, offset) {
+    function getString() {
+        var text = '',
+            char;
+        while ((char = view.getUint16(offset, true)) != 0) {
             offset += 2;
-            return text;
+            text += String.fromCharCode(char);
         }
-
-        var flags = view.getUint8(offset++);
-
-        if (flags & 0x80) {
-            // SERVER Message
-        }
-
-        if (flags & 0x40) {
-            // ADMIN Message
-        }
-
-        if (flags & 0x20) {
-            // MOD Message
-        }
-
-        var r = view.getUint8(offset++),
-            g = view.getUint8(offset++),
-            b = view.getUint8(offset++),
-            color = (r << 16 | g << 8 | b).toString(16);
-        while (color.length < 6) {
-            color = '0' + color;
-        }
-        color = '#' + color;
-        chatBoard.push({
-            "name": getString(),
-            "color": color,
-            "message": getString(),
-            "time": formatTime(new Date()), // Форматируем текущее время
-			"level": getLevel(accountData.xp)
-        });
-        drawChatBoard();
+        offset += 2;
+        return text;
     }
+
+    var flags = view.getUint8(offset++);
+
+    if (flags & 0x80) {
+        // SERVER Message
+    }
+
+    if (flags & 0x40) {
+        // ADMIN Message
+    }
+
+    if (flags & 0x20) {
+        // MOD Message
+    }
+
+    var r = view.getUint8(offset++),
+        g = view.getUint8(offset++),
+        b = view.getUint8(offset++),
+        color = (r << 16 | g << 8 | b).toString(16);
+    while (color.length < 6) {
+        color = '0' + color;
+    }
+    color = '#' + color;
+
+    // Получаем имя и сообщение
+    var playerName = getString();
+    var message = getString();
+
+    // Получаем XP и уровень
+    const playerXp = view.getUint32(offset, true);
+    offset += 4;
+    const level = playerXp ? getLevel(playerXp) : -1;
+
+    chatBoard.push({
+        "name": playerName,
+        "color": color,
+        "message": message,
+        "time": formatTime(new Date()), // Форматируем текущее время
+        "level": level // Добавляем уровень
+    });
+
+    drawChatBoard();
+}
+
 
     function formatTime(date) {
         const hours = String(date.getHours()).padStart(2, '0');
