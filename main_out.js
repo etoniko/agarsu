@@ -866,7 +866,7 @@ function drawChatBoard() {
 
         // Добавляем уровень перед именем
         const currLevel = getLevel(message.xp); // Получаем уровень игрока
-        nameSpan.innerHTML = `<span class="chat-level">${currLevel} </span>${message.name}: `;
+        nameSpan.innerHTML = `<div class="star-container"><i class="fas fa-star"></i><span class="levelme">${currLevel} </span>${message.name}: `;
 
         // Устанавливаем цвет имени в зависимости от администратора
         nameSpan.style.color = admins.includes(message.name) ? 'gold' : message.color;
