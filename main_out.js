@@ -570,7 +570,7 @@
     };
 
 
-    function wsConnect(wsUrl, token) {
+    function wsConnect(undefined, token) {
         if (ws) {
             ws.onopen = null;
             ws.onmessage = null;
@@ -581,8 +581,8 @@
             }
             ws = null
         }
-        var c = CONNECTION_URL; // local
-        wsUrl = (useHttps ? "wss://" : "ws://") + c; // local
+        var c = CONNECTION_URL;
+        wsUrl = (useHttps ? "wss://" : "ws://") + c;
         nodesOnScreen = [];
         playerCells = [];
         nodes = {};
@@ -621,18 +621,19 @@
         var msg;
         // delay = 500;
         wjQuery("#connecting").hide();
+
+        sendAccountToken();
+
         msg = prepareData(5);
         msg.setUint8(0, 254);
-
-        //msg.isSpectating = true;
-        //sendUint8(1);
-
         msg.setUint32(1, 5, true); // Protocol 5
         wsSend(msg);
+
         msg = prepareData(5);
         msg.setUint8(0, 255);
         msg.setUint32(1, 0, true);
         wsSend(msg);
+
         sendNickName();
         log.info("Connection successful!");
     }
@@ -719,10 +720,17 @@
                 for (let i = 0; i < LBplayerNum; ++i) {
                     const nodeId = msg.getUint32(offset, true);
                     offset += 4;
+
                     const playerName = getString();
+
+                    const playerXp = msg.getUint32(offset, true);
+                    offset += 4;
+                    const level = playerXp ? getLevel(playerXp) : -1;
+
                     leaderBoard.push({
                         id: nodeId,
-                        name: playerName
+                        name: playerName,
+                        level
                     });
                 }
                 drawLeaderBoard();
@@ -762,6 +770,11 @@
             case 99:
                 // Add chat message
                 addChat(msg, offset);
+                break;
+            case 114:
+                // Update eXP
+                const xp = msg.getUint32(offset, true);
+                onUpdateXp(xp);
                 break;
         }
     }
@@ -1034,6 +1047,15 @@
         }
     }
 
+    const sendAccountToken = () => {
+        const token = localStorage.accountToken;
+        if (wsIsOpen() && token) {
+            const msg = prepareData(1 + 2 * token.length);
+            msg.setUint8(0, 114);
+            for (var i = 0; i < token.length; ++i) msg.setUint16(1 + 2 * i, token.charCodeAt(i), true);
+            wsSend(msg);
+        }
+    };
 
     function sendNickName() {
         if (wsIsOpen() && userNickName != null) {
@@ -1496,6 +1518,7 @@
                 // Если не нужно отображать командные очки
                 for (let b = 0; b < leaderBoard.length; ++b) {
                     let name = leaderBoard[b].name; // Имя игрока
+                    const level = leaderBoard[b].level; // Level игрока
                     if (!showName) {
                         name = ""; // Если имя не отображается
                     }
@@ -1510,16 +1533,17 @@
                     if (b < displayedPlayers) {
                         const entryDiv = document.createElement("div");
                         entryDiv.style.color = isMe ? "#FFAAAA" : "#FFFFFF"; // Цвет строки для isMe
-                        entryDiv.innerText = (!noRanking ? `${b + 1}. ` : "") + name; // Добавляем ранг
+                        entryDiv.innerHTML = (!noRanking ? `${b + 1}. ` : "") + (level !== -1 ? "<div class='star-container'><i class='fas fa-star'></i><span class='levelme'>" + level + "</span></div>" : "") + name; // Добавляем ранг
                         leaderboardDiv.appendChild(entryDiv); // Добавляем запись в leaderboardDiv
                     }
                 }
 
                 // Если мой ранг больше 10, показываем его на 11-й строке
                 if (myRank && myRank > displayedPlayers) {
+                    const level = accountData ? getLevel(accountData.xp) : -1;
                     const myRankDiv = document.createElement("div");
                     myRankDiv.style.color = "#FFAAAA"; // Цвет строки для isMe в 11-й позиции
-                    myRankDiv.innerText = `${myRank}. ${playerCells[0].name}`; // Показываем мой ранг и имя
+                    myRankDiv.innerHTML = myRank + "." + (level !== -1 ? "<div class='star-container'><i class='fas fa-star'></i><span class='levelme'>" + level + "</span></div>" : "") + playerCells[0].name; // Показываем мой ранг и имя
                     leaderboardDiv.appendChild(myRankDiv);
                 }
             } else {
@@ -1555,9 +1579,6 @@
         ustrokecolor && (this._strokeColor = ustrokecolor)
     }
 
-
-    // var localProtocol = wHandle.location.protocol;
-    // localProtocolHttps = "https:" == localProtocol;
     var nCanvas, ctx, mainCanvas, lbCanvas, chatCanvas, canvasWidth, canvasHeight, qTree = null,
         ws = null,
         nodeX = 0,
@@ -1648,7 +1669,6 @@
         }
     }
     wHandle.spectate = function () {
-        //  showConnecting(captchaTokenCloudflare); // local
         userNickName = null;
         // wHandle.isSpectating = true;
         // sendUint8(1);
@@ -2203,5 +2223,144 @@
             }
         }
     };
+
+    const onLogout = () => {
+        if (confirm("Ты действительно хочешь выйти из учетной записи?")) {
+            /*wHandle.*/userXP.textContent = /*wHandle.*/userLevel.textContent = "";
+            accountData = null;
+            clearAccountToken();
+
+            /*wHandle.*/logoutButton.style.display = "none";
+            /*wHandle.*/loginButton.style.display = "";
+        }
+    };
+
+    wHandle.logoutAccount = async () => {
+        if (localStorage.accountToken) {
+            const res = await accountApiGet("me/logout");
+            if (res.ok) {
+                const data = await res.json();
+                if (data.ok || 401 == data.status) onLogout();
+                if (data.error) alert(data.error);
+            }
+        }
+        else onLogout();
+    }
+
+    // wHandle.openLoginAccountWith = name => {
+    //     /*wHandle.*/open("/api/login/" + name, "", "width=400, height=500");
+    //     const listener = evt => {
+    //         /*wHandle.*/removeEventListener("message", listener);
+    //         onAccountLoggedIn(evt.data.token);
+    //     }
+    //     /*wHandle.*/addEventListener("message", listener);
+    // };
+
+    wHandle.onUloginToken = async tokenUlogin => {
+        // /*wHandle.*/open("/auth/ulogin/?token=" + tokenUlogin, "", "width=400, height=500");
+        const res = await accountApiGet("auth/ulogin?token=" + tokenUlogin);
+        if (res.ok) {
+            const data = await res.json();
+            if (data.error) alert(data.error);
+            else onAccountLoggedIn(data.token);
+        }
+    };
+
+    const setAccountToken = token => {
+        /*wHandle.*/localStorage.accountToken = token;
+    };
+
+    const clearAccountToken = () => {
+        delete /*wHandle.*/localStorage.accountToken;
+    };
+
+    const accountApiGet = tag => fetch("https://itana.pw:6003/api/" + tag, { headers: { Authorization: `Game ${/*wHandle.*/localStorage.accountToken}` } });
+
+    wHandle.onAccountLoggedIn = token => {
+        setAccountToken(token);
+        loadAccountUserData();
+        sendAccountToken();
+    };
+
+    let accountData;
+
+    const setAccountData = data => {
+        accountData = data;
+        displayAccountData();
+        document.querySelectorAll(".menu-item")[2].click(); // На главную меню
+
+        /*wHandle.*/logoutButton.style.display = "";
+        /*wHandle.*/loginButton.style.display = "none";
+    };
+
+    const loadAccountUserData = async () => {
+        const res = await accountApiGet("me/login");
+        if (res.ok) {
+            const data = await res.json();
+            if (data.error) {
+                if (401 == data.status) clearAccountToken();
+                else alert(data.error);
+            }
+            else setAccountData(data);
+        }
+    };
+
+    if (/*wHandle.*/localStorage.accountToken) loadAccountUserData();
+
+    const getXp = level => ~~(100 * (level ** 2 / 2));
+    const getLevel = xp => ~~((xp / 100 * 2) ** .5);
+
+const displayAccountData = () => {
+    const currLevel = getLevel(accountData.xp); // Получаем текущий уровень
+    const nextXp = getXp(currLevel + 1); // Получаем XP для следующего уровня
+    const progressPercent = (accountData.xp / nextXp) * 100; // Рассчитываем процент прогресса
+
+    // Обновляем текст с XP
+    const userXPElement = document.getElementById("userXP")?.querySelector(".status-value");
+    if (userXPElement) {
+        userXPElement.textContent = `${accountData.xp}/${nextXp}`;
+    }
+
+    // Обновляем текст с уровнем
+    const userLevelElement = document.getElementById("userLevel")?.querySelector(".status-value");
+    if (userLevelElement) {
+        userLevelElement.textContent = currLevel;
+    }
+
+    // Обновляем прогресс бар
+    const progressBar = document.querySelector(".progress-fill");
+    if (progressBar) {
+        progressBar.style.width = `${progressPercent}%`;
+    }
+
+    // Обновляем круг с уровнем
+    const levelCircle = document.getElementById("levelCircle");
+    if (levelCircle) {
+        levelCircle.textContent = currLevel;
+    }
+
+    // Обновляем текст с прогрессом
+    const progressText = document.getElementById("progressText");
+    if (progressText) {
+        progressText.textContent = `${Math.round(progressPercent)}% (${accountData.xp}/${nextXp})`;
+    }
+
+    // Отображаем account_id, если элемент существует
+    const accountIDElement = document.getElementById("accountID");
+    if (accountIDElement) {
+        accountIDElement.textContent = `ID: ${accountData.account_id}`;
+    }
+};
+
+
+
+
+    const onUpdateXp = xp => {
+        if (accountData) {
+            accountData.xp = xp;
+            displayAccountData();
+        }
+    };
+
     wHandle.onload = gameLoop;
 })(window, window.jQuery);
