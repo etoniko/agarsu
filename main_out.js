@@ -867,30 +867,22 @@ function drawChatBoard() {
 // Добавляем уровень перед именем
 const currLevel = getLevel(message.xp); // Получаем уровень игрока
 
-// Создаем контейнер для звезды и уровня
+// Создаем элемент для звезды и уровня
 const starContainer = document.createElement('div');
 starContainer.classList.add('star-container');
+starContainer.innerHTML = `<i class='fas fa-star'></i><span class='levelme'>${currLevel}</span>`;
 
-// Создаем элемент иконки звезды
-const starIcon = document.createElement('i');
-starIcon.classList.add('fas', 'fa-star');
-
-// Создаем элемент для отображения уровня
-const levelSpan = document.createElement('span');
-levelSpan.classList.add('levelme');
-levelSpan.textContent = `${currLevel}`; // Устанавливаем текст с уровнем
-
-// Добавляем звезду и уровень в контейнер
-starContainer.appendChild(starIcon);
-starContainer.appendChild(levelSpan);
-
-// Добавляем starContainer перед именем
+// Добавляем starContainer в начало сообщения
 messageDiv.appendChild(starContainer);
 
+// Создаем элемент для имени
+const nameSpan = document.createElement('span');
+nameSpan.classList.add('chat-name');
+nameSpan.style.color = admins.includes(message.name.toLowerCase()) ? 'gold' : message.color; // Устанавливаем цвет имени
+nameSpan.textContent = message.name + ': '; // Добавляем двоеточие
 
-        // Устанавливаем цвет имени в зависимости от администратора
-        nameSpan.style.color = admins.includes(message.name) ? 'gold' : message.color;
-        nameSpan.textContent = message.name + ': '; // Добавляем двоеточие
+// Добавляем имя в сообщение
+messageDiv.appendChild(nameSpan);
 
         // Добавляем уровень и имя в div сообщения
         messageDiv.appendChild(levelSpan); // Добавляем уровень
