@@ -2348,7 +2348,7 @@ const displayAccountData = () => {
     // Отображаем account_id, если элемент существует
     const accountIDElement = document.getElementById("accountID");
     if (accountIDElement) {
-        accountIDElement.textContent = `ID: ${accountData.account_id}`;
+        accountIDElement.textContent = `ID: ${accountData.uid}`;
     }
 };
 
