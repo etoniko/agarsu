@@ -1,4 +1,16 @@
    @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap");
+:root {
+	--vs-primary: 29 92 255;
+  -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+     -khtml-user-select: none; /* Konqueror HTML */
+       -moz-user-select: none; /* Old versions of Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome, Edge, Opera and Firefox */
+}
+
+
 /* Фон полупрозрачный */
 #captcha-overlay {
   position: fixed;
@@ -204,18 +216,6 @@ display: flex;
 		margin-top: 10px;
 	}
 
-#table-container > div:nth-child(1) > div.skkin::after {
-  content: "👑";
-  position: absolute;
-  top: 14%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 1;
-}
-
-#table-container > div:nth-child(1) > div.skkin {
-  position: relative;
-}
 .top-player:nth-child(2) {
     color: #2579e7;
 }
@@ -702,7 +702,7 @@ backdrop-filter: blur(20px);
     .top-info span {
       background-color: #1b263b;
       padding: 8px 15px;
-      border-radius: 15px;
+      border-radius: 20px;
     }
 #process{
     font-size: 13px;
@@ -861,7 +861,7 @@ display: flex;
     align-items: flex-start;
 }
 #leaderboard{
-	max-width: 150px;
+	max-width: 160px;
 position: absolute;
     padding: 10px 10px 10px 10px;
     border-radius: 20px 20px 20px 20px;
@@ -1079,4 +1079,95 @@ background-size: 50px auto;
 	transition: ease filter, transform 0.5s;
 	transform: scale(1.1);
 }
-.sgm{padding-bottom: 10px;font-family: 'ubuntu';color: #ffffff;font-size: 20px;};
+.sgm{padding-bottom: 10px;font-family: 'ubuntu';color: #ffffff;font-size: 20px;
+}
+
+
+
+
+.progress-container {
+font-family: Arial, sans-serif;
+    position: absolute;
+    top: 21px;
+}
+
+.level-circle {
+  width: 40px;
+  height: 40px;
+  background-color: white;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  font-size: 14px;
+  color: black;
+  position: absolute;
+}
+
+.progress-bar {
+    width: 220px;
+    height: 37px;
+    background-color: #1b263b;
+    border-radius: 20px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #016bef; /* Синий цвет */
+  border-radius: 20px 0 0 20px;
+}
+
+.progress-text {
+  position: absolute;
+  width: 100%;
+  text-align: center;
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+  pointer-events: none;
+}
+
+
+#accountID{
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    background-color: #1b263b;
+    padding: 8px 15px;
+    border-radius: 20px;
+}
+        .line {
+    width: 100%;
+    height: 2px;
+    background-color: #ffffff;
+    margin: 10px 0px 10px 0px;
+}
+
+#l1eaderboard {
+    max-width: 150px;
+    position: absolute;
+    padding: 10px 10px 10px 10px;
+    border-radius: 20px 20px 20px 20px;
+    border: solid #ffffff26 1px;
+    background: rgba(0, 0, 0, .3);
+}
+
+        .star-container {
+			font-size: 20px; /* Размер звезды */
+            position: relative;
+            display: inline-block;
+        }
+
+        .levelme {
+position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 10px;
+    color: #6a6a6a;
+    font-family: 'Ubuntu';
+        }
