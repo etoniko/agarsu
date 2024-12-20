@@ -818,7 +818,8 @@
             "name": getString(),
             "color": color,
             "message": getString(),
-            "time": formatTime(new Date()) // Форматируем текущее время
+            "time": formatTime(new Date()), // Форматируем текущее время
+			"level": level
         });
         drawChatBoard();
     }
