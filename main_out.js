@@ -864,11 +864,29 @@ function drawChatBoard() {
         const nameSpan = document.createElement('span');
         nameSpan.classList.add('chat-name');
 
-        // Добавляем уровень перед именем
-        const currLevel = getLevel(message.xp); // Получаем уровень игрока
-        const levelSpan = document.createElement('span');
-        levelSpan.classList.add('chat-level');
-        levelSpan.textContent = `Lv${currLevel} `; // Добавляем текст с уровнем
+// Добавляем уровень перед именем
+const currLevel = getLevel(message.xp); // Получаем уровень игрока
+
+// Создаем контейнер для звезды и уровня
+const starContainer = document.createElement('div');
+starContainer.classList.add('star-container');
+
+// Создаем элемент иконки звезды
+const starIcon = document.createElement('i');
+starIcon.classList.add('fas', 'fa-star');
+
+// Создаем элемент для отображения уровня
+const levelSpan = document.createElement('span');
+levelSpan.classList.add('levelme');
+levelSpan.textContent = `${currLevel}`; // Устанавливаем текст с уровнем
+
+// Добавляем звезду и уровень в контейнер
+starContainer.appendChild(starIcon);
+starContainer.appendChild(levelSpan);
+
+// Добавляем starContainer перед именем
+messageDiv.appendChild(starContainer);
+
 
         // Устанавливаем цвет имени в зависимости от администратора
         nameSpan.style.color = admins.includes(message.name) ? 'gold' : message.color;
