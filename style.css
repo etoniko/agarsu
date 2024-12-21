@@ -1191,12 +1191,13 @@ position: absolute;
 #chat-container {
     max-height: 300px;
     overflow-y: auto;
-    transition: height 0.3s ease; /* Добавим плавную анимацию */
+    transition: all 0.3s ease; /* Добавим плавную анимацию для всего */
+    display: block; /* Изначально показываем */
 }
 
 #chat-container.collapsed {
-    height: 0;
     display: none; /* Hide content when collapsed */
+     height: 0; /* Зануляем высоту */
     padding:0;
-    overflow:hidden
+    overflow:hidden;
 }
