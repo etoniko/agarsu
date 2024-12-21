@@ -366,10 +366,10 @@ transition: ease filter, transform 0.5s;
   font-weight: bold;
 }
 .chat-time{
-    position: fixed;
-    right: 10px;
     font-size: 10px;
     color: #8e8e8e;
+    position: absolute;
+    right: 10px;
 }
 .chat-text {
   color: #ffffff;
@@ -386,7 +386,6 @@ transition: ease filter, transform 0.5s;
     grid-template-columns: repeat(2, 1fr);
     scroll-behavior: smooth;
 	margin-bottom: 10px;
-	transform: scale(0.9);
 }
 	#chat_textbox {
 transition: all .5s ease-in-out;
