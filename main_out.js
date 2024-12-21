@@ -1126,11 +1126,26 @@
         drawGameScene();
     }
 
-    function viewRange() {
-        var ratio;
+function viewRange() {
+    let ratio;
+
+    // Проверяем, если это мобильное устройство
+    if (window.innerWidth <= 768) {
+        // Для мобильных устройств учитываем ориентацию экрана
+        if (window.innerHeight > window.innerWidth) {
+            // Вертикальная ориентация
+            ratio = Math.max(canvasHeight / 1080, canvasWidth / 1920);
+        } else {
+            // Горизонтальная ориентация
+            ratio = Math.max(canvasHeight / 1920, canvasWidth / 1080);
+        }
+    } else {
+        // Для ПК или планшетов с большим экраном
         ratio = Math.max(canvasHeight / 1080, canvasWidth / 1920);
-        return ratio * zoom;
     }
+
+    return ratio * zoom; // Умножаем на значение зума
+}
 
     function calcViewZoom() {
         if (0 != playerCells.length) {
