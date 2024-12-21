@@ -1609,7 +1609,7 @@
         // userScore = 0,
         showDarkTheme = true,
         showMass = true,
-        hideChat = true,
+        hideChat = false,
         smoothRender = .4,
         posX = nodeX = ~~((leftPos + rightPos) / 2),
         posY = nodeY = ~~((topPos + bottomPos) / 2),
