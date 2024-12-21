@@ -450,7 +450,7 @@ content: "";
 	#table-container {height: 375px;}
 	.skkinn {height: 32px; width: 50px;}
 .overchat{
-transform: scale(0.5) translate(-5px, 5px);
+transform: scale(0.7) translate(-7px, 7px);
 transform-origin: bottom left;
 }
   .social {
