@@ -1187,17 +1187,3 @@ position: absolute;
     right: 10px;
     z-index: 10;
 }
-
-#chat-container {
-    max-height: 300px;
-    overflow-y: auto;
-    transition: all 0.3s ease; /* Добавим плавную анимацию для всего */
-    display: block; /* Изначально показываем */
-}
-
-#chat-container.collapsed {
-    display: none; /* Hide content when collapsed */
-     height: 0; /* Зануляем высоту */
-    padding:0;
-    overflow:hidden;
-}
