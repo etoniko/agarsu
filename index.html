@@ -631,29 +631,36 @@
 
     </script>
 <button id="toggleChatButton">Открыть чат</button>
-<div class="overchat hidden">
+<div class="overchat">
+    <button id="toggleChatButton">
+        <i class="fas fa-close"></i> <!-- Изначально показываем крестик -->
+    </button>
     <div id="chat-container"></div>
     <input type="text" autocomplete="off" id="chat_textbox" maxlength="120" placeholder="Напишите сообщение...">
-    <button id="closeChatButton">Закрыть чат</button> <!-- Кнопка закрытия внутри чата -->
 </div>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const overchat = document.querySelector('.overchat');
     const toggleChatButton = document.getElementById('toggleChatButton');
-    const closeChatButton = document.getElementById('closeChatButton');
+    const chatContainer = document.getElementById('chat-container');
+    const toggleIcon = toggleChatButton.querySelector('i');
 
-    let isChatHidden = true; // Начинаем со скрытого чата
+    let isChatCollapsed = false; // Initial state is expanded (not collapsed)
+    //  chatContainer.classList.remove('collapsed');
+
 
     toggleChatButton.addEventListener('click', function() {
-        isChatHidden = false;
-        overchat.classList.remove('hidden');
-        toggleChatButton.classList.add('hidden'); // Скрываем кнопку "Открыть чат"
-    });
+        isChatCollapsed = !isChatCollapsed;
+        if (isChatCollapsed) {
+            chatContainer.classList.add('collapsed');
+            toggleIcon.classList.remove('fa-close');
+            toggleIcon.classList.add('fa-arrow-up');
 
-    closeChatButton.addEventListener('click', function() {
-        isChatHidden = true;
-        overchat.classList.add('hidden');
-        toggleChatButton.classList.remove('hidden'); // Показываем кнопку "Открыть чат"
+        } else {
+             chatContainer.classList.remove('collapsed');
+            toggleIcon.classList.remove('fa-arrow-up');
+           toggleIcon.classList.add('fa-close');
+        }
     });
 });
 </script>
