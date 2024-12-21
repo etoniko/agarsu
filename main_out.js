@@ -479,7 +479,7 @@
         zoom *= Math.pow(.9, event.wheelDelta / -120 || event.detail || 0);
         if (zoom < 0) zoom = 1;
         if (zoom > 4 / viewZoom) zoom = 4 / viewZoom;
-        if (zoom < 0.6) zoom = 0.6;
+        if (zoom < 0.8) zoom = 0.8;
     }
 
     function isMouseOverElement(element) {
