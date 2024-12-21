@@ -476,7 +476,7 @@
             return; // Stop zooming if the overlay is open or mouse is over chat container
         }
 
-        zoom *= Math.pow(1.1, event.wheelDelta / -120 || event.detail || 0);
+        zoom *= Math.pow(.9, event.wheelDelta / -120 || event.detail || 0);
         if (zoom < 0) zoom = 1;
         if (zoom > 4 / viewZoom) zoom = 4 / viewZoom;
         if (zoom < 0.6) zoom = 0.6;
@@ -1135,7 +1135,7 @@ function viewRange() {
     function calcViewZoom() {
         if (0 != playerCells.length) {
             for (var newViewZoom = 0, i = 0; i < playerCells.length; i++) newViewZoom += playerCells[i].size;
-            newViewZoom = Math.pow(Math.min(64 / newViewZoom, 1), .4) * viewRange();
+            newViewZoom = Math.pow(Math.min(64 / newViewZoom, 1), .9) * viewRange();
             viewZoom = (9 * viewZoom + newViewZoom) / 10;
         }
     }
