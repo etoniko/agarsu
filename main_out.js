@@ -1126,16 +1126,16 @@
         drawGameScene();
     }
 
-function viewRange() {
-    var ratio1 = Math.min(canvasHeight / 1080, canvasWidth / 1920);
-    var ratio2 = Math.min(canvasHeight / 1920, canvasWidth / 1080);
-    return Math.min(ratio1, ratio2) * zoom;
-}
+    function viewRange() {
+        var ratio;
+        ratio = Math.max(canvasHeight / 1080, canvasWidth / 1920);
+        return ratio * zoom;
+    }
 
     function calcViewZoom() {
         if (0 != playerCells.length) {
             for (var newViewZoom = 0, i = 0; i < playerCells.length; i++) newViewZoom += playerCells[i].size;
-            newViewZoom = Math.pow(Math.min(64 / newViewZoom, 1), .9) * viewRange();
+            newViewZoom = Math.pow(Math.min(64 / newViewZoom, 1), .4) * viewRange();
             viewZoom = (9 * viewZoom + newViewZoom) / 10;
         }
     }
