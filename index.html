@@ -631,9 +631,26 @@
 
     </script>
 <div class="overchat">
+    <button id="toggle-chat">Открыть/Закрыть Чат</button>
     <div id="chat-container"></div>
     <input type="text" autocomplete="off" id="chat_textbox" maxlength="120" placeholder="Напишите сообщение...">
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const overchat = document.querySelector('.overchat');
+    const toggleButton = document.getElementById('toggle-chat');
+
+    toggleButton.addEventListener('click', function() {
+        overchat.classList.toggle('closed');
+        // Можно изменить текст кнопки в зависимости от состояния чата
+        if (overchat.classList.contains('closed')) {
+          toggleButton.textContent = 'Открыть Чат';
+        } else {
+          toggleButton.textContent = 'Закрыть Чат';
+        }
+    });
+});
+</script>
     <div class="homemenu" onclick="$('#overlays').show();"><i class="fas fa-home"></i></div>
 
 
