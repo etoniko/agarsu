@@ -637,26 +637,25 @@
     <button id="closeChatButton">Закрыть чат</button> <!-- Кнопка закрытия внутри чата -->
 </div>
 <script>
-document.addEventListener('DOMContentLoaded', function() { // Убедимся, что DOM загружен
+document.addEventListener('DOMContentLoaded', function() {
     const overchat = document.querySelector('.overchat');
     const toggleChatButton = document.getElementById('toggleChatButton');
+    const closeChatButton = document.getElementById('closeChatButton');
 
-    // Изначальное состояние
-    let isChatHidden = false;
+    let isChatHidden = true; // Начинаем со скрытого чата
 
     toggleChatButton.addEventListener('click', function() {
-        isChatHidden = !isChatHidden; // Инвертируем состояние
-
-        if (isChatHidden) {
-            overchat.classList.add('hidden');
-            toggleChatButton.textContent = 'Показать чат';
-        } else {
-            overchat.classList.remove('hidden');
-            toggleChatButton.textContent = 'Скрыть чат';
-        }
+        isChatHidden = false;
+        overchat.classList.remove('hidden');
+        toggleChatButton.classList.add('hidden'); // Скрываем кнопку "Открыть чат"
     });
-});
-</script>
+
+    closeChatButton.addEventListener('click', function() {
+        isChatHidden = true;
+        overchat.classList.add('hidden');
+        toggleChatButton.classList.remove('hidden'); // Показываем кнопку "Открыть чат"
+    });
+});ipt>
     <div class="homemenu" onclick="$('#overlays').show();"><i class="fas fa-home"></i></div>
 
 
