@@ -1157,7 +1157,7 @@ function calcViewZoom() {
         viewZoom = (9 * viewZoom + newViewZoom) / 10; // Сглаживаем переходы зума
     }
 }
-docment.addEventListener('resize', canvasResize);
+document.addEventListener('resize', canvasResize);
 
 
 
