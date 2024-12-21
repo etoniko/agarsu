@@ -638,9 +638,10 @@
     <input type="text" autocomplete="off" id="chat_textbox" maxlength="120" placeholder="Напишите сообщение...">
 </div>
 <script>
- // Получаем элементы
+    // Получаем элементы
     const toggleChatButton = document.getElementById('toggleChatButton');
     const chatContainer = document.getElementById('chat-container');
+    const chatTextBox = document.getElementById('chat_textbox');
     const chatIcon = toggleChatButton.querySelector('i');
 
     // Начальное состояние чата (видимый)
@@ -651,11 +652,13 @@
         if (isChatVisible) {
             // Если чат видимый, скрываем его с помощью высоты
             chatContainer.style.height = '0';
+            chatTextBox.style.display = 'none'; // Скрываем текстовое поле
             chatIcon.classList.remove('fa-close');
             chatIcon.classList.add('fa-arrow-up');
         } else {
             // Если чат скрыт, показываем его
             chatContainer.style.height = 'auto';
+            chatTextBox.style.display = 'block'; // Показываем текстовое поле
             chatIcon.classList.remove('fa-arrow-up');
             chatIcon.classList.add('fa-close');
         }
