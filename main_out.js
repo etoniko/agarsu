@@ -1099,65 +1099,47 @@
     }
 
 
-    function redrawGameScene() {
+     function redrawGameScene() {
         drawGameScene();
         wHandle.requestAnimationFrame(redrawGameScene)
     }
 
-   function canvasResize() {
-    window.scrollTo(0, 0);
+    function canvasResize() {
+        window.scrollTo(0, 0);
 
-    // Используем devicePixelRatio для корректного отображения на экранах с высокой плотностью пикселей
-    const dpr = window.devicePixelRatio;
+        // Используйте devicePixelRatio для корректного отображения на разных экранах
+        const dpr = window.devicePixelRatio;
 
-    // Получаем размеры окна в пикселях
-    const canvasWidth = wHandle.innerWidth * dpr;
-    const canvasHeight = wHandle.innerHeight * dpr;
+        // Получите размеры окна в пикселях
+        canvasWidth = wHandle.innerWidth * dpr;
+        canvasHeight = wHandle.innerHeight * dpr;
 
-    // Устанавливаем размеры канваса в пикселях
-    nCanvas.width = canvasWidth;
-    nCanvas.height = canvasHeight;
+        // Установите размеры холста в пикселях
+        nCanvas.width = canvasWidth;
+        nCanvas.height = canvasHeight;
 
-    // Масштабируем контекст канваса, чтобы изображение не размывалось
-    nCanvas.style.width = `${wHandle.innerWidth}px`; // Установка стиля для правильного отображения
-    nCanvas.style.height = `${wHandle.innerHeight}px`;
+        // Масштабируйте контекст холста, чтобы изображение не размывалось
+        nCanvas.style.width = `${wHandle.innerWidth}px`; // Установка стиля для правильного отображения
+        nCanvas.style.height = `${wHandle.innerHeight}px`;
 
-    // Обновляем отрисовку
-    drawGameScene();
-}
+        // Обновите отрисовку
+        drawGameScene();
+    }
 
-function viewRange() {
-    let ratio;
-
-    // Проверяем, если это мобильное устройство или ПК
-    if (window.innerWidth <= 768) {  // Мобильные устройства
-        // Для мобильных устройств: определяем ориентацию экрана
-        if (window.innerHeight > window.innerWidth) {
-            // Вертикальная ориентация
-            ratio = Math.max(canvasHeight / 1080, canvasWidth / 1920);
-        } else {
-            // Горизонтальная ориентация
-            ratio = Math.max(canvasHeight / 1920, canvasWidth / 1080);
-        }
-    } else {  // Для ПК
-        // Для десктопов и планшетов с большими экранами
+    function viewRange() {
+        var ratio;
         ratio = Math.max(canvasHeight / 1080, canvasWidth / 1920);
+        return ratio * zoom;
     }
 
-    return ratio * zoom; // Умножаем на значение зума
-}
-
-function calcViewZoom() {
-    if (playerCells.length !== 0) {
-        let newViewZoom = 0;
-        for (let i = 0; i < playerCells.length; i++) {
-            newViewZoom += playerCells[i].size; // Суммируем размеры всех клеток игроков
+    function calcViewZoom() {
+        if (0 != playerCells.length) {
+            for (var newViewZoom = 0, i = 0; i < playerCells.length; i++) newViewZoom += playerCells[i].size;
+            newViewZoom = Math.pow(Math.min(64 / newViewZoom, 1), .4) * viewRange();
+            viewZoom = (9 * viewZoom + newViewZoom) / 10;
         }
-        newViewZoom = Math.pow(Math.min(64 / newViewZoom, 1), 0.4) * viewRange(); // Применяем расчет зума
-        viewZoom = (9 * viewZoom + newViewZoom) / 10; // Сглаживаем переходы зума
     }
-}
-document.addEventListener('resize', canvasResize);
+
 
 
 
