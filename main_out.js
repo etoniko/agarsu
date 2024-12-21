@@ -1128,9 +1128,9 @@
 
 
 function viewRange() {
-    var ratio1 = Math.max(canvasHeight / 1080, canvasWidth / 1920);
-    var ratio2 = Math.max(canvasHeight / 1920, canvasWidth / 1080);
-    return Math.max(ratio1, ratio2) * zoom;
+    var ratio1 = Math.min(canvasHeight / 1080, canvasWidth / 1920);
+    var ratio2 = Math.min(canvasHeight / 1920, canvasWidth / 1080);
+    return Math.min(ratio1, ratio2) * zoom;
 }
 
 
