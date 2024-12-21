@@ -476,10 +476,10 @@
             return; // Stop zooming if the overlay is open or mouse is over chat container
         }
 
-        zoom *= Math.pow(.9, event.wheelDelta / -120 || event.detail || 0);
+        zoom *= Math.pow(1.1, event.wheelDelta / -120 || event.detail || 0);
         if (zoom < 0) zoom = 1;
         if (zoom > 4 / viewZoom) zoom = 4 / viewZoom;
-        if (zoom < 0.1) zoom = 0.1;
+        if (zoom < 0.6) zoom = 0.6;
     }
 
     function isMouseOverElement(element) {
