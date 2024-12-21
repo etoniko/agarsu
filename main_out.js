@@ -1127,11 +1127,12 @@
     }
 
 
-    function viewRange() {
-        var ratio;
-        ratio = Math.max(canvasHeight / 1080, canvasWidth / 1920);
-        return ratio * zoom;
-    }
+function viewRange() {
+    var ratio1 = Math.max(canvasHeight / 1080, canvasWidth / 1920);
+    var ratio2 = Math.max(canvasHeight / 1920, canvasWidth / 1080);
+    return Math.max(ratio1, ratio2) * zoom;
+}
+
 
 
     function calcViewZoom() {
