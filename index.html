@@ -633,7 +633,7 @@
 <button id="toggleChatButton">Открыть чат</button>
 <div class="overchat">
     <button id="toggleChatButton">
-        <i class="fas fa-close"></i> <!-- Изначально показываем крестик -->
+        <i class="fas fa-close"></i>
     </button>
     <div id="chat-container"></div>
     <input type="text" autocomplete="off" id="chat_textbox" maxlength="120" placeholder="Напишите сообщение...">
@@ -646,20 +646,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const toggleIcon = toggleChatButton.querySelector('i');
 
     let isChatCollapsed = false; // Initial state is expanded (not collapsed)
-    //  chatContainer.classList.remove('collapsed');
-
 
     toggleChatButton.addEventListener('click', function() {
         isChatCollapsed = !isChatCollapsed;
+
         if (isChatCollapsed) {
             chatContainer.classList.add('collapsed');
-            toggleIcon.classList.remove('fa-close');
+             toggleIcon.classList.remove('fa-close');
             toggleIcon.classList.add('fa-arrow-up');
 
         } else {
-             chatContainer.classList.remove('collapsed');
+            chatContainer.classList.remove('collapsed');
             toggleIcon.classList.remove('fa-arrow-up');
-           toggleIcon.classList.add('fa-close');
+            toggleIcon.classList.add('fa-close');
         }
     });
 });
