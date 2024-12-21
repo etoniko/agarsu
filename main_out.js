@@ -156,8 +156,8 @@
             showCaptcha();
 
             // Attempt to reconnect with the new server.
-            // if (captchaTokenCloudflare) {
-            //     showConnecting(captchaTokenCloudflare);
+            // if (captokenCloudflare) {
+            //     showConnecting(captokenCloudflare);
             // } else {
             //     console.log("Captcha token is not available yet.");
             // }
@@ -168,7 +168,7 @@
         ma = true;
         document.getElementById("canvas").focus();
         var isTyping = false;
-        var chattxt;
+        var txt;
         mainCanvas = nCanvas = document.getElementById("canvas");
         ctx = mainCanvas.getContext("2d");
 
@@ -1609,7 +1609,7 @@
         // userScore = 0,
         showDarkTheme = true,
         showMass = true,
-        hideChat = false,
+        hideChat = true,
         smoothRender = .4,
         posX = nodeX = ~~((leftPos + rightPos) / 2),
         posY = nodeY = ~~((topPos + bottomPos) / 2),
