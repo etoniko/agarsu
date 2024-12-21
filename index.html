@@ -638,7 +638,7 @@
     <input type="text" autocomplete="off" id="chat_textbox" maxlength="120" placeholder="Напишите сообщение...">
 </div>
 <script>
-    // Получаем элементы
+      // Получаем элементы
     const toggleChatButton = document.getElementById('toggleChatButton');
     const chatContainer = document.getElementById('chat-container');
     const chatIcon = toggleChatButton.querySelector('i');
@@ -649,13 +649,13 @@
     // Обработчик клика по кнопке
     toggleChatButton.addEventListener('click', function() {
         if (isChatVisible) {
-            // Если чат видимый, скрываем его
-            chatContainer.style.display = 'none';
+            // Если чат видимый, скрываем его с помощью visibility
+            chatContainer.style.visibility = 'hidden';
             chatIcon.classList.remove('fa-close');
             chatIcon.classList.add('fa-arrow-up');
         } else {
             // Если чат скрыт, показываем его
-            chatContainer.style.display = 'block';
+            chatContainer.style.visibility = 'visible';
             chatIcon.classList.remove('fa-arrow-up');
             chatIcon.classList.add('fa-close');
         }
