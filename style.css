@@ -1170,7 +1170,10 @@ position: absolute;
     bottom: 10px;
     max-height: 450px;
     left: 10px;
-    width: 300px; /* Зададим ширину для чата */
+    padding: 10px 10px 10px 10px;
+    border-radius: 20px 20px 20px 20px;
+    border: solid #ffffff26 1px;
+    background: rgba(0, 0, 0, .3);
 }
 
 .overchat.hidden {
@@ -1178,10 +1181,11 @@ position: absolute;
 }
 
 #toggleChatButton {
-    background: none;
+background: none;
     border: none;
     cursor: pointer;
     font-size: 18px;
     color: white;
     float: right;
+    padding: 0px 5px 5px 0px;
 }
