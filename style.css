@@ -1173,17 +1173,3 @@ position: absolute;
     width: 300px; /* Зададим ширину для чата */
 }
 
-.overchat.hidden {
-    display: none; /* Скрываем overchat при добавлении класса 'hidden' */
-}
-
-#toggleChatButton {
-    position: absolute;
-    bottom: 10px;
-    left: 10px;
-    display: block; /* Изначально показываем кнопку открытия */
-}
-
-#toggleChatButton.hidden {
-    display: none; /* Скрываем кнопку открытия, когда чат открыт */
-}
