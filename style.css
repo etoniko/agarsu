@@ -449,6 +449,10 @@ content: "";
 	.score-info{left: 40%;}
 	#table-container {height: 375px;}
 	.skkinn {height: 32px; width: 50px;}
+.overchat{
+transform: scale(0.5) translate(-5px, 5px);
+transform-origin: bottom left;
+}
   .social {
 	position: absolute !important;
     width: 140px !important;
@@ -557,9 +561,11 @@ backdrop-filter: blur(20px);
 @media (min-width: 600px) and (max-width: 899px) {
 	.center {transform: scale(0.7);}
   .social {opacity: 0;}
-  #leaderboard,
-  #chat-container,
-  #chat_textbox{display: none !important;}
+  #leaderboard{display: none !important;}
+.overchat{
+transform: scale(0.5) translate(-5px, 5px);
+transform-origin: bottom left;
+}
 }
 
     /* Base Reset */
@@ -578,7 +584,7 @@ backdrop-filter: blur(20px);
       overflow: hidden;
       touch-action: manipulation;
     }
-	@media (min-width: 600px) {
+	@media (min-width: 600px) { 
 		.score-info{left: 50%;}
 		#table-container {height: 340px;}
 		.skkinn {height: 50px; width: 50px;}
