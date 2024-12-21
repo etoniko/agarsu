@@ -106,12 +106,57 @@
                     </div>
 <div class="checkbox-container">
      <label><input type="checkbox" class="save" data-box-id="2" onchange="setNames(!$(this).is(':checked'));">Оключить Имена</label>
-     <label><input type="checkbox" class="save" data-box-id="3" onchange="setDarkTheme($(this).is(':checked'));">Гардиента</label>
+     <label><input type="checkbox" class="save" data-box-id="3" onchange="setDarkTheme($(this).is(':checked'));" checked>Гардиента</label>
      <label><input type="checkbox" class="save" data-box-id="4" onchange="setColors($(this).is(':checked'));">Без Цветов</label>
-     <label><input type="checkbox" class="save" data-box-id="5" onchange="setShowMass($(this).is(':checked'));">Показать Массу</label>
+     <label><input type="checkbox" class="save" data-box-id="5" onchange="setShowMass($(this).is(':checked'));" checked>Показать Массу</label>
      <label><input type="checkbox" class="save" data-box-id="6" onchange="setSmooth($(this).is(':checked'));">Простой Рендер</label>
      <label><input type="checkbox" class="save" data-box-id="7" onchange="setChatHide($(this).is(':checked'));" checked>Отключить Чат</label>
  </div>
+<script>
+    function handleCheckboxChange(checkbox, settingName) {
+        setCookie(settingName, checkbox.checked, 30); // Сохраняем куки на 30 дней
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const checkboxes = document.querySelectorAll('.checkbox-container input[type="checkbox"]');
+
+        checkboxes.forEach(checkbox => {
+            const settingName = checkbox.parentElement.textContent.trim(); // Получаем имя настройки из текста лейбла
+            let settingValue = getCookie(settingName);
+
+            if (settingValue !== null) {
+                checkbox.checked = (settingValue === 'true'); // Восстанавливаем состояние из куки
+            }
+
+             // Вызываем начальные функции
+             if(checkbox.dataset.boxId == "2")
+             {
+               setNames(!checkbox.checked);
+             }
+             if(checkbox.dataset.boxId == "3")
+             {
+                setDarkTheme(checkbox.checked);
+             }
+            if(checkbox.dataset.boxId == "4")
+             {
+                 setColors(checkbox.checked);
+             }
+            if(checkbox.dataset.boxId == "5")
+             {
+                setShowMass(checkbox.checked);
+             }
+            if(checkbox.dataset.boxId == "6")
+             {
+                setSmooth(checkbox.checked);
+             }
+             if(checkbox.dataset.boxId == "7")
+             {
+                setChatHide(checkbox.checked);
+             }
+
+        });
+    });
+</script>
                 </div>
                 <div id="skinslist" class="content">
                     <div style="display: flex;flex-direction: column;justify-content: space-around;" class="top-info">
