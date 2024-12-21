@@ -1126,7 +1126,34 @@
         drawGameScene();
     }
 
+
 function viewRange() {
+    let ratio;
+    
+    // Используем devicePixelRatio для корректного отображения на экранах с высокой плотностью пикселей
+    const dpr = window.devicePixelRatio || 1;
+
+    // Проверяем, если это мобильное устройство (ширина экрана меньше 768px)
+    if (window.innerWidth <= 768) {
+        // Для мобильных устройств учитываем ориентацию экрана
+        if (window.matchMedia("(orientation: portrait)").matches) {
+            // Вертикальная ориентация
+            ratio = Math.max(canvasHeight / 1080, canvasWidth / 1920);
+        } else {
+            // Горизонтальная ориентация
+            ratio = Math.max(canvasHeight / 1920, canvasWidth / 1080);
+        }
+    } else {
+        // Для ПК или планшетов с большим экраном
+        ratio = Math.max(canvasHeight / 1080, canvasWidth / 1920);
+    }
+
+    // Возвращаем зум с учетом устройства
+    return ratio * zoom * dpr; // Умножаем на devicePixelRatio для экрана с высокой плотностью пикселей
+}
+
+
+/*function viewRange() {
     let ratio;
 
     // Проверяем, если это мобильное устройство
@@ -1145,7 +1172,7 @@ function viewRange() {
     }
 
     return ratio * zoom; // Умножаем на значение зума
-}
+}*/
 
     function calcViewZoom() {
         if (0 != playerCells.length) {
