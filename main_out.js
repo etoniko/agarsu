@@ -1104,35 +1104,34 @@
         wHandle.requestAnimationFrame(redrawGameScene)
     }
 
-    function canvasResize() {
-        window.scrollTo(0, 0);
+   function canvasResize() {
+    window.scrollTo(0, 0);
 
-        // Используйте devicePixelRatio для корректного отображения на разных экранах
-        const dpr = window.devicePixelRatio;
+    // Используем devicePixelRatio для корректного отображения на экранах с высокой плотностью пикселей
+    const dpr = window.devicePixelRatio;
 
-        // Получите размеры окна в пикселях
-        canvasWidth = wHandle.innerWidth * dpr;
-        canvasHeight = wHandle.innerHeight * dpr;
+    // Получаем размеры окна в пикселях
+    const canvasWidth = wHandle.innerWidth * dpr;
+    const canvasHeight = wHandle.innerHeight * dpr;
 
-        // Установите размеры холста в пикселях
-        nCanvas.width = canvasWidth;
-        nCanvas.height = canvasHeight;
+    // Устанавливаем размеры канваса в пикселях
+    nCanvas.width = canvasWidth;
+    nCanvas.height = canvasHeight;
 
-        // Масштабируйте контекст холста, чтобы изображение не размывалось
-        nCanvas.style.width = `${wHandle.innerWidth}px`; // Установка стиля для правильного отображения
-        nCanvas.style.height = `${wHandle.innerHeight}px`;
+    // Масштабируем контекст канваса, чтобы изображение не размывалось
+    nCanvas.style.width = `${wHandle.innerWidth}px`; // Установка стиля для правильного отображения
+    nCanvas.style.height = `${wHandle.innerHeight}px`;
 
-        // Обновите отрисовку
-        drawGameScene();
-    }
+    // Обновляем отрисовку
+    drawGameScene();
+}
 
-// Функция для расчета коэффициента зума для отображения
 function viewRange() {
     let ratio;
 
-    // Проверяем, если это мобильное устройство
-    if (window.innerWidth <= 768) {
-        // Для мобильных устройств учитываем ориентацию экрана
+    // Проверяем, если это мобильное устройство или ПК
+    if (window.innerWidth <= 768) {  // Мобильные устройства
+        // Для мобильных устройств: определяем ориентацию экрана
         if (window.innerHeight > window.innerWidth) {
             // Вертикальная ориентация
             ratio = Math.max(canvasHeight / 1080, canvasWidth / 1920);
@@ -1140,21 +1139,26 @@ function viewRange() {
             // Горизонтальная ориентация
             ratio = Math.max(canvasHeight / 1920, canvasWidth / 1080);
         }
-    } else {
-        // Для ПК или планшетов с большим экраном
+    } else {  // Для ПК
+        // Для десктопов и планшетов с большими экранами
         ratio = Math.max(canvasHeight / 1080, canvasWidth / 1920);
     }
 
     return ratio * zoom; // Умножаем на значение зума
 }
 
-    function calcViewZoom() {
-        if (0 != playerCells.length) {
-            for (var newViewZoom = 0, i = 0; i < playerCells.length; i++) newViewZoom += playerCells[i].size;
-            newViewZoom = Math.pow(Math.min(64 / newViewZoom, 1), .4) * viewRange();
-            viewZoom = (9 * viewZoom + newViewZoom) / 10;
+function calcViewZoom() {
+    if (playerCells.length !== 0) {
+        let newViewZoom = 0;
+        for (let i = 0; i < playerCells.length; i++) {
+            newViewZoom += playerCells[i].size; // Суммируем размеры всех клеток игроков
         }
+        newViewZoom = Math.pow(Math.min(64 / newViewZoom, 1), 0.4) * viewRange(); // Применяем расчет зума
+        viewZoom = (9 * viewZoom + newViewZoom) / 10; // Сглаживаем переходы зума
     }
+}
+docment.addEventListener('resize', canvasResize);
+
 
 
     let lastDisplayedScore = 0;
