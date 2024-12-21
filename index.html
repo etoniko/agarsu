@@ -631,22 +631,27 @@
 
     </script>
 <div class="overchat">
-    <button id="toggle-chat">Открыть/Закрыть Чат</button>
     <div id="chat-container"></div>
     <input type="text" autocomplete="off" id="chat_textbox" maxlength="120" placeholder="Напишите сообщение...">
+    <button id="toggleChatButton">Скрыть чат</button> <!-- Добавили кнопку -->
 </div>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function() { // Убедимся, что DOM загружен
     const overchat = document.querySelector('.overchat');
-    const toggleButton = document.getElementById('toggle-chat');
+    const toggleChatButton = document.getElementById('toggleChatButton');
 
-    toggleButton.addEventListener('click', function() {
-        overchat.classList.toggle('closed');
-        // Можно изменить текст кнопки в зависимости от состояния чата
-        if (overchat.classList.contains('closed')) {
-          toggleButton.textContent = 'Открыть Чат';
+    // Изначальное состояние
+    let isChatHidden = false;
+
+    toggleChatButton.addEventListener('click', function() {
+        isChatHidden = !isChatHidden; // Инвертируем состояние
+
+        if (isChatHidden) {
+            overchat.classList.add('hidden');
+            toggleChatButton.textContent = 'Показать чат';
         } else {
-          toggleButton.textContent = 'Закрыть Чат';
+            overchat.classList.remove('hidden');
+            toggleChatButton.textContent = 'Скрыть чат';
         }
     });
 });
