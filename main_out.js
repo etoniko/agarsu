@@ -1126,15 +1126,11 @@
         drawGameScene();
     }
 
-function viewRange() {
-    var ratio;
-    if (canvasWidth > canvasHeight) {
-        ratio = canvasWidth / 1920;  // Для широких экранов (ориентирован по ширине)
-    } else {
-        ratio = canvasHeight / 1080;  // Для экранов по высоте
+    function viewRange() {
+        var ratio;
+        ratio = Math.max(canvasHeight / 1080, canvasWidth / 1920);
+        return ratio * zoom;
     }
-    return ratio * zoom;
-}
 
 
     function calcViewZoom() {
