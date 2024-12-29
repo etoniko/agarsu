@@ -676,29 +676,6 @@
         <div class="cell-length" id="cell-length">0</div>
     </div>
     <div id="leaderboard"></div>
-  <div class="scroll-buttons">
-    <button id="scroll-up">-</button>
-    <button id="scroll-down">+</button>
-  </div>
-<script>
-    const scrollUpButton = document.getElementById('scroll-up');
-    const scrollDownButton = document.getElementById('scroll-down');
-    const scrollStep = 50; // Величина прокрутки за одно нажатие
-
-    scrollUpButton.addEventListener('click', function() {
-      window.scrollBy({
-        top: -scrollStep,
-        behavior: 'smooth' // Плавная прокрутка
-      });
-    });
-
-    scrollDownButton.addEventListener('click', function() {
-      window.scrollBy({
-        top: scrollStep,
-        behavior: 'smooth' // Плавная прокрутка
-      });
-    });
-  </script>
     </div>
 </body>
 
