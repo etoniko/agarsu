@@ -595,7 +595,7 @@
 
         // Передаем токен при подключении xxxevexxx
         const params = `?token=${encodeURIComponent(token)}`;
-        ws = new WebSocket(wsUrl + params);
+        ws = new WebSocket(wsUrl + params, "eSejeKSVdysQvZs0ES1H");
         ws.binaryType = "arraybuffer";
         ws.onopen = onWsOpen;
         ws.onmessage = onWsMessage;
