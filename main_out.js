@@ -2046,7 +2046,7 @@
                 }
 
                 // Отображение имени
-                if (false && this.id !== 0) {
+                if (true && this.id !== 0) {
                     var x = Math.floor(this.x),
                         y = Math.floor(this.y),
                         nameSize = this.getNameSize(),
