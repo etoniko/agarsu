@@ -438,40 +438,66 @@ _tmr.push({id: "3595798", type: "pageView", start: (new Date()).getTime()});
                                 class="fas fa-play"></i> ИГРАТЬ</button>
 
                         <script>
-                            let playButtonClickCount = 0; // Счётчик нажатий
-                            let serverSet = false; // Флаг, чтобы вызвать setserver только один раз
+                           let gameCount = 0;
+let lastAdTimestamp = 0;
+let serverSet = false;
 
-                            async function startGame() {
+async function startGame() {
+  const currentTime = Date.now();
 
-                                setNick(document.getElementById('nick').value);
+  // setNick выполняется только один раз
+  if (!serverSet) {
+    setNick(document.getElementById('nick').value);
+    serverSet = true;
+    console.log('setNick выполнен.');
+  }
 
-                                // Проверяем, инициализирован ли Yandex SDK, и запускаем геймплей
-                                if (window.ysdk) {
-                                    window.ysdk.features.GameplayAPI?.start();
-                                    console.log("Геймплей начат");
-                                } else {
-                                    console.warn("SDK Яндекс Игр не инициализирован");
-                                }
 
-                                playButtonClickCount++; // Увеличиваем счётчик
+  gameCount++;
+  console.log(`Игровой счетчик: ${gameCount}`);
 
-                                const buttonText = document.getElementById("button-text");
 
-                                if (playButtonClickCount === 2) {
-                                }
+  // Проверяем, инициализирован ли Yandex SDK, и запускаем геймплей
+  if (window.ysdk) {
+    window.ysdk.features.GameplayAPI?.start();
+    console.log("Геймплей начат");
+  } else {
+    console.warn("SDK Яндекс Игр не инициализирован");
+    return; //  Возвращаем, чтобы не пытаться показать рекламу
+  }
 
-                                if (playButtonClickCount === 3) {
-                                    playButtonClickCount = 0; // Сбрасываем счётчик после третьего нажатия
+  // Проверяем таймаут и количество запусков
+  if (gameCount % 3 === 0 && (currentTime - lastAdTimestamp >= 60000)) { // 60 секунд (1 минута)
+      const adShown = await showYandexAds();
+      if (adShown) {
+          lastAdTimestamp = currentTime;
+      }
+  }
+}
 
-                                    try {
-                                        await window.ysdk.adv.showFullscreenAdv(); // Показ рекламы
-                                        console.log("Реклама показана успешно");
-                                    } catch (error) {
-                                        console.error("Ошибка при показе рекламы:", error);
-                                    } finally {
-                                    }
-                                }
-                            }
+
+async function showYandexAds() {
+    try {
+      if (window.ysdk) {
+        await window.ysdk.adv.showFullscreenAdv();
+        console.log("Реклама показана успешно (Yandex)");
+        return true;
+      } else {
+        console.error("Yandex SDK не инициализирован для показа рекламы");
+        return false;
+      }
+    } catch (error) {
+      console.error("Ошибка при показе рекламы (Yandex):", error);
+      return false;
+    }
+}
+
+
+const playButton = document.getElementById('button-text');
+if (playButton) {
+    console.log('Обработчик нажатия добавлен.');
+    playButton.addEventListener('click', startGame);
+}
                         </script>
                         <!-- change div -> button | Disabled button xxxevexxx -->
                         <button id="button-spec" class="spec" onclick="spectate();"><i class="fas fa-eye"></i>
