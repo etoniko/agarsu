@@ -38,7 +38,7 @@
             const domain = CONNECTION_URL || window.location.hostname; // Используем текущий домен если CONNECTION_URL не задан
 
             // Формируем URL для запроса статистики
-            const statsUrl = `https://${domain}/checkStats`;
+            const statsUrl = `https://${domain}/test1/checkStats`;
 
             // Выполняем запрос
             const response = await fetch(statsUrl, { method: 'GET' });
