@@ -997,7 +997,7 @@
             if (type === 1) {
                 posX = leftPos + (rightPos * 2) * normalizeFractlPart(nodeid);
                 posY = topPos + (bottomPos * 2) * normalizeFractlPart(nodeid * nodeid);
-                size = 30;//foodMinSize + nodeid % ((foodMaxSize - foodMinSize) + 1);
+                size = foodMinSize + nodeid % ((foodMaxSize - foodMinSize) + 1);
             }
             else {
                 posX = reader.int32();
