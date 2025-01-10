@@ -28,8 +28,54 @@
     }
 
     fetchSkinList();
+
+  // Функция для проверки, что игра работает на платформе Яндекс Игр
+    function isYandexGamesPlatform() {
+        try {
+            // Проверка, что родительский домен - это Яндекс Игры
+            return window.location !== window.parent.location && document.referrer.includes('yandex');
+        } catch (e) {
+            return false;
+        }
+    }
+
+    // Асинхронная функция для инициализации SDK Яндекс Игр
+    async function initYandexSDK() {
+        if (isYandexGamesPlatform()) {
+            try {
+                // Инициализация SDK Яндекс Игр
+                const ysdk = await YaGames.init();
+                console.log('Yandex SDK initialized');
+                window.ysdk = ysdk;
+
+                // Проверяем, доступен ли LoadingAPI и ожидаем, что он будет готов
+                if (ysdk.features && ysdk.features.LoadingAPI) {
+                    await ysdk.features.LoadingAPI.ready();
+                    console.log('Платформа готова, игра может начаться');
+
+                    // Показываем рекламу сразу после загрузки SDK
+                    if (ysdk.adv) {
+                        await ysdk.adv.showFullscreenAdv();
+                        console.log('Реклама показана');
+                    } else {
+                        console.warn('Реклама недоступна');
+                    }
+                } else {
+                    console.warn('LoadingAPI не доступен');
+                }
+
+            } catch (err) {
+                console.error('Ошибка инициализации SDK Яндекс Игр:', err);
+            }
+        } else {
+            console.warn('SDK Яндекс Игр доступен только на платформе Яндекс Игр');
+        }
+    }
+
+    // Вызываем инициализацию SDK
+    initYandexSDK();
     // Периодически проверяем изменения в skinList.txt
-    //setInterval(fetchSkinList, 10000); // Проверяем каждые 60 секунд
+    // setInterval(fetchSkinList, 10000); // Проверяем каждые 60 секунд
 
     // Функция для загрузки данных о топ-1 игроке
     wHandle.chekstats = async function () {
@@ -153,7 +199,7 @@
             }
 
             // Открываем ввод капчи на экран
-            showCaptchashowCaptcha();
+            showCaptcha();
 
             // Attempt to reconnect with the new server.
             // if (captokenCloudflare) {
@@ -180,10 +226,11 @@
         };
 
         const updateMouseAim = () => {
+            // border limit
             let x = X < rightPos ? X : rightPos;
             let y = Y < bottomPos ? Y : bottomPos;
-            x = -rightPos > x ? -rightPos : x;
-            y = -bottomPos > y ? -bottomPos : y;
+            x = -leftPos > x ? -leftPos : x;
+            y = -topPos > y ? -topPos : y;
 
             // change cords
             posX = x;
@@ -372,7 +419,6 @@
         wjQuery("#overlays").show();
 
         showCaptcha();
-        // wsConnect("");
     }
 
     const dpr = window.devicePixelRatio;
@@ -583,10 +629,6 @@
         }
         var c = CONNECTION_URL;
         wsUrl = (useHttps ? "wss://" : "ws://") + c;
-
-        // var c = "ws://localhost:3000/";
-        // wsUrl = c;
-
         nodesOnScreen = [];
         playerCells = [];
         nodes = {};
@@ -651,41 +693,6 @@
         handleWsMessage(new DataView(msg.data));
     }
 
-    class BinaryReader {
-        constructor(view) {
-            this.view = view;
-            this.byteLength = view.byteLength;
-        }
-        get canRead() {
-            return this.offset < this.byteLength;
-        }
-        uint8() {
-            return this.view.getUint8(this.offset++);
-        }
-        int8() {
-            return this.view.getInt8(this.offset++);
-        }
-        uint16() {
-            return this.view.getUint16((this.offset += 2) - 2, true);
-        }
-        int16() {
-            return this.view.getInt16((this.offset += 2) - 2, true);
-        }
-        uint32() {
-            return this.view.getUint32((this.offset += 4) - 4, true);
-        }
-        int32() {
-            return this.view.getInt32((this.offset += 4) - 4, true);
-        }
-        utf16() {
-            let str = "";
-            let char;
-            while (this.canRead && (char = this.uint16())) str += String.fromCharCode(char);
-            return str;
-        }
-    };
-    BinaryReader.prototype.offset = 0;
-
     function handleWsMessage(msg) {
         let offset = 0;
         let setCustomLB = false;
@@ -707,9 +714,7 @@
         switch (messageType) {
             case 16:
                 // Update nodes
-                const reader = new BinaryReader(msg);
-                reader.offset++; // skip messageType
-                updateNodes(reader);
+                updateNodes(msg, offset);
                 break;
             case 17:
                 // Update position
@@ -797,13 +802,6 @@
                 offset += 8;
                 bottomPos = msg.getFloat64(offset, true);
                 offset += 8;
-                foodMinSize = (msg.getUint16(offset, true) * 100) ** .5;
-                offset += 2;
-                foodMaxSize = (msg.getUint16(offset, true) * 100) ** .5;
-                offset += 2;
-
-                mapWidth = (rightPos + leftPos) / 2;
-                mapHeight = (bottomPos + topPos) / 2;
 
                 posX = (rightPos + leftPos) / 2;
                 posY = (bottomPos + topPos) / 2;
@@ -964,17 +962,33 @@
         chatDiv.scrollTop = chatDiv.scrollHeight;
     }
 
-    const normalizeFractlPart = n => {
-        const result = n * 0.15915494309189535; // 1 / (2 * Math.PI); => 0.15915494309189535
-        return result - (result | 0);
-    };
+    async function showSDK() {
+        // Проверяем, что SDK инициализирован и игра запущена на платформе Яндекс Игр
+        if (window.ysdk && isYandexGamesPlatform()) {
+            try {
+                // Останавливаем геймплей и ждем завершения
+                await window.ysdk.features.GameplayAPI?.stop();
+                console.log("Геймплей остановлен");
+            } catch (err) {
+                console.error("Ошибка при работе с SDK Яндекс Игр:", err);
+            }
+        } else {
+            console.warn("SDK Яндекс Игр не инициализирован или игра не на платформе Яндекс Игр");
+        }
+    }
 
-    function updateNodes(reader) {
-        timestamp = Date.now();
+
+    function updateNodes(view, offset) {
+        timestamp = +new Date;
+        var code = Math.random();
         ua = false;
-        for (let killerId; killerId = reader.uint32();) {
-            var killer = nodes[killerId],
-                killedNode = nodes[reader.uint32()];
+        var queueLength = view.getUint16(offset, true);
+        offset += 2;
+
+        for (i = 0; i < queueLength; ++i) {
+            var killer = nodes[view.getUint32(offset, true)],
+                killedNode = nodes[view.getUint32(offset + 4, true)];
+            offset += 8;
             if (killer && killedNode) {
                 killedNode.destroy();
                 killedNode.ox = killedNode.x;
@@ -987,37 +1001,48 @@
             }
         }
 
-        for (let nodeid; nodeid = reader.uint32();) {
-            const type = reader.uint8();
+        for (var i = 0; ;) {
+            var nodeid = view.getUint32(offset, true);
+            offset += 4;
+            if (0 == nodeid) break;
+            ++i;
 
-            let posX = 0;
-            let posY = 0;
-            let size = 0;
+            var size, posY, posX = view.getInt32(offset, true);
+            offset += 4;
+            posY = view.getInt32(offset, true);
+            offset += 4;
+            size = view.getInt16(offset, true);
+            offset += 2;
 
-            if (type === 1) {
-                posX = leftPos + (rightPos * 2) * normalizeFractlPart(nodeid);
-                posY = topPos + (bottomPos * 2) * normalizeFractlPart(nodeid * nodeid);
-                size = foodMinSize + nodeid % ((foodMaxSize - foodMinSize) + 1);
-            }
-            else {
-                posX = reader.int32();
-                posY = reader.int32();
-                size = reader.uint16();
-            }
-
-            for (var r = reader.uint8(), g = reader.uint8(), b = reader.uint8(),
+            for (var r = view.getUint8(offset++), g = view.getUint8(offset++), b = view.getUint8(offset++),
                 color = (r << 16 | g << 8 | b).toString(16); 6 > color.length;) color = "0" + color;
             var colorstr = "#" + color,
-                flags = reader.uint8(),
+                flags = view.getUint8(offset++),
                 flagVirus = !!(flags & 0x01),
                 flagEjected = !!(flags & 0x20),
                 flagAgitated = !!(flags & 0x10),
                 _skin = "";
 
-            const name = reader.utf16();
+            flags & 2 && (offset += 4);
 
-            let node = nodes[nodeid];
-            if (node) {
+            if (flags & 4) {
+                for (; ;) { // skin name
+                    t = view.getUint8(offset, true) & 0x7F;
+                    offset += 1;
+                    if (0 == t) break;
+                    _skin += String.fromCharCode(t);
+                }
+            }
+
+            for (var char, name = ""; ;) { // nick name
+                char = view.getUint16(offset, true);
+                offset += 2;
+                if (0 == char) break;
+                name += String.fromCharCode(char);
+            }
+
+            var node = null;
+            if (nodes.hasOwnProperty(nodeid)) {
                 node = nodes[nodeid];
                 node.updatePos();
                 node.ox = node.x;
@@ -1037,6 +1062,7 @@
             node.nx = posX;
             node.ny = posY;
             node.setSize(size);
+            node.updateCode = code;
             node.updateTime = timestamp;
             node.flag = flags;
             name && node.setName(name);
@@ -1049,14 +1075,17 @@
                 }
             }
         }
-
-        while (reader.canRead) {
-            const node = nodes[reader.uint32()];
+        queueLength = view.getUint32(offset, true);
+        offset += 4;
+        for (i = 0; i < queueLength; i++) {
+            var nodeId = view.getUint32(offset, true);
+            offset += 4;
+            node = nodes[nodeId];
             null != node && node.destroy();
         }
-
         if (ua && playerCells.length === 0) {
             showOverlays(false);  // Hide overlays
+            showSDK();  // Show SDK ad
         }
     }
 
@@ -1130,7 +1159,7 @@
     }
 
 
-    function redrawGameScene() {
+     function redrawGameScene() {
         drawGameScene();
         wHandle.requestAnimationFrame(redrawGameScene)
     }
@@ -1635,10 +1664,6 @@
         topPos = 0,
         rightPos = 1E4,
         bottomPos = 1E4,
-        foodMinSize = 0,
-        foodMaxSize = 0,
-        mapWidth = 0,
-        mapHeight = 0,
         viewZoom = 1,
         showSkin = true,
         showName = true,
@@ -1780,6 +1805,7 @@
         nSize: 0,
         flag: 0,
         updateTime: 0,
+        updateCode: 0,
         drawTime: 0,
         destroyed: false,
         isVirus: false,
@@ -2347,47 +2373,47 @@
     const getXp = level => ~~(100 * (level ** 2 / 2));
     const getLevel = xp => ~~((xp / 100 * 2) ** .5);
 
-    const displayAccountData = () => {
-        const currLevel = getLevel(accountData.xp); // Получаем текущий уровень
-        const nextXp = getXp(currLevel + 1); // Получаем XP для следующего уровня
-        const progressPercent = (accountData.xp / nextXp) * 100; // Рассчитываем процент прогресса
+const displayAccountData = () => {
+    const currLevel = getLevel(accountData.xp); // Получаем текущий уровень
+    const nextXp = getXp(currLevel + 1); // Получаем XP для следующего уровня
+    const progressPercent = (accountData.xp / nextXp) * 100; // Рассчитываем процент прогресса
 
-        // Обновляем текст с XP
-        const userXPElement = document.getElementById("userXP")?.querySelector(".status-value");
-        if (userXPElement) {
-            userXPElement.textContent = `${accountData.xp}/${nextXp}`;
-        }
+    // Обновляем текст с XP
+    const userXPElement = document.getElementById("userXP")?.querySelector(".status-value");
+    if (userXPElement) {
+        userXPElement.textContent = `${accountData.xp}/${nextXp}`;
+    }
 
-        // Обновляем текст с уровнем
-        const userLevelElement = document.getElementById("userLevel")?.querySelector(".status-value");
-        if (userLevelElement) {
-            userLevelElement.textContent = currLevel;
-        }
+    // Обновляем текст с уровнем
+    const userLevelElement = document.getElementById("userLevel")?.querySelector(".status-value");
+    if (userLevelElement) {
+        userLevelElement.textContent = currLevel;
+    }
 
-        // Обновляем прогресс бар
-        const progressBar = document.querySelector(".progress-fill");
-        if (progressBar) {
-            progressBar.style.width = `${progressPercent}%`;
-        }
+    // Обновляем прогресс бар
+    const progressBar = document.querySelector(".progress-fill");
+    if (progressBar) {
+        progressBar.style.width = `${progressPercent}%`;
+    }
 
-        // Обновляем круг с уровнем
-        const levelCircle = document.getElementById("levelCircle");
-        if (levelCircle) {
-            levelCircle.textContent = currLevel;
-        }
+    // Обновляем круг с уровнем
+    const levelCircle = document.getElementById("levelCircle");
+    if (levelCircle) {
+        levelCircle.textContent = currLevel;
+    }
 
-        // Обновляем текст с прогрессом
-        const progressText = document.getElementById("progressText");
-        if (progressText) {
-            progressText.textContent = `${Math.round(progressPercent)}% (${accountData.xp}/${nextXp})`;
-        }
+    // Обновляем текст с прогрессом
+    const progressText = document.getElementById("progressText");
+    if (progressText) {
+        progressText.textContent = `${Math.round(progressPercent)}% (${accountData.xp}/${nextXp})`;
+    }
 
-        // Отображаем account_id, если элемент существует
-        const accountIDElement = document.getElementById("accountID");
-        if (accountIDElement) {
-            accountIDElement.textContent = `ID: ${accountData.uid}`;
-        }
-    };
+    // Отображаем account_id, если элемент существует
+    const accountIDElement = document.getElementById("accountID");
+    if (accountIDElement) {
+        accountIDElement.textContent = `ID: ${accountData.uid}`;
+    }
+};
 
 
 
