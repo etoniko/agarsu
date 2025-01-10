@@ -29,7 +29,7 @@
 
     fetchSkinList();
     // Периодически проверяем изменения в skinList.txt
-    setInterval(fetchSkinList, 10000); // Проверяем каждые 60 секунд
+    //setInterval(fetchSkinList, 10000); // Проверяем каждые 60 секунд
 
     // Функция для загрузки данных о топ-1 игроке
     wHandle.chekstats = async function () {
