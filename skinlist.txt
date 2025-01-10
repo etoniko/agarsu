@@ -4,6 +4,8 @@ console:zt0uI2g
 игрок:PPFtwqH
 муха:tq33YWv
 паук:dzQIxk0
+россия:4FtEQxh
+russia:4FtEQxh
 кактус:fpDpEl9
 могучая:roUvNMV
 дарья:p7sEnBa
