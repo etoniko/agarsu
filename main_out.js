@@ -995,8 +995,8 @@
             let size = 0;
 
             if (type === 1) {
-                posX = leftPos + (rightPos * 2) * normalizeFractlPart(nodeid);
-                posY = topPos + (bottomPos * 2) * normalizeFractlPart(nodeid * nodeid);
+                posX = leftPos + (rightPos * 2) * normalizeFractlPart(n % 65535);
+                posY = topPos + (bottomPos * 2) * normalizeFractlPart((n % 65535) * (n % 65535));
                 size = foodMinSize + nodeid % ((foodMaxSize - foodMinSize) + 1);
             }
             else {
