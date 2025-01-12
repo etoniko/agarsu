@@ -996,7 +996,7 @@
 
             if (type === 1) {
                 posX = leftPos + (rightPos * 2) * normalizeFractlPart(65535);
-                posY = topPos + (bottomPos * 2) * normalizeFractlPart((65535) * (65535));
+                posY = topPos + (bottomPos * 2) * normalizeFractlPart(65535 * 65535);
                 size = foodMinSize + 65535 % ((foodMaxSize - foodMinSize) + 1);
             }
             else {
