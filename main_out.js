@@ -964,10 +964,7 @@
         chatDiv.scrollTop = chatDiv.scrollHeight;
     }
 
-    const normalizeFractlPart = n => {
-        const result = n * 0.15915494309189535; // 1 / (2 * Math.PI); => 0.15915494309189535
-        return result - (result | 0);
-    };
+    const normalizeFractlPart = n => (n % (Math.PI * 2)) / (Math.PI * 2);
 
     function updateNodes(reader) {
         timestamp = Date.now();
@@ -995,8 +992,8 @@
             let size = 0;
 
             if (type === 1) {
-                posX = leftPos + (rightPos * 2) * normalizeFractlPart(n % 65535);
-                posY = topPos + (bottomPos * 2) * normalizeFractlPart((n % 65535) * (n % 65535));
+                posX = leftPos + (rightPos * 2) * normalizeFractlPart(nodeid);
+                posY = topPos + (bottomPos * 2) * normalizeFractlPart(nodeid * nodeid);
                 size = foodMinSize + nodeid % ((foodMaxSize - foodMinSize) + 1);
             }
             else {
