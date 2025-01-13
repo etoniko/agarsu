@@ -227,6 +227,23 @@ document.addEventListener("DOMContentLoaded", async () => {
                             <div class="previous-skin" id="prevSkin" onclick="showPrevious()"></div>
                             <div class="arrow" id="previous" onclick="showPrevious()">&#10094;</div>
                             <div onclick="showContent('skinslist')" id="skinss" class="main-skin"></div>
+<script>
+						document.addEventListener('userInfoLoaded', (event) => {
+    // Получаем информацию о пользователе из события
+    const userInfo = event.detail;
+
+    // Применяем фотографию пользователя
+    if (userInfo.photo_200) {
+        // Например, использовать photo_200 как фоновое изображение
+        const skinElement = document.getElementById("skinss");
+        if (skinElement) {
+            skinElement.style.backgroundImage = `url('${userInfo.photo_200}')`;
+            skinElement.style.backgroundSize = "cover";
+            skinElement.style.backgroundPosition = "center";
+        }
+    }
+});
+</script>
                             <div class="arrow" id="next" onclick="showNext()">&#10095;</div>
                             <div class="next-skin" id="nextSkin" onclick="showNext()"></div>
                         </div>
