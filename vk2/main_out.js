@@ -29,7 +29,7 @@
 
     fetchSkinList();
     // Периодически проверяем изменения в skinList.txt
-    // setInterval(fetchSkinList, 10000); // Проверяем каждые 60 секунд
+    //setInterval(fetchSkinList, 10000); // Проверяем каждые 60 секунд
 
     // Функция для загрузки данных о топ-1 игроке
     wHandle.chekstats = async function () {
@@ -156,8 +156,8 @@
             showCaptcha();
 
             // Attempt to reconnect with the new server.
-            // if (captchaTokenCloudflare) {
-            //     showConnecting(captchaTokenCloudflare);
+            // if (captokenCloudflare) {
+            //     showConnecting(captokenCloudflare);
             // } else {
             //     console.log("Captcha token is not available yet.");
             // }
@@ -168,7 +168,7 @@
         ma = true;
         document.getElementById("canvas").focus();
         var isTyping = false;
-        var chattxt;
+        var txt;
         mainCanvas = nCanvas = document.getElementById("canvas");
         ctx = mainCanvas.getContext("2d");
 
@@ -180,11 +180,10 @@
         };
 
         const updateMouseAim = () => {
-            // border limit
             let x = X < rightPos ? X : rightPos;
             let y = Y < bottomPos ? Y : bottomPos;
-            x = -leftPos > x ? -leftPos : x;
-            y = -topPos > y ? -topPos : y;
+            x = -rightPos > x ? -rightPos : x;
+            y = -bottomPos > y ? -bottomPos : y;
 
             // change cords
             posX = x;
@@ -373,6 +372,7 @@
         wjQuery("#overlays").show();
 
         showCaptcha();
+        // wsConnect("");
     }
 
     const dpr = window.devicePixelRatio;
@@ -479,7 +479,7 @@
         zoom *= Math.pow(.9, event.wheelDelta / -120 || event.detail || 0);
         if (zoom < 0) zoom = 1;
         if (zoom > 4 / viewZoom) zoom = 4 / viewZoom;
-        if (zoom < 0.6) zoom = 0.6;
+        if (zoom < 0.3) zoom = 0.3;
     }
 
     function isMouseOverElement(element) {
@@ -570,7 +570,7 @@
     };
 
 
-    function wsConnect(wsUrl, token) {
+    function wsConnect(undefined, token) {
         if (ws) {
             ws.onopen = null;
             ws.onmessage = null;
@@ -581,8 +581,12 @@
             }
             ws = null
         }
-        var c = CONNECTION_URL; // local
-        wsUrl = (useHttps ? "wss://" : "ws://") + c; // local
+        var c = CONNECTION_URL;
+        wsUrl = (useHttps ? "wss://" : "ws://") + c;
+
+        // var c = "ws://localhost:3000/";
+        // wsUrl = c;
+
         nodesOnScreen = [];
         playerCells = [];
         nodes = {};
@@ -595,7 +599,7 @@
 
         // Передаем токен при подключении xxxevexxx
         const params = `?token=${encodeURIComponent(token)}`;
-        ws = new WebSocket(wsUrl + params);
+        ws = new WebSocket(wsUrl + params, "eSejeKSVdysQvZs0ES1H");
         ws.binaryType = "arraybuffer";
         ws.onopen = onWsOpen;
         ws.onmessage = onWsMessage;
@@ -621,18 +625,19 @@
         var msg;
         // delay = 500;
         wjQuery("#connecting").hide();
+
+        sendAccountToken();
+
         msg = prepareData(5);
         msg.setUint8(0, 254);
-
-        //msg.isSpectating = true;
-        //sendUint8(1);
-
         msg.setUint32(1, 5, true); // Protocol 5
         wsSend(msg);
+
         msg = prepareData(5);
         msg.setUint8(0, 255);
         msg.setUint32(1, 0, true);
         wsSend(msg);
+
         sendNickName();
         log.info("Connection successful!");
     }
@@ -645,6 +650,41 @@
     function onWsMessage(msg) {
         handleWsMessage(new DataView(msg.data));
     }
+
+    class BinaryReader {
+        constructor(view) {
+            this.view = view;
+            this.byteLength = view.byteLength;
+        }
+        get canRead() {
+            return this.offset < this.byteLength;
+        }
+        uint8() {
+            return this.view.getUint8(this.offset++);
+        }
+        int8() {
+            return this.view.getInt8(this.offset++);
+        }
+        uint16() {
+            return this.view.getUint16((this.offset += 2) - 2, true);
+        }
+        int16() {
+            return this.view.getInt16((this.offset += 2) - 2, true);
+        }
+        uint32() {
+            return this.view.getUint32((this.offset += 4) - 4, true);
+        }
+        int32() {
+            return this.view.getInt32((this.offset += 4) - 4, true);
+        }
+        utf16() {
+            let str = "";
+            let char;
+            while (this.canRead && (char = this.uint16())) str += String.fromCharCode(char);
+            return str;
+        }
+    };
+    BinaryReader.prototype.offset = 0;
 
     function handleWsMessage(msg) {
         let offset = 0;
@@ -667,7 +707,9 @@
         switch (messageType) {
             case 16:
                 // Update nodes
-                updateNodes(msg, offset);
+                const reader = new BinaryReader(msg);
+                reader.offset++; // skip messageType
+                updateNodes(reader);
                 break;
             case 17:
                 // Update position
@@ -719,10 +761,17 @@
                 for (let i = 0; i < LBplayerNum; ++i) {
                     const nodeId = msg.getUint32(offset, true);
                     offset += 4;
+
                     const playerName = getString();
+
+                    const playerXp = msg.getUint32(offset, true);
+                    offset += 4;
+                    const level = playerXp ? getLevel(playerXp) : -1;
+
                     leaderBoard.push({
                         id: nodeId,
-                        name: playerName
+                        name: playerName,
+                        level
                     });
                 }
                 drawLeaderBoard();
@@ -748,6 +797,13 @@
                 offset += 8;
                 bottomPos = msg.getFloat64(offset, true);
                 offset += 8;
+                foodMinSize = (msg.getUint16(offset, true) * 100) ** .5;
+                offset += 2;
+                foodMaxSize = (msg.getUint16(offset, true) * 100) ** .5;
+                offset += 2;
+
+                mapWidth = (rightPos + leftPos) / 2;
+                mapHeight = (bottomPos + topPos) / 2;
 
                 posX = (rightPos + leftPos) / 2;
                 posY = (bottomPos + topPos) / 2;
@@ -762,6 +818,11 @@
             case 99:
                 // Add chat message
                 addChat(msg, offset);
+                break;
+            case 114:
+                // Update eXP
+                const xp = msg.getUint32(offset, true);
+                onUpdateXp(xp);
                 break;
         }
     }
@@ -903,20 +964,14 @@
         chatDiv.scrollTop = chatDiv.scrollHeight;
     }
 
+    const normalizeFractlPart = n => (n % (Math.PI * 2)) / (Math.PI * 2);
 
-
-
-    function updateNodes(view, offset) {
-        timestamp = +new Date;
-        var code = Math.random();
+    function updateNodes(reader) {
+        timestamp = Date.now();
         ua = false;
-        var queueLength = view.getUint16(offset, true);
-        offset += 2;
-
-        for (i = 0; i < queueLength; ++i) {
-            var killer = nodes[view.getUint32(offset, true)],
-                killedNode = nodes[view.getUint32(offset + 4, true)];
-            offset += 8;
+        for (let killerId; killerId = reader.uint32();) {
+            var killer = nodes[killerId],
+                killedNode = nodes[reader.uint32()];
             if (killer && killedNode) {
                 killedNode.destroy();
                 killedNode.ox = killedNode.x;
@@ -929,48 +984,37 @@
             }
         }
 
-        for (var i = 0; ;) {
-            var nodeid = view.getUint32(offset, true);
-            offset += 4;
-            if (0 == nodeid) break;
-            ++i;
+        for (let nodeid; nodeid = reader.uint32();) {
+            const type = reader.uint8();
 
-            var size, posY, posX = view.getInt32(offset, true);
-            offset += 4;
-            posY = view.getInt32(offset, true);
-            offset += 4;
-            size = view.getInt16(offset, true);
-            offset += 2;
+            let posX = 0;
+            let posY = 0;
+            let size = 0;
 
-            for (var r = view.getUint8(offset++), g = view.getUint8(offset++), b = view.getUint8(offset++),
+            if (type === 1) {
+                posX = leftPos + (rightPos * 2) * normalizeFractlPart(nodeid);
+                posY = topPos + (bottomPos * 2) * normalizeFractlPart(nodeid * nodeid);
+                size = foodMinSize + nodeid % ((foodMaxSize - foodMinSize) + 1);
+            }
+            else {
+                posX = reader.int32();
+                posY = reader.int32();
+                size = reader.uint16();
+            }
+
+            for (var r = reader.uint8(), g = reader.uint8(), b = reader.uint8(),
                 color = (r << 16 | g << 8 | b).toString(16); 6 > color.length;) color = "0" + color;
             var colorstr = "#" + color,
-                flags = view.getUint8(offset++),
+                flags = reader.uint8(),
                 flagVirus = !!(flags & 0x01),
                 flagEjected = !!(flags & 0x20),
                 flagAgitated = !!(flags & 0x10),
                 _skin = "";
 
-            flags & 2 && (offset += 4);
+            const name = reader.utf16();
 
-            if (flags & 4) {
-                for (; ;) { // skin name
-                    t = view.getUint8(offset, true) & 0x7F;
-                    offset += 1;
-                    if (0 == t) break;
-                    _skin += String.fromCharCode(t);
-                }
-            }
-
-            for (var char, name = ""; ;) { // nick name
-                char = view.getUint16(offset, true);
-                offset += 2;
-                if (0 == char) break;
-                name += String.fromCharCode(char);
-            }
-
-            var node = null;
-            if (nodes.hasOwnProperty(nodeid)) {
+            let node = nodes[nodeid];
+            if (node) {
                 node = nodes[nodeid];
                 node.updatePos();
                 node.ox = node.x;
@@ -990,7 +1034,6 @@
             node.nx = posX;
             node.ny = posY;
             node.setSize(size);
-            node.updateCode = code;
             node.updateTime = timestamp;
             node.flag = flags;
             name && node.setName(name);
@@ -1003,14 +1046,12 @@
                 }
             }
         }
-        queueLength = view.getUint32(offset, true);
-        offset += 4;
-        for (i = 0; i < queueLength; i++) {
-            var nodeId = view.getUint32(offset, true);
-            offset += 4;
-            node = nodes[nodeId];
+
+        while (reader.canRead) {
+            const node = nodes[reader.uint32()];
             null != node && node.destroy();
         }
+
         if (ua && playerCells.length === 0) {
             showOverlays(false);  // Hide overlays
         }
@@ -1034,6 +1075,15 @@
         }
     }
 
+    const sendAccountToken = () => {
+        const token = localStorage.accountToken;
+        if (wsIsOpen() && token) {
+            const msg = prepareData(1 + 2 * token.length);
+            msg.setUint8(0, 114);
+            for (var i = 0; i < token.length; ++i) msg.setUint16(1 + 2 * i, token.charCodeAt(i), true);
+            wsSend(msg);
+        }
+    };
 
     function sendNickName() {
         if (wsIsOpen() && userNickName != null) {
@@ -1110,6 +1160,7 @@
         return ratio * zoom;
     }
 
+
     function calcViewZoom() {
         if (0 != playerCells.length) {
             for (var newViewZoom = 0, i = 0; i < playerCells.length; i++) newViewZoom += playerCells[i].size;
@@ -1117,6 +1168,8 @@
             viewZoom = (9 * viewZoom + newViewZoom) / 10;
         }
     }
+
+
 
 
     let lastDisplayedScore = 0;
@@ -1496,6 +1549,7 @@
                 // Если не нужно отображать командные очки
                 for (let b = 0; b < leaderBoard.length; ++b) {
                     let name = leaderBoard[b].name; // Имя игрока
+                    const level = leaderBoard[b].level; // Level игрока
                     if (!showName) {
                         name = ""; // Если имя не отображается
                     }
@@ -1510,16 +1564,17 @@
                     if (b < displayedPlayers) {
                         const entryDiv = document.createElement("div");
                         entryDiv.style.color = isMe ? "#FFAAAA" : "#FFFFFF"; // Цвет строки для isMe
-                        entryDiv.innerText = (!noRanking ? `${b + 1}. ` : "") + name; // Добавляем ранг
+                        entryDiv.innerHTML = (!noRanking ? `${b + 1}. ` : "") + (level !== -1 ? "<div class='star-container'><i class='fas fa-star'></i><span class='levelme'>" + level + "</span></div>" : "") + name; // Добавляем ранг
                         leaderboardDiv.appendChild(entryDiv); // Добавляем запись в leaderboardDiv
                     }
                 }
 
                 // Если мой ранг больше 10, показываем его на 11-й строке
                 if (myRank && myRank > displayedPlayers) {
+                    const level = accountData ? getLevel(accountData.xp) : -1;
                     const myRankDiv = document.createElement("div");
                     myRankDiv.style.color = "#FFAAAA"; // Цвет строки для isMe в 11-й позиции
-                    myRankDiv.innerText = `${myRank}. ${playerCells[0].name}`; // Показываем мой ранг и имя
+                    myRankDiv.innerHTML = myRank + "." + (level !== -1 ? "<div class='star-container'><i class='fas fa-star'></i><span class='levelme'>" + level + "</span></div>" : "") + playerCells[0].name; // Показываем мой ранг и имя
                     leaderboardDiv.appendChild(myRankDiv);
                 }
             } else {
@@ -1555,9 +1610,6 @@
         ustrokecolor && (this._strokeColor = ustrokecolor)
     }
 
-
-    // var localProtocol = wHandle.location.protocol;
-    // localProtocolHttps = "https:" == localProtocol;
     var nCanvas, ctx, mainCanvas, lbCanvas, chatCanvas, canvasWidth, canvasHeight, qTree = null,
         ws = null,
         nodeX = 0,
@@ -1580,6 +1632,10 @@
         topPos = 0,
         rightPos = 1E4,
         bottomPos = 1E4,
+        foodMinSize = 0,
+        foodMaxSize = 0,
+        mapWidth = 0,
+        mapHeight = 0,
         viewZoom = 1,
         showSkin = true,
         showName = true,
@@ -1648,7 +1704,6 @@
         }
     }
     wHandle.spectate = function () {
-        //  showConnecting(captchaTokenCloudflare); // local
         userNickName = null;
         // wHandle.isSpectating = true;
         // sendUint8(1);
@@ -1722,7 +1777,6 @@
         nSize: 0,
         flag: 0,
         updateTime: 0,
-        updateCode: 0,
         drawTime: 0,
         destroyed: false,
         isVirus: false,
@@ -1943,7 +1997,7 @@
                 var skinId = skinList[skinName];
                 var skinImage = null;
 
-                if (skinId) {
+                              if (skinId) {
                     // Загружаем изображение скина только если ID найден в skinList
                     if (!skins.hasOwnProperty(skinId)) {
                         skins[skinId] = new Image();
@@ -1993,7 +2047,7 @@
                     ctx.restore();
                 }
 
-                // Отображение имени
+// Отображение имени
                 if (this.id !== 0) {
                     var x = Math.floor(this.x),
                         y = Math.floor(this.y),
@@ -2001,7 +2055,9 @@
                         zoomRatio = Math.ceil(10 * viewZoom) * 0.1,
                         invZoomRatio = 1 / zoomRatio;
 
-                    if ((showName || playerCells.includes(this)) && this.name && this.nameCache) {
+
+                    // Скрываем имя, если this.size > 100
+                    if (this.size > 100 && (showName || playerCells.includes(this)) && this.name && this.nameCache) {
                         this.nameCache.setValue(this.name);
                         this.nameCache.setSize(nameSize);
                         this.nameCache.setScale(zoomRatio);
@@ -2012,7 +2068,8 @@
                     }
 
                     // Отображение массы
-                    if (showMass && (playerCells.includes(this) || (playerCells.length === 0 && (!this.isVirus || this.isAgitated) && this.size > 20))) {
+                    //скрываем массу если this.size > 100
+                    if (showMass && ((!this.isVirus && !this.isEjected && !this.isAgitated) && this.size > 100)) {
                         var mass = Math.floor(this.size * this.size * 0.01);
                         this.sizeCache.setValue(mass);
                         this.sizeCache.setScale(zoomRatio);
@@ -2208,5 +2265,144 @@
             }
         }
     };
+
+    const onLogout = () => {
+        if (confirm("Ты действительно хочешь выйти из учетной записи?")) {
+            /*wHandle.*/userXP.textContent = /*wHandle.*/userLevel.textContent = "";
+            accountData = null;
+            clearAccountToken();
+
+            /*wHandle.*/logoutButton.style.display = "none";
+            /*wHandle.*/loginButton.style.display = "";
+        }
+    };
+
+    wHandle.logoutAccount = async () => {
+        if (localStorage.accountToken) {
+            const res = await accountApiGet("me/logout");
+            if (res.ok) {
+                const data = await res.json();
+                if (data.ok || 401 == data.status) onLogout();
+                if (data.error) alert(data.error);
+            }
+        }
+        else onLogout();
+    }
+
+    // wHandle.openLoginAccountWith = name => {
+    //     /*wHandle.*/open("/api/login/" + name, "", "width=400, height=500");
+    //     const listener = evt => {
+    //         /*wHandle.*/removeEventListener("message", listener);
+    //         onAccountLoggedIn(evt.data.token);
+    //     }
+    //     /*wHandle.*/addEventListener("message", listener);
+    // };
+
+    wHandle.onUloginToken = async tokenUlogin => {
+        // /*wHandle.*/open("/auth/ulogin/?token=" + tokenUlogin, "", "width=400, height=500");
+        const res = await accountApiGet("auth/ulogin?token=" + tokenUlogin);
+        if (res.ok) {
+            const data = await res.json();
+            if (data.error) alert(data.error);
+            else onAccountLoggedIn(data.token);
+        }
+    };
+
+    const setAccountToken = token => {
+        /*wHandle.*/localStorage.accountToken = token;
+    };
+
+    const clearAccountToken = () => {
+        delete /*wHandle.*/localStorage.accountToken;
+    };
+
+    const accountApiGet = tag => fetch("https://itana.pw:6003/api/" + tag, { headers: { Authorization: `Game ${/*wHandle.*/localStorage.accountToken}` } });
+
+    wHandle.onAccountLoggedIn = token => {
+        setAccountToken(token);
+        loadAccountUserData();
+        sendAccountToken();
+    };
+
+    let accountData;
+
+    const setAccountData = data => {
+        accountData = data;
+        displayAccountData();
+        document.querySelectorAll(".menu-item")[2].click(); // На главную меню
+
+        /*wHandle.*/logoutButton.style.display = "";
+        /*wHandle.*/loginButton.style.display = "none";
+    };
+
+    const loadAccountUserData = async () => {
+        const res = await accountApiGet("me/login");
+        if (res.ok) {
+            const data = await res.json();
+            if (data.error) {
+                if (401 == data.status) clearAccountToken();
+                else alert(data.error);
+            }
+            else setAccountData(data);
+        }
+    };
+
+    if (/*wHandle.*/localStorage.accountToken) loadAccountUserData();
+
+    const getXp = level => ~~(100 * (level ** 2 / 2));
+    const getLevel = xp => ~~((xp / 100 * 2) ** .5);
+
+    const displayAccountData = () => {
+        const currLevel = getLevel(accountData.xp); // Получаем текущий уровень
+        const nextXp = getXp(currLevel + 1); // Получаем XP для следующего уровня
+        const progressPercent = (accountData.xp / nextXp) * 100; // Рассчитываем процент прогресса
+
+        // Обновляем текст с XP
+        const userXPElement = document.getElementById("userXP")?.querySelector(".status-value");
+        if (userXPElement) {
+            userXPElement.textContent = `${accountData.xp}/${nextXp}`;
+        }
+
+        // Обновляем текст с уровнем
+        const userLevelElement = document.getElementById("userLevel")?.querySelector(".status-value");
+        if (userLevelElement) {
+            userLevelElement.textContent = currLevel;
+        }
+
+        // Обновляем прогресс бар
+        const progressBar = document.querySelector(".progress-fill");
+        if (progressBar) {
+            progressBar.style.width = `${progressPercent}%`;
+        }
+
+        // Обновляем круг с уровнем
+        const levelCircle = document.getElementById("levelCircle");
+        if (levelCircle) {
+            levelCircle.textContent = currLevel;
+        }
+
+        // Обновляем текст с прогрессом
+        const progressText = document.getElementById("progressText");
+        if (progressText) {
+            progressText.textContent = `${Math.round(progressPercent)}% (${accountData.xp}/${nextXp})`;
+        }
+
+        // Отображаем account_id, если элемент существует
+        const accountIDElement = document.getElementById("accountID");
+        if (accountIDElement) {
+            accountIDElement.textContent = `ID: ${accountData.uid}`;
+        }
+    };
+
+
+
+
+    const onUpdateXp = xp => {
+        if (accountData) {
+            accountData.xp = xp;
+            displayAccountData();
+        }
+    };
+
     wHandle.onload = gameLoop;
 })(window, window.jQuery);
