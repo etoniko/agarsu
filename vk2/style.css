@@ -216,18 +216,6 @@ display: flex;
 		margin-top: 10px;
 	}
 
-#table-container > div:nth-child(1) > div.skkin::after {
-  content: "👑";
-  position: absolute;
-  top: 14%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 1;
-}
-
-#table-container > div:nth-child(1) > div.skkin {
-  position: relative;
-}
 .top-player:nth-child(2) {
     color: #2579e7;
 }
@@ -378,10 +366,10 @@ transition: ease filter, transform 0.5s;
   font-weight: bold;
 }
 .chat-time{
-    position: fixed;
-    right: 10px;
     font-size: 10px;
     color: #8e8e8e;
+    position: absolute;
+    right: 10px;
 }
 .chat-text {
   color: #ffffff;
@@ -389,30 +377,23 @@ transition: ease filter, transform 0.5s;
   font-size: 16px;
 }
 #chat-container {
-    position: fixed;
-    bottom: 30px;
-    width: 290px;
+width: 290px;
     max-height: 300px;
     overflow-y: auto;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     scroll-behavior: smooth;
-	margin-bottom: 10px;
-	transform: scale(0.9);
 }
 	#chat_textbox {
 transition: all .5s ease-in-out;
-    position: absolute;
-    bottom: 10px;
     background: rgb(133 133 133 / 20%);
     border: solid 1px #ffffff3d;
     outline: none;
     color: #ffffff;
     height: 30px;
     text-indent: 12px;
-    width: 270px;
+    width: 100%;
     border-radius: 20px;
-	left: 10px;
 }
 
 
@@ -468,6 +449,10 @@ content: "";
 	.score-info{left: 40%;}
 	#table-container {height: 375px;}
 	.skkinn {height: 32px; width: 50px;}
+.overchat{
+transform: scale(0.7) translate(-7px, 7px);
+transform-origin: bottom left;
+}
   .social {
 	position: absolute !important;
     width: 140px !important;
@@ -565,6 +550,7 @@ backdrop-filter: blur(20px);
     grid-template-columns: repeat(4, auto);
 }
 #leaderboard{
+	max-width: 140px;
     right: 5px;
     top: 5px;
     font-size: 11px;
@@ -575,9 +561,11 @@ backdrop-filter: blur(20px);
 @media (min-width: 600px) and (max-width: 899px) {
 	.center {transform: scale(0.7);}
   .social {opacity: 0;}
-  #leaderboard,
-  #chat-container,
-  #chat_textbox{display: none !important;}
+  #leaderboard{display: none !important;}
+.overchat{
+transform: scale(0.5) translate(-5px, 5px);
+transform-origin: bottom left;
+}
 }
 
     /* Base Reset */
@@ -596,7 +584,7 @@ backdrop-filter: blur(20px);
       overflow: hidden;
       touch-action: manipulation;
     }
-	@media (min-width: 600px) {
+	@media (min-width: 600px) { 
 		.score-info{left: 50%;}
 		#table-container {height: 340px;}
 		.skkinn {height: 50px; width: 50px;}
@@ -713,7 +701,7 @@ backdrop-filter: blur(20px);
     .top-info span {
       background-color: #1b263b;
       padding: 8px 15px;
-      border-radius: 15px;
+      border-radius: 20px;
     }
 #process{
     font-size: 13px;
@@ -770,7 +758,7 @@ input{
 
 #nick {
     width: 190px; /* Длина поля для ника */
-    /*padding-right: 70px;  Отступ справа для поля пароля */
+    padding-right: 70px; /* Отступ справа для поля пароля */
     margin-top: 20px;
     outline: none; /* Убирает обводку при фокусировке */
     border: 1px solid #ccc; /* Пример рамки, вы можете настроить цвет и стиль */
@@ -872,6 +860,7 @@ display: flex;
     align-items: flex-start;
 }
 #leaderboard{
+	max-width: 160px;
 position: absolute;
     padding: 10px 10px 10px 10px;
     border-radius: 20px 20px 20px 20px;
@@ -1093,101 +1082,117 @@ background-size: 50px auto;
 }
 
 
-        #infoBlock {
-			z-index:1000;
-			
-    font-family: Arial, sans-serif;
-    color: white;
-    display: none;
+
+
+.progress-container {
+font-family: Arial, sans-serif;
     position: absolute;
+    top: 21px;
+}
+
+.level-circle {
+  width: 40px;
+  height: 40px;
+  background-color: white;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  font-size: 14px;
+  color: black;
+  position: absolute;
+}
+
+.progress-bar {
+    width: 220px;
+    height: 37px;
+    background-color: #1b263b;
+    border-radius: 20px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #016bef; /* Синий цвет */
+  border-radius: 20px 0 0 20px;
+}
+
+.progress-text {
+  position: absolute;
+  width: 100%;
+  text-align: center;
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+  pointer-events: none;
+}
+
+
+#accountID{
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    background-color: #1b263b;
+    padding: 9.5px 15px;
+    border-radius: 20px;
+}
+        .line {
+    width: 100%;
+    height: 2px;
+    background-color: #ffffff;
+    margin: 10px 0px 10px 0px;
+}
+
+#l1eaderboard {
+    max-width: 150px;
+    position: absolute;
+    padding: 10px 10px 10px 10px;
+    border-radius: 20px 20px 20px 20px;
+    border: solid #ffffff26 1px;
+    background: rgba(0, 0, 0, .3);
+}
+
+        .star-container {
+			font-size: 20px; /* Размер звезды */
+            position: relative;
+            display: inline-block;
+        }
+
+        .levelme {
+position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: linear-gradient(145deg, #202020, #1a1a1a);
-    border: 1px solid #676d72a6;
-    border-radius: 15px;
-	 box-shadow: 0 8px 20px rgba(0, 0, 0, 0.8), 0 4px 40px rgba(0, 0, 0, 0.5);
-    padding: 20px;
-    width: 90%;
-    max-width: 800px;
-    animation: slideIn 0.8s ease-in-out;
+    font-size: 10px;
+    color: #6a6a6a;
+    font-family: 'Ubuntu';
         }
 
-        #infoBlock h2 {
-            margin: 0 0 20px;
-            color: #0d84fb;
-            font-size: 22px;
-            text-align: center;
-        }
-		#infoBlock h1 {
-            margin: 0 0 15px;
-            font-size: 20px;
-            text-align: center;
-        }
+.overchat {
+    position: absolute;
+    bottom: 10px;
+    max-height: 450px;
+    width: 310px;
+    left: 10px;
+    padding: 10px 10px 10px 10px;
+    border-radius: 20px 20px 20px 20px;
+    border: solid #ffffff26 1px;
+    background: rgba(0, 0, 0, .3);
+}
 
-        .info-section {
-            display: flex;
-            justify-content: space-between;
-            gap: 20px;
-        }
+.overchat.hidden {
+    display: none; /* Скрываем overchat при добавлении класса 'hidden' */
+}
 
-        .info-box {
-            flex: 1;
-            background: #242424;
-            border-radius: 10px;
-            padding: 10px;
-            text-align: center;
-            color: white;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .info-box:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-        }
-
-        .info-box img {
-            width: 100%;
-            max-height: 150px;
-            border-radius: 5px;
-            margin-bottom: 10px;
-        }
-
-        .info-box p {
-            margin: 0;
-            font-size: 14px;
-        }
-
-        #closeBtn {
-    margin-top: 20px;
-    display: block;
-    background: #016bef;
-    color: white;
+#toggleChatButton {
+background: none;
     border: none;
-    padding: 10px 20px;
-    font-size: 16px;
-    font-weight: bold;
-    border-radius: 20px;
     cursor: pointer;
-    transition: background 0.3s;
-    text-align: center;
+    font-size: 18px;
+    color: white;
     float: right;
-    margin-right: 10px;
-        }
-
-        #closeBtn:hover {
-            background: white;
-			color: #016bef;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translate(-50%, -60%);
-            }
-            to {
-                opacity: 1;
-                transform: translate(-50%, -50%);
-            }
-        }
+    padding: 0px 5px 5px 0px;
+}
