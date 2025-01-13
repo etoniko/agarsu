@@ -2050,11 +2050,9 @@
                         zoomRatio = Math.ceil(10 * viewZoom) * 0.1,
                         invZoomRatio = 1 / zoomRatio;
 
-                    //  Условие для отображения имени и массы при увеличенном зуме.
-                    let showAtZoom = zoomRatio > 0.1; // Ключевое изменение: проверяем на увеличение, а не на 100.
 
                     // Скрываем имя, если this.size > 100
-                    if (this.size > 100 && (showName || playerCells.includes(this)) && this.name && this.nameCache && showAtZoom) {
+                    if (this.size > 100 && (showName || playerCells.includes(this)) && this.name && this.nameCache) {
                         this.nameCache.setValue(this.name);
                         this.nameCache.setSize(nameSize);
                         this.nameCache.setScale(zoomRatio);
@@ -2066,7 +2064,7 @@
 
                     // Отображение массы
                     //скрываем массу если this.size > 100
-                    if (showMass && ((!this.isVirus && !this.isEjected && !this.isAgitated) && this.size > 100) && showAtZoom) {
+                    if (showMass && ((!this.isVirus && !this.isEjected && !this.isAgitated) && this.size > 100)) {
                         var mass = Math.floor(this.size * this.size * 0.01);
                         this.sizeCache.setValue(mass);
                         this.sizeCache.setScale(zoomRatio);
