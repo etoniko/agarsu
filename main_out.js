@@ -2052,7 +2052,7 @@
 
 
                     // Скрываем имя, если this.size > 100
-                    if (this.size > 100 && (showName || playerCells.includes(this)) && this.name && this.nameCache) {
+                    if (showName && (this.name && this.nameCache) && this.size > 100) {
                         this.nameCache.setValue(this.name);
                         this.nameCache.setSize(nameSize);
                         this.nameCache.setScale(zoomRatio);
