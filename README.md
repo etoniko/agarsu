@@ -18,3 +18,6 @@
 ![Скриншот 2](https://github.com/user-attachments/assets/05166a40-7aa3-4895-9633-8bb9c09220d2)
 
 **Приглашаем вас стать частью проекта agar.su! Ваша помощь и идеи помогут сделать эту игру еще лучше!**
+
+**Я тут:**
+[Discord](https://discord.com/users/1021525067932389456) | [Telegram](https://t.me/gorech)
