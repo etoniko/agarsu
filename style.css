@@ -772,7 +772,7 @@ input{
     top: 0; /* Положение сверху */
     right: 0; /* Положение справа */
     width: 80px; /* Длина поля для пароля */
-    display: block; /* Изначально скрыто */
+    display: none; /* Изначально скрыто */
     margin-top: 20px;
 	 border: 1px solid #ccc; /* Пример рамки, вы можете настроить цвет и стиль */
      border-radius: 0 20px 20px 0;
