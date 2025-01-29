@@ -1086,15 +1086,11 @@
     };
 
     function sendNickName() {
-        if (wsIsOpen() && userNickName != null) {
-            const sanitizedNickName = userNickName.replace(/[\uFDFD\u1242B\u12219\u2E3B\uA9C5\u102A\u0BF5\u0BF8\u2031\u0300-\u036F\u0483\u1AB0-\u1AFF\u1DC0-\u1DFF\u20D0-\u20FF\u2DE0-\u2DFF\uA66F-\uA6FF\uFE20-\uFE2F]/g, "");
-
-            var msg = prepareData(1 + 2 * sanitizedNickName.length);
+        if (wsIsOpen() && null != userNickName) {
+            var msg = prepareData(1 + 2 * userNickName.length);
             msg.setUint8(0, 0);
-            for (var i = 0; i < sanitizedNickName.length; ++i) {
-                msg.setUint16(1 + 2 * i, sanitizedNickName.charCodeAt(i), true);
-            }
-            wsSend(msg);
+            for (var i = 0; i < userNickName.length; ++i) msg.setUint16(1 + 2 * i, userNickName.charCodeAt(i), true);
+            wsSend(msg)
         }
     }
 
