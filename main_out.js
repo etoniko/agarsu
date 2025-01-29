@@ -1746,7 +1746,7 @@
     // var data = {
     //     "action": "test"
     // };
-    var transparent = ["незнакомка"];
+    var transparent = ["незнакомка","bublik"];
     var
         // delay = 500,
         oldX = -1,
