@@ -1014,6 +1014,21 @@
 
     const normalizeFractlPart = n => (n % (Math.PI * 2)) / (Math.PI * 2);
 
+    async function showSDK() {
+        // Проверяем, что SDK инициализирован и игра запущена на платформе Яндекс Игр
+        if (window.ysdk && isYandexGamesPlatform()) {
+            try {
+                // Останавливаем геймплей и ждем завершения
+                await window.ysdk.features.GameplayAPI?.stop();
+                console.log("Геймплей остановлен");
+            } catch (err) {
+                console.error("Ошибка при работе с SDK Яндекс Игр:", err);
+            }
+        } else {
+            console.warn("SDK Яндекс Игр не инициализирован или игра не на платформе Яндекс Игр");
+        }
+    }
+
     function updateNodes(reader) {
         timestamp = Date.now();
         ua = false;
@@ -1102,6 +1117,7 @@
 
         if (ua && playerCells.length === 0) {
             showOverlays(false);  // Hide overlays
+showSDK();  // Show SDK ad
         }
     }
 
