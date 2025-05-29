@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agar.su - Лучшая Онлайн Игра в Стиле Agar.io! Играть Бесплатно</title>
+    <meta name="description" content="Agar.su - захватывающая многопользовательская онлайн игра, как Agar.io, но с улучшениями! Поглощайте других игроков, растите и доминируйте на арене. Играйте бесплатно прямо сейчас!">
+    <meta name="keywords" content="agar.io, agar.su, игра как agar.io, онлайн игра, многопользовательская игра, io игра, играть бесплатно, лучшая игра, браузерная игра, агар ио, агар су">
+    <meta name="robots" content="index, follow">
+    <meta name="revisit-after" content="7 days">
+    <link rel="canonical" href="https://agar.su/">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
+	    <!-- Favicon и иконки для Apple устройств -->
+    <link rel="apple-touch-icon" href="https://cdn.jsdelivr.net/gh/etoniko/agarsu/icon.svg/icon.svg">
+    <link rel="icon" href="https://cdn.jsdelivr.net/gh/etoniko/agarsu/icon.svg" type="image/svg+xml">
+
+    <style>
+        /* Общие стили */
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+            line-height: 1.6;
+            overflow-x: hidden; /* Предотвращает горизонтальную прокрутку */
+        }
+
+        a {
+            text-decoration: none;
+            color: #3498db;
+            transition: color 0.3s ease;
+        }
+
+        a:hover {
+            color: #2980b9;
+        }
+
+        /* Стили для Header */
+        header {
+            background-color: #3498db;
+            color: #fff;
+            padding: 30px 0;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Тень для объема */
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); /* Тень для текста */
+        }
+
+        header p {
+            font-size: 1.2em;
+            font-weight: 300;
+        }
+
+        /* Стили для Section */
+        section {
+            padding: 50px;
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1); /* Усиленная тень */
+            margin-bottom: 30px;
+        }
+
+        section h2 {
+            font-size: 2em;
+            margin-bottom: 20px;
+            color: #34495e;
+            text-align: center;
+        }
+
+        section ul, section ol {
+            list-style: none;
+            padding: 0;
+        }
+
+        section li {
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        section li:last-child {
+            border-bottom: none;
+        }
+
+        /* Стили для Image */
+        .game-screenshot {
+            max-width: 100%; /* Адаптивность по ширине */
+            height: auto;
+            border: 5px solid #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Тень для скриншота */
+            transition: transform 0.3s ease; /* Анимация при наведении */
+        }
+
+        .game-screenshot:hover {
+            transform: scale(1.05);
+        }
+
+        /* Стили для Button */
+        .button {
+            background-color: #2ecc71;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 1.2em;
+            display: inline-block;
+            margin-top: 30px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Тень для кнопки */
+        }
+
+        .button:hover {
+            background-color: #27ae60;
+            transform: translateY(-3px);
+        }
+
+        /* Стили для Footer */
+        footer {
+            background-color: #2c3e50;
+            color: #fff;
+            text-align: center;
+            padding: 20px;
+            font-size: 0.9em;
+        }
+
+        footer a {
+            color: #fff;
+            text-decoration: underline;
+        }
+
+        footer a:hover {
+            color: #ddd;
+        }
+
+        /* Flexbox Layout для Features */
+        .features {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            margin-top: 30px;
+        }
+
+        .feature {
+            width: 30%;
+            min-width: 250px;
+            text-align: center;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .feature:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .feature h3 {
+            color: #3498db;
+            margin-bottom: 10px;
+        }
+
+        .feature p {
+            font-size: 0.9em;
+        }
+
+        /* Адаптивность (Media Queries) */
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2em;
+            }
+
+            header p {
+                font-size: 1em;
+            }
+
+            section {
+                padding: 30px;
+            }
+
+
+            .feature {
+                width: 100%;
+            }
+        }
+
+         /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        header, section, footer {
+            animation: fadeIn 1s ease-out both;
+        }
+
+        /* Custom list styles */
+        section ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        section ul li {
+            position: relative;
+            padding-left: 30px; /* Отступ для значка */
+            margin-bottom: 10px;
+            border-bottom: none;
+        }
+
+        section ul li::before {
+            content: "✔"; /* Значок галочки */
+            position: absolute;
+            left: 0;
+            top: 0;
+            color: #2ecc71; /* Цвет галочки */
+            font-size: 1.2em;
+        }
+
+        /* Style the ol */
+        section ol {
+            list-style-type: none; /* Remove default numbering */
+            counter-reset: steps; /* Initialize counter */
+            padding: 0;
+        }
+
+        section ol li {
+            position: relative;
+            padding-left: 35px; /* Space for custom counter */
+            margin-bottom: 15px;
+            border-bottom: none;
+        }
+
+        section ol li::before {
+            counter-increment: steps; /* Increment counter */
+            content: counter(steps) "."; /* Display counter */
+            position: absolute;
+            left: 0;
+            top: 0;
+            font-weight: bold;
+            color: #3498db; /* Style of the number */
+            width: 25px;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Agar.su - Новая Эра Игр в Стиле Agar.io</h1>
+        <p>Погрузитесь в захватывающий мир Agar.su, где вы сражаетесь за господство, поглощая других игроков!</p>
+    </header>
+
+    <section>
+	        <img src="https://i.imgur.com/aUnAuZ0.jpg" alt="Скриншот игры Agar.su" class="game-screenshot">
+        <p>Посмотрите, как выглядит игра Agar.su! Убедитесь в превосходстве графики и динамичности игрового процесса.</p>
+
+        <a href="https://agar.su/" class="button">Играть Сейчас Бесплатно!</a>
+        <h2>Что делает Agar.su лучше, чем Agar.io?</h2>
+
+        <div class="features">
+            <div class="feature">
+                <h3>Улучшенная графика</h3>
+                <p>Наслаждайтесь более красочным и детализированным игровым миром. Высокое разрешение и плавная анимация!</p>
+            </div>
+
+            <div class="feature">
+                <h3>Новые режимы игры</h3>
+                <p>Откройте для себя уникальные режимы, которые добавят разнообразие в игровой процесс. Командный режим, выживание и многое другое!</p>
+            </div>
+
+            <div class="feature">
+                <h3>Специальные бонусы</h3>
+                <p>Получайте временные усиления, чтобы получить преимущество над соперниками. Ускорение, щит и невидимость!</p>
+            </div>
+
+            <div class="feature">
+                <h3>Активное сообщество</h3>
+                <p>Присоединяйтесь к дружелюбному и активному сообществу игроков. Общайтесь, создавайте кланы и играйте вместе!</p>
+            </div>
+
+            <div class="feature">
+                <h3>Улучшенное управление</h3>
+                <p>Более отзывчивое и точное управление, позволяющее вам полностью контролировать свою клетку.</p>
+            </div>
+
+            <div class="feature">
+                <h3>Регулярные обновления</h3>
+                <p>Мы постоянно работаем над улучшением игры и добавлением нового контента. Оставайтесь с нами!</p>
+            </div>
+
+        </div>
+
+    </section>
+
+    <section>
+        <h2>Как играть в Agar.su</h2>
+        <ol>
+            <li>Перейдите на сайт <a href="https://agar.su/">Agar.su</a>.</li>
+            <li>Введите свой никнейм.</li>
+            <li>Нажмите кнопку "Играть".</li>
+            <li>Управляйте своей клеткой с помощью мыши или тачпада.</li>
+            <li>Поглощайте другие клетки, чтобы расти и становиться больше.</li>
+            <li>Избегайте больших клеток, которые могут поглотить вас.</li>
+        </ol>
+    </section>
+
+    <footer>
+        &copy; 2023 Agar.su. Все права защищены.  <a href="/terms">Условия использования</a> | <a href="/privacy">Политика конфиденциальности</a>
+    </footer>
+
+</body>
+</html>
