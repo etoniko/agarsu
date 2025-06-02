@@ -87,15 +87,33 @@
 
 <body>
     <!-- Yandex.RTB R-A-15699059-1 -->
-<script>
-window.yaContextCb.push(() => {
-    Ya.Context.AdvManager.render({
-        "blockId": "R-A-15699059-1",
-        "type": "fullscreen",
-        "platform": "touch"
-    })
-})
-</script>
+    <script>
+        // Инициализация yaContextCb, если ещё не существует
+        window.yaContextCb = window.yaContextCb || [];
+
+        // Функция для рендеринга рекламного блока
+        function renderYandexAd(blockId, type, platform) {
+            window.yaContextCb.push(() => {
+                Ya.Context.AdvManager.render({
+                    "blockId": blockId,
+                    "type": type,
+                    "platform": platform
+                });
+            });
+        }
+
+        // Массив с конфигурацией рекламных блоков
+        const adConfigs = [
+            { blockId: "R-A-15699059-1", type: "fullscreen", platform: "touch" },
+            { blockId: "R-A-15699059-4", type: "fullscreen", platform: "desktop" }
+            // Добавь другие конфигурации здесь
+        ];
+
+        // Рендеринг рекламных блоков с использованием цикла
+        adConfigs.forEach(config => {
+            renderYandexAd(config.blockId, config.type, config.platform);
+        });
+    </script>
     <div id="overlays" class="overlays">
         <!-- <div class="social">
          <a href="https://t.me/agarsu" target="_blank" class="tg"><i
