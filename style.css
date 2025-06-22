@@ -445,7 +445,6 @@ content: "";
 .add{
 width: 240px;
     height: 400px;
-    background: white;
     position: absolute;
     left: 5%;
     display: flex;
