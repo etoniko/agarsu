@@ -76,7 +76,23 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 </script>
 </head>
-<body oncontextmenu="return false;">
+<!-- Yandex.RTB -->
+<script>window.yaContextCb=window.yaContextCb||[]</script>
+<script src="https://yandex.ru/ads/system/context.js" async></script>
+</head>
+
+
+<body>
+<!-- Yandex.RTB R-A-15699059-6 -->
+<script>
+window.yaContextCb.push(() => {
+    Ya.Context.AdvManager.render({
+        "blockId": "R-A-15699059-6",
+        "type": "fullscreen",
+        "platform": "touch"
+    })
+})
+</script>
     <div id="infoBlock">
         <h2>Добро пожаловать в AGARSU!</h2>
 		<h1>как играть?</h1>
@@ -119,12 +135,23 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
 <div id="overlays" class="overlays">
-    <!-- <div class="social">
+<div class="social">
          <a href="https://t.me/agarsu" target="_blank" class="tg"><i
                  style="background: radial-gradient(white 9px, #1e90ff00 50%);border-radius: 50%;" class="fab fa-telegram"></i></a>
          <a href="#" class="soc"><i style="cursor: not-allowed;" class="fab fa-vk"></i></a>
          <a href="#" class="soc"><i style="cursor: not-allowed;" class="fab fa-discord"></i></a>
-     </div>-->
+     </div>
+<div class="add">
+<!-- Yandex.RTB R-A-15699059-8 -->
+<div id="yandex_rtb_R-A-15699059-8"></div>
+<script>
+window.yaContextCb.push(() => {
+    Ya.Context.AdvManager.render({
+        "blockId": "R-A-15699059-8",
+        "renderTo": "yandex_rtb_R-A-15699059-8"
+    })
+})
+</script>
     <div class="center">
         <div class="sidebar">
             <div class="menu-item" onclick="showContent('profile')">
