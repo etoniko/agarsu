@@ -447,8 +447,7 @@ width: 240px;
     height: 400px;
     background: white;
     position: absolute;
-    left: 7%;
-    border-radius: 25px;
+    left: 5%;
     display: flex;
     align-items: center;
 }
