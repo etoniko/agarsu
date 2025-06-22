@@ -462,12 +462,22 @@ content: "";
 
 
 
-
+.add{
+width: 240px;
+    height: 400px;
+    position: absolute;
+    left: 5%;
+    display: flex;
+    align-items: center;
+}
 
 @media (max-width: 599px) {
 	.score-info{left: 40%;}
 	#table-container {height: 375px;}
 	.skkinn {height: 32px; width: 50px;}
+.add{
+display: none !important;
+}
   .social {
 position: absolute !important;
 width: 140px !important;
