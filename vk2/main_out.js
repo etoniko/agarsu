@@ -423,123 +423,150 @@
         // wsConnect("");
     }
 
-    const dpr = window.devicePixelRatio;
+   const dpr = window.devicePixelRatio;
 
-    const joystickRadius = 360; // Максимальное расстояние точки от центра джойстика
-    const cursorSize = 20; // Размер квадрата курсора
-    // Добавляем переменные для анимации
-    let splitPressed = false;
-    let ejectPressed = false;
+const joystickRadius = 360; // Максимальное расстояние точки от центра джойстика
+const cursorSize = 20; // Размер квадрата курсора
 
-    function onTouchStart(e) {
-        for (var i = 0; i < e.changedTouches.length; i++) {
-            var touch = e.changedTouches[i];
+let splitPressed = false;
+let ejectPressed = false;
 
-            var size = ~~(canvasWidth / 7);
+let pinchZoomStartDistance = 0;
+let isPinching = false;
 
-            // Проверяем, касается ли нажатие кнопки "split"
-            if (
-                touch.clientX * dpr > canvasWidth - size &&
-                touch.clientY * dpr > canvasHeight - size
-            ) {
-                sendMouseMove();
-                sendUint8(17); // split
-                splitPressed = true; // Активируем анимацию для split
-                continue;
-            }
+function onTouchStart(e) {
+    for (var i = 0; i < e.changedTouches.length; i++) {
+        var touch = e.changedTouches[i];
 
-            // Проверяем, касается ли нажатие кнопки "eject"
-            if (
-                touch.clientX * dpr > canvasWidth - size &&
-                touch.clientY * dpr > canvasHeight - 2 * size - 10 &&
-                touch.clientY * dpr < canvasHeight - size - 10
-            ) {
-                sendMouseMove();
-                sendUint8(21); // eject
-                ejectPressed = true; // Активируем анимацию для eject
-                continue;
-            }
+        var size = ~~(canvasWidth / 7);
 
-            // Если это не кнопка, обрабатываем как джойстик
-            if (leftTouchID < 0) {
-                leftTouchID = touch.identifier;
-                leftTouchStartPos.reset(touch.clientX * dpr, touch.clientY * dpr);
-                leftTouchPos.copyFrom(leftTouchStartPos);
-                leftVector.reset(0, 0);
-            }
-        }
-        touches = e.touches;
-    }
-
-    function onTouchMove(e) {
-        e.preventDefault();
-        for (var i = 0; i < e.changedTouches.length; i++) {
-            var touch = e.changedTouches[i];
-
-            // Обрабатываем движение только для leftTouchID
-            if (leftTouchID === touch.identifier) {
-                leftTouchPos.reset(touch.clientX * dpr, touch.clientY * dpr);
-                leftVector.copyFrom(leftTouchPos);
-                leftVector.minusEq(leftTouchStartPos);
-
-                // Ограничиваем расстояние точки от центра
-                const distance = Math.sqrt(leftVector.x ** 2 + leftVector.y ** 2);
-                if (distance > joystickRadius) {
-                    const scale = joystickRadius / distance;
-                    leftVector.x *= scale;
-                    leftVector.y *= scale;
-                    leftTouchPos.x = leftTouchStartPos.x + leftVector.x;
-                    leftTouchPos.y = leftTouchStartPos.y + leftVector.y;
-                }
-
-                rawMouseX = leftVector.x * 3 + canvasWidth / 2;
-                rawMouseY = leftVector.y * 3 + canvasHeight / 2;
-                mouseCoordinateChange();
-                sendMouseMove();
-            }
-        }
-        touches = e.touches;
-    }
-
-    function onTouchEnd(e) {
-        for (var i = 0; i < e.changedTouches.length; i++) {
-            var touch = e.changedTouches[i];
-
-            // Сбрасываем leftTouchID только если идентификатор совпадает
-            if (leftTouchID === touch.identifier) {
-                leftTouchID = -1;
-                leftVector.reset(0, 0);
-            }
-        }
-        touches = e.touches;
-    }
-
-
-    function handleWheel(event) {
-        const overlay = $('#overlays'); // Get the overlay element
-        const chatContainer = $('#chat-container'); // Get the chat container element
-
-        // Check if the overlay is visible or if the mouse is over the chat container
-        if (overlay.is(':visible') || isMouseOverElement(chatContainer)) {
-            return; // Stop zooming if the overlay is open or mouse is over chat container
+        // Проверяем, касается ли нажатие кнопки "split"
+        if (
+            touch.clientX * dpr > canvasWidth - size &&
+            touch.clientY * dpr > canvasHeight - size
+        ) {
+            sendMouseMove();
+            sendUint8(17); // split
+            splitPressed = true;
+            continue;
         }
 
-        zoom *= Math.pow(.9, event.wheelDelta / -120 || event.detail || 0);
-        if (zoom < 0) zoom = 1;
-        if (zoom > 4 / viewZoom) zoom = 4 / viewZoom;
-        if (zoom < 0.3) zoom = 0.3;
+        // Проверяем, касается ли нажатие кнопки "eject"
+        if (
+            touch.clientX * dpr > canvasWidth - size &&
+            touch.clientY * dpr > canvasHeight - 2 * size - 10 &&
+            touch.clientY * dpr < canvasHeight - size - 10
+        ) {
+            sendMouseMove();
+            sendUint8(21); // eject
+            ejectPressed = true;
+            continue;
+        }
+
+        // Если это не кнопка, обрабатываем как джойстик
+        if (leftTouchID < 0) {
+            leftTouchID = touch.identifier;
+            leftTouchStartPos.reset(touch.clientX * dpr, touch.clientY * dpr);
+            leftTouchPos.copyFrom(leftTouchStartPos);
+            leftVector.reset(0, 0);
+        }
+    }
+    touches = e.touches;
+}
+
+function onTouchMove(e) {
+    e.preventDefault();
+
+    // === Пинч-зум (двумя пальцами) ===
+    if (e.touches.length === 2) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const currentDistance = Math.sqrt(dx * dx + dy * dy);
+
+        if (!isPinching) {
+            pinchZoomStartDistance = currentDistance;
+            isPinching = true;
+        } else {
+            const delta = currentDistance - pinchZoomStartDistance;
+            const zoomFactor = 1 + delta / 300; // Настройка чувствительности
+            zoom *= zoomFactor;
+
+            // Ограничения
+            if (zoom < 0.3) zoom = 0.3;
+            if (zoom > 4 / viewZoom) zoom = 4 / viewZoom;
+
+            pinchZoomStartDistance = currentDistance;
+        }
+
+        return; // Не продолжаем обработку джойстика, если пинч
     }
 
-    function isMouseOverElement(element) {
-        const mouseX = event.clientX; // Get mouse X position
-        const mouseY = event.clientY; // Get mouse Y position
-        const offset = element.offset(); // Get the position of the element
+    // === Обычное касание (джойстик) ===
+    for (var i = 0; i < e.changedTouches.length; i++) {
+        var touch = e.changedTouches[i];
 
-        // Check if the mouse is within the bounds of the element
-        return mouseX >= offset.left && mouseX <= offset.left + element.width() &&
-            mouseY >= offset.top && mouseY <= offset.top + element.height();
+        if (leftTouchID === touch.identifier) {
+            leftTouchPos.reset(touch.clientX * dpr, touch.clientY * dpr);
+            leftVector.copyFrom(leftTouchPos);
+            leftVector.minusEq(leftTouchStartPos);
+
+            const distance = Math.sqrt(leftVector.x ** 2 + leftVector.y ** 2);
+            if (distance > joystickRadius) {
+                const scale = joystickRadius / distance;
+                leftVector.x *= scale;
+                leftVector.y *= scale;
+                leftTouchPos.x = leftTouchStartPos.x + leftVector.x;
+                leftTouchPos.y = leftTouchStartPos.y + leftVector.y;
+            }
+
+            rawMouseX = leftVector.x * 3 + canvasWidth / 2;
+            rawMouseY = leftVector.y * 3 + canvasHeight / 2;
+            mouseCoordinateChange();
+            sendMouseMove();
+        }
+    }
+    touches = e.touches;
+}
+
+function onTouchEnd(e) {
+    // Сброс пинча, если пальцев меньше двух
+    if (e.touches.length < 2) {
+        isPinching = false;
     }
 
+    for (var i = 0; i < e.changedTouches.length; i++) {
+        var touch = e.changedTouches[i];
+
+        if (leftTouchID === touch.identifier) {
+            leftTouchID = -1;
+            leftVector.reset(0, 0);
+        }
+    }
+    touches = e.touches;
+}
+
+function handleWheel(event) {
+    const overlay = $('#overlays');
+    const chatContainer = $('#chat-container');
+
+    if (overlay.is(':visible') || isMouseOverElement(chatContainer)) {
+        return;
+    }
+
+    zoom *= Math.pow(.9, event.wheelDelta / -120 || event.detail || 0);
+    if (zoom < 0) zoom = 1;
+    if (zoom > 4 / viewZoom) zoom = 4 / viewZoom;
+    if (zoom < 0.3) zoom = 0.3;
+}
+
+function isMouseOverElement(element) {
+    const mouseX = event.clientX;
+    const mouseY = event.clientY;
+    const offset = element.offset();
+
+    return mouseX >= offset.left && mouseX <= offset.left + element.width() &&
+           mouseY >= offset.top && mouseY <= offset.top + element.height();
+}
 
 
     function buildQTree() {
