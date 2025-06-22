@@ -454,21 +454,22 @@ transform: scale(0.7) translate(-7px, 7px);
 transform-origin: bottom left;
 }
   .social {
-	position: absolute !important;
-    width: 140px !important;
-    height: 40px !important;
-    background: #0e172c !important;
-    font-size: 25px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    flex-direction: row !important;
-    gap: 10px !important;
-    border-radius: 0px 0 25px 25px !important;
-    border: #ffffff14 solid 1px !important;
-    border-right: none !important;
-    top: 0px !important;
-	right: auto !important;
+position: absolute !important;
+width: 140px !important;
+height: 40px !important;
+background: #0e172c !important;
+font-size: 25px !important;
+display: flex !important;
+align-items: center !important;
+justify-content: center !important;
+flex-direction: row !important;
+gap: 10px !important;
+border-radius: 25px 25px 0 0 !important; /* Скругление: сверху слева и справа */
+border: #ffffff14 solid 1px !important;
+border-bottom: none !important; /* Убираем нижнюю границу */
+left: 50% !important;
+transform: translateX(-50%) !important; /* Центрирование по горизонтали */
+bottom: 0px !important;
 	}
     .sidebar {
         background-color: #016bef;
