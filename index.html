@@ -82,29 +82,18 @@
 <!-- Yandex.RTB -->
 <script>window.yaContextCb=window.yaContextCb||[]</script>
 <script src="https://yandex.ru/ads/system/context.js" async></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/detect_izr/2.2.2/detect_izr.min.js"></script> <!-- Подключаем detect.js -->
-
 </head>
 
 
 <body>
+<!-- Yandex.RTB R-A-15699059-5 -->
 <script>
 window.yaContextCb.push(() => {
-  let blockId;
-  let type;
-
-  if (IZR.isMobile) {
-    blockId = "R-A-15699059-6"; // Блок для мобильных
-    type = "fullscreen";
-  } else {
-    blockId = "R-A-15699059-5"; // Блок для компьютеров
-    type = "fullscreen";
-  }
-
-  Ya.Context.AdvManager.render({
-    "blockId": blockId,
-    "type": type,
-  });
+    Ya.Context.AdvManager.render({
+        "blockId": "R-A-15699059-5",
+        "type": "fullscreen",
+        "platform": "desktop"
+    })
 })
 </script>
     <div id="overlays" class="overlays">
