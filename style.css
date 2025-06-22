@@ -442,8 +442,16 @@ content: "";
 }
 
 
-
-
+.add{
+width: 240px;
+    height: 400px;
+    background: white;
+    position: absolute;
+    left: 7%;
+    border-radius: 25px;
+    display: flex;
+    align-items: center;
+}
 
 @media (max-width: 599px) {
 	.score-info{left: 40%;}
@@ -452,6 +460,9 @@ content: "";
 .overchat{
 transform: scale(0.7) translate(-7px, 7px);
 transform-origin: bottom left;
+}
+.add{
+display: none !important;
 }
   .social {
 position: absolute !important;
