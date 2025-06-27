@@ -1814,7 +1814,6 @@ function drawWhiteGrid() {
         // showColor = false,
         ua = false,
         // userScore = 0,
-        defaultTheme = true,
         showMass = true,
         hideChat = false,
         smoothRender = .4,
@@ -1854,9 +1853,6 @@ function drawWhiteGrid() {
     };
     wHandle.setNames = function (arg) {
         showName = arg
-    };
-    wHandle.setDarkTheme = function (arg) {
-        defaultTheme = arg
     };
     wHandle.setColors = function (arg) {
         // showColor = arg
