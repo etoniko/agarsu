@@ -1299,7 +1299,7 @@ showSDK();  // Show SDK ad
                 ctx.fillRect(0, 0, canvasWidth, canvasHeight);
                 ctx.globalAlpha = 1;
             } else {
-                ctx.fillStyle = '#F2FBFF';
+                ctx.fillStyle = '##101010';
                 ctx.globalAlpha = .05;
                 ctx.fillRect(0, 0, canvasWidth, canvasHeight);
                 ctx.globalAlpha = 1;
@@ -1447,7 +1447,7 @@ showSDK();  // Show SDK ad
 
     // Старая версия сетки
     function drawClassicGrid() {
-        ctx.fillStyle = "#F2FBFF";
+        ctx.fillStyle = "##101010";
         ctx.fillRect(0, 0, canvasWidth, canvasHeight);
         ctx.save();
 
