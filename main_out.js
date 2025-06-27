@@ -1393,7 +1393,6 @@ showSDK();  // Show SDK ad
         }
         ctx.restore();
     }
-
 // Функция для получения значения куки по имени
 function getCookie(name) {
   const value = `; ${document.cookie}`;
@@ -1454,18 +1453,10 @@ function createThemeSelector() {
     drawGrid(); // Отрисовываем сетку (без аргументов, читаем из куки)
   });
 
-  // Добавляем div на страницу (например, в body)
-  document.body.appendChild(themeSelector);
-
   // Возвращаем div, чтобы можно было его дальше стилизовать (если нужно)
   return themeSelector;
 }
-
-// Инициализация
-(function() {
-  // Проверяем, есть ли тема в куках
-  const savedTheme = getCookie('grid_theme');
-
+document.addEventListener('DOMContentLoaded', function() {
   // Создаем и добавляем селектор тем на страницу
   const themeSelector = createThemeSelector();
 
@@ -1474,6 +1465,11 @@ function createThemeSelector() {
   themeSelector.style.top = '10px';
   themeSelector.style.left = '10px';
   themeSelector.style.zIndex = '1000'; //  Обеспечивает отображение над другими элементами
+  document.body.appendChild(themeSelector);
+
+
+  // Проверяем, есть ли тема в куках
+  const savedTheme = getCookie('grid_theme');
 
   // Устанавливаем выбранную тему в селекторе (если она есть в куках)
   if (savedTheme) {
@@ -1482,7 +1478,7 @@ function createThemeSelector() {
 
   // Первоначальная отрисовка сетки при загрузке страницы
   drawGrid();
-})();
+});
 
     // Новая версия с градиентом
     function drawGradientGrid() {
