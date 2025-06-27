@@ -1394,13 +1394,95 @@ showSDK();  // Show SDK ad
         ctx.restore();
     }
 
-    function drawGrid() {
-        if (showDarkTheme) {
-            drawGradientGrid();
-        } else {
-            drawBlackGrid();
-        }
-    }
+// Функция для получения значения куки по имени
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
+// Функция для установки куки
+function setCookie(name, value, days) {
+  let expires = "";
+  if (days) {
+    const date = new Date();
+    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+    expires = "; expires=" + date.toUTCString();
+  }
+  document.cookie = name + "=" + (value || "") + expires + "; path=/";
+}
+
+// Функция отрисовки сетки (БЕЗ аргументов, читает тему из куки)
+function drawGrid() {
+  const savedTheme = getCookie('grid_theme');
+  let themeToDraw = savedTheme || 'gradient'; // Тема по умолчанию - gradient
+
+  switch (themeToDraw) {
+    case 'gradient':
+      drawGradientGrid();
+      break;
+    case 'white':
+      drawWhiteGrid();
+      break;
+    case 'black':
+      drawBlackGrid();
+      break;
+    default:
+      drawGradientGrid(); // Обработка неизвестной темы (градиент по умолчанию)
+  }
+}
+
+
+// Создаем div с выбором темы
+function createThemeSelector() {
+  const themeSelector = document.createElement('div');
+  themeSelector.id = 'theme-selector';
+  themeSelector.innerHTML = `
+    <label>Выберите тему:</label>
+    <select id="theme-select">
+      <option value="gradient">Градиент</option>
+      <option value="white">Белая</option>
+      <option value="black">Черная</option>
+    </select>
+  `;
+
+  // Добавляем обработчик события изменения выбранной темы
+  const selectElement = themeSelector.querySelector('#theme-select');
+  selectElement.addEventListener('change', function() {
+    const selectedTheme = this.value;
+    setCookie('grid_theme', selectedTheme, 30); // Сохраняем в куки на 30 дней
+    drawGrid(); // Отрисовываем сетку (без аргументов, читаем из куки)
+  });
+
+  // Добавляем div на страницу (например, в body)
+  document.body.appendChild(themeSelector);
+
+  // Возвращаем div, чтобы можно было его дальше стилизовать (если нужно)
+  return themeSelector;
+}
+
+// Инициализация
+(function() {
+  // Проверяем, есть ли тема в куках
+  const savedTheme = getCookie('grid_theme');
+
+  // Создаем и добавляем селектор тем на страницу
+  const themeSelector = createThemeSelector();
+
+  //  Если нужно стилизовать selector:
+  themeSelector.style.position = 'absolute';
+  themeSelector.style.top = '10px';
+  themeSelector.style.left = '10px';
+  themeSelector.style.zIndex = '1000'; //  Обеспечивает отображение над другими элементами
+
+  // Устанавливаем выбранную тему в селекторе (если она есть в куках)
+  if (savedTheme) {
+      document.getElementById('theme-select').value = savedTheme;
+  }
+
+  // Первоначальная отрисовка сетки при загрузке страницы
+  drawGrid();
+})();
 
     // Новая версия с градиентом
     function drawGradientGrid() {
@@ -1744,7 +1826,7 @@ function drawWhiteGrid() {
         // showColor = false,
         ua = false,
         // userScore = 0,
-        showDarkTheme = true,
+        defaultTheme = true,
         showMass = true,
         hideChat = false,
         smoothRender = .4,
@@ -1786,7 +1868,7 @@ function drawWhiteGrid() {
         showName = arg
     };
     wHandle.setDarkTheme = function (arg) {
-        showDarkTheme = arg
+        defaultTheme = arg
     };
     wHandle.setColors = function (arg) {
         // showColor = arg
