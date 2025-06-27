@@ -1464,10 +1464,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Устанавливаем выбранную тему в селекторе
   selectElement.value = savedTheme;
-
-
-  // Первоначальная отрисовка сетки при загрузке страницы
-  drawGrid();
 });
 
 
