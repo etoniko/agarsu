@@ -1293,7 +1293,6 @@ showSDK();  // Show SDK ad
         mouseCoordinateChange();
             drawGrid();
             drawCenterBackground();
-        }
 
         nodelist.sort((a, b) => a.size === b.size ? a.id - b.id : a.size - b.size);
 
