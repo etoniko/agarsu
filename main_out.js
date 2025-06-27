@@ -1393,6 +1393,8 @@ showSDK();  // Show SDK ad
         }
         ctx.restore();
     }
+
+
 // Функция для получения значения куки по имени
 function getCookie(name) {
   const value = `; ${document.cookie}`;
@@ -1411,10 +1413,21 @@ function setCookie(name, value, days) {
   document.cookie = name + "=" + (value || "") + expires + "; path=/";
 }
 
-// Функция отрисовки сетки (БЕЗ аргументов, читает тему из куки)
+// Функция для определения темы ОС по умолчанию
+function getDefaultTheme() {
+  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    return 'black'; // Или 'gradient'
+  } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+    return 'white'; // Или 'gradient'
+  } else {
+    return 'gradient'; // Если невозможно определить
+  }
+}
+
+// Функция отрисовки сетки (БЕЗ аргументов, читает тему из куки или ОС)
 function drawGrid() {
   const savedTheme = getCookie('grid_theme');
-  let themeToDraw = savedTheme || 'gradient'; // Тема по умолчанию - gradient
+  let themeToDraw = savedTheme || getDefaultTheme(); // Используем тему из куки или тему ОС
 
   switch (themeToDraw) {
     case 'gradient':
@@ -1427,58 +1440,37 @@ function drawGrid() {
       drawBlackGrid();
       break;
     default:
-      drawGradientGrid(); // Обработка неизвестной темы (градиент по умолчанию)
+      drawGradientGrid(); // Обработка неизвестной темы
   }
 }
 
-
-// Создаем div с выбором темы
-function createThemeSelector() {
-  const themeSelector = document.createElement('div');
-  themeSelector.id = 'theme-selector';
-  themeSelector.innerHTML = `
-    <label>Выберите тему:</label>
-    <select id="theme-select">
-      <option value="gradient">Градиент</option>
-      <option value="white">Белая</option>
-      <option value="black">Черная</option>
-    </select>
-  `;
+document.addEventListener('DOMContentLoaded', function() {
+  const selectElement = document.getElementById('theme-select');
 
   // Добавляем обработчик события изменения выбранной темы
-  const selectElement = themeSelector.querySelector('#theme-select');
   selectElement.addEventListener('change', function() {
     const selectedTheme = this.value;
-    setCookie('grid_theme', selectedTheme, 30); // Сохраняем в куки на 30 дней
-    drawGrid(); // Отрисовываем сетку (без аргументов, читаем из куки)
+    setCookie('grid_theme', selectedTheme, 30); // Сохраняем в куки
+    drawGrid(); // Отрисовываем сетку
   });
 
-  // Возвращаем div, чтобы можно было его дальше стилизовать (если нужно)
-  return themeSelector;
-}
-document.addEventListener('DOMContentLoaded', function() {
-  // Создаем и добавляем селектор тем на страницу
-  const themeSelector = createThemeSelector();
-
-  //  Если нужно стилизовать selector:
-  themeSelector.style.position = 'absolute';
-  themeSelector.style.top = '10px';
-  themeSelector.style.left = '10px';
-  themeSelector.style.zIndex = '1000'; //  Обеспечивает отображение над другими элементами
-  document.body.appendChild(themeSelector);
-
-
   // Проверяем, есть ли тема в куках
-  const savedTheme = getCookie('grid_theme');
-
-  // Устанавливаем выбранную тему в селекторе (если она есть в куках)
-  if (savedTheme) {
-      document.getElementById('theme-select').value = savedTheme;
+  let savedTheme = getCookie('grid_theme');
+  if (!savedTheme) {
+      // Если нет темы в куках, получаем тему ОС по умолчанию
+      savedTheme = getDefaultTheme();
+      setCookie('grid_theme', savedTheme, 30); // Сохраняем тему ОС в куки
   }
+
+  // Устанавливаем выбранную тему в селекторе
+  selectElement.value = savedTheme;
+
 
   // Первоначальная отрисовка сетки при загрузке страницы
   drawGrid();
 });
+
+
 
     // Новая версия с градиентом
     function drawGradientGrid() {
