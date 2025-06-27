@@ -1425,40 +1425,33 @@ function getDefaultTheme() {
 }
 
 // Функция отрисовки сетки (БЕЗ аргументов, читает тему из куки или ОС)
-function getDrawGridFunction() {
+function drawGrid() {
   const savedTheme = getCookie('grid_theme');
   let themeToDraw = savedTheme || getDefaultTheme(); // Используем тему из куки или тему ОС
 
   switch (themeToDraw) {
     case 'gradient':
-      return drawGradientGrid;
+      drawGradientGrid();
+      break;
     case 'white':
-      return drawWhiteGrid;
+      drawWhiteGrid();
+      break;
     case 'black':
-      return drawBlackGrid;
+      drawBlackGrid();
+      break;
     default:
-      return drawGradientGrid; // Обработка неизвестной темы
+      drawGradientGrid(); // Обработка неизвестной темы
   }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  // Получаем контекст рисования
-  const canvas = document.getElementById('myCanvas');
-  ctx = canvas.getContext('2d');
-
-  if (!ctx) {
-    console.error("Failed to get 2D rendering context for canvas!");
-    return;
-  }
-
   const selectElement = document.getElementById('theme-select');
 
   // Добавляем обработчик события изменения выбранной темы
   selectElement.addEventListener('change', function() {
     const selectedTheme = this.value;
     setCookie('grid_theme', selectedTheme, 30); // Сохраняем в куки
-    const drawFunction = getDrawGridFunction(); // Получаем функцию отрисовки
-    drawFunction(); // Вызываем функцию отрисовки
+    drawGrid(); // Отрисовываем сетку
   });
 
   // Проверяем, есть ли тема в куках
@@ -1472,9 +1465,9 @@ document.addEventListener('DOMContentLoaded', function() {
   // Устанавливаем выбранную тему в селекторе
   selectElement.value = savedTheme;
 
+
   // Первоначальная отрисовка сетки при загрузке страницы
-  const drawFunction = getDrawGridFunction(); // Получаем функцию отрисовки
-  drawFunction(); // Вызываем функцию отрисовки
+  drawGrid();
 });
 
 
