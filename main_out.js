@@ -1447,10 +1447,10 @@ showSDK();  // Show SDK ad
 
     // Старая версия сетки
     function drawClassicGrid() {
-        ctx.fillStyle = "#FFFFFF";
+        ctx.fillStyle = "#101010";
         ctx.fillRect(0, 0, canvasWidth, canvasHeight);
         ctx.save();
-
+ctx.fillStyle = '#FFFFFF';
         ctx.globalAlpha = 0.2;
         ctx.scale(viewZoom, viewZoom);
         const a = canvasWidth / viewZoom;
