@@ -1446,31 +1446,34 @@ showSDK();  // Show SDK ad
     }
 
     // Старая версия сетки
-    function drawClassicGrid() {
-        ctx.fillStyle = "#101010";
-        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-        ctx.save();
-ctx.fillStyle = '#FFFFFF';
-        ctx.globalAlpha = 0.2;
-        ctx.scale(viewZoom, viewZoom);
-        const a = canvasWidth / viewZoom;
-        const b = canvasHeight / viewZoom;
+function drawClassicGrid() {
+    ctx.fillStyle = "#101010";
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+    ctx.save();
 
-        ctx.beginPath();
-        for (let c = -.5 + (-nodeX + a / 2) % 50; c < a; c += 50) {
-            ctx.moveTo(c, 0);
-            ctx.lineTo(c, b);
-        }
-        ctx.stroke();
+    ctx.globalAlpha = 0.5; // Увеличил alpha чтобы лучше было видно
+    ctx.scale(viewZoom, viewZoom);
+    const a = canvasWidth / viewZoom;
+    const b = canvasHeight / viewZoom;
 
-        ctx.beginPath();
-        for (let c = -.5 + (-nodeY + b / 2) % 50; c < b; c += 50) {
-            ctx.moveTo(0, c);
-            ctx.lineTo(a, c);
-        }
-        ctx.stroke();
-        ctx.restore();
+    // Устанавливаем цвет линий в белый
+    ctx.strokeStyle = "white";
+
+    ctx.beginPath();
+    for (let c = -.5 + (-nodeX + a / 2) % 50; c < a; c += 50) {
+        ctx.moveTo(c, 0);
+        ctx.lineTo(c, b);
     }
+    ctx.stroke();
+
+    ctx.beginPath();
+    for (let c = -.5 + (-nodeY + b / 2) % 50; c < b; c += 50) {
+        ctx.moveTo(0, c);
+        ctx.lineTo(a, c);
+    }
+    ctx.stroke();
+    ctx.restore();
+}
 
 
     // Инициализация изображений
