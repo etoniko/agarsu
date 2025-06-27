@@ -1291,20 +1291,6 @@ showSDK();  // Show SDK ad
 
         buildQTree();
         mouseCoordinateChange();
-        xa || ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-        if (xa) {
-            if (showDarkTheme) {
-                ctx.fillStyle = '#FFFFFF';
-                ctx.globalAlpha = .05;
-                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-                ctx.globalAlpha = 1;
-            } else {
-                ctx.fillStyle = '#101010';
-                ctx.globalAlpha = .05;
-                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-                ctx.globalAlpha = 1;
-            }
-        } else {
             drawGrid();
             drawCenterBackground();
         }
@@ -1413,7 +1399,7 @@ showSDK();  // Show SDK ad
         if (showDarkTheme) {
             drawGradientGrid();
         } else {
-            drawClassicGrid();
+            drawBlackGrid();
         }
     }
 
@@ -1446,7 +1432,7 @@ showSDK();  // Show SDK ad
     }
 
     // Старая версия сетки
-function drawClassicGrid() {
+function drawBlackGrid() {
     ctx.fillStyle = "#101010";
     ctx.fillRect(0, 0, canvasWidth, canvasHeight);
     ctx.save();
@@ -1456,6 +1442,34 @@ function drawClassicGrid() {
 
     // Устанавливаем цвет линий в белый
     ctx.strokeStyle = "white";
+    ctx.globalAlpha = 0.1; // Увеличил alpha чтобы лучше было видно
+
+    ctx.beginPath();
+    for (let c = -.5 + (-nodeX + a / 2) % 50; c < a; c += 50) {
+        ctx.moveTo(c, 0);
+        ctx.lineTo(c, b);
+    }
+    ctx.stroke();
+
+    ctx.beginPath();
+    for (let c = -.5 + (-nodeY + b / 2) % 50; c < b; c += 50) {
+        ctx.moveTo(0, c);
+        ctx.lineTo(a, c);
+    }
+    ctx.stroke();
+    ctx.restore();
+}
+
+function drawWhiteGrid() {
+    ctx.fillStyle = "#F2FBFF";
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+    ctx.save();
+    ctx.scale(viewZoom, viewZoom);
+    const a = canvasWidth / viewZoom;
+    const b = canvasHeight / viewZoom;
+
+    // Устанавливаем цвет линий в белый
+    ctx.strokeStyle = "#111111";
     ctx.globalAlpha = 0.1; // Увеличил alpha чтобы лучше было видно
 
     ctx.beginPath();
