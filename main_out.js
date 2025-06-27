@@ -1294,7 +1294,7 @@ showSDK();  // Show SDK ad
         xa || ctx.clearRect(0, 0, canvasWidth, canvasHeight);
         if (xa) {
             if (showDarkTheme) {
-                ctx.fillStyle = '#111111';
+                ctx.fillStyle = '#FFFFFF';
                 ctx.globalAlpha = .05;
                 ctx.fillRect(0, 0, canvasWidth, canvasHeight);
                 ctx.globalAlpha = 1;
