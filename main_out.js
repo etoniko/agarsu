@@ -1456,7 +1456,7 @@ function drawClassicGrid() {
 
     // Устанавливаем цвет линий в белый
     ctx.strokeStyle = "white";
-    ctx.globalAlpha = 0.5; // Увеличил alpha чтобы лучше было видно
+    ctx.globalAlpha = 0.2; // Увеличил alpha чтобы лучше было видно
 
     ctx.beginPath();
     for (let c = -.5 + (-nodeX + a / 2) % 50; c < a; c += 50) {
