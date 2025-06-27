@@ -1447,7 +1447,7 @@ showSDK();  // Show SDK ad
 
     // Старая версия сетки
     function drawClassicGrid() {
-        ctx.fillStyle = "#101010";
+        ctx.fillStyle = "#FFFFFF";
         ctx.fillRect(0, 0, canvasWidth, canvasHeight);
         ctx.save();
 
