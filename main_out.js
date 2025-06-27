@@ -1450,14 +1450,13 @@ function drawClassicGrid() {
     ctx.fillStyle = "#101010";
     ctx.fillRect(0, 0, canvasWidth, canvasHeight);
     ctx.save();
-
-    ctx.globalAlpha = 0.5; // Увеличил alpha чтобы лучше было видно
     ctx.scale(viewZoom, viewZoom);
     const a = canvasWidth / viewZoom;
     const b = canvasHeight / viewZoom;
 
     // Устанавливаем цвет линий в белый
     ctx.strokeStyle = "white";
+    ctx.globalAlpha = 0.5; // Увеличил alpha чтобы лучше было видно
 
     ctx.beginPath();
     for (let c = -.5 + (-nodeX + a / 2) % 50; c < a; c += 50) {
