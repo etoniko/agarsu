@@ -1291,8 +1291,23 @@ showSDK();  // Show SDK ad
 
         buildQTree();
         mouseCoordinateChange();
+xa || ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+        if (xa) {
+            if (showDarkTheme) {
+                ctx.fillStyle = '#111111';
+                ctx.globalAlpha = .05;
+                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+                ctx.globalAlpha = 1;
+            } else {
+                ctx.fillStyle = '#F2FBFF';
+                ctx.globalAlpha = .05;
+                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+                ctx.globalAlpha = 1;
+            }
+        } else {
             drawGrid();
             drawCenterBackground();
+}
 
         nodelist.sort((a, b) => a.size === b.size ? a.id - b.id : a.size - b.size);
 
