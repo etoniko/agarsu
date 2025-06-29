@@ -226,7 +226,6 @@ display: flex;
 
 /* Стили для остальных игроков */
 .Lednick{
-    color: white;
     overflow: hidden;
     width: 150px;
     white-space: nowrap;
