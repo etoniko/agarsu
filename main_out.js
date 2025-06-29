@@ -1054,9 +1054,11 @@ function applyNicknameLimit() {
             // Создаем новый span для ника с ограничением
             const nicknameSpan = document.createElement('span');
             nicknameSpan.style.overflow = 'hidden';
-            nicknameSpan.style.width = '150px';
+            nicknameSpan.style.width = '100px';
             nicknameSpan.style.whiteSpace = 'nowrap';
             nicknameSpan.style.textOverflow = 'ellipsis';
+            nicknameSpan.style.display = 'inline-block';
+            nicknameSpan.style.verticalAlign = 'bottom';
             nicknameSpan.textContent = nickname;
 
             // Заменяем исходный текст в chatTextSpan, оставив только " вошел в игру!"
