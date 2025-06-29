@@ -1054,11 +1054,11 @@ function applyNicknameLimit() {
             // Создаем новый span для ника с ограничением
             const nicknameSpan = document.createElement('span');
             nicknameSpan.style.overflow = 'hidden';
-            nicknameSpan.style.maxWidth = '150px'
+            nicknameSpan.style.maxWidth = '150px';  // Максимальная ширина
             nicknameSpan.style.whiteSpace = 'nowrap';
             nicknameSpan.style.textOverflow = 'ellipsis';
-            nicknameSpan.style.display = 'inline-block';
-            nicknameSpan.style.verticalAlign = 'bottom';
+            nicknameSpan.style.display = 'inline-block'; // Важно!
+            nicknameSpan.style.flexShrink = '0';  // Не сжимать!
             nicknameSpan.textContent = nickname;
 
             // Заменяем исходный текст в chatTextSpan, оставив только " вошел в игру!"
@@ -1066,6 +1066,10 @@ function applyNicknameLimit() {
 
             // Добавляем ник с ограничением в начало chatTextSpan
             chatTextSpan.prepend(nicknameSpan);
+
+            // Делаем chatTextSpan flex-контейнером
+            chatTextSpan.style.display = 'flex';
+            chatTextSpan.style.alignItems = 'center'; // Выравнивание по вертикали (по желанию)
         }
     });
 }
