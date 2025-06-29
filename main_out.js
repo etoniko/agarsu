@@ -1732,7 +1732,7 @@ function drawWhiteGrid() {
                     if (b < displayedPlayers) {
                         const entryDiv = document.createElement("div");
                         entryDiv.style.color = isMe ? "#FFAAAA" : "#FFFFFF"; // Цвет строки для isMe
-                        entryDiv.innerHTML = (!noRanking ? `${b + 1}. ` : "") + (level !== -1 ? "<div class='star-container'><i class='fas fa-star'></i><span class='levelme'>" + level + "</span></div>" : "") + name; // Добавляем ранг
+                        entryDiv.innerHTML = (!noRanking ? `${b + 1}. ` : "") + (level !== -1 ? "<div class='star-container'><i class='fas fa-star'></i><span class='levelme'>" + level + "</span></div>" : "") + `<span class="Lednick">${name}</span>`; // Добавляем ранг
                         leaderboardDiv.appendChild(entryDiv); // Добавляем запись в leaderboardDiv
                     }
                 }
@@ -1742,7 +1742,7 @@ function drawWhiteGrid() {
                     const level = accountData ? getLevel(accountData.xp) : -1;
                     const myRankDiv = document.createElement("div");
                     myRankDiv.style.color = "#FFAAAA"; // Цвет строки для isMe в 11-й позиции
-                    myRankDiv.innerHTML = myRank + "." + (level !== -1 ? "<div class='star-container'><i class='fas fa-star'></i><span class='levelme'>" + level + "</span></div>" : "") + playerCells[0].name; // Показываем мой ранг и имя
+                    myRankDiv.innerHTML = myRank + "." + (level !== -1 ? "<div class='star-container'><i class='fas fa-star'></i><span class='levelme'>" + level + "</span></div>" : "") + `<span class="Lednick">${playerCells[0].name}</span>`; // Показываем мой ранг и имя
                     leaderboardDiv.appendChild(myRankDiv);
                 }
             } else {
