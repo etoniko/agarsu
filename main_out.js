@@ -1049,12 +1049,13 @@ function applyNicknameLimit() {
         if (chatTextSpan && chatTextSpan.textContent.includes(' вошел в игру!')) {
             // Находим никнейм игрока (предполагаем, что ник перед " вошел в игру!")
             const messageText = chatTextSpan.textContent;
-            const nickname = messageText.substring(0, messageText.indexOf(' вошел в игру!'));
+            const nickname = messageText.substring(0, messageText.indexOf('вошел в игру!'));
 
             // Создаем новый span для ника с ограничением
             const nicknameSpan = document.createElement('span');
             nicknameSpan.style.overflow = 'hidden';
-            nicknameSpan.style.maxWidth = '100px';  // Максимальная ширина
+            nicknameSpan.style.maxWidth = '95px';  // Максимальная ширина
+            nicknameSpan.style.marginRight = '5px'; // или любое другое значение
             nicknameSpan.style.whiteSpace = 'nowrap';
             nicknameSpan.style.textOverflow = 'ellipsis';
             nicknameSpan.style.display = 'inline-block'; // Важно!
@@ -1062,7 +1063,7 @@ function applyNicknameLimit() {
             nicknameSpan.textContent = nickname;
 
             // Заменяем исходный текст в chatTextSpan, оставив только " вошел в игру!"
-            chatTextSpan.textContent = ' вошел в игру!';
+            chatTextSpan.textContent = 'вошел в игру!';
 
             // Добавляем ник с ограничением в начало chatTextSpan
             chatTextSpan.prepend(nicknameSpan);
