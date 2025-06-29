@@ -1054,7 +1054,7 @@ function applyNicknameLimit() {
             // Создаем новый span для ника с ограничением
             const nicknameSpan = document.createElement('span');
             nicknameSpan.style.overflow = 'hidden';
-            nicknameSpan.style.width = '100px';
+            nicknameSpan.style.maxWidth = '150px'
             nicknameSpan.style.whiteSpace = 'nowrap';
             nicknameSpan.style.textOverflow = 'ellipsis';
             nicknameSpan.style.display = 'inline-block';
