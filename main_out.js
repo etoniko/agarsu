@@ -944,6 +944,7 @@ function isMouseOverElement(element) {
             "time": formatTime(new Date()) // Форматируем текущее время
         });
         drawChatBoard();
+applyNicknameLimit();
     }
 
     function formatTime(date) {
@@ -1038,6 +1039,35 @@ function isMouseOverElement(element) {
         // Устанавливаем прокрутку в самый низ
         chatDiv.scrollTop = chatDiv.scrollHeight;
     }
+
+function applyNicknameLimit() {
+    const chatDivs = document.querySelectorAll('.scoreshint');
+
+    chatDivs.forEach(chatDiv => {
+        const chatTextSpan = chatDiv.querySelector('.chat-text');
+
+        if (chatTextSpan && chatTextSpan.textContent.includes(' вошел в игру!')) {
+            // Находим никнейм игрока (предполагаем, что ник перед " вошел в игру!")
+            const messageText = chatTextSpan.textContent;
+            const nickname = messageText.substring(0, messageText.indexOf(' вошел в игру!'));
+
+            // Создаем новый span для ника с ограничением
+            const nicknameSpan = document.createElement('span');
+            nicknameSpan.style.overflow = 'hidden';
+            nicknameSpan.style.width = '150px';
+            nicknameSpan.style.whiteSpace = 'nowrap';
+            nicknameSpan.style.textOverflow = 'ellipsis';
+            nicknameSpan.textContent = nickname;
+
+            // Заменяем исходный текст в chatTextSpan, оставив только " вошел в игру!"
+            chatTextSpan.textContent = ' вошел в игру!';
+
+            // Добавляем ник с ограничением в начало chatTextSpan
+            chatTextSpan.prepend(nicknameSpan);
+        }
+    });
+}
+
 
     const normalizeFractlPart = n => (n % (Math.PI * 2)) / (Math.PI * 2);
 
