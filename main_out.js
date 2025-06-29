@@ -1731,8 +1731,9 @@ function drawWhiteGrid() {
                     // Отображаем только первых 10 игроков
                     if (b < displayedPlayers) {
                         const entryDiv = document.createElement("div");
+                        entryDiv.className = "Lednick"; // Добавляем класс Lednick
                         entryDiv.style.color = isMe ? "#FFAAAA" : "#FFFFFF"; // Цвет строки для isMe
-                        entryDiv.innerHTML = (!noRanking ? `${b + 1}. ` : "") + (level !== -1 ? "<div class='star-container'><i class='fas fa-star'></i><span class='levelme'>" + level + "</span></div>" : "") + `<span class="Lednick">${name}</span>`; // Добавляем ранг
+                        entryDiv.innerHTML = (!noRanking ? `${b + 1}. ` : "") + (level !== -1 ? "<div class='star-container'><i class='fas fa-star'></i><span class='levelme'>" + level + "</span></div>" : "") + `<span>${name}</span>`; // Добавляем ранг
                         leaderboardDiv.appendChild(entryDiv); // Добавляем запись в leaderboardDiv
                     }
                 }
@@ -1741,8 +1742,9 @@ function drawWhiteGrid() {
                 if (myRank && myRank > displayedPlayers) {
                     const level = accountData ? getLevel(accountData.xp) : -1;
                     const myRankDiv = document.createElement("div");
+                    myRankDiv.className = "Lednick";
                     myRankDiv.style.color = "#FFAAAA"; // Цвет строки для isMe в 11-й позиции
-                    myRankDiv.innerHTML = myRank + "." + (level !== -1 ? "<div class='star-container'><i class='fas fa-star'></i><span class='levelme'>" + level + "</span></div>" : "") + `<span class="Lednick">${playerCells[0].name}</span>`; // Показываем мой ранг и имя
+                    myRankDiv.innerHTML = myRank + "." + (level !== -1 ? "<div class='star-container'><i class='fas fa-star'></i><span class='levelme'>" + level + "</span></div>" : "") + `<span>${playerCells[0].name}</span>`; // Показываем мой ранг и имя
                     leaderboardDiv.appendChild(myRankDiv);
                 }
             } else {
