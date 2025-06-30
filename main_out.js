@@ -957,8 +957,45 @@ applyNicknameLimit();
     const admins = ["нико"]; // Укажите ники администраторов
 
 
-    // Использование при обработке чата
-    function drawChatBoard() {
+let badWordsSet; // Используем Set вместо массива
+
+fetch('word.txt')
+    .then(response => response.text())
+    .then(text => {
+        const words = text.split('\n').map(word => word.trim().toLowerCase());
+        badWordsSet = new Set(words); // Создаем Set из массива
+    })
+    .catch(error => console.error('Ошибка загрузки списка матерных слов:', error));
+
+
+function censorMessage(message) {
+    if (!badWordsSet) {
+        console.warn("Список матерных слов не загружен. Антимат не работает.");
+        return message;
+    }
+
+    const words = message.split(' ');
+    let censoredMessage = "";  // Собираем результат в строку
+    for (let i = 0; i < words.length; i++) {
+        const word = words[i];
+        const lowerCaseWord = word.toLowerCase();
+
+        if (badWordsSet.has(lowerCaseWord)) {
+            censoredMessage += word[0] + "***";
+        } else {
+            censoredMessage += word;
+        }
+
+        if (i < words.length - 1) {
+            censoredMessage += " "; // Добавляем пробел, если это не последнее слово
+        }
+    }
+    return censoredMessage;
+}
+
+
+
+ function drawChatBoard() {
         if (hideChat) {
             return;
         }
@@ -985,7 +1022,6 @@ applyNicknameLimit();
             }
 
             // Создаем текстовые элементы для имени, сообщения и времени
-            // Создаем текстовые элементы для имени, сообщения и времени
             const nameSpan = document.createElement('span');
             nameSpan.classList.add('chat-name');
             nameSpan.style.color = admins.includes(message.name) ? 'gold' : message.color; // Устанавливаем цвет имени
@@ -993,7 +1029,8 @@ applyNicknameLimit();
 
             const messageSpan = document.createElement('span');
             messageSpan.classList.add('chat-text');
-            messageSpan.textContent = message.message; // Применяем фильтр
+            //  Применяем антимат к сообщению
+            messageSpan.textContent = censorMessage(message.message);
 
             const timeSpan = document.createElement('span'); // Создаем элемент для времени
             timeSpan.classList.add('chat-time');
