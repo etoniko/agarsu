@@ -974,7 +974,7 @@ function censorMessage(message) {
         return message;
     }
 
-    const words = message.split(' ');
+    const words = message.split(' ').filter(word => word !== "");
     let censoredMessage = "";  // Собираем результат в строку
     for (let i = 0; i < words.length; i++) {
         const word = words[i];
