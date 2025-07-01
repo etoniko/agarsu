@@ -717,9 +717,19 @@ function isMouseOverElement(element) {
         log.info("Connection successful!");
     }
 
-    function onWsClose(evt) {
-        console.log(evt);
+function onWsClose(evt) {
+    console.log(evt);
+    // Получаем элемент div с id "serverclose"
+    let serverCloseDiv = document.getElementById("serverclose");
+
+    // Проверяем, существует ли элемент
+    if (serverCloseDiv) {
+        // Устанавливаем стиль display в "block", чтобы отобразить div
+        serverCloseDiv.style.display = "block";
+    } else {
+        console.warn("Элемент с id 'serverclose' не найден.");
     }
+}
 
 
     function onWsMessage(msg) {
