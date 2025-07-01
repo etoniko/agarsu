@@ -719,13 +719,13 @@ function isMouseOverElement(element) {
 
         function onWsClose(evt) {
             console.log(evt);
-            let serverCloseDiv = document.getElementById("serverclose");
+            let serverCloseDiv = document.getElementById("serverclose-overlay");
 
             if (serverCloseDiv) {
                 serverCloseDiv.style.display = "block";
                 startCountdown();
             } else {
-                console.warn("Элемент с id 'serverclose' не найден.");
+                console.warn("Элемент с id 'serverclose-overlay' не найден.");
             }
         }
 
