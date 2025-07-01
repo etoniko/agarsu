@@ -488,7 +488,6 @@ bottom: 0px !important;
     .sidebar {
         background-color: #016bef;
         display: flex;
-        z-index: 3;
         user-select: none;
         justify-content: space-evenly;
         align-items: center;
