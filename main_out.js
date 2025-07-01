@@ -717,19 +717,33 @@ function isMouseOverElement(element) {
         log.info("Connection successful!");
     }
 
-function onWsClose(evt) {
-    console.log(evt);
-    // Получаем элемент div с id "serverclose"
-    let serverCloseDiv = document.getElementById("serverclose");
+        function onWsClose(evt) {
+            console.log(evt);
+            let serverCloseDiv = document.getElementById("serverclose");
 
-    // Проверяем, существует ли элемент
-    if (serverCloseDiv) {
-        // Устанавливаем стиль display в "block", чтобы отобразить div
-        serverCloseDiv.style.display = "block";
-    } else {
-        console.warn("Элемент с id 'serverclose' не найден.");
-    }
-}
+            if (serverCloseDiv) {
+                serverCloseDiv.style.display = "block";
+                startCountdown();
+            } else {
+                console.warn("Элемент с id 'serverclose' не найден.");
+            }
+        }
+
+        function startCountdown() {
+            let countdownElement = document.getElementById("countdown");
+            let seconds = 10;
+
+            let countdownInterval = setInterval(function() {
+                seconds--;
+                countdownElement.textContent = "Перезагрузка через: " + seconds;
+
+                if (seconds <= 0) {
+                    clearInterval(countdownInterval);
+                    location.reload(); // Перезагружаем страницу
+                }
+            }, 1000); // Обновляем каждую секунду
+        }
+
 
 
     function onWsMessage(msg) {
