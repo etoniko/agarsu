@@ -682,34 +682,37 @@ window.yaContextCb.push(() => {
     <input type="text" autocomplete="off" id="chat_textbox" maxlength="120" placeholder="Напишите сообщение...">
 </div>
 <script>
-    // Получаем элементы
-    const toggleChatButton = document.getElementById('toggleChatButton');
-    const chatContainer = document.getElementById('chat-container');
-    const chatTextBox = document.getElementById('chat_textbox');
-    const chatIcon = toggleChatButton.querySelector('i');
+// Получаем элементы
+const toggleChatButton = document.getElementById('toggleChatButton');
+const chatContainer = document.getElementById('chat-container');
+const chatTextBox = document.getElementById('chat_textbox');
+const chatIcon = toggleChatButton.querySelector('i');
+const overchatElement = document.querySelector("body > div.overchat"); // Получаем элемент overchat
 
-    // Начальное состояние чата (видимый)
-    let isChatVisible = true;
+// Начальное состояние чата (видимый)
+let isChatVisible = true;
 
-    // Обработчик клика по кнопке
-    toggleChatButton.addEventListener('click', function() {
-        if (isChatVisible) {
-            // Если чат видимый, скрываем его с помощью высоты
-            chatContainer.style.height = '0';
-            chatTextBox.style.display = 'none'; // Скрываем текстовое поле
-            chatIcon.classList.remove('fa-close');
-            chatIcon.classList.add('fa-arrow-up');
-        } else {
-            // Если чат скрыт, показываем его
-            chatContainer.style.height = 'auto';
-            chatTextBox.style.display = 'block'; // Показываем текстовое поле
-            chatIcon.classList.remove('fa-arrow-up');
-            chatIcon.classList.add('fa-close');
-        }
+// Обработчик клика по кнопке
+toggleChatButton.addEventListener('click', function() {
+    if (isChatVisible) {
+        // Если чат видимый, скрываем его с помощью высоты
+        chatContainer.style.height = '0';
+        chatTextBox.style.display = 'none'; // Скрываем текстовое поле
+        chatIcon.classList.remove('fa-close');
+        chatIcon.classList.add('fa-arrow-up');
+        overchatElement.style.maxWidth = '43px'; // Устанавливаем max-width
+    } else {
+        // Если чат скрыт, показываем его
+        chatContainer.style.height = 'auto';
+        chatTextBox.style.display = 'block'; // Показываем текстовое поле
+        chatIcon.classList.remove('fa-arrow-up');
+        chatIcon.classList.add('fa-close');
+        overchatElement.style.maxWidth = ''; // Сбрасываем max-width (применяется стиль по умолчанию)
+    }
 
-        // Переключаем состояние видимости чата
-        isChatVisible = !isChatVisible;
-    });
+    // Переключаем состояние видимости чата
+    isChatVisible = !isChatVisible;
+});
 </script>
     <div class="homemenu" onclick="$('#overlays').show();"><i class="fas fa-home"></i></div>
 
