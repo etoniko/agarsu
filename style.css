@@ -1201,7 +1201,6 @@ position: absolute;
 
 .overchat.hidden {
     width: 43px;
-    display: none; /* Скрываем overchat при добавлении класса 'hidden' */
 }
 
 #toggleChatButton {
