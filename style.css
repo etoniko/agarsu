@@ -566,7 +566,7 @@ backdrop-filter: blur(20px);
     grid-template-columns: repeat(4, auto);
 }
 #leaderboard{
-	max-width: 140px;
+	max-width: 140px !important;
     right: 5px;
     top: 5px;
     font-size: 11px;
@@ -1200,6 +1200,7 @@ position: absolute;
 }
 
 .overchat.hidden {
+    width: 43px;
     display: none; /* Скрываем overchat при добавлении класса 'hidden' */
 }
 
