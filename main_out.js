@@ -1842,7 +1842,7 @@ function drawWhiteGrid() {
                     const myRankDiv = document.createElement("div");
                     myRankDiv.className = "Lednick";
                     myRankDiv.style.color = "#FFAAAA"; // Цвет строки для isMe в 11-й позиции
-                    myRankDiv.innerHTML = myRank + "." + (level !== -1 ? "<div class='star-container'><i class='fas fa-star'></i><span class='levelme'>" + level + "</span></div>" : "") + `<span>${playerCells[0].name}</span>`; // Показываем мой ранг и имя
+                    myRankDiv.innerHTML = myRank + ". " + (level !== -1 ? "<div class='star-container'><i class='fas fa-star'></i><span class='levelme'>" + level + "</span></div>" : "") + `<span>${playerCells[0].name}</span>`; // Показываем мой ранг и имя
                     leaderboardDiv.appendChild(myRankDiv);
                 }
             } else {
