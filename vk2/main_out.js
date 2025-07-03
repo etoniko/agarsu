@@ -1058,26 +1058,42 @@ function isMouseOverElement(element) {
 
    // В main_out.js (или где у вас находится функция updateNodes)
 
-let gameStartTime = 0; // Время начала игры
-let totalScore = 0;  // Общий набранный счет
-let survivalTime = 0; // Время выживания
+let gameStartTime = 0;
+let totalScore = 0;
+let maxScore = 0;
+let survivalTime = 0;
+let killLog = [];
+let myRank = 0;  // Добавили переменную для хранения ранга
 
 function updateNodes(reader) {
     timestamp = Date.now();
     ua = false;
 
     if (gameStartTime === 0 && playerCells.length > 0) {
-        // Засекаем время начала игры при первом появлении клетки игрока
         gameStartTime = timestamp;
-        totalScore = 0;  // Reset score on new game
-        maxScore = 0; // Reset max score
-        survivalTime = 0; // Reset survival time
+        totalScore = 0;
+        maxScore = 0;
+        survivalTime = 0;
+        killLog = [];
+        myRank = 0; // Reset rank at new game start
     }
 
     for (let killerId; killerId = reader.uint32();) {
         var killer = nodes[killerId],
             killedNode = nodes[reader.uint32()];
         if (killer && killedNode) {
+            // Записываем информацию о поедании
+            let killerName = killer.name || "Неизвестный"; // Получаем имя съевшего
+            let killedName = killedNode.name || "Неизвестный"; // Получаем имя съеденного
+
+            if (playerCells.includes(killer)) {
+                // Если игрок съел кого-то
+                killLog.push({ type: "kill", victim: killedName, killer: "Вы" });
+            } else if (playerCells.includes(killedNode)) {
+                // Если игрока съели
+                killLog.push({ type: "killedBy", killer: killerName, victim: "Вы" });
+            }
+
             killedNode.destroy();
             killedNode.ox = killedNode.x;
             killedNode.oy = killedNode.y;
@@ -1151,10 +1167,9 @@ function updateNodes(reader) {
             }
         }
 
-        // Обновление статистики во время игры
         if (playerCells.length > 0) {
-            totalScore += node.size; // Простой пример подсчета очков.  Подстройте под свою игру.
-            maxScore = Math.max(maxScore, node.size); // Обновляем максимальный счет
+            totalScore += node.size;
+            maxScore = Math.max(maxScore, node.size);
         }
     }
 
@@ -1162,6 +1177,32 @@ function updateNodes(reader) {
         const node = nodes[reader.uint32()];
         null != node && node.destroy();
     }
+    // leaderboard start
+    if(leaderBoard)
+    {
+
+        let displayedPlayers = 10;
+        let noRanking = false;
+
+                let myRank = 0;
+                let name = "";
+
+                for (let b = 0; b < leaderBoard.length; b++) {
+                    let name = leaderBoard[b].name;
+                    if (!name) {
+                        name = "Неизвестный";
+                    }
+                    const isMe = nodesOnScreen.indexOf(leaderBoard[b].id) !== -1;
+                    if (isMe && playerCells[0]?.name) {
+                        name = playerCells[0].name;
+                        myRank = b + 1;
+                    }
+
+                }
+
+    }
+
+    // leaderboard end
 
 
     if (ua && playerCells.length === 0) {
@@ -1171,17 +1212,20 @@ function updateNodes(reader) {
 
 
 function showGameOverStats() {
-    survivalTime = (Date.now() - gameStartTime) / 1000; // Время в секундах
-    gameStartTime = 0; // Сбрасываем время начала, чтобы начать новый отсчет при следующей игре
+    survivalTime = (Date.now() - gameStartTime) / 1000;
+    gameStartTime = 0;
+
     console.log("Game Over!");
     console.log("Время выживания: " + survivalTime.toFixed(2) + " секунд");
     console.log("Общий счет: " + totalScore);
     console.log("Максимальный счет: " + maxScore);
-    // Здесь можно добавить отображение статистики на экране (например, через модальное окно)
-    displayStatsPopup(survivalTime, totalScore, maxScore);
+    console.log("Kill Log:", killLog);
+    console.log("Ранг:", myRank);
+
+    displayStatsPopup(survivalTime, totalScore, maxScore, killLog, myRank);
 }
 
-function displayStatsPopup(survivalTime, totalScore, maxScore) {
+function displayStatsPopup(survivalTime, totalScore, maxScore, killLog, myRank) {
     // Создаем элементы для модального окна
     const modal = document.createElement('div');
     modal.style.position = 'fixed';
@@ -1189,11 +1233,11 @@ function displayStatsPopup(survivalTime, totalScore, maxScore) {
     modal.style.left = '0';
     modal.style.width = '100%';
     modal.style.height = '100%';
-    modal.style.backgroundColor = 'rgba(0, 0, 0, 0.5)'; // Полупрозрачный фон
+    modal.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
     modal.style.display = 'flex';
     modal.style.justifyContent = 'center';
     modal.style.alignItems = 'center';
-    modal.style.zIndex = '1000'; // Чтобы модальное окно было поверх всего
+    modal.style.zIndex = '1000';
 
     const modalContent = document.createElement('div');
     modalContent.style.backgroundColor = 'white';
@@ -1213,32 +1257,54 @@ function displayStatsPopup(survivalTime, totalScore, maxScore) {
     const maxScoreText = document.createElement('p');
     maxScoreText.textContent = 'Максимальный счет: ' + maxScore;
 
+    const rankText = document.createElement('p');
+    rankText.textContent = `Место в таблице лидеров: ${myRank || 'неизвестно'}`;
+
+    // Добавляем информацию об убийствах
+    const killLogTitle = document.createElement('h3');
+    killLogTitle.textContent = 'События:';
+    modalContent.appendChild(killLogTitle);
+
+    const killLogList = document.createElement('ul');
+    killLog.forEach(event => {
+        const listItem = document.createElement('li');
+        if (event.type === 'kill') {
+            listItem.textContent = `Вы съели ${event.victim}`;
+        } else if (event.type === 'killedBy') {
+            listItem.textContent = `Вас съел ${event.killer}`;
+        }
+        killLogList.appendChild(listItem);
+    });
+    modalContent.appendChild(killLogList);
+
+
     const closeButton = document.createElement('button');
     closeButton.textContent = 'Закрыть';
     closeButton.addEventListener('click', () => {
-        modal.remove(); // Удаляем модальное окно
-        resetGameVariables(); // Сбрасываем переменные игры
+        modal.remove();
+        resetGameVariables();
     });
 
-    // Добавляем элементы в модальное окно
     modalContent.appendChild(title);
     modalContent.appendChild(survivalTimeText);
     modalContent.appendChild(totalScoreText);
     modalContent.appendChild(maxScoreText);
+    modalContent.appendChild(rankText);
+    modalContent.appendChild(killLogTitle);
+    modalContent.appendChild(killLogList);
     modalContent.appendChild(closeButton);
     modal.appendChild(modalContent);
 
-    // Добавляем модальное окно в body
     document.body.appendChild(modal);
 }
 
 function resetGameVariables() {
-    // Сбрасываем переменные, чтобы подготовиться к новой игре
     gameStartTime = 0;
     totalScore = 0;
     maxScore = 0;
     survivalTime = 0;
-    // Сброс других переменных, если необходимо
+    killLog = [];
+    myRank = 0; // Reset rank when restarting
 }
 
 
