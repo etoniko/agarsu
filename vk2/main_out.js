@@ -1057,7 +1057,6 @@ function isMouseOverElement(element) {
     }
 
    // В main_out.js (или где у вас находится функция updateNodes)
-
 let gameStartTime = 0;
 let totalScore = 0;
 let maxScore = 0;
@@ -1177,33 +1176,6 @@ function updateNodes(reader) {
         const node = nodes[reader.uint32()];
         null != node && node.destroy();
     }
-    // leaderboard start
-    if(leaderBoard)
-    {
-
-        let displayedPlayers = 10;
-        let noRanking = false;
-
-                let myRank = 0;
-                let name = "";
-
-                for (let b = 0; b < leaderBoard.length; b++) {
-                    let name = leaderBoard[b].name;
-                    if (!name) {
-                        name = "Неизвестный";
-                    }
-                    const isMe = nodesOnScreen.indexOf(leaderBoard[b].id) !== -1;
-                    if (isMe && playerCells[0]?.name) {
-                        name = playerCells[0].name;
-                        myRank = b + 1;
-                    }
-
-                }
-
-    }
-
-    // leaderboard end
-
 
     if (ua && playerCells.length === 0) {
         showGameOverStats();
@@ -1306,7 +1278,6 @@ function resetGameVariables() {
     killLog = [];
     myRank = 0; // Reset rank when restarting
 }
-
 
 
 
