@@ -1056,227 +1056,99 @@ function isMouseOverElement(element) {
         }
     }
 
-   // В main_out.js (или где у вас находится функция updateNodes)
-let gameStartTime = 0;
-let totalScore = 0;
-let survivalTime = 0;
-let killLog = [];
-let myRank = 0;  // Добавили переменную для хранения ранга
 
-function updateNodes(reader) {
-    timestamp = Date.now();
-    ua = false;
 
-    if (gameStartTime === 0 && playerCells.length > 0) {
-        gameStartTime = timestamp;
-        totalScore = 0;
-        maxScore = 0;
-        survivalTime = 0;
-        killLog = [];
-        myRank = 0; // Reset rank at new game start
-    }
-
-    for (let killerId; killerId = reader.uint32();) {
-        var killer = nodes[killerId],
-            killedNode = nodes[reader.uint32()];
-        if (killer && killedNode) {
-            // Записываем информацию о поедании
-            let killerName = killer.name || "Неизвестный"; // Получаем имя съевшего
-            let killedName = killedNode.name || "Неизвестный"; // Получаем имя съеденного
-
-            if (playerCells.includes(killer)) {
-                // Если игрок съел кого-то
-                killLog.push({ type: "kill", victim: killedName, killer: "Вы" });
-            } else if (playerCells.includes(killedNode)) {
-                // Если игрока съели
-                killLog.push({ type: "killedBy", killer: killerName, victim: "Вы" });
-            }
-
-            killedNode.destroy();
-            killedNode.ox = killedNode.x;
-            killedNode.oy = killedNode.y;
-            killedNode.oSize = killedNode.size;
-            killedNode.nx = killer.x;
-            killedNode.ny = killer.y;
-            killedNode.nSize = killer.size;
-            killedNode.updateTime = timestamp;
-        }
-    }
-
-    for (let nodeid; nodeid = reader.uint32();) {
-        const type = reader.uint8();
-
-        let posX = 0;
-        let posY = 0;
-        let size = 0;
-
-        if (type === 1) {
-            posX = leftPos + (rightPos * 2) * normalizeFractlPart(nodeid);
-            posY = topPos + (bottomPos * 2) * normalizeFractlPart(nodeid * nodeid);
-            size = foodMinSize + nodeid % ((foodMaxSize - foodMinSize) + 1);
-        }
-        else {
-            posX = reader.int32();
-            posY = reader.int32();
-            size = reader.uint16();
-        }
-
-        for (var r = reader.uint8(), g = reader.uint8(), b = reader.uint8(),
-            color = (r << 16 | g << 8 | b).toString(16); 6 > color.length;) color = "0" + color;
-        var colorstr = "#" + color,
-            flags = reader.uint8(),
-            flagVirus = !!(flags & 0x01),
-            flagEjected = !!(flags & 0x20),
-            flagAgitated = !!(flags & 0x10),
-            _skin = "";
-
-        const name = reader.utf16();
-
-        let node = nodes[nodeid];
-        if (node) {
-            node = nodes[nodeid];
-            node.updatePos();
-            node.ox = node.x;
-            node.oy = node.y;
-            node.oSize = node.size;
-            node.color = colorstr;
-        } else {
-            node = new Cell(nodeid, posX, posY, size, colorstr, name, _skin);
-            nodelist.push(node);
-            nodes[nodeid] = node;
-            node.ka = posX;
-            node.la = posY;
-        }
-        node.isVirus = flagVirus;
-        node.isEjected = flagEjected;
-        node.isAgitated = flagAgitated;
-        node.nx = posX;
-        node.ny = posY;
-        node.setSize(size);
-        node.updateTime = timestamp;
-        node.flag = flags;
-        name && node.setName(name);
-        if (-1 != nodesOnScreen.indexOf(nodeid) && -1 == playerCells.indexOf(node)) {
-            document.getElementById("overlays").style.display = "none";
-            playerCells.push(node);
-            if (1 == playerCells.length) {
-                nodeX = node.x;
-                nodeY = node.y;
+    function updateNodes(reader) {
+        timestamp = Date.now();
+        ua = false;
+        for (let killerId; killerId = reader.uint32();) {
+            var killer = nodes[killerId],
+                killedNode = nodes[reader.uint32()];
+            if (killer && killedNode) {
+                killedNode.destroy();
+                killedNode.ox = killedNode.x;
+                killedNode.oy = killedNode.y;
+                killedNode.oSize = killedNode.size;
+                killedNode.nx = killer.x;
+                killedNode.ny = killer.y;
+                killedNode.nSize = killedNode.size;
+                killedNode.updateTime = timestamp;
             }
         }
 
-        if (playerCells.length > 0) {
-            totalScore += node.size;
-            maxScore = Math.max(maxScore, node.size);
+        for (let nodeid; nodeid = reader.uint32();) {
+            const type = reader.uint8();
+
+            let posX = 0;
+            let posY = 0;
+            let size = 0;
+
+            if (type === 1) {
+                posX = leftPos + (rightPos * 2) * normalizeFractlPart(nodeid);
+                posY = topPos + (bottomPos * 2) * normalizeFractlPart(nodeid * nodeid);
+                size = foodMinSize + nodeid % ((foodMaxSize - foodMinSize) + 1);
+            }
+            else {
+                posX = reader.int32();
+                posY = reader.int32();
+                size = reader.uint16();
+            }
+
+            for (var r = reader.uint8(), g = reader.uint8(), b = reader.uint8(),
+                color = (r << 16 | g << 8 | b).toString(16); 6 > color.length;) color = "0" + color;
+            var colorstr = "#" + color,
+                flags = reader.uint8(),
+                flagVirus = !!(flags & 0x01),
+                flagEjected = !!(flags & 0x20),
+                flagAgitated = !!(flags & 0x10),
+                _skin = "";
+
+            const name = reader.utf16();
+
+            let node = nodes[nodeid];
+            if (node) {
+                node = nodes[nodeid];
+                node.updatePos();
+                node.ox = node.x;
+                node.oy = node.y;
+                node.oSize = node.size;
+                node.color = colorstr;
+            } else {
+                node = new Cell(nodeid, posX, posY, size, colorstr, name, _skin);
+                nodelist.push(node);
+                nodes[nodeid] = node;
+                node.ka = posX;
+                node.la = posY;
+            }
+            node.isVirus = flagVirus;
+            node.isEjected = flagEjected;
+            node.isAgitated = flagAgitated;
+            node.nx = posX;
+            node.ny = posY;
+            node.setSize(size);
+            node.updateTime = timestamp;
+            node.flag = flags;
+            name && node.setName(name);
+            if (-1 != nodesOnScreen.indexOf(nodeid) && -1 == playerCells.indexOf(node)) {
+                document.getElementById("overlays").style.display = "none";
+                playerCells.push(node);
+                if (1 == playerCells.length) {
+                    nodeX = node.x;
+                    nodeY = node.y;
+                }
+            }
+        }
+
+        while (reader.canRead) {
+            const node = nodes[reader.uint32()];
+            null != node && node.destroy();
+        }
+
+        if (ua && playerCells.length === 0) {
+            showOverlays(false);  // Hide overlays
+showSDK();  // Show SDK ad
         }
     }
-
-    while (reader.canRead) {
-        const node = nodes[reader.uint32()];
-        null != node && node.destroy();
-    }
-
-    if (ua && playerCells.length === 0) {
-        showGameOverStats();
-    }
-}
-
-
-function showGameOverStats() {
-    survivalTime = (Date.now() - gameStartTime) / 1000;
-    gameStartTime = 0;
-
-    console.log("Game Over!");
-    console.log("Время выживания: " + survivalTime.toFixed(2) + " секунд");
-    console.log("Общий счет: " + totalScore);
-    console.log("Максимальный счет: " + maxScore);
-    console.log("Kill Log:", killLog);
-    console.log("Ранг:", myRank);
-
-    displayStatsPopup(survivalTime, totalScore, maxScore, killLog, myRank);
-}
-
-function displayStatsPopup(survivalTime, totalScore, maxScore, killLog, myRank) {
-    // Создаем элементы для модального окна
-    const modal = document.createElement('div');
-    modal.style.position = 'fixed';
-    modal.style.top = '0';
-    modal.style.left = '0';
-    modal.style.width = '100%';
-    modal.style.height = '100%';
-    modal.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-    modal.style.display = 'flex';
-    modal.style.justifyContent = 'center';
-    modal.style.alignItems = 'center';
-    modal.style.zIndex = '1000';
-
-    const modalContent = document.createElement('div');
-    modalContent.style.backgroundColor = 'white';
-    modalContent.style.padding = '20px';
-    modalContent.style.borderRadius = '5px';
-    modalContent.style.textAlign = 'center';
-
-    const title = document.createElement('h2');
-    title.textContent = 'Game Over!';
-
-    const survivalTimeText = document.createElement('p');
-    survivalTimeText.textContent = 'Время выживания: ' + survivalTime.toFixed(2) + ' секунд';
-
-    const totalScoreText = document.createElement('p');
-    totalScoreText.textContent = 'Общий счет: ' + totalScore;
-
-    const maxScoreText = document.createElement('p');
-    maxScoreText.textContent = 'Максимальный счет: ' + maxScore;
-
-    const rankText = document.createElement('p');
-    rankText.textContent = `Место в таблице лидеров: ${myRank || 'неизвестно'}`;
-
-    // Добавляем информацию об убийствах
-    const killLogTitle = document.createElement('h3');
-    killLogTitle.textContent = 'События:';
-    modalContent.appendChild(killLogTitle);
-
-    const killLogList = document.createElement('ul');
-    killLog.forEach(event => {
-        const listItem = document.createElement('li');
-        if (event.type === 'kill') {
-            listItem.textContent = `Вы съели ${event.victim}`;
-        } else if (event.type === 'killedBy') {
-            listItem.textContent = `Вас съел ${event.killer}`;
-        }
-        killLogList.appendChild(listItem);
-    });
-    modalContent.appendChild(killLogList);
-
-
-    const closeButton = document.createElement('button');
-    closeButton.textContent = 'Закрыть';
-    closeButton.addEventListener('click', () => {
-        modal.remove();
-        resetGameVariables();
-    });
-
-    modalContent.appendChild(title);
-    modalContent.appendChild(survivalTimeText);
-    modalContent.appendChild(totalScoreText);
-    modalContent.appendChild(maxScoreText);
-    modalContent.appendChild(rankText);
-    modalContent.appendChild(killLogTitle);
-    modalContent.appendChild(killLogList);
-    modalContent.appendChild(closeButton);
-    modal.appendChild(modalContent);
-
-    document.body.appendChild(modal);
-}
-
-function resetGameVariables() {
-    gameStartTime = 0;
-    totalScore = 0;
-    maxScore = 0;
-    survivalTime = 0;
-    killLog = [];
-    myRank = 0; // Reset rank when restarting
-}
 
 
 
