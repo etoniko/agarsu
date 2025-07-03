@@ -467,43 +467,6 @@ window.yaContextCb.push(() => {
                         <!-- change div -> button | Disabled button xxxevexxx -->
                         <button id="button-text" onclick="startGame(); return false;" class="nav-button play-button"><i
                                 class="fas fa-play"></i> ИГРАТЬ</button>
-
-                        <script>
-                                                  let playButtonClickCount = 0; // Счётчик нажатий
-                            let serverSet = false; // Флаг, чтобы вызвать setserver только один раз
-
-                            async function startGame() {
-
-                                setNick(document.getElementById('nick').value);
-
-                                // Проверяем, инициализирован ли Yandex SDK, и запускаем геймплей
-                                if (window.ysdk) {
-                                    window.ysdk.features.GameplayAPI?.start();
-                                    console.log("Геймплей начат");
-                                } else {
-                                    console.warn("SDK Яндекс Игр не инициализирован");
-                                }
-
-                                playButtonClickCount++; // Увеличиваем счётчик
-
-                                const buttonText = document.getElementById("button-text");
-
-                                if (playButtonClickCount === 2) {
-                                }
-
-                                if (playButtonClickCount === 3) {
-                                    playButtonClickCount = 0; // Сбрасываем счётчик после третьего нажатия
-
-                                    try {
-                                        await window.ysdk.adv.showFullscreenAdv(); // Показ рекламы
-                                        console.log("Реклама показана успешно");
-                                    } catch (error) {
-                                        console.error("Ошибка при показе рекламы:", error);
-                                    } finally {
-                                    }
-                                }
-                            }
-                        </script>
                         <!-- change div -> button | Disabled button xxxevexxx -->
                         <button id="button-spec" class="spec" onclick="spectate();"><i class="fas fa-eye"></i>
                         </button>
