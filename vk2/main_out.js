@@ -1059,7 +1059,6 @@ function isMouseOverElement(element) {
    // В main_out.js (или где у вас находится функция updateNodes)
 let gameStartTime = 0;
 let totalScore = 0;
-let maxScore = 0;
 let survivalTime = 0;
 let killLog = [];
 let myRank = 0;  // Добавили переменную для хранения ранга
