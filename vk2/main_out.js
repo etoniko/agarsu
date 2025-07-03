@@ -1060,7 +1060,6 @@ function isMouseOverElement(element) {
 
 let gameStartTime = 0; // Время начала игры
 let totalScore = 0;  // Общий набранный счет
-let maxScore = 0;    // Максимальный счет за игру (для статистики)
 let survivalTime = 0; // Время выживания
 
 function updateNodes(reader) {
