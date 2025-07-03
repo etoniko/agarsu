@@ -1143,10 +1143,69 @@ function isMouseOverElement(element) {
         }
 
         if (ua && playerCells.length === 0) {
-            showOverlays(false);  // Hide overlays
-showSDK();  // Show SDK ad
+           showDeathStats();
+
         }
     }
+
+
+function showDeathStats() {
+    // Получаем нужные данные для статистики.  
+    // В данном примере, предположим, что у вас есть глобальные переменные:
+    // - `gameStartTime`:  Время начала игры (Date.now() в начале игры).
+    // - `maxScore`: Максимальный набранный счет за игру (обновляется при увеличении счета).
+    // - `timeAlive`: Время, которое игрок пробыл в живых в миллисекундах.
+    // - `totalFoodEaten`: Количество съеденной еды.
+    // - `totalCellsEaten`: Количество съеденных других игроков.
+
+    const timeAliveSeconds = Math.floor((Date.now() - gameStartTime) / 1000);
+    const timeAliveMinutes = Math.floor(timeAliveSeconds / 60);
+    const timeAliveRemainingSeconds = timeAliveSeconds % 60;
+
+    //  Создаем HTML-элемент для отображения статистики.  Можно использовать модальное окно, div,  что угодно.
+    const statsContainer = document.createElement("div");
+    statsContainer.id = "deathStats"; // Уникальный ID для стиля.
+    statsContainer.style.position = "fixed"; // Важно, чтобы перекрывало игру.
+    statsContainer.style.top = "50%";
+    statsContainer.style.left = "50%";
+    statsContainer.style.transform = "translate(-50%, -50%)";
+    statsContainer.style.backgroundColor = "rgba(0, 0, 0, 0.7)"; // Полупрозрачный фон
+    statsContainer.style.color = "white";
+    statsContainer.style.padding = "20px";
+    statsContainer.style.borderRadius = "10px";
+    statsContainer.style.zIndex = "1000"; //  Убедитесь, что поверх всего.
+    statsContainer.style.fontFamily = "Arial, sans-serif";
+
+    let statsHTML = `
+        <h2>Game Over!</h2>
+        <p>Time Alive: ${timeAliveMinutes}m ${timeAliveRemainingSeconds}s</p>
+        <p>Max Score: ${maxScore}</p>
+        <p>Food Eaten: ${totalFoodEaten}</p>
+        <p>Cells Eaten: ${totalCellsEaten}</p>
+        <button id="restartButton">Restart</button>
+    `;
+
+    statsContainer.innerHTML = statsHTML;
+    document.body.appendChild(statsContainer);
+
+    // Добавляем обработчик события для кнопки "Restart".
+    const restartButton = document.getElementById("restartButton");
+    restartButton.addEventListener("click", () => {
+        //  Здесь нужно добавить код для перезапуска игры.
+        //  Например, перезагрузка страницы:
+        location.reload(); // Самый простой вариант
+        //  Или, если у вас более сложная система, сброс состояния игры.
+    });
+
+    // Функция для скрытия статистики (может понадобиться).
+    window.hideDeathStats = () => {
+        const statsContainer = document.getElementById("deathStats");
+        if (statsContainer) {
+            statsContainer.remove();
+        }
+    };
+}
+
 
     function sendMouseMove() {
         var msg;
