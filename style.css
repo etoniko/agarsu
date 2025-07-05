@@ -475,6 +475,17 @@ width: 240px;
     height: 120px;
     bottom: 20px;
 }
+@media (max-height: 720px) {
+  .add-top, .add-bottom {
+    transform: scale(0.7);
+  }
+}
+
+@media (max-width: 1400px) {
+  .add-left, .add-right {
+    transform: scale(0.7);
+  }
+}
 
 @media (max-width: 599px) {
 	.score-info{left: 40%;}
