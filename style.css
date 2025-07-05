@@ -479,6 +479,12 @@ transform-origin: bottom left;
 .add{
 display: none !important;
 }
+.add-top{
+display: none !important;
+}
+.add-bottom{
+display: none !important;
+}
   .social {
 position: absolute !important;
 width: 140px !important;
