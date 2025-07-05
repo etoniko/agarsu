@@ -149,6 +149,58 @@ window.yaContextCb.push(() => {
 })
 </script>
 </div>
+<script>
+  function adjustScales() {
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+
+    const addTopElements = document.querySelectorAll('.add-top');
+    const addBottomElements = document.querySelectorAll('.add-bottom');
+    const addLeftElements = document.querySelectorAll('.add-left');
+    const addRightElements = document.querySelectorAll('.add-right');
+
+
+    if (screenHeight < 720) {
+      addTopElements.forEach(element => {
+        element.style.transform = 'scale(0.7)';
+        element.style.transformOrigin = 'top center'; // Важно для правильного масштабирования
+      });
+      addBottomElements.forEach(element => {
+        element.style.transform = 'scale(0.7)';
+        element.style.transformOrigin = 'bottom center'; // Важно для правильного масштабирования
+      });
+    } else {
+      addTopElements.forEach(element => {
+        element.style.transform = 'scale(1)'; // Сброс масштаба
+      });
+      addBottomElements.forEach(element => {
+        element.style.transform = 'scale(1)'; // Сброс масштаба
+      });
+    }
+
+    if (screenWidth < 1400) {
+      addLeftElements.forEach(element => {
+        element.style.transform = 'scale(0.7)';
+        element.style.transformOrigin = 'left center'; // Важно для правильного масштабирования
+      });
+      addRightElements.forEach(element => {
+        element.style.transform = 'scale(0.7)';
+        element.style.transformOrigin = 'right center'; // Важно для правильного масштабирования
+      });
+    } else {
+      addLeftElements.forEach(element => {
+        element.style.transform = 'scale(1)'; // Сброс масштаба
+      });
+      addRightElements.forEach(element => {
+        element.style.transform = 'scale(1)'; // Сброс масштаба
+      });
+    }
+  }
+
+  // Вызываем функцию при загрузке страницы и при изменении размера окна
+  window.onload = adjustScales;
+  window.addEventListener('resize', adjustScales);
+</script>
         <div class="center">
             <div class="sidebar">
                 <div class="menu-item" onclick="showContent('profile')">
