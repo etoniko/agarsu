@@ -112,6 +112,44 @@ window.yaContextCb.push(() => {
     })
 })
 </script>
+<script>
+function updateScale() {
+  const addElement = document.querySelector('.add');
+  if (!addElement) {
+    console.error("Элемент с классом 'add' не найден.");
+    return;
+  }
+
+  const screenWidth = window.innerWidth;
+
+  // Определите диапазоны разрешений и соответствующие значения scale
+  let scaleValue = 1; // Значение по умолчанию
+
+  if (screenWidth < 768) {  // Для маленьких экранов (телефоны)
+    scaleValue = 0.7;
+  } else if (screenWidth >= 768 && screenWidth < 1024) { // Для средних экранов (планшеты)
+    scaleValue = 0.85;
+  } else { // Для больших экранов (десктопы)
+    scaleValue = 1;
+  }
+
+  // Применяем масштабирование с помощью CSS transform
+  addElement.style.transform = `scale(${scaleValue})`;
+}
+
+// Вызываем функцию при загрузке страницы и при изменении размера окна
+window.addEventListener('load', updateScale);
+window.addEventListener('resize', updateScale);
+
+// Дополнительно:  Можно добавить небольшую задержку, чтобы избежать слишком частых пересчетов
+let resizeTimeout;
+window.addEventListener('resize', function() {
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(updateScale, 100); // Задержка 100мс
+});
+
+
+</script>
 </div>
         <div class="center">
             <div class="sidebar">
