@@ -1412,7 +1412,6 @@ window.yaContextCb.push(() => {
   <div id="staticks">
     <h2>Game Over!</h2>
 <canvas id="myChart"></canvas>
-
 <script>
   let chartInterval;
   let chart;
@@ -1421,8 +1420,6 @@ window.yaContextCb.push(() => {
   let labels = [];
   const maxDataPoints = 20;
   const updateInterval = 1000;
-  let gameOverCalled = false;
-  let scoreInterval; // Добавляем переменную для интервала, уменьшающего счет
 
   function initChart() {
     const scoreElement = document.getElementById('score-new');
@@ -1443,9 +1440,16 @@ window.yaContextCb.push(() => {
         return;
       }
 
-      if (score <= 0 && !gameIsOver && !gameOverCalled) {
+      if (score < 12 && !gameIsOver) {
         gameOver();
         return;
+      }
+
+      if (score > 12 && gameIsOver) {
+        resetChart();
+        gameIsOver = false;
+        startChart();
+        console.log("Значение больше 12. Сброс и начало нового графика.");
       }
 
       if (!gameIsOver) {
@@ -1519,23 +1523,12 @@ window.yaContextCb.push(() => {
 
     function gameOver() {
       gameIsOver = true;
-      gameOverCalled = true;
-      console.log("Игра окончена! Останавливаем график.");
+      console.log("Значение меньше 12. Останавливаем график.");
       stopChart();
-      // ОСТАНАВЛИВАЕМ ТОЛЬКО ГРАФИК, НИКАКОГО ВМЕШАТЕЛЬСТВА В ЗНАЧЕНИЕ scoreElement
-      const gameOverEvent = new Event('gameOver');
-      window.dispatchEvent(gameOverEvent);
-
-      setTimeout(() => {
-          resetChart();
-          startChart();
-          gameOverCalled = false;
-      }, 3000);
     }
 
     function startChart() {
       if (!chartInterval) {
-        gameIsOver = false;
         chartInterval = setInterval(updateChart, updateInterval);
         console.log("График запущен.");
       }
@@ -1555,7 +1548,6 @@ window.yaContextCb.push(() => {
         chart.destroy();
         chart = null;
       }
-      gameIsOver = false;
       console.log("График сброшен.");
     }
 
@@ -1569,14 +1561,11 @@ window.yaContextCb.push(() => {
   }
 
   window.addEventListener('load', () => {
-    const scoreElement = document.createElement('div');
+    const scoreElement = document.getElementById('score-new');
     scoreElement.id = 'score-new';
     scoreElement.className = 'scorr';
 
     document.body.appendChild(scoreElement);
-
-    // **БОЛЬШЕ НИКАКОГО ВМЕШАТЕЛЬСТВА В scoreElement ЗДЕСЬ**
-    // (Предполагается, что ДРУГОЙ скрипт управляет этим)
 
     initChart();
   });
