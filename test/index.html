@@ -1417,8 +1417,8 @@ window.yaContextCb.push(() => {
     const labels = [];
     let chart;
 
-    const updateInterval = 1000; // milliseconds (adjust as needed)
-    const maxDataPoints = 20; // Maximum number of data points to keep
+    const updateInterval = 1000;
+    const maxDataPoints = 20;
 
     function updateChart() {
       if (!scoreElement) {
@@ -1427,10 +1427,11 @@ window.yaContextCb.push(() => {
       }
 
       const scoreText = scoreElement.innerText;
-      const score = parseInt(scoreText);
+      const scoreString = scoreText.replace("Сейчас: ", ""); // **Извлечь число**
+      const score = parseInt(scoreString);
 
       if (isNaN(score)) {
-        console.warn("Не удалось преобразовать значение в число.  Проверьте, что score-new содержит только цифры.");
+        console.warn("Не удалось преобразовать значение в число. Проверьте, что score-new содержит только цифры после удаления 'Сейчас: '.");
         return;
       }
 
@@ -1477,26 +1478,22 @@ window.yaContextCb.push(() => {
     setInterval(updateChart, updateInterval);
   }
 
-  // **Затем вызовите функцию initChart() после создания элемента score-new**
-  // Пример, если score-new создается другим скриптом:
-  window.addEventListener('load', () => { // Ждем полной загрузки страницы
+  window.addEventListener('load', () => {
+    // **Замените этот код на свой код, который создает и обновляет score-new:**
     const scoreElement = document.createElement('div');
     scoreElement.id = 'score-new';
     scoreElement.className = 'scorr';
-    scoreElement.innerText = '0';
+    scoreElement.innerText = 'Сейчас: 0'; // Начальное значение с текстом
     document.body.appendChild(scoreElement);
 
-    // Симулируем изменение значения score-new (замените своим кодом)
     let currentScore = 0;
     setInterval(() => {
       currentScore += Math.floor(Math.random() * 100);
-      scoreElement.innerText = currentScore;
+      scoreElement.innerText = "Сейчас: " + currentScore; // Обновляем с текстом
     }, 500);
 
-
-    initChart(); // Инициализируем график после создания score-new
+    initChart();
   });
-</script>
 </script>
   </div>
     <div id="overlays" class="overlays">
