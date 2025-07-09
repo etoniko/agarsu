@@ -117,6 +117,28 @@ window.yaContextCb.push(() => {
 </div>
 <div class="add-bottom">
 </div>
+<style>
+#staticks {
+  position: absolute; /* Теперь относительно #game-container */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 20px;
+  border-radius: 10px;
+  font-family: sans-serif;
+  font-size: 20px;
+  text-align: center;
+  z-index: 1000;
+  border: 2px solid white;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+  display: none;
+}
+</style>
+  <div id="staticks">
+    <h2>Game Over!</h2>
+  </div>
         <div class="center">
             <div class="sidebar">
                 <div class="menu-item" onclick="showContent('profile')">
@@ -1979,11 +2001,12 @@ function applyNicknameLimit() {
         }
 
         if (ua && playerCells.length === 0) {
-            showOverlays(false);  // Hide overlays
-showSDK();  // Show SDK ad
+            showGameOverStats(); // Вызов функции статистики
         }
     }
-
+function showGameOverStats() {
+    document.getElementById("staticks").style.display = "block";
+}
     function sendMouseMove() {
         var msg;
         if (wsIsOpen()) {
