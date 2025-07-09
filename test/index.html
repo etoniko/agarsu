@@ -1411,76 +1411,93 @@ window.yaContextCb.push(() => {
     <h2>Game Over!</h2>
 <canvas id="myChart"></canvas>
 <script>
-  // *Предполагаем*, что scoreElement определен *где-то* в HTML,
-  // и его значение обновляется другим скриптом.
-  const scoreElement = document.getElementById('score-new');
+ <script>
+  function initChart() {
+    const scoreElement = document.getElementById('score-new');
+    const dataPoints = [];
+    const labels = [];
+    let chart;
 
-  const dataPoints = [];
-  const labels = [];
-  let chart;
+    const updateInterval = 1000; // milliseconds (adjust as needed)
+    const maxDataPoints = 20; // Maximum number of data points to keep
 
-  const updateInterval = 1000; // milliseconds (adjust as needed)
-  const maxDataPoints = 20; // Maximum number of data points to keep
+    function updateChart() {
+      if (!scoreElement) {
+        console.error("Элемент с id 'score-new' не найден в HTML!");
+        return;
+      }
 
-  function updateChart() {
-    if (!scoreElement) {
-      console.error("Элемент с id 'score-new' не найден в HTML!");
-      return;
-    }
+      const scoreText = scoreElement.innerText;
+      const score = parseInt(scoreText);
 
-    const scoreText = scoreElement.innerText;
-    //Предполагаем, что scoreElement.innerText содержит только число (массу).
-    const score = parseInt(scoreText);
+      if (isNaN(score)) {
+        console.warn("Не удалось преобразовать значение в число.  Проверьте, что score-new содержит только цифры.");
+        return;
+      }
 
-    if (isNaN(score)) {
-      console.warn("Не удалось преобразовать значение в число.  Проверьте, что score-new содержит только цифры.");
-      return;
-    }
+      const currentTime = new Date().toLocaleTimeString();
+      dataPoints.push(score);
+      labels.push(currentTime);
 
-    const currentTime = new Date().toLocaleTimeString();
-    dataPoints.push(score);
-    labels.push(currentTime);
+      if (dataPoints.length > maxDataPoints) {
+        dataPoints.shift();
+        labels.shift();
+      }
 
-    // Keep only the last 'maxDataPoints' data points
-    if (dataPoints.length > maxDataPoints) {
-      dataPoints.shift();
-      labels.shift();
-    }
+      console.log("Score:", score, "Time:", currentTime);
 
-    console.log("Score:", score, "Time:", currentTime); // Debugging
-
-    if (chart) {
-      chart.data.datasets[0].data = dataPoints;
-      chart.data.labels = labels;
-      chart.update();
-    } else {
-      // Initialize chart on first data point
-      const ctx = document.getElementById('myChart').getContext('2d');
-      chart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Score',
-            data: dataPoints,
-            borderColor: 'rgb(75, 192, 192)',
-            tension: 0.1
-          }]
-        },
-        options: {
-          scales: {
-            y: {
-              beginAtZero: true
+      if (chart) {
+        chart.data.datasets[0].data = dataPoints;
+        chart.data.labels = labels;
+        chart.update();
+      } else {
+        const ctx = document.getElementById('myChart').getContext('2d');
+        chart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Score',
+              data: dataPoints,
+              borderColor: 'rgb(75, 192, 192)',
+              tension: 0.1
+            }]
+          },
+          options: {
+            scales: {
+              y: {
+                beginAtZero: true
+              }
             }
           }
-        }
-      });
+        });
+      }
     }
+
+    updateChart();
+    setInterval(updateChart, updateInterval);
   }
 
-  // Initial call to start the process
-  updateChart();
-  setInterval(updateChart, updateInterval);
+  // **Затем вызовите функцию initChart() после создания элемента score-new**
+  // Пример, если score-new создается другим скриптом:
+  window.addEventListener('load', () => { // Ждем полной загрузки страницы
+    const scoreElement = document.createElement('div');
+    scoreElement.id = 'score-new';
+    scoreElement.className = 'scorr';
+    scoreElement.innerText = '0';
+    document.body.appendChild(scoreElement);
+
+    // Симулируем изменение значения score-new (замените своим кодом)
+    let currentScore = 0;
+    setInterval(() => {
+      currentScore += Math.floor(Math.random() * 100);
+      scoreElement.innerText = currentScore;
+    }, 500);
+
+
+    initChart(); // Инициализируем график после создания score-new
+  });
+</script>
 </script>
   </div>
     <div id="overlays" class="overlays">
