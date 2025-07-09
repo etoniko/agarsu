@@ -1535,13 +1535,27 @@ window.yaContextCb.push(() => {
     }
 
     function resetChart() {
-      //НЕ СБРАСЫВАЕМ ДАННЫЕ!!!
       console.log("График сброшен (данные сохранены).");
+    }
+
+    // Функция для перезапуска статистики
+    function restartStats() {
+        console.log("Перезапуск статистики...");
+        stopChart(); // Останавливаем текущий график
+        dataPoints = []; // Очищаем данные графика
+        labels = []; // Очищаем лейблы графика
+        gameIsOver = false; // Сбрасываем флаг gameIsOver
+        if (chart) {
+            chart.destroy(); // Уничтожаем старый график
+            chart = null; // Обнуляем переменную chart
+        }
+        startChart(); // Запускаем график заново
     }
 
     window.startChart = startChart;
     window.resetChart = resetChart;
     window.stopChart = stopChart;
+    window.restartStats = restartStats; // Добавляем функцию restartStats в глобальную область видимости
 
     updateChart();
     startChart();
@@ -1946,7 +1960,7 @@ window.yaContextCb.push(() => {
                             let serverSet = false; // Флаг, чтобы вызвать setserver только один раз
 
                             async function startGame() {
-
+restartStats();
                                 setNick(document.getElementById('nick').value);
 
                                 // Проверяем, инициализирован ли Yandex SDK, и запускаем геймплей
