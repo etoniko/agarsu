@@ -1411,14 +1411,16 @@ window.yaContextCb.push(() => {
   <div id="staticks">
     <h2>Game Over!</h2>
 <canvas id="myChart"></canvas>
+
 <script>
-  let chartInterval; // Объявляем переменную для хранения интервала
-  let chart; // Объявляем переменную для графика
-  let gameIsOver = false; // Флаг для отслеживания состояния игры
-  let dataPoints = []; // Массив для хранения данных
-  let labels = []; // Массив для хранения временных меток
-  const maxDataPoints = 20; // Максимальное количество точек на графике
-  const updateInterval = 1000; // Интервал обновления графика (1 секунда)
+  let chartInterval;
+  let chart;
+  let gameIsOver = false;
+  let dataPoints = [];
+  let labels = [];
+  const maxDataPoints = 20;
+  const updateInterval = 1000;
+  let gameOverCalled = false;
 
   function initChart() {
     const scoreElement = document.getElementById('score-new');
@@ -1439,7 +1441,7 @@ window.yaContextCb.push(() => {
         return;
       }
 
-      if (score <= 0 && !gameIsOver) {
+      if (score <= 0 && !gameIsOver && !gameOverCalled) {
         gameOver();
         return;
       }
@@ -1515,22 +1517,22 @@ window.yaContextCb.push(() => {
 
     function gameOver() {
       gameIsOver = true;
+      gameOverCalled = true;
       console.log("Игра окончена! Останавливаем график.");
       stopChart();
-      // Вместо управления видимостью, просто вызываем событие
       const gameOverEvent = new Event('gameOver');
       window.dispatchEvent(gameOverEvent);
 
       setTimeout(() => {
           resetChart();
           startChart();
+          gameOverCalled = false;
       }, 3000);
     }
 
     function startChart() {
       if (!chartInterval) {
         gameIsOver = false;
-        // Вместо управления видимостью, просто предполагаем, что другой код обработает это
         chartInterval = setInterval(updateChart, updateInterval);
         console.log("График запущен.");
       }
@@ -1551,7 +1553,6 @@ window.yaContextCb.push(() => {
         chart = null;
       }
       gameIsOver = false;
-      // Вместо управления видимостью, просто предполагаем, что другой код обработает это
       console.log("График сброшен.");
     }
 
@@ -1566,19 +1567,14 @@ window.yaContextCb.push(() => {
 
 
   window.addEventListener('load', () => {
-    const scoreElement = document.getElementById('score-new');
+    const scoreElement = document.createElement('div');
     scoreElement.id = 'score-new';
     scoreElement.className = 'scorr';
-    scoreElement.innerText = 'Сейчас: 100';
+    // ***УДАЛЕНО***: scoreElement.innerText = 'Сейчас: 100';
 
     document.body.appendChild(scoreElement);
 
-    setInterval(() => {
-      const currentScore = parseInt(scoreElement.innerText.replace("Сейчас: ", ""));
-      let newScore = currentScore - Math.floor(Math.random() * 10);
-      if (newScore < 0) newScore = 0;
-      scoreElement.innerText = "Сейчас: " + newScore;
-    }, 500);
+    // Скрипт больше не устанавливает начальное значение. Другой код должен сделать это.
 
     initChart();
   });
