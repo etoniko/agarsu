@@ -1444,11 +1444,11 @@ window.yaContextCb.push(() => {
         return;
       }
 
-      // ИЗМЕНЕНО: Убираем сброс графика при score >= 12
+      // Проверяем, что игра возобновилась
       if (score >= 12 && gameIsOver) {
-        gameIsOver = false;
-        startChart();
-        console.log("Значение больше или равно 12. Возобновляем график.");
+        console.log("Игра возобновилась. Продолжаем график.");
+        gameIsOver = false; // Сбрасываем флаг gameIsOver
+        startChart(); // Запускаем график снова
       }
 
       if (!gameIsOver) {
@@ -1535,8 +1535,7 @@ window.yaContextCb.push(() => {
     }
 
     function resetChart() {
-      stopChart();
-      //НЕ ОЧИЩАЕМ ДАННЫЕ!
+      //НЕ СБРАСЫВАЕМ ДАННЫЕ!!!
       console.log("График сброшен (данные сохранены).");
     }
 
