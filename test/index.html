@@ -124,7 +124,7 @@ window.yaContextCb.push(() => {
         <p>Time Alive: <span id="timeAlive">0</span></p>
         <button onclick="showOverlays(false)">Play Again</button>
     </div>
-        <div class="center">
+        <div id= "cntr" class="center">
             <div class="sidebar">
                 <div class="menu-item" onclick="showContent('profile')">
                     <i class="fas fa-gear"></i>
@@ -1996,7 +1996,7 @@ function applyNicknameLimit() {
 
     function showStatistics() {
         wjQuery("#overlays").fadeIn(200); // Fade in overlays
-        wjQuery("#center").hide(); // Скрываем основное меню
+        wjQuery("#cntr").hide(); // Скрываем основное меню
         wjQuery("#statistics").show(); // Показываем статистику
     }
 
