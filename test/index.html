@@ -1421,6 +1421,7 @@ window.yaContextCb.push(() => {
   const maxDataPoints = 20;
   const updateInterval = 1000;
   let gameOverCalled = false;
+  let scoreInterval; // Добавляем переменную для интервала, уменьшающего счет
 
   function initChart() {
     const scoreElement = document.getElementById('score-new');
@@ -1520,11 +1521,14 @@ window.yaContextCb.push(() => {
       gameOverCalled = true;
       console.log("Игра окончена! Останавливаем график.");
       stopChart();
+      clearInterval(scoreInterval); // Останавливаем интервал, уменьшающий счет
       const gameOverEvent = new Event('gameOver');
       window.dispatchEvent(gameOverEvent);
 
       setTimeout(() => {
           resetChart();
+          // Запускаем функцию обновления счета, а не только график
+          startScoreUpdate();
           startChart();
           gameOverCalled = false;
       }, 3000);
@@ -1565,16 +1569,28 @@ window.yaContextCb.push(() => {
 
   }
 
+  function startScoreUpdate() {
+      const scoreElement = document.getElementById('score-new');
+      //  ВОТ ОН, ЭЛЕМЕНТ score-new!!!
+      scoreElement.innerText = 'Сейчас: 12'; //  Устанавливаем начальное значение ПЕРЕД началом
+
+      scoreInterval = setInterval(() => {
+        const currentScore = parseInt(scoreElement.innerText.replace("Сейчас: ", ""));
+        let newScore = currentScore - Math.floor(Math.random() * 10);
+        if (newScore < 0) newScore = 0;
+        scoreElement.innerText = "Сейчас: " + newScore;
+      }, 500);
+  }
 
   window.addEventListener('load', () => {
     const scoreElement = document.createElement('div');
     scoreElement.id = 'score-new';
     scoreElement.className = 'scorr';
-    // ***УДАЛЕНО***: scoreElement.innerText = 'Сейчас: 100';
 
     document.body.appendChild(scoreElement);
 
-    // Скрипт больше не устанавливает начальное значение. Другой код должен сделать это.
+    //  Запускаем функцию обновления счета
+    startScoreUpdate();
 
     initChart();
   });
