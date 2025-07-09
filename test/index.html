@@ -1418,7 +1418,6 @@ window.yaContextCb.push(() => {
   let gameIsOver = false;
   let dataPoints = [];
   let labels = [];
-  // const maxDataPoints = 20; // Убираем ограничение на количество точек
   const updateInterval = 5000; // Интервал слежки 5 секунд
 
   function initChart() {
@@ -1445,22 +1444,17 @@ window.yaContextCb.push(() => {
         return;
       }
 
+      // ИЗМЕНЕНО: Убираем сброс графика при score >= 12
       if (score >= 12 && gameIsOver) {
-        resetChart();
         gameIsOver = false;
         startChart();
-        console.log("Значение больше или равно 12. Сброс и начало нового графика.");
+        console.log("Значение больше или равно 12. Возобновляем график.");
       }
 
       if (!gameIsOver) {
         const currentTime = new Date().toLocaleTimeString();
         dataPoints.push(score);
         labels.push(currentTime);
-
-        // if (dataPoints.length > maxDataPoints) { // Убираем сдвиг данных
-        //   dataPoints.shift();
-        //   labels.shift();
-        // }
 
         console.log("Score:", score, "Time:", currentTime);
 
@@ -1542,13 +1536,7 @@ window.yaContextCb.push(() => {
 
     function resetChart() {
       stopChart();
-      dataPoints = [];
-      labels = [];
-
-      if (chart) {
-        chart.destroy();
-        chart = null;
-      }
+      //НЕ ОЧИЩАЕМ ДАННЫЕ!
       console.log("График сброшен (данные сохранены).");
     }
 
