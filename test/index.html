@@ -117,14 +117,7 @@ window.yaContextCb.push(() => {
 </div>
 <div class="add-bottom">
 </div>
-<div id="statistics" class="statistics" style="display:none;">
-        <h2>Game Over!</h2>
-        <p>Here's your stats:</p>
-        <p>Score: <span id="finalScore">0</span></p>
-        <p>Time Alive: <span id="timeAlive">0</span></p>
-        <button onclick="showOverlays(false)">Play Again</button>
-    </div>
-        <div id= "cntr" class="center">
+        <div class="center">
             <div class="sidebar">
                 <div class="menu-item" onclick="showContent('profile')">
                     <i class="fas fa-gear"></i>
@@ -1359,14 +1352,14 @@ function isMouseOverElement(element) {
     }
 
     function hideOverlays() {
+        // hasOverlay = false;
         wjQuery("#overlays").hide();
     }
 
     function showOverlays(arg) {
+        // hasOverlay = true;
         userNickName = null;
         wjQuery("#overlays").fadeIn(arg ? 200 : 3E3);
-        wjQuery("#cntr").show(); // Показываем основное меню
-        wjQuery("#statistics").hide(); // Скрываем статистику
     }
 
     let currentWebSocketUrl = null;
@@ -1912,7 +1905,7 @@ function applyNicknameLimit() {
                 killedNode.oSize = killedNode.size;
                 killedNode.nx = killer.x;
                 killedNode.ny = killer.y;
-                killedNode.nSize = killer.size;
+                killedNode.nSize = killedNode.size;
                 killedNode.updateTime = timestamp;
             }
         }
@@ -1986,20 +1979,9 @@ function applyNicknameLimit() {
         }
 
         if (ua && playerCells.length === 0) {
-            showStatistics(); // Показываем статистику
+            showOverlays(false);  // Hide overlays
+showSDK();  // Show SDK ad
         }
-    }
-
-    function showStatistics() {
-        wjQuery("#overlays").fadeIn(200); // Fade in overlays
-        wjQuery("#cntr").hide(); // Скрываем основное меню
-        wjQuery("#statistics").show(); // Показываем статистику
-    }
-
-    // New function to hide statistics and show the main menu
-    function hideStatistics() {
-        wjQuery("#statistics").hide();
-        wjQuery("#cntr").show();
     }
 
     function sendMouseMove() {
@@ -3987,31 +3969,6 @@ bottom: 0px !important;
   justify-content: center;
   height: 530px;
   width: 100%;
-}
-.statistics {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: rgba(0, 0, 0, 0.8); /* Темный фон */
-    color: white;
-    padding: 20px;
-    border-radius: 10px;
-    text-align: center;
-    z-index: 10; /* Чтобы статистика была поверх других элементов */
-}
-
-.statistics h2 {
-    margin-top: 0;
-}
-
-.statistics button {
-    background-color: #4CAF50; /* Зеленая кнопка */
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
 }
 	.overlays{
 		z-index: 1;
