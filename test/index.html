@@ -14,6 +14,8 @@
 <meta property="og:url" content="https://agar.su">
 <meta property="og:type" content="website">
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <!-- Twitter Cards -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Agar.su - Браузерная онлайн-игра">
@@ -1407,6 +1409,71 @@ window.yaContextCb.push(() => {
 </style>
   <div id="staticks">
     <h2>Game Over!</h2>
+<canvas id="myChart"></canvas>
+<script>
+  const scoreElement = document.getElementById('score-new');
+  const dataPoints = [];
+  const labels = [];
+  let chart;
+
+  const updateInterval = 1000; // milliseconds (adjust as needed)
+  const maxDataPoints = 20; // Maximum number of data points to keep
+
+  function updateChart() {
+    const scoreText = scoreElement.innerText;
+    const score = parseInt(scoreText.replace('Сейчас: ', '')); // Extract number
+    if (isNaN(score)) {
+      console.warn("Could not parse score value.");
+      return; // Don't add if parsing fails
+    }
+
+    const currentTime = new Date().toLocaleTimeString();
+    dataPoints.push(score);
+    labels.push(currentTime);
+
+    // Keep only the last 'maxDataPoints' data points
+    if (dataPoints.length > maxDataPoints) {
+      dataPoints.shift();
+      labels.shift();
+    }
+
+    console.log("Score:", score, "Time:", currentTime); // Debugging
+
+    if (chart) {
+      chart.data.datasets[0].data = dataPoints;
+      chart.data.labels = labels;
+      chart.update();
+    } else {
+      // Initialize chart on first data point
+      const ctx = document.getElementById('myChart').getContext('2d');
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Score',
+            data: dataPoints,
+            borderColor: 'rgb(75, 192, 192)',
+            tension: 0.1
+          }]
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+  }
+
+  // Initial call to start the process
+  updateChart();
+  setInterval(updateChart, updateInterval);
+
+
+</script>
   </div>
     <div id="overlays" class="overlays">
       <!--<div class="social">
