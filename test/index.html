@@ -117,6 +117,13 @@ window.yaContextCb.push(() => {
 </div>
 <div class="add-bottom">
 </div>
+<div id="statistics" class="statistics" style="display:none;">
+        <h2>Game Over!</h2>
+        <p>Here's your stats:</p>
+        <p>Score: <span id="finalScore">0</span></p>
+        <p>Time Alive: <span id="timeAlive">0</span></p>
+        <button onclick="showOverlays(false)">Play Again</button>
+    </div>
         <div class="center">
             <div class="sidebar">
                 <div class="menu-item" onclick="showContent('profile')">
@@ -1360,6 +1367,8 @@ function isMouseOverElement(element) {
         // hasOverlay = true;
         userNickName = null;
         wjQuery("#overlays").fadeIn(arg ? 200 : 3E3);
+        wjQuery("#center").show(); // Показываем основное меню
+        wjQuery("#statistics").hide(); // Скрываем статистику
     }
 
     let currentWebSocketUrl = null;
@@ -1892,7 +1901,7 @@ function applyNicknameLimit() {
         }
     }
 
-    function updateNodes(reader) {
+ function updateNodes(reader) {
         timestamp = Date.now();
         ua = false;
         for (let killerId; killerId = reader.uint32();) {
@@ -1905,7 +1914,7 @@ function applyNicknameLimit() {
                 killedNode.oSize = killedNode.size;
                 killedNode.nx = killer.x;
                 killedNode.ny = killer.y;
-                killedNode.nSize = killedNode.size;
+                killedNode.nSize = killer.size;
                 killedNode.updateTime = timestamp;
             }
         }
@@ -1979,9 +1988,16 @@ function applyNicknameLimit() {
         }
 
         if (ua && playerCells.length === 0) {
-            showOverlays(false);  // Hide overlays
-showSDK();  // Show SDK ad
+            //showOverlays(false);  // Hide overlays
+            //showSDK();  // Show SDK ad
+            showStatistics(); // Показываем статистику
         }
+    }
+
+    function showStatistics() {
+        wjQuery("#overlays").fadeIn(200); // Fade in overlays
+        wjQuery("#center").hide(); // Скрываем основное меню
+        wjQuery("#statistics").show(); // Показываем статистику
     }
 
     function sendMouseMove() {
@@ -3969,6 +3985,31 @@ bottom: 0px !important;
   justify-content: center;
   height: 530px;
   width: 100%;
+}
+.statistics {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.8); /* Темный фон */
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    z-index: 10; /* Чтобы статистика была поверх других элементов */
+}
+
+.statistics h2 {
+    margin-top: 0;
+}
+
+.statistics button {
+    background-color: #4CAF50; /* Зеленая кнопка */
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
 }
 	.overlays{
 		z-index: 1;
