@@ -1418,8 +1418,8 @@ window.yaContextCb.push(() => {
   let gameIsOver = false;
   let dataPoints = [];
   let labels = [];
-  const maxDataPoints = 20;
-  const updateInterval = 1000;
+  // const maxDataPoints = 20; // Убираем ограничение на количество точек
+  const updateInterval = 5000; // Интервал слежки 5 секунд
 
   function initChart() {
     const scoreElement = document.getElementById('score-new');
@@ -1457,10 +1457,10 @@ window.yaContextCb.push(() => {
         dataPoints.push(score);
         labels.push(currentTime);
 
-        if (dataPoints.length > maxDataPoints) {
-          dataPoints.shift();
-          labels.shift();
-        }
+        // if (dataPoints.length > maxDataPoints) { // Убираем сдвиг данных
+        //   dataPoints.shift();
+        //   labels.shift();
+        // }
 
         console.log("Score:", score, "Time:", currentTime);
 
@@ -1542,14 +1542,13 @@ window.yaContextCb.push(() => {
 
     function resetChart() {
       stopChart();
-      //НЕ ОЧИЩАЕМ ДАННЫЕ!
-      // dataPoints = [];
-      // labels = [];
+      dataPoints = [];
+      labels = [];
 
-      //if (chart) {
-      //  chart.destroy();
-      //  chart = null;
-      //}
+      if (chart) {
+        chart.destroy();
+        chart = null;
+      }
       console.log("График сброшен (данные сохранены).");
     }
 
@@ -1565,7 +1564,6 @@ window.yaContextCb.push(() => {
   window.addEventListener('load', () => {
     let scoreElement = document.getElementById('score-new');
 
-    // Создаем score-new, если его еще нет
     if (!scoreElement) {
       scoreElement = document.createElement('div');
       scoreElement.id = 'score-new';
