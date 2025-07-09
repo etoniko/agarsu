@@ -1445,11 +1445,11 @@ window.yaContextCb.push(() => {
         return;
       }
 
-      if (score > 12 && gameIsOver) {
+      if (score >= 12 && gameIsOver) {
         resetChart();
         gameIsOver = false;
         startChart();
-        console.log("Значение больше 12. Сброс и начало нового графика.");
+        console.log("Значение больше или равно 12. Сброс и начало нового графика.");
       }
 
       if (!gameIsOver) {
@@ -1542,13 +1542,15 @@ window.yaContextCb.push(() => {
 
     function resetChart() {
       stopChart();
-      dataPoints = [];
-      labels = [];
-      if (chart) {
-        chart.destroy();
-        chart = null;
-      }
-      console.log("График сброшен.");
+      //НЕ ОЧИЩАЕМ ДАННЫЕ!
+      // dataPoints = [];
+      // labels = [];
+
+      //if (chart) {
+      //  chart.destroy();
+      //  chart = null;
+      //}
+      console.log("График сброшен (данные сохранены).");
     }
 
     window.startChart = startChart;
@@ -1561,11 +1563,15 @@ window.yaContextCb.push(() => {
   }
 
   window.addEventListener('load', () => {
-    const scoreElement = document.getElementById('score-new');
-    scoreElement.id = 'score-new';
-    scoreElement.className = 'scorr';
+    let scoreElement = document.getElementById('score-new');
 
-    document.body.appendChild(scoreElement);
+    // Создаем score-new, если его еще нет
+    if (!scoreElement) {
+      scoreElement = document.createElement('div');
+      scoreElement.id = 'score-new';
+      scoreElement.className = 'scorr';
+      document.body.appendChild(scoreElement);
+    }
 
     initChart();
   });
