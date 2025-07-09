@@ -1411,7 +1411,10 @@ window.yaContextCb.push(() => {
     <h2>Game Over!</h2>
 <canvas id="myChart"></canvas>
 <script>
+  // *Предполагаем*, что scoreElement определен *где-то* в HTML,
+  // и его значение обновляется другим скриптом.
   const scoreElement = document.getElementById('score-new');
+
   const dataPoints = [];
   const labels = [];
   let chart;
@@ -1420,11 +1423,18 @@ window.yaContextCb.push(() => {
   const maxDataPoints = 20; // Maximum number of data points to keep
 
   function updateChart() {
+    if (!scoreElement) {
+      console.error("Элемент с id 'score-new' не найден в HTML!");
+      return;
+    }
+
     const scoreText = scoreElement.innerText;
-    const score = parseInt(scoreText.replace('Сейчас: ', '')); // Extract number
+    //Предполагаем, что scoreElement.innerText содержит только число (массу).
+    const score = parseInt(scoreText);
+
     if (isNaN(score)) {
-      console.warn("Could not parse score value.");
-      return; // Don't add if parsing fails
+      console.warn("Не удалось преобразовать значение в число.  Проверьте, что score-new содержит только цифры.");
+      return;
     }
 
     const currentTime = new Date().toLocaleTimeString();
@@ -1471,8 +1481,6 @@ window.yaContextCb.push(() => {
   // Initial call to start the process
   updateChart();
   setInterval(updateChart, updateInterval);
-
-
 </script>
   </div>
     <div id="overlays" class="overlays">
