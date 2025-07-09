@@ -1359,15 +1359,13 @@ function isMouseOverElement(element) {
     }
 
     function hideOverlays() {
-        // hasOverlay = false;
         wjQuery("#overlays").hide();
     }
 
     function showOverlays(arg) {
-        // hasOverlay = true;
         userNickName = null;
         wjQuery("#overlays").fadeIn(arg ? 200 : 3E3);
-        wjQuery("#center").show(); // Показываем основное меню
+        wjQuery("#cntr").show(); // Показываем основное меню
         wjQuery("#statistics").hide(); // Скрываем статистику
     }
 
@@ -1901,7 +1899,7 @@ function applyNicknameLimit() {
         }
     }
 
- function updateNodes(reader) {
+    function updateNodes(reader) {
         timestamp = Date.now();
         ua = false;
         for (let killerId; killerId = reader.uint32();) {
@@ -1988,8 +1986,6 @@ function applyNicknameLimit() {
         }
 
         if (ua && playerCells.length === 0) {
-            //showOverlays(false);  // Hide overlays
-            //showSDK();  // Show SDK ad
             showStatistics(); // Показываем статистику
         }
     }
@@ -1998,6 +1994,12 @@ function applyNicknameLimit() {
         wjQuery("#overlays").fadeIn(200); // Fade in overlays
         wjQuery("#cntr").hide(); // Скрываем основное меню
         wjQuery("#statistics").show(); // Показываем статистику
+    }
+
+    // New function to hide statistics and show the main menu
+    function hideStatistics() {
+        wjQuery("#statistics").hide();
+        wjQuery("#cntr").show();
     }
 
     function sendMouseMove() {
