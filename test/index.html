@@ -1405,17 +1405,21 @@ window.yaContextCb.push(() => {
   border: 2px solid white;
   box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
   display: none;
+  width: 820px;
 }
 </style>
   <div id="staticks">
     <h2>Game Over!</h2>
 <canvas id="myChart"></canvas>
 <script>
+  let chartInterval; // Объявляем переменную для хранения интервала
+
   function initChart() {
     const scoreElement = document.getElementById('score-new');
     const dataPoints = [];
     const labels = [];
     let chart;
+    let gameIsOver = false; // Флаг для отслеживания состояния игры
 
     const updateInterval = 1000;
     const maxDataPoints = 20;
@@ -1423,11 +1427,12 @@ window.yaContextCb.push(() => {
     function updateChart() {
       if (!scoreElement) {
         console.error("Элемент с id 'score-new' не найден в HTML!");
+        clearInterval(chartInterval); // Останавливаем интервал, если элемент не найден
         return;
       }
 
       const scoreText = scoreElement.innerText;
-      const scoreString = scoreText.replace("Сейчас: ", ""); // **Извлечь число**
+      const scoreString = scoreText.replace("Сейчас: ", "");
       const score = parseInt(scoreString);
 
       if (isNaN(score)) {
@@ -1435,61 +1440,89 @@ window.yaContextCb.push(() => {
         return;
       }
 
-      const currentTime = new Date().toLocaleTimeString();
-      dataPoints.push(score);
-      labels.push(currentTime);
-
-      if (dataPoints.length > maxDataPoints) {
-        dataPoints.shift();
-        labels.shift();
+      if (score <= 0 && !gameIsOver) {
+        gameIsOver = true;
+        console.log("Игра окончена! Останавливаем график.");
+        clearInterval(chartInterval); // Останавливаем интервал, если score <= 0
+        document.getElementById('staticks').style.display = 'block'; // Показываем Game Over
       }
 
-      console.log("Score:", score, "Time:", currentTime);
+      if (!gameIsOver) { // Обновляем график только если игра не окончена
+        const currentTime = new Date().toLocaleTimeString();
+        dataPoints.push(score);
+        labels.push(currentTime);
 
-      if (chart) {
-        chart.data.datasets[0].data = dataPoints;
-        chart.data.labels = labels;
-        chart.update();
-      } else {
-        const ctx = document.getElementById('myChart').getContext('2d');
-        chart = new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: labels,
-            datasets: [{
-              label: 'Score',
-              data: dataPoints,
-              borderColor: 'rgb(75, 192, 192)',
-              tension: 0.1
-            }]
-          },
-          options: {
-            scales: {
-              y: {
-                beginAtZero: true
+        if (dataPoints.length > maxDataPoints) {
+          dataPoints.shift();
+          labels.shift();
+        }
+
+        console.log("Score:", score, "Time:", currentTime);
+
+        if (chart) {
+          chart.data.datasets[0].data = dataPoints;
+          chart.data.labels = labels;
+          chart.update();
+        } else {
+          const ctx = document.getElementById('myChart').getContext('2d');
+          chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: labels,
+              datasets: [{
+                label: 'Score',
+                data: dataPoints,
+                borderColor: 'rgba(54, 162, 235, 1)', // Более приятный синий
+                backgroundColor: 'rgba(54, 162, 235, 0.2)', // Заливка под линией
+                borderWidth: 2,
+                tension: 0.4 // Сглаживание линии
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false, // Разрешить изменение соотношения сторон
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  title: {
+                    display: true,
+                    text: 'Score' // Заголовок оси Y
+                  }
+                },
+                x: {
+                  title: {
+                    display: true,
+                    text: 'Time' // Заголовок оси X
+                  }
+                }
+              },
+              plugins: {
+                legend: {
+                  display: false // Скрыть легенду
+                }
               }
             }
-          }
-        });
+          });
+        }
       }
     }
 
     updateChart();
-    setInterval(updateChart, updateInterval);
+    chartInterval = setInterval(updateChart, updateInterval); // Сохраняем интервал в переменной
   }
 
   window.addEventListener('load', () => {
-    // **Замените этот код на свой код, который создает и обновляет score-new:**
     const scoreElement = document.createElement('div');
     scoreElement.id = 'score-new';
     scoreElement.className = 'scorr';
-    scoreElement.innerText = 'Сейчас: 0'; // Начальное значение с текстом
+    scoreElement.innerText = 'Сейчас: 100'; // Начальное значение
     document.body.appendChild(scoreElement);
 
-    let currentScore = 0;
+    let currentScore = 100;
     setInterval(() => {
-      currentScore += Math.floor(Math.random() * 100);
-      scoreElement.innerText = "Сейчас: " + currentScore; // Обновляем с текстом
+      currentScore -= Math.floor(Math.random() * 10); // Уменьшаем счет
+      if (currentScore < 0) currentScore = 0; // Не даем уйти в минус
+      scoreElement.innerText = "Сейчас: " + currentScore;
     }, 500);
 
     initChart();
