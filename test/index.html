@@ -1522,14 +1522,12 @@ window.yaContextCb.push(() => {
       gameOverCalled = true;
       console.log("Игра окончена! Останавливаем график.");
       stopChart();
-      clearInterval(scoreInterval); // Останавливаем интервал, уменьшающий счет
+      // ОСТАНАВЛИВАЕМ ТОЛЬКО ГРАФИК, НИКАКОГО ВМЕШАТЕЛЬСТВА В ЗНАЧЕНИЕ scoreElement
       const gameOverEvent = new Event('gameOver');
       window.dispatchEvent(gameOverEvent);
 
       setTimeout(() => {
           resetChart();
-          // Запускаем функцию обновления счета, а не только график
-          startScoreUpdate();
           startChart();
           gameOverCalled = false;
       }, 3000);
@@ -1570,19 +1568,6 @@ window.yaContextCb.push(() => {
 
   }
 
-  function startScoreUpdate() {
-      const scoreElement = document.getElementById('score-new');
-      //  ВОТ ОН, ЭЛЕМЕНТ score-new!!!
-      scoreElement.innerText = 'Сейчас: 12'; //  Устанавливаем начальное значение ПЕРЕД началом
-
-      scoreInterval = setInterval(() => {
-        const currentScore = parseInt(scoreElement.innerText.replace("Сейчас: ", ""));
-        let newScore = currentScore - Math.floor(Math.random() * 10);
-        if (newScore < 0) newScore = 0;
-        scoreElement.innerText = "Сейчас: " + newScore;
-      }, 500);
-  }
-
   window.addEventListener('load', () => {
     const scoreElement = document.createElement('div');
     scoreElement.id = 'score-new';
@@ -1590,8 +1575,8 @@ window.yaContextCb.push(() => {
 
     document.body.appendChild(scoreElement);
 
-    //  Запускаем функцию обновления счета
-    startScoreUpdate();
+    // **БОЛЬШЕ НИКАКОГО ВМЕШАТЕЛЬСТВА В scoreElement ЗДЕСЬ**
+    // (Предполагается, что ДРУГОЙ скрипт управляет этим)
 
     initChart();
   });
