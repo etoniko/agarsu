@@ -470,9 +470,9 @@ width: 240px;
     top: 20px;
 }
 .add-bottom{
-    width: 820px;
+    width: 410px;
     position: absolute;
-    height: 120px;
+    height: 150px;
     bottom: 20px;
 }
 @media (max-height: 720px) {
@@ -499,9 +499,6 @@ transform-origin: bottom left;
 display: none !important;
 }
 .add-top{
-display: none !important;
-}
-.add-bottom{
 display: none !important;
 }
   .social {
