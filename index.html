@@ -750,7 +750,14 @@ window.yaContextCb.push(() => {
     styleSheet.type = "text/css";
     styleSheet.innerText = `
       .my-custom-banner-container {
-        position: absolute;
+            position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 100;
+    width: 90vw;
+    max-width: 700px;
+    box-sizing: border-box;
         z-index: 100;
       }
 
