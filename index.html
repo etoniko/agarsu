@@ -687,6 +687,57 @@ window.yaContextCb.push(() => {
     <input type="text" autocomplete="off" id="chat_textbox" maxlength="120" placeholder="Напишите сообщение...">
 </div>
 <script>
+// Получаем элементы
+const toggleChatButton = document.getElementById('toggleChatButton');
+const chatContainer = document.getElementById('chat-container');
+const chatTextBox = document.getElementById('chat_textbox');
+const chatIcon = toggleChatButton.querySelector('i');
+const overchatElement = document.querySelector("body > div.overchat"); // Получаем элемент overchat
+
+// Начальное состояние чата (видимый)
+let isChatVisible = true;
+
+// Обработчик клика по кнопке
+toggleChatButton.addEventListener('click', function() {
+    if (isChatVisible) {
+        // Если чат видимый, скрываем его с помощью высоты
+        chatContainer.style.height = '0';
+        chatTextBox.style.display = 'none'; // Скрываем текстовое поле
+        chatIcon.classList.remove('fa-close');
+        chatIcon.classList.add('fa-arrow-up');
+        overchatElement.style.maxWidth = '43px'; // Устанавливаем max-width
+    } else {
+        // Если чат скрыт, показываем его
+        chatContainer.style.height = 'auto';
+        chatTextBox.style.display = 'block'; // Показываем текстовое поле
+        chatIcon.classList.remove('fa-arrow-up');
+        chatIcon.classList.add('fa-close');
+        overchatElement.style.maxWidth = ''; // Сбрасываем max-width (применяется стиль по умолчанию)
+    }
+
+    // Переключаем состояние видимости чата
+    isChatVisible = !isChatVisible;
+});
+</script>
+    <div class="homemenu" onclick="$('#overlays').show();"><i class="fas fa-home"></i></div>
+
+
+    <div class="score-info" id="score-info">
+        <div class="scorr" id="score-max">0</div>
+        <div class="scorr" id="score-new">0</div>
+        <div class="cell-length" id="cell-length">0</div>
+    </div>
+    <div id="leaderboard"></div>
+    <div id="serverclose-overlay">
+    <div id="serverclose">
+        <i class="fas fa-spinner fa-spin"></i> 
+        <div>Соединение с сервером потеряно.</div>
+        <div id="countdown">Перезагрузка через: 10</div>
+    </div>
+    </div>
+
+<script>
+<script>
 (function() {
   function setCookie(name, value, days) {
     let expires = "";
@@ -750,14 +801,14 @@ window.yaContextCb.push(() => {
     styleSheet.type = "text/css";
     styleSheet.innerText = `
       .my-custom-banner-container {
-            position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 100;
-    width: 90vw;
-    max-width: 700px;
-    box-sizing: border-box;
+          position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  max-width: 95vw; /* Не выходит за границы экрана */
+  width: auto;
+  box-sizing: border-box;
         z-index: 100;
       }
 
@@ -818,6 +869,7 @@ window.yaContextCb.push(() => {
 })();
 </script>
 
+</script>
 </body>
 
 </html>
