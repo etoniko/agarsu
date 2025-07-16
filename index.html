@@ -687,56 +687,6 @@ window.yaContextCb.push(() => {
     <input type="text" autocomplete="off" id="chat_textbox" maxlength="120" placeholder="Напишите сообщение...">
 </div>
 <script>
-// Получаем элементы
-const toggleChatButton = document.getElementById('toggleChatButton');
-const chatContainer = document.getElementById('chat-container');
-const chatTextBox = document.getElementById('chat_textbox');
-const chatIcon = toggleChatButton.querySelector('i');
-const overchatElement = document.querySelector("body > div.overchat"); // Получаем элемент overchat
-
-// Начальное состояние чата (видимый)
-let isChatVisible = true;
-
-// Обработчик клика по кнопке
-toggleChatButton.addEventListener('click', function() {
-    if (isChatVisible) {
-        // Если чат видимый, скрываем его с помощью высоты
-        chatContainer.style.height = '0';
-        chatTextBox.style.display = 'none'; // Скрываем текстовое поле
-        chatIcon.classList.remove('fa-close');
-        chatIcon.classList.add('fa-arrow-up');
-        overchatElement.style.maxWidth = '43px'; // Устанавливаем max-width
-    } else {
-        // Если чат скрыт, показываем его
-        chatContainer.style.height = 'auto';
-        chatTextBox.style.display = 'block'; // Показываем текстовое поле
-        chatIcon.classList.remove('fa-arrow-up');
-        chatIcon.classList.add('fa-close');
-        overchatElement.style.maxWidth = ''; // Сбрасываем max-width (применяется стиль по умолчанию)
-    }
-
-    // Переключаем состояние видимости чата
-    isChatVisible = !isChatVisible;
-});
-</script>
-    <div class="homemenu" onclick="$('#overlays').show();"><i class="fas fa-home"></i></div>
-
-
-    <div class="score-info" id="score-info">
-        <div class="scorr" id="score-max">0</div>
-        <div class="scorr" id="score-new">0</div>
-        <div class="cell-length" id="cell-length">0</div>
-    </div>
-    <div id="leaderboard"></div>
-    <div id="serverclose-overlay">
-    <div id="serverclose">
-        <i class="fas fa-spinner fa-spin"></i> 
-        <div>Соединение с сервером потеряно.</div>
-        <div id="countdown">Перезагрузка через: 10</div>
-    </div>
-    </div>
-
-<script>
 (function() {
   function setCookie(name, value, days) {
     let expires = "";
@@ -767,6 +717,9 @@ toggleChatButton.addEventListener('click', function() {
     }
   }
 
+  function handleBannerClick() {
+    setCookie('myCustomBannerClosed', 'true', 7); // Сохраняем переход в куки
+  }
 
   function createBanner() {
     const bannerContainer = document.createElement('div');
@@ -776,6 +729,7 @@ toggleChatButton.addEventListener('click', function() {
     bannerLink.href = 'https://t.me/agarskins_bot';
     bannerLink.target = '_blank';
     bannerLink.className = 'my-custom-banner-link';
+    bannerLink.addEventListener('click', handleBannerClick); // Важная строка
 
     const bannerImage = document.createElement('div');
     bannerImage.className = 'my-custom-banner-image';
@@ -786,48 +740,37 @@ toggleChatButton.addEventListener('click', function() {
     const closeButton = document.createElement('button');
     closeButton.className = 'my-custom-close-button';
     closeButton.textContent = 'X';
-    closeButton.onclick = closeMyCustomBanner; // Устанавливаем обработчик события
+    closeButton.onclick = closeMyCustomBanner;
 
     bannerContainer.appendChild(closeButton);
 
     document.body.prepend(bannerContainer);
 
-    // CSS в JS (динамически добавляем стили)
     const styleSheet = document.createElement("style");
     styleSheet.type = "text/css";
     styleSheet.innerText = `
-      body {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        min-height: 100vh;
-        margin: 0;
-        padding: 0;
-      }
-
       .my-custom-banner-container {
         position: absolute;
-z-index: 100;
+        z-index: 100;
       }
 
       .my-custom-banner-image {
-  width: 700px; /* Базовая ширина для больших экранов */
-  height: 250px;
-  background-image: url("./assets/photo/baner.png");
-  background-size: cover;
-  background-position: center;
-  display: block;
-}
+        width: 700px;
+        height: 250px;
+        background-image: url("./assets/photo/baner.png");
+        background-size: cover;
+        background-position: center;
+        display: block;
+        border: dashed red;
+      }
 
-/* Медиа-запрос для телефонов (ширина экрана до 768px, как правило) */
-@media (max-width: 768px) {
-  .my-custom-banner-image {
-    width: 100%; /* Занимает всю ширину экрана */
-    height: auto; /* Высота автоматически подстраивается под ширину, сохраняя пропорции */
-    min-height: 150px; /* Минимальная высота, чтобы баннер не был слишком маленьким */
-  }
-}
+      @media (max-width: 768px) {
+        .my-custom-banner-image {
+          width: 100%;
+          height: auto;
+          min-height: 150px;
+        }
+      }
 
       .my-custom-close-button {
         position: absolute;
@@ -856,25 +799,18 @@ z-index: 100;
       }
     `;
     document.head.appendChild(styleSheet);
-
-     // Устанавливаем обработчик closeMyCustomBanner (важно после добавления HTML)
-    window.closeMyCustomBanner = closeMyCustomBanner;
   }
-
 
   function checkMyCustomBannerVisibility() {
     const bannerClosed = getCookie('myCustomBannerClosed');
-
-    if (bannerClosed === 'true') {
-      return; // Не создаем баннер, если он должен быть скрыт
-    }
-
+    if (bannerClosed === 'true') return;
     createBanner();
   }
 
   checkMyCustomBannerVisibility();
 })();
 </script>
+
 </body>
 
 </html>
