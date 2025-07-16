@@ -812,13 +812,22 @@ z-index: 100;
       }
 
       .my-custom-banner-image {
-        width: 800px;
-        height: 300px;
-        background-image: url("./assets/photo/baner.png"); /* Путь к изображению */
-        background-size: cover;
-        background-position: center;
-        display: block;
-      }
+  width: 700px; /* Базовая ширина для больших экранов */
+  height: 250px;
+  background-image: url("./assets/photo/baner.png");
+  background-size: cover;
+  background-position: center;
+  display: block;
+}
+
+/* Медиа-запрос для телефонов (ширина экрана до 768px, как правило) */
+@media (max-width: 768px) {
+  .my-custom-banner-image {
+    width: 100%; /* Занимает всю ширину экрана */
+    height: auto; /* Высота автоматически подстраивается под ширину, сохраняя пропорции */
+    min-height: 150px; /* Минимальная высота, чтобы баннер не был слишком маленьким */
+  }
+}
 
       .my-custom-close-button {
         position: absolute;
