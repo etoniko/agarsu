@@ -51,7 +51,7 @@
     initYandexSDK();
 
     function fetchSkinList() {
-        fetch('https://raw.githubusercontent.com/etoniko/agarsu/refs/heads/main/skinlist.txt')
+        fetch('skinlist.txt')
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Ошибка сети: ' + response.status);
