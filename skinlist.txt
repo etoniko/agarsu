@@ -8,7 +8,7 @@ coolagent:i0prgo7
 crazysombrero:0fYxTvG
 detective:t34UiBP
 diva:sT9JDtB
-frustail:G5EM5wl
+frustail:i8Medpg
 dragon:B70foG5
 drcosmos:BPP5EFR
 droid:QLcCKv0
@@ -42,4 +42,3 @@ derzki:72KWdnZ
 roule:qKtYFTi
 ебу_бомжей:d5TFU90
 console:zt0uI2g
-	Rx9HnSH
