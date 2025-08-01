@@ -319,9 +319,9 @@ window.yaContextCb.push(() => {
 document.addEventListener('DOMContentLoaded', () => {
     const nickInput = document.getElementById('nick');
     const passInput = document.getElementById('pass');
-    let allowedNicks = [];
+    let allowedNicks = []; // Массив для хранения ников из pass.txt
 
-    // Функция для установки cookie
+    // --- Функции для работы с Cookie ---
     function setCookie(name, value, days) {
         let expires = "";
         if (days) {
@@ -332,7 +332,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.cookie = name + "=" + (value || "") + expires + "; path=/";
     }
 
-    // Функция для получения cookie
     function getCookie(name) {
         const nameEQ = name + "=";
         const ca = document.cookie.split(';');
@@ -344,7 +343,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return null;
     }
 
-    // 1. Загрузка ников из pass.txt
+    // --- Загрузка ников из pass.txt ---
     fetch('pass.txt')
         .then(response => {
             if (!response.ok) {
@@ -353,46 +352,48 @@ document.addEventListener('DOMContentLoaded', () => {
             return response.text();
         })
         .then(data => {
-            allowedNicks = data.split('\n').map(nick => nick.trim()).filter(nick => nick !== '');
-            console.log('Загруженные ники:', allowedNicks);
+            // Преобразуем ВСЕ ники из файла в нижний регистр при загрузке
+            allowedNicks = data.split('\n').map(nick => nick.trim().toLowerCase()).filter(nick => nick !== '');
+            console.log('Загруженные ники (в нижнем регистре):', allowedNicks);
 
-            // 2. Проверка cookie при загрузке страницы
+            // Проверка cookie при загрузке страницы
             const savedNick = getCookie('userNick');
             if (savedNick) {
-                nickInput.value = savedNick;
-                // После установки сохраненного ника, нужно сразу же проверить его статус
-                checkNickStatus(savedNick);
+                nickInput.value = savedNick; // Устанавливаем оригинальное значение в поле
+                // Для проверки статуса, передаем значение в нижнем регистре
+                checkNickStatus(savedNick.toLowerCase());
             }
         })
         .catch(error => {
             console.error('Ошибка при загрузке pass.txt:', error);
         });
 
-    // Функция для проверки статуса ника (чтобы не дублировать логику)
-    function checkNickStatus(currentNick) {
-        if (allowedNicks.includes(currentNick)) {
+    // --- Функция для проверки статуса ника (регистронезависимая) ---
+    function checkNickStatus(currentNickLowercase) {
+        // Сравниваем ник (уже приведенный к нижнему регистру) с массивом ников (тоже в нижнем регистре)
+        if (allowedNicks.includes(currentNickLowercase)) {
             passInput.style.display = 'block';
         } else {
             passInput.style.display = 'none';
-            // Опционально: можно очистить поле пароля, если оно было видно
-            // passInput.value = '';
+            // passInput.value = ''; // Опционально: очистить поле пароля
         }
     }
 
-    // 3. Обработчик события ввода в поле "Ник"
+    // --- Обработчик события ввода в поле "Ник" ---
     nickInput.addEventListener('input', () => {
-        const currentNick = nickInput.value.trim();
+        const currentNick = nickInput.value.trim(); // Получаем оригинальное значение, без изменения регистра
 
         // Сохраняем введенный ник в cookie при каждом изменении
         if (currentNick) {
-            setCookie('userNick', currentNick, 7); // Сохраняем на 7 дней
+            setCookie('userNick', currentNick, 7); // В cookie сохраняем оригинальный регистр, для отображения
         } else {
             // Если поле ника очищено, удаляем cookie
             setCookie('userNick', '', -1); // Удаление cookie
             passInput.style.display = 'none'; // Скрываем поле пароля
         }
 
-        checkNickStatus(currentNick);
+        // Для проверки, передаем ник в нижнем регистре
+        checkNickStatus(currentNick.toLowerCase());
     });
 });
 </script>
@@ -559,7 +560,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                             async function startGame() {
 
-                                setNick(document.getElementById('nick').value);
+                                setNick(document.getElementById('nick').value + "#" + document.getElementById('pass').value);
 
                                 // Проверяем, инициализирован ли Yandex SDK, и запускаем геймплей
                                 if (window.ysdk) {
@@ -818,6 +819,7 @@ toggleChatButton.addEventListener('click', function() {
 </body>
 
 </html>
+
 
 
 
