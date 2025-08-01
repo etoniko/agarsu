@@ -51,7 +51,7 @@
     initYandexSDK();
 
     function fetchSkinList() {
-        fetch('https://cdn.jsdelivr.net/gh/etoniko/agarsu/skinlist.txt?v0.0.1')
+        fetch('https://cdn.jsdelivr.net/gh/etoniko/agarsu/skinlist.txt')
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Ошибка сети: ' + response.status);
@@ -1004,7 +1004,7 @@ applyNicknameLimit();
 
 let badWordsSet; // Используем Set вместо массива
 
-fetch('word.txt')
+fetch('https://cdn.jsdelivr.net/gh/etoniko/agarsu/word.txt')
     .then(response => response.text())
     .then(text => {
         const words = text.split('\n').map(word => word.trim().toLowerCase());
