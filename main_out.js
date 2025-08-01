@@ -782,7 +782,31 @@ function isMouseOverElement(element) {
             while (this.canRead && (char = this.uint16())) str += String.fromCharCode(char);
             return str;
         }
+        utf8() {
+            let text = "";
+
+            for (let byte1; byte1 = this.canRead && this.view.getUint8(this.offset++);) {
+                if (byte1 <= 0x7F)
+                    text += String.fromCharCode(byte1);
+                else if (byte1 <= 0xDF)
+                    text += String.fromCharCode(((byte1 & 0x1F) << 6) | (this.view.getUint8(this.offset++) & 0x3F));
+                else if (byte1 <= 0xEF)
+                    text += String.fromCharCode(((byte1 & 0x0F) << 12) | ((this.view.getUint8(this.offset++) & 0x3F) << 6) | (this.view.getUint8(this.offset++) & 0x3F));
+                else {
+                    let codePoint = ((byte1 & 0x07) << 18) | ((this.view.getUint8(this.offset++) & 0x3F) << 12) | ((this.view.getUint8(this.offset++) & 0x3F) << 6) | (this.view.getUint8(this.offset++) & 0x3F);
+
+                    if (codePoint >= 0x10000) {
+                        codePoint -= 0x10000;
+                        text += String.fromCharCode(0xD800 | (codePoint >> 10), 0xDC00 | (codePoint & 0x3FF));
+                    }
+                    else text += String.fromCharCode(codePoint);
+                }
+            }
+
+            return text;
+        }
     };
+    BinaryReader.prototype.offset = 0;
     BinaryReader.prototype.offset = 0;
 
     function handleWsMessage(msg) {
@@ -1154,12 +1178,13 @@ function applyNicknameLimit() {
         }
     }
 
- function updateNodes(reader) {
+function updateNodes(reader) {
         timestamp = Date.now();
         ua = false;
-        for (let killerId; killerId = reader.uint32();) {
-            let killer = nodes[killerId],
-                killedNode = nodes[reader.uint32()];
+
+        for (let killedId; killedId = reader.uint32();) {
+            let killer = nodes[reader.uint32()],
+                killedNode = nodes[killedId];
             if (killer && killedNode) {
                 killedNode.destroy();
                 killedNode.ox = killedNode.x;
@@ -1208,7 +1233,7 @@ function applyNicknameLimit() {
             let flagAgitated = !!(spiked & 0x10);
             let _skin = "";
 
-            const name = reader.utf16();
+            const name = reader.utf8();
 
             let node = nodes[nodeid];
             if (node) {
