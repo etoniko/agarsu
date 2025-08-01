@@ -1095,7 +1095,7 @@ function censorMessage(message) {
 
             // Проверяем, существует ли id скина
             if (skinId) {
-                const skinImagePath = `https://i.imgur.com/${skinId}.png`; // Формируем путь к изображению скина
+                const skinImagePath = `skins/${skinId}.png`; // Формируем путь к изображению скина
                 const skinImg = new Image();
                 skinImg.src = skinImagePath;
 
@@ -1104,11 +1104,11 @@ function censorMessage(message) {
                 };
 
                 skinImg.onerror = function () {
-                    skinSpan.style.backgroundImage = 'url(https://i.imgur.com/PPFtwqH.png)'; // Устанавливаем запасное изображение
+                    skinSpan.style.backgroundImage = 'url(skins/4.png)'; // Устанавливаем запасное изображение
                 };
             } else {
                 // Устанавливаем запасное изображение, если id скина не найден
-                skinSpan.style.backgroundImage = 'url(https://i.imgur.com/PPFtwqH.png)';
+                skinSpan.style.backgroundImage = 'url(skins/4.png)';
             }
 
             // Добавляем скин в контейнер чата
@@ -1699,8 +1699,8 @@ function drawWhiteGrid() {
 
                 const skinId = skinList[topPlayerNick];
                 innerImage.src = skinId
-                    ? `https://i.imgur.com/${skinId}.png`
-                    : "https://i.imgur.com/PPFtwqH.png";
+                    ? `skins/${skinId}.png`
+                    : "skins/4.png";
 
                 topPlayerSkin = skinId || 'default';
             }
@@ -1953,8 +1953,8 @@ function drawWhiteGrid() {
         splitIcon = new Image,
         ejectIcon = new Image,
         noRanking = false;
-    splitIcon.src = "https://i.imgur.com/b3KFHHK.png";
-    ejectIcon.src = "https://i.imgur.com/RA4r3a0.png";
+    splitIcon.src = "assets/photo/split.png";
+    ejectIcon.src = "assets/photo/eject.png";
     // var wCanvas = document.createElement("canvas");
     // var playerStat = null;
     //wHandle.isSpectating = false;
@@ -2286,7 +2286,7 @@ function drawWhiteGrid() {
                     // Загружаем изображение скина только если ID найден в skinList
                     if (!skins.hasOwnProperty(skinId)) {
                         skins[skinId] = new Image();
-                        skins[skinId].src = `https://i.imgur.com/${skinId}.png`;
+                        skins[skinId].src = `skins/${skinId}.png`;
                     }
                     if (skins[skinId].complete && skins[skinId].width > 0) {
                         skinImage = skins[skinId];
