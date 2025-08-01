@@ -315,6 +315,87 @@ window.yaContextCb.push(() => {
                                     autocomplete="current-password" />
                             </form>
                         </div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const nickInput = document.getElementById('nick');
+    const passInput = document.getElementById('pass');
+    let allowedNicks = [];
+
+    // Функция для установки cookie
+    function setCookie(name, value, days) {
+        let expires = "";
+        if (days) {
+            const date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            expires = "; expires=" + date.toUTCString();
+        }
+        document.cookie = name + "=" + (value || "") + expires + "; path=/";
+    }
+
+    // Функция для получения cookie
+    function getCookie(name) {
+        const nameEQ = name + "=";
+        const ca = document.cookie.split(';');
+        for (let i = 0; i < ca.length; i++) {
+            let c = ca[i];
+            while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+            if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+        }
+        return null;
+    }
+
+    // 1. Загрузка ников из pass.txt
+    fetch('pass.txt')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Не удалось загрузить pass.txt');
+            }
+            return response.text();
+        })
+        .then(data => {
+            allowedNicks = data.split('\n').map(nick => nick.trim()).filter(nick => nick !== '');
+            console.log('Загруженные ники:', allowedNicks);
+
+            // 2. Проверка cookie при загрузке страницы
+            const savedNick = getCookie('userNick');
+            if (savedNick) {
+                nickInput.value = savedNick;
+                // После установки сохраненного ника, нужно сразу же проверить его статус
+                checkNickStatus(savedNick);
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка при загрузке pass.txt:', error);
+        });
+
+    // Функция для проверки статуса ника (чтобы не дублировать логику)
+    function checkNickStatus(currentNick) {
+        if (allowedNicks.includes(currentNick)) {
+            passInput.style.display = 'block';
+        } else {
+            passInput.style.display = 'none';
+            // Опционально: можно очистить поле пароля, если оно было видно
+            // passInput.value = '';
+        }
+    }
+
+    // 3. Обработчик события ввода в поле "Ник"
+    nickInput.addEventListener('input', () => {
+        const currentNick = nickInput.value.trim();
+
+        // Сохраняем введенный ник в cookie при каждом изменении
+        if (currentNick) {
+            setCookie('userNick', currentNick, 7); // Сохраняем на 7 дней
+        } else {
+            // Если поле ника очищено, удаляем cookie
+            setCookie('userNick', '', -1); // Удаление cookie
+            passInput.style.display = 'none'; // Скрываем поле пароля
+        }
+
+        checkNickStatus(currentNick);
+    });
+});
+</script>
                     </div>
 
                     <script>
@@ -737,5 +818,6 @@ toggleChatButton.addEventListener('click', function() {
 </body>
 
 </html>
+
 
 
