@@ -1154,11 +1154,11 @@ function applyNicknameLimit() {
         }
     }
 
-    function updateNodes(reader) {
+ function updateNodes(reader) {
         timestamp = Date.now();
         ua = false;
         for (let killerId; killerId = reader.uint32();) {
-            var killer = nodes[killerId],
+            let killer = nodes[killerId],
                 killedNode = nodes[reader.uint32()];
             if (killer && killedNode) {
                 killedNode.destroy();
@@ -1190,14 +1190,23 @@ function applyNicknameLimit() {
                 size = reader.uint16();
             }
 
-            for (var r = reader.uint8(), g = reader.uint8(), b = reader.uint8(),
-                color = (r << 16 | g << 8 | b).toString(16); 6 > color.length;) color = "0" + color;
-            var colorstr = "#" + color,
-                flags = reader.uint8(),
-                flagVirus = !!(flags & 0x01),
-                flagEjected = !!(flags & 0x20),
-                flagAgitated = !!(flags & 0x10),
-                _skin = "";
+            const r = reader.uint8();
+            const g = reader.uint8();
+            const b = reader.uint8();
+
+            let color = (r << 16 | g << 8 | b).toString(16);
+
+            while (color.length < 6) {
+                color = "0" + color;
+            }
+
+            color = "#" + color;
+
+            let spiked = reader.uint8();
+            let flagVirus = !!(spiked & 0x01);
+            let flagEjected = !!(spiked & 0x20);
+            let flagAgitated = !!(spiked & 0x10);
+            let _skin = "";
 
             const name = reader.utf16();
 
@@ -1208,14 +1217,15 @@ function applyNicknameLimit() {
                 node.ox = node.x;
                 node.oy = node.y;
                 node.oSize = node.size;
-                node.color = colorstr;
+                node.color = color;
             } else {
-                node = new Cell(nodeid, posX, posY, size, colorstr, name, _skin);
+                node = new Cell(nodeid, posX, posY, size, color, name, _skin);
                 nodelist.push(node);
                 nodes[nodeid] = node;
                 node.ka = posX;
                 node.la = posY;
             }
+
             node.isVirus = flagVirus;
             node.isEjected = flagEjected;
             node.isAgitated = flagAgitated;
@@ -1223,8 +1233,10 @@ function applyNicknameLimit() {
             node.ny = posY;
             node.setSize(size);
             node.updateTime = timestamp;
-            node.flag = flags;
-            name && node.setName(name);
+            node.flag = spiked;
+
+            if (name) node.setName(name);
+
             if (-1 != nodesOnScreen.indexOf(nodeid) && -1 == playerCells.indexOf(node)) {
                 document.getElementById("overlays").style.display = "none";
                 playerCells.push(node);
@@ -1237,12 +1249,12 @@ function applyNicknameLimit() {
 
         while (reader.canRead) {
             const node = nodes[reader.uint32()];
-            null != node && node.destroy();
+            if (node) node.destroy();
         }
 
         if (ua && playerCells.length === 0) {
             showOverlays(false);  // Hide overlays
-showSDK();  // Show SDK ad
+            showSDK();  // Show SDK ad
         }
     }
 
