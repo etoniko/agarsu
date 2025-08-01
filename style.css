@@ -481,11 +481,6 @@ width: 240px;
   }
 }
 
-@media (max-width: 1400px) {
-  .add-left, .add-right {
-    transform: scale(0.7);
-  }
-}
 
 @media (max-width: 599px) {
 	.score-info{left: 40%;}
