@@ -319,9 +319,9 @@ window.yaContextCb.push(() => {
 document.addEventListener('DOMContentLoaded', () => {
     const nickInput = document.getElementById('nick');
     const passInput = document.getElementById('pass');
-    let allowedNicks = []; // Массив для хранения ников из pass.txt
+    let allowedNicks = [];
 
-    // --- Функции для работы с Cookie ---
+    // --- Работа с cookie ---
     function setCookie(name, value, days) {
         let expires = "";
         if (days) {
@@ -329,71 +329,71 @@ document.addEventListener('DOMContentLoaded', () => {
             date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
             expires = "; expires=" + date.toUTCString();
         }
-        document.cookie = name + "=" + (value || "") + expires + "; path=/";
+        document.cookie = name + "=" + encodeURIComponent(value || "") + expires + "; path=/";
     }
 
     function getCookie(name) {
         const nameEQ = name + "=";
         const ca = document.cookie.split(';');
         for (let i = 0; i < ca.length; i++) {
-            let c = ca[i];
-            while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-            if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+            let c = ca[i].trim();
+            if (c.indexOf(nameEQ) === 0) return decodeURIComponent(c.substring(nameEQ.length));
         }
         return null;
     }
 
-    // --- Загрузка ников из pass.txt ---
+    // --- Загрузка списка ников ---
     fetch('pass.txt')
         .then(response => {
-            if (!response.ok) {
-                throw new Error('Не удалось загрузить pass.txt');
-            }
+            if (!response.ok) throw new Error('Не удалось загрузить pass.txt');
             return response.text();
         })
         .then(data => {
-            // Преобразуем ВСЕ ники из файла в нижний регистр при загрузке
-            allowedNicks = data.split('\n').map(nick => nick.trim().toLowerCase()).filter(nick => nick !== '');
-            console.log('Загруженные ники (в нижнем регистре):', allowedNicks);
+            allowedNicks = data.split('\n').map(n => n.trim().toLowerCase()).filter(n => n !== '');
 
-            // Проверка cookie при загрузке страницы
             const savedNick = getCookie('userNick');
+            const savedPass = getCookie('userPass');
+
             if (savedNick) {
-                nickInput.value = savedNick; // Устанавливаем оригинальное значение в поле
-                // Для проверки статуса, передаем значение в нижнем регистре
+                nickInput.value = savedNick;
                 checkNickStatus(savedNick.toLowerCase());
+            }
+
+            if (savedPass) {
+                passInput.value = savedPass;
             }
         })
         .catch(error => {
             console.error('Ошибка при загрузке pass.txt:', error);
         });
 
-    // --- Функция для проверки статуса ника (регистронезависимая) ---
-    function checkNickStatus(currentNickLowercase) {
-        // Сравниваем ник (уже приведенный к нижнему регистру) с массивом ников (тоже в нижнем регистре)
-        if (allowedNicks.includes(currentNickLowercase)) {
+    function checkNickStatus(nickLower) {
+        if (allowedNicks.includes(nickLower)) {
             passInput.style.display = 'block';
         } else {
             passInput.style.display = 'none';
-            // passInput.value = ''; // Опционально: очистить поле пароля
         }
     }
 
-    // --- Обработчик события ввода в поле "Ник" ---
+    // --- Сохраняем изменения в полях ---
     nickInput.addEventListener('input', () => {
-        const currentNick = nickInput.value.trim(); // Получаем оригинальное значение, без изменения регистра
-
-        // Сохраняем введенный ник в cookie при каждом изменении
+        const currentNick = nickInput.value.trim();
         if (currentNick) {
-            setCookie('userNick', currentNick, 7); // В cookie сохраняем оригинальный регистр, для отображения
+            setCookie('userNick', currentNick, 7);
         } else {
-            // Если поле ника очищено, удаляем cookie
-            setCookie('userNick', '', -1); // Удаление cookie
-            passInput.style.display = 'none'; // Скрываем поле пароля
+            setCookie('userNick', '', -1); // Удалить cookie
+            passInput.style.display = 'none';
         }
-
-        // Для проверки, передаем ник в нижнем регистре
         checkNickStatus(currentNick.toLowerCase());
+    });
+
+    passInput.addEventListener('input', () => {
+        const currentPass = passInput.value.trim();
+        if (currentPass) {
+            setCookie('userPass', currentPass, 7);
+        } else {
+            setCookie('userPass', '', -1); // Удалить cookie
+        }
     });
 });
 </script>
@@ -819,6 +819,7 @@ toggleChatButton.addEventListener('click', function() {
 </body>
 
 </html>
+
 
 
 
