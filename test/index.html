@@ -2169,57 +2169,6 @@ restartStats();
     <input type="text" autocomplete="off" id="chat_textbox" maxlength="120" placeholder="Напишите сообщение...">
 </div>
 <script>
-// Получаем элементы
-const toggleChatButton = document.getElementById('toggleChatButton');
-const chatContainer = document.getElementById('chat-container');
-const chatTextBox = document.getElementById('chat_textbox');
-const chatIcon = toggleChatButton.querySelector('i');
-const overchatElement = document.querySelector("body > div.overchat"); // Получаем элемент overchat
-
-// Начальное состояние чата (видимый)
-let isChatVisible = true;
-
-// Обработчик клика по кнопке
-toggleChatButton.addEventListener('click', function() {
-    if (isChatVisible) {
-        // Если чат видимый, скрываем его с помощью высоты
-        chatContainer.style.height = '0';
-        chatTextBox.style.display = 'none'; // Скрываем текстовое поле
-        chatIcon.classList.remove('fa-close');
-        chatIcon.classList.add('fa-arrow-up');
-        overchatElement.style.maxWidth = '43px'; // Устанавливаем max-width
-    } else {
-        // Если чат скрыт, показываем его
-        chatContainer.style.height = 'auto';
-        chatTextBox.style.display = 'block'; // Показываем текстовое поле
-        chatIcon.classList.remove('fa-arrow-up');
-        chatIcon.classList.add('fa-close');
-        overchatElement.style.maxWidth = ''; // Сбрасываем max-width (применяется стиль по умолчанию)
-    }
-
-    // Переключаем состояние видимости чата
-    isChatVisible = !isChatVisible;
-});
-</script>
-    <div class="homemenu" onclick="$('#overlays').show();"><i class="fas fa-home"></i></div>
-
-
-    <div class="score-info" id="score-info">
-        <div class="scorr" id="score-max">0</div>
-        <div class="scorr" id="score-new">0</div>
-        <div class="cell-length" id="cell-length">0</div>
-    </div>
-    <div id="leaderboard"></div>
-    <div id="serverclose-overlay">
-    <div id="serverclose">
-        <i class="fas fa-spinner fa-spin"></i> 
-        <div>Соединение с сервером потеряно.</div>
-        <div id="countdown">Перезагрузка через: 10</div>
-    </div>
-    </div>
-</body>
-
-<script>
 (function (wHandle, wjQuery) {
     // Загружаем список скинов из skinList.txt
     var skinList = {};
@@ -2273,7 +2222,7 @@ toggleChatButton.addEventListener('click', function() {
     initYandexSDK();
 
     function fetchSkinList() {
-        fetch('https://raw.githubusercontent.com/etoniko/agarsu/refs/heads/main/skinlist.txt')
+        fetch('skinlist.txt')
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Ошибка сети: ' + response.status);
@@ -3205,7 +3154,7 @@ applyNicknameLimit();
 
 let badWordsSet; // Используем Set вместо массива
 
-fetch('https://cdn.jsdelivr.net/gh/etoniko/agarsu/word.txt')
+fetch('word.txt')
     .then(response => response.text())
     .then(text => {
         const words = text.split('\n').map(word => word.trim().toLowerCase());
@@ -3463,12 +3412,11 @@ function applyNicknameLimit() {
         }
 
         if (ua && playerCells.length === 0) {
-            showGameOverStats(); // Вызов функции статистики
+            showOverlays(false);  // Hide overlays
+showSDK();  // Show SDK ad
         }
     }
-function showGameOverStats() {
-    document.getElementById("staticks").style.display = "block";
-}
+
     function sendMouseMove() {
         var msg;
         if (wsIsOpen()) {
