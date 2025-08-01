@@ -51,7 +51,7 @@
     initYandexSDK();
 
     function fetchSkinList() {
-        fetch('skinlist.txt')
+        fetch('skinlist.txt?v0.0.1')
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Ошибка сети: ' + response.status);
