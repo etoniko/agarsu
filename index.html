@@ -326,7 +326,7 @@ window.yaContextCb.push(() => {
 
                         // Функция загрузки списка скинов
                         async function loadSkinsList() {
-                            const response = await fetch('https://raw.githubusercontent.com/etoniko/agarsu/refs/heads/main/skinlist.txt?v0.0.1');
+                            const response = await fetch('skinlist.txt?v0.0.1');
                             const data = await response.text();
                             const skinsMap = new Map();
 
