@@ -1245,7 +1245,7 @@ background: none;
 
 .chat-header{
     display: flex;
-    height: 20px;
+    height: 25px;
     flex-direction: row-reverse;
     gap: 60px;
     align-items: center;
