@@ -788,6 +788,7 @@ chatclose.addEventListener('click', function() {
         chatIcon.classList.remove('fa-close');
         chatIcon.classList.add('fa-arrow-up');
         overchatElement.style.maxWidth = '43px'; // Устанавливаем max-width
+overchatElement.style.maxHeight = '43px'; // Устанавливаем max-width
     } else {
         // Если чат скрыт, показываем его
         chatContainer.style.height = 'auto';
@@ -795,6 +796,7 @@ chatclose.addEventListener('click', function() {
         chatIcon.classList.remove('fa-arrow-up');
         chatIcon.classList.add('fa-close');
         overchatElement.style.maxWidth = ''; // Сбрасываем max-width (применяется стиль по умолчанию)
+overchatElement.style.maxHeight = ''; // Сбрасываем
     }
 
     // Переключаем состояние видимости чата
@@ -820,6 +822,7 @@ chatclose.addEventListener('click', function() {
 </body>
 
 </html>
+
 
 
 
