@@ -771,73 +771,77 @@ document.addEventListener('DOMContentLoaded', () => {
     <input type="text" autocomplete="off" id="chat_textbox" maxlength="120" placeholder="Напишите сообщение...">
 </div>
 <script>
-// Получаем элементы
-const chatclose = document.getElementById('chatclose');
-const chatresize = document.getElementById('chatresize');
-const chatContainer = document.getElementById('chat-container');
-const chatTextBox = document.getElementById('chat_textbox');
-const chatIcon = chatclose.querySelector('i');
-const overchatElement = document.querySelector(".overchat"); // Получаем элемент overchat по классу
+    // Получаем элементы
+    const chatclose = document.getElementById('chatclose');
+    const chatContainer = document.getElementById('chat-container');
+    const chatTextBox = document.getElementById('chat_textbox');
+    const chatIcon = chatclose.querySelector('i');
+    const overchatElement = document.querySelector("body > div.overchat"); // Получаем элемент overchat
+    const chatResize = document.getElementById('chatresize');
 
-// Начальное состояние чата (видимый)
-let isChatVisible = true;
-let isResizing = false;
-let initialHeight = 0;
-let initialY = 0;
+    // Начальное состояние чата (видимый)
+    let isChatVisible = true;
+    let isResizing = false;
+    let startY;
+    let initialHeight;
 
-// Обработчик клика по кнопке закрытия
-chatclose.addEventListener('click', function() {
-    if (isChatVisible) {
-        // Если чат видимый, скрываем его с помощью высоты
-        chatContainer.style.height = '0';
-        chatTextBox.style.display = 'none'; // Скрываем текстовое поле
-        chatIcon.classList.remove('fa-close');
-        chatIcon.classList.add('fa-arrow-up');
-        overchatElement.style.maxWidth = '43px'; // Устанавливаем max-width
-        overchatElement.style.maxHeight = '43px'; // Устанавливаем max-height
-        overchatElement.style.height = 'auto'; // важно!
-    } else {
-        // Если чат скрыт, показываем его
-        chatContainer.style.height = 'auto';
-        chatTextBox.style.display = 'block'; // Показываем текстовое поле
-        chatIcon.classList.remove('fa-arrow-up');
-        chatIcon.classList.add('fa-close');
-        overchatElement.style.maxWidth = ''; // Сбрасываем max-width (применяется стиль по умолчанию)
-        overchatElement.style.maxHeight = ''; // Сбрасываем max-height
-        overchatElement.style.height = '200px'; // Устанавливаем height по умолчанию или другое нужное значение
-    }
+    // Обработчик клика по кнопке закрытия/открытия
+    chatclose.addEventListener('click', function() {
+        if (isChatVisible) {
+            // Если чат видимый, скрываем его с помощью высоты
+            chatContainer.style.height = '0';
+            chatTextBox.style.display = 'none'; // Скрываем текстовое поле
+            chatIcon.classList.remove('fa-close');
+            chatIcon.classList.add('fa-arrow-up');
+            overchatElement.style.maxWidth = '43px'; // Устанавливаем max-width
+            overchatElement.style.maxHeight = '43px'; // Устанавливаем max-width
+        } else {
+            // Если чат скрыт, показываем его
+            chatContainer.style.height = 'auto';
+            chatTextBox.style.display = 'block'; // Показываем текстовое поле
+            chatIcon.classList.remove('fa-arrow-up');
+            chatIcon.classList.add('fa-close');
+            overchatElement.style.maxWidth = ''; // Сбрасываем max-width (применяется стиль по умолчанию)
+            overchatElement.style.maxHeight = ''; // Сбрасываем
+        }
 
-    // Переключаем состояние видимости чата
-    isChatVisible = !isChatVisible;
-});
+        // Переключаем состояние видимости чата
+        isChatVisible = !isChatVisible;
+    });
 
+    // Обработчики изменения размера
+    chatResize.addEventListener('mousedown', function(e) {
+        isResizing = true;
+        startY = e.clientY;
+        initialHeight = chatContainer.offsetHeight;
+        document.body.style.cursor = 'n-resize'; // Изменяем курсор
+    });
 
-// Функция для начала изменения размера
-function startResize(e) {
-    isResizing = true;
-    initialHeight = overchatElement.offsetHeight;
-    initialY = e.clientY;
-    document.addEventListener('mousemove', resize);
-    document.addEventListener('mouseup', stopResize);
-}
+    document.addEventListener('mousemove', function(e) {
+        if (!isResizing) return;
 
-// Функция для изменения размера
-function resize(e) {
-    if (!isResizing) return;
+        const deltaY = e.clientY - startY;
+        let newHeight = initialHeight + deltaY;
 
-    const newHeight = initialHeight + (e.clientY - initialY);
-    overchatElement.style.height = newHeight + 'px';
-}
+        // Ограничиваем минимальную высоту (например, 50px)
+        if (newHeight < 50) {
+            newHeight = 50;
+        }
 
-// Функция для остановки изменения размера
-function stopResize(e) {
-    isResizing = false;
-    document.removeEventListener('mousemove', resize);
-    document.removeEventListener('mouseup', stopResize);
-}
+        chatContainer.style.height = newHeight + 'px';
+    });
 
-// Добавляем слушатели событий для изменения размера
-chatresize.addEventListener('mousedown', startResize);
+    document.addEventListener('mouseup', function() {
+        isResizing = false;
+        document.body.style.cursor = 'default'; // Возвращаем курсор по умолчанию
+    });
+
+    document.addEventListener('mouseleave', function() {
+        if (isResizing) {
+            isResizing = false;
+            document.body.style.cursor = 'default';
+        }
+    });
 
 </script>
 
@@ -862,6 +866,7 @@ chatresize.addEventListener('mousedown', startResize);
 </body>
 
 </html>
+
 
 
 
