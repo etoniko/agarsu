@@ -51,7 +51,7 @@
     initYandexSDK();
 
     function fetchSkinList() {
-        fetch('skinlist.txt?0.0.3')
+        fetch('/skinlist.txt')
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Ошибка сети: ' + response.status);
@@ -1007,7 +1007,7 @@ applyNicknameLimit();
 
 let badWordsSet; // Используем Set вместо массива
 
-fetch('word.txt')
+fetch('/word.txt')
     .then(response => response.text())
     .then(text => {
         const words = text.split('\n').map(word => word.trim().toLowerCase());
