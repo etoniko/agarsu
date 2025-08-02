@@ -1043,88 +1043,94 @@ function censorMessage(message) {
 
 
 
- function drawChatBoard() {
-        if (hideChat) {
-            return;
-        }
-
-        // Очищаем существующий контент чата
-        const chatDiv = document.getElementById('chat-container');
-        chatDiv.innerHTML = '';
-
-        // Рисуем сообщения, начиная с самых новых
-        const messageCount = chatBoard.length;
-        const startIndex = Math.max(messageCount - 16, 0);
-
-        for (let i = 0; i < messageCount - startIndex; i++) {
-            const messageIndex = startIndex + i;
-            const message = chatBoard[messageIndex];
-
-            // Создаем новый div для сообщения с классом scoreshint
-            const messageDiv = document.createElement('div');
-            messageDiv.classList.add('scoreshint');
-
-            // Проверяем, является ли отправитель администратором
-            if (admins.includes(message.name.toLowerCase())) {
-                messageDiv.classList.add('admin'); // Применяем класс админа
-            }
-
-            // Создаем текстовые элементы для имени, сообщения и времени
-            const nameSpan = document.createElement('span');
-            nameSpan.classList.add('chat-name');
-            nameSpan.style.color = admins.includes(message.name) ? 'gold' : message.color; // Устанавливаем цвет имени
-            nameSpan.textContent = message.name + ': '; // Добавляем двоеточие
-
-            const messageSpan = document.createElement('span');
-            messageSpan.classList.add('chat-text');
-            //  Применяем антимат к сообщению
-            messageSpan.textContent = censorMessage(message.message);
-
-            const timeSpan = document.createElement('span'); // Создаем элемент для времени
-            timeSpan.classList.add('chat-time');
-            timeSpan.textContent = message.time; // Добавляем время к сообщению
-
-            // Добавляем текстовые элементы в div сообщения
-            messageDiv.appendChild(nameSpan);
-            messageDiv.appendChild(messageSpan);
-            messageDiv.appendChild(timeSpan); // Добавляем время в сообщение
-
-            // Создаем span для скина
-            const skinSpan = document.createElement('span');
-            skinSpan.classList.add('chat-skin');
-
-            // Получаем id скина из skinList
-            const skinId = skinList[message.name.toLowerCase()]; // Получаем id скина по нику
-
-            // Проверяем, существует ли id скина
-            if (skinId) {
-                const skinImagePath = `skins/${skinId}.png`; // Формируем путь к изображению скина
-                const skinImg = new Image();
-                skinImg.src = skinImagePath;
-
-                skinImg.onload = function () {
-                    skinSpan.style.backgroundImage = `url(${skinImagePath})`;
-                };
-
-                skinImg.onerror = function () {
-                    skinSpan.style.backgroundImage = 'url(skins/PPFtwqH.png)'; // Устанавливаем запасное изображение
-                };
-            } else {
-                // Устанавливаем запасное изображение, если id скина не найден
-                skinSpan.style.backgroundImage = 'url(skins/4.png)';
-            }
-
-            // Добавляем скин в контейнер чата
-            chatDiv.appendChild(skinSpan); // Скин добавляется отдельно
-
-            // Добавляем div сообщения в контейнер чата
-            chatDiv.appendChild(messageDiv);
-        }
-
-        // Устанавливаем прокрутку в самый низ
-        chatDiv.scrollTop = chatDiv.scrollHeight;
+function drawChatBoard() {
+    if (hideChat) {
+        return;
     }
 
+    const chatDiv = document.getElementById('chat-container');
+    // chatDiv.innerHTML = ''; // ***УБРАЛИ ОЧИСТКУ***.  Очищать только если нужно перерисовать весь чат.
+
+    // Рисуем сообщения, начиная с самых новых
+    const messageCount = chatBoard.length;
+    const startIndex = Math.max(messageCount - 16, 0);
+
+    // Логика для очистки старых сообщений, если нужно
+    while (chatDiv.children.length > 16) {
+        chatDiv.removeChild(chatDiv.firstChild); // Удаляем старый скин
+        chatDiv.removeChild(chatDiv.firstChild); // Удаляем старое сообщение
+        chatBoard.shift(); // Удаляем сообщение из chatBoard
+    }
+
+
+    for (let i = 0; i < messageCount - startIndex; i++) {
+        const messageIndex = startIndex + i;
+        const message = chatBoard[messageIndex];
+
+        // Создаем новый div для сообщения с классом scoreshint
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('scoreshint');
+
+        // Проверяем, является ли отправитель администратором
+        if (admins.includes(message.name.toLowerCase())) {
+            messageDiv.classList.add('admin'); // Применяем класс админа
+        }
+
+        // Создаем текстовые элементы для имени, сообщения и времени
+        const nameSpan = document.createElement('span');
+        nameSpan.classList.add('chat-name');
+        nameSpan.style.color = admins.includes(message.name) ? 'gold' : message.color; // Устанавливаем цвет имени
+        nameSpan.textContent = message.name + ': '; // Добавляем двоеточие
+
+        const messageSpan = document.createElement('span');
+        messageSpan.classList.add('chat-text');
+        //  Применяем антимат к сообщению
+        messageSpan.textContent = censorMessage(message.message);
+
+        const timeSpan = document.createElement('span'); // Создаем элемент для времени
+        timeSpan.classList.add('chat-time');
+        timeSpan.textContent = message.time; // Добавляем время к сообщению
+
+        // Добавляем текстовые элементы в div сообщения
+        messageDiv.appendChild(nameSpan);
+        messageDiv.appendChild(messageSpan);
+        messageDiv.appendChild(timeSpan); // Добавляем время в сообщение
+
+        // Создаем span для скина
+        const skinSpan = document.createElement('span');
+        skinSpan.classList.add('chat-skin');
+
+        // Получаем id скина из skinList
+        const skinId = skinList[message.name.toLowerCase()]; // Получаем id скина по нику
+
+        // Проверяем, существует ли id скина
+        if (skinId) {
+            const skinImagePath = `skins/${skinId}.png`; // Формируем путь к изображению скина
+            const skinImg = new Image();
+            skinImg.src = skinImagePath;
+
+            skinImg.onload = function () {
+                skinSpan.style.backgroundImage = `url(${skinImagePath})`;
+            };
+
+            skinImg.onerror = function () {
+                skinSpan.style.backgroundImage = 'url(skins/PPFtwqH.png)'; // Устанавливаем запасное изображение
+            };
+        } else {
+            // Устанавливаем запасное изображение, если id скина не найден
+            skinSpan.style.backgroundImage = 'url(skins/4.png)';
+        }
+
+        // Добавляем скин в контейнер чата
+        chatDiv.appendChild(skinSpan); // Скин добавляется отдельно
+
+        // Добавляем div сообщения в контейнер чата
+        chatDiv.appendChild(messageDiv);
+    }
+
+    // Устанавливаем прокрутку в самый низ
+    chatDiv.scrollTop = chatDiv.scrollHeight;
+}
 function applyNicknameLimit() {
     const chatDivs = document.querySelectorAll('.scoreshint');
 
