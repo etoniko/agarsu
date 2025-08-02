@@ -760,26 +760,32 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
     </script>
+
+
 <div class="overchat">
     <div class="chat-header">
-<div id="chatclose"><i class="fa fa-close"></i></div>
-<div id="chatresize"><i class="fa fa-bars" style="cursor: n-resize;"></i></div>
-</div>
+        <div id="chatclose"><i class="fa fa-close"></i></div>
+        <div id="chatresize"><i class="fa fa-bars" style="cursor: n-resize;"></i></div>
+    </div>
     <div id="chat-container"></div>
     <input type="text" autocomplete="off" id="chat_textbox" maxlength="120" placeholder="Напишите сообщение...">
 </div>
 <script>
 // Получаем элементы
 const chatclose = document.getElementById('chatclose');
+const chatresize = document.getElementById('chatresize');
 const chatContainer = document.getElementById('chat-container');
 const chatTextBox = document.getElementById('chat_textbox');
 const chatIcon = chatclose.querySelector('i');
-const overchatElement = document.querySelector("body > div.overchat"); // Получаем элемент overchat
+const overchatElement = document.querySelector(".overchat"); // Получаем элемент overchat по классу
 
 // Начальное состояние чата (видимый)
 let isChatVisible = true;
+let isResizing = false;
+let initialHeight = 0;
+let initialY = 0;
 
-// Обработчик клика по кнопке
+// Обработчик клика по кнопке закрытия
 chatclose.addEventListener('click', function() {
     if (isChatVisible) {
         // Если чат видимый, скрываем его с помощью высоты
@@ -788,7 +794,8 @@ chatclose.addEventListener('click', function() {
         chatIcon.classList.remove('fa-close');
         chatIcon.classList.add('fa-arrow-up');
         overchatElement.style.maxWidth = '43px'; // Устанавливаем max-width
-overchatElement.style.maxHeight = '43px'; // Устанавливаем max-width
+        overchatElement.style.maxHeight = '43px'; // Устанавливаем max-height
+        overchatElement.style.height = 'auto'; // важно!
     } else {
         // Если чат скрыт, показываем его
         chatContainer.style.height = 'auto';
@@ -796,13 +803,46 @@ overchatElement.style.maxHeight = '43px'; // Устанавливаем max-widt
         chatIcon.classList.remove('fa-arrow-up');
         chatIcon.classList.add('fa-close');
         overchatElement.style.maxWidth = ''; // Сбрасываем max-width (применяется стиль по умолчанию)
-overchatElement.style.maxHeight = ''; // Сбрасываем
+        overchatElement.style.maxHeight = ''; // Сбрасываем max-height
+        overchatElement.style.height = '200px'; // Устанавливаем height по умолчанию или другое нужное значение
     }
 
     // Переключаем состояние видимости чата
     isChatVisible = !isChatVisible;
 });
+
+
+// Функция для начала изменения размера
+function startResize(e) {
+    isResizing = true;
+    initialHeight = overchatElement.offsetHeight;
+    initialY = e.clientY;
+    document.addEventListener('mousemove', resize);
+    document.addEventListener('mouseup', stopResize);
+}
+
+// Функция для изменения размера
+function resize(e) {
+    if (!isResizing) return;
+
+    const newHeight = initialHeight + (e.clientY - initialY);
+    overchatElement.style.height = newHeight + 'px';
+}
+
+// Функция для остановки изменения размера
+function stopResize(e) {
+    isResizing = false;
+    document.removeEventListener('mousemove', resize);
+    document.removeEventListener('mouseup', stopResize);
+}
+
+// Добавляем слушатели событий для изменения размера
+chatresize.addEventListener('mousedown', startResize);
+
 </script>
+
+
+
     <div class="homemenu" onclick="$('#overlays').show();"><i class="fas fa-home"></i></div>
 
 
@@ -822,6 +862,7 @@ overchatElement.style.maxHeight = ''; // Сбрасываем
 </body>
 
 </html>
+
 
 
 
