@@ -451,8 +451,8 @@ content: "";
 
 
 .add-left{
-    max-width: 250px;
-    max-height: 450px;
+    width: 250px;
+    height: 450px;
     position: absolute;
     left: 2%;
     display: flex;
