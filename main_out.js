@@ -1675,7 +1675,7 @@ function drawWhiteGrid() {
     // Инициализация изображений
     const innerImage = new Image();
     const centerBackground = new Image();
-    centerBackground.src = "https://cdn.jsdelivr.net/gh/etoniko/agarsu/center.png"; // Фоновое изображение
+    centerBackground.src = "/assets/photo/center.png"; // Фоновое изображение
 
     // Переменные для хранения данных топ-1 игрока
     let topPlayerNick = '';
