@@ -368,7 +368,8 @@ transition: ease filter, transform 0.5s;
 }
 
 .chat-name {
-  font-weight: bold;
+      font-family: sans-serif;
+    font-weight: bold;
 }
 .chat-time{
     font-size: 10px;
