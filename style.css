@@ -1243,6 +1243,24 @@ background: none;
     padding: 0px 5px 5px 0px;
 }
 
+.chat-header{
+    display: flex;
+    height: 20px;
+    flex-direction: row-reverse;
+    gap: 60px;
+    align-items: center;
+    padding-bottom: 5px;
+}
+
+#chatclose{
+    font-size: 20px;
+    padding-right: 10px;
+}
+#chatresize{
+    color: #7b7b7b;
+    font-size: 14px;
+}
+
 #serverclose-overlay{
 display: none;
 position: fixed;
