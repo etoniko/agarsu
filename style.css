@@ -373,7 +373,7 @@ transition: ease filter, transform 0.5s;
 }
 .chat-time{
     font-size: 10px;
-    color: #8e8e8e;
+    color: #dadada;
     position: absolute;
     right: 10px;
 }
