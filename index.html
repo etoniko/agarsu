@@ -820,8 +820,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('mousemove', function(e) {
         if (!isResizing) return;
 
+        // ИЗМЕНЕНО: Вычитаем deltaY из initialHeight
         const deltaY = e.clientY - startY;
-        let newHeight = initialHeight + deltaY;
+        let newHeight = initialHeight - deltaY;
 
         // Ограничиваем минимальную высоту (например, 50px)
         if (newHeight < 50) {
@@ -866,6 +867,7 @@ document.addEventListener('DOMContentLoaded', () => {
 </body>
 
 </html>
+
 
 
 
