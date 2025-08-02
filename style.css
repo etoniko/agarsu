@@ -12,7 +12,7 @@
 
 
 /* Фон полупрозрачный */
-#captcha-overlay {
+#captcha-overlay {А
   position: fixed;
   top: 0;
   left: 0;
@@ -451,8 +451,8 @@ content: "";
 
 
 .add-left{
-    max-width: 400px;
-    max-height: 800px;
+    max-width: 250px;
+    max-height: 450px;
     position: absolute;
     left: 2%;
     display: flex;
