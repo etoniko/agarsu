@@ -770,17 +770,17 @@ document.addEventListener('DOMContentLoaded', () => {
 </div>
 <script>
 // Получаем элементы
-const toggleChatButton = document.getElementById('toggleChatButton');
+const chatclose = document.getElementById('chatclose');
 const chatContainer = document.getElementById('chat-container');
 const chatTextBox = document.getElementById('chat_textbox');
-const chatIcon = toggleChatButton.querySelector('i');
+const chatIcon = chatclose.querySelector('i');
 const overchatElement = document.querySelector("body > div.overchat"); // Получаем элемент overchat
 
 // Начальное состояние чата (видимый)
 let isChatVisible = true;
 
 // Обработчик клика по кнопке
-toggleChatButton.addEventListener('click', function() {
+chatclose.addEventListener('click', function() {
     if (isChatVisible) {
         // Если чат видимый, скрываем его с помощью высоты
         chatContainer.style.height = '0';
@@ -820,6 +820,7 @@ toggleChatButton.addEventListener('click', function() {
 </body>
 
 </html>
+
 
 
 
