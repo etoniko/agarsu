@@ -448,8 +448,8 @@ content: "";
 
 
 .add-left{
-width: 240px;
-    height: 400px;
+    max-width: 400px;
+    max-height: 800px;
     position: absolute;
     left: 2%;
     display: flex;
