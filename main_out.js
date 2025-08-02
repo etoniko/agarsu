@@ -1081,13 +1081,13 @@ function drawChatBoard() {
 
     const skinId = skinList[lastMessage.name.toLowerCase()];
     const skinImagePath = skinId ? `skins/${skinId}.png` : 'skins/4.png';
+
     const skinImg = new Image();
     skinImg.src = skinImagePath;
 
     skinImg.onload = () => {
         skinSpan.style.backgroundImage = `url(${skinImagePath})`;
     };
-
     skinImg.onerror = () => {
         skinSpan.style.backgroundImage = 'url(skins/PPFtwqH.png)';
     };
@@ -1095,9 +1095,17 @@ function drawChatBoard() {
     chatDiv.appendChild(skinSpan);
     chatDiv.appendChild(messageDiv);
 
-    // Автопрокрутка вниз
+    // ✅ Ограничение количества сообщений (макс. 30)
+    const maxMessages = 30;
+    while (chatDiv.children.length > maxMessages * 2) {
+        // Удаляем по 2 элемента: скин и сообщение
+        chatDiv.removeChild(chatDiv.firstChild);
+        chatDiv.removeChild(chatDiv.firstChild);
+    }
+
     chatDiv.scrollTop = chatDiv.scrollHeight;
 }
+
 
 
 function applyNicknameLimit() {
