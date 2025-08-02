@@ -1250,11 +1250,11 @@ background: none;
     gap: 60px;
     align-items: center;
     padding-bottom: 5px;
+padding-right: 5px;
 }
 
 #chatclose{
     font-size: 20px;
-    padding-right: 10px;
 }
 #chatresize{
     color: #7b7b7b;
