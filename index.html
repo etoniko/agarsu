@@ -609,38 +609,9 @@
     <div id="loginButton" data-ulogin="callback=onUloginToken;display=panel;fields=photo,first_name,last_name;providers=vkontakte,odnoklassniki,mailru,facebook;hidden=other;redirect_uri=https%3A%2F%2Fitana.pw%2Fapi%2Fauth%2Fulogin"></div>
 
    <!-- Telegram виджет (без data-auth-url!) -->
-<script async src="https://telegram.org/js/telegram-widget.js?7"
-        data-telegram-login="agarsu_auth_bot"
-        data-size="large"
-        data-userpic="false"
-        data-request-access="write">
-</script>
-
-<script>
-// Получаем user данные от Telegram iframe
-window.addEventListener("message", function (event) {
-    if (event.origin !== "https://telegram.org") return;
-    const user = event.data;
-
-    // Отправляем эти данные на сервер на itana.pw
-    fetch("https://itana.pw/api/auth/telegram", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(user)
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.token) {
-            console.log("Успешный вход! Токен:", data.token);
-            // Можешь сохранить токен в cookie/localStorage и т.д.
-        } else {
-            console.error("Ошибка авторизации:", data.error);
-        }
-    });
-});
-</script>
+<button onclick="window.open('https://oauth.telegram.org/auth?bot=agarsu_auth_bot&origin=https://itana.pw&embed=1&request_access=write', '_blank', 'width=500,height=600')">
+    Войти через Telegram
+</button>
 </div>
 
                 </div>
@@ -790,6 +761,7 @@ window.addEventListener("message", function (event) {
 </body>
 
 </html>
+
 
 
 
