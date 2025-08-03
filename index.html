@@ -609,7 +609,37 @@
     <div id="loginButton" data-ulogin="callback=onUloginToken;display=panel;fields=photo,first_name,last_name;providers=vkontakte,odnoklassniki,mailru,facebook;hidden=other;redirect_uri=https%3A%2F%2Fitana.pw%2Fapi%2Fauth%2Fulogin"></div>
 
     <!-- Telegram авторизация -->
-<script async src="https://telegram.org/js/telegram-widget.js?22" data-telegram-login="agarsu_auth_bot" data-size="medium" data-userpic="false" data-auth-url="https://itana.pw/api/auth/telegram" data-request-access="write"></script>
+<script async src="https://telegram.org/js/telegram-widget.js?22"
+        data-telegram-login="agarsu_auth_bot"
+        data-size="medium"
+        data-userpic="false"
+        data-onauth="onTelegramAuth"
+        data-request-access="write">
+</script>
+
+<script>
+function onTelegramAuth(user) {
+    // Отправляем данные пользователя на сервер для проверки и выдачи токена
+    fetch('https://itana.pw/api/auth/telegram_callback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(user)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.token) {
+            console.log('Получен токен:', data.token);
+            // Тут сохраняй токен в localStorage/cookie и ставь пользователя в сессию
+            alert('Авторизация успешна! Токен: ' + data.token);
+        } else {
+            alert('Ошибка авторизации: ' + (data.error || 'Неизвестная ошибка'));
+        }
+    })
+    .catch(err => {
+        alert('Ошибка сети: ' + err.message);
+    });
+}
+</script>
 </div>
 
                 </div>
@@ -759,6 +789,7 @@
 </body>
 
 </html>
+
 
 
 
