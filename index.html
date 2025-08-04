@@ -607,6 +607,22 @@
     <!-- uLogin авторизация -->
     <script src="//ulogin.ru/js/ulogin.js"></script>
     <div id="loginButton" data-ulogin="callback=onUloginToken;display=panel;fields=photo,first_name,last_name;providers=vkontakte,odnoklassniki,mailru,facebook;hidden=other;redirect_uri=https%3A%2F%2Fitana.pw%2Fapi%2Fauth%2Fulogin"></div> 
+<!-- в header-row -->
+<button id="telegramLoginButton">Войти через Telegram</button>
+<script>
+document.getElementById("telegramLoginButton").onclick = () => {
+  // открываем окно с Telegram login-widget
+  const popup = window.open( `https://itana.pw:6003/telegram_login`, '', 'width=400,height=600' );
+  window.addEventListener("message", listener);
+  function listener(evt) {
+    if (evt.origin === "https://itana.pw" && evt.data.token) {
+      window.removeEventListener("message", listener);
+      onAccountLoggedIn(evt.data.token);
+    }
+  }
+};
+</script>
+
 </div>
 
                 </div>
@@ -756,6 +772,7 @@
 </body>
 
 </html>
+
 
 
 
