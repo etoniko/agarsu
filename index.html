@@ -612,7 +612,7 @@
 <script>
 document.getElementById("telegramLoginButton").onclick = () => {
   // открываем окно с Telegram login-widget
-  const popup = window.open( `https://itana.pw:6003/telegram_login`, '', 'width=400,height=600' );
+  const popup = window.open( `https://itana.pw/telegram_login`, '', 'width=400,height=600' );
   window.addEventListener("message", listener);
   function listener(evt) {
     if (evt.origin === "https://itana.pw" && evt.data.token) {
@@ -772,6 +772,7 @@ document.getElementById("telegramLoginButton").onclick = () => {
 </body>
 
 </html>
+
 
 
 
