@@ -1304,3 +1304,19 @@ position: fixed;
             font-size: 1.2em;
             margin-top: 10px;
         }
+
+#map{
+position: absolute;
+    right: 10px;
+    bottom: 10px;
+    width: 170px;
+    border: 1px solid rgba(0, 0, 0, .10);
+    border-radius: 25px;
+    background: rgba(0, 0, 0, .3);
+}
+.map-container > div {
+    display: flex;
+    float: left;
+    width: 30px;
+    height: 30px;
+}
