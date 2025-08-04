@@ -2545,14 +2545,14 @@ function drawWhiteGrid() {
         }
     };
 
-    const onLogout = () => {
+const onLogout = () => {
         if (confirm("Ты действительно хочешь выйти из учетной записи?")) {
-            userXP.textContent = userLevel.textContent = "";
+            /*wHandle.*/userXP.textContent = /*wHandle.*/userLevel.textContent = "";
             accountData = null;
             clearAccountToken();
 
-            logoutButton.style.display = "none";
-            loginButton.style.display = "";
+            /*wHandle.*/logoutButton.style.display = "none";
+            /*wHandle.*/loginButton.style.display = "";
         }
     };
 
@@ -2561,15 +2561,25 @@ function drawWhiteGrid() {
             const res = await accountApiGet("me/logout");
             if (res.ok) {
                 const data = await res.json();
-                if (data.ok || data.status == 401) onLogout();
+                if (data.ok || 401 == data.status) onLogout();
                 if (data.error) alert(data.error);
             }
-        } else onLogout();
-    };
+        }
+        else onLogout();
+    }
 
-    wHandle.onTelegramAuth = async user => {
-        const params = new URLSearchParams(user);
-        const res = await fetch("https://itana.pw:6003/api/auth/telegram?" + params.toString());
+    // wHandle.openLoginAccountWith = name => {
+    //     /*wHandle.*/open("/api/login/" + name, "", "width=400, height=500");
+    //     const listener = evt => {
+    //         /*wHandle.*/removeEventListener("message", listener);
+    //         onAccountLoggedIn(evt.data.token);
+    //     }
+    //     /*wHandle.*/addEventListener("message", listener);
+    // };
+
+    wHandle.onUloginToken = async tokenUlogin => {
+        // /*wHandle.*/open("/auth/ulogin/?token=" + tokenUlogin, "", "width=400, height=500");
+        const res = await accountApiGet("auth/ulogin?token=" + tokenUlogin);
         if (res.ok) {
             const data = await res.json();
             if (data.error) alert(data.error);
@@ -2578,21 +2588,19 @@ function drawWhiteGrid() {
     };
 
     const setAccountToken = token => {
-        localStorage.accountToken = token;
+        /*wHandle.*/localStorage.accountToken = token;
     };
 
     const clearAccountToken = () => {
-        delete localStorage.accountToken;
+        delete /*wHandle.*/localStorage.accountToken;
     };
 
-    const accountApiGet = tag => fetch("https://itana.pw:6003/api/" + tag, {
-        headers: { Authorization: "Game " + localStorage.accountToken }
-    });
+    const accountApiGet = tag => fetch("https://itana.pw:6003/api/" + tag, { headers: { Authorization: Game ${/*wHandle.*/localStorage.accountToken} } });
 
     wHandle.onAccountLoggedIn = token => {
         setAccountToken(token);
         loadAccountUserData();
-        sendAccountToken?.(); // если есть функция отправки токена на сервер
+        sendAccountToken();
     };
 
     let accountData;
@@ -2600,10 +2608,10 @@ function drawWhiteGrid() {
     const setAccountData = data => {
         accountData = data;
         displayAccountData();
-        document.querySelectorAll(".menu-item")[2].click();
+        document.querySelectorAll(".menu-item")[2].click(); // На главную меню
 
-        logoutButton.style.display = "";
-        loginButton.style.display = "none";
+        /*wHandle.*/logoutButton.style.display = "";
+        /*wHandle.*/loginButton.style.display = "none";
     };
 
     const loadAccountUserData = async () => {
@@ -2611,49 +2619,68 @@ function drawWhiteGrid() {
         if (res.ok) {
             const data = await res.json();
             if (data.error) {
-                if (data.status == 401) clearAccountToken();
+                if (401 == data.status) clearAccountToken();
                 else alert(data.error);
-            } else {
-                setAccountData(data);
             }
+            else setAccountData(data);
         }
     };
 
-    if (localStorage.accountToken) loadAccountUserData();
+    if (/*wHandle.*/localStorage.accountToken) loadAccountUserData();
 
     const getXp = level => ~~(100 * (level ** 2 / 2));
-    const getLevel = xp => ~~((xp / 100 * 2) ** 0.5);
+    const getLevel = xp => ~~((xp / 100 * 2) ** .5);
 
     const displayAccountData = () => {
-        const currLevel = getLevel(accountData.xp);
-        const nextXp = getXp(currLevel + 1);
-        const progressPercent = (accountData.xp / nextXp) * 100;
+        const currLevel = getLevel(accountData.xp); // Получаем текущий уровень
+        const nextXp = getXp(currLevel + 1); // Получаем XP для следующего уровня
+        const progressPercent = (accountData.xp / nextXp) * 100; // Рассчитываем процент прогресса
 
+        // Обновляем текст с XP
         const userXPElement = document.getElementById("userXP")?.querySelector(".status-value");
-        if (userXPElement) userXPElement.textContent = `${accountData.xp}/${nextXp}`;
+        if (userXPElement) {
+            userXPElement.textContent = ${accountData.xp}/${nextXp};
+        }
 
+        // Обновляем текст с уровнем
         const userLevelElement = document.getElementById("userLevel")?.querySelector(".status-value");
-        if (userLevelElement) userLevelElement.textContent = currLevel;
+        if (userLevelElement) {
+            userLevelElement.textContent = currLevel;
+        }
 
+        // Обновляем прогресс бар
         const progressBar = document.querySelector(".progress-fill");
-        if (progressBar) progressBar.style.width = `${progressPercent}%`;
+        if (progressBar) {
+            progressBar.style.width = ${progressPercent}%;
+        }
 
+        // Обновляем круг с уровнем
         const levelCircle = document.getElementById("levelCircle");
-        if (levelCircle) levelCircle.textContent = currLevel;
+        if (levelCircle) {
+            levelCircle.textContent = currLevel;
+        }
 
+        // Обновляем текст с прогрессом
         const progressText = document.getElementById("progressText");
-        if (progressText) progressText.textContent = `${Math.round(progressPercent)}% (${accountData.xp}/${nextXp})`;
+        if (progressText) {
+            progressText.textContent = ${Math.round(progressPercent)}% (${accountData.xp}/${nextXp});
+        }
 
+        // Отображаем account_id, если элемент существует
         const accountIDElement = document.getElementById("accountID");
-        if (accountIDElement) accountIDElement.textContent = `ID: ${accountData.uid}`;
+        if (accountIDElement) {
+            accountIDElement.textContent = ID: ${accountData.uid};
+        }
     };
 
-    wHandle.onUpdateXp = xp => {
+
+
+
+    const onUpdateXp = xp => {
         if (accountData) {
             accountData.xp = xp;
             displayAccountData();
         }
-    };
-
+    }; 
     wHandle.onload = gameLoop;
 })(window, window.jQuery);
