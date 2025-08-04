@@ -2545,7 +2545,7 @@ function drawWhiteGrid() {
         }
     };
 
-const onLogout = () => {
+    const onLogout = () => {
         if (confirm("Ты действительно хочешь выйти из учетной записи?")) {
             /*wHandle.*/userXP.textContent = /*wHandle.*/userLevel.textContent = "";
             accountData = null;
@@ -2595,7 +2595,7 @@ const onLogout = () => {
         delete /*wHandle.*/localStorage.accountToken;
     };
 
-    const accountApiGet = tag => fetch("https://itana.pw:6003/api/" + tag, { headers: { Authorization: Game ${/*wHandle.*/localStorage.accountToken} } });
+    const accountApiGet = tag => fetch("https://itana.pw:6003/api/" + tag, { headers: { Authorization: `Game ${/*wHandle.*/localStorage.accountToken}` } });
 
     wHandle.onAccountLoggedIn = token => {
         setAccountToken(token);
@@ -2639,7 +2639,7 @@ const onLogout = () => {
         // Обновляем текст с XP
         const userXPElement = document.getElementById("userXP")?.querySelector(".status-value");
         if (userXPElement) {
-            userXPElement.textContent = ${accountData.xp}/${nextXp};
+            userXPElement.textContent = `${accountData.xp}/${nextXp}`;
         }
 
         // Обновляем текст с уровнем
@@ -2651,7 +2651,7 @@ const onLogout = () => {
         // Обновляем прогресс бар
         const progressBar = document.querySelector(".progress-fill");
         if (progressBar) {
-            progressBar.style.width = ${progressPercent}%;
+            progressBar.style.width = `${progressPercent}%`;
         }
 
         // Обновляем круг с уровнем
@@ -2663,13 +2663,13 @@ const onLogout = () => {
         // Обновляем текст с прогрессом
         const progressText = document.getElementById("progressText");
         if (progressText) {
-            progressText.textContent = ${Math.round(progressPercent)}% (${accountData.xp}/${nextXp});
+            progressText.textContent = `${Math.round(progressPercent)}% (${accountData.xp}/${nextXp})`;
         }
 
         // Отображаем account_id, если элемент существует
         const accountIDElement = document.getElementById("accountID");
         if (accountIDElement) {
-            accountIDElement.textContent = ID: ${accountData.uid};
+            accountIDElement.textContent = `ID: ${accountData.uid}`;
         }
     };
 
@@ -2681,6 +2681,7 @@ const onLogout = () => {
             accountData.xp = xp;
             displayAccountData();
         }
-    }; 
+    };
+
     wHandle.onload = gameLoop;
 })(window, window.jQuery);
