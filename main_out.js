@@ -2547,12 +2547,12 @@ function drawWhiteGrid() {
 
     const onLogout = () => {
         if (confirm("Ты действительно хочешь выйти из учетной записи?")) {
-            /*wHandle.*/userXP.textContent = /*wHandle.*/userLevel.textContent = "";
+            userXP.textContent = userLevel.textContent = "";
             accountData = null;
             clearAccountToken();
 
-            /*wHandle.*/logoutButton.style.display = "none";
-            /*wHandle.*/loginButton.style.display = "";
+            logoutButton.style.display = "none";
+            loginButton.style.display = "";
         }
     };
 
@@ -2568,17 +2568,8 @@ function drawWhiteGrid() {
         else onLogout();
     }
 
-    // wHandle.openLoginAccountWith = name => {
-    //     /*wHandle.*/open("/api/login/" + name, "", "width=400, height=500");
-    //     const listener = evt => {
-    //         /*wHandle.*/removeEventListener("message", listener);
-    //         onAccountLoggedIn(evt.data.token);
-    //     }
-    //     /*wHandle.*/addEventListener("message", listener);
-    // };
 
     wHandle.onUloginToken = async tokenUlogin => {
-        // /*wHandle.*/open("/auth/ulogin/?token=" + tokenUlogin, "", "width=400, height=500");
         const res = await accountApiGet("auth/ulogin?token=" + tokenUlogin);
         if (res.ok) {
             const data = await res.json();
@@ -2588,14 +2579,14 @@ function drawWhiteGrid() {
     };
 
     const setAccountToken = token => {
-        /*wHandle.*/localStorage.accountToken = token;
+        localStorage.accountToken = token;
     };
 
     const clearAccountToken = () => {
-        delete /*wHandle.*/localStorage.accountToken;
+        delete localStorage.accountToken;
     };
 
-    const accountApiGet = tag => fetch("https://itana.pw:6003/api/" + tag, { headers: { Authorization: `Game ${/*wHandle.*/localStorage.accountToken}` } });
+    const accountApiGet = tag => fetch("https://itana.pw:6003/api/" + tag, { headers: { Authorization: `Game ${localStorage.accountToken}` } });
 
     wHandle.onAccountLoggedIn = token => {
         setAccountToken(token);
@@ -2610,8 +2601,8 @@ function drawWhiteGrid() {
         displayAccountData();
         document.querySelectorAll(".menu-item")[2].click(); // На главную меню
 
-        /*wHandle.*/logoutButton.style.display = "";
-        /*wHandle.*/loginButton.style.display = "none";
+        logoutButton.style.display = "";
+        loginButton.style.display = "none";
     };
 
     const loadAccountUserData = async () => {
@@ -2626,7 +2617,7 @@ function drawWhiteGrid() {
         }
     };
 
-    if (/*wHandle.*/localStorage.accountToken) loadAccountUserData();
+    if (localStorage.accountToken) loadAccountUserData();
 
     const getXp = level => ~~(100 * (level ** 2 / 2));
     const getLevel = xp => ~~((xp / 100 * 2) ** .5);
