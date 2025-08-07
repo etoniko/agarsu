@@ -1309,6 +1309,7 @@ position: fixed;
 display:none;
 }
 #map {
+display: block;
     position: absolute;
     right: 10px;
     bottom: 10px;
