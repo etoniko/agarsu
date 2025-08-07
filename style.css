@@ -1305,9 +1305,6 @@ position: fixed;
             font-size: 1.2em;
             margin-top: 10px;
         }
-.map{
-display:none;
-}
 #map {
 display: block;
     position: absolute;
