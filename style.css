@@ -1306,7 +1306,6 @@ position: fixed;
             margin-top: 10px;
         }
 #map {
-display: block;
     position: absolute;
     right: 10px;
     bottom: 10px;
