@@ -1411,6 +1411,7 @@ function updateNodes(reader) {
         mouseCoordinateChange();
             drawGrid();
             drawCenterBackground();
+updateMiniMapPosition();
 
         nodelist.sort((a, b) => a.size === b.size ? a.id - b.id : a.size - b.size);
 
@@ -1778,6 +1779,36 @@ function drawWhiteGrid() {
         ctx.fillText(`${topPlayerScore}`, screenX, screenY + radius - 15 * viewZoom);
     }
 
+function updateMiniMapPosition() {
+    const playerDot = document.getElementById('mapposition');
+    const mapContainer = document.querySelector('.map-container');
+
+    if (!playerDot || !mapContainer) return;
+
+    // Границы всей игровой карты (например, 0 - 10000)
+    const totalMapWidth = rightPos - leftPos;
+    const totalMapHeight = bottomPos - topPos;
+
+    // Позиция игрока на карте
+    const playerX = nodeX - leftPos; // относительно начала карты
+    const playerY = nodeY - topPos;
+
+    // Размер мини-карты в пикселях
+    const miniMapWidth = mapContainer.offsetWidth;
+    const miniMapHeight = mapContainer.offsetHeight;
+
+    // Относительная позиция игрока
+    const relativeX = playerX / totalMapWidth;
+    const relativeY = playerY / totalMapHeight;
+
+    // Координаты на мини-карте
+    const miniX = relativeX * miniMapWidth;
+    const miniY = relativeY * miniMapHeight;
+
+    // Установка позиции точки игрока
+    playerDot.style.left = `${miniX}px`;
+    playerDot.style.top = `${miniY}px`;
+}
 
 
     function drawSplitIcon(ctx) {
