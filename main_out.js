@@ -1779,13 +1779,21 @@ function drawWhiteGrid() {
         ctx.fillText(`${topPlayerScore}`, screenX, screenY + radius - 15 * viewZoom);
     }
 
+let lastUpdateTime = 0;
+const updateInterval = 1000; // Интервал обновления в миллисекундах (100 = 10 раз в секунду)
+
 function updateMiniMapPosition() {
     const playerDot = document.getElementById('mapposition');
     const mapContainer = document.querySelector('.map-container');
 
     if (!playerDot || !mapContainer) return;
 
-    // Размеры реальной карты
+    const now = Date.now();
+    if (now - lastUpdateTime < updateInterval) {
+        return; // Пропускаем обновление, если прошло слишком мало времени
+    }
+
+    // Размеры реальной карты  (Предполагается, что leftPos, rightPos, topPos, bottomPos уже определены)
     const totalMapWidth = rightPos - leftPos;
     const totalMapHeight = bottomPos - topPos;
 
@@ -1797,16 +1805,26 @@ function updateMiniMapPosition() {
     const relativeX = playerX / totalMapWidth;
     const relativeY = playerY / totalMapHeight;
 
-    // Переводим в пиксели для мини-карты 140x140
-    const miniMapWidth = 140;
-    const miniMapHeight = 140;
+    // Размеры мини-карты
+    const miniMapWidth = mapContainer.offsetWidth;
+    const miniMapHeight = mapContainer.offsetHeight;
 
+    // Переводим в пиксели для мини-карты
     const miniX = relativeX * miniMapWidth;
     const miniY = relativeY * miniMapHeight;
 
-    // Ставим позицию
-    playerDot.style.left = `${miniX}px`;
-    playerDot.style.top = `${miniY}px`;
+    // Границы
+    const dotRadius = playerDot.offsetWidth / 2; // Предполагаем, что это круг
+    const boundedMiniX = Math.max(0 + dotRadius, Math.min(miniX, miniMapWidth - dotRadius));
+    const boundedMiniY = Math.max(0 + dotRadius, Math.min(miniY, miniMapHeight - dotRadius));
+
+
+    // Ставим позицию с учетом радиуса точки, чтобы не вылезала за контейнер
+    playerDot.style.left = `${boundedMiniX - dotRadius}px`; // Центрируем точку
+    playerDot.style.top = `${boundedMiniY - dotRadius}px`;   // Центрируем точку
+
+
+    lastUpdateTime = now;
 }
 
 
