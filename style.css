@@ -1305,7 +1305,9 @@ position: fixed;
             font-size: 1.2em;
             margin-top: 10px;
         }
-
+.map{
+display:none;
+}
 #map {
     display:none;
     position: absolute;
@@ -1314,7 +1316,6 @@ position: fixed;
     border: solid #ffffff26 1px;
     border-radius: 25px;
     background: rgba(0, 0, 0, .3);
-    display: block;
     width: 150px;
     height: 180px;
     padding: 5px;
