@@ -1781,7 +1781,7 @@ function drawWhiteGrid() {
 
 
 let lastUpdateTime = 0;
-const updateInterval = 100; // Интервал обновления в миллисекундах
+const updateInterval = 1000; // миллисекунды
 
 function updateMiniMapPosition() {
     const playerDot = document.getElementById('mapposition');
@@ -1790,9 +1790,7 @@ function updateMiniMapPosition() {
     if (!playerDot || !mapContainer) return;
 
     const now = Date.now();
-    if (now - lastUpdateTime < updateInterval) {
-        return; // Пропускаем обновление, если прошло слишком мало времени
-    }
+    if (now - lastUpdateTime < updateInterval) return;
 
     // Размеры реальной карты
     const totalMapWidth = rightPos - leftPos;
@@ -1802,28 +1800,28 @@ function updateMiniMapPosition() {
     const miniMapWidth = mapContainer.offsetWidth;
     const miniMapHeight = mapContainer.offsetHeight;
 
-    // Радиус точки
-    const dotRadius = playerDot.offsetWidth / 2;
-
-    // Вычисляем относительное положение игрока (с учетом смещения начала координат)
+    // Относительное положение игрока
     const relativeX = (nodeX - leftPos) / totalMapWidth;
     const relativeY = (nodeY - topPos) / totalMapHeight;
 
-    // Преобразуем относительные координаты в координаты мини-карты
+    // Переводим относительные координаты в мини-карту
     let miniX = relativeX * miniMapWidth;
     let miniY = relativeY * miniMapHeight;
 
-    // Ограничиваем координаты, чтобы точка не выходила за границы
+    // Радиус точки
+    const dotRadius = playerDot.offsetWidth / 2;
+
+    // Ограничиваем, чтобы не выходило за границы
     miniX = Math.max(dotRadius, Math.min(miniX, miniMapWidth - dotRadius));
     miniY = Math.max(dotRadius, Math.min(miniY, miniMapHeight - dotRadius));
 
-    // Устанавливаем позицию элемента (с учетом центрирования)
+    // Устанавливаем позицию точки
     playerDot.style.left = (miniX - dotRadius) + 'px';
     playerDot.style.top = (miniY - dotRadius) + 'px';
 
-
     lastUpdateTime = now;
 }
+
 
 
 
