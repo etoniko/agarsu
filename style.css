@@ -486,6 +486,7 @@ width: 240px;
 
 
 @media (max-width: 599px) {
+.map{display: none;}
 	.score-info{left: 40%;}
 	#table-container {height: 375px;}
 	.skkinn {height: 32px; width: 50px;}
@@ -1305,18 +1306,47 @@ position: fixed;
             margin-top: 10px;
         }
 
-#map{
-position: absolute;
+#map {
+    display:none;
+    position: absolute;
     right: 10px;
     bottom: 10px;
-    width: 170px;
-    border: 1px solid rgba(0, 0, 0, .10);
+    border: solid #ffffff26 1px;
     border-radius: 25px;
     background: rgba(0, 0, 0, .3);
+    display: block;
+    width: 150px;
+    height: 180px;
+    padding: 5px;
+}
+.map-header{
+height: 20px;
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: flex-end;
+}
+.mapclose{
+margin-right: 10px;
+}
+.map-container{
+    width: 140px;
+    height: 140px;
+    grid-template-columns: repeat(5, 1fr);
+    display: grid;
+    place-items: center;
+    align-items: end;
 }
 .map-container > div {
-    display: flex;
-    float: left;
-    width: 30px;
-    height: 30px;
+    font-size: 12px;
 }
+#mapposition{
+    position: absolute;
+    top: 34%;
+    left: 68%;
+    width: 10px;
+    height: 10px;
+    margin: -5px 0 0 5px;
+    background: #1a73e8;
+    border-radius: 10px;
+}
+
