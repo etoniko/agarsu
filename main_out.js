@@ -1779,8 +1779,9 @@ function drawWhiteGrid() {
         ctx.fillText(`${topPlayerScore}`, screenX, screenY + radius - 15 * viewZoom);
     }
 
+
 let lastUpdateTime = 0;
-const updateInterval = 1000; // Интервал обновления в миллисекундах (100 = 10 раз в секунду)
+const updateInterval = 500; // Интервал обновления в миллисекундах
 
 function updateMiniMapPosition() {
     const playerDot = document.getElementById('mapposition');
@@ -1793,35 +1794,32 @@ function updateMiniMapPosition() {
         return; // Пропускаем обновление, если прошло слишком мало времени
     }
 
-    // Размеры реальной карты  (Предполагается, что leftPos, rightPos, topPos, bottomPos уже определены)
+    // Размеры реальной карты
     const totalMapWidth = rightPos - leftPos;
     const totalMapHeight = bottomPos - topPos;
-
-    // Положение игрока относительно начала карты
-    const playerX = nodeX - leftPos;
-    const playerY = nodeY - topPos;
-
-    // Относительное положение (0..1)
-    const relativeX = playerX / totalMapWidth;
-    const relativeY = playerY / totalMapHeight;
 
     // Размеры мини-карты
     const miniMapWidth = mapContainer.offsetWidth;
     const miniMapHeight = mapContainer.offsetHeight;
 
-    // Переводим в пиксели для мини-карты
-    const miniX = relativeX * miniMapWidth;
-    const miniY = relativeY * miniMapHeight;
+    // Радиус точки
+    const dotRadius = playerDot.offsetWidth / 2;
 
-    // Границы
-    const dotRadius = playerDot.offsetWidth / 2; // Предполагаем, что это круг
-    const boundedMiniX = Math.max(0 + dotRadius, Math.min(miniX, miniMapWidth - dotRadius));
-    const boundedMiniY = Math.max(0 + dotRadius, Math.min(miniY, miniMapHeight - dotRadius));
+    // Вычисляем относительное положение игрока (с учетом смещения начала координат)
+    const relativeX = (nodeX - leftPos) / totalMapWidth;
+    const relativeY = (nodeY - topPos) / totalMapHeight;
 
+    // Преобразуем относительные координаты в координаты мини-карты
+    let miniX = relativeX * miniMapWidth;
+    let miniY = relativeY * miniMapHeight;
 
-    // Ставим позицию с учетом радиуса точки, чтобы не вылезала за контейнер
-    playerDot.style.left = `${boundedMiniX - dotRadius}px`; // Центрируем точку
-    playerDot.style.top = `${boundedMiniY - dotRadius}px`;   // Центрируем точку
+    // Ограничиваем координаты, чтобы точка не выходила за границы
+    miniX = Math.max(dotRadius, Math.min(miniX, miniMapWidth - dotRadius));
+    miniY = Math.max(dotRadius, Math.min(miniY, miniMapHeight - dotRadius));
+
+    // Устанавливаем позицию элемента (с учетом центрирования)
+    playerDot.style.left = (miniX - dotRadius) + 'px';
+    playerDot.style.top = (miniY - dotRadius) + 'px';
 
 
     lastUpdateTime = now;
