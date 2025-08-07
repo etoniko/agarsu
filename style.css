@@ -1332,14 +1332,14 @@ margin-right: 10px;
     display: grid;
     place-items: center;
     align-items: end;
+    position: relative; /* 👈 для абсолютного позиционирования точки */
+    overflow: hidden; /* 👈 предотвращает выход за границы */
 }
 .map-container > div {
     font-size: 12px;
 }
 #mapposition{
     position: absolute;
-    top: 34%;
-    left: 68%;
     width: 10px;
     height: 10px;
     margin: -5px 0 0 5px;
