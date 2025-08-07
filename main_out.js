@@ -1781,7 +1781,7 @@ function drawWhiteGrid() {
 
 
 let lastUpdateTime = 0;
-const updateInterval = 300; // Интервал обновления в миллисекундах
+const updateInterval = 100; // Интервал обновления в миллисекундах
 
 function updateMiniMapPosition() {
     const playerDot = document.getElementById('mapposition');
