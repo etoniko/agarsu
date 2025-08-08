@@ -653,7 +653,7 @@
 
     <div id="chat" class="overchat">
         <div class="chat-header">
-            <div id="chatclose"><i class="fa fa-close"></i></div>
+            <div id="chatclose" onclick="document.getElementById('chat').style.display = 'none'; document.getElementById('onchat').style.display = 'flex';"><i class="fa fa-close"></i></div>
             <div id="chatresize"><i class="fa fa-bars" style="cursor: n-resize;"></i></div>
         </div>
         <div id="chat-container"></div>
@@ -790,6 +790,7 @@ setInterval(updatePingIndicator, 1000);
 </body>
 
 </html>
+
 
 
 
