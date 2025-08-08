@@ -833,10 +833,21 @@ let pingstamp = 0;
 
         const messageType = msg.getUint8(offset++);
         switch (messageType) {
-             case 2:                
-                 ping = Date.now() - pingstamp;
-                 console.log(ping);            
-                break;
+                 case 2:
+        ping = Date.now() - pingstamp;
+        console.log(ping);
+
+        // Находим элемент с id "ping" в HTML
+        const pingElement = document.getElementById('ping');
+
+        // Проверяем, что элемент найден (чтобы избежать ошибок, если его нет)
+        if (pingElement) {
+            // Добавляем текст (значение ping) в элемент
+            pingElement.textContent = ping; // Или pingElement.innerText = ping;
+        } else {
+            console.error("Элемент с id 'ping' не найден в HTML."); // Выводим ошибку в консоль, если элемент не найден
+        }
+        break;
             case 16:
                 // Update nodes
                 const reader = new BinaryReader(msg);
