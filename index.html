@@ -661,49 +661,20 @@
     </div>
     <script>
         // Получаем элементы
-        const chatclose = document.getElementById('chatclose');
         const chatContainer = document.getElementById('chat-container');
         const chatTextBox = document.getElementById('chat_textbox');
-        const chatIcon = chatclose.querySelector('i');
-        const overchatElement = document.querySelector("body > div.overchat"); // Получаем элемент overchat
         const chatResize = document.getElementById('chatresize');
 
-        // Начальное состояние чата (видимый)
-        let isChatVisible = true;
+        // Начальное состояние чата
         let isResizing = false;
         let startY;
         let initialHeight;
-
-        // Обработчик клика по кнопке закрытия/открытия
-        chatclose.addEventListener('click', function () {
-            if (isChatVisible) {
-                // Если чат видимый, скрываем его с помощью высоты
-                chatContainer.style.height = '0';
-                chatTextBox.style.display = 'none'; // Скрываем текстовое поле
-                chatIcon.classList.remove('fa-close');
-                chatIcon.classList.add('fa-arrow-up');
-                overchatElement.style.maxWidth = '43px'; // Устанавливаем max-width
-                overchatElement.style.maxHeight = '43px'; // Устанавливаем max-width
-            } else {
-                // Если чат скрыт, показываем его
-                chatContainer.style.height = 'auto';
-                chatTextBox.style.display = 'block'; // Показываем текстовое поле
-                chatIcon.classList.remove('fa-arrow-up');
-                chatIcon.classList.add('fa-close');
-                overchatElement.style.maxWidth = ''; // Сбрасываем max-width (применяется стиль по умолчанию)
-                overchatElement.style.maxHeight = ''; // Сбрасываем
-            }
-
-            // Переключаем состояние видимости чата
-            isChatVisible = !isChatVisible;
-        });
 
         // Обработчики изменения размера
         chatResize.addEventListener('mousedown', function (e) {
             isResizing = true;
             startY = e.clientY;
             initialHeight = chatContainer.offsetHeight;
-            document.body.style.cursor = 'n-resize'; // Изменяем курсор
         });
 
         document.addEventListener('mousemove', function (e) {
@@ -732,7 +703,6 @@
                 document.body.style.cursor = 'default';
             }
         });
-
     </script>
 
 
@@ -819,6 +789,7 @@ setInterval(updatePingIndicator, 1000);
 </body>
 
 </html>
+
 
 
 
