@@ -34,7 +34,6 @@
     <link rel="canonical" href="https://agar.su">
 
     <!-- Шрифты и стили -->
-     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link href="https://fonts.googleapis.com/css?family=Ubuntu:700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=new_releases" />
@@ -756,7 +755,7 @@
     </div>
 <div id="map"class="map">
 <div class="map-header">
-  <div class="ping-container">ping: <span id="ping">0</span><i id="ping-icon" class="fas fa-signal"></i></div>
+  <div class="ping-container">ping: <span id="ping">0</span></div>
                 <div class="mapclose"><i class="fa fa-close"></i></div>
             </div>
             
@@ -790,115 +789,7 @@
             </div>
         </div>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const map = document.getElementById('map');
-    const mapClose = document.querySelector('.mapclose');
-
-    mapClose.addEventListener('click', function() {
-        // Изменяем класс иконки на стрелку вверх
-        this.innerHTML = '<i class="fa fa-arrow-up"></i>'; 
-
-        // Изменяем размеры и форму контейнера map
-        map.style.width = '43px';
-        map.style.height = '43px';
-        map.style.borderRadius = '50%'; // делаем круглым
-        map.style.padding = '0'; // Убираем padding
-		map.style.display = 'block'; // Отображаем карту
-        
-		// Скрываем все элементы внутри map-container, кроме кнопки закрытия
-		const mapContainer = document.querySelector('.map-container');
-		mapContainer.style.display = 'none';
-
-        //Изменяем позиционирование map-header, чтобы крестик был в центре круга
-		const mapHeader = document.querySelector('.map-header');
-		mapHeader.style.height = '43px';
-		mapHeader.style.alignItems = 'center';
-
-		//Изменяем позиционирование крестика/стрелки, чтобы была в центре круга
-		mapClose.style.marginRight = '0px';
-		mapClose.style.display = 'flex';
-		mapClose.style.justifyContent = 'center';
-		mapClose.style.alignItems = 'center';
-
-        // Удаляем обработчик события click и добавляем новый, чтобы при клике раскрывать карту
-        mapClose.removeEventListener('click', arguments.callee); // Remove old event listener
-
-        mapClose.addEventListener('click', function() {
-            // Возвращаем все к исходному состоянию
-            this.innerHTML = '<i class="fa fa-close"></i>';
-            map.style.width = '150px';
-            map.style.height = '180px';
-            map.style.borderRadius = '25px';
-            map.style.padding = '5px';
-            mapContainer.style.display = 'grid';
-
-			mapHeader.style.height = '20px';
-			mapHeader.style.alignItems = 'flex-end';
-
-			mapClose.style.marginRight = '10px';
-			mapClose.style.display = 'block';
-
-
-			mapClose.removeEventListener('click', arguments.callee);
-
-            // Добавляем исходный обработчик событий click для закрытия
-            mapClose.addEventListener('click', function() {
-				this.innerHTML = '<i class="fa fa-arrow-up"></i>'; 
-
-				// Изменяем размеры и форму контейнера map
-				map.style.width = '43px';
-				map.style.height = '43px';
-				map.style.borderRadius = '50%'; // делаем круглым
-				map.style.padding = '0'; // Убираем padding
-				map.style.display = 'block'; // Отображаем карту
-
-				// Скрываем все элементы внутри map-container, кроме кнопки закрытия
-				const mapContainer = document.querySelector('.map-container');
-				mapContainer.style.display = 'none';
-
-				//Изменяем позиционирование map-header, чтобы крестик был в центре круга
-				const mapHeader = document.querySelector('.map-header');
-				mapHeader.style.height = '43px';
-				mapHeader.style.alignItems = 'center';
-
-				//Изменяем позиционирование крестика/стрелки, чтобы была в центре круга
-				mapClose.style.marginRight = '0px';
-				mapClose.style.display = 'flex';
-				mapClose.style.justifyContent = 'center';
-				mapClose.style.alignItems = 'center';
-
-				mapClose.removeEventListener('click', arguments.callee);
-				mapClose.addEventListener('click', function() {
-					// Возвращаем все к исходному состоянию
-					this.innerHTML = '<i class="fa fa-close"></i>';
-					map.style.width = '150px';
-					map.style.height = '180px';
-					map.style.borderRadius = '25px';
-					map.style.padding = '5px';
-					mapContainer.style.display = 'grid';
-
-					mapHeader.style.height = '20px';
-					mapHeader.style.alignItems = 'flex-end';
-
-					mapClose.style.marginRight = '10px';
-					mapClose.style.display = 'block';
-
-					mapClose.removeEventListener('click', arguments.callee);
-					mapClose.addEventListener('click', arguments.callee);
-				});
-				
-			});
-        });
-    });
-
-	if(map.style.display === 'none'){
-		map.style.display = 'block';
-	}
-});
-</script>
-<script>
 const pingValueElement = document.getElementById('ping'); // Ищем элемент с id="ping"
-const pingIconElement = document.getElementById('ping-icon'); // Добавляем id иконке
 
 // Функция для обновления ping и иконки
 function updatePingIndicator() { // Переименовали функцию
@@ -908,17 +799,13 @@ function updatePingIndicator() { // Переименовали функцию
 
   // Убираем все существующие классы цветов
   pingValueElement.classList.remove('ping-green', 'ping-yellow', 'ping-red');
-  pingIconElement.classList.remove('fa-signal', 'fa-signal-alt-3', 'fa-signal-alt-2', 'fa-signal-alt');
 
   if (ping >= 0 && ping < 100) {
     pingValueElement.classList.add('ping-green');
-    pingIconElement.classList.add('fa-signal-alt-3'); // 3 палки
   } else if (ping >= 100 && ping < 150) {
     pingValueElement.classList.add('ping-yellow');
-    pingIconElement.classList.add('fa-signal-alt-2'); // 2 палки
   } else {
     pingValueElement.classList.add('ping-red');
-    pingIconElement.classList.add('fa-signal-alt'); // 1 палка
   }
 }
 
@@ -931,6 +818,7 @@ setInterval(updatePingIndicator, 1000);
 </body>
 
 </html>
+
 
 
 
