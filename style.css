@@ -1351,15 +1351,11 @@ margin-right: 10px;
     position: absolute;
     left: 12px;
     font-size: 12px;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
     width: 70px;
 }
 
 #ping{
     font-size: 11px;
-    color: #dadada;
-    text-align: center;
 }
 
 /* Цвета для ping */
