@@ -1347,3 +1347,44 @@ margin-right: 10px;
     border-radius: 10px;
 }
 
+.ping-container {
+  font-family: sans-serif;
+  font-size: 20px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  /*  Фиксированная минимальная ширина  */
+  min-width: 120px; /*  Подстройте это значение под максимальный ping + ms + иконка  */
+  display: flex;        /*  Выравнивание элементов в строку  */
+  align-items: center;  /*  Выравнивание по вертикали  */
+}
+
+#ping-value {
+  /* Задаем минимальную ширину только для значения пинга */
+  min-width: 40px;  /* Подстройте, чтобы вместить, например, "1000" */
+  text-align: right; /* Выравниваем текст справа */
+  display: inline-block; /* Чтобы min-width работала */
+}
+
+
+.ping-container i {
+  margin-left: 5px;
+}
+
+/* Цвета для ping */
+.ping-green {
+  color: green;
+}
+
+.ping-yellow {
+  color: orange;
+}
+
+.ping-red {
+  color: red;
+}
+
+/* Стили для иконок (альтернативно, можно использовать отдельные классы для каждой иконки) */
+.fa-signal { /*Начальная иконка 3 палки */
+  color: green; /* Начальный цвет */
+}
