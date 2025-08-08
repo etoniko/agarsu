@@ -755,6 +755,7 @@
     </div>
 <div id="map"class="map">
 <div class="map-header">
+  <div class="ping-container">Ping: <span id="ping-value">0</span>ms <i id="ping-icon" class="fas fa-signal"></i></div>
                 <div class="mapclose"><i class="fa fa-close"></i></div>
             </div>
             
@@ -894,9 +895,42 @@ document.addEventListener('DOMContentLoaded', function() {
 	}
 });
 </script>
+<script>
+const pingValueElement = document.getElementById('ping'); // Ищем элемент с id="ping"
+const pingIconElement = document.getElementById('ping-icon'); // Добавляем id иконке
+
+// Функция для обновления ping и иконки
+function updatePingIndicator() { // Переименовали функцию
+
+  // Получаем текущее значение пинга из элемента
+  const ping = parseInt(pingValueElement.textContent);
+
+  // Убираем все существующие классы цветов
+  pingValueElement.classList.remove('ping-green', 'ping-yellow', 'ping-red');
+  pingIconElement.classList.remove('fa-signal', 'fa-signal-alt-3', 'fa-signal-alt-2', 'fa-signal-alt');
+
+  if (ping >= 0 && ping < 100) {
+    pingValueElement.classList.add('ping-green');
+    pingIconElement.classList.add('fa-signal-alt-3'); // 3 палки
+  } else if (ping >= 100 && ping < 150) {
+    pingValueElement.classList.add('ping-yellow');
+    pingIconElement.classList.add('fa-signal-alt-2'); // 2 палки
+  } else {
+    pingValueElement.classList.add('ping-red');
+    pingIconElement.classList.add('fa-signal-alt'); // 1 палка
+  }
+}
+
+// Запускаем функцию обновления индикатора при загрузке страницы
+updatePingIndicator();
+
+// Запускаем функцию обновления индикатора каждую секунду (или другой интервал)
+setInterval(updatePingIndicator, 1000);
+</script>
 </body>
 
 </html>
+
 
 
 
