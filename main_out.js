@@ -807,7 +807,12 @@ function isMouseOverElement(element) {
         }
     };
     BinaryReader.prototype.offset = 0;
-    BinaryReader.prototype.offset = 0;
+
+let ping = 0;    
+let pingstamp = 0;
+     setInterval(() => {
+        pingstamp = Date.now();        wsSend(new Uint8Array([2])); // ping
+    }, 1000);
 
     function handleWsMessage(msg) {
         let offset = 0;
@@ -828,6 +833,10 @@ function isMouseOverElement(element) {
 
         const messageType = msg.getUint8(offset++);
         switch (messageType) {
+             case 2:                
+                 ping = Date.now() - pingstamp;
+                 console.log(ping);            
+                break;
             case 16:
                 // Update nodes
                 const reader = new BinaryReader(msg);
