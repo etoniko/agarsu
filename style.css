@@ -1232,6 +1232,8 @@ position: absolute;
     background: rgba(0, 0, 0, .3);
 }
 
+
+
 .overchat.hidden {
     width: 43px;
 }
@@ -1262,6 +1264,22 @@ padding-right: 5px;
 #chatresize{
     color: #7b7b7b;
     font-size: 14px;
+}
+
+#onchat{
+    position: absolute;
+    left: 10px;
+    bottom: 10px;
+    border: solid #ffffff26 1px;
+    border-radius: 25px;
+    background: rgba(0, 0, 0, .3);
+    width: 40px;
+    height: 40px;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
 }
 
 #serverclose-overlay{
