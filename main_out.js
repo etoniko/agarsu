@@ -696,6 +696,11 @@ function isMouseOverElement(element) {
         return xmlHttp.responseText;
     }
 
+
+let ping = 0;    
+let pingstamp = 0;
+
+
     function onWsOpen() {
         var msg;
         // delay = 500;
@@ -715,6 +720,10 @@ function isMouseOverElement(element) {
 
         sendNickName();
         log.info("Connection successful!");
+     setInterval(() => {
+        pingstamp = Date.now();        
+wsSend(new Uint8Array([2])); // ping
+    }, 1000);
     }
 
         function onWsClose(evt) {
@@ -807,12 +816,6 @@ function isMouseOverElement(element) {
         }
     };
     BinaryReader.prototype.offset = 0;
-
-let ping = 0;    
-let pingstamp = 0;
-     setInterval(() => {
-        pingstamp = Date.now();        wsSend(new Uint8Array([2])); // ping
-    }, 1000);
 
     function handleWsMessage(msg) {
         let offset = 0;
