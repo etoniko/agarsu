@@ -723,7 +723,7 @@ let pingstamp = 0;
      setInterval(() => {
         pingstamp = Date.now();        
 wsSend(new Uint8Array([2])); // ping
-    }, 1000);
+    }, 3000);
     }
 
         function onWsClose(evt) {
@@ -838,7 +838,6 @@ wsSend(new Uint8Array([2])); // ping
         switch (messageType) {
                  case 2:
         ping = Date.now() - pingstamp;
-        console.log(ping);
 
         // Находим элемент с id "ping" в HTML
         const pingElement = document.getElementById('ping');
