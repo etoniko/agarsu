@@ -1348,33 +1348,31 @@ margin-right: 10px;
 }
 
 .ping-container {
-    display: flex;
     position: absolute;
     left: 12px;
     font-size: 12px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    width: 70px;
 }
 
 #ping{
-    width: 25;
-    text-align: end;
-}
-
-
-.ping-container i {
-  margin-left: 5px;
+    font-size: 11px;
+    color: #dadada;
+    text-align: center;
 }
 
 /* Цвета для ping */
 .ping-green {
-  color: green;
+  color: #00ff00;
 }
 
 .ping-yellow {
-  color: orange;
+  color: gold;
 }
 
 .ping-red {
-  color: red;
+  color: #ff3627;
 }
 
 /* Стили для иконок (альтернативно, можно использовать отдельные классы для каждой иконки) */
