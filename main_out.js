@@ -1072,6 +1072,12 @@ function drawChatBoard() {
 
     const lastMessage = chatBoard[chatBoard.length - 1];
     if (!lastMessage) return;
+if (lastMessage.playerLevel !== 1) {    
+    lastMessage.playerXp;
+console.log(lastMessage.playerXp)
+    lastMessage.playerLevel;    // ...TODO
+console.log(lastMessage.playerLevel)
+   }
 
     const messageDiv = document.createElement('div');
     messageDiv.classList.add('scoreshint');
