@@ -119,6 +119,7 @@ button:focus { outline: none; }
     padding: 0;
     margin: 0;
     overflow: hidden;
+    background-color: #070c16;
 }
 
 
@@ -630,7 +631,6 @@ transform-origin: bottom left;
       display: flex;
       height: 100%;
       width: 100%;
-      background-color: #070c16;
       color: white;
       overflow: hidden;
       touch-action: manipulation;
