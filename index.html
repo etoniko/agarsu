@@ -788,9 +788,7 @@ updatePingIndicator();
 setInterval(updatePingIndicator, 1000);
 </script>
 <div id="notification-container">
-  <div id="logout-notification" class="notification" style="display:none;">
-    Вы вышли из учетной записи
-  </div>
+  <div id="logout-notification" class="notification" style="display:none;">Login close</div>
 <script>
 function showLogoutNotification() {
     const notif = document.getElementById('logout-notification');
@@ -820,7 +818,7 @@ function showLogoutNotification() {
 #notification-container {
   position: fixed;
   top: 20px;
-  right: 20px;
+  right: 180px;
   z-index: 9999;
   display: flex;
   flex-direction: column;
@@ -828,19 +826,16 @@ function showLogoutNotification() {
 }
 
 .notification {
-  background-color: #333;
-  color: white;
-  padding: 12px 20px;
-  border-radius: 5px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  font-family: Arial, sans-serif;
-  font-size: 14px;
-  user-select: none;
-
-  /* для анимации */
-  opacity: 0;
-  transform: translateX(100%);
-  transition: opacity 0.3s, transform 0.3s;
+    background-color: #ff000075;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 5px;
+    box-shadow: 1px 1px 10px rgb(255 0 0 / 62%);
+    font-size: 13px;
+    user-select: none;
+    opacity: 0;
+    transform: translateY(-100%);
+    transition: opacity 0.3s, transform 0.3s;
 }
 
 .notification.show {
@@ -853,6 +848,7 @@ function showLogoutNotification() {
 </body>
 
 </html>
+
 
 
 
