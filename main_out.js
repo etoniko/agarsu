@@ -1914,7 +1914,7 @@ function updateMiniMapPosition() {
                         name = ""; // Если имя не отображается
                     }
 
-                    const isMe = playerCells.indexOf(leaderBoard[b].id) !== -1; // Проверка, мой ли это игрок
+                    const isMe = leaderBoard[b].id === ownerPlayerId; // Проверка, мой ли это игрок
                     if (isMe && playerCells[0]?.name) {
                         name = playerCells[0].name; // Если это я, используем моё имя
                         myRank = b + 1; // Сохраняем мой ранг
@@ -1976,7 +1976,7 @@ function updateMiniMapPosition() {
         ws = null,
         nodeX = 0,
         nodeY = 0,
-        playerCells = window.playerCells = [],
+        playerCells = [],
         nodes = {},
         nodelist = [],
         Cells = [],
