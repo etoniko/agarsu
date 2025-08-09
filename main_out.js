@@ -1996,7 +1996,7 @@ function updateMiniMapPosition() {
         bottomPos = 1E4,
         foodMinSize = 0,
         foodMaxSize = 0,
-        ownerPlayerId = 0,
+        ownerPlayerId = -1,
         mapWidth = 0,
         mapHeight = 0,
         viewZoom = 1,
