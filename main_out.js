@@ -1073,8 +1073,7 @@ function drawChatBoard() {
     const lastMessage = chatBoard[chatBoard.length - 1];
     if (!lastMessage) return;
 if (lastMessage.playerLevel !== 1) {    
-    lastMessage.playerXp;
-    lastMessage.playerLevel;    // ...TODO
+    lastMessage.playerLevel;
    }
 
     const messageDiv = document.createElement('div');
@@ -1977,7 +1976,7 @@ function updateMiniMapPosition() {
         ws = null,
         nodeX = 0,
         nodeY = 0,
-        playerCells = [],
+        window.playerCells = [],
         nodes = {},
         nodelist = [],
         Cells = [],
