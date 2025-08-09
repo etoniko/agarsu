@@ -2613,38 +2613,34 @@ function updateMiniMapPosition() {
     };
 
 const onLogout = () => {
-    if (confirm("Ты действительно хочешь выйти из учетной записи?")) {
-        // Очистка данных аккаунта в памяти
-        accountData = null;
+    // Очистка данных аккаунта в памяти
+    accountData = null;
 
-        // Очистка данных в localStorage, связанных с аккаунтом (например, прогресс)
-        // Если у вас есть сохранение прогресса в localStorage, удалите его здесь:
-        localStorage.removeItem('accountData'); // пример, если есть
+    // Очистка данных в localStorage, связанных с аккаунтом (например, прогресс)
+    localStorage.removeItem('accountData'); // если есть
 
-        // Очистить токен
-        clearAccountToken();
+    // Очистить токен
+    clearAccountToken();
 
-        // Обновить UI — очистить все элементы с прогрессом
+    // Обновить UI — очистить все элементы с прогрессом
+    const progressBar = document.querySelector(".progress-fill");
+    if (progressBar) progressBar.style.width = `0%`;
 
-        const progressBar = document.querySelector(".progress-fill");
-        if (progressBar) progressBar.style.width = `0%`;
+    const levelCircle = document.getElementById("levelCircle");
+    if (levelCircle) levelCircle.textContent = "0";
 
-        const levelCircle = document.getElementById("levelCircle");
-        if (levelCircle) levelCircle.textContent = "0";
+    const progressText = document.getElementById("progressText");
+    if (progressText) progressText.textContent = "0% (0/0)";
 
-        const progressText = document.getElementById("progressText");
-        if (progressText) progressText.textContent = "0% (0/0)";
+    const accountIDElement = document.getElementById("accountID");
+    if (accountIDElement) accountIDElement.textContent = "ID: 0000";
 
-        const accountIDElement = document.getElementById("accountID");
-        if (accountIDElement) accountIDElement.textContent = "ID: 0000";
-
-        // Обновляем кнопки
-        logoutButton.style.display = "none";
-        loginButton.style.display = "";
-
-        alert("Вы вышли из учетной записи");
-    }
+    // Обновляем кнопки
+    logoutButton.style.display = "none";
+    loginButton.style.display = "";
+showLogoutNotification();
 };
+
 
 
     wHandle.logoutAccount = async () => {
