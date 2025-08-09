@@ -787,9 +787,73 @@ updatePingIndicator();
 // Запускаем функцию обновления индикатора каждую секунду (или другой интервал)
 setInterval(updatePingIndicator, 1000);
 </script>
+<div id="notification-container">
+  <div id="logout-notification" class="notification" style="display:none;">
+    Вы вышли из учетной записи
+  </div>
+<script>
+function showLogoutNotification() {
+    const notif = document.getElementById('logout-notification');
+    if (!notif) return;
+
+    notif.style.display = 'block';
+
+    // Чтобы сработал transition, добавляем класс с задержкой
+    setTimeout(() => {
+      notif.classList.add('show');
+    }, 10);
+
+    // Через 3 секунды скрываем
+    setTimeout(() => {
+      notif.classList.remove('show');
+
+      // После анимации прячем полностью
+      notif.addEventListener('transitionend', () => {
+          notif.style.display = 'none';
+      }, { once: true });
+
+    }, 3000);
+}
+
+</script>
+<style>
+#notification-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.notification {
+  background-color: #333;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 5px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  user-select: none;
+
+  /* для анимации */
+  opacity: 0;
+  transform: translateX(100%);
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.notification.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+</style>
+</div>
 </body>
 
 </html>
+
 
 
 
