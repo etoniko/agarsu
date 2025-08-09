@@ -662,7 +662,6 @@ function isMouseOverElement(element) {
         // var c = "ws://localhost:3000/";
         // wsUrl = c;
 
-        nodesOnScreen = [];
         playerCells = [];
         nodes = {};
         nodelist = [];
@@ -871,7 +870,6 @@ wsSend(new Uint8Array([2])); // ping
             case 20:
                 // Clear nodes
                 playerCells = [];
-                nodesOnScreen = [];
                 break;
             case 21:
                 // Draw line
@@ -884,11 +882,6 @@ wsSend(new Uint8Array([2])); // ping
                     drawLineX = lineX;
                     drawLineY = lineY;
                 }
-                break;
-            case 32:
-                // Add node
-                nodesOnScreen.push(msg.getUint32(offset, true));
-                offset += 4;
                 break;
             case 48:
                 // Update leaderboard (custom text)
@@ -946,6 +939,8 @@ wsSend(new Uint8Array([2])); // ping
                 offset += 2;
                 foodMaxSize = (msg.getUint16(offset, true) * 100) ** .5;
                 offset += 2;
+                ownerPlayerId = msg.getUint32(offset, true);
+                offset += 4;
 
                 mapWidth = (rightPos + leftPos) / 2;
                 mapHeight = (bottomPos + topPos) / 2;
@@ -973,7 +968,7 @@ wsSend(new Uint8Array([2])); // ping
     }
 
 
-    function addChat(view, offset) {
+        function addChat(view, offset) {
         function getString() {
             var text = '',
                 char;
@@ -1006,15 +1001,20 @@ wsSend(new Uint8Array([2])); // ping
         while (color.length < 6) {
             color = '0' + color;
         }
+		
+        const playerXp = view.getUint32(offset, true);
+        offset += 4;
+		
         color = '#' + color;
         chatBoard.push({
+			"playerXp": playerXp,
+			"playerLevel": playerXp ? getLevel(playerXp) : -1,
             "name": getString(),
             "color": color,
             "message": getString(),
             "time": formatTime(new Date()) // Форматируем текущее время
         });
         drawChatBoard();
-applyNicknameLimit();
     }
 
     function formatTime(date) {
@@ -1208,6 +1208,7 @@ function updateNodes(reader) {
             let posX = 0;
             let posY = 0;
             let size = 0;
+            let playerId = 0;
 
             if (type === 1) {
                 posX = leftPos + (rightPos * 2) * normalizeFractlPart(nodeid);
@@ -1215,6 +1216,7 @@ function updateNodes(reader) {
                 size = foodMinSize + nodeid % ((foodMaxSize - foodMinSize) + 1);
             }
             else {
+                if (type === 0) playerId = reader.uint32();
                 posX = reader.int32();
                 posY = reader.int32();
                 size = reader.uint16();
@@ -1254,6 +1256,15 @@ function updateNodes(reader) {
                 nodes[nodeid] = node;
                 node.ka = posX;
                 node.la = posY;
+if (playerId === ownerPlayerId) {
+      document.getElementById("overlays").style.display = "none";
+      playerCells.push(node);
+      if (1 == playerCells.length) {
+       nodeX = node.x;
+       nodeY = node.y;
+         }
+
+    }
             }
 
             node.isVirus = flagVirus;
@@ -1267,14 +1278,7 @@ function updateNodes(reader) {
 
             if (name) node.setName(name);
 
-            if (-1 != nodesOnScreen.indexOf(nodeid) && -1 == playerCells.indexOf(node)) {
-                document.getElementById("overlays").style.display = "none";
-                playerCells.push(node);
-                if (1 == playerCells.length) {
-                    nodeX = node.x;
-                    nodeY = node.y;
-                }
-            }
+
         }
 
         while (reader.canRead) {
@@ -1907,7 +1911,7 @@ function updateMiniMapPosition() {
                         name = ""; // Если имя не отображается
                     }
 
-                    const isMe = nodesOnScreen.indexOf(leaderBoard[b].id) !== -1; // Проверка, мой ли это игрок
+                    const isMe = playerCells.indexOf(leaderBoard[b].id) !== -1; // Проверка, мой ли это игрок
                     if (isMe && playerCells[0]?.name) {
                         name = playerCells[0].name; // Если это я, используем моё имя
                         myRank = b + 1; // Сохраняем мой ранг
@@ -1969,7 +1973,6 @@ function updateMiniMapPosition() {
         ws = null,
         nodeX = 0,
         nodeY = 0,
-        nodesOnScreen = [],
         playerCells = [],
         nodes = {},
         nodelist = [],
@@ -1989,6 +1992,7 @@ function updateMiniMapPosition() {
         bottomPos = 1E4,
         foodMinSize = 0,
         foodMaxSize = 0,
+        ownerPlayerId = 0,
         mapWidth = 0,
         mapHeight = 0,
         viewZoom = 1,
@@ -2147,8 +2151,6 @@ function updateMiniMapPosition() {
                 ua = true;
                 playerCells.splice(tmp, 1);
             }
-            tmp = nodesOnScreen.indexOf(this.id);
-            if (-1 != tmp) nodesOnScreen.splice(tmp, 1);
             this.destroyed = true;
             Cells.push(this)
         },
