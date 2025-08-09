@@ -1084,16 +1084,16 @@ function drawChatBoard() {
     const nameContainer = document.createElement('span');
     nameContainer.style.display = 'inline-flex';
     nameContainer.style.alignItems = 'center';
-    nameContainer.style.gap = '4px'; // небольшой отступ между звездой и именем
+    nameContainer.style.gap = '4px';
 
-    // Если есть уровень, добавляем звездочку и уровень
-    if (lastMessage.playerLevel) {
+    // Показываем звезду и уровень, только если playerLevel — число и больше 0
+    if (typeof lastMessage.playerLevel === 'number' && lastMessage.playerLevel > 0) {
         const starContainer = document.createElement('span');
         starContainer.classList.add('star-container');
 
         const starIcon = document.createElement('i');
         starIcon.className = 'fas fa-star';
-        starIcon.style.color = 'gold'; // цвет звезды, можно настроить
+        starIcon.style.color = 'gold';
 
         const levelSpan = document.createElement('span');
         levelSpan.classList.add('levelme');
@@ -1145,7 +1145,7 @@ function drawChatBoard() {
     chatDiv.appendChild(skinSpan);
     chatDiv.appendChild(messageDiv);
 
-    // ✅ Ограничение количества сообщений (макс. 30)
+    // Ограничение количества сообщений (макс. 30)
     const maxMessages = 30;
     while (chatDiv.children.length > maxMessages * 2) {
         // Удаляем по 2 элемента: скин и сообщение
