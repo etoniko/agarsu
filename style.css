@@ -1417,3 +1417,33 @@ margin-right: 10px;
 .fa-signal { /*Начальная иконка 3 палки */
   color: green; /* Начальный цвет */
 }
+
+#notification-container {
+  position: fixed;
+  top: 20px;
+  right: 180px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.notification {
+    background-color: #ff000075;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 5px;
+    box-shadow: 1px 1px 10px rgb(255 0 0 / 62%);
+    font-size: 13px;
+    user-select: none;
+    opacity: 0;
+    transform: translateY(-100%);
+    transition: opacity 0.2s, transform 0.3s;
+}
+
+.notification.show {
+  opacity: 1;
+  transform: translateX(0);
+  ransition: opacity 0.3s, transform 0.2s;
+}
+
