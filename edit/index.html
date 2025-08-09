@@ -1,0 +1,455 @@
+<html lang="en"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Редактор Скинов | agar.su</title>
+   <!-- Favicon и иконки для Apple устройств -->
+    <link rel="apple-touch-icon" href="https://cdn.jsdelivr.net/gh/etoniko/agarsu/icon.svg/icon.svg">
+    <link rel="icon" href="https://cdn.jsdelivr.net/gh/etoniko/agarsu/icon.svg" type="image/svg+xml">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;display=swap" rel="stylesheet">
+      <!-- Open Graph для социальных сетей -->
+    <meta property="og:title" content="Agar.su - Редактор Скинов!">
+    <meta property="og:description" content="Редактируй себе красивый скин, отличайся от других!">
+    <meta property="og:image" content="assets/photo/ogimage.jpeg">
+    <meta property="og:url" content="https://agar.su">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Agar.su - Редактор Скинов!">
+    <meta name="twitter:description" content="Редактируй себе красивый скин, отличайся от других!">
+    <meta name="twitter:image" content="assets/photo/ogimage.jpeg">
+
+  <style>
+    :root {
+      --bg: #111215;
+      --panel: #111a27;
+      --accent: #016bef;
+      --text: #ffffff;
+      --muted: #a0a0a0;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+	  display: flex;
+    align-items: center;
+    justify-content: center;
+    }
+
+    header {
+      background-color: var(--accent);
+      padding: 14px 20px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 16px;
+    }
+
+    main {
+      display: flex;
+      justify-content: center;
+	      align-items: center;
+      padding: 40px 0px;
+      gap: 60px;
+      flex-wrap: wrap;
+    }
+.circle-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px; /* расстояние между кругом и кнопкой */
+}
+ .circle-box {
+  width: 360px;
+  height: 360px;
+  border: 3px dashed #ffffff14;
+  border-radius: 50%;
+  background-color: #141f2c;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: var(--muted);
+  cursor: pointer;
+  transition: 0.2s;
+  text-align: center;
+}
+
+.circle-box:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.circle-box p {
+  margin: 4px 0;
+  font-size: 16px;
+}
+
+.circle-box .icon {
+  font-size: 36px;
+  margin-bottom: 10px;
+}
+
+.download-btn {
+  background: rgba(255,255,255,0.02);
+  border: #ffffff14 solid 1px;
+  color: white;
+  padding: 10px 28px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.download-btn:hover {
+  background-color: var(--accent);
+  color: white;
+}
+
+    .controls {
+      background-color: var(--panel);
+      padding: 24px;
+      border-radius: 12px;
+      width: 350px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+	  border: #ffffff14 solid 1px;
+    }
+
+    .control-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .control-row label {
+      flex: 1;
+      font-size: 16px;
+      color: #bbbbbb;
+    }
+
+    .control-row input[type=range] {
+      flex: 2;
+      accent-color: var(--accent);
+    }
+
+    .control-row button {
+      padding: 3px 8px;
+      font-size: 17px;
+      background: transparent;
+      border: 1px solid #333;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .control-row button:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    @media (max-width: 768px) {
+      main {
+        flex-direction: column;
+        align-items: center;
+        gap: 40px;
+	   padding: 10px 0px;
+      }
+
+      .circle-box {
+        width: 300px;
+        height: 300px;
+      }
+
+      .controls {
+    height: 200px;
+    overflow: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+<main>
+    <div class="circle-wrapper">
+        <div class="circle-box">
+            <div class="icon">↥</div>
+            <p>Drag the image here</p>
+            <p>Click to select file</p>
+        </div>
+        <button class="download-btn">Download Image</button>
+    </div>
+
+    <div class="controls">
+        <div class="control-row">
+            <label aria-labelledby="Hue">Hue</label><input type="range" min="0" max="360" value="0" id="hue"><button>Reset</button>
+        </div>
+        <div class="control-row">
+            <label aria-labelledby="Zoom">Zoom</label><input type="range" min="1" max="5" value="1" step="0.1" id="zoom"><button>Reset</button>
+        </div>
+        <div class="control-row">
+            <label aria-labelledby="Blur">Blur</label><input type="range" min="0" max="10" value="0" id="blur"><button>Reset</button>
+        </div>
+        <div class="control-row">
+            <label aria-labelledby="Sepia">Sepia</label><input type="range" min="0" max="100" value="0" id="sepia"><button>Reset</button>
+        </div>
+        <div class="control-row">
+            <label aria-labelledby="Saturate">Saturate</label><input type="range" min="0" max="200" value="100" id="saturate"><button>Reset</button>
+        </div>
+        <div class="control-row">
+            <label aria-labelledby="Rotation">Rotation</label><input type="range" min="0" max="360" value="0" id="rotation"><button>Reset</button>
+        </div>
+        <div class="control-row">
+            <label aria-labelledby="Contrast">Contrast</label><input type="range" min="0" max="200" value="100" id="contrast"><button>Reset</button>
+        </div>
+        <div class="control-row">
+            <label aria-labelledby="Brightness">Brightness</label><input type="range" min="0" max="200" value="100" id="brightness"><button>Reset</button>
+        </div>
+    </div>
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const circleBox = document.querySelector('.circle-box');
+    const downloadBtn = document.querySelector('.download-btn');
+    const controls = document.querySelector('.controls');
+
+    let img = null;
+    const canvasSize = 512;
+    let canvas = null;
+    let offsetX = 0, offsetY = 0;
+    let isDragging = false;
+    let startX, startY;
+    let dragMoved = false;
+    let imgLoaded = false;
+
+    let minZoom = 1;
+
+    const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+
+    const handleImageUpload = (file) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            img = new Image();
+            img.onload = () => {
+                // Рассчитываем минимальный зум, чтобы покрыть весь круг
+                const scaleX = canvasSize / img.width;
+                const scaleY = canvasSize / img.height;
+                minZoom = Math.max(scaleX, scaleY);
+
+                const zoomInput = document.getElementById('zoom');
+circleBox.addEventListener('wheel', (e) => {
+    if (!imgLoaded) return;
+    e.preventDefault(); // чтобы страница не скроллилась
+
+    const zoomInput = document.getElementById('zoom');
+    let zoom = parseFloat(zoomInput.value);
+
+    // Изменяем зум на шаг, например 0.05, с направлением по колесику
+    const delta = -e.deltaY * 0.001; // обычно deltaY положительный при прокрутке вниз (уменьшить), отрицательный вверх (увеличить)
+    zoom = clamp(zoom + delta, minZoom, 10); // ограничиваем сверху 10x (можно поменять)
+
+    zoomInput.value = zoom;
+    limitOffset(zoom);
+    applyFilters();
+});
+                zoomInput.min = minZoom;
+                zoomInput.value = minZoom;
+
+                offsetX = 0;
+                offsetY = 0;
+
+                canvas = document.createElement('canvas');
+                canvas.width = canvasSize;
+                canvas.height = canvasSize;
+                circleBox.innerHTML = '';
+                circleBox.appendChild(canvas);
+                canvas.style.borderRadius = "50%";
+                canvas.style.maxWidth = "100%";
+                canvas.style.maxHeight = "100%";
+
+                imgLoaded = true;
+                applyFilters();
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const limitOffset = (zoom) => {
+        if (!img) return;
+        const imgW = img.width * zoom;
+        const imgH = img.height * zoom;
+        const maxOffsetX = (imgW - canvasSize) / 2;
+        const maxOffsetY = (imgH - canvasSize) / 2;
+
+        offsetX = clamp(offsetX, -maxOffsetX, maxOffsetX);
+        offsetY = clamp(offsetY, -maxOffsetY, maxOffsetY);
+    };
+
+    const startDrag = (e) => {
+        if (!img) return;
+        isDragging = true;
+        dragMoved = false;
+        startX = e.clientX || e.touches?.[0]?.clientX;
+        startY = e.clientY || e.touches?.[0]?.clientY;
+    };
+    const onDrag = (e) => {
+        if (!isDragging) return;
+        const x = e.clientX || e.touches?.[0]?.clientX;
+        const y = e.clientY || e.touches?.[0]?.clientY;
+
+        if (Math.abs(x - startX) > 2 || Math.abs(y - startY) > 2) {
+            dragMoved = true;
+        }
+
+        offsetX += (x - startX);
+        offsetY += (y - startY);
+        startX = x;
+        startY = y;
+        const zoom = parseFloat(document.getElementById('zoom').value);
+        limitOffset(zoom);
+        applyFilters();
+    };
+    const stopDrag = () => { isDragging = false; };
+
+    circleBox.addEventListener('mousedown', startDrag);
+    circleBox.addEventListener('touchstart', startDrag);
+    window.addEventListener('mousemove', onDrag);
+    window.addEventListener('touchmove', onDrag);
+    window.addEventListener('mouseup', stopDrag);
+    window.addEventListener('touchend', stopDrag);
+
+    circleBox.addEventListener('click', () => {
+        if (imgLoaded || dragMoved) return;
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = e => {
+            const file = e.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleImageUpload(file);
+            }
+        };
+        input.click();
+    });
+
+    const applyFilters = () => {
+        if (!img || !canvas) return;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvasSize, canvasSize);
+
+        const hue = document.getElementById('hue').value;
+        const zoom = parseFloat(document.getElementById('zoom').value);
+        const blur = document.getElementById('blur').value;
+        const sepia = document.getElementById('sepia').value;
+        const saturate = document.getElementById('saturate').value;
+        const rotation = document.getElementById('rotation').value;
+        const contrast = document.getElementById('contrast').value;
+        const brightness = document.getElementById('brightness').value;
+
+        ctx.save();
+        ctx.translate(canvasSize / 2, canvasSize / 2);
+        ctx.rotate(rotation * Math.PI / 180);
+        ctx.translate(-canvasSize / 2, -canvasSize / 2);
+
+        ctx.beginPath();
+        ctx.arc(canvasSize / 2, canvasSize / 2, canvasSize / 2, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+
+        const drawWidth = img.width * zoom;
+        const drawHeight = img.height * zoom;
+        const drawX = (canvasSize - drawWidth) / 2 + offsetX;
+        const drawY = (canvasSize - drawHeight) / 2 + offsetY;
+
+        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+
+        ctx.restore();
+
+        canvas.style.filter =
+            `hue-rotate(${hue}deg) blur(${blur}px) sepia(${sepia}%) saturate(${saturate}%) contrast(${contrast}%) brightness(${brightness}%)`;
+    };
+
+    controls.addEventListener('input', (e) => {
+        if (e.target.id === 'zoom') {
+            const zoom = parseFloat(e.target.value);
+            limitOffset(zoom);
+        }
+        applyFilters();
+    });
+    controls.addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON') {
+            const input = e.target.parentNode.querySelector('input[type="range"]');
+            if (!input) return;
+            if (input.id === 'zoom') input.value = minZoom;
+            else input.value = input.defaultValue;
+            applyFilters();
+        }
+    });
+
+    circleBox.addEventListener('dragover', e => { e.preventDefault(); circleBox.classList.add('dragover'); });
+    circleBox.addEventListener('dragleave', () => circleBox.classList.remove('dragover'));
+    circleBox.addEventListener('drop', (e) => {
+        e.preventDefault();
+        circleBox.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) handleImageUpload(file);
+        else alert('Please upload an image file.');
+    });
+
+    downloadBtn.addEventListener('click', () => {
+        if (!img || !canvas) return alert('Please upload an image first.');
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = canvasSize;
+        tempCanvas.height = canvasSize;
+        const ctx = tempCanvas.getContext('2d');
+
+        const hue = document.getElementById('hue').value;
+        const zoom = parseFloat(document.getElementById('zoom').value);
+        const blur = document.getElementById('blur').value;
+        const sepia = document.getElementById('sepia').value;
+        const saturate = document.getElementById('saturate').value;
+        const rotation = document.getElementById('rotation').value;
+        const contrast = document.getElementById('contrast').value;
+        const brightness = document.getElementById('brightness').value;
+
+        ctx.filter =
+            `hue-rotate(${hue}deg) blur(${blur}px) sepia(${sepia}%) saturate(${saturate}%) contrast(${contrast}%) brightness(${brightness}%)`;
+
+        ctx.save();
+        ctx.translate(canvasSize / 2, canvasSize / 2);
+        ctx.rotate(rotation * Math.PI / 180);
+        ctx.translate(-canvasSize / 2, -canvasSize / 2);
+
+        ctx.beginPath();
+        ctx.arc(canvasSize / 2, canvasSize / 2, canvasSize / 2, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+
+        const drawWidth = img.width * zoom;
+        const drawHeight = img.height * zoom;
+        const drawX = (canvasSize - drawWidth) / 2 + offsetX;
+        const drawY = (canvasSize - drawHeight) / 2 + offsetY;
+
+        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+        ctx.restore();
+
+        const a = document.createElement('a');
+        a.href = tempCanvas.toDataURL('image/png');
+        a.download = 'cropped_image.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    });
+});
+</script>
+
+
+</body></html>
