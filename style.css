@@ -1213,6 +1213,7 @@ font-family: Arial, sans-serif;
 			font-size: 20px; /* Размер звезды */
             position: relative;
             display: inline-block;
+            white-space: nowrap
         }
 
         .levelme {
