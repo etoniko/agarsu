@@ -136,7 +136,7 @@ i:hover{
     font-size: 12px;
     cursor: pointer;
     margin-left: -42px;
-    background: #0e172cc4;
+    background: #0e172c;
     height: 19px;
     padding: 4px;
 	border: 0;
@@ -487,8 +487,6 @@ width: 240px;
 
 
 @media (max-width: 599px) {
-.progress-container {top: -45px !important;}
-#accountID {top: -45px !important;}
 .map{display: none;}
 	.score-info{left: 40%;}
 	#table-container {height: 375px;}
@@ -507,7 +505,7 @@ display: none !important;
 position: absolute !important;
 width: 140px !important;
 height: 40px !important;
-background: #0e172cc4 !important;
+background: #0e172c !important;
 font-size: 25px !important;
 display: flex !important;
 align-items: center !important;
@@ -545,7 +543,7 @@ bottom: 0px !important;
 	    /* Main Content */
     .main-content {
         width: 100%;
-        background-color: #0e172cc4;
+        background-color: #0e172c;
         backdrop-filter: blur(10px);
         border-radius: 25px 25px 0px 0px;
         border: #ffffff14 solid 1px;
@@ -670,8 +668,7 @@ transform-origin: bottom left;
       height: 430px;
       width: 820px;
       padding: 20px;
-      background-color: #0e172cc4;
-      backdrop-filter: blur(10px);
+      background-color: #0e172c;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -895,8 +892,7 @@ input{
 position: absolute;
     width: 70px;
     height: 170px;
-    background: #0e172cc4;
-        backdrop-filter: blur(10px);
+    background: #0e172c;
     right: 0;
     font-size: 40px;
     display: flex;
@@ -1308,7 +1304,6 @@ position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: #0e172cc4;
         backdrop-filter: blur(10px);
     color: #ff0000d6;
     text-shadow: #ff0000d6 1px 0 10px;
