@@ -1976,7 +1976,6 @@ function updateMiniMapPosition() {
         ws = null,
         nodeX = 0,
         nodeY = 0,
-        window.playerCells = [],
         nodes = {},
         nodelist = [],
         Cells = [],
@@ -2026,6 +2025,7 @@ function updateMiniMapPosition() {
         splitIcon = new Image,
         ejectIcon = new Image,
         noRanking = false;
+    window.playerCells = [];
     splitIcon.src = "assets/photo/split.png";
     ejectIcon.src = "assets/photo/eject.png";
     // var wCanvas = document.createElement("canvas");
