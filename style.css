@@ -137,7 +137,6 @@ i:hover{
     cursor: pointer;
     margin-left: -42px;
     background: #0e172cc4;
-        backdrop-filter: blur(10px);
     height: 19px;
     padding: 4px;
 	border: 0;
