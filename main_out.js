@@ -1072,9 +1072,6 @@ function drawChatBoard() {
 
     const lastMessage = chatBoard[chatBoard.length - 1];
     if (!lastMessage) return;
-if (lastMessage.playerLevel !== 1) {    
-    lastMessage.playerLevel;
-   }
 
     const messageDiv = document.createElement('div');
     messageDiv.classList.add('scoreshint');
@@ -1083,10 +1080,38 @@ if (lastMessage.playerLevel !== 1) {
         messageDiv.classList.add('admin');
     }
 
+    // Контейнер для имени и звезды с уровнем
+    const nameContainer = document.createElement('span');
+    nameContainer.style.display = 'inline-flex';
+    nameContainer.style.alignItems = 'center';
+    nameContainer.style.gap = '4px'; // небольшой отступ между звездой и именем
+
+    // Если есть уровень, добавляем звездочку и уровень
+    if (lastMessage.playerLevel) {
+        const starContainer = document.createElement('span');
+        starContainer.classList.add('star-container');
+
+        const starIcon = document.createElement('i');
+        starIcon.className = 'fas fa-star';
+        starIcon.style.color = 'gold'; // цвет звезды, можно настроить
+
+        const levelSpan = document.createElement('span');
+        levelSpan.classList.add('levelme');
+        levelSpan.textContent = lastMessage.playerLevel;
+
+        starContainer.appendChild(starIcon);
+        starContainer.appendChild(levelSpan);
+
+        nameContainer.appendChild(starContainer);
+    }
+
+    // Имя игрока
     const nameSpan = document.createElement('span');
     nameSpan.classList.add('chat-name');
     nameSpan.style.color = admins.includes(lastMessage.name.toLowerCase()) ? 'gold' : lastMessage.color;
     nameSpan.textContent = lastMessage.name + ': ';
+
+    nameContainer.appendChild(nameSpan);
 
     const messageSpan = document.createElement('span');
     messageSpan.classList.add('chat-text');
@@ -1096,7 +1121,7 @@ if (lastMessage.playerLevel !== 1) {
     timeSpan.classList.add('chat-time');
     timeSpan.textContent = lastMessage.time;
 
-    messageDiv.appendChild(nameSpan);
+    messageDiv.appendChild(nameContainer);
     messageDiv.appendChild(messageSpan);
     messageDiv.appendChild(timeSpan);
 
@@ -1130,6 +1155,7 @@ if (lastMessage.playerLevel !== 1) {
 
     chatDiv.scrollTop = chatDiv.scrollHeight;
 }
+
 
 
 
