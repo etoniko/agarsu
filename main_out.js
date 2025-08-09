@@ -2612,16 +2612,47 @@ function updateMiniMapPosition() {
         }
     };
 
-    const onLogout = () => {
-        if (confirm("Ты действительно хочешь выйти из учетной записи?")) {
-            userXP.textContent = userLevel.textContent = "";
-            accountData = null;
-            clearAccountToken();
+const onLogout = () => {
+    if (confirm("Ты действительно хочешь выйти из учетной записи?")) {
+        // Очистка данных аккаунта в памяти
+        accountData = null;
 
-            logoutButton.style.display = "none";
-            loginButton.style.display = "";
-        }
-    };
+        // Очистка данных в localStorage, связанных с аккаунтом (например, прогресс)
+        // Если у вас есть сохранение прогресса в localStorage, удалите его здесь:
+        localStorage.removeItem('userXP');
+        localStorage.removeItem('userLevel');
+        localStorage.removeItem('accountData'); // пример, если есть
+
+        // Очистить токен
+        clearAccountToken();
+
+        // Обновить UI — очистить все элементы с прогрессом
+        const userXPElement = document.getElementById("userXP")?.querySelector(".status-value");
+        if (userXPElement) userXPElement.textContent = "";
+
+        const userLevelElement = document.getElementById("userLevel")?.querySelector(".status-value");
+        if (userLevelElement) userLevelElement.textContent = "";
+
+        const progressBar = document.querySelector(".progress-fill");
+        if (progressBar) progressBar.style.width = `0%`;
+
+        const levelCircle = document.getElementById("levelCircle");
+        if (levelCircle) levelCircle.textContent = "";
+
+        const progressText = document.getElementById("progressText");
+        if (progressText) progressText.textContent = "";
+
+        const accountIDElement = document.getElementById("accountID");
+        if (accountIDElement) accountIDElement.textContent = "";
+
+        // Обновляем кнопки
+        logoutButton.style.display = "none";
+        loginButton.style.display = "";
+
+        alert("Вы вышли из учетной записи");
+    }
+};
+
 
     wHandle.logoutAccount = async () => {
         if (localStorage.accountToken) {
