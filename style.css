@@ -544,7 +544,6 @@ bottom: 0px !important;
     .main-content {
         width: 100%;
         background-color: #0e172c;
-        backdrop-filter: blur(10px);
         border-radius: 25px 25px 0px 0px;
         border: #ffffff14 solid 1px;
         height: 100%;
@@ -1304,13 +1303,13 @@ position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-        backdrop-filter: blur(10px);
     color: #ff0000d6;
     text-shadow: #ff0000d6 1px 0 10px;
     padding: 20px;
     border-radius: 25px;
     text-align: center;
     border: #ffffff14 solid 1px;
+    background: #0e172c;
         }
 
         #serverclose i {
