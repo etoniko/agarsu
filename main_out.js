@@ -1074,9 +1074,7 @@ function drawChatBoard() {
     if (!lastMessage) return;
 if (lastMessage.playerLevel !== 1) {    
     lastMessage.playerXp;
-console.log(lastMessage.playerXp)
     lastMessage.playerLevel;    // ...TODO
-console.log(lastMessage.playerLevel)
    }
 
     const messageDiv = document.createElement('div');
