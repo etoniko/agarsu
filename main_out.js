@@ -2619,31 +2619,24 @@ const onLogout = () => {
 
         // Очистка данных в localStorage, связанных с аккаунтом (например, прогресс)
         // Если у вас есть сохранение прогресса в localStorage, удалите его здесь:
-        localStorage.removeItem('userXP');
-        localStorage.removeItem('userLevel');
         localStorage.removeItem('accountData'); // пример, если есть
 
         // Очистить токен
         clearAccountToken();
 
         // Обновить UI — очистить все элементы с прогрессом
-        const userXPElement = document.getElementById("userXP")?.querySelector(".status-value");
-        if (userXPElement) userXPElement.textContent = "";
-
-        const userLevelElement = document.getElementById("userLevel")?.querySelector(".status-value");
-        if (userLevelElement) userLevelElement.textContent = "";
 
         const progressBar = document.querySelector(".progress-fill");
         if (progressBar) progressBar.style.width = `0%`;
 
         const levelCircle = document.getElementById("levelCircle");
-        if (levelCircle) levelCircle.textContent = "";
+        if (levelCircle) levelCircle.textContent = "0";
 
         const progressText = document.getElementById("progressText");
-        if (progressText) progressText.textContent = "";
+        if (progressText) progressText.textContent = "0% (0/0)";
 
         const accountIDElement = document.getElementById("accountID");
-        if (accountIDElement) accountIDElement.textContent = "";
+        if (accountIDElement) accountIDElement.textContent = "ID: 0000";
 
         // Обновляем кнопки
         logoutButton.style.display = "none";
@@ -2725,17 +2718,6 @@ const onLogout = () => {
         const nextXp = getXp(currLevel + 1); // Получаем XP для следующего уровня
         const progressPercent = (accountData.xp / nextXp) * 100; // Рассчитываем процент прогресса
 
-        // Обновляем текст с XP
-        const userXPElement = document.getElementById("userXP")?.querySelector(".status-value");
-        if (userXPElement) {
-            userXPElement.textContent = `${accountData.xp}/${nextXp}`;
-        }
-
-        // Обновляем текст с уровнем
-        const userLevelElement = document.getElementById("userLevel")?.querySelector(".status-value");
-        if (userLevelElement) {
-            userLevelElement.textContent = currLevel;
-        }
 
         // Обновляем прогресс бар
         const progressBar = document.querySelector(".progress-fill");
