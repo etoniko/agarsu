@@ -265,14 +265,10 @@
             isTyping = false;
         };
 
-        document.getElementById("chat_textbox").onblur = function () {
-            isTyping = false;
-        };
-
-
-        document.getElementById("chat_textbox").onfocus = function () {
-            isTyping = true;
-        };
+        document.querySelectorAll('.noPress').forEach(elem => {
+    elem.onblur = () => { isTyping = false; };
+    elem.onfocus = () => { isTyping = true; };
+});
 
         var spacePressed = false,
             qPressed = false,
@@ -281,17 +277,21 @@
             tPressed = false,
             pPressed = false,
             wPressed = false,
-            wInterval;
-            pauseMode = false;
-
+            wInterval; // Variable to hold the interval for 'W' key press
+			freeze = false;
+            var posX = 0, posY = 0;
+            var oldX = 0, oldY = 0;
+			
         wHandle.onkeydown = function (event) {
             switch (event.keyCode) {
- case 70: // клавиша F
+				 case 70: // F
   if (!isTyping) {
-    pauseMode = !pauseMode;
-    if (pauseMode) {
-      // когда включаем паузу, можно сразу отправить "остановку" (опционально)
-      sendPausePosition();
+    freeze = !freeze;
+    if (freeze) {
+            // Зафиксировать текущие координаты шара
+            posX = X;
+            posY = Y;
+
     }
   }
   break;
@@ -1331,46 +1331,42 @@ if (playerId === ownerPlayerId) {
         }
     }
 
-function sendPausePosition() {
-  if (wsIsOpen()) {
-    const msg = prepareData(21);
-    msg.setUint8(0, 16);
-    msg.setFloat64(1, 0.001, true);
-    msg.setFloat64(9, 0.001, true);
-    msg.setUint32(17, 0, true);
-    wsSend(msg);
-  }
-}
-
 function sendMouseMove() {
-    if (!wsIsOpen()) return;
+    if (wsIsOpen()) {
+        if (freeze) {
+            // Отправляем зафиксированные координаты, шар не двигается
+            if (!(Math.abs(oldX - posX) < 0.01 && Math.abs(oldY - posY) < 0.01)) {
+                oldX = posX;
+                oldY = posY;
 
-    if (pauseMode) {
-        // Отправляем координаты (0,0), чтобы шар остановился в центре
-        const msg = prepareData(21);
-        msg.setUint8(0, 16);
-        msg.setFloat64(1, 0, true);
-        msg.setFloat64(9, 0, true);
-        msg.setUint32(17, 0, true);
-        wsSend(msg);
-        return;
-    }
+                let msg = prepareData(21);
+                msg.setUint8(0, 16);
+                msg.setFloat64(1, posX, true);
+                msg.setFloat64(9, posY, true);
+                msg.setUint32(17, 0, true);
+                wsSend(msg);
+            }
+        } else {
+            // Шар следует за мышью
+            let msgX = rawMouseX - canvasWidth / 2;
+            let msgY = rawMouseY - canvasHeight / 2;
 
-    let msgX = rawMouseX - canvasWidth / 2;
-    let msgY = rawMouseY - canvasHeight / 2;
+            if (64 <= msgX * msgX + msgY * msgY && !(Math.abs(oldX - X) < 0.01 && Math.abs(oldY - Y) < 0.01)) {
+                oldX = X;
+                oldY = Y;
 
-    if (64 <= msgX * msgX + msgY * msgY && !(.01 > Math.abs(oldX - X) && .01 > Math.abs(oldY - Y))) {
-        oldX = X;
-        oldY = Y;
-        const msg = prepareData(21);
-        msg.setUint8(0, 16);
-        msg.setFloat64(1, X, true);
-        msg.setFloat64(9, Y, true);
-        msg.setUint32(17, 0, true);
-        wsSend(msg);
+                let msg = prepareData(21);
+                msg.setUint8(0, 16);
+                msg.setFloat64(1, X, true);
+                msg.setFloat64(9, Y, true);
+                msg.setUint32(17, 0, true);
+                wsSend(msg);
+            }
+        }
     }
 }
-
+	
+	
 
     const sendAccountToken = () => {
         const token = localStorage.accountToken;
