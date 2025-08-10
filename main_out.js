@@ -296,10 +296,11 @@ wHandle.onkeydown = function (event) {
                     rawMouseY = canvasHeight / 2;
                     X = rawMouseX;
                     Y = rawMouseY;
+            // Сразу отправляем координаты центра серверу
+            sendPositionImmediately(X, Y);
                 }
             }
             break;
-
         case 13: // Enter
             if (isTyping || hideChat) {
                 isTyping = false;
@@ -1334,8 +1335,20 @@ if (playerId === ownerPlayerId) {
         }
     }
 
-    function sendMouseMove() {
-    if (pauseMode) return; // если в паузе — не отправляем координаты
+// Функция отправки координат без проверок паузы (чтобы мгновенно зафиксировать)
+function sendPositionImmediately(x, y) {
+    if (wsIsOpen()) {
+        const msg = prepareData(21);
+        msg.setUint8(0, 16);
+        msg.setFloat64(1, x, true);
+        msg.setFloat64(9, y, true);
+        msg.setUint32(17, 0, true);
+        wsSend(msg);
+    }
+}
+
+function sendMouseMove() {
+    if (pauseMode) return; // если в паузе — не отправляем координаты (пока что)
 
     var msg;
     if (wsIsOpen()) {
