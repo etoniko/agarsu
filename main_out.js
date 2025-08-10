@@ -290,12 +290,10 @@
     if (!isTyping) {
         pauseMode = !pauseMode;
         if (pauseMode) {
-            if (cells && cells.length > 0) {
-                cells.forEach(c => {
-                    c.nx = c.x;
-                    c.ny = c.y;
-                });
-            }
+            playerCells.forEach(cell => {
+                cell.nx = cell.x;
+                cell.ny = cell.y;
+            });
         }
     }
     break;
