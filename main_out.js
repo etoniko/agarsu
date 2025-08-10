@@ -288,10 +288,14 @@
             switch (event.keyCode) {
               case 70: // F
     if (!isTyping) {
-        pauseMode = !pauseMode; // переключаем состояние
+        pauseMode = !pauseMode;
         if (pauseMode) {
-            cell.nx = cell.x;
-            cell.ny = cell.y;
+            if (cells && cells.length > 0) {
+                cells.forEach(c => {
+                    c.nx = c.x;
+                    c.ny = c.y;
+                });
+            }
         }
     }
     break;
