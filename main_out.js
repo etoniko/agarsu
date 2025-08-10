@@ -1333,35 +1333,23 @@ if (playerId === ownerPlayerId) {
         }
     }
 
-function sendMouseMove() {
-    if (wsIsOpen()) {
-        var sendX, sendY;
-
-        if (fPressed) {
-            // Пока держим F — считаем мышь в центре
-            sendX = canvasWidth / 2;
-            sendY = canvasHeight / 2;
-        } else {
-            sendX = X;
-            sendY = Y;
-        }
-
-        var dx = sendX - canvasWidth / 2;
-        var dy = sendY - canvasHeight / 2;
-
-        // Условие отправки — оставлено как в твоём коде
-        if (64 <= dx * dx + dy * dy && !(0.01 > Math.abs(oldX - sendX) && 0.01 > Math.abs(oldY - sendY))) {
-            oldX = sendX;
-            oldY = sendY;
-            var msg = prepareData(21);
-            msg.setUint8(0, 16);
-            msg.setFloat64(1, sendX, true);
-            msg.setFloat64(9, sendY, true);
-            msg.setUint32(17, 0, true);
-            wsSend(msg);
+    function sendMouseMove() {
+        var msg;
+        if (wsIsOpen()) {
+            msg = rawMouseX - canvasWidth / 2;
+            var b = rawMouseY - canvasHeight / 2;
+            if (64 <= msg * msg + b * b && !(.01 > Math.abs(oldX - X) && .01 > Math.abs(oldY - Y))) {
+                oldX = X;
+                oldY = Y;
+                msg = prepareData(21);
+                msg.setUint8(0, 16);
+                msg.setFloat64(1, X, true);
+                msg.setFloat64(9, Y, true);
+                msg.setUint32(17, 0, true);
+                wsSend(msg);
+            }
         }
     }
-}
 
     const sendAccountToken = () => {
         const token = localStorage.accountToken;
