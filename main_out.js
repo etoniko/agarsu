@@ -2702,6 +2702,9 @@ const onLogout = () => {
     // Обновляем кнопки
     logoutButton.style.display = "none";
     loginButton.style.display = "";
+
+    const starContainers = document.querySelectorAll('.star-container');
+    starContainers.forEach(container => container.remove());
 showLogoutNotification();
 };
 
