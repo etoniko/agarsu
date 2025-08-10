@@ -283,13 +283,16 @@
         wHandle.onkeydown = function (event) {
             switch (event.keyCode) {
 				 case 70: // F
-  if (!isTyping) {
+  if (!isTyping && playerCells.length > 0) {  // freeze работает только если есть игроки
     freeze = !freeze;
     if (freeze) {
-            // Зафиксировать текущие координаты шара
-            posX = X;
-            posY = Y;
+      // Зафиксировать текущие координаты шара
+      posX = X;
+      posY = Y;
 
+      document.querySelector("#freeze").style.display = "flex";
+    } else {
+      document.querySelector("#freeze").style.display = "none";
     }
   }
   break;
