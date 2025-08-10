@@ -274,14 +274,15 @@
             isTyping = true;
         };
 
-       var spacePressed = false,
+  // ---> Объявляем все флаги ВЕРХОМ сценария (глобально)
+var spacePressed = false,
     qPressed = false,
     ePressed = false,
     rPressed = false,
     tPressed = false,
     pPressed = false,
     wPressed = false,
-    fPressed = false, // Флаг паузы (F)
+    fPressed = false, // <-- тут обязательно объявляем
     wInterval; // Интервал для 'W'
 
 // Обработка нажатий клавиш
@@ -353,8 +354,11 @@ wHandle.onkeydown = function (event) {
                 pPressed = true;
             }
             break;
-        case 70: // F — включение/выключение паузы
-            fPressed = !fPressed;
+        case 70: // F — пауза пока держишь
+            if (!isTyping) {
+                // ставим флаг в true при нажатии и удержании
+                fPressed = true;
+            }
             break;
     }
 };
@@ -387,14 +391,18 @@ wHandle.onkeyup = function (event) {
         case 80: // P
             pPressed = false;
             break;
+        case 70: // F — отпустил F => выключаем паузу
+            fPressed = false;
+            break;
     }
 };
 
-        wHandle.onblur = function () {
-            sendUint8(19);
-            clearInterval(wInterval); // Ensure the interval is cleared on blur
-            wPressed = spacePressed = qPressed = ePressed = rPressed = tPressed = pPressed = false;
-        };
+// Сбрасываем флаги при потере фокуса (на всякий случай)
+wHandle.onblur = function () {
+    sendUint8(19);
+    clearInterval(wInterval);
+    wPressed = spacePressed = qPressed = ePressed = rPressed = tPressed = pPressed = fPressed = false;
+};
 
 
         $(document).ready(function () {
@@ -1327,25 +1335,25 @@ if (playerId === ownerPlayerId) {
 
 function sendMouseMove() {
     if (wsIsOpen()) {
-        let sendX, sendY;
+        var sendX, sendY;
 
         if (fPressed) {
-            // Если пауза — ставим координаты в центр
+            // Пока держим F — считаем мышь в центре
             sendX = canvasWidth / 2;
             sendY = canvasHeight / 2;
         } else {
-            // Обычный режим
             sendX = X;
             sendY = Y;
         }
 
-        let dx = sendX - canvasWidth / 2;
-        let dy = sendY - canvasHeight / 2;
+        var dx = sendX - canvasWidth / 2;
+        var dy = sendY - canvasHeight / 2;
 
+        // Условие отправки — оставлено как в твоём коде
         if (64 <= dx * dx + dy * dy && !(0.01 > Math.abs(oldX - sendX) && 0.01 > Math.abs(oldY - sendY))) {
             oldX = sendX;
             oldY = sendY;
-            let msg = prepareData(21);
+            var msg = prepareData(21);
             msg.setUint8(0, 16);
             msg.setFloat64(1, sendX, true);
             msg.setFloat64(9, sendY, true);
