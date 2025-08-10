@@ -279,8 +279,6 @@
             wPressed = false,
             wInterval; // Variable to hold the interval for 'W' key press
 			freeze = false;
-            var posX = 0, posY = 0;
-            var oldX = 0, oldY = 0;
 			
         wHandle.onkeydown = function (event) {
             switch (event.keyCode) {
