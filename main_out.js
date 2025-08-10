@@ -286,17 +286,15 @@
 
         wHandle.onkeydown = function (event) {
             switch (event.keyCode) {
-              case 70: // F
-    if (!isTyping) {
-        pauseMode = !pauseMode;
-        if (pauseMode) {
-            playerCells.forEach(cell => {
-                cell.nx = cell.x;
-                cell.ny = cell.y;
-            });
-        }
+ case 70: // клавиша F
+  if (!isTyping) {
+    pauseMode = !pauseMode;
+    if (pauseMode) {
+      // когда включаем паузу, можно сразу отправить "остановку" (опционально)
+      sendPausePosition();
     }
-    break;
+  }
+  break;
                 case 13: // enter
                     if (isTyping || hideChat) {
                         isTyping = false;
@@ -1333,23 +1331,40 @@ if (playerId === ownerPlayerId) {
         }
     }
 
-    function sendMouseMove() {
-        var msg;
-        if (wsIsOpen()) {
-            msg = rawMouseX - canvasWidth / 2;
-            var b = rawMouseY - canvasHeight / 2;
-            if (64 <= msg * msg + b * b && !(.01 > Math.abs(oldX - X) && .01 > Math.abs(oldY - Y))) {
-                oldX = X;
-                oldY = Y;
-                msg = prepareData(21);
-                msg.setUint8(0, 16);
-                msg.setFloat64(1, X, true);
-                msg.setFloat64(9, Y, true);
-                msg.setUint32(17, 0, true);
-                wsSend(msg);
-            }
-        }
-    }
+function sendPausePosition() {
+  if (wsIsOpen()) {
+    const msg = prepareData(21);
+    msg.setUint8(0, 16);
+    msg.setFloat64(1, 0.001, true);
+    msg.setFloat64(9, 0.001, true);
+    msg.setUint32(17, 0, true);
+    wsSend(msg);
+  }
+}
+
+function sendMouseMove() {
+  if (!wsIsOpen()) return;
+
+  if (pauseMode) {
+    // Если пауза, отправляем координаты, чтобы "остановить" шар
+    sendPausePosition();
+    return;
+  }
+
+  let msgX = rawMouseX - canvasWidth / 2;
+  let msgY = rawMouseY - canvasHeight / 2;
+
+  if (64 <= msgX * msgX + msgY * msgY && !(.01 > Math.abs(oldX - X) && .01 > Math.abs(oldY - Y))) {
+    oldX = X;
+    oldY = Y;
+    const msg = prepareData(21);
+    msg.setUint8(0, 16);
+    msg.setFloat64(1, X, true);
+    msg.setFloat64(9, Y, true);
+    msg.setUint32(17, 0, true);
+    wsSend(msg);
+  }
+}
 
     const sendAccountToken = () => {
         const token = localStorage.accountToken;
