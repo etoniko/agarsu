@@ -274,137 +274,133 @@
             isTyping = true;
         };
 
+        var spacePressed = false,
+            qPressed = false,
+            ePressed = false,
+            rPressed = false,
+            tPressed = false,
+            pPressed = false,
+            wPressed = false,
+            wInterval;
+            pauseMode = false;
 
-var spacePressed = false,
-    qPressed = false,
-    ePressed = false,
-    rPressed = false,
-    tPressed = false,
-    pPressed = false,
-    wPressed = false,
-    wInterval; 
-    pauseMode = false;
-
-wHandle.onkeydown = function (event) {
-    switch (event.keyCode) {
-        case 70: // F
-            if (!isTyping) {
-                pauseMode = !pauseMode; // переключаем состояние
-                if (pauseMode) {
-                    // При паузе — фиксируем курсор по центру
-                    rawMouseX = canvasWidth / 2;
-                    rawMouseY = canvasHeight / 2;
-                    X = rawMouseX;
-                    Y = rawMouseY;
-            // Сразу отправляем координаты центра серверу
-            sendPositionImmediately(X, Y);
-                }
-            }
-            break;
-        case 13: // Enter
-            if (isTyping || hideChat) {
-                isTyping = false;
-                document.getElementById("chat_textbox").blur();
-                chattxt = document.getElementById("chat_textbox").value;
-                if (chattxt.length > 0) sendChat(chattxt);
-                document.getElementById("chat_textbox").value = "";
-            } else {
-                document.getElementById("chat_textbox").focus();
-                isTyping = true;
-            }
-            break;
-
-        case 32: // Space
-            if (!spacePressed && !isTyping) {
-                sendMouseMove();
-                sendUint8(17);
-                spacePressed = true;
-            }
-            break;
-        case 87: // W
-            if (!wPressed && !isTyping) {
-                sendMouseMove();
-                sendUint8(21);
-                wPressed = true;
-
-                wInterval = setInterval(function () {
-                    sendMouseMove();
-                    sendUint8(21);
-                }, 100);
-            }
-            break;
-        case 81: // Q
-            if (!qPressed && !isTyping) {
-                sendUint8(18);
-                qPressed = true;
-            }
-            break;
-        case 69: // E
-            if (!ePressed && !isTyping) {
-                sendMouseMove();
-                sendUint8(22);
-                ePressed = true;
-            }
-            break;
-        case 82: // R
-            if (!rPressed && !isTyping) {
-                sendMouseMove();
-                sendUint8(23);
-                rPressed = true;
-            }
-            break;
-        case 84: // T
-            if (!tPressed && !isTyping) {
-                sendMouseMove();
-                sendUint8(24);
-                tPressed = true;
-            }
-            break;
-        case 80: // P
-            if (!pPressed && !isTyping) {
-                sendMouseMove();
-                sendUint8(25);
-                pPressed = true;
-            }
-            break;
+        wHandle.onkeydown = function (event) {
+            switch (event.keyCode) {
+              case 70: // F
+    if (!isTyping) {
+        pauseMode = !pauseMode; // переключаем состояние
+        if (pauseMode) {
+            cell.nx = cell.x;
+            cell.ny = cell.y;
+        }
     }
-};
+    break;
+                case 13: // enter
+                    if (isTyping || hideChat) {
+                        isTyping = false;
+                        document.getElementById("chat_textbox").blur();
+                        chattxt = document.getElementById("chat_textbox").value;
+                        if (chattxt.length > 0) sendChat(chattxt);
+                        document.getElementById("chat_textbox").value = "";
+                    } else {
+                        document.getElementById("chat_textbox").focus();
+                        isTyping = true;
+                    }
+                    break;
+                case 32: // space
+                    if (!spacePressed && !isTyping) {
+                        sendMouseMove();
+                        sendUint8(17);
+                        spacePressed = true;
+                    }
+                    break;
+                case 87: // W
+                    if (!wPressed && !isTyping) {
+                        sendMouseMove();
+                        sendUint8(21);
+                        wPressed = true;
 
-wHandle.onkeyup = function (event) {
-    switch (event.keyCode) {
-        case 32:
-            spacePressed = false;
-            break;
-        case 87:
-            wPressed = false;
-            clearInterval(wInterval);
-            break;
-        case 81:
-            if (qPressed) {
-                sendUint8(19);
-                qPressed = false;
+                        // Start the interval when 'W' is pressed
+                        wInterval = setInterval(function () {
+                            sendMouseMove();
+                            sendUint8(21);
+                        }, 100);
+                    }
+                    break;
+                case 81: // Q
+                    if (!qPressed && !isTyping) {
+                        sendUint8(18);
+                        qPressed = true;
+                    }
+                    break;
+                case 69: // E
+                    if (!ePressed && !isTyping) {
+                        sendMouseMove();
+                        sendUint8(22);
+                        ePressed = true; // Added missing ePressed flag
+                    }
+                    break;
+                case 82: // R
+                    if (!rPressed && !isTyping) {
+                        sendMouseMove();
+                        sendUint8(23);
+                        rPressed = true; // Added missing rPressed flag
+                    }
+                    break;
+                case 84: // T
+                    if (!tPressed && !isTyping) {
+                        sendMouseMove();
+                        sendUint8(24);
+                        tPressed = true;
+                    }
+                    break;
+                case 80: // P
+                    if (!pPressed && !isTyping) {
+                        sendMouseMove();
+                        sendUint8(25);
+                        pPressed = true;
+                    }
+                    break;
             }
-            break;
-        case 69:
-            ePressed = false;
-            break;
-        case 82:
-            rPressed = false;
-            break;
-        case 84:
-            tPressed = false;
-            break;
-        case 80:
-            pPressed = false;
-            break;
-    }
-};
+        };
 
-wHandle.onblur = function () {
-    sendUint8(19);
-    clearInterval(wInterval);
-    wPressed = spacePressed = qPressed = ePressed = rPressed = tPressed = pPressed = false;
-};
+        wHandle.onkeyup = function (event) {
+            switch (event.keyCode) {
+                case 32: // space
+                    spacePressed = false;
+                    break;
+                case 87: // W
+                    wPressed = false;
+
+                    // Clear the interval when 'W' is released
+                    clearInterval(wInterval);
+                    break;
+                case 81: // Q
+                    if (qPressed) {
+                        sendUint8(19);
+                        qPressed = false;
+                    }
+                    break;
+                case 69: // E
+                    ePressed = false;
+                    break;
+                case 82: // R
+                    rPressed = false;
+                    break;
+                case 84: // T
+                    tPressed = false;
+                    break;
+                case 80: // P
+                    pPressed = false;
+                    break;
+            }
+        };
+
+        wHandle.onblur = function () {
+            sendUint8(19);
+            clearInterval(wInterval); // Ensure the interval is cleared on blur
+            wPressed = spacePressed = qPressed = ePressed = rPressed = tPressed = pPressed = false;
+        };
 
 
         $(document).ready(function () {
@@ -1335,37 +1331,23 @@ if (playerId === ownerPlayerId) {
         }
     }
 
-// Функция отправки координат без проверок паузы (чтобы мгновенно зафиксировать)
-function sendPositionImmediately(x, y) {
-    if (wsIsOpen()) {
-        const msg = prepareData(21);
-        msg.setUint8(0, 16);
-        msg.setFloat64(1, x, true);
-        msg.setFloat64(9, y, true);
-        msg.setUint32(17, 0, true);
-        wsSend(msg);
-    }
-}
-
-function sendMouseMove() {
-    if (pauseMode) return; // если в паузе — не отправляем координаты (пока что)
-
-    var msg;
-    if (wsIsOpen()) {
-        msg = rawMouseX - canvasWidth / 2;
-        var b = rawMouseY - canvasHeight / 2;
-        if (64 <= msg * msg + b * b && !(.01 > Math.abs(oldX - X) && .01 > Math.abs(oldY - Y))) {
-            oldX = X;
-            oldY = Y;
-            msg = prepareData(21);
-            msg.setUint8(0, 16);
-            msg.setFloat64(1, X, true);
-            msg.setFloat64(9, Y, true);
-            msg.setUint32(17, 0, true);
-            wsSend(msg);
+    function sendMouseMove() {
+        var msg;
+        if (wsIsOpen()) {
+            msg = rawMouseX - canvasWidth / 2;
+            var b = rawMouseY - canvasHeight / 2;
+            if (64 <= msg * msg + b * b && !(.01 > Math.abs(oldX - X) && .01 > Math.abs(oldY - Y))) {
+                oldX = X;
+                oldY = Y;
+                msg = prepareData(21);
+                msg.setUint8(0, 16);
+                msg.setFloat64(1, X, true);
+                msg.setFloat64(9, Y, true);
+                msg.setUint32(17, 0, true);
+                wsSend(msg);
+            }
         }
     }
-}
 
     const sendAccountToken = () => {
         const token = localStorage.accountToken;
