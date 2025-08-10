@@ -274,7 +274,7 @@
             isTyping = true;
         };
 
-  // ---> Объявляем все флаги ВЕРХОМ сценария (глобально)
+
 var spacePressed = false,
     qPressed = false,
     ePressed = false,
@@ -282,12 +282,24 @@ var spacePressed = false,
     tPressed = false,
     pPressed = false,
     wPressed = false,
-    fPressed = false, // <-- тут обязательно объявляем
-    wInterval; // Интервал для 'W'
+    wInterval; 
+    pauseMode = false;
 
-// Обработка нажатий клавиш
 wHandle.onkeydown = function (event) {
     switch (event.keyCode) {
+        case 70: // F
+            if (!isTyping) {
+                pauseMode = !pauseMode; // переключаем состояние
+                if (pauseMode) {
+                    // При паузе — фиксируем курсор по центру
+                    rawMouseX = canvasWidth / 2;
+                    rawMouseY = canvasHeight / 2;
+                    X = rawMouseX;
+                    Y = rawMouseY;
+                }
+            }
+            break;
+
         case 13: // Enter
             if (isTyping || hideChat) {
                 isTyping = false;
@@ -300,6 +312,7 @@ wHandle.onkeydown = function (event) {
                 isTyping = true;
             }
             break;
+
         case 32: // Space
             if (!spacePressed && !isTyping) {
                 sendMouseMove();
@@ -313,7 +326,6 @@ wHandle.onkeydown = function (event) {
                 sendUint8(21);
                 wPressed = true;
 
-                // Запускаем интервал при зажатии W
                 wInterval = setInterval(function () {
                     sendMouseMove();
                     sendUint8(21);
@@ -354,54 +366,43 @@ wHandle.onkeydown = function (event) {
                 pPressed = true;
             }
             break;
-        case 70: // F — пауза пока держишь
-            if (!isTyping) {
-                // ставим флаг в true при нажатии и удержании
-                fPressed = true;
-            }
-            break;
     }
 };
 
-// Обработка отпускания клавиш
 wHandle.onkeyup = function (event) {
     switch (event.keyCode) {
-        case 32: // Space
+        case 32:
             spacePressed = false;
             break;
-        case 87: // W
+        case 87:
             wPressed = false;
             clearInterval(wInterval);
             break;
-        case 81: // Q
+        case 81:
             if (qPressed) {
                 sendUint8(19);
                 qPressed = false;
             }
             break;
-        case 69: // E
+        case 69:
             ePressed = false;
             break;
-        case 82: // R
+        case 82:
             rPressed = false;
             break;
-        case 84: // T
+        case 84:
             tPressed = false;
             break;
-        case 80: // P
+        case 80:
             pPressed = false;
-            break;
-        case 70: // F — отпустил F => выключаем паузу
-            fPressed = false;
             break;
     }
 };
 
-// Сбрасываем флаги при потере фокуса (на всякий случай)
 wHandle.onblur = function () {
     sendUint8(19);
     clearInterval(wInterval);
-    wPressed = spacePressed = qPressed = ePressed = rPressed = tPressed = pPressed = fPressed = false;
+    wPressed = spacePressed = qPressed = ePressed = rPressed = tPressed = pPressed = false;
 };
 
 
@@ -1334,22 +1335,24 @@ if (playerId === ownerPlayerId) {
     }
 
     function sendMouseMove() {
-        var msg;
-        if (wsIsOpen()) {
-            msg = rawMouseX - canvasWidth / 2;
-            var b = rawMouseY - canvasHeight / 2;
-            if (64 <= msg * msg + b * b && !(.01 > Math.abs(oldX - X) && .01 > Math.abs(oldY - Y))) {
-                oldX = X;
-                oldY = Y;
-                msg = prepareData(21);
-                msg.setUint8(0, 16);
-                msg.setFloat64(1, X, true);
-                msg.setFloat64(9, Y, true);
-                msg.setUint32(17, 0, true);
-                wsSend(msg);
-            }
+    if (pauseMode) return; // если в паузе — не отправляем координаты
+
+    var msg;
+    if (wsIsOpen()) {
+        msg = rawMouseX - canvasWidth / 2;
+        var b = rawMouseY - canvasHeight / 2;
+        if (64 <= msg * msg + b * b && !(.01 > Math.abs(oldX - X) && .01 > Math.abs(oldY - Y))) {
+            oldX = X;
+            oldY = Y;
+            msg = prepareData(21);
+            msg.setUint8(0, 16);
+            msg.setFloat64(1, X, true);
+            msg.setFloat64(9, Y, true);
+            msg.setUint32(17, 0, true);
+            wsSend(msg);
         }
     }
+}
 
     const sendAccountToken = () => {
         const token = localStorage.accountToken;
