@@ -1451,7 +1451,7 @@ margin-right: 10px;
 #freeze{
 display:none;
 position: absolute;
-bottom: 50%;
+bottom: 10%;
 left: 50%;
 transform: translateX(-50%);
 border: solid #ffffff26 1px;
