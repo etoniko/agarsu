@@ -787,7 +787,7 @@ updatePingIndicator();
 // Запускаем функцию обновления индикатора каждую секунду (или другой интервал)
 setInterval(updatePingIndicator, 1000);
 </script>
-<div id="freeze" onclick="freeze = false;this.style.display = 'none';">Pause <i class="fa fa-pause"></i></div>
+<div id="freeze" onclick="freeze = false;this.style.display = 'none';">Pause <i style="color:red;"class="fa fa-pause"></i></div>
 <div id="notification-container">
   <div id="logout-notification" class="notification" style="display:none;">Login close</div>
 </div>
@@ -817,6 +817,7 @@ function showLogoutNotification() {
 </script>
 </body>
 </html>
+
 
 
 
