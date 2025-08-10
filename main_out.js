@@ -1343,28 +1343,34 @@ function sendPausePosition() {
 }
 
 function sendMouseMove() {
-  if (!wsIsOpen()) return;
+    if (!wsIsOpen()) return;
 
-  if (pauseMode) {
-    // Если пауза, отправляем координаты, чтобы "остановить" шар
-    sendPausePosition();
-    return;
-  }
+    if (pauseMode) {
+        // Отправляем координаты (0,0), чтобы шар остановился в центре
+        const msg = prepareData(21);
+        msg.setUint8(0, 16);
+        msg.setFloat64(1, 0, true);
+        msg.setFloat64(9, 0, true);
+        msg.setUint32(17, 0, true);
+        wsSend(msg);
+        return;
+    }
 
-  let msgX = rawMouseX - canvasWidth / 2;
-  let msgY = rawMouseY - canvasHeight / 2;
+    let msgX = rawMouseX - canvasWidth / 2;
+    let msgY = rawMouseY - canvasHeight / 2;
 
-  if (64 <= msgX * msgX + msgY * msgY && !(.01 > Math.abs(oldX - X) && .01 > Math.abs(oldY - Y))) {
-    oldX = X;
-    oldY = Y;
-    const msg = prepareData(21);
-    msg.setUint8(0, 16);
-    msg.setFloat64(1, X, true);
-    msg.setFloat64(9, Y, true);
-    msg.setUint32(17, 0, true);
-    wsSend(msg);
-  }
+    if (64 <= msgX * msgX + msgY * msgY && !(.01 > Math.abs(oldX - X) && .01 > Math.abs(oldY - Y))) {
+        oldX = X;
+        oldY = Y;
+        const msg = prepareData(21);
+        msg.setUint8(0, 16);
+        msg.setFloat64(1, X, true);
+        msg.setFloat64(9, Y, true);
+        msg.setUint32(17, 0, true);
+        wsSend(msg);
+    }
 }
+
 
     const sendAccountToken = () => {
         const token = localStorage.accountToken;
