@@ -196,9 +196,9 @@
                         </div>
                         <div class="input-container">
                             <form>
-                                <input type="text" placeholder="Ник" name="name" maxlength="15" id="nick" required
+                                <input type="text" placeholder="Ник" name="name" maxlength="15" class="noPress" id="nick" required
                                        autocomplete="username" />
-                                <input type="password" placeholder="Пасс" name="pass" id="pass" required
+                                <input type="password" placeholder="Пасс" name="pass" class="noPress" id="pass" required
                                        autocomplete="current-password" />
                             </form>
                         </div>
@@ -657,7 +657,7 @@
             <div id="chatresize"><i class="fa fa-bars" style="cursor: n-resize;"></i></div>
         </div>
         <div id="chat-container"></div>
-        <input type="text" autocomplete="off" id="chat_textbox" maxlength="120" placeholder="Напишите сообщение...">
+        <input type="text" autocomplete="off" class="noPress" id="chat_textbox" maxlength="120" placeholder="Напишите сообщение...">
     </div>
 <div id="onchat" onclick="document.getElementById('chat').style.display = 'block'; document.getElementById('onchat').style.display = 'none';"><i class="fa fa-arrow-up"></i></div>
     <script>
@@ -818,6 +818,7 @@ function showLogoutNotification() {
 </body>
 
 </html>
+
 
 
 
