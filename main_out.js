@@ -1389,7 +1389,7 @@ function sendMouseMove() {
     }
 
 
-    function sendChat(str) {
+    wHandle.sendChat = function(str) {
         if (wsIsOpen() && (str.length < 200) && (str.length > 0) && !hideChat) {
             var msg = prepareData(2 + 2 * str.length);
             var offset = 0;
