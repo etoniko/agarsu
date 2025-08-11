@@ -815,8 +815,20 @@ function showLogoutNotification() {
     }, 3000);
 }
 </script>
+<script>
+document.querySelectorAll('.star-container').forEach(container => {
+  const level = parseInt(container.querySelector('.levelme').textContent, 10);
+  const star = container.querySelector('.fa-star');
+  if (level >= 50) {
+    star.classList.add('high-level');
+  } else {
+    star.classList.remove('high-level');
+  }
+});
+</script>
 </body>
 </html>
+
 
 
 
