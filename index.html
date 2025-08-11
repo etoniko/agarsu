@@ -815,8 +815,28 @@ function showLogoutNotification() {
     }, 3000);
 }
 </script>
+<script>
+const observer = new MutationObserver(() => {
+  document.querySelectorAll('.star-container').forEach(container => {
+    const levelElem = container.querySelector('.levelme');
+    if (!levelElem) return;
+    const level = parseInt(levelElem.textContent, 10);
+    const star = container.querySelector('.fa-star');
+    if (!star) return;
+    if (level >= 50) {
+      star.classList.add('high-level');
+    } else {
+      star.classList.remove('high-level');
+    }
+  });
+});
+
+// Запускаем наблюдатель за всей страницей (или более конкретным контейнером)
+observer.observe(document.body, { childList: true, subtree: true });
+</script>
 </body>
 </html>
+
 
 
 
