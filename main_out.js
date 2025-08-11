@@ -1104,7 +1104,6 @@ function drawChatBoard() {
 
         const starIcon = document.createElement('i');
         starIcon.className = 'fas fa-star';
-        starIcon.style.color = 'gold';
 
         const levelSpan = document.createElement('span');
         levelSpan.classList.add('levelme');
