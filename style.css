@@ -1033,6 +1033,10 @@ gap: 5px;
 	color: gold;
     text-shadow: #FC0 1px 0 10px;
 }
+.fa-star.high-level {
+    color: #00ffe5;
+    text-shadow: #00ffe5 1px 0 10px;
+}
 
 
 .gamemode {
