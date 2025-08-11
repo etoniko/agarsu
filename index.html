@@ -823,7 +823,7 @@ const observer = new MutationObserver(() => {
     const level = parseInt(levelElem.textContent, 10);
     const star = container.querySelector('.fa-star');
     if (!star) return;
-    if (level >= 50) {
+    if (level >= 36) {
       star.classList.add('high-level');
     } else {
       star.classList.remove('high-level');
@@ -836,6 +836,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
