@@ -629,11 +629,12 @@ function isMouseOverElement(element) {
         wjQuery("#overlays").hide();
     }
 
-   function showOverlays(arg) {
-    console.log("[showOverlays] called with arg:", arg);
-    userNickName = null;
-    wjQuery("#overlays").show();
-}
+    function showOverlays(arg) {
+        // hasOverlay = true;
+        userNickName = null;
+       // wjQuery("#overlays").fadeIn(arg ? 200 : 3E3);
+       wjQuery("#overlays").show();
+    }
 
     let currentWebSocketUrl = null;
 
@@ -696,8 +697,13 @@ function isMouseOverElement(element) {
     }
 
     function wsSend(a) {
-        ws.send(a.buffer)
+    try {
+        console.log("[wsSend] отправка сообщения, byteLength:", a.byteLength);
+        ws.send(a.buffer);
+    } catch (e) {
+        console.error("[wsSend] ошибка при отправке:", e);
     }
+}
 
     function httpGet(theUrl) {
         var xmlHttp = new XMLHttpRequest();
@@ -712,36 +718,29 @@ let pingstamp = 0;
 
 
     function onWsOpen() {
-    console.log("[onWsOpen] WebSocket opened");
-    var msg;
-    wjQuery("#connecting").hide();
+        var msg;
+        // delay = 500;
+        wjQuery("#connecting").hide();
 
-    console.log("[onWsOpen] Sending account token");
-    sendAccountToken();
+        sendAccountToken();
 
-    msg = prepareData(5);
-    msg.setUint8(0, 254);
-    msg.setUint32(1, 5, true); // Protocol 5
-    console.log("[onWsOpen] Sending protocol 5 message:", msg);
-    wsSend(msg);
+        msg = prepareData(5);
+        msg.setUint8(0, 254);
+        msg.setUint32(1, 5, true); // Protocol 5
+        wsSend(msg);
 
-    msg = prepareData(5);
-    msg.setUint8(0, 255);
-    msg.setUint32(1, 0, true);
-    console.log("[onWsOpen] Sending 255 message:", msg);
-    wsSend(msg);
+        msg = prepareData(5);
+        msg.setUint8(0, 255);
+        msg.setUint32(1, 0, true);
+        wsSend(msg);
 
-    console.log("[onWsOpen] Sending nickname");
-    sendNickName();
-
-    console.log("Connection successful!");
-    
-    setInterval(() => {
-        pingstamp = Date.now();
-        console.log("[Ping] Sending ping at", pingstamp);
-        wsSend(new Uint8Array([2])); // ping
+        sendNickName();
+        log.info("Connection successful!");
+     setInterval(() => {
+        pingstamp = Date.now();        
+wsSend(new Uint8Array([2])); // ping
     }, 3000);
-}
+    }
 
         function onWsClose(evt) {
             console.log(evt);
@@ -773,8 +772,23 @@ let pingstamp = 0;
 
 
     function onWsMessage(msg) {
-        handleWsMessage(new DataView(msg.data));
+    try {
+        const view = new DataView(msg.data);
+        console.log("[onWsMessage] получено сообщение, byteLength:", view.byteLength);
+
+        // Только просмотр первых байт, чтобы не ломать DataView
+        const preview = [];
+        for (let i = 0; i < Math.min(10, view.byteLength); i++) {
+            preview.push(view.getUint8(i));
+        }
+        console.log("[onWsMessage] первые байты сообщения:", preview);
+
+        // Вызов оригинальной функции без изменений
+        handleWsMessage(view);
+    } catch (e) {
+        console.error("[onWsMessage] ошибка при обработке сообщения:", e);
     }
+}
 
     class BinaryReader {
         constructor(view) {
@@ -1354,19 +1368,13 @@ function sendMouseMove() {
     };
 
     function sendNickName() {
-    console.log("[sendNickName] called with userNickName:", userNickName);
-    if (wsIsOpen() && userNickName != null) {
-        var msg = prepareData(1 + 2 * userNickName.length);
-        msg.setUint8(0, 0);
-        for (var i = 0; i < userNickName.length; ++i) {
-            msg.setUint16(1 + 2 * i, userNickName.charCodeAt(i), true);
+        if (wsIsOpen() && null != userNickName) {
+            var msg = prepareData(1 + 2 * userNickName.length);
+            msg.setUint8(0, 0);
+            for (var i = 0; i < userNickName.length; ++i) msg.setUint16(1 + 2 * i, userNickName.charCodeAt(i), true);
+            wsSend(msg)
         }
-        console.log("[sendNickName] Sending message:", msg);
-        wsSend(msg);
-    } else {
-        console.log("[sendNickName] WebSocket not open or nickname null");
     }
-}
 
 
     wHandle.sendChat = function(str) {
@@ -2071,7 +2079,7 @@ if (isMe) {
     // var playerStat = null;
     //wHandle.isSpectating = false;
     // Обновленный setNick
-   wHandle.setNick = function(arg) {
+wHandle.setNick = function(arg) {
     console.log("[setNick] called with arg:", arg);
     $('#overlays').hide();
     userNickName = arg;
@@ -2100,11 +2108,12 @@ if (isMe) {
             wjQuery('#chat_textbox').show();
         }
     }
-    wHandle.spectate = function() {
-    console.log("[spectate] called");
-    userNickName = null;
-    hideOverlays();
-};
+    wHandle.spectate = function () {
+        userNickName = null;
+        // wHandle.isSpectating = true;
+        // sendUint8(1);
+        hideOverlays()
+    };
     wHandle.setAcid = function (arg) {
         xa = arg
     };
