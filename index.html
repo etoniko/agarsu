@@ -264,16 +264,17 @@ mirElement.addEventListener('click', () => {
     },duration);
   }
 
-// ----------------- фильтры для инпутов -----------------
 nicknameInput.addEventListener('input', () => {
   nicknameInput.value = nicknameInput.value
-    .replace(/[^a-zA-Zа-яА-ЯёЁ0-9]/g, '')  // разрешаем буквы и цифры
+    .replace(/['`";:]/g, '') // удаляем ' ` " ; :
+    .trim()
     .slice(0, 20);
 });
 
 passwordInput.addEventListener('input', () => {
   passwordInput.value = passwordInput.value
-    .replace(/[^a-zA-Zа-яА-ЯёЁ0-9]/g, '')  // разрешаем буквы и цифры
+    .replace(/['`";:]/g, '') // удаляем ' ` " ; :
+    .trim()
     .slice(0, 5)
     .toLowerCase();
 });
@@ -1238,6 +1239,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
