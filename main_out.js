@@ -629,12 +629,11 @@ function isMouseOverElement(element) {
         wjQuery("#overlays").hide();
     }
 
-    function showOverlays(arg) {
-        // hasOverlay = true;
-        userNickName = null;
-       // wjQuery("#overlays").fadeIn(arg ? 200 : 3E3);
-       wjQuery("#overlays").show();
-    }
+   function showOverlays(arg) {
+    console.log("[showOverlays] called with arg:", arg);
+    userNickName = null;
+    wjQuery("#overlays").show();
+}
 
     let currentWebSocketUrl = null;
 
@@ -713,29 +712,36 @@ let pingstamp = 0;
 
 
     function onWsOpen() {
-        var msg;
-        // delay = 500;
-        wjQuery("#connecting").hide();
+    console.log("[onWsOpen] WebSocket opened");
+    var msg;
+    wjQuery("#connecting").hide();
 
-        sendAccountToken();
+    console.log("[onWsOpen] Sending account token");
+    sendAccountToken();
 
-        msg = prepareData(5);
-        msg.setUint8(0, 254);
-        msg.setUint32(1, 5, true); // Protocol 5
-        wsSend(msg);
+    msg = prepareData(5);
+    msg.setUint8(0, 254);
+    msg.setUint32(1, 5, true); // Protocol 5
+    console.log("[onWsOpen] Sending protocol 5 message:", msg);
+    wsSend(msg);
 
-        msg = prepareData(5);
-        msg.setUint8(0, 255);
-        msg.setUint32(1, 0, true);
-        wsSend(msg);
+    msg = prepareData(5);
+    msg.setUint8(0, 255);
+    msg.setUint32(1, 0, true);
+    console.log("[onWsOpen] Sending 255 message:", msg);
+    wsSend(msg);
 
-        sendNickName();
-        log.info("Connection successful!");
-     setInterval(() => {
-        pingstamp = Date.now();        
-wsSend(new Uint8Array([2])); // ping
+    console.log("[onWsOpen] Sending nickname");
+    sendNickName();
+
+    console.log("Connection successful!");
+    
+    setInterval(() => {
+        pingstamp = Date.now();
+        console.log("[Ping] Sending ping at", pingstamp);
+        wsSend(new Uint8Array([2])); // ping
     }, 3000);
-    }
+}
 
         function onWsClose(evt) {
             console.log(evt);
@@ -1348,13 +1354,19 @@ function sendMouseMove() {
     };
 
     function sendNickName() {
-        if (wsIsOpen() && null != userNickName) {
-            var msg = prepareData(1 + 2 * userNickName.length);
-            msg.setUint8(0, 0);
-            for (var i = 0; i < userNickName.length; ++i) msg.setUint16(1 + 2 * i, userNickName.charCodeAt(i), true);
-            wsSend(msg)
+    console.log("[sendNickName] called with userNickName:", userNickName);
+    if (wsIsOpen() && userNickName != null) {
+        var msg = prepareData(1 + 2 * userNickName.length);
+        msg.setUint8(0, 0);
+        for (var i = 0; i < userNickName.length; ++i) {
+            msg.setUint16(1 + 2 * i, userNickName.charCodeAt(i), true);
         }
+        console.log("[sendNickName] Sending message:", msg);
+        wsSend(msg);
+    } else {
+        console.log("[sendNickName] WebSocket not open or nickname null");
     }
+}
 
 
     wHandle.sendChat = function(str) {
@@ -2059,12 +2071,12 @@ if (isMe) {
     // var playerStat = null;
     //wHandle.isSpectating = false;
     // Обновленный setNick
-    wHandle.setNick = function (arg) {
-        $('#overlays').hide();
-        userNickName = arg;
-        sendNickName();
-        // userScore = 0;
-    };
+   wHandle.setNick = function(arg) {
+    console.log("[setNick] called with arg:", arg);
+    $('#overlays').hide();
+    userNickName = arg;
+    sendNickName();
+};
     wHandle.setSkins = function (arg) {
         showSkin = arg
     };
@@ -2088,12 +2100,11 @@ if (isMe) {
             wjQuery('#chat_textbox').show();
         }
     }
-    wHandle.spectate = function () {
-        userNickName = null;
-        // wHandle.isSpectating = true;
-        // sendUint8(1);
-        hideOverlays()
-    };
+    wHandle.spectate = function() {
+    console.log("[spectate] called");
+    userNickName = null;
+    hideOverlays();
+};
     wHandle.setAcid = function (arg) {
         xa = arg
     };
