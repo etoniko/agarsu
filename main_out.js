@@ -632,7 +632,8 @@ function isMouseOverElement(element) {
     function showOverlays(arg) {
         // hasOverlay = true;
         userNickName = null;
-        wjQuery("#overlays").fadeIn(arg ? 200 : 3E3);
+       // wjQuery("#overlays").fadeIn(arg ? 200 : 3E3);
+       wjQuery("#overlays").show();
     }
 
     let currentWebSocketUrl = null;
@@ -1294,7 +1295,7 @@ if (playerId === ownerPlayerId) {
         }
 
         if (ua && playerCells.length === 0) {
-            showOverlays(false);  // Hide overlays
+            showOverlays();  // Hide overlays
             showSDK();  // Show SDK ad
         }
     }
