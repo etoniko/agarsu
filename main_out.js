@@ -728,11 +728,7 @@ let pingstamp = 0;
         msg.setUint8(0, 255);
         msg.setUint32(1, 0, true);
         wsSend(msg);
-
-            setTimeout(() => {
         sendNickName();
-        console.log("[onWsOpen] sendNickName после задержки");
-    }, 50); // 50ms обычно достаточно
         log.info("Connection successful!");
      setInterval(() => {
         pingstamp = Date.now();        
@@ -2062,12 +2058,22 @@ if (isMe) {
     // var playerStat = null;
     //wHandle.isSpectating = false;
     // Обновленный setNick
-    wHandle.setNick = function (arg) {
+wHandle.setNick = function (arg) {
+    try {
+        console.log('[setNick] вызвана с аргументом:', arg);
         $('#overlays').hide();
         userNickName = arg;
+
+        console.log('[setNick] вызываю sendNickName()');
         sendNickName();
+        console.log('[setNick] sendNickName() выполнена успешно');
+
         // userScore = 0;
-    };
+    } catch (err) {
+        console.error('[setNick] Ошибка при выполнении:', err);
+    }
+};
+
     wHandle.setSkins = function (arg) {
         showSkin = arg
     };
