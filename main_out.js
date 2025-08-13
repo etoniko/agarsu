@@ -1034,8 +1034,6 @@ wsSend(new Uint8Array([2])); // ping
         return `${hours}:${minutes}`; // Возвращаем строку в формате HH:MM
     }
 
-    // Список администраторов
-    const admins = ["нико","banshee"]; // Укажите ники администраторов
 
 
 let badWordsSet; // Используем Set вместо массива
@@ -1074,7 +1072,8 @@ function censorMessage(message) {
     return censoredMessage;
 }
 
-
+const admins = ["нико"]; // 
+const moders = ["banshee"]; 
 
 function drawChatBoard() {
     if (hideChat) return;
@@ -1087,8 +1086,13 @@ function drawChatBoard() {
     const messageDiv = document.createElement('div');
     messageDiv.classList.add('scoreshint');
 
+    // Добавляем класс и title для админа или модера
     if (admins.includes(lastMessage.name.toLowerCase())) {
         messageDiv.classList.add('admin');
+        messageDiv.title = 'Администратор';
+    } else if (moders.includes(lastMessage.name.toLowerCase())) {
+        messageDiv.classList.add('moder');
+        messageDiv.title = 'Модератор';
     }
 
     // Контейнер для имени и звезды с уровнем
@@ -1118,7 +1122,9 @@ function drawChatBoard() {
     // Имя игрока
     const nameSpan = document.createElement('span');
     nameSpan.classList.add('chat-name');
-    nameSpan.style.color = admins.includes(lastMessage.name.toLowerCase()) ? 'gold' : lastMessage.color;
+    nameSpan.style.color = admins.includes(lastMessage.name.toLowerCase()) 
+        ? 'gold' 
+        : lastMessage.color;
     nameSpan.textContent = lastMessage.name + ': ';
 
     nameContainer.appendChild(nameSpan);
@@ -1165,6 +1171,7 @@ function drawChatBoard() {
 
     chatDiv.scrollTop = chatDiv.scrollHeight;
 }
+
 
 
 
