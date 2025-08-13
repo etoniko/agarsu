@@ -115,7 +115,7 @@
       <h3 id="chosenTitle">Данные для товара</h3>
       <form id="dataForm">
         <label>
-          <input id="nickname" maxlength="20" class="shopnp" type="text" placeholder="ник" pattern="^[a-zA-Zа-яА-Я]+$" title="Пожалуйста, введите только английские или русские буквы" autocomplete="off" required>
+          <input id="nickname" maxlength="16" class="shopnp" type="text" placeholder="ник" pattern="^[a-zA-Zа-яА-Я]+$" title="Пожалуйста, введите только английские или русские буквы" autocomplete="off" required>
         </label>
 
         <label id="passLabel" style="display:none;" >
@@ -598,7 +598,7 @@ paidBtn.addEventListener('click', async ()=> {
                         </div>
                         <div class="input-container">
                             <form>
-                                <input type="text" placeholder="Ник" name="name" maxlength="20" class="noPress" id="nick" required
+                                <input type="text" placeholder="Ник" name="name" maxlength="16" class="noPress" id="nick" required
                                        autocomplete="username" />
                                 <input type="password" placeholder="Пасс" name="pass" maxlength="6" class="noPress" id="pass" required
                                        autocomplete="current-password" />
@@ -1238,6 +1238,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
