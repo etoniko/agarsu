@@ -74,3 +74,4 @@ steam:69
 князикс:6822
 chat gpt-3:3265
 chat gpt-4:7277
+chat gpt-5:3369
