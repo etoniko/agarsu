@@ -1469,3 +1469,86 @@ align-items: center;
 justify-content: center;
 gap: 5px;cursor: pointer;
 }
+
+#shop { font-family: Arial, sans-serif; }
+/* upload circle */
+#shop #uploadCircle {
+  width:150px;
+  height:150px;
+  border-radius:50%;
+  background:#0d1b2a;
+  color:#ccc;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin:12px auto;
+  cursor:pointer;
+  border:2px dashed #334;
+  transition:0.3s;
+  text-align:center;
+  font-size:14px;
+  overflow:hidden;
+}
+.reqs{display: flex;justify-content: center;flex-direction: column;align-items: center;padding: 20px;}
+.sbp{user-select: text;background: #00000059;padding: 10px;margin-bottom: 10px;border-radius: 10px;font-size: 17px;}
+.mir{user-select: text;background: #00000059;padding: 10px;border-radius: 10px;font-size: 17px;}
+#shop #uploadCircle:hover { background:#1b263b; border-color:#478; }
+#shop #uploadCircle img { width:100%; height:100%; border-radius:50%; object-fit:cover; display:block; }
+
+/* stages */
+#shop .stages { display:flex; justify-content:center; gap:24px; margin-bottom:20px; user-select:none; }
+#shop .stage { display:flex; flex-direction:column; align-items:center; cursor:default; }
+#shop .stage span { width:36px; height:36px; border-radius:50%; background:#ccc; color:#555; font-weight:700; display:flex; align-items:center; justify-content:center; }
+#shop .stage.active span { background:#016bef; color:#fff; box-shadow: 0 0 8px #4f46e5aa; }
+#shop .label {font-weight: bold; margin-top:6px; font-size:0.85rem; color:#444; }
+#shop .stage.active .label { color:#016bef; font-weight:700; }
+
+/* step content */
+#shop #step-content > div.step { display:none; }
+#shop #step-content > div.step.active { display:block; }
+
+/* skins */
+#shop .skins-grid { display:flex; gap:12px; flex-wrap:nowrap; margin-top:20px; justify-content:center; align-items:center; }
+#shop .skin-card { padding:10px; width:160px; text-align:center; color:#eee; }
+#shop .skin-card img { width:100%; border-radius:8px; }
+
+/* buttons & inputs */
+#shop .btnn { margin-top:8px; padding:8px 12px; border-radius:8px; border:none; background:#016bef; color:white; font-weight:700; cursor:pointer; }
+#shop .btnn.ghost { background:transparent; border:1px solid rgba(255,255,255,0.2); color:#ccc; }
+#shop .shopnp { width:190px; margin-top:20px; outline:none; border:1px solid #ccc; border-radius:20px; height:30px; padding-left:8px; }
+
+/* misc */
+#shop .price-label { color:#bbb; font-size:0.9rem; }
+#shop .hiddenn { display:none; }
+#shop .price { font-size:1.5rem; font-weight:700; color:#48e55c; margin:12px 0; }
+#shop .timer { color:#999; }
+
+/* TOAST стили (под #shop) */
+#shop #shopToastContainer {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+#shop .shop-toast {
+  pointer-events: auto;
+  min-width: 240px;
+  max-width: 360px;
+  background: rgba(10,10,12,0.95);
+  color: #fff;
+  border-radius: 10px;
+  padding: 12px 14px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.5);
+  font-weight:600;
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:center;
+}
+#shop .shop-toast.success { border-left: 6px solid #38a169; }
+#shop .shop-toast.error { border-left: 6px solid #e53e3e; }
+#shop .shop-toast .close { cursor:pointer; opacity:0.8; font-weight:700; }
