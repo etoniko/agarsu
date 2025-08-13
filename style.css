@@ -1029,6 +1029,13 @@ gap: 5px;
   color: gold;
   text-shadow: #FC0 1px 0 10px;
 }
+.scoreshint.moder {
+  background: #de4fd66b;
+}
+
+.scoreshint.moder:after {
+  border-right-color: #de4fd66b;
+}
 .fa-star{
 	color: gold;
     text-shadow: #FC0 1px 0 10px;
