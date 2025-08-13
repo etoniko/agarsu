@@ -1173,45 +1173,6 @@ function drawChatBoard() {
 }
 
 
-
-
-
-function applyNicknameLimit() {
-    const chatDivs = document.querySelectorAll('.scoreshint');
-
-    chatDivs.forEach(chatDiv => {
-        const chatTextSpan = chatDiv.querySelector('.chat-text');
-
-        if (chatTextSpan && chatTextSpan.textContent.includes(' вошел в игру!')) {
-            // Находим никнейм игрока (предполагаем, что ник перед " вошел в игру!")
-            const messageText = chatTextSpan.textContent;
-            const nickname = messageText.substring(0, messageText.indexOf('вошел в игру!'));
-
-            // Создаем новый span для ника с ограничением
-            const nicknameSpan = document.createElement('span');
-            nicknameSpan.style.overflow = 'hidden';
-            nicknameSpan.style.maxWidth = '95px';  // Максимальная ширина
-            nicknameSpan.style.marginRight = '5px'; // или любое другое значение
-            nicknameSpan.style.whiteSpace = 'nowrap';
-            nicknameSpan.style.textOverflow = 'ellipsis';
-            nicknameSpan.style.display = 'inline-block'; // Важно!
-            nicknameSpan.style.flexShrink = '0';  // Не сжимать!
-            nicknameSpan.textContent = nickname;
-
-            // Заменяем исходный текст в chatTextSpan, оставив только " вошел в игру!"
-            chatTextSpan.textContent = 'вошел в игру!';
-
-            // Добавляем ник с ограничением в начало chatTextSpan
-            chatTextSpan.prepend(nicknameSpan);
-
-            // Делаем chatTextSpan flex-контейнером
-            chatTextSpan.style.display = 'flex';
-            chatTextSpan.style.alignItems = 'center'; // Выравнивание по вертикали (по желанию)
-        }
-    });
-}
-
-
     const normalizeFractlPart = n => (n % (Math.PI * 2)) / (Math.PI * 2);
 
     async function showSDK() {
