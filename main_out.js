@@ -1346,38 +1346,14 @@ function sendMouseMove() {
         }
     };
 
-function sendNickName() {
-    console.log('[sendNickName] вызвана, userNickName =', userNickName);
-
-    if (!wsIsOpen()) {
-        console.warn('[sendNickName] WebSocket еще не открыт! Сообщение не отправлено.');
-        return;
-    }
-    if (userNickName == null) {
-        console.warn('[sendNickName] userNickName == null, пропускаю отправку.');
-        return;
-    }
-
-    var length = 1 + 2 * userNickName.length;
-    console.log('[sendNickName] длина пакета:', length);
-
-    try {
-        var msg = prepareData(length);
-        msg.setUint8(0, 0);
-
-        for (var i = 0; i < userNickName.length; ++i) {
-            var code = userNickName.charCodeAt(i);
-            msg.setUint16(1 + 2 * i, code, true);
-            console.log(`[sendNickName] символ[${i}] = '${userNickName[i]}' (${code})`);
+  function sendNickName() {
+        if (wsIsOpen() && null != userNickName) {
+            var msg = prepareData(1 + 2 * userNickName.length);
+            msg.setUint8(0, 0);
+            for (var i = 0; i < userNickName.length; ++i) msg.setUint16(1 + 2 * i, userNickName.charCodeAt(i), true);
+            wsSend(msg)
         }
-
-        console.log('[sendNickName] отправка через wsSend:', msg);
-        wsSend(msg);
-        console.log('[sendNickName] отправка завершена');
-    } catch (err) {
-        console.error('[sendNickName] Ошибка при формировании или отправке:', err);
     }
-}
 
 
 
