@@ -697,13 +697,8 @@ function isMouseOverElement(element) {
     }
 
     function wsSend(a) {
-    try {
-        console.log("[wsSend] отправка сообщения, byteLength:", a.byteLength);
-        ws.send(a.buffer);
-    } catch (e) {
-        console.error("[wsSend] ошибка при отправке:", e);
+        ws.send(a.buffer)
     }
-}
 
     function httpGet(theUrl) {
         var xmlHttp = new XMLHttpRequest();
@@ -734,7 +729,10 @@ let pingstamp = 0;
         msg.setUint32(1, 0, true);
         wsSend(msg);
 
+            setTimeout(() => {
         sendNickName();
+        console.log("[onWsOpen] sendNickName после задержки");
+    }, 50); // 50ms обычно достаточно
         log.info("Connection successful!");
      setInterval(() => {
         pingstamp = Date.now();        
@@ -772,23 +770,8 @@ wsSend(new Uint8Array([2])); // ping
 
 
     function onWsMessage(msg) {
-    try {
-        const view = new DataView(msg.data);
-        console.log("[onWsMessage] получено сообщение, byteLength:", view.byteLength);
-
-        // Только просмотр первых байт, чтобы не ломать DataView
-        const preview = [];
-        for (let i = 0; i < Math.min(10, view.byteLength); i++) {
-            preview.push(view.getUint8(i));
-        }
-        console.log("[onWsMessage] первые байты сообщения:", preview);
-
-        // Вызов оригинальной функции без изменений
-        handleWsMessage(view);
-    } catch (e) {
-        console.error("[onWsMessage] ошибка при обработке сообщения:", e);
+        handleWsMessage(new DataView(msg.data));
     }
-}
 
     class BinaryReader {
         constructor(view) {
@@ -2079,12 +2062,12 @@ if (isMe) {
     // var playerStat = null;
     //wHandle.isSpectating = false;
     // Обновленный setNick
-wHandle.setNick = function(arg) {
-    console.log("[setNick] called with arg:", arg);
-    $('#overlays').hide();
-    userNickName = arg;
-    sendNickName();
-};
+    wHandle.setNick = function (arg) {
+        $('#overlays').hide();
+        userNickName = arg;
+        sendNickName();
+        // userScore = 0;
+    };
     wHandle.setSkins = function (arg) {
         showSkin = arg
     };
