@@ -1034,6 +1034,9 @@ wsSend(new Uint8Array([2])); // ping
         return `${hours}:${minutes}`; // Возвращаем строку в формате HH:MM
     }
 
+    // Список администраторов
+    const admins = ["нико"]; // Укажите ники администраторов
+
 
 let badWordsSet; // Используем Set вместо массива
 
@@ -1072,9 +1075,6 @@ function censorMessage(message) {
 }
 
 
-    // Список администраторов
-    const admins = ["нико"]; // Укажите ники администраторов
-    const moders = ["㊛㊚Bₐₙₛₕₑₑムゾ"]; 
 
 function drawChatBoard() {
     if (hideChat) return;
@@ -1104,7 +1104,6 @@ function drawChatBoard() {
 
         const starIcon = document.createElement('i');
         starIcon.className = 'fas fa-star';
-        starIcon.style.color = 'gold';
 
         const levelSpan = document.createElement('span');
         levelSpan.classList.add('levelme');
@@ -1141,13 +1140,13 @@ function drawChatBoard() {
     skinSpan.classList.add('chat-skin');
 
     const skinId = skinList[lastMessage.name.toLowerCase()];
-    const skinImagePath = skinId ? skins/${skinId}.png : 'skins/4.png';
+    const skinImagePath = skinId ? `skins/${skinId}.png` : 'skins/4.png';
 
     const skinImg = new Image();
     skinImg.src = skinImagePath;
 
     skinImg.onload = () => {
-        skinSpan.style.backgroundImage = url(${skinImagePath});
+        skinSpan.style.backgroundImage = `url(${skinImagePath})`;
     };
     skinImg.onerror = () => {
         skinSpan.style.backgroundImage = 'url(skins/PPFtwqH.png)';
