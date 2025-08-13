@@ -1036,6 +1036,7 @@ wsSend(new Uint8Array([2])); // ping
 
     // Список администраторов
     const admins = ["нико"]; // Укажите ники администраторов
+    const moders = ['㊛㊚Bₐₙₛₕₑₑムゾ']; // примеры имён
 
 
 let badWordsSet; // Используем Set вместо массива
@@ -1087,8 +1088,12 @@ function drawChatBoard() {
     const messageDiv = document.createElement('div');
     messageDiv.classList.add('scoreshint');
 
-    if (admins.includes(lastMessage.name.toLowerCase())) {
+    const nameLower = lastMessage.name.toLowerCase();
+
+    if (admins.includes(nameLower)) {
         messageDiv.classList.add('admin');
+    } else if (moders.includes(nameLower)) {
+        messageDiv.classList.add('moder');
     }
 
     // Контейнер для имени и звезды с уровнем
@@ -1104,6 +1109,7 @@ function drawChatBoard() {
 
         const starIcon = document.createElement('i');
         starIcon.className = 'fas fa-star';
+        starIcon.style.color = 'gold';
 
         const levelSpan = document.createElement('span');
         levelSpan.classList.add('levelme');
@@ -1118,9 +1124,16 @@ function drawChatBoard() {
     // Имя игрока
     const nameSpan = document.createElement('span');
     nameSpan.classList.add('chat-name');
-    nameSpan.style.color = admins.includes(lastMessage.name.toLowerCase()) ? 'gold' : lastMessage.color;
-    nameSpan.textContent = lastMessage.name + ': ';
 
+    if (admins.includes(nameLower)) {
+        nameSpan.style.color = 'gold';
+    } else if (moders.includes(nameLower)) {
+        nameSpan.style.color = 'lightblue';
+    } else {
+        nameSpan.style.color = lastMessage.color;
+    }
+
+    nameSpan.textContent = lastMessage.name + ': ';
     nameContainer.appendChild(nameSpan);
 
     const messageSpan = document.createElement('span');
@@ -1139,7 +1152,7 @@ function drawChatBoard() {
     const skinSpan = document.createElement('span');
     skinSpan.classList.add('chat-skin');
 
-    const skinId = skinList[lastMessage.name.toLowerCase()];
+    const skinId = skinList[nameLower];
     const skinImagePath = skinId ? `skins/${skinId}.png` : 'skins/4.png';
 
     const skinImg = new Image();
@@ -1158,7 +1171,6 @@ function drawChatBoard() {
     // Ограничение количества сообщений (макс. 30)
     const maxMessages = 30;
     while (chatDiv.children.length > maxMessages * 2) {
-        // Удаляем по 2 элемента: скин и сообщение
         chatDiv.removeChild(chatDiv.firstChild);
         chatDiv.removeChild(chatDiv.firstChild);
     }
