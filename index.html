@@ -115,11 +115,11 @@
       <h3 id="chosenTitle">Данные для товара</h3>
       <form id="dataForm">
         <label>
-          <input id="nickname" class="shopnp" type="text" placeholder="ник" pattern="^[a-zA-Zа-яА-Я]+$" title="Пожалуйста, введите только английские или русские буквы" autocomplete="off" required>
+          <input id="nickname" maxlength="20" class="shopnp" type="text" placeholder="ник" pattern="^[a-zA-Zа-яА-Я]+$" title="Пожалуйста, введите только английские или русские буквы" autocomplete="off" required>
         </label>
 
         <label id="passLabel" style="display:none;" >
-          <input id="password" class="shopnp" type="text" placeholder="пароль" pattern="^[a-zA-Zа-яА-Я]+$" title="Пожалуйста, введите только английские или русские буквы" autocomplete="off">
+          <input id="password" maxlength="6" class="shopnp" type="text" placeholder="пароль" pattern="^[a-zA-Zа-яА-Я]+$" title="Пожалуйста, введите только английские или русские буквы" autocomplete="off">
         </label>
 
         <div id="uploadCircle">
@@ -598,9 +598,9 @@ paidBtn.addEventListener('click', async ()=> {
                         </div>
                         <div class="input-container">
                             <form>
-                                <input type="text" placeholder="Ник" name="name" maxlength="25" class="noPress" id="nick" required
+                                <input type="text" placeholder="Ник" name="name" maxlength="20" class="noPress" id="nick" required
                                        autocomplete="username" />
-                                <input type="password" placeholder="Пасс" name="pass" class="noPress" id="pass" required
+                                <input type="password" placeholder="Пасс" name="pass" maxlength="6" class="noPress" id="pass" required
                                        autocomplete="current-password" />
                             </form>
                         </div>
