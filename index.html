@@ -267,13 +267,13 @@ mirElement.addEventListener('click', () => {
 // ----------------- фильтры для инпутов -----------------
 nicknameInput.addEventListener('input', () => {
   nicknameInput.value = nicknameInput.value
-    .replace(/[^a-zA-Zа-яА-ЯёЁ]/g, '')  // убираем всё, что не буквы латиницы/кириллицы
+    .replace(/[^a-zA-Zа-яА-ЯёЁ0-9]/g, '')  // разрешаем буквы и цифры
     .slice(0, 20);
 });
 
 passwordInput.addEventListener('input', () => {
   passwordInput.value = passwordInput.value
-    .replace(/[^a-zA-Zа-яА-ЯёЁ]/g, '')  // только буквы
+    .replace(/[^a-zA-Zа-яА-ЯёЁ0-9]/g, '')  // разрешаем буквы и цифры
     .slice(0, 5)
     .toLowerCase();
 });
@@ -1238,6 +1238,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
