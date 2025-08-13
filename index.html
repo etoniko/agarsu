@@ -267,16 +267,13 @@ mirElement.addEventListener('click', () => {
 nicknameInput.addEventListener('input', () => {
   nicknameInput.value = nicknameInput.value
     .replace(/['`";:]/g, '') // удаляем ' ` " ; :
-    .trim()
     .slice(0, 20);
 });
 
 passwordInput.addEventListener('input', () => {
   passwordInput.value = passwordInput.value
     .replace(/['`";:]/g, '') // удаляем ' ` " ; :
-    .trim()
     .slice(0, 5)
-    .toLowerCase();
 });
 
   // ----------------- навигация между шагами -----------------
