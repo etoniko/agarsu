@@ -749,7 +749,7 @@ wsSend(new Uint8Array([2])); // ping
         }
 
         function startCountdown() {
-            let countdownElement = document.getElementById("countdown");
+            let countdownElement = document.getElementById("countdownclose");
             let seconds = 10;
 
             let countdownInterval = setInterval(function() {
