@@ -558,7 +558,7 @@ function onTouchEnd(e) {
 
 function handleWheel(event) {
     const overlay = $('#overlays');
-    const chatContainer = $('#chatX_window');
+    const chatContainer = $('#chatX_feed');
 
     if (overlay.is(':visible') || isMouseOverElement(chatContainer)) {
         return;
