@@ -1052,7 +1052,7 @@ paidBtn.addEventListener('click', async ()=> {
 
 
 <style>
-.chatX_window {width: 322px;background: rgba(0, 0, 0, .3);border-radius: 25px;padding: 10px 5px 12px;position: absolute;left: 10px;bottom: 10px;display: flex;flex-direction: column;overflow: hidden;min-height: 100px;max-height: 600px;color: white;box-sizing: border-box;border: solid #ffffff26 1px;}
+.chatX_window {width: 310px;background: rgba(0, 0, 0, .3);border-radius: 25px;padding: 10px 5px 12px;position: absolute;left: 10px;bottom: 10px;display: flex;flex-direction: column;overflow: hidden;min-height: 100px;max-height: 600px;color: white;box-sizing: border-box;border: solid #ffffff26 1px;}
 .chatX_top { height: 20px; display: flex; align-items: center; justify-content: center; position: relative; margin-bottom: 6px; user-select: none; }
 .chatX_burger { position: absolute; left: 50%; transform: translateX(-50%); width: 18px; height: 14px; cursor: n-resize; display: flex; flex-direction: column; justify-content: center; font-size: 16px; color: white; text-align: center; }
 .chatX_close {position: absolute;right: 6px;width: 18px;height: 18px;line-height: 18px;text-align: center;color: white;font-size: 19px;cursor: pointer;}
@@ -1061,13 +1061,13 @@ paidBtn.addEventListener('click', async ()=> {
 .chatX_feed::-webkit-scrollbar-track { background: transparent; }
 .chatX_feed::-webkit-scrollbar-thumb { background-color: rgba(255,255,255,0.2); border-radius: 3px; transition: background-color 0.2s; }
 .chatX_feed::-webkit-scrollbar-thumb:hover { background-color: rgba(255,255,255,0.4); }
-.chatX_msg {position: relative;display: grid;grid-template-columns: 42px 1fr;column-gap: 8px;background: #80808057;border-radius: 10px;padding: 8px 10px 8px 8px;box-sizing: border-box; }
-.chatX_avatar { grid-row: 1 / span 2; width: 45px; height: 45px; border-radius: 100%; object-fit: cover; }
+.chatX_msg {position: relative;display: grid;grid-template-columns: 42px 1fr;column-gap: 8px;background: #80808057;border-radius: 10px;padding: 8px 10px 8px 8px;box-sizing: border-box;column-gap: 15px;}
+.chatX_avatar { grid-row: 1 / span 2; width: 50px; height: 50px; border-radius: 100%; object-fit: cover;border: 2px solid;}
 .chatX_nick { font-size: 13px; color: #b8c0cc; margin-top: 2px; max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; direction: ltr; }
 .chatX_nick--accent { color: #ff4e3e; font-weight: 700; }
 .chatX_text { margin-top: 6px; font-size: 14px; color: white; }
 .chatX_time { position: absolute; right: 8px; top: 6px; font-size: 11px; color: #dadada; }
-#chat_textbox { margin-top: 8px; background: rgb(133 133 133 / 21%); border: solid 1px #ffffff3d; border-radius: 14px; padding: 10px 12px; color: #e6e9ef; outline: none; width: 100%; box-sizing: border-box; }
+#chat_textbox {box-sizing: border-box;margin-top: 8px;transition: all .5s ease-in-out;background: rgb(133 133 133 / 20%);border: solid 1px #ffffff3d;outline: none;color: #ffffff;height: 30px;text-indent: 12px;width: 100%;border-radius: 20px;}
 #chat_textbox::placeholder { color: #606060; }
 .chatX_alert { position: absolute; top: 30px; right: 10px; background: #ff4e3e; color: #fff; font-size: 13px; padding: 4px 8px; border-radius: 12px; display: none; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
 </style>
@@ -1296,6 +1296,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
