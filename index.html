@@ -1052,7 +1052,7 @@ paidBtn.addEventListener('click', async ()=> {
 
 
 <style>
-.chatX_window {width: 322px;background: rgba(0, 0, 0, .3);border-radius: 25px;padding: 10px 10px 12px;position: absolute;left: 10px;bottom: 10px;display: flex;flex-direction: column;overflow: hidden;height: 280px;min-height: 100px;max-height: 600px;color: white;box-sizing: border-box;border: solid #ffffff26 1px;}
+.chatX_window {width: 322px;background: rgba(0, 0, 0, .3);border-radius: 25px;padding: 10px 5px 12px;position: absolute;left: 10px;bottom: 10px;display: flex;flex-direction: column;overflow: hidden;height: 280px;min-height: 100px;max-height: 600px;color: white;box-sizing: border-box;border: solid #ffffff26 1px;}
 .chatX_top { height: 20px; display: flex; align-items: center; justify-content: center; position: relative; margin-bottom: 6px; user-select: none; }
 .chatX_burger { position: absolute; left: 50%; transform: translateX(-50%); width: 18px; height: 14px; cursor: n-resize; display: flex; flex-direction: column; justify-content: center; font-size: 16px; color: white; text-align: center; }
 .chatX_close {position: absolute;right: 6px;width: 18px;height: 18px;line-height: 18px;text-align: center;color: white;font-size: 19px;cursor: pointer;}
@@ -1089,7 +1089,6 @@ paidBtn.addEventListener('click', async ()=> {
 <script>
 const chatWindow = document.getElementById('chatX_window');
 const feed = document.getElementById('chatX_feed');
-const input = document.getElementById('chatX_input');
 const alertBox = document.getElementById('chatX_alert');
 const burger = document.getElementById('chatX_burger');
 const closeBtn = document.getElementById('chatX_close');
@@ -1100,66 +1099,61 @@ let startTop = 0;
 let resizing = false;
 
 burger.addEventListener('mousedown', e => {
-  resizing = true;
-  startY = e.clientY;
-  startHeight = chatWindow.offsetHeight;
-  startTop = chatWindow.offsetTop;
-  document.body.style.userSelect = 'none';
+    resizing = true;
+    startY = e.clientY;
+    startHeight = chatWindow.offsetHeight;
+    startTop = chatWindow.offsetTop;
+    document.body.style.userSelect = 'none';
 });
-document.addEventListener('mousemove', e => {
-  if (!resizing) return;
-  const dy = e.clientY - startY;
-  let newHeight = startHeight - dy;
-  let newTop = startTop + dy;
-  if (newHeight < 100) { newTop -= (100-newHeight); newHeight = 100; }
-  if (newHeight > 600) { newTop += (newHeight-600); newHeight = 600; }
-  chatWindow.style.height = newHeight + 'px';
-  chatWindow.style.top = newTop + 'px';
-});
-document.addEventListener('mouseup', () => { resizing=false; document.body.style.userSelect=''; });
 
-closeBtn.addEventListener('click', ()=> { chatWindow.style.display='none'; });
+document.addEventListener('mousemove', e => {
+    if (!resizing) return;
+    const dy = e.clientY - startY;
+    let newHeight = startHeight - dy;
+    let newTop = startTop + dy;
+    if (newHeight < 100) {
+        newTop -= (100-newHeight);
+        newHeight = 100;
+    }
+    if (newHeight > 600) {
+        newTop += (newHeight-600);
+        newHeight = 600;
+    }
+    chatWindow.style.height = newHeight + 'px';
+    chatWindow.style.top = newTop + 'px';
+});
+
+document.addEventListener('mouseup', () => {
+    resizing = false;
+    document.body.style.userSelect = '';
+});
+
+closeBtn.addEventListener('click', () => {
+    chatWindow.style.display = 'none';
+});
 
 let autoScroll = true;
 let unreadCount = 0;
 
-function scrollToBottom() { feed.scrollTop = 0; }
-
-function addMessage(text, nick='Пользователь', timeStr=null){
-  const div = document.createElement('div');
-  div.className = 'chatX_msg';
-  const now = new Date();
-  const time = timeStr || now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
-  div.innerHTML = `
-    <img class="chatX_avatar" src="https://via.placeholder.com/36" alt="">
-    <div class="chatX_nick">${nick}:</div>
-    <div class="chatX_text">${text}</div>
-    <div class="chatX_time">${time}</div>
-  `;
-  feed.prepend(div);
-  if(autoScroll){ scrollToBottom(); }
-  else{
-    unreadCount++;
-    alertBox.textContent = unreadCount;
-    alertBox.style.display = 'block';
-  }
+function scrollToBottom() {
+    feed.scrollTop = 0;
 }
 
-input.addEventListener('keydown', e => {
-  if(e.key==='Enter' && input.value.trim()!==''){
-    addMessage(input.value.trim()); // текст добавляется без "Я"
-    input.value='';
+feed.addEventListener('scroll', () => {
+    autoScroll = feed.scrollTop === 0;
+    if (autoScroll) {
+        unreadCount = 0;
+        alertBox.style.display = 'none';
+    }
+});
+
+alertBox.addEventListener('click', () => {
     scrollToBottom();
     autoScroll = true;
     unreadCount = 0;
     alertBox.style.display = 'none';
-  }
 });
 
-feed.addEventListener('scroll', ()=>{ autoScroll = feed.scrollTop === 0; if(autoScroll){ unreadCount = 0; alertBox.style.display='none'; } });
-alertBox.addEventListener('click', ()=>{ scrollToBottom(); autoScroll = true; unreadCount = 0; alertBox.style.display = 'none'; });
-
-// Удалено авто-добавление сообщений
 scrollToBottom();
 </script>
 
@@ -1340,6 +1334,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
