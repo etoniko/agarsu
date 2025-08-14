@@ -384,8 +384,8 @@ transition: ease filter, transform 0.5s;
   font-size: 16px;
 }
 #chat-container {
-width: 290px;
-    max-height: 300px;
+    width: 290px;
+    max-height: 500px;
     overflow-y: auto;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -1244,7 +1244,7 @@ position: absolute;
 .overchat {
     position: absolute;
     bottom: 10px;
-    max-height: 450px;
+    max-height: 650px;
     width: 310px;
     left: 10px;
     padding: 10px 10px 10px 10px;
