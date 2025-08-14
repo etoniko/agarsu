@@ -1092,6 +1092,7 @@ const feed = document.getElementById('chatX_feed');
 const alertBox = document.getElementById('chatX_alert');
 const burger = document.getElementById('chatX_burger');
 const closeBtn = document.getElementById('chatX_close');
+const input = document.getElementById("chatX_input");
 
 let startY = 0;
 let startHeight = 0;
@@ -1122,7 +1123,15 @@ document.addEventListener('mousemove', e => {
     chatWindow.style.height = newHeight + 'px';
     chatWindow.style.top = newTop + 'px';
 });
-
+input.addEventListener("keydown", function(e) {
+    if (e.key === "Enter") {
+        const text = input.value.trim();
+        if (text.length > 0) {
+            sendChat(text);   // твоя функция отправки
+            input.value = "";
+        }
+    }
+});
 document.addEventListener('mouseup', () => {
     resizing = false;
     document.body.style.userSelect = '';
@@ -1287,6 +1296,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
