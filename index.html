@@ -1051,14 +1051,118 @@ paidBtn.addEventListener('click', async ()=> {
     </script>
 
 
-    <div id="chat" class="overchat">
-        <div class="chat-header">
-            <div id="chatclose" onclick="document.getElementById('chat').style.display = 'none'; document.getElementById('onchat').style.display = 'flex';"><i class="fa fa-close"></i></div>
-            <div id="chatresize"><i class="fa fa-bars" style="cursor: n-resize;"></i></div>
-        </div>
-        <div id="chat-container"></div>
-        <input type="text" autocomplete="off" class="noPress" id="chat_textbox" maxlength="120" placeholder="Напишите сообщение...">
+<style>
+.chatX_window { width: 322px; background: #0c1117; border-radius: 16px; padding: 10px 10px 12px; box-shadow: 0 10px 30px rgba(0,0,0,.35); position: absolute; left: 10px; bottom: 10px; display: flex; flex-direction: column; overflow: hidden; height: 280px; min-height: 100px; max-height: 600px; top: 200px; color: #e6e9ef; box-sizing: border-box; }
+.chatX_top { height: 20px; display: flex; align-items: center; justify-content: center; position: relative; margin-bottom: 6px; user-select: none; }
+.chatX_burger { position: absolute; left: 50%; transform: translateX(-50%); width: 18px; height: 14px; cursor: n-resize; display: flex; flex-direction: column; justify-content: center; font-size: 16px; color: #95a0b3; text-align: center; }
+.chatX_close {position: absolute;right: 6px;width: 18px;height: 18px;line-height: 18px;text-align: center;color: #95a0b3;font-size: 19px;cursor: pointer;}
+.chatX_feed { flex: 1; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 8px; padding-right: 4px; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent; }
+.chatX_feed::-webkit-scrollbar { width: 6px; }
+.chatX_feed::-webkit-scrollbar-track { background: transparent; }
+.chatX_feed::-webkit-scrollbar-thumb { background-color: rgba(255,255,255,0.2); border-radius: 3px; transition: background-color 0.2s; }
+.chatX_feed::-webkit-scrollbar-thumb:hover { background-color: rgba(255,255,255,0.4); }
+.chatX_msg { position: relative; display: grid; grid-template-columns: 42px 1fr; column-gap: 8px; background: #1b2028; border: 1px solid #28303a; border-radius: 10px; padding: 8px 10px 8px 8px; box-sizing: border-box; }
+.chatX_avatar { grid-row: 1 / span 2; width: 40px; height: 40px; border-radius: 50%; background: #2a313c; object-fit: cover; }
+.chatX_nick { font-size: 13px; color: #b8c0cc; margin-top: 2px; max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; direction: ltr; }
+.chatX_nick--accent { color: #ff4e3e; font-weight: 700; }
+.chatX_text { margin-top: 6px; font-size: 14px; color: #e6e9ef; }
+.chatX_time { position: absolute; right: 8px; top: 6px; font-size: 11px; color: #8b94a3; }
+.chatX_input { margin-top: 8px; background: #1b2028; border: 1px solid #28303a; border-radius: 14px; padding: 10px 12px; color: #e6e9ef; outline: none; width: 100%; box-sizing: border-box; }
+.chatX_input::placeholder { color: #9099aa; }
+.chatX_alert { position: absolute; top: 30px; right: 10px; background: #ff4e3e; color: #fff; font-size: 13px; padding: 4px 8px; border-radius: 12px; display: none; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
+</style>
+
+  <div class="chatX_window" id="chatX_window">
+    <div class="chatX_top">
+      <div class="chatX_burger" id="chatX_burger"><i class="fa-solid fa-bars"></i></div>
+      <div class="chatX_close" id="chatX_close"><i class="fa-solid fa-xmark"></i></div>
     </div>
+
+    <div class="chatX_feed" id="chatX_feed">
+    </div>
+
+    <div class="chatX_alert" id="chatX_alert"></div>
+
+    <input class="chatX_input" id="chatX_input" type="text"  autocomplete="off" placeholder="Напишите сообщение..." />
+  </div>
+
+<script>
+const chatWindow = document.getElementById('chatX_window');
+const feed = document.getElementById('chatX_feed');
+const input = document.getElementById('chatX_input');
+const alertBox = document.getElementById('chatX_alert');
+const burger = document.getElementById('chatX_burger');
+const closeBtn = document.getElementById('chatX_close');
+
+let startY = 0;
+let startHeight = 0;
+let startTop = 0;
+let resizing = false;
+
+burger.addEventListener('mousedown', e => {
+  resizing = true;
+  startY = e.clientY;
+  startHeight = chatWindow.offsetHeight;
+  startTop = chatWindow.offsetTop;
+  document.body.style.userSelect = 'none';
+});
+document.addEventListener('mousemove', e => {
+  if (!resizing) return;
+  const dy = e.clientY - startY;
+  let newHeight = startHeight - dy;
+  let newTop = startTop + dy;
+  if (newHeight < 100) { newTop -= (100-newHeight); newHeight = 100; }
+  if (newHeight > 600) { newTop += (newHeight-600); newHeight = 600; }
+  chatWindow.style.height = newHeight + 'px';
+  chatWindow.style.top = newTop + 'px';
+});
+document.addEventListener('mouseup', () => { resizing=false; document.body.style.userSelect=''; });
+
+closeBtn.addEventListener('click', ()=> { chatWindow.style.display='none'; });
+
+let autoScroll = true;
+let unreadCount = 0;
+
+function scrollToBottom() { feed.scrollTop = 0; }
+
+function addMessage(text, nick='Пользователь', timeStr=null){
+  const div = document.createElement('div');
+  div.className = 'chatX_msg';
+  const now = new Date();
+  const time = timeStr || now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+  div.innerHTML = `
+    <img class="chatX_avatar" src="https://via.placeholder.com/36" alt="">
+    <div class="chatX_nick">${nick}:</div>
+    <div class="chatX_text">${text}</div>
+    <div class="chatX_time">${time}</div>
+  `;
+  feed.prepend(div);
+  if(autoScroll){ scrollToBottom(); }
+  else{
+    unreadCount++;
+    alertBox.textContent = unreadCount;
+    alertBox.style.display = 'block';
+  }
+}
+
+input.addEventListener('keydown', e => {
+  if(e.key==='Enter' && input.value.trim()!==''){
+    addMessage(input.value.trim()); // текст добавляется без "Я"
+    input.value='';
+    scrollToBottom();
+    autoScroll = true;
+    unreadCount = 0;
+    alertBox.style.display = 'none';
+  }
+});
+
+feed.addEventListener('scroll', ()=>{ autoScroll = feed.scrollTop === 0; if(autoScroll){ unreadCount = 0; alertBox.style.display='none'; } });
+alertBox.addEventListener('click', ()=>{ scrollToBottom(); autoScroll = true; unreadCount = 0; alertBox.style.display = 'none'; });
+
+// Удалено авто-добавление сообщений
+scrollToBottom();
+</script>
+
 <div id="onchat" onclick="document.getElementById('chat').style.display = 'block'; document.getElementById('onchat').style.display = 'none';"><i class="fa fa-arrow-up"></i></div>
     <script>
         // Получаем элементы
@@ -1236,6 +1340,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
