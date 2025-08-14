@@ -1094,10 +1094,33 @@ function drawChatBoard() {
     avatar.onerror = () => avatar.src = 'skins/4.png';
     msgDiv.appendChild(avatar);
 
-    // Имя и текст
+    // Создаем контейнер для уровня и ника
+    const nameContainer = document.createElement('div');
+    nameContainer.className = 'chatX_name_container'; // Добавляем класс для стилизации, если нужно
+
+    // Звезда и уровень (левее ника)
+    if (typeof lastMessage.playerLevel === 'number' && lastMessage.playerLevel > 0) {
+        const levelContainer = document.createElement('div');
+        levelContainer.className = 'star-container';
+
+        const starIcon = document.createElement('i');
+        starIcon.className = 'fas fa-star'; // Используем Font Awesome для звезды
+
+        const levelSpan = document.createElement('span');
+        levelSpan.className = 'levelme';
+        levelSpan.textContent = lastMessage.playerLevel;
+
+        levelContainer.appendChild(starIcon);
+        levelContainer.appendChild(levelSpan);
+
+        nameContainer.appendChild(levelContainer); // Добавляем контейнер уровня перед ником
+    }
+
+    // Имя
     const nameDiv = document.createElement('div');
     nameDiv.className = 'chatX_nick';
     nameDiv.textContent = lastMessage.name + ':';
+
 
     // Стиль для админа/модера
     const lowerName = lastMessage.name.toLowerCase();
@@ -1112,13 +1135,7 @@ function drawChatBoard() {
         nameDiv.style.color = lastMessage.color || '#b8c0cc';
     }
 
-    // Звезда и уровень
-    if (typeof lastMessage.playerLevel === 'number' && lastMessage.playerLevel > 0) {
-        const levelSpan = document.createElement('span');
-        levelSpan.textContent = `⭐${lastMessage.playerLevel}`;
-        levelSpan.style.marginLeft = '4px';
-        nameDiv.appendChild(levelSpan);
-    }
+    nameContainer.appendChild(nameDiv); // Добавляем ник
 
     const textDiv = document.createElement('div');
     textDiv.className = 'chatX_text';
@@ -1128,7 +1145,7 @@ function drawChatBoard() {
     timeDiv.className = 'chatX_time';
     timeDiv.textContent = lastMessage.time;
 
-    msgDiv.appendChild(nameDiv);
+    msgDiv.appendChild(nameContainer); // Добавляем контейнер имени и уровня
     msgDiv.appendChild(textDiv);
     msgDiv.appendChild(timeDiv);
 
