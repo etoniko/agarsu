@@ -1161,8 +1161,8 @@ function drawChatBoard() {
     chatDiv.appendChild(skinSpan);
     chatDiv.appendChild(messageDiv);
 
-    // Ограничение количества сообщений (макс. 30)
-    const maxMessages = 30;
+    // Ограничение количества сообщений (макс. 50)
+    const maxMessages = 50;
     while (chatDiv.children.length > maxMessages * 2) {
         // Удаляем по 2 элемента: скин и сообщение
         chatDiv.removeChild(chatDiv.firstChild);
