@@ -296,18 +296,24 @@
     }
   }
   break;
-                case 13: // enter
-                    if (isTyping || hideChat) {
-                        isTyping = false;
-                        document.getElementById("chatX_input").blur();
-                        chattxt = document.getElementById("chatX_input").value;
-                        if (chattxt.trim().length > 0) sendChat(chattxt); // Проверяем после trim
-                        document.getElementById("chatX_input").value = "";
-                    } else {
-                        document.getElementById("chatX_input").focus();
-                        isTyping = true;
-                    }
-                    break;
+case 13: // enter
+    if (hideChat) {
+        // Если чат скрыт, просто фокусируемся на поле ввода, чтобы его открыть
+        document.getElementById("chatX_input").focus();
+        isTyping = true;
+    } else if (isTyping) {
+        // Если чат виден и мы печатаем, отправляем сообщение
+        isTyping = false;
+        document.getElementById("chatX_input").blur();
+        chattxt = document.getElementById("chatX_input").value;
+        if (chattxt.trim().length > 0) sendChat(chattxt);
+        document.getElementById("chatX_input").value = "";
+    } else {
+        // Если чат виден и мы не печатаем, фокусируемся на поле ввода
+        document.getElementById("chatX_input").focus();
+        isTyping = true;
+    }
+    break;
                 case 32: // space
                     if (!spacePressed && !isTyping) {
                         sendMouseMove();
