@@ -2443,7 +2443,7 @@ if (this.id !== 0) {
 
     // Скрываем имя, если this.size > 100
 if (showName && (this.name && this.nameCache) && this.size > 100) {
-    const maxNameWidth = 150; // макс ширина в пикселях
+    const maxNameWidth = 400; // макс ширина в пикселях
     let displayName = this.name;
     
     this.nameCache.setSize(nameSize);
