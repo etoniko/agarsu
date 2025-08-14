@@ -605,7 +605,7 @@ backdrop-filter: blur(20px);
 	.center {transform: scale(0.7);}
   .social {opacity: 0;}
   #leaderboard{display: none !important;}
-.overchat{
+.chatX_window{
 transform: scale(0.5) translate(-5px, 5px);
 transform-origin: bottom left;
 }
