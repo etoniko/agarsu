@@ -1116,9 +1116,9 @@ document.addEventListener('mousemove', e => {
         newTop -= (100-newHeight);
         newHeight = 100;
     }
-    if (newHeight > 600) {
-        newTop += (newHeight-600);
-        newHeight = 600;
+    if (newHeight > 700) {
+        newTop += (newHeight-700);
+        newHeight = 700;
     }
     chatWindow.style.height = newHeight + 'px';
     chatWindow.style.top = newTop + 'px';
@@ -1287,6 +1287,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
