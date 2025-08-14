@@ -1005,7 +1005,7 @@ wsSend(new Uint8Array([2])); // ping
             // MOD Message
         }
 
- var r = view.getUint8(offset++),
+        var r = view.getUint8(offset++),
             g = view.getUint8(offset++),
             b = view.getUint8(offset++),
             color = (r << 16 | g << 8 | b).toString(16);
@@ -1013,11 +1013,11 @@ wsSend(new Uint8Array([2])); // ping
             color = '0' + color;
         }
 		
-        const pId = view.getUint16(offset, true);  // Считываем pID
-        offset += 2;
-
         const playerXp = view.getUint32(offset, true);
         offset += 4;
+
+        const pId = view.getUint16(offset, true);  // Считываем pID
+        offset += 2;
 		
         color = '#' + color;
         chatBoard.push({
