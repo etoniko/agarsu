@@ -849,7 +849,7 @@ paidBtn.addEventListener('click', async ()=> {
 
                             async function startGame() {
 
-                                setNick(document.getElementById('nick').value + "#" + document.getElementById('pass').value);
+                                setNick(document.getElementById('nick').value.trim() + "#" + document.getElementById('pass').value);
 
                                 // Проверяем, инициализирован ли Yandex SDK, и запускаем геймплей
                                 if (window.ysdk) {
@@ -1064,7 +1064,7 @@ paidBtn.addEventListener('click', async ()=> {
 .chatX_text {min-height: 30px;font-size: 14px;color: white;}
 .chatX_time { position: absolute; right: 8px; top: 6px; font-size: 11px; color: #dadada; }
 .chatX_name_container{display: flex;gap: 3px;padding-bottom: 2px;align-items: baseline;}
-#chat_textbox {box-sizing: border-box;margin-top: 8px;transition: all .5s ease-in-out;background: rgb(133 133 133 / 20%);border: solid 1px #ffffff3d;outline: none;color: #ffffff;height: 30px;text-indent: 12px;width: 100%;border-radius: 20px;}
+#chat_textbox {padding: 10px;box-sizing: border-box;margin-top: 8px;transition: all .5s ease-in-out;background: rgb(133 133 133 / 20%);border: solid 1px #ffffff3d;outline: none;color: #ffffff;height: 30px;text-indent: 12px;width: 100%;border-radius: 20px;}
 #chat_textbox::placeholder { color: #606060; }
 .chatX_alert { position: absolute; top: 30px; right: 10px; background: #ff4e3e; color: #fff; font-size: 13px; padding: 4px 8px; border-radius: 12px; display: none; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
 .nresize{cursor: n-resize !important;}
@@ -1287,6 +1287,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
