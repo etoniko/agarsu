@@ -76,3 +76,4 @@ chat gpt-3:3265
 chat gpt-4:7277
 chat gpt-5:3369
 ⊈ядрёна матрёна⊉:6963
+3d portal:1529
