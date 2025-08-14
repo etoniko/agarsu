@@ -299,12 +299,12 @@
                 case 13: // enter
                     if (isTyping || hideChat) {
                         isTyping = false;
-                        document.getElementById("chat_textbox").blur();
-                        chattxt = document.getElementById("chat_textbox").value;
+                        document.getElementById("chatX_input").blur();
+                        chattxt = document.getElementById("chatX_input").value;
                         if (chattxt.trim().length > 0) sendChat(chattxt); // Проверяем после trim
-                        document.getElementById("chat_textbox").value = "";
+                        document.getElementById("chatX_input").value = "";
                     } else {
-                        document.getElementById("chat_textbox").focus();
+                        document.getElementById("chatX_input").focus();
                         isTyping = true;
                     }
                     break;
@@ -558,7 +558,7 @@ function onTouchEnd(e) {
 
 function handleWheel(event) {
     const overlay = $('#overlays');
-    const chatContainer = $('#chat-container');
+    const chatContainer = $('#chatX_window');
 
     if (overlay.is(':visible') || isMouseOverElement(chatContainer)) {
         return;
@@ -2055,9 +2055,9 @@ if (isMe) {
     wHandle.setChatHide = function (arg) {
         hideChat = arg;
         if (hideChat) {
-            wjQuery('#chat_textbox').hide();
+            wjQuery('#chatX_input').hide();
         } else {
-            wjQuery('#chat_textbox').show();
+            wjQuery('#chatX_input').show();
         }
     }
     wHandle.spectate = function () {
