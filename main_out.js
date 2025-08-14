@@ -296,24 +296,18 @@
     }
   }
   break;
-case 13: // enter
-    if (hideChat) {
-        // Если чат скрыт, просто фокусируемся на поле ввода, чтобы его открыть
-        document.getElementById("chatX_input").focus();
-        isTyping = true;
-    } else if (isTyping) {
-        // Если чат виден и мы печатаем, отправляем сообщение
-        isTyping = false;
-        document.getElementById("chatX_input").blur();
-        chattxt = document.getElementById("chatX_input").value;
-        if (chattxt.trim().length > 0) sendChat(chattxt);
-        document.getElementById("chatX_input").value = "";
-    } else {
-        // Если чат виден и мы не печатаем, фокусируемся на поле ввода
-        document.getElementById("chatX_input").focus();
-        isTyping = true;
-    }
-    break;
+                case 13: // enter
+                    if (isTyping || hideChat) {
+                        isTyping = false;
+                        document.getElementById("chat_textbox").blur();
+                        chattxt = document.getElementById("chat_textbox").value;
+                        if (chattxt.trim().length > 0) sendChat(chattxt); // Проверяем после trim
+                        document.getElementById("chat_textbox").value = "";
+                    } else {
+                        document.getElementById("chat_textbox").focus();
+                        isTyping = true;
+                    }
+                    break;
                 case 32: // space
                     if (!spacePressed && !isTyping) {
                         sendMouseMove();
@@ -2061,9 +2055,9 @@ if (isMe) {
     wHandle.setChatHide = function (arg) {
         hideChat = arg;
         if (hideChat) {
-            wjQuery('#chatX_input').hide();
+            wjQuery('#chat_textbox').hide();
         } else {
-            wjQuery('#chatX_input').show();
+            wjQuery('#chat_textbox').show();
         }
     }
     wHandle.spectate = function () {
