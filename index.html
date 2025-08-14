@@ -1067,8 +1067,8 @@ paidBtn.addEventListener('click', async ()=> {
 .chatX_nick--accent { color: #ff4e3e; font-weight: 700; }
 .chatX_text { margin-top: 6px; font-size: 14px; color: white; }
 .chatX_time { position: absolute; right: 8px; top: 6px; font-size: 11px; color: #dadada; }
-.chatX_input { margin-top: 8px; background: rgb(133 133 133 / 21%); border: solid 1px #ffffff3d; border-radius: 14px; padding: 10px 12px; color: #e6e9ef; outline: none; width: 100%; box-sizing: border-box; }
-.chatX_input::placeholder { color: #606060; }
+#chat_textbox { margin-top: 8px; background: rgb(133 133 133 / 21%); border: solid 1px #ffffff3d; border-radius: 14px; padding: 10px 12px; color: #e6e9ef; outline: none; width: 100%; box-sizing: border-box; }
+#chat_textbox::placeholder { color: #606060; }
 .chatX_alert { position: absolute; top: 30px; right: 10px; background: #ff4e3e; color: #fff; font-size: 13px; padding: 4px 8px; border-radius: 12px; display: none; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
 </style>
 
@@ -1083,7 +1083,7 @@ paidBtn.addEventListener('click', async ()=> {
 
     <div class="chatX_alert" id="chatX_alert"></div>
 
-    <input class="chatX_input" id="chat_textbox" type="text"  autocomplete="off" placeholder="Напишите сообщение..." />
+    <input class="noPress" id="chat_textbox" type="text"  autocomplete="off" placeholder="Напишите сообщение..." />
   </div>
 
 <script>
@@ -1296,6 +1296,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
