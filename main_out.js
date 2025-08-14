@@ -2434,37 +2434,37 @@ if (isMe) {
                 }
 
 // Отображение имени
-                if (this.id !== 0) {
-                    var x = Math.floor(this.x),
-                        y = Math.floor(this.y),
-                        nameSize = this.getNameSize(),
-                        zoomRatio = Math.ceil(10 * viewZoom) * 0.1,
-                        invZoomRatio = 1 / zoomRatio;
+if (this.id !== 0) {
+    var x = Math.floor(this.x),
+        y = Math.floor(this.y),
+        nameSize = this.getNameSize(),
+        zoomRatio = Math.ceil(10 * viewZoom) * 0.1,
+        invZoomRatio = 1 / zoomRatio;
 
+    // Блок отображения имени
+    if (showName && (this.name && this.nameCache) && this.size > 100) {
+        let name = this.name;
+        this.nameCache.setValue(name);
+        this.nameCache.setSize(nameSize);
+        this.nameCache.setScale(zoomRatio);
+        let nameImage = this.nameCache.render();
+        let nameWidth = Math.floor(nameImage.width * invZoomRatio);
+        let nameHeight = Math.floor(nameImage.height * invZoomRatio);
 
-                    // Скрываем имя, если this.size > 100
-                    if (showName && (this.name && this.nameCache) && this.size > 100) {
-                        this.nameCache.setValue(this.name);
-                        this.nameCache.setSize(nameSize);
-                        this.nameCache.setScale(zoomRatio);
-                        var nameImage = this.nameCache.render(),
-                            nameWidth = Math.floor(nameImage.width * invZoomRatio),
-                            nameHeight = Math.floor(nameImage.height * invZoomRatio);
-                        ctx.drawImage(nameImage, x - Math.floor(nameWidth / 2), y - Math.floor(nameHeight / 2), nameWidth, nameHeight);
-                    }
+        const maxNameWidth = 150; // Ограничение ширины
+        if (nameWidth > maxNameWidth) {
+            let scaleRatio = maxNameWidth / nameWidth;
+            let newWidth = Math.floor(nameWidth * scaleRatio);
+            let newHeight = Math.floor(nameHeight * scaleRatio);
 
-                    // Отображение массы
-                    //скрываем массу если this.size > 100
-                    if (showMass && ((!this.isVirus && !this.isEjected && !this.isAgitated) && this.size > 100)) {
-                        var mass = Math.floor(this.size * this.size * 0.01);
-                        this.sizeCache.setValue(mass);
-                        this.sizeCache.setScale(zoomRatio);
-                        var massImage = this.sizeCache.render(),
-                            massWidth = Math.floor(massImage.width * invZoomRatio),
-                            massHeight = Math.floor(massImage.height * invZoomRatio);
-                        ctx.drawImage(massImage, x - Math.floor(massWidth / 2), y + Math.floor(massHeight * 0.8), massWidth, massHeight);
-                    }
-                }
+            ctx.drawImage(nameImage, 0, 0, nameImage.width, nameImage.height,
+                x - Math.floor(newWidth / 2), y - Math.floor(newHeight / 2),
+                newWidth, newHeight
+            );
+        } else {
+            ctx.drawImage(nameImage, x - Math.floor(nameWidth / 2), y - Math.floor(nameHeight / 2), nameWidth, nameHeight);
+        }
+    }
                 ctx.restore();
             }
         }
