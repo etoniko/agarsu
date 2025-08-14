@@ -1075,7 +1075,7 @@ paidBtn.addEventListener('click', async ()=> {
   <div class="chatX_window" id="chatX_window">
     <div class="chatX_top">
       <div class="chatX_burger" id="chatX_burger"><i class="fa-solid fa-bars"></i></div>
-      <div class="chatX_close" id="chatX_close"><i class="fa-solid fa-xmark"></i></div>
+      <div class="chatX_close" document.getElementById('chatX_window').style.display = 'none'; document.getElementById('onchat').style.display = 'flex'; id="chatX_close"><i class="fa-solid fa-xmark"></i></div>
     </div>
 
     <div class="chatX_feed" id="chatX_feed">
@@ -1156,54 +1156,7 @@ alertBox.addEventListener('click', () => {
 
 scrollToBottom();
 </script>
-
-<div id="onchat" onclick="document.getElementById('chat').style.display = 'block'; document.getElementById('onchat').style.display = 'none';"><i class="fa fa-arrow-up"></i></div>
-    <script>
-        // Получаем элементы
-        const chatContainer = document.getElementById('chat-container');
-        const chatTextBox = document.getElementById('chat_textbox');
-        const chatResize = document.getElementById('chatresize');
-
-        // Начальное состояние чата
-        let isResizing = false;
-        let startY;
-        let initialHeight;
-
-        // Обработчики изменения размера
-        chatResize.addEventListener('mousedown', function (e) {
-            isResizing = true;
-            startY = e.clientY;
-            initialHeight = chatContainer.offsetHeight;
-        });
-
-        document.addEventListener('mousemove', function (e) {
-            if (!isResizing) return;
-
-            // ИЗМЕНЕНО: Вычитаем deltaY из initialHeight
-            const deltaY = e.clientY - startY;
-            let newHeight = initialHeight - deltaY;
-
-            // Ограничиваем минимальную высоту (например, 50px)
-            if (newHeight < 50) {
-                newHeight = 50;
-            }
-
-            chatContainer.style.height = newHeight + 'px';
-        });
-
-        document.addEventListener('mouseup', function () {
-            isResizing = false;
-            document.body.style.cursor = 'default'; // Возвращаем курсор по умолчанию
-        });
-
-        document.addEventListener('mouseleave', function () {
-            if (isResizing) {
-                isResizing = false;
-                document.body.style.cursor = 'default';
-            }
-        });
-    </script>
-
+<div id="onchat" onclick="document.getElementById('chatX_window').style.display = 'flex'; document.getElementById('onchat').style.display = 'none';"><i class="fa fa-arrow-up"></i></div>
 
 
     <div class="homemenu" onclick="$('#overlays').show();"><i class="fas fa-home"></i></div>
@@ -1334,6 +1287,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
