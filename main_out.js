@@ -2064,13 +2064,18 @@ if (isMe) {
     // var wCanvas = document.createElement("canvas");
     // var playerStat = null;
     //wHandle.isSpectating = false;
+    const forbiddenChars = /[\uFDFF\uD800-\uDBFF\uDC00-\uDFFF\u{1F000}-\u{1FFFF}﷽𒐫𒈙⸻꧅ဪ௵௸‱]/gu;
     // Обновленный setNick
     wHandle.setNick = function (arg) {
-        $('#overlays').hide();
-        userNickName = arg;
-        sendNickName();
-        // userScore = 0;
-    };
+    $('#overlays').hide();
+    
+    // Фильтруем запрещённые символы
+    const cleanNick = arg.replace(forbiddenChars, '');
+    
+    userNickName = cleanNick;
+    sendNickName();
+    // userScore = 0;
+};
 
 
     wHandle.setSkins = function (arg) {
@@ -2434,63 +2439,37 @@ if (isMe) {
                 }
 
 // Отображение имени
-if (this.id !== 0) {
-    var x = Math.floor(this.x),
-        y = Math.floor(this.y),
-        nameSize = this.getNameSize(),
-        zoomRatio = Math.ceil(10 * viewZoom) * 0.1,
-        invZoomRatio = 1 / zoomRatio;
+                if (this.id !== 0) {
+                    var x = Math.floor(this.x),
+                        y = Math.floor(this.y),
+                        nameSize = this.getNameSize(),
+                        zoomRatio = Math.ceil(10 * viewZoom) * 0.1,
+                        invZoomRatio = 1 / zoomRatio;
 
-    // Скрываем имя, если this.size > 100
-if (showName && (this.name && this.nameCache) && this.size > 100) {
-    const maxNameWidth = 400; // макс ширина в пикселях
-    let displayName = this.name;
-    
-    this.nameCache.setSize(nameSize);
-    this.nameCache.setScale(zoomRatio);
 
-    // Считаем ширину имени, отрезаем лишнее с троеточием
-    while (true) {
-        this.nameCache.setValue(displayName);
-        let nameImage = this.nameCache.render();
-        let nameWidth = Math.floor(nameImage.width * invZoomRatio);
-        if (nameWidth <= maxNameWidth || displayName.length === 0) break;
-        displayName = displayName.slice(0, -1); // урезаем один символ с конца
-    }
+                    // Скрываем имя, если this.size > 100
+                    if (showName && (this.name && this.nameCache) && this.size > 100) {
+                        this.nameCache.setValue(this.name);
+                        this.nameCache.setSize(nameSize);
+                        this.nameCache.setScale(zoomRatio);
+                        var nameImage = this.nameCache.render(),
+                            nameWidth = Math.floor(nameImage.width * invZoomRatio),
+                            nameHeight = Math.floor(nameImage.height * invZoomRatio);
+                        ctx.drawImage(nameImage, x - Math.floor(nameWidth / 2), y - Math.floor(nameHeight / 2), nameWidth, nameHeight);
+                    }
 
-    // Если имя было обрезано, добавляем троеточие
-    if (displayName !== this.name) displayName = displayName.slice(0, -1) + '…';
-    this.nameCache.setValue(displayName);
-    let finalNameImage = this.nameCache.render();
-    let finalNameWidth = Math.floor(finalNameImage.width * invZoomRatio);
-    let finalNameHeight = Math.floor(finalNameImage.height * invZoomRatio);
-
-    ctx.drawImage(
-        finalNameImage,
-        x - Math.floor(finalNameWidth / 2),
-        y - Math.floor(finalNameHeight / 2),
-        finalNameWidth,
-        finalNameHeight
-    );
-}
-
-    // Отображение массы
-    if (showMass && ((!this.isVirus && !this.isEjected && !this.isAgitated) && this.size > 100)) {
-        var mass = Math.floor(this.size * this.size * 0.01);
-        this.sizeCache.setValue(mass);
-        this.sizeCache.setScale(zoomRatio);
-        var massImage = this.sizeCache.render(),
-            massWidth = Math.floor(massImage.width * invZoomRatio),
-            massHeight = Math.floor(massImage.height * invZoomRatio);
-        ctx.drawImage(
-            massImage,
-            x - Math.floor(massWidth / 2),
-            y + Math.floor(massHeight * 0.8),
-            massWidth,
-            massHeight
-        );
-    }
-}
+                    // Отображение массы
+                    //скрываем массу если this.size > 100
+                    if (showMass && ((!this.isVirus && !this.isEjected && !this.isAgitated) && this.size > 100)) {
+                        var mass = Math.floor(this.size * this.size * 0.01);
+                        this.sizeCache.setValue(mass);
+                        this.sizeCache.setScale(zoomRatio);
+                        var massImage = this.sizeCache.render(),
+                            massWidth = Math.floor(massImage.width * invZoomRatio),
+                            massHeight = Math.floor(massImage.height * invZoomRatio);
+                        ctx.drawImage(massImage, x - Math.floor(massWidth / 2), y + Math.floor(massHeight * 0.8), massWidth, massHeight);
+                    }
+                }
                 ctx.restore();
             }
         }
