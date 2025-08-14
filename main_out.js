@@ -1084,7 +1084,18 @@ function drawChatBoard() {
     if (!lastMessage) return;
 
     const msgDiv = document.createElement('div');
-    msgDiv.className = 'chatX_msg';
+
+    // Определение класса для сообщения на основе роли
+    const lowerName = lastMessage.name.toLowerCase();
+    if (admins.includes(lowerName)) {
+        msgDiv.className = 'chatX_msg admins'; // Класс для администратора
+        msgDiv.title = 'Администратор';
+    } else if (moders.includes(lowerName)) {
+        msgDiv.className = 'chatX_msg moders'; // Класс для модератора
+        msgDiv.title = 'Модератор';
+    } else {
+        msgDiv.className = 'chatX_msg'; // Стандартный класс для остальных
+    }
 
     // Аватар
     const avatar = document.createElement('img');
@@ -1121,16 +1132,9 @@ function drawChatBoard() {
     nameDiv.className = 'chatX_nick';
     nameDiv.textContent = lastMessage.name + ':';
 
-
-    // Стиль для админа/модера
-    const lowerName = lastMessage.name.toLowerCase();
+    // Применение цвета к нику в зависимости от роли
     if (admins.includes(lowerName)) {
-        nameDiv.classList.add('chatX_nick--accent');
-        nameDiv.title = 'Администратор';
         nameDiv.style.color = 'gold';
-    } else if (moders.includes(lowerName)) {
-        nameDiv.title = 'Модератор';
-        nameDiv.style.color = '#ffb84d';
     } else {
         nameDiv.style.color = lastMessage.color || '#b8c0cc';
     }
