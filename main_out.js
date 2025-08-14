@@ -1072,105 +1072,75 @@ function censorMessage(message) {
     return censoredMessage;
 }
 
-const admins = ["нико"]; // 
-const moders = ["banshee"]; 
+const admins = ["нико"];
+const moders = ["banshee"];
 
 function drawChatBoard() {
     if (hideChat) return;
 
-    const chatDiv = document.getElementById('chat-container');
+    const chatDiv = document.getElementById('chatX_feed');
 
     const lastMessage = chatBoard[chatBoard.length - 1];
     if (!lastMessage) return;
 
-    const messageDiv = document.createElement('div');
-    messageDiv.classList.add('scoreshint');
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'chatX_msg';
 
-    // Добавляем класс и title для админа или модера
-    if (admins.includes(lastMessage.name.toLowerCase())) {
-        messageDiv.classList.add('admin');
-        messageDiv.title = 'Администратор';
-    } else if (moders.includes(lastMessage.name.toLowerCase())) {
-        messageDiv.classList.add('moder');
-        messageDiv.title = 'Модератор';
-    }
-
-    // Контейнер для имени и звезды с уровнем
-    const nameContainer = document.createElement('span');
-    nameContainer.style.display = 'inline-flex';
-    nameContainer.style.alignItems = 'center';
-    nameContainer.style.gap = '4px';
-
-    // Показываем звезду и уровень, только если playerLevel — число и больше 0
-    if (typeof lastMessage.playerLevel === 'number' && lastMessage.playerLevel > 0) {
-        const starContainer = document.createElement('span');
-        starContainer.classList.add('star-container');
-
-        const starIcon = document.createElement('i');
-        starIcon.className = 'fas fa-star';
-
-        const levelSpan = document.createElement('span');
-        levelSpan.classList.add('levelme');
-        levelSpan.textContent = lastMessage.playerLevel;
-
-        starContainer.appendChild(starIcon);
-        starContainer.appendChild(levelSpan);
-
-        nameContainer.appendChild(starContainer);
-    }
-
-    // Имя игрока
-    const nameSpan = document.createElement('span');
-    nameSpan.classList.add('chat-name');
-    nameSpan.style.color = admins.includes(lastMessage.name.toLowerCase()) 
-        ? 'gold' 
-        : lastMessage.color;
-    nameSpan.textContent = lastMessage.name + ': ';
-
-    nameContainer.appendChild(nameSpan);
-
-    const messageSpan = document.createElement('span');
-    messageSpan.classList.add('chat-text');
-    messageSpan.textContent = censorMessage(lastMessage.message);
-
-    const timeSpan = document.createElement('span');
-    timeSpan.classList.add('chat-time');
-    timeSpan.textContent = lastMessage.time;
-
-    messageDiv.appendChild(nameContainer);
-    messageDiv.appendChild(messageSpan);
-    messageDiv.appendChild(timeSpan);
-
-    // Скин
-    const skinSpan = document.createElement('span');
-    skinSpan.classList.add('chat-skin');
-
+    // Аватар
+    const avatar = document.createElement('img');
+    avatar.className = 'chatX_avatar';
     const skinId = skinList[lastMessage.name.toLowerCase()];
-    const skinImagePath = skinId ? `skins/${skinId}.png` : 'skins/4.png';
+    avatar.src = skinId ? `skins/${skinId}.png` : 'skins/4.png';
+    avatar.onerror = () => avatar.src = 'https://via.placeholder.com/36';
+    msgDiv.appendChild(avatar);
 
-    const skinImg = new Image();
-    skinImg.src = skinImagePath;
+    // Имя и текст
+    const nameDiv = document.createElement('div');
+    nameDiv.className = 'chatX_nick';
+    nameDiv.textContent = lastMessage.name + ':';
 
-    skinImg.onload = () => {
-        skinSpan.style.backgroundImage = `url(${skinImagePath})`;
-    };
-    skinImg.onerror = () => {
-        skinSpan.style.backgroundImage = 'url(skins/PPFtwqH.png)';
-    };
-
-    chatDiv.appendChild(skinSpan);
-    chatDiv.appendChild(messageDiv);
-
-    // Ограничение количества сообщений (макс. 50)
-    const maxMessages = 50;
-    while (chatDiv.children.length > maxMessages * 2) {
-        // Удаляем по 2 элемента: скин и сообщение
-        chatDiv.removeChild(chatDiv.firstChild);
-        chatDiv.removeChild(chatDiv.firstChild);
+    // Стиль для админа/модера
+    const lowerName = lastMessage.name.toLowerCase();
+    if (admins.includes(lowerName)) {
+        nameDiv.classList.add('chatX_nick--accent');
+        nameDiv.title = 'Администратор';
+        nameDiv.style.color = 'gold';
+    } else if (moders.includes(lowerName)) {
+        nameDiv.title = 'Модератор';
+        nameDiv.style.color = '#ffb84d';
+    } else {
+        nameDiv.style.color = lastMessage.color || '#b8c0cc';
     }
 
-    chatDiv.scrollTop = chatDiv.scrollHeight;
+    // Звезда и уровень
+    if (typeof lastMessage.playerLevel === 'number' && lastMessage.playerLevel > 0) {
+        const levelSpan = document.createElement('span');
+        levelSpan.textContent = `⭐${lastMessage.playerLevel}`;
+        levelSpan.style.marginLeft = '4px';
+        nameDiv.appendChild(levelSpan);
+    }
+
+    const textDiv = document.createElement('div');
+    textDiv.className = 'chatX_text';
+    textDiv.textContent = censorMessage(lastMessage.message);
+
+    const timeDiv = document.createElement('div');
+    timeDiv.className = 'chatX_time';
+    timeDiv.textContent = lastMessage.time;
+
+    msgDiv.appendChild(nameDiv);
+    msgDiv.appendChild(textDiv);
+    msgDiv.appendChild(timeDiv);
+
+    chatDiv.prepend(msgDiv);
+
+    // Ограничение сообщений
+    const maxMessages = 50;
+    while (chatDiv.children.length > maxMessages) {
+        chatDiv.removeChild(chatDiv.lastChild);
+    }
 }
+
 
 
     const normalizeFractlPart = n => (n % (Math.PI * 2)) / (Math.PI * 2);
