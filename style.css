@@ -9,7 +9,8 @@
             user-select: none; /* Non-prefixed version, currently
                                   supported by Chrome, Edge, Opera and Firefox */
 }
-
+.admins{background: #ff00008f;}
+.moders{background: #de4fd66b;}
 
 /* Фон полупрозрачный */
 #captcha-overlay {
