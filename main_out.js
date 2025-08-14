@@ -1091,7 +1091,7 @@ function drawChatBoard() {
     avatar.className = 'chatX_avatar';
     const skinId = skinList[lastMessage.name.toLowerCase()];
     avatar.src = skinId ? `skins/${skinId}.png` : 'skins/4.png';
-    avatar.onerror = () => avatar.src = 'https://via.placeholder.com/36';
+    avatar.onerror = () => avatar.src = 'skins/4.png';
     msgDiv.appendChild(avatar);
 
     // Имя и текст
