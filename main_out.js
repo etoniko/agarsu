@@ -1346,14 +1346,20 @@ function sendMouseMove() {
         }
     };
 
-  function sendNickName() {
-        if (wsIsOpen() && null != userNickName) {
-            var msg = prepareData(1 + 2 * userNickName.length);
-            msg.setUint8(0, 0);
-            for (var i = 0; i < userNickName.length; ++i) msg.setUint16(1 + 2 * i, userNickName.charCodeAt(i), true);
-            wsSend(msg)
+function sendNickName() {
+    if (wsIsOpen() && userNickName != null) {
+        // Убираем пробелы в начале и конце
+        const nick = userNickName.trim();
+
+        var msg = prepareData(1 + 2 * nick.length);
+        msg.setUint8(0, 0);
+        for (var i = 0; i < nick.length; ++i) {
+            msg.setUint16(1 + 2 * i, nick.charCodeAt(i), true);
         }
+        wsSend(msg);
     }
+}
+
 
 
 
