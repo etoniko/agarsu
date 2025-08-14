@@ -1498,7 +1498,7 @@ gap: 5px;cursor: pointer;
   font-size:14px;
   overflow:hidden;
 }
-.reqs{display: flex;justify-content: center;flex-direction: column;align-items: center;padding: 20px;}
+.reqs{display: flex;justify-content: center;flex-direction: column;align-items: center;padding: 20px;color: white;text-decoration: none;}
 .sbp{user-select: text;background: #00000059;padding: 10px;margin-bottom: 10px;border-radius: 10px;font-size: 17px;}
 .mir{user-select: text;background: #00000059;padding: 10px;border-radius: 10px;font-size: 17px;}
 #shop #uploadCircle:hover { background:#1b263b; border-color:#478; }
