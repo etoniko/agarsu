@@ -593,7 +593,7 @@ backdrop-filter: blur(20px);
     grid-template-columns: repeat(4, auto);
 }
 #leaderboard{
-	max-width: 140px !important;
+	max-width: 120px !important;
     right: 5px;
     top: 5px;
     font-size: 11px;
