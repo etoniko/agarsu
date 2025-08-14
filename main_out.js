@@ -1005,7 +1005,7 @@ wsSend(new Uint8Array([2])); // ping
             // MOD Message
         }
 
-        var r = view.getUint8(offset++),
+ var r = view.getUint8(offset++),
             g = view.getUint8(offset++),
             b = view.getUint8(offset++),
             color = (r << 16 | g << 8 | b).toString(16);
@@ -1013,11 +1013,15 @@ wsSend(new Uint8Array([2])); // ping
             color = '0' + color;
         }
 		
+        const pId = view.getUint16(offset, true);  // Считываем pID
+        offset += 2;
+
         const playerXp = view.getUint32(offset, true);
         offset += 4;
 		
         color = '#' + color;
         chatBoard.push({
+            "pId": pId,  // Добавляем playerPId
 			"playerXp": playerXp,
 			"playerLevel": playerXp ? getLevel(playerXp) : -1,
             "name": getString(),
@@ -1088,13 +1092,11 @@ function drawChatBoard() {
     // Определение класса для сообщения на основе роли
     const lowerName = lastMessage.name.toLowerCase();
     if (admins.includes(lowerName)) {
-        msgDiv.className = 'chatX_msg admins'; // Класс для администратора
-        msgDiv.title = 'Администратор';
+        msgDiv.className = 'chatX_msg admins';
     } else if (moders.includes(lowerName)) {
-        msgDiv.className = 'chatX_msg moders'; // Класс для модератора
-        msgDiv.title = 'Модератор';
+        msgDiv.className = 'chatX_msg moders';
     } else {
-        msgDiv.className = 'chatX_msg'; // Стандартный класс для остальных
+        msgDiv.className = 'chatX_msg';
     }
 
     // Аватар
@@ -1105,17 +1107,17 @@ function drawChatBoard() {
     avatar.onerror = () => avatar.src = 'skins/4.png';
     msgDiv.appendChild(avatar);
 
-    // Создаем контейнер для уровня и ника
+    // Контейнер для уровня и ника
     const nameContainer = document.createElement('div');
-    nameContainer.className = 'chatX_name_container'; // Добавляем класс для стилизации, если нужно
+    nameContainer.className = 'chatX_name_container';
 
-    // Звезда и уровень (левее ника)
+    // Звезда и уровень
     if (typeof lastMessage.playerLevel === 'number' && lastMessage.playerLevel > 0) {
         const levelContainer = document.createElement('div');
         levelContainer.className = 'star-container';
 
         const starIcon = document.createElement('i');
-        starIcon.className = 'fas fa-star'; // Используем Font Awesome для звезды
+        starIcon.className = 'fas fa-star';
 
         const levelSpan = document.createElement('span');
         levelSpan.className = 'levelme';
@@ -1123,8 +1125,7 @@ function drawChatBoard() {
 
         levelContainer.appendChild(starIcon);
         levelContainer.appendChild(levelSpan);
-
-        nameContainer.appendChild(levelContainer); // Добавляем контейнер уровня перед ником
+        nameContainer.appendChild(levelContainer);
     }
 
     // Имя
@@ -1132,24 +1133,31 @@ function drawChatBoard() {
     nameDiv.className = 'chatX_nick';
     nameDiv.textContent = lastMessage.name + ':';
 
-    // Применение цвета к нику в зависимости от роли
+    // Цвет ника
     if (admins.includes(lowerName)) {
         nameDiv.style.color = 'gold';
+        nameDiv.title = 'Администратор';
+    } else if (moders.includes(lowerName)) {
+        nameDiv.style.color = 'silver';
+        nameDiv.title = 'Модератор';
     } else {
         nameDiv.style.color = lastMessage.color || '#b8c0cc';
+        nameDiv.title = `PID: ${lastMessage.pId || 0}`; // PID только у обычных игроков
     }
 
-    nameContainer.appendChild(nameDiv); // Добавляем ник
+    nameContainer.appendChild(nameDiv);
 
+    // Сообщение
     const textDiv = document.createElement('div');
     textDiv.className = 'chatX_text';
     textDiv.textContent = censorMessage(lastMessage.message);
 
+    // Время
     const timeDiv = document.createElement('div');
     timeDiv.className = 'chatX_time';
     timeDiv.textContent = lastMessage.time;
 
-    msgDiv.appendChild(nameContainer); // Добавляем контейнер имени и уровня
+    msgDiv.appendChild(nameContainer);
     msgDiv.appendChild(textDiv);
     msgDiv.appendChild(timeDiv);
 
@@ -1161,6 +1169,7 @@ function drawChatBoard() {
         chatDiv.removeChild(chatDiv.lastChild);
     }
 }
+
 
 
 
