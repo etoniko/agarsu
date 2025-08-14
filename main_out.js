@@ -1142,7 +1142,7 @@ function drawChatBoard() {
         nameDiv.title = 'Модератор';
     } else {
         nameDiv.style.color = lastMessage.color || '#b8c0cc';
-        nameDiv.title = `PID: ${lastMessage.pId || 0}`; // PID только у обычных игроков
+        nameDiv.title = `${lastMessage.pId || 0}`; // PID только у обычных игроков
     }
 
     nameContainer.appendChild(nameDiv);
