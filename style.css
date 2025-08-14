@@ -391,17 +391,7 @@ transition: ease filter, transform 0.5s;
     grid-template-columns: repeat(2, 1fr);
     scroll-behavior: smooth;
 }
-	#chat_textbox {
-transition: all .5s ease-in-out;
-    background: rgb(133 133 133 / 20%);
-    border: solid 1px #ffffff3d;
-    outline: none;
-    color: #ffffff;
-    height: 30px;
-    text-indent: 12px;
-    width: 100%;
-    border-radius: 20px;
-}
+
 
 .fa-arrow-up{
 font-size: 17px;
