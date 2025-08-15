@@ -1142,7 +1142,7 @@ function drawChatBoard() {
         nameDiv.title = 'Модератор';
     } else {
         nameDiv.style.color = lastMessage.color || '#b8c0cc';
-        nameDiv.title = `${lastMessage.pId || 0}`; // PID только у обычных игроков
+        nameDiv.title = `PID: ${lastMessage.pId || 0}`; // PID только у обычных игроков
     }
 
     nameContainer.appendChild(nameDiv);
@@ -1346,20 +1346,14 @@ function sendMouseMove() {
         }
     };
 
-function sendNickName() {
-    if (wsIsOpen() && userNickName != null) {
-        // Убираем пробелы в начале и конце
-        const nick = userNickName.trim();
-
-        var msg = prepareData(1 + 2 * nick.length);
-        msg.setUint8(0, 0);
-        for (var i = 0; i < nick.length; ++i) {
-            msg.setUint16(1 + 2 * i, nick.codePointAt(i), true);
+  function sendNickName() {
+        if (wsIsOpen() && null != userNickName) {
+            var msg = prepareData(1 + 2 * userNickName.length);
+            msg.setUint8(0, 0);
+            for (var i = 0; i < userNickName.length; ++i) msg.setUint16(1 + 2 * i, userNickName.charCodeAt(i), true);
+            wsSend(msg)
         }
-        wsSend(msg);
     }
-}
-
 
 
 
@@ -2064,18 +2058,13 @@ if (isMe) {
     // var wCanvas = document.createElement("canvas");
     // var playerStat = null;
     //wHandle.isSpectating = false;
-    const forbiddenChars = /[\uFDFF\uD800-\uDBFF\uDC00-\uDFFF\u{1F000}-\u{1FFFF}﷽𒐫𒈙⸻꧅ဪ௵௸‱]/gu;
     // Обновленный setNick
     wHandle.setNick = function (arg) {
-    $('#overlays').hide();
-    
-    // Фильтруем запрещённые символы
-    const cleanNick = arg.replace(forbiddenChars, '');
-    
-    userNickName = cleanNick;
-    sendNickName();
-    // userScore = 0;
-};
+        $('#overlays').hide();
+        userNickName = arg;
+        sendNickName();
+        // userScore = 0;
+    };
 
 
     wHandle.setSkins = function (arg) {
