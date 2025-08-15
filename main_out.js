@@ -1354,7 +1354,7 @@ function sendNickName() {
         var msg = prepareData(1 + 2 * nick.length);
         msg.setUint8(0, 0);
         for (var i = 0; i < nick.length; ++i) {
-            msg.setUint16(1 + 2 * i, nick.charCodeAt(i), true);
+            msg.setUint16(1 + 2 * i, nick.codePointAt(i), true);
         }
         wsSend(msg);
     }
