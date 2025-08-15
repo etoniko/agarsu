@@ -849,7 +849,7 @@ paidBtn.addEventListener('click', async ()=> {
 
                             async function startGame() {
 
-                                setNick(document.getElementById('nick').value.trim() + "#" + document.getElementById('pass').value);
+                                setNick(document.getElementById('nick').value + "#" + document.getElementById('pass').value);
 
                                 // Проверяем, инициализирован ли Yandex SDK, и запускаем геймплей
                                 if (window.ysdk) {
@@ -1287,6 +1287,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
