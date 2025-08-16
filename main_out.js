@@ -1,9 +1,4 @@
 (function (wHandle, wjQuery) {
-    // Загружаем список скинов из skinList.txt
-    var skinList = {};
-
-
-
  // Функция для проверки, что игра работает на платформе Яндекс Игр
     function isYandexGamesPlatform() {
         try {
@@ -50,74 +45,57 @@
     // Вызываем инициализацию SDK
     initYandexSDK();
 
-    function fetchSkinList() {
-        fetch('/skinlist.txt')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Ошибка сети: ' + response.status);
-                }
-                return response.text();
-            })
-            .then(data => {
-                skinList = {}; // Очищаем предыдущий список скинов
-                data.split('\n').forEach(line => {
-                    let [name, id] = line.split(':');
-                    if (name && id) {
-                        // Заменяем _ на пробелы в имени
-                        name = name.trim().replace(/_/g, ' ').toLowerCase();
-                        skinList[name] = id.trim();
-                    }
-                });
-                console.log('Скин загружен:', skinList);
-            })
-            .catch(error => {
-                console.error('Ошибка загрузки skinList.txt:', error);
-            });
+let skinList = {}; // Глобальный объект для скинов
+
+// Функция нормализации ника (берёт ник внутри скобок или обрезает лишнее)
+function normalizeNick(nick) {
+    if (!nick) return '';
+
+    let n = nick.trim();
+
+    // Проверяем, есть ли ник в скобках любого типа
+    const match = n.match(/^[\(\[\{\|](.*?)[\)\]\}\|]/);
+    if (match && match[1]) {
+        n = match[1];
+    } else {
+        // Если нет скобок, отсекаем всё после закрывающих символов
+        n = n.split(/[\)\]\}\|]/)[0];
     }
 
-    fetchSkinList();
-    // Периодически проверяем изменения в skinList.txt
-    setInterval(fetchSkinList, 300000); // Проверяем каждые 300 секунд
+    return n.trim().toLowerCase();
+}
 
-
-// 1. Загрузка скинов кланов
-function fetchClanSkinList() {
-    fetch('/skinclanlist.txt')
+// Функция загрузки skinList.txt с нормализацией
+function fetchSkinList() {
+    fetch('/skinlist.txt')
         .then(response => {
-            if (!response.ok) throw new Error('Ошибка сети: ' + response.status);
+            if (!response.ok) {
+                throw new Error('Ошибка сети: ' + response.status);
+            }
             return response.text();
         })
         .then(data => {
-            clanSkinList = {};
+            skinList = {}; // Очищаем предыдущий список скинов
             data.split('\n').forEach(line => {
-                let match = line.match(/^\[(.+?)\]:([0-9]+)$/); // строго [clan]:id
-                if (match) {
-                    let clanName = match[1].trim().toLowerCase();
-                    let id = match[2].trim();
-                    clanSkinList[clanName] = id;
+                let [name, id] = line.split(':');
+                if (name && id) {
+                    // Нормализуем ник и заменяем _ на пробелы
+                    name = normalizeNick(name.replace(/_/g, ' '));
+                    skinList[name] = id.trim();
                 }
             });
-            console.log('Скины кланов загружены:', clanSkinList);
+            console.log('Скин загружен:', skinList);
         })
-        .catch(err => console.error('Ошибка загрузки skinclanlist.txt:', err));
+        .catch(error => {
+            console.error('Ошибка загрузки skinList.txt:', error);
+        });
 }
 
-fetchClanSkinList();
-setInterval(fetchClanSkinList, 300000); // обновление каждые 5 минут
+// Первоначальная загрузка
+fetchSkinList();
 
-// 2. Получение ID скина по имени игрока с кланом
-function getClanSkinId(playerName) {
-    // Берём только текст между [ и ]
-    let match = playerName.match(/^\[([^\]]+)\]/); 
-    if (match) {
-        let clanName = match[1].trim().toLowerCase();
-        // Если в списке кланов есть такой скин — возвращаем его
-        if (clanSkinList[clanName]) {
-            return clanSkinList[clanName];
-        }
-    }
-    return null; // Если клана нет или скин не найден
-}
+// Периодическая проверка изменений каждые 5 минут
+setInterval(fetchSkinList, 300000);
 
 
     // Функция для загрузки данных о топ-1 игроке
@@ -2419,8 +2397,8 @@ if (isMe) {
                 ctx.closePath();
 
                 // Определение ID скина через skinList
-               var skinId = getClanSkinId(this.name) || skinList[this.name.toLowerCase()];
-
+                var skinName = this.name.toLowerCase();
+                var skinId = skinList[skinName];
                 var skinImage = null;
 
                 if (skinId) {
