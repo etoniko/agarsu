@@ -80,6 +80,7 @@
     setInterval(fetchSkinList, 300000); // Проверяем каждые 300 секунд
 
 
+// 1. Загрузка скинов кланов
 function fetchClanSkinList() {
     fetch('/skinclanlist.txt')
         .then(response => {
@@ -89,7 +90,7 @@ function fetchClanSkinList() {
         .then(data => {
             clanSkinList = {};
             data.split('\n').forEach(line => {
-                let match = line.match(/^[({\[\|]?(.+?)[)}\]\|]?:([0-9]+)$/);
+                let match = line.match(/^\[(.+?)\]:([0-9]+)$/); // строго [clan]:id
                 if (match) {
                     let clanName = match[1].trim().toLowerCase();
                     let id = match[2].trim();
@@ -104,17 +105,16 @@ function fetchClanSkinList() {
 fetchClanSkinList();
 setInterval(fetchClanSkinList, 300000); // обновление каждые 5 минут
 
-// 2. Функция для получения ID скина по имени клана
+// 2. Получение ID скина по имени игрока с кланом
 function getClanSkinId(playerName) {
-    // Попытка найти клан в начале имени, формате [clan] НикИгрока
-    let match = playerName.match(/^[({\[\|]?(.+?)[)}\]\|]?:?\s*(.+)$/);
+    let match = playerName.match(/^\[(.+?)\]\s*(.+)$/); // строго [clan] НикИгрока
     if (match) {
         let clanName = match[1].trim().toLowerCase();
         if (clanSkinList[clanName]) {
             return clanSkinList[clanName];
         }
     }
-    return null; // Если клана нет или скин не найден
+    return null; // Если нет клана или скина
 }
 
     // Функция для загрузки данных о топ-1 игроке
@@ -2416,7 +2416,8 @@ if (isMe) {
                 ctx.closePath();
 
                 // Определение ID скина через skinList
-                var skinId = getClanSkinId(this.name) || skinList[this.name.toLowerCase()];
+               var skinId = getClanSkinId(this.name) || skinList[this.name.toLowerCase()];
+
                 var skinImage = null;
 
                 if (skinId) {
