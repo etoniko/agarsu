@@ -50,22 +50,6 @@
     // Вызываем инициализацию SDK
     initYandexSDK();
 
-// Универсальная функция нормализации ника
-function normalizeNick(nick) {
-    if (!nick) return '';
-
-    let n = nick.trim();
-
-    // Проверяем, есть ли ник в скобках любого типа
-    const match = n.match(/^[\(\[\{\|](.*?)[\)\]\}\|]/);
-    if (match && match[1]) {
-        n = match[1];
-    } else {
-        n = n.split(/[\)\]\}\|]/)[0];
-    }
-
-    return n.trim().toLowerCase();
-}
 
 function fetchSkinList() {
     fetch('/skinlist.txt')
@@ -78,11 +62,26 @@ function fetchSkinList() {
         .then(data => {
             skinList = {}; // Очищаем предыдущий список скинов
             data.split('\n').forEach(line => {
-                let [name, id] = line.split(':');
-                if (name && id) {
-                    // Заменяем _ на пробелы и нормализуем ник
-                    const normalizedName = normalizeNick(name.replace(/_/g, ' '));
-                    skinList[normalizedName] = id.trim();
+                line = line.trim();
+                if (!line) return;
+
+                let name = null;
+                let id = null;
+
+                // Проверяем формат с разными скобками и разделителем :
+                const match = line.match(/^([\(\[\{\|]?)([^\)\]\}\|:]+)\1?\s*:?/);
+                if (match) {
+                    name = match[2].trim().replace(/_/g, ' ').toLowerCase();
+
+                    // Берём всё после ':' как id, если есть
+                    const idx = line.indexOf(':');
+                    if (idx !== -1) {
+                        id = line.slice(idx + 1).trim();
+                    } else {
+                        id = '';
+                    }
+
+                    skinList[name] = id;
                 }
             });
             console.log('Скин загружен:', skinList);
@@ -93,9 +92,9 @@ function fetchSkinList() {
 }
 
 fetchSkinList();
-
 // Периодически проверяем изменения в skinList.txt
 setInterval(fetchSkinList, 300000); // Проверяем каждые 300 секунд
+
 
 
     // Функция для загрузки данных о топ-1 игроке
