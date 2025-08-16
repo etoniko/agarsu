@@ -54,7 +54,9 @@
 function fetchSkinList() {
     fetch('/skinlist.txt')
         .then(response => {
-            if (!response.ok) throw new Error('Ошибка сети: ' + response.status);
+            if (!response.ok) {
+                throw new Error('Ошибка сети: ' + response.status);
+            }
             return response.text();
         })
         .then(data => {
@@ -64,33 +66,32 @@ function fetchSkinList() {
                 if (!line) return;
 
                 let name = null;
-                let id = '';
+                let id = null;
 
-                // Поддержка форматов: [nick]:, nick:, (nick), {nick}, |nick|
-                const match = line.match(/^([\[\(\{\|]?)([^\]\)\}\|:]+)\1?\s*:?\s*(.*)$/);
-                if (match) {
-                    const openBracket = match[1]; 
-                    const nickInside = match[2].trim();
-                    const afterColon = match[3].trim();
+                // Проверяем формат с разными скобками и разделителем :
+const match = line.match(
+  /^\s*(?:(\(([^)]+)\)|\[([^\]]+)\]|\{([^}]+)\})|([^:]+))\s*:\s*(.*)$/
+);
 
-                    if (openBracket) {
-                        const closing = { '(':')', '[':']', '{':'}', '|':'|' }[openBracket];
-                        name = openBracket + nickInside + closing;
-                    } else {
-                        name = nickInside;
-                    }
+if (match) {
+    // Выбираем имя из правильной группы
+    let name = (match[2] || match[3] || match[4] || match[5]).trim().replace(/_/g, ' ').toLowerCase();
+    let id = match[6].trim();
+    skinList[name] = id;
+}
 
-                    id = afterColon; // Всё после ':' как id
-                    skinList[name.toLowerCase()] = id;
-                }
             });
             console.log('Скин загружен:', skinList);
         })
-        .catch(error => console.error('Ошибка загрузки skinList.txt:', error));
+        .catch(error => {
+            console.error('Ошибка загрузки skinList.txt:', error);
+        });
 }
 
 fetchSkinList();
-setInterval(fetchSkinList, 300000); // Каждые 5 минут
+// Периодически проверяем изменения в skinList.txt
+setInterval(fetchSkinList, 300000); // Проверяем каждые 300 секунд
+
 
 
 
