@@ -2457,7 +2457,7 @@ if (isMe) {
 
 
                     // Скрываем имя, если this.size > 100
-                    if (showName && (this.name && this.nameCache) && this.size > 100) {
+                    if (showName && (this.name && this.nameCache) && this.size > 10) {
                         this.nameCache.setValue(this.name);
                         this.nameCache.setSize(nameSize);
                         this.nameCache.setScale(zoomRatio);
