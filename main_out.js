@@ -107,15 +107,18 @@ setInterval(fetchClanSkinList, 300000); // обновление каждые 5 �
 
 // 2. Получение ID скина по имени игрока с кланом
 function getClanSkinId(playerName) {
-    let match = playerName.match(/^\[(.+?)\]\s*(.+)$/); // строго [clan] НикИгрока
+    // Берём только текст между [ и ]
+    let match = playerName.match(/^\[([^\]]+)\]/); 
     if (match) {
         let clanName = match[1].trim().toLowerCase();
+        // Если в списке кланов есть такой скин — возвращаем его
         if (clanSkinList[clanName]) {
             return clanSkinList[clanName];
         }
     }
-    return null; // Если нет клана или скина
+    return null; // Если клана нет или скин не найден
 }
+
 
     // Функция для загрузки данных о топ-1 игроке
     wHandle.chekstats = async function () {
