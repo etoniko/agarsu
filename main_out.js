@@ -50,34 +50,55 @@
     // Вызываем инициализацию SDK
     initYandexSDK();
 
-    function fetchSkinList() {
-        fetch('/skinlist.txt')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Ошибка сети: ' + response.status);
-                }
-                return response.text();
-            })
-            .then(data => {
-                skinList = {}; // Очищаем предыдущий список скинов
-                data.split('\n').forEach(line => {
-                    let [name, id] = line.split(':');
-                    if (name && id) {
-                        // Заменяем _ на пробелы в имени
-                        name = name.trim().replace(/_/g, ' ').toLowerCase();
-                        skinList[name] = id.trim();
-                    }
-                });
-                console.log('Скин загружен:', skinList);
-            })
-            .catch(error => {
-                console.error('Ошибка загрузки skinList.txt:', error);
-            });
+// Универсальная функция нормализации ника
+function normalizeNick(nick) {
+    if (!nick) return '';
+
+    let n = nick.trim();
+
+    // Проверяем, есть ли ник в скобках любого типа
+    const match = n.match(/^[\(\[\{\|](.*?)[\)\]\}\|]/);
+    if (match && match[1]) {
+        n = match[1];
+    } else {
+        n = n.split(/[\)\]\}\|]/)[0];
     }
 
-    fetchSkinList();
-    // Периодически проверяем изменения в skinList.txt
-    setInterval(fetchSkinList, 300000); // Проверяем каждые 300 секунд
+    return n.trim().toLowerCase();
+}
+
+let skinList = {};
+
+function fetchSkinList() {
+    fetch('/skinlist.txt')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Ошибка сети: ' + response.status);
+            }
+            return response.text();
+        })
+        .then(data => {
+            skinList = {}; // Очищаем предыдущий список скинов
+            data.split('\n').forEach(line => {
+                let [name, id] = line.split(':');
+                if (name && id) {
+                    // Заменяем _ на пробелы и нормализуем ник
+                    const normalizedName = normalizeNick(name.replace(/_/g, ' '));
+                    skinList[normalizedName] = id.trim();
+                }
+            });
+            console.log('Скин загружен:', skinList);
+        })
+        .catch(error => {
+            console.error('Ошибка загрузки skinList.txt:', error);
+        });
+}
+
+fetchSkinList();
+
+// Периодически проверяем изменения в skinList.txt
+setInterval(fetchSkinList, 300000); // Проверяем каждые 300 секунд
+
 
     // Функция для загрузки данных о топ-1 игроке
     wHandle.chekstats = async function () {
