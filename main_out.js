@@ -54,13 +54,12 @@
 function fetchSkinList() {
     fetch('/skinlist.txt')
         .then(response => {
-            if (!response.ok) {
-                throw new Error('Ошибка сети: ' + response.status);
-            }
+            if (!response.ok) throw new Error('Ошибка сети: ' + response.status);
             return response.text();
         })
         .then(data => {
             skinList = {}; // Очищаем предыдущий список скинов
+
             data.split('\n').forEach(line => {
                 line = line.trim();
                 if (!line) return;
@@ -68,19 +67,19 @@ function fetchSkinList() {
                 let name = null;
                 let id = null;
 
-                // Проверяем формат с разными скобками и разделителем :
-const match = line.match(
-  /^\s*(?:(\(([^)]+)\)|\[([^\]]+)\]|\{([^}]+)\})|([^:]+))\s*:\s*(.*)$/
-);
+                // Универсальный паттерн для форматов:
+                // nick:id, (nick):id, [nick]:id, {nick}:id
+                const regex = /^\s*(?:\(([^)]+)\)|\[([^\]]+)\]|\{([^}]+)\}|([^:]+))\s*:\s*(.+)$/;
+                const match = line.match(regex);
 
-if (match) {
-    // Выбираем имя из правильной группы
-    let name = (match[2] || match[3] || match[4] || match[5]).trim().replace(/_/g, ' ').toLowerCase();
-    let id = match[6].trim();
-    skinList[name] = id;
-}
-
+                if (match) {
+                    // Берём имя из первой группы, которая не пустая
+                    name = (match[1] || match[2] || match[3] || match[4]).trim().replace(/_/g, ' ').toLowerCase();
+                    id = match[5].trim();
+                    skinList[name] = id;
+                }
             });
+
             console.log('Скин загружен:', skinList);
         })
         .catch(error => {
@@ -89,8 +88,8 @@ if (match) {
 }
 
 fetchSkinList();
-// Периодически проверяем изменения в skinList.txt
-setInterval(fetchSkinList, 300000); // Проверяем каждые 300 секунд
+setInterval(fetchSkinList, 300000); // Каждые 5 минут
+
 
 
 
