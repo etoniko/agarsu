@@ -1121,7 +1121,8 @@ function drawChatBoard() {
     // Аватар
     const avatar = document.createElement('img');
     avatar.className = 'chatX_avatar';
-    const skinId = skinList[lastMessage.name.toLowerCase()];
+    const skinName = normalizeNick(lastMessage.name);
+    const skinId = skinList[skinName];
     avatar.src = skinId ? `skins/${skinId}.png` : 'skins/4.png';
     avatar.onerror = () => avatar.src = 'skins/4.png';
     msgDiv.appendChild(avatar);
