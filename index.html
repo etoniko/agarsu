@@ -647,7 +647,7 @@ paidBtn.addEventListener('click', async ()=> {
     }
 
     // --- Загрузка списка ников ---
-    fetch('pass.txt')
+    fetch('pass.txt?v=0.0.1')
         .then(response => {
             if (!response.ok) throw new Error('Не удалось загрузить pass.txt');
             return response.text();
@@ -1322,6 +1322,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
