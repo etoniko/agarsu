@@ -67,8 +67,6 @@ function normalizeNick(nick) {
     return n.trim().toLowerCase();
 }
 
-let skinList = {};
-
 function fetchSkinList() {
     fetch('/skinlist.txt')
         .then(response => {
