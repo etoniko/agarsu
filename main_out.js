@@ -2397,7 +2397,7 @@ if (isMe) {
                 ctx.closePath();
 
                 // Определение ID скина через skinList
-                var skinName = this.name.toLowerCase();
+                var skinName = normalizeNick(this.name);
                 var skinId = skinList[skinName];
                 var skinImage = null;
 
