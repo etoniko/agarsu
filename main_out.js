@@ -50,49 +50,72 @@
     // Вызываем инициализацию SDK
     initYandexSDK();
 
+    function fetchSkinList() {
+        fetch('/skinlist.txt')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Ошибка сети: ' + response.status);
+                }
+                return response.text();
+            })
+            .then(data => {
+                skinList = {}; // Очищаем предыдущий список скинов
+                data.split('\n').forEach(line => {
+                    let [name, id] = line.split(':');
+                    if (name && id) {
+                        // Заменяем _ на пробелы в имени
+                        name = name.trim().replace(/_/g, ' ').toLowerCase();
+                        skinList[name] = id.trim();
+                    }
+                });
+                console.log('Скин загружен:', skinList);
+            })
+            .catch(error => {
+                console.error('Ошибка загрузки skinList.txt:', error);
+            });
+    }
 
-function fetchSkinList() {
-    fetch('/skinlist.txt')
+    fetchSkinList();
+    // Периодически проверяем изменения в skinList.txt
+    setInterval(fetchSkinList, 300000); // Проверяем каждые 300 секунд
+
+
+function fetchClanSkinList() {
+    fetch('/skinclanlist.txt')
         .then(response => {
             if (!response.ok) throw new Error('Ошибка сети: ' + response.status);
             return response.text();
         })
         .then(data => {
-            skinList = {}; // Очищаем предыдущий список скинов
-
+            clanSkinList = {};
             data.split('\n').forEach(line => {
-                line = line.trim();
-                if (!line) return;
-
-                let name = null;
-                let id = null;
-
-                // Универсальный паттерн для форматов:
-                // nick:id, (nick):id, [nick]:id, {nick}:id
-                const regex = /^\s*(?:\(([^)]+)\)|\[([^\]]+)\]|\{([^}]+)\}|([^:]+))\s*:\s*(.+)$/;
-                const match = line.match(regex);
-
+                let match = line.match(/^[({\[\|]?(.+?)[)}\]\|]?:([0-9]+)$/);
                 if (match) {
-                    // Берём имя из первой группы, которая не пустая
-                    name = (match[1] || match[2] || match[3] || match[4]).trim().replace(/_/g, ' ').toLowerCase();
-                    id = match[5].trim();
-                    skinList[name] = id;
+                    let clanName = match[1].trim().toLowerCase();
+                    let id = match[2].trim();
+                    clanSkinList[clanName] = id;
                 }
             });
-
-            console.log('Скин загружен:', skinList);
+            console.log('Скины кланов загружены:', clanSkinList);
         })
-        .catch(error => {
-            console.error('Ошибка загрузки skinList.txt:', error);
-        });
+        .catch(err => console.error('Ошибка загрузки skinclanlist.txt:', err));
 }
 
-fetchSkinList();
-setInterval(fetchSkinList, 300000); // Каждые 5 минут
+fetchClanSkinList();
+setInterval(fetchClanSkinList, 300000); // обновление каждые 5 минут
 
-
-
-
+// 2. Функция для получения ID скина по имени клана
+function getClanSkinId(playerName) {
+    // Попытка найти клан в начале имени, формате [clan] НикИгрока
+    let match = playerName.match(/^[({\[\|]?(.+?)[)}\]\|]?:?\s*(.+)$/);
+    if (match) {
+        let clanName = match[1].trim().toLowerCase();
+        if (clanSkinList[clanName]) {
+            return clanSkinList[clanName];
+        }
+    }
+    return null; // Если клана нет или скин не найден
+}
 
     // Функция для загрузки данных о топ-1 игроке
     wHandle.chekstats = async function () {
@@ -2393,8 +2416,7 @@ if (isMe) {
                 ctx.closePath();
 
                 // Определение ID скина через skinList
-                var skinName = this.name.toLowerCase();
-                var skinId = skinList[skinName];
+                var skinId = getClanSkinId(this.name) || skinList[this.name.toLowerCase()];
                 var skinImage = null;
 
                 if (skinId) {
