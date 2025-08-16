@@ -54,9 +54,7 @@
 function fetchSkinList() {
     fetch('/skinlist.txt')
         .then(response => {
-            if (!response.ok) {
-                throw new Error('Ошибка сети: ' + response.status);
-            }
+            if (!response.ok) throw new Error('Ошибка сети: ' + response.status);
             return response.text();
         })
         .then(data => {
@@ -66,34 +64,33 @@ function fetchSkinList() {
                 if (!line) return;
 
                 let name = null;
-                let id = null;
+                let id = '';
 
-                // Проверяем формат с разными скобками и разделителем :
-                const match = line.match(/^([\(\[\{\|]?)([^\)\]\}\|:]+)\1?\s*:?/);
+                // Поддержка форматов: [nick]:, nick:, (nick), {nick}, |nick|
+                const match = line.match(/^([\[\(\{\|]?)([^\]\)\}\|:]+)\1?\s*:?\s*(.*)$/);
                 if (match) {
-                    name = match[2].trim().replace(/_/g, ' ').toLowerCase();
+                    const openBracket = match[1]; 
+                    const nickInside = match[2].trim();
+                    const afterColon = match[3].trim();
 
-                    // Берём всё после ':' как id, если есть
-                    const idx = line.indexOf(':');
-                    if (idx !== -1) {
-                        id = line.slice(idx + 1).trim();
+                    if (openBracket) {
+                        const closing = { '(':')', '[':']', '{':'}', '|':'|' }[openBracket];
+                        name = openBracket + nickInside + closing;
                     } else {
-                        id = '';
+                        name = nickInside;
                     }
 
-                    skinList[name] = id;
+                    id = afterColon; // Всё после ':' как id
+                    skinList[name.toLowerCase()] = id;
                 }
             });
             console.log('Скин загружен:', skinList);
         })
-        .catch(error => {
-            console.error('Ошибка загрузки skinList.txt:', error);
-        });
+        .catch(error => console.error('Ошибка загрузки skinList.txt:', error));
 }
 
 fetchSkinList();
-// Периодически проверяем изменения в skinList.txt
-setInterval(fetchSkinList, 300000); // Проверяем каждые 300 секунд
+setInterval(fetchSkinList, 300000); // Каждые 5 минут
 
 
 
