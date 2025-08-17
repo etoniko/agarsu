@@ -290,7 +290,7 @@ nicknameInput.addEventListener('blur', async ()=>{
   if(serviceType==='clan'){
     const clanPattern = /^(\[.*\]|\|.*\||\{.*\}|\(.*\))$/;
     if(!clanPattern.test(nick)){
-      notify('❌ У клана должны быть скобки [ ] | { } ( )');
+      notify('❌ У клана должны быть скобки [ ] || { } ( )');
       return;
     }
   }
@@ -315,7 +315,7 @@ nicknameInput.addEventListener('blur', async ()=>{
     if(!nick){notify(serviceType==='clan'?'Введите название клана':'Введите ник');return;}
     if(serviceType==='clan'){
       const clanPattern = /^(\[.*\]|\|.*\||\{.*\}|\(.*\))$/;
-      if(!clanPattern.test(nick)){notify('❌ У клана должны быть скобки [ ] | { } ( )');return;}
+      if(!clanPattern.test(nick)){notify('❌ У клана должны быть скобки [ ] || { } ( )');return;}
     }
     if(chosenType==='pass'){
       if(!pass){notify('❌ Введите пароль');return;}
@@ -1286,6 +1286,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
