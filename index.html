@@ -121,7 +121,7 @@
       <h3 id="chosenTitle">Данные для товара</h3>
       <form id="dataForm">
         <label>
-          <input id="nickname" maxlength="16" class="shopnp" type="text" placeholder="ник" title="Введите ник" autocomplete="off" required>
+          <input id="nickname" maxlength="16" class="shopnp" type="text" placeholder="ник" title="Введите ник" autocomplete="off">
         </label>
 
         <label id="passLabel" style="display:none;">
@@ -205,19 +205,25 @@
   }
 
   // --- переключение для себя / клана ---
-  serviceRadios.forEach(r=>{
-    r.addEventListener('change',()=>{
-      serviceType=r.value;
-      nicknameInput.placeholder=serviceType==='clan'?'клан':'ник';
-      nicknameInput.title=serviceType==='clan'?'Введите название клана':'Введите ник';
-      document.querySelectorAll('#skinsGrid .skin-card').forEach(card=>{
-        const base=Number(card.dataset.base);
-        const price=serviceType==='clan'?base*2:base;
-        card.querySelector('.price-label').textContent=`Цена: ${price}`;
-        card.querySelector('img').src=serviceType==='clan'?card.dataset.srcClan:card.dataset.srcSelf;
-      });
+serviceRadios.forEach(r=>{
+  r.addEventListener('change',()=>{
+    serviceType=r.value;
+    nicknameInput.placeholder=serviceType==='clan'?'клан':'ник';
+    nicknameInput.title=serviceType==='clan'?'Введите название клана':'Введите ник';
+
+    document.querySelectorAll('#skinsGrid .skin-card').forEach(card=>{
+      const base=Number(card.dataset.base);
+      const price=serviceType==='clan'?base*2:base;
+      card.querySelector('.price-label').textContent=`Цена: ${price}`;
+      card.querySelector('img').src=serviceType==='clan'?card.dataset.srcClan:card.dataset.srcSelf;
+
+      // --- если это карточка пароля, меняем заголовок ---
+      if(card.dataset.type==='pass'){
+        card.querySelector('h4').textContent = serviceType==='clan' ? 'Пароль на клан' : 'Пароль на ник';
+      }
     });
   });
+});
 
   // --- выбор товара ---
   skinsGrid.addEventListener('click', e => {
@@ -233,7 +239,7 @@
       passLabel.style.display = chosenType==='pass' ? 'block' : 'none';
       uploadCircle.style.display = chosenType==='pass' ? 'none' : 'flex';
 
-      chosenTitleEl.textContent = `Вы выбрали: ${chosenSkin} (${serviceType==='clan'?'Для клана':'Для себя'})`;
+      chosenTitleEl.textContent = `Вы выбрали: ${chosenSkin}`;
       priceEl.textContent = `${chosenPrice}₽`;
       setActiveStep(2);
     }
@@ -277,37 +283,28 @@
   });
 
   // --- проверка nickname по завершении ввода ---
-  nicknameInput.addEventListener('blur', async ()=>{
-    let nick = nicknameInput.value.trim();
-    nicknameInput.value = nick.replace(/['`";:]/g,'').slice(0,20);
-    if(!nick){
-      notify(serviceType==='clan'?'Введите название клана':'Введите ник');
+nicknameInput.addEventListener('blur', async ()=>{
+  let nick = nicknameInput.value.trim();
+  nicknameInput.value = nick.replace(/['`";:]/g,'').slice(0,20);
+
+  if(serviceType==='clan'){
+    const clanPattern = /^(\[.*\]|\|.*\||\{.*\}|\(.*\))$/;
+    if(!clanPattern.test(nick)){
+      notify('❌ У клана должны быть скобки [ ] | { } ( )');
       return;
     }
-    if(serviceType==='clan'){
-      const clanPattern = /^(\[.*\]|\|.*\||\{.*\}|\(.*\))$/;
-      if(!clanPattern.test(nick)){
-        notify('❌ У клана должны быть скобки [ ] | { } ( )');
-        return;
-      }
-    }
-    try{
-      const res = await fetch(`https://itana.pw:6005/check-nick?nickname=${encodeURIComponent(nick.toLowerCase())}`);
-      const data = await res.json();
-      if(data.exists) notify('❌ Этот '+(serviceType==='clan'?'клан':'ник')+' уже занят');
-      else if(!data.success) notify('❌ '+data.error);
-    }catch(err){notify('❌ Ошибка проверки: '+err.message);}
-  });
+  }
 
-  // --- проверка пароля по завершении ввода ---
-  passwordInput.addEventListener('blur', ()=>{
-    let pass = passwordInput.value.trim();
-    passwordInput.value = pass.replace(/['`";:]/g,'').slice(0,5);
-    if(chosenType==='pass'){
-      if(!pass) notify('❌ Введите пароль');
-      else if(pass.length>5) notify('❌ Пароль ≤5 символов');
-    }
-  });
+  if(!nick) return; // пустой просто пропускаем проверку
+
+  try{
+    const res = await fetch(`https://itana.pw:6005/check-nick?nickname=${encodeURIComponent(nick.toLowerCase())}`);
+    const data = await res.json();
+    if(data.exists) notify('❌ Этот '+(serviceType==='clan'?'клан':'ник')+' уже занят');
+    else if(!data.success) notify('❌ '+data.error);
+  }catch(err){notify('❌ Ошибка проверки: '+err.message);}
+});
+
 
   // --- переход к оплате ---
   document.getElementById('dataForm').addEventListener('submit', async e=>{
@@ -326,7 +323,7 @@
     }
     if(chosenType!=='pass'&&!processedImageUrl){notify('❌ Загрузите изображение');return;}
 
-    finalTitleEl.textContent=`Оплата — ${chosenSkin} (${serviceType==='clan'?'Клан':'Ник'})`;
+    finalTitleEl.textContent=`Оплата — ${chosenSkin}`;
     priceEl.textContent=`${chosenPrice}₽`;
     paidBtn.disabled=false;
     expiredBox.classList.add('hiddenn');
@@ -398,7 +395,6 @@
   setActiveStep(1);
 })();
 </script>
-
 
 
 
@@ -1260,6 +1256,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
