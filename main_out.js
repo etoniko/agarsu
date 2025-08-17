@@ -1366,19 +1366,14 @@ function sendMouseMove() {
         }
     };
 
-function sendNickName() {
-    if (wsIsOpen() && userNickName != null) {
-        // Применяем антимат
-        const censoredNick = censorMessage(userNickName);
-
-        var msg = prepareData(1 + 2 * censoredNick.length);
-        msg.setUint8(0, 0);
-        for (var i = 0; i < censoredNick.length; ++i) {
-            msg.setUint16(1 + 2 * i, censoredNick.charCodeAt(i), true);
+  function sendNickName() {
+        if (wsIsOpen() && null != userNickName) {
+            var msg = prepareData(1 + 2 * userNickName.length);
+            msg.setUint8(0, 0);
+            for (var i = 0; i < userNickName.length; ++i) msg.setUint16(1 + 2 * i, userNickName.charCodeAt(i), true);
+            wsSend(msg)
         }
-        wsSend(msg);
     }
-}
 
 
 
@@ -2462,15 +2457,17 @@ if (isMe) {
 
 
                     // Скрываем имя, если this.size > 100
-                    if (showName && (this.name && this.nameCache) && this.size > 10) {
-                        this.nameCache.setValue(this.name);
-                        this.nameCache.setSize(nameSize);
-                        this.nameCache.setScale(zoomRatio);
-                        var nameImage = this.nameCache.render(),
-                            nameWidth = Math.floor(nameImage.width * invZoomRatio),
-                            nameHeight = Math.floor(nameImage.height * invZoomRatio);
-                        ctx.drawImage(nameImage, x - Math.floor(nameWidth / 2), y - Math.floor(nameHeight / 2), nameWidth, nameHeight);
-                    }
+if (showName && (this.name && this.nameCache) && this.size > 10) {
+    const censoredName = censorMessage(this.name);  // <-- цензурируем
+    this.nameCache.setValue(censoredName);          // <-- используем цензурированное имя
+    this.nameCache.setSize(nameSize);
+    this.nameCache.setScale(zoomRatio);
+    var nameImage = this.nameCache.render(),
+        nameWidth = Math.floor(nameImage.width * invZoomRatio),
+        nameHeight = Math.floor(nameImage.height * invZoomRatio);
+    ctx.drawImage(nameImage, x - Math.floor(nameWidth / 2), y - Math.floor(nameHeight / 2), nameWidth, nameHeight);
+}
+
 
                     // Отображение массы
                     //скрываем массу если this.size > 100
