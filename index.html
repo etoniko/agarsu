@@ -87,7 +87,6 @@
     <!-- Шаг 1 -->
     <div class="step active" data-step="1">
       <h3>Выберите услугу</h3>
-      <!-- Переключатель для себя / для клана -->
       <div style="margin-bottom:10px;">
         <label><input type="radio" name="serviceType" value="self" checked> Для себя</label>
         <label><input type="radio" name="serviceType" value="clan"> Для клана</label>
@@ -122,11 +121,11 @@
       <h3 id="chosenTitle">Данные для товара</h3>
       <form id="dataForm">
         <label>
-          <input id="nickname" maxlength="16" class="shopnp" type="text" placeholder="ник" title="Пожалуйста, введите только английские или русские буквы" autocomplete="off" required>
+          <input id="nickname" maxlength="16" class="shopnp" type="text" placeholder="ник" title="Введите ник" autocomplete="off" required>
         </label>
 
         <label id="passLabel" style="display:none;">
-          <input id="password" maxlength="6" class="shopnp" type="text" placeholder="пароль" title="Пожалуйста, введите только английские или русские буквы" autocomplete="off">
+          <input id="password" maxlength="6" class="shopnp" type="text" placeholder="пароль" title="Введите пароль" autocomplete="off">
         </label>
 
         <div id="uploadCircle">
@@ -173,13 +172,9 @@
 <script>
 (function(){
   let currentStep = 1;
-  let chosenSkin = null;
-  let chosenType = null;
-  let chosenPrice = 0;
-  let processedImageUrl = null;
+  let chosenSkin = null, chosenType = null, chosenPrice = 0, processedImageUrl = null;
   let serviceType = 'self';
-  let timer = 10*60;
-  let timerInterval = null;
+  let timer = 10*60, timerInterval = null;
 
   const stages = document.querySelectorAll('#shop .stage');
   const stepContents = document.querySelectorAll('#shop #step-content > div.step');
@@ -197,193 +192,135 @@
   const skinsGrid = document.getElementById('skinsGrid');
   const serviceRadios = document.querySelectorAll('input[name="serviceType"]');
 
-  // ----------------- уведомления -----------------
-  const notificationEl = document.createElement('div');
-  notificationEl.id = 'shopNotification';
-  notificationEl.style.cssText = "position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#1b263b;color:#fff;padding:12px 20px;border-radius:12px;font-weight:700;z-index:9999;opacity:0;transition:opacity 0.3s, transform 0.3s;";
+  // --- уведомления ---
+  const notificationEl=document.createElement('div');
+  notificationEl.id='shopNotification';
+  notificationEl.style.cssText="position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#1b263b;color:#fff;padding:12px 20px;border-radius:12px;font-weight:700;z-index:9999;opacity:0;transition:opacity 0.3s,transform 0.3s;";
   document.body.appendChild(notificationEl);
-
   function notify(msg,duration=3000){
-    notificationEl.textContent = msg;
+    notificationEl.textContent=msg;
     notificationEl.style.opacity='1';
     notificationEl.style.transform='translateX(-50%) translateY(0)';
-    setTimeout(()=>{
-      notificationEl.style.opacity='0';
-      notificationEl.style.transform='translateX(-50%) translateY(-20px)';
-    },duration);
+    setTimeout(()=>{notificationEl.style.opacity='0';notificationEl.style.transform='translateX(-50%) translateY(-20px)';},duration);
   }
 
-  // ----------------- вводы -----------------
-  nicknameInput.addEventListener('input', () => {
-    nicknameInput.value = nicknameInput.value.replace(/['`";:]/g, '').slice(0, 20);
-  });
-  passwordInput.addEventListener('input', () => {
-    passwordInput.value = passwordInput.value.replace(/['`";:]/g, '').slice(0, 5);
-  });
+  // --- вводы ---
+  nicknameInput.addEventListener('input',()=>nicknameInput.value=nicknameInput.value.replace(/['`";:]/g,'').slice(0,20));
+  passwordInput.addEventListener('input',()=>passwordInput.value=passwordInput.value.replace(/['`";:]/g,'').slice(0,5));
 
-  // ----------------- переключение Для себя / Для клана -----------------
-  serviceRadios.forEach(radio=>{
-    radio.addEventListener('change', ()=>{
-      serviceType = radio.value;
+  // --- переключение для себя / клана ---
+  serviceRadios.forEach(r=>{
+    r.addEventListener('change',()=>{
+      serviceType=r.value;
+      nicknameInput.placeholder=serviceType==='clan'?'клан':'ник';
+      nicknameInput.title=serviceType==='clan'?'Введите название клана':'Введите ник';
       document.querySelectorAll('#skinsGrid .skin-card').forEach(card=>{
-        const base = Number(card.dataset.base);
-        const price = serviceType==='clan'? base*2 : base;
-        card.querySelector('.price-label').textContent = `Цена: ${price}`;
-        const img = card.querySelector('img');
-        img.src = serviceType==='clan' ? card.dataset.srcClan : card.dataset.srcSelf;
+        const base=Number(card.dataset.base);
+        const price=serviceType==='clan'?base*2:base;
+        card.querySelector('.price-label').textContent=`Цена: ${price}`;
+        card.querySelector('img').src=serviceType==='clan'?card.dataset.srcClan:card.dataset.srcSelf;
       });
     });
   });
 
-  // ----------------- выбор товара -----------------
-  skinsGrid.addEventListener('click', e=>{
+  // --- выбор товара ---
+  skinsGrid.addEventListener('click',e=>{
     if(e.target.tagName==='BUTTON'){
-      const card = e.target.closest('.skin-card');
-      chosenSkin = card.querySelector('h4').textContent;
-      chosenType = card.dataset.type;
-      const base = Number(card.dataset.base);
-      const rand = Math.floor(Math.random()*10);
-      chosenPrice = (serviceType==='clan'? base*2 : base) + rand;
+      const card=e.target.closest('.skin-card');
+      chosenSkin=card.querySelector('h4').textContent;
+      chosenType=card.dataset.type;
+      const base=Number(card.dataset.base);
+      const rand=Math.floor(Math.random()*10);
+      chosenPrice=(serviceType==='clan'?base*2:base)+rand;
 
-      passLabel.style.display = chosenType==='pass'?'block':'none';
-      uploadCircle.style.display = chosenType==='pass'?'none':'flex';
-      chosenTitleEl.textContent = `Вы выбрали: ${chosenSkin} (${serviceType==='clan'?'Для клана':'Для себя'})`;
-      priceEl.textContent = `${chosenPrice}₽`;
-
+      passLabel.style.display=chosenType==='pass'?'block':'none';
+      uploadCircle.style.display=chosenType==='pass'?'none':'flex';
+      chosenTitleEl.textContent=`Вы выбрали: ${chosenSkin} (${serviceType==='clan'?'Для клана':'Для себя'})`;
+      priceEl.textContent=`${chosenPrice}₽`;
       setActiveStep(2);
     }
   });
 
-  // ----------------- загрузка изображения -----------------
+  // --- загрузка файла ---
   uploadCircle.addEventListener('click',()=>imageInput.click());
   imageInput.addEventListener('change',()=>{
-    const file=imageInput.files[0];
-    if(!file) return;
+    const file=imageInput.files[0]; if(!file) return;
     const name=file.name.toLowerCase();
-    if(chosenType==='gif' && !name.endsWith('.gif')) { notify('Только GIF!'); imageInput.value=''; return; }
-    if(chosenType==='image' && !(/\.(png|jpg|jpeg)$/i.test(name))) { notify('Разрешены PNG/JPG!'); imageInput.value=''; return; }
-
-    const reader = new FileReader();
+    if(chosenType==='gif'&&!name.endsWith('.gif')){notify('Только GIF!');imageInput.value='';return;}
+    if(chosenType==='image'&&!(/\.(png|jpg|jpeg)$/i.test(name))){notify('Разрешены PNG/JPG!');imageInput.value='';return;}
+    const reader=new FileReader();
     reader.onload=e=>{
       const img=new Image();
-      img.onload=()=>{ uploadCircle.innerHTML=''; uploadCircle.appendChild(img); };
+      img.onload=()=>{uploadCircle.innerHTML='';uploadCircle.appendChild(img);};
       img.src=e.target.result;
       processedImageUrl=e.target.result;
     };
     reader.readAsDataURL(file);
   });
 
-  // ----------------- переход к оплате -----------------
-  document.getElementById('dataForm').addEventListener('submit', async e => {
+  // --- переход к оплате ---
+  document.getElementById('dataForm').addEventListener('submit',async e=>{
     e.preventDefault();
-    const nick = nicknameInput.value.trim().toLowerCase();
-    const pass = passwordInput.value.trim().toLowerCase();
-
-    if(!nick){ notify('Введите ник'); return; }
-
-    // Проверка занятости ника
-    try {
-        const res = await fetch(`https://itana.pw:6005/check-nick?nickname=${encodeURIComponent(nick)}`);
-        const data = await res.json();
-        if (data.exists) { notify('Этот ник уже занят'); return; }
-        else if (!data.success) { notify(data.error); return; }
-    } catch(err){ notify('Ошибка проверки ника: ' + err.message); return; }
-
+    const nick=nicknameInput.value.trim().toLowerCase();
+    const pass=passwordInput.value.trim().toLowerCase();
+    if(!nick){notify(serviceType==='clan'?'Введите название клана':'Введите ник');return;}
+    try{
+      const res=await fetch(`https://itana.pw:6005/check-nick?nickname=${encodeURIComponent(nick)}`);
+      const data=await res.json();
+      if(data.exists){notify('Этот '+(serviceType==='clan'?'клан':'ник')+' уже занят');return;}
+      else if(!data.success){notify(data.error);return;}
+    }catch(err){notify('Ошибка проверки: '+err.message);return;}
     if(chosenType==='pass'){
-        if(!pass){ notify('Введите пароль'); return; }
-        if(pass.length>5){ notify('Пароль не должен превышать 5 символов'); return; }
-        if(/[:;'#]/.test(pass)){ notify("Пароль не должен содержать символы : ; ' #"); return; }
+      if(!pass){notify('Введите пароль');return;}
+      if(pass.length>5){notify('Пароль ≤5 символов');return;}
     }
-
-    if(chosenType!=='pass' && !processedImageUrl){ notify('Загрузите изображение'); return; }
-
-    finalTitleEl.textContent = `Оплата — ${chosenSkin}`;
-    priceEl.textContent = `${chosenPrice}₽`;
-    paidBtn.disabled=false;
-    expiredBox.classList.add('hiddenn');
-    startTimer();
-    setActiveStep(3);
+    if(chosenType!=='pass'&&!processedImageUrl){notify('Загрузите изображение');return;}
+    finalTitleEl.textContent=`Оплата — ${chosenSkin} (${serviceType==='clan'?'Клан':'Ник'})`;
+    priceEl.textContent=`${chosenPrice}₽`;
+    paidBtn.disabled=false;expiredBox.classList.add('hiddenn');startTimer();setActiveStep(3);
   });
 
-  // ----------------- таймер -----------------
-  function startTimer(){
-    clearInterval(timerInterval);
-    timer=10*60;
-    updateTimer();
-    timerInterval=setInterval(()=>{
-      if(timer>0){ timer--; updateTimer(); }
-      else{ clearInterval(timerInterval); onExpired(); }
-    },1000);
-  }
-  function updateTimer(){
-    const m=Math.floor(timer/60), s=timer%60;
-    countdownEl.textContent=`${m}:${s.toString().padStart(2,'0')}`;
-  }
-  function onExpired(){
-    countdownEl.textContent='00:00';
-    expiredBox.classList.remove('hiddenn');
-    paidBtn.disabled=true;
-  }
+  // --- таймер ---
+  function startTimer(){clearInterval(timerInterval);timer=10*60;updateTimer();
+    timerInterval=setInterval(()=>{if(timer>0){timer--;updateTimer();}else{clearInterval(timerInterval);onExpired();}},1000);}
+  function updateTimer(){const m=Math.floor(timer/60),s=timer%60;countdownEl.textContent=`${m}:${s.toString().padStart(2,'0')}`;}
+  function onExpired(){countdownEl.textContent='00:00';expiredBox.classList.remove('hiddenn');paidBtn.disabled=true;}
 
-  // ----------------- кнопки назад -----------------
+  // --- кнопки назад ---
   document.getElementById('backToChoose').addEventListener('click',()=>setActiveStep(1));
   document.getElementById('backToData').addEventListener('click',()=>setActiveStep(2));
 
-  // ----------------- оплата / отправка -----------------
-  paidBtn.addEventListener('click', async ()=> {
-    const nick = nicknameInput.value.trim().toLowerCase();
-    const pass = passwordInput.value.trim().toLowerCase();
-
-    const formData = new FormData();
-    formData.append('nickname', nick);
-    formData.append('price', chosenPrice);
-
+  // --- отправка ---
+  paidBtn.addEventListener('click',async()=>{
+    const nick=nicknameInput.value.trim().toLowerCase();
+    const pass=passwordInput.value.trim().toLowerCase();
+    const formData=new FormData();
+    formData.append('nickname',nick);formData.append('price',chosenPrice);formData.append('serviceType',serviceType);
     let endpoint='';
-    if(chosenType==='pass'){ formData.append('password', pass); endpoint='https://itana.pw:6005/submit-pass'; }
-    else{ 
-      if(!imageInput.files[0]) { notify('Файл не выбран'); return; }
-      formData.append('file', imageInput.files[0]); 
-      formData.append('type', chosenType);
-      endpoint='https://itana.pw:6005/submit-skin';
-    }
-
+    if(chosenType==='pass'){formData.append('password',pass);endpoint='https://itana.pw:6005/submit-pass';}
+    else{if(!imageInput.files[0]){notify('Файл не выбран');return;}
+      formData.append('file',imageInput.files[0]);formData.append('type',chosenType);endpoint='https://itana.pw:6005/submit-skin';}
     try{
-      const res = await fetch(endpoint,{method:'POST',body:formData});
-      const data = await res.json();
-      if(data.success){
-        notify('✅ Идет модерация, займет от 10 до 30 минут.');
-        resetShop();
-      }else{ notify('❌ Ошибка: '+data.error); }
-    }catch(err){ notify('⚠ Ошибка сети: '+err.message); }
+      const res=await fetch(endpoint,{method:'POST',body:formData});
+      const data=await res.json();
+      if(data.success){notify('✅ Идет модерация 10-30 минут.');resetShop();}
+      else{notify('❌ Ошибка: '+data.error);}
+    }catch(err){notify('⚠ Ошибка сети: '+err.message);}
   });
 
-  // ----------------- начать заново -----------------
-  document.getElementById('restartBtn').addEventListener('click', resetShop);
-
-  function resetShop(){
-    clearInterval(timerInterval);
-    setActiveStep(1);
-    imageInput.value='';
-    uploadCircle.innerHTML='<span>Загрузите изображение</span>';
-    nicknameInput.value='';
-    passwordInput.value='';
-    processedImageUrl=null;
-    expiredBox.classList.add('hiddenn');
-    paidBtn.disabled=false;
-    finalTitleEl.textContent='Оплата';
-    priceEl.textContent='100.00₽';
-    chosenSkin=null; chosenType=null; chosenPrice=0;
-  }
-
-  function setActiveStep(step){
-    currentStep=step;
+  // --- начать заново ---
+  document.getElementById('restartBtn').addEventListener('click',resetShop);
+  function resetShop(){clearInterval(timerInterval);setActiveStep(1);imageInput.value='';
+    uploadCircle.innerHTML='<span>Загрузите изображение</span>';nicknameInput.value='';passwordInput.value='';
+    processedImageUrl=null;expiredBox.classList.add('hiddenn');paidBtn.disabled=false;
+    finalTitleEl.textContent='Оплата';priceEl.textContent='100.00₽';chosenSkin=null;chosenType=null;chosenPrice=0;}
+  function setActiveStep(step){currentStep=step;
     stages.forEach(s=>s.classList.toggle('active',Number(s.dataset.step)===step));
-    stepContents.forEach(c=>c.classList.toggle('active',Number(c.dataset.step)===step));
-  }
-
+    stepContents.forEach(c=>c.classList.toggle('active',Number(c.dataset.step)===step));}
   setActiveStep(1);
 })();
 </script>
+
 
 
 
@@ -1242,6 +1179,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
