@@ -87,10 +87,12 @@
     <!-- Шаг 1 -->
     <div class="step active" data-step="1">
       <h3>Выберите услугу</h3>
-      <div>
+      <!-- Переключатель для себя / для клана -->
+      <div style="margin-bottom:10px;">
         <label><input type="radio" name="serviceType" value="self" checked> Для себя</label>
         <label><input type="radio" name="serviceType" value="clan"> Для клана</label>
       </div>
+
       <div class="skins-grid" id="skinsGrid">
         <div class="skin-card" data-type="image" data-base="100" data-src-self="https://agar.su/skins/3.png" data-src-clan="https://agar.su/skins/3-clan.png">
           <img style="border: solid;border-radius: 100%;margin-bottom: 10px;" src="https://agar.su/skins/3.png" alt="png">
@@ -225,7 +227,7 @@
       serviceType = radio.value;
       document.querySelectorAll('#skinsGrid .skin-card').forEach(card=>{
         const base = Number(card.dataset.base);
-        const price = serviceType === 'clan' ? base*2 : base;
+        const price = serviceType==='clan'? base*2 : base;
         card.querySelector('.price-label').textContent = `Цена: ${price}`;
         const img = card.querySelector('img');
         img.src = serviceType==='clan' ? card.dataset.srcClan : card.dataset.srcSelf;
@@ -241,12 +243,13 @@
       chosenType = card.dataset.type;
       const base = Number(card.dataset.base);
       const rand = Math.floor(Math.random()*10);
-      chosenPrice = (serviceType==='clan'?base*2:base)+rand;
+      chosenPrice = (serviceType==='clan'? base*2 : base) + rand;
 
       passLabel.style.display = chosenType==='pass'?'block':'none';
       uploadCircle.style.display = chosenType==='pass'?'none':'flex';
       chosenTitleEl.textContent = `Вы выбрали: ${chosenSkin} (${serviceType==='clan'?'Для клана':'Для себя'})`;
       priceEl.textContent = `${chosenPrice}₽`;
+
       setActiveStep(2);
     }
   });
@@ -278,6 +281,7 @@
 
     if(!nick){ notify('Введите ник'); return; }
 
+    // Проверка занятости ника
     try {
         const res = await fetch(`https://itana.pw:6005/check-nick?nickname=${encodeURIComponent(nick)}`);
         const data = await res.json();
@@ -371,7 +375,6 @@
     chosenSkin=null; chosenType=null; chosenPrice=0;
   }
 
-  // ----------------- setActiveStep -----------------
   function setActiveStep(step){
     currentStep=step;
     stages.forEach(s=>s.classList.toggle('active',Number(s.dataset.step)===step));
@@ -381,6 +384,7 @@
   setActiveStep(1);
 })();
 </script>
+
 
 
 
@@ -1238,6 +1242,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
