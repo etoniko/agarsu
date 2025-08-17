@@ -1784,3 +1784,9 @@ zaebat
 ௵
 ௸
 ‱
+чашка
+петри
+petri
+dish
+petridish
+petridish.pw
