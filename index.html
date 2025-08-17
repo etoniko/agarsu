@@ -74,7 +74,6 @@
 
             <!-- Main Content -->
             <div class="main-content">
-<!-- shop.html (вставьте в ваш public или включите на странице) -->
 <div id="shop" class="content">
   <div class="top-info">
     <div class="stages">
@@ -88,24 +87,30 @@
     <!-- Шаг 1 -->
     <div class="step active" data-step="1">
       <h3>Выберите услугу</h3>
+      <div>
+        <label><input type="radio" name="serviceType" value="self" checked> Для себя</label>
+        <label><input type="radio" name="serviceType" value="clan"> Для клана</label>
+      </div>
       <div class="skins-grid" id="skinsGrid">
-        <div class="skin-card">
+        <div class="skin-card" data-type="image" data-base="100" data-src-self="https://agar.su/skins/3.png" data-src-clan="https://agar.su/skins/3-clan.png">
           <img style="border: solid;border-radius: 100%;margin-bottom: 10px;" src="https://agar.su/skins/3.png" alt="png">
           <h4>Скин PNG/JPEG</h4>
           <p class="price-label" data-base="100">Цена: 100</p>
-          <button class="btnn" data-name="Скин png" data-type="image" data-base="100">Выбрать</button>
+          <button class="btnn">Выбрать</button>
         </div>
-        <div class="skin-card">
+
+        <div class="skin-card" data-type="pass" data-base="200" data-src-self="https://agar.su/assets/photo/pasing.png" data-src-clan="https://agar.su/assets/photo/pasing-clan.png">
           <img style="margin-bottom: 10px;" src="https://agar.su/assets/photo/pasing.png" alt="pass">
           <h4>Пароль на ник</h4>
           <p class="price-label" data-base="200">Цена: 200</p>
-          <button class="btnn" data-name="Пароль на ник" data-type="pass" data-base="200">Выбрать</button>
+          <button class="btnn">Выбрать</button>
         </div>
-        <div class="skin-card">
+
+        <div class="skin-card" data-type="gif" data-base="3000" data-src-self="https://agar.su/assets/photo/console.gif" data-src-clan="https://agar.su/assets/photo/console-clan.gif">
           <img style="border: solid;border-radius: 100%;margin-bottom: 10px;" src="https://agar.su/assets/photo/console.gif" alt="gif">
           <h4>Мульти Скин Gif</h4>
           <p class="price-label" data-base="3000">Цена: 3000</p>
-          <button class="btnn" data-name="Мульти Скин Gif" data-type="gif" data-base="3000">Выбрать</button>
+          <button class="btnn">Выбрать</button>
         </div>
       </div>
     </div>
@@ -118,11 +123,11 @@
           <input id="nickname" maxlength="16" class="shopnp" type="text" placeholder="ник" title="Пожалуйста, введите только английские или русские буквы" autocomplete="off" required>
         </label>
 
-        <label id="passLabel" style="display:none;" >
+        <label id="passLabel" style="display:none;">
           <input id="password" maxlength="6" class="shopnp" type="text" placeholder="пароль" title="Пожалуйста, введите только английские или русские буквы" autocomplete="off">
         </label>
 
-        <div id="uploadCircle">
+        <div id="uploadCircle" style="cursor:pointer;display:flex;align-items:center;justify-content:center;border:1px dashed #999;border-radius:50%;width:100px;height:100px;margin:10px 0;">
           <input id="imageFile" type="file" accept="image/*" style="display:none;">
           <span>Загрузите изображение</span>
         </div>
@@ -140,78 +145,17 @@
       <p>Переведите точную сумму в течение 10 минут</p>
       <div class="price" id="price">100.00₽</div>
       <div class="timer">Осталось: <span id="countdown">10:00</span></div>
-<div class="reqs">
-  <div class="sbp">СБП: +79969712765 (Сбербанк)</div>
-  <div class="mir">Карта МИР: 2202 2081 8483 3425</div>
-</div>
+      <div class="reqs">
+        <div class="sbp">СБП: +79969712765 (Сбербанк)</div>
+        <div class="mir">Карта МИР: 2202 2081 8483 3425</div>
+      </div>
       <div>
         <button class="btnn ghost" id="backToData">Назад</button>
         <button class="btnn" id="paidBtn">Я оплатил</button>
-		<script>
-// Получаем элементы СБП и карты МИР
-const sbpElement = document.querySelector('.sbp');
-const mirElement = document.querySelector('.mir');
-
-// Функция для копирования текста в буфер обмена и отображения уведомления
-function copyToClipboardAndNotify(text, element) {
-  navigator.clipboard.writeText(text)
-    .then(() => {
-      // Создаем элемент уведомления внутри элемента
-      const notification = document.createElement('div');
-      notification.classList.add('copy-notification'); // Добавляем класс для стилей (см. CSS ниже)
-      notification.textContent = 'Скопировано!';
-
-      // Стили, чтобы уведомление вылезало из элемента
-      notification.style.position = 'absolute';
-      notification.style.top = '50%';
-      notification.style.left = '50%';
-      notification.style.transform = 'translate(-50%, -50%)';
-      notification.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-      notification.style.color = 'white';
-      notification.style.padding = '5px 10px';
-      notification.style.borderRadius = '5px';
-      notification.style.zIndex = '1000'; // Убеждаемся, что уведомление поверх всего
-      notification.style.opacity = '0'; // Сначала невидимое
-      notification.style.transition = 'opacity 0.3s ease-out, transform 0.3s ease-out'; // Анимация
-
-      // Добавляем уведомление в элемент
-      element.appendChild(notification);
-
-      // Запускаем анимацию появления
-      requestAnimationFrame(() => {
-        notification.style.opacity = '1';
-        notification.style.transform = 'translate(-50%, -80%)'; // Вылетает вверх
-      });
-
-      // Анимация исчезновения и удаление
-      setTimeout(() => {
-        notification.style.opacity = '0';
-        notification.style.transform = 'translate(-50%, -50%)'; // Возвращается на место
-
-        setTimeout(() => {
-          notification.remove(); // Удаляем элемент после завершения анимации
-        }, 300); // Ждем окончания transition
-      }, 500); // Отображаем в течение 1.5 секунд
-    })
-    .catch(err => {
-      console.error('Не удалось скопировать текст: ', err);
-      alert('Не удалось скопировать текст. Попробуйте снова.');
-    });
-}
-
-// Добавляем обработчики событий для элементов
-sbpElement.addEventListener('click', () => {
-  const phoneNumber = sbpElement.textContent.split(':')[1].trim().split(' ')[0]; // Извлекаем номер телефона
-  copyToClipboardAndNotify(phoneNumber, sbpElement);
-});
-
-mirElement.addEventListener('click', () => {
-  const cardNumber = mirElement.textContent.split(':')[1].trim(); // Извлекаем номер карты
-  copyToClipboardAndNotify(cardNumber, mirElement);
-});
-		</script>
       </div>
-	  <div style="font-size: 11px;color: #7e7e7e;margin-top: 10px;display: flex;flex-direction: column;">ИП: Дараселиа Николоз Ираклиевич ИНН: 503830093674 ООО «АгарСу»</div>
+      <div style="font-size: 11px;color: #7e7e7e;margin-top: 10px;display: flex;flex-direction: column;">
+        ИП: Дараселиа Николоз Ираклиевич ИНН: 503830093674 ООО «АгарСу»
+      </div>
       <div id="expiredBox" class="hiddenn" style="margin-top:12px; color:#f55; font-weight:700;">
         ⛔ Время истекло — начните заново
         <div style="margin-top:8px;">
@@ -221,9 +165,9 @@ mirElement.addEventListener('click', () => {
     </div>
   </div>
 
-  <!-- Toast контейнер (всё под #shop) -->
   <div id="shopToastContainer" aria-live="polite" aria-atomic="true"></div>
 </div>
+
 <script>
 (function(){
   let currentStep = 1;
@@ -231,6 +175,7 @@ mirElement.addEventListener('click', () => {
   let chosenType = null;
   let chosenPrice = 0;
   let processedImageUrl = null;
+  let serviceType = 'self';
   let timer = 10*60;
   let timerInterval = null;
 
@@ -247,6 +192,8 @@ mirElement.addEventListener('click', () => {
   const imageInput = document.getElementById('imageFile');
   const expiredBox = document.getElementById('expiredBox');
   const paidBtn = document.getElementById('paidBtn');
+  const skinsGrid = document.getElementById('skinsGrid');
+  const serviceRadios = document.querySelectorAll('input[name="serviceType"]');
 
   // ----------------- уведомления -----------------
   const notificationEl = document.createElement('div');
@@ -264,40 +211,45 @@ mirElement.addEventListener('click', () => {
     },duration);
   }
 
-nicknameInput.addEventListener('input', () => {
-  nicknameInput.value = nicknameInput.value
-    .replace(/['`";:]/g, '') // удаляем ' ` " ; :
-    .slice(0, 20);
-});
+  // ----------------- вводы -----------------
+  nicknameInput.addEventListener('input', () => {
+    nicknameInput.value = nicknameInput.value.replace(/['`";:]/g, '').slice(0, 20);
+  });
+  passwordInput.addEventListener('input', () => {
+    passwordInput.value = passwordInput.value.replace(/['`";:]/g, '').slice(0, 5);
+  });
 
-passwordInput.addEventListener('input', () => {
-  passwordInput.value = passwordInput.value
-    .replace(/['`";:]/g, '') // удаляем ' ` " ; :
-    .slice(0, 5)
-});
-
-  // ----------------- навигация между шагами -----------------
-  function setActiveStep(step){
-    currentStep = step;
-    stages.forEach(s=>s.classList.toggle('active',Number(s.dataset.step)===step));
-    stepContents.forEach(c=>c.classList.toggle('active',Number(c.dataset.step)===step));
-  }
+  // ----------------- переключение Для себя / Для клана -----------------
+  serviceRadios.forEach(radio=>{
+    radio.addEventListener('change', ()=>{
+      serviceType = radio.value;
+      document.querySelectorAll('#skinsGrid .skin-card').forEach(card=>{
+        const base = Number(card.dataset.base);
+        const price = serviceType === 'clan' ? base*2 : base;
+        card.querySelector('.price-label').textContent = `Цена: ${price}`;
+        const img = card.querySelector('img');
+        img.src = serviceType==='clan' ? card.dataset.srcClan : card.dataset.srcSelf;
+      });
+    });
+  });
 
   // ----------------- выбор товара -----------------
-document.getElementById('skinsGrid').addEventListener('click', e=>{
-  if(e.target.tagName==='BUTTON'){
-    chosenSkin = e.target.dataset.name;
-    chosenType = e.target.dataset.type;
-    const base = Number(e.target.dataset.base);
-    const rand = Math.floor(Math.random() * 10); // случайное число 0-9
-    chosenPrice = base + rand; // 100 → 100-109, 200 → 200-209, 3000 → 3000-3009
+  skinsGrid.addEventListener('click', e=>{
+    if(e.target.tagName==='BUTTON'){
+      const card = e.target.closest('.skin-card');
+      chosenSkin = card.querySelector('h4').textContent;
+      chosenType = card.dataset.type;
+      const base = Number(card.dataset.base);
+      const rand = Math.floor(Math.random()*10);
+      chosenPrice = (serviceType==='clan'?base*2:base)+rand;
 
-    passLabel.style.display = chosenType==='pass'?'block':'none';
-    uploadCircle.style.display = chosenType==='pass'?'none':'flex';
-    chosenTitleEl.textContent = `Вы выбрали: ${chosenSkin}`;
-    setActiveStep(2);
-  }
-});
+      passLabel.style.display = chosenType==='pass'?'block':'none';
+      uploadCircle.style.display = chosenType==='pass'?'none':'flex';
+      chosenTitleEl.textContent = `Вы выбрали: ${chosenSkin} (${serviceType==='clan'?'Для клана':'Для себя'})`;
+      priceEl.textContent = `${chosenPrice}₽`;
+      setActiveStep(2);
+    }
+  });
 
   // ----------------- загрузка изображения -----------------
   uploadCircle.addEventListener('click',()=>imageInput.click());
@@ -319,30 +271,20 @@ document.getElementById('skinsGrid').addEventListener('click', e=>{
   });
 
   // ----------------- переход к оплате -----------------
-document.getElementById('dataForm').addEventListener('submit', async e => {
+  document.getElementById('dataForm').addEventListener('submit', async e => {
     e.preventDefault();
     const nick = nicknameInput.value.trim().toLowerCase();
     const pass = passwordInput.value.trim().toLowerCase();
 
     if(!nick){ notify('Введите ник'); return; }
 
-    // --- Проверка занятости ника ---
     try {
         const res = await fetch(`https://itana.pw:6005/check-nick?nickname=${encodeURIComponent(nick)}`);
         const data = await res.json();
-        if (data.exists) {
-            notify('Этот ник уже занят');
-            return; // блокируем переход к оплате
-        } else if (!data.success) {
-            notify(data.error);
-            return;
-        }
-    } catch(err){
-        notify('Ошибка проверки ника: ' + err.message);
-        return;
-    }
+        if (data.exists) { notify('Этот ник уже занят'); return; }
+        else if (!data.success) { notify(data.error); return; }
+    } catch(err){ notify('Ошибка проверки ника: ' + err.message); return; }
 
-    // Далее обычная логика проверки пароля / изображения
     if(chosenType==='pass'){
         if(!pass){ notify('Введите пароль'); return; }
         if(pass.length>5){ notify('Пароль не должен превышать 5 символов'); return; }
@@ -351,14 +293,13 @@ document.getElementById('dataForm').addEventListener('submit', async e => {
 
     if(chosenType!=='pass' && !processedImageUrl){ notify('Загрузите изображение'); return; }
 
-    priceEl.textContent = `${chosenPrice}₽`;
     finalTitleEl.textContent = `Оплата — ${chosenSkin}`;
+    priceEl.textContent = `${chosenPrice}₽`;
     paidBtn.disabled=false;
     expiredBox.classList.add('hiddenn');
     startTimer();
     setActiveStep(3);
-});
-
+  });
 
   // ----------------- таймер -----------------
   function startTimer(){
@@ -370,12 +311,10 @@ document.getElementById('dataForm').addEventListener('submit', async e => {
       else{ clearInterval(timerInterval); onExpired(); }
     },1000);
   }
-
   function updateTimer(){
     const m=Math.floor(timer/60), s=timer%60;
     countdownEl.textContent=`${m}:${s.toString().padStart(2,'0')}`;
   }
-
   function onExpired(){
     countdownEl.textContent='00:00';
     expiredBox.classList.remove('hiddenn');
@@ -386,70 +325,38 @@ document.getElementById('dataForm').addEventListener('submit', async e => {
   document.getElementById('backToChoose').addEventListener('click',()=>setActiveStep(1));
   document.getElementById('backToData').addEventListener('click',()=>setActiveStep(2));
 
-  // ----------------- оплата / отправка данных -----------------
-paidBtn.addEventListener('click', async ()=> {
+  // ----------------- оплата / отправка -----------------
+  paidBtn.addEventListener('click', async ()=> {
     const nick = nicknameInput.value.trim().toLowerCase();
     const pass = passwordInput.value.trim().toLowerCase();
 
-    let endpoint = '';
     const formData = new FormData();
     formData.append('nickname', nick);
     formData.append('price', chosenPrice);
 
-    if (chosenType === 'pass') {
-        formData.append('password', pass);
-        endpoint = 'https://itana.pw:6005/submit-pass';
-    } else {
-        if (!imageInput.files[0]) { notify('Файл не выбран'); return; }
-        formData.append('file', imageInput.files[0]);
-        formData.append('type', chosenType);
-        endpoint = 'https://itana.pw:6005/submit-skin';
+    let endpoint='';
+    if(chosenType==='pass'){ formData.append('password', pass); endpoint='https://itana.pw:6005/submit-pass'; }
+    else{ 
+      if(!imageInput.files[0]) { notify('Файл не выбран'); return; }
+      formData.append('file', imageInput.files[0]); 
+      formData.append('type', chosenType);
+      endpoint='https://itana.pw:6005/submit-skin';
     }
-
-    try {
-        const res = await fetch(endpoint, { method: 'POST', body: formData });
-        const data = await res.json();
-        if (data.success) {
-            notify('✅ Идет модерация, займет от 10 до 30 минут.');
-            // Сброс состояния, как при restartBtn
-            clearInterval(timerInterval);
-            setActiveStep(1);
-            imageInput.value = '';
-            uploadCircle.innerHTML = '<span>Загрузите изображение</span>';
-            nicknameInput.value = '';
-            passwordInput.value = '';
-            processedImageUrl = null;
-            expiredBox.classList.add('hiddenn');
-            paidBtn.disabled = false;
-            finalTitleEl.textContent = 'Оплата';
-            priceEl.textContent = '100.00₽';
-            chosenSkin = null;
-            chosenType = null;
-            chosenPrice = 0;
-        } else {
-            notify('❌ Ошибка: ' + data.error);
-        }
-    } catch (err) {
-        notify('⚠ Ошибка сети: ' + err.message);
-    }
-});
-
-  // ----------------- проверка ника -----------------
-  nicknameInput.addEventListener('blur', async ()=>{
-    const nick = nicknameInput.value.trim().toLowerCase();
-    if(!nick) return;
 
     try{
-      const res = await fetch(`https://itana.pw:6005/check-nick?nickname=${encodeURIComponent(nick)}`);
+      const res = await fetch(endpoint,{method:'POST',body:formData});
       const data = await res.json();
-      if(data.exists){ notify('❌ Этот ник уже занят'); }
-      else if(!data.success){ notify(data.error); }
-      else { notify('✅ Ник доступен', 1500); }
-    }catch(err){ notify('Ошибка проверки ника: ' + err.message); }
+      if(data.success){
+        notify('✅ Идет модерация, займет от 10 до 30 минут.');
+        resetShop();
+      }else{ notify('❌ Ошибка: '+data.error); }
+    }catch(err){ notify('⚠ Ошибка сети: '+err.message); }
   });
 
   // ----------------- начать заново -----------------
-  document.getElementById('restartBtn').addEventListener('click', ()=>{
+  document.getElementById('restartBtn').addEventListener('click', resetShop);
+
+  function resetShop(){
     clearInterval(timerInterval);
     setActiveStep(1);
     imageInput.value='';
@@ -461,11 +368,20 @@ paidBtn.addEventListener('click', async ()=> {
     paidBtn.disabled=false;
     finalTitleEl.textContent='Оплата';
     priceEl.textContent='100.00₽';
-  });
+    chosenSkin=null; chosenType=null; chosenPrice=0;
+  }
+
+  // ----------------- setActiveStep -----------------
+  function setActiveStep(step){
+    currentStep=step;
+    stages.forEach(s=>s.classList.toggle('active',Number(s.dataset.step)===step));
+    stepContents.forEach(c=>c.classList.toggle('active',Number(c.dataset.step)===step));
+  }
 
   setActiveStep(1);
 })();
 </script>
+
 
 
 
@@ -1322,6 +1238,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
