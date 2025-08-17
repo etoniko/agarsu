@@ -284,20 +284,20 @@ passwordInput.addEventListener('input', () => {
   }
 
   // ----------------- выбор товара -----------------
-  document.getElementById('skinsGrid').addEventListener('click', e=>{
-    if(e.target.tagName==='BUTTON'){
-      chosenSkin = e.target.dataset.name;
-      chosenType = e.target.dataset.type;
-      const base = Number(e.target.dataset.base);
-      const rand = (Math.random()).toFixed(2).slice(1);
-      chosenPrice = `${base}${rand}`;
+document.getElementById('skinsGrid').addEventListener('click', e=>{
+  if(e.target.tagName==='BUTTON'){
+    chosenSkin = e.target.dataset.name;
+    chosenType = e.target.dataset.type;
+    const base = Number(e.target.dataset.base);
+    const rand = Math.floor(Math.random() * 10); // случайное число 0-9
+    chosenPrice = base + rand; // 100 → 100-109, 200 → 200-209, 3000 → 3000-3009
 
-      passLabel.style.display = chosenType==='pass'?'block':'none';
-      uploadCircle.style.display = chosenType==='pass'?'none':'flex';
-      chosenTitleEl.textContent = `Вы выбрали: ${chosenSkin}`;
-      setActiveStep(2);
-    }
-  });
+    passLabel.style.display = chosenType==='pass'?'block':'none';
+    uploadCircle.style.display = chosenType==='pass'?'none':'flex';
+    chosenTitleEl.textContent = `Вы выбрали: ${chosenSkin}`;
+    setActiveStep(2);
+  }
+});
 
   // ----------------- загрузка изображения -----------------
   uploadCircle.addEventListener('click',()=>imageInput.click());
@@ -1322,6 +1322,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
