@@ -27,23 +27,28 @@ function censorMessage(message) {
     }
 
     const words = message.split(' ').filter(word => word !== "");
-    let censoredMessage = "";  // Собираем результат в строку
-    for (let i = 0; i < words.length; i++) {
-        const word = words[i];
-        const lowerCaseWord = word.toLowerCase();
+    let censoredMessage = "";
 
-        if (badWordsSet.has(lowerCaseWord)) {
+    for (let i = 0; i < words.length; i++) {
+        let word = words[i];
+        // Убираем знаки препинания и цифры для проверки
+        const cleanedWord = word.toLowerCase().replace(/[^a-zа-яё]/gi, '');
+
+        if (badWordsSet.has(cleanedWord)) {
+            // Сохраняем первый символ, остальное заменяем на ***
             censoredMessage += word[0] + "***";
         } else {
             censoredMessage += word;
         }
 
         if (i < words.length - 1) {
-            censoredMessage += " "; // Добавляем пробел, если это не последнее слово
+            censoredMessage += " ";
         }
     }
+
     return censoredMessage;
 }
+
 
     // Асинхронная функция для инициализации SDK Яндекс Игр
     async function initYandexSDK() {
