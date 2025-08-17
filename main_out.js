@@ -1113,6 +1113,27 @@ function censorMessage(message) {
 const admins = ["нико"];
 const moders = ["banshee"];
 
+let passUsers = [];
+
+// Загружаем pass.txt и парсим ники
+fetch('/pass.txt')
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Ошибка сети: ' + response.status);
+        }
+        return response.text();
+    })
+    .then(text => {
+        passUsers = text
+            .split('\n')
+            .map(n => normalizeNick(n).toLowerCase()) // нормализуем ник и приводим к нижнему регистру
+            .filter(n => n.length > 0);
+
+        console.log('passUsers загружены:', passUsers);
+    })
+    .catch(err => console.error('Ошибка загрузки pass.txt:', err))
+
+
 function drawChatBoard() {
     if (hideChat) return;
 
@@ -1133,14 +1154,26 @@ function drawChatBoard() {
         msgDiv.className = 'chatX_msg';
     }
 
+    // Контейнер для аватара
+    const avatarXContainer = document.createElement('div');
+    avatarXContainer.className = 'avatarXcontainer';
+	const normalizedName = normalizeNick(lastMessage.name); // нормализуем точно так же, как при загрузке passUsers
+if (passUsers.includes(normalizedName)) {
+    avatarXContainer.style.setProperty('--after-display', 'block');
+}
     // Аватар
     const avatar = document.createElement('img');
     avatar.className = 'chatX_avatar';
     const skinName = normalizeNick(lastMessage.name);
     const skinId = skinList[skinName];
-    avatar.src = skinId ? `skins/${skinId}.png` : 'skins/4.png';
-    avatar.onerror = () => avatar.src = 'skins/4.png';
-    msgDiv.appendChild(avatar);
+    avatar.src = skinId ? `https://agar.su/skins/${skinId}.png` : 'https://agar.su/skins/4.png';
+    avatar.onerror = () => avatar.src = 'https://agar.su/skins/4.png';
+
+    // Добавляем аватар в контейнер
+    avatarXContainer.appendChild(avatar);
+
+    // Добавляем контейнер аватара в сообщение
+    msgDiv.appendChild(avatarXContainer);
 
     // Контейнер для уровня и ника
     const nameContainer = document.createElement('div');
