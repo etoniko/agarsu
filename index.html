@@ -228,22 +228,29 @@
   });
 
   // --- выбор товара ---
-  skinsGrid.addEventListener('click',e=>{
-    if(e.target.tagName==='BUTTON'){
-      const card=e.target.closest('.skin-card');
-      chosenSkin=card.querySelector('h4').textContent;
-      chosenType=card.dataset.type;
-      const base=Number(card.dataset.base);
-      const rand=Math.floor(Math.random()*10);
-      chosenPrice=(serviceType==='clan'?base*2:base)+rand;
+  skinsGrid.addEventListener('click', e => {
+  if(e.target.tagName==='BUTTON'){
+    const card = e.target.closest('.skin-card');
+    chosenSkin = card.querySelector('h4').textContent;
+    chosenType = card.dataset.type;
 
-      passLabel.style.display=chosenType==='pass'?'block':'none';
-      uploadCircle.style.display=chosenType==='pass'?'none':'flex';
-      chosenTitleEl.textContent=`Вы выбрали: ${chosenSkin} (${serviceType==='clan'?'Для клана':'Для себя'})`;
-      priceEl.textContent=`${chosenPrice}₽`;
-      setActiveStep(2);
+    const base = Number(card.dataset.base);
+    const rand = Math.floor(Math.random()*10);
+    chosenPrice = (serviceType==='clan'?base*2:base)+rand;
+
+    // --- обновление видимости и текста ---
+    passLabel.style.display = chosenType==='pass' ? 'block' : 'none';
+    uploadCircle.style.display = chosenType==='pass' ? 'none' : 'flex';
+
+    if(chosenType==='pass'){
+      card.querySelector('h4').textContent = serviceType==='clan' ? 'Пароль на клан' : 'Пароль на ник';
     }
-  });
+
+    chosenTitleEl.textContent = `Вы выбрали: ${chosenSkin} (${serviceType==='clan'?'Для клана':'Для себя'})`;
+    priceEl.textContent = `${chosenPrice}₽`;
+    setActiveStep(2);
+  }
+});
 
   // --- загрузка файла с проверкой размера ---
   uploadCircle.addEventListener('click',()=>imageInput.click());
@@ -294,7 +301,7 @@
     if(serviceType==='clan'){
       const clanPattern=/^(\[.*\]|\|.*\||\{.*\}|\(.*\))$/;
       if(!clanPattern.test(nick)){
-        notify('❌ Название клана должно быть в [] | {} ()');
+        notify('❌ у клана должны быть скобки [ ] || { } ( )');
         return;
       }
     }
@@ -1240,6 +1247,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
