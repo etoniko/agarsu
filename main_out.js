@@ -53,12 +53,27 @@ function normalizeNick(nick) {
 
     let n = nick.trim();
 
-    // Проверяем, есть ли ник в скобках любого типа
-    const match = n.match(/^[\(\[\{\|](.*?)[\)\]\}\|]/);
-    if (match && match[1]) {
-        n = match[1];
+    // Пары скобок
+    const bracketPairs = {
+        '[': ']',
+        '{': '}',
+        '(': ')',
+        '|': '|'  // симметричная скобка
+    };
+
+    const firstChar = n.charAt(0);
+
+    if (bracketPairs[firstChar]) {
+        const closing = bracketPairs[firstChar];
+        const endIndex = n.indexOf(closing, 1); // ищем закрывающую скобку начиная со второго символа
+        if (endIndex !== -1) {
+            n = n.substring(1, endIndex); // берём ник внутри скобок
+        } else {
+            // если закрывающей скобки нет, просто берём ник до первой встреченной закрывающей любой скобки
+            n = n.split(/[\)\]\}\|]/)[0];
+        }
     } else {
-        // Если нет скобок, отсекаем всё после закрывающих символов
+        // если нет открывающей скобки, берём ник до первой встреченной закрывающей любой скобки
         n = n.split(/[\)\]\}\|]/)[0];
     }
 
