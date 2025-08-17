@@ -289,8 +289,8 @@ passwordInput.addEventListener('input', () => {
       chosenSkin = e.target.dataset.name;
       chosenType = e.target.dataset.type;
       const base = Number(e.target.dataset.base);
-      const rand = (Math.random()).toFixed(2).slice(1);
-      chosenPrice = `${base}${rand}`;
+const rand = Math.floor(Math.random() * 9 + 1); // 1-9
+chosenPrice = Number(`${base}${rand}`); // соединяем base + rand, например 100 + 1 = 101
 
       passLabel.style.display = chosenType==='pass'?'block':'none';
       uploadCircle.style.display = chosenType==='pass'?'none':'flex';
