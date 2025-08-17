@@ -1366,14 +1366,19 @@ function sendMouseMove() {
         }
     };
 
-  function sendNickName() {
-        if (wsIsOpen() && null != userNickName) {
-            var msg = prepareData(1 + 2 * userNickName.length);
-            msg.setUint8(0, 0);
-            for (var i = 0; i < userNickName.length; ++i) msg.setUint16(1 + 2 * i, userNickName.charCodeAt(i), true);
-            wsSend(msg)
+function sendNickName() {
+    if (wsIsOpen() && userNickName != null) {
+        // Применяем антимат
+        const censoredNick = censorMessage(userNickName);
+
+        var msg = prepareData(1 + 2 * censoredNick.length);
+        msg.setUint8(0, 0);
+        for (var i = 0; i < censoredNick.length; ++i) {
+            msg.setUint16(1 + 2 * i, censoredNick.charCodeAt(i), true);
         }
+        wsSend(msg);
     }
+}
 
 
 
