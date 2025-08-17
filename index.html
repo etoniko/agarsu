@@ -28,6 +28,7 @@
     <title>Agar.su</title>
 
     <!-- Favicon и иконки для Apple устройств -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="apple-touch-icon" href="https://cdn.jsdelivr.net/gh/etoniko/agarsu/icon.svg/icon.svg">
     <link rel="icon" href="https://cdn.jsdelivr.net/gh/etoniko/agarsu/icon.svg" type="image/svg+xml">
     <!-- Canonical URL -->
@@ -1057,7 +1058,9 @@ function normalizeNick(nick) {
 .chatX_close {position: absolute;right: 6px;width: 18px;height: 18px;line-height: 18px;text-align: center;color: white;font-size: 19px;cursor: pointer;}
 .chatX_feed { flex: 1; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 8px; padding-right: 4px;}
 .chatX_msg {position: relative;display: grid;grid-template-columns: 42px 1fr;background: #80808057;border-radius: 10px;padding: 8px 10px 8px 8px;box-sizing: border-box;column-gap: 15px;}
-.chatX_avatar { grid-row: 1 / span 2; width: 50px; height: 50px; border-radius: 100%; object-fit: cover;border: 2px solid;}
+.chatX_avatar {width: 50px; height: 50px; border-radius: 100%; object-fit: cover;border: 2px solid;}
+.avatarXcontainer{position: relative;grid-row: 1 / span 2;width: 50px;height: 50px;}
+.avatarXcontainer::after {content: "lock";font-family: 'Material Icons';position: absolute;right: 1;bottom: 1;font-size: 15px;color: #3aff07;display: var(--after-display, none);}
 .chatX_nick {font-size: 15px;max-width: 185px;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;direction: ltr;font-weight: bold;height: 20px;}
 .chatX_nick--accent { color: #ff4e3e; font-weight: 700; }
 .chatX_text {min-height: 30px;font-size: 14px;color: white;}
@@ -1286,6 +1289,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
