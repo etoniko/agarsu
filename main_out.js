@@ -2474,19 +2474,6 @@ if (this.id !== 0) {
     }
 }
 
-
-                    // Отображение массы
-                    //скрываем массу если this.size > 100
-                    if (showMass && ((!this.isVirus && !this.isEjected && !this.isAgitated) && this.size > 100)) {
-                        var mass = Math.floor(this.size * this.size * 0.01);
-                        this.sizeCache.setValue(mass);
-                        this.sizeCache.setScale(zoomRatio);
-                        var massImage = this.sizeCache.render(),
-                            massWidth = Math.floor(massImage.width * invZoomRatio),
-                            massHeight = Math.floor(massImage.height * invZoomRatio);
-                        ctx.drawImage(massImage, x - Math.floor(massWidth / 2), y + Math.floor(massHeight * 0.8), massWidth, massHeight);
-                    }
-                }
                 ctx.restore();
             }
         }
