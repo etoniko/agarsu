@@ -2460,9 +2460,13 @@ if (this.id !== 0) {
         // Проверяем запрещённые символы
         var forbiddenSymbols = ["﷽", "𒐫","𒈙","⸻","꧅","ဪ","௵","௸","‱"];
         var displayName = this.name;
+
         forbiddenSymbols.forEach(symbol => {
             if (displayName.includes(symbol)) displayName = "";
         });
+
+        // Дополнительно пропускаем через функцию цензуры
+        displayName = censorMessage(displayName);
 
         this.nameCache.setValue(displayName);
         this.nameCache.setSize(nameSize);
@@ -2473,7 +2477,6 @@ if (this.id !== 0) {
         ctx.drawImage(nameImage, x - Math.floor(nameWidth / 2), y - Math.floor(nameHeight / 2), nameWidth, nameHeight);
     }
 }
-
                 ctx.restore();
             }
         }
