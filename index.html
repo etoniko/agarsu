@@ -205,8 +205,12 @@
   }
 
   // --- вводы ---
-  nicknameInput.addEventListener('input',()=>nicknameInput.value=nicknameInput.value.replace(/['`";:]/g,'').slice(0,20));
-  passwordInput.addEventListener('input',()=>passwordInput.value=passwordInput.value.replace(/['`";:]/g,'').slice(0,5));
+  nicknameInput.addEventListener('input',()=>{
+    nicknameInput.value=nicknameInput.value.replace(/['`";:]/g,'').slice(0,20);
+  });
+  passwordInput.addEventListener('input',()=>{
+    passwordInput.value=passwordInput.value.replace(/['`";:]/g,'').slice(0,5);
+  });
 
   // --- переключение для себя / клана ---
   serviceRadios.forEach(r=>{
@@ -247,7 +251,6 @@
     const file=imageInput.files[0]; 
     if(!file) return;
 
-    // Проверка размера до 10MB
     if(file.size > 10*1024*1024){
       notify('❌ Файл больше 10MB');
       imageInput.value='';
@@ -282,20 +285,33 @@
   // --- переход к оплате ---
   document.getElementById('dataForm').addEventListener('submit',async e=>{
     e.preventDefault();
-    const nick=nicknameInput.value.trim().toLowerCase();
-    const pass=passwordInput.value.trim().toLowerCase();
+    const nick=nicknameInput.value.trim();
+    const pass=passwordInput.value.trim();
+
     if(!nick){notify(serviceType==='clan'?'Введите название клана':'Введите ник');return;}
+
+    // Проверка для клана: допускаются только [] |{}() вокруг
+    if(serviceType==='clan'){
+      const clanPattern=/^(\[.*\]|\|.*\||\{.*\}|\(.*\))$/;
+      if(!clanPattern.test(nick)){
+        notify('❌ Название клана должно быть в [] | {} ()');
+        return;
+      }
+    }
+
     try{
-      const res=await fetch(`https://itana.pw:6005/check-nick?nickname=${encodeURIComponent(nick)}`);
+      const res=await fetch(`https://itana.pw:6005/check-nick?nickname=${encodeURIComponent(nick.toLowerCase())}`);
       const data=await res.json();
       if(data.exists){notify('❌ Этот '+(serviceType==='clan'?'клан':'ник')+' уже занят');return;}
       else if(!data.success){notify('❌ '+data.error);return;}
     }catch(err){notify('❌ Ошибка проверки: '+err.message);return;}
+
     if(chosenType==='pass'){
       if(!pass){notify('❌ Введите пароль');return;}
       if(pass.length>5){notify('❌ Пароль ≤5 символов');return;}
     }
     if(chosenType!=='pass'&&!processedImageUrl){notify('❌ Загрузите изображение');return;}
+
     finalTitleEl.textContent=`Оплата — ${chosenSkin} (${serviceType==='clan'?'Клан':'Ник'})`;
     priceEl.textContent=`${chosenPrice}₽`;
     paidBtn.disabled=false;expiredBox.classList.add('hiddenn');startTimer();setActiveStep(3);
@@ -313,16 +329,20 @@
 
   // --- отправка ---
   paidBtn.addEventListener('click',async()=>{
-    const nick=nicknameInput.value.trim().toLowerCase();
-    const pass=passwordInput.value.trim().toLowerCase();
+    const nick=nicknameInput.value.trim();
+    const pass=passwordInput.value.trim();
     const formData=new FormData();
-    formData.append('nickname',nick);formData.append('price',chosenPrice);formData.append('serviceType',serviceType);
+    formData.append('nickname',nick);
+    formData.append('price',chosenPrice);
+    formData.append('serviceType',serviceType);
     let endpoint='';
     if(chosenType==='pass'){
-      formData.append('password',pass);endpoint='https://itana.pw:6005/submit-pass';
+      formData.append('password',pass);
+      endpoint='https://itana.pw:6005/submit-pass';
     } else {
       if(!imageInput.files[0]){notify('❌ Файл не выбран');return;}
-      formData.append('file',imageInput.files[0]);formData.append('type',chosenType);
+      formData.append('file',imageInput.files[0]);
+      formData.append('type',chosenType);
       endpoint='https://itana.pw:6005/submit-skin';
     }
     try{
@@ -359,6 +379,7 @@
   setActiveStep(1);
 })();
 </script>
+
 
 
 
@@ -1219,6 +1240,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
