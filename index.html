@@ -1052,7 +1052,7 @@ function normalizeNick(nick) {
 .chatX_msg {position: relative;display: grid;grid-template-columns: 42px 1fr;background: #80808057;border-radius: 10px;padding: 8px 10px 8px 8px;box-sizing: border-box;column-gap: 15px;}
 .chatX_avatar {width: 50px; height: 50px; border-radius: 100%; object-fit: cover;border: 2px solid;}
 .avatarXcontainer{position: relative;grid-row: 1 / span 2;width: 50px;height: 50px;}
-.avatarXcontainer::after {content: "lock";font-family: 'Material Icons';position: absolute;right: 1;bottom: 1;font-size: 15px;color: #3aff07;display: var(--after-display, none);}
+.avatarXcontainer::after {    content: "verified_user";font-family: 'Material Icons';position: absolute;right: 1;bottom: 1;font-size: 19px;color: #08dd24;display: var(--after-display, none);}
 .chatX_nick {font-size: 15px;max-width: 185px;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;direction: ltr;font-weight: bold;height: 20px;}
 .chatX_nick--accent { color: #ff4e3e; font-weight: 700; }
 .chatX_text {min-height: 30px;font-size: 14px;color: white;}
@@ -1281,6 +1281,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
