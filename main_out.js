@@ -1,4 +1,36 @@
 (function (wHandle, wjQuery) {
+
+const admins = ["нико"];
+const moders = ["banshee"];
+let badWordsSet; // Используем Set вместо массива
+
+fetch('/word.txt')
+    .then(response => response.text())
+    .then(text => {
+        const words = text.split('\n').map(word => word.trim().toLowerCase());
+        badWordsSet = new Set(words); // Создаем Set из массива
+    })
+    .catch(error => console.error('Ошибка загрузки списка матерных слов:', error));
+
+
+function censorMessage(message) {
+    if (!badWordsSet) {
+        console.warn("Список матерных слов не загружен. Антимат не работает.");
+        return message;
+    }
+
+    // Разделяем текст на слова и знаки препинания
+    return message.replace(/\b[\w]+\b/gi, (word) => {
+        const lowerCaseWord = word.toLowerCase();
+        if (badWordsSet.has(lowerCaseWord)) {
+            // Заменяем всё слово на первую букву + ***
+            return word[0] + "***";
+        }
+        return word;
+    });
+}
+
+
  // Функция для проверки, что игра работает на платформе Яндекс Игр
     function isYandexGamesPlatform() {
         try {
@@ -1057,46 +1089,6 @@ wsSend(new Uint8Array([2])); // ping
         return `${hours}:${minutes}`; // Возвращаем строку в формате HH:MM
     }
 
-
-
-let badWordsSet; // Используем Set вместо массива
-
-fetch('/word.txt')
-    .then(response => response.text())
-    .then(text => {
-        const words = text.split('\n').map(word => word.trim().toLowerCase());
-        badWordsSet = new Set(words); // Создаем Set из массива
-    })
-    .catch(error => console.error('Ошибка загрузки списка матерных слов:', error));
-
-
-function censorMessage(message) {
-    if (!badWordsSet) {
-        console.warn("Список матерных слов не загружен. Антимат не работает.");
-        return message;
-    }
-
-    const words = message.split(' ').filter(word => word !== "");
-    let censoredMessage = "";  // Собираем результат в строку
-    for (let i = 0; i < words.length; i++) {
-        const word = words[i];
-        const lowerCaseWord = word.toLowerCase();
-
-        if (badWordsSet.has(lowerCaseWord)) {
-            censoredMessage += word[0] + "***";
-        } else {
-            censoredMessage += word;
-        }
-
-        if (i < words.length - 1) {
-            censoredMessage += " "; // Добавляем пробел, если это не последнее слово
-        }
-    }
-    return censoredMessage;
-}
-
-const admins = ["нико"];
-const moders = ["banshee"];
 
 function drawChatBoard() {
     if (hideChat) return;
