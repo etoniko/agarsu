@@ -53,31 +53,27 @@ function normalizeNick(nick) {
 
     let n = nick.trim();
 
-    // Пары скобок
-    const bracketPairs = {
-        '[': ']',
-        '{': '}',
-        '(': ')',
-        '|': '|'  // симметричная скобка
-    };
-
+    const brackets = { '[': ']', '{': '}', '(': ')', '|': '|' };
     const firstChar = n.charAt(0);
+    const lastChar = n.charAt(n.length - 1);
 
-    if (bracketPairs[firstChar]) {
-        const closing = bracketPairs[firstChar];
-        const endIndex = n.indexOf(closing, 1); // ищем закрывающую скобку начиная со второго символа
-        if (endIndex !== -1) {
-            n = n.substring(1, endIndex); // берём ник внутри скобок
-        } else {
-            // если закрывающей скобки нет, просто берём ник до первой встреченной закрывающей любой скобки
-            n = n.split(/[\)\]\}\|]/)[0];
-        }
+    if (brackets[firstChar]) {
+        const closeChar = brackets[firstChar];
+        const endIndex = n.indexOf(closeChar, 1);
+
+        // Проверяем, что закрывающая скобка есть и ник внутри не пустой
+        if (endIndex === -1) return ''; 
+
+        const innerNick = n.substring(1, endIndex);
+        if (!innerNick || innerNick.trim() !== innerNick) return ''; // нет пробелов в начале/конце
+
+        n = innerNick; 
     } else {
-        // если нет открывающей скобки, берём ник до первой встреченной закрывающей любой скобки
-        n = n.split(/[\)\]\}\|]/)[0];
+        // Ник без скобок: нельзя содержать пробелы в начале/конце
+        if (!n || n.trim() !== n) return '';
     }
 
-    return n.trim().toLowerCase();
+    return n.toLowerCase();
 }
 
 // Функция загрузки skinList.txt с нормализацией
