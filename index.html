@@ -241,17 +241,38 @@
     }
   });
 
-  // --- загрузка файла ---
+  // --- загрузка файла с проверкой размера ---
   uploadCircle.addEventListener('click',()=>imageInput.click());
   imageInput.addEventListener('change',()=>{
-    const file=imageInput.files[0]; if(!file) return;
+    const file=imageInput.files[0]; 
+    if(!file) return;
+
+    // Проверка размера до 10MB
+    if(file.size > 10*1024*1024){
+      notify('❌ Файл больше 10MB');
+      imageInput.value='';
+      return;
+    }
+
     const name=file.name.toLowerCase();
-    if(chosenType==='gif'&&!name.endsWith('.gif')){notify('Только GIF!');imageInput.value='';return;}
-    if(chosenType==='image'&&!(/\.(png|jpg|jpeg)$/i.test(name))){notify('Разрешены PNG/JPG!');imageInput.value='';return;}
+    if(chosenType==='gif'&&!name.endsWith('.gif')){
+      notify('❌ Только GIF!');
+      imageInput.value='';
+      return;
+    }
+    if(chosenType==='image'&&!(/\.(png|jpg|jpeg)$/i.test(name))){
+      notify('❌ Разрешены PNG/JPG!');
+      imageInput.value='';
+      return;
+    }
+
     const reader=new FileReader();
     reader.onload=e=>{
       const img=new Image();
-      img.onload=()=>{uploadCircle.innerHTML='';uploadCircle.appendChild(img);};
+      img.onload=()=>{
+        uploadCircle.innerHTML='';
+        uploadCircle.appendChild(img);
+      };
       img.src=e.target.result;
       processedImageUrl=e.target.result;
     };
@@ -267,14 +288,14 @@
     try{
       const res=await fetch(`https://itana.pw:6005/check-nick?nickname=${encodeURIComponent(nick)}`);
       const data=await res.json();
-      if(data.exists){notify('Этот '+(serviceType==='clan'?'клан':'ник')+' уже занят');return;}
-      else if(!data.success){notify(data.error);return;}
-    }catch(err){notify('Ошибка проверки: '+err.message);return;}
+      if(data.exists){notify('❌ Этот '+(serviceType==='clan'?'клан':'ник')+' уже занят');return;}
+      else if(!data.success){notify('❌ '+data.error);return;}
+    }catch(err){notify('❌ Ошибка проверки: '+err.message);return;}
     if(chosenType==='pass'){
-      if(!pass){notify('Введите пароль');return;}
-      if(pass.length>5){notify('Пароль ≤5 символов');return;}
+      if(!pass){notify('❌ Введите пароль');return;}
+      if(pass.length>5){notify('❌ Пароль ≤5 символов');return;}
     }
-    if(chosenType!=='pass'&&!processedImageUrl){notify('Загрузите изображение');return;}
+    if(chosenType!=='pass'&&!processedImageUrl){notify('❌ Загрузите изображение');return;}
     finalTitleEl.textContent=`Оплата — ${chosenSkin} (${serviceType==='clan'?'Клан':'Ник'})`;
     priceEl.textContent=`${chosenPrice}₽`;
     paidBtn.disabled=false;expiredBox.classList.add('hiddenn');startTimer();setActiveStep(3);
@@ -297,9 +318,13 @@
     const formData=new FormData();
     formData.append('nickname',nick);formData.append('price',chosenPrice);formData.append('serviceType',serviceType);
     let endpoint='';
-    if(chosenType==='pass'){formData.append('password',pass);endpoint='https://itana.pw:6005/submit-pass';}
-    else{if(!imageInput.files[0]){notify('Файл не выбран');return;}
-      formData.append('file',imageInput.files[0]);formData.append('type',chosenType);endpoint='https://itana.pw:6005/submit-skin';}
+    if(chosenType==='pass'){
+      formData.append('password',pass);endpoint='https://itana.pw:6005/submit-pass';
+    } else {
+      if(!imageInput.files[0]){notify('❌ Файл не выбран');return;}
+      formData.append('file',imageInput.files[0]);formData.append('type',chosenType);
+      endpoint='https://itana.pw:6005/submit-skin';
+    }
     try{
       const res=await fetch(endpoint,{method:'POST',body:formData});
       const data=await res.json();
@@ -310,16 +335,31 @@
 
   // --- начать заново ---
   document.getElementById('restartBtn').addEventListener('click',resetShop);
-  function resetShop(){clearInterval(timerInterval);setActiveStep(1);imageInput.value='';
-    uploadCircle.innerHTML='<span>Загрузите изображение</span>';nicknameInput.value='';passwordInput.value='';
-    processedImageUrl=null;expiredBox.classList.add('hiddenn');paidBtn.disabled=false;
-    finalTitleEl.textContent='Оплата';priceEl.textContent='100.00₽';chosenSkin=null;chosenType=null;chosenPrice=0;}
-  function setActiveStep(step){currentStep=step;
+  function resetShop(){
+    clearInterval(timerInterval);
+    setActiveStep(1);
+    imageInput.value='';
+    uploadCircle.innerHTML='<span>Загрузите изображение</span>';
+    nicknameInput.value='';
+    passwordInput.value='';
+    processedImageUrl=null;
+    expiredBox.classList.add('hiddenn');
+    paidBtn.disabled=false;
+    finalTitleEl.textContent='Оплата';
+    priceEl.textContent='100.00₽';
+    chosenSkin=null;
+    chosenType=null;
+    chosenPrice=0;
+  }
+  function setActiveStep(step){
+    currentStep=step;
     stages.forEach(s=>s.classList.toggle('active',Number(s.dataset.step)===step));
-    stepContents.forEach(c=>c.classList.toggle('active',Number(c.dataset.step)===step));}
+    stepContents.forEach(c=>c.classList.toggle('active',Number(c.dataset.step)===step));
+  }
   setActiveStep(1);
 })();
 </script>
+
 
 
 
@@ -1179,6 +1219,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
