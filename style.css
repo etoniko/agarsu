@@ -1111,11 +1111,11 @@ background-size: 50px auto;
     background-size: 50px auto;
 }
 
-/*.exp:hover {
+.exp:hover {
     background-color: #1e67e0;
 	transition: ease filter, transform 0.5s;
 	transform: scale(1.1);
-}*/
+}
 
 .thumbnail.ffa {
     --thumbnail-bg-color: #ff3f58; /* Цвет фона для FFA */
@@ -1130,9 +1130,9 @@ background-size: 50px auto;
     --thumbnail-bg-color: #ffaa00; 
 }*/
 
-/*.thumbnail.exp {
+.thumbnail.exp {
     --thumbnail-bg-color: #1e67e0; 
-}*/
+}
 .actives {
     background-color: var(--thumbnail-bg-color);
 	transition: ease filter, transform 0.5s;
