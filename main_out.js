@@ -135,15 +135,36 @@ setInterval(fetchSkinList, 300000);
         }
     };
 
-    // Установка параметров подключения
-    ONLY_CLIENT = false;
-    let CONNECTION_URL = "itana.pw:6001";
-    const hash = location.hash;
-    if (hash === "#ffa") {
-        CONNECTION_URL = "itana.pw:6001";
-    } else if (hash === "#crazy") {
-        CONNECTION_URL = "itana.pw:6002";
+// ONLY_CLIENT режим
+ONLY_CLIENT = false;
+
+// Подгружаем список серверов из server.json
+let SERVERS = {};
+let CONNECTION_URL = "itana.pw:6001"; // текущий сервер по умолчанию
+
+async function loadServers() {
+    try {
+        const response = await fetch('/assets/scripts/server.json');
+        SERVERS = await response.json();
+
+        // Определяем сервер по hash
+        const hash = location.hash;
+        if (hash && SERVERS[hash.slice(1)]) {
+            CONNECTION_URL = SERVERS[hash.slice(1)];
+        } else {
+            // Берём первый сервер по умолчанию
+            const keys = Object.keys(SERVERS);
+            CONNECTION_URL = keys.length ? SERVERS[keys[0]] : "";
+        }
+
+        console.log("Подключаемся к серверу:", CONNECTION_URL);
+    } catch (err) {
+        console.error("Не удалось загрузить серверы:", err);
     }
+}
+loadServers();
+
+
     var
         // touchX, touchY,
         touchable = 'createTouch' in window || navigator.maxTouchPoints > 0,
@@ -217,31 +238,26 @@ setInterval(fetchSkinList, 300000);
     };
 
     // Обновляем setserver функцию для вызова showConnecting() вручную
-    wHandle.setserver = function (arg) {
-        if (arg !== CONNECTION_URL) {
-            CONNECTION_URL = arg;
-            // Update the hash based on the new server
-            if (arg === "itana.pw:6002") {
-                window.location.hash = "#crazy";
-            } else if (arg === "itana.pw:6001") {
-                window.location.hash = "#ffa";
-            } else {
-                console.warn("Unknown server URL:", arg);
-                window.location.hash = ""; // Or some default hash
-            }
+wHandle.setserver = function(arg) {
+    if (!SERVERS || Object.keys(SERVERS).length === 0) {
+        console.warn("Серверы ещё не загружены. Подождите...");
+        return;
+    }
 
-            // Открываем ввод капчи на экран
-            showCaptcha();
+    if (arg !== CONNECTION_URL) {
+        CONNECTION_URL = arg;
 
-            // Attempt to reconnect with the new server.
-            // if (captokenCloudflare) {
-            //     showConnecting(captokenCloudflare);
-            // } else {
-            //     console.log("Captcha token is not available yet.");
-            // }
+        const foundHash = Object.keys(SERVERS).find(key => SERVERS[key] === arg);
+        if (foundHash) {
+            window.location.hash = `#${foundHash}`;
+        } else {
+            console.warn("Неизвестный сервер URL:", arg);
+            window.location.hash = "";
         }
-    };
 
+        showCaptcha();
+    }
+};
     function gameLoop() {
         ma = true;
         document.getElementById("canvas").focus();
