@@ -1,50 +1,4 @@
 (function (wHandle, wjQuery) {
- // Функция для проверки, что игра работает на платформе Яндекс Игр
-    function isYandexGamesPlatform() {
-        try {
-            // Проверка, что родительский домен - это Яндекс Игры
-            return window.location !== window.parent.location && document.referrer.includes('yandex');
-        } catch (e) {
-            return false;
-        }
-    }
-
-    // Асинхронная функция для инициализации SDK Яндекс Игр
-    async function initYandexSDK() {
-        if (isYandexGamesPlatform()) {
-            try {
-                // Инициализация SDK Яндекс Игр
-                const ysdk = await YaGames.init();
-                console.log('Yandex SDK initialized');
-                window.ysdk = ysdk;
-
-                // Проверяем, доступен ли LoadingAPI и ожидаем, что он будет готов
-                if (ysdk.features && ysdk.features.LoadingAPI) {
-                    await ysdk.features.LoadingAPI.ready();
-                    console.log('Платформа готова, игра может начаться');
-
-                    // Показываем рекламу сразу после загрузки SDK
-                    if (ysdk.adv) {
-                        await ysdk.adv.showFullscreenAdv();
-                        console.log('Реклама показана');
-                    } else {
-                        console.warn('Реклама недоступна');
-                    }
-                } else {
-                    console.warn('LoadingAPI не доступен');
-                }
-
-            } catch (err) {
-                console.error('Ошибка инициализации SDK Яндекс Игр:', err);
-            }
-        } else {
-            console.warn('SDK Яндекс Игр доступен только на платформе Яндекс Игр');
-        }
-    }
-
-    // Вызываем инициализацию SDK
-    initYandexSDK();
-
 let skinList = {}; // Глобальный объект для скинов
 
 // Функция нормализации ника (берёт ник внутри скобок или обрезает лишнее)
@@ -1255,20 +1209,6 @@ if (passUsers.includes(normalizedName)) {
 
     const normalizeFractlPart = n => (n % (Math.PI * 2)) / (Math.PI * 2);
 
-    async function showSDK() {
-        // Проверяем, что SDK инициализирован и игра запущена на платформе Яндекс Игр
-        if (window.ysdk && isYandexGamesPlatform()) {
-            try {
-                // Останавливаем геймплей и ждем завершения
-                await window.ysdk.features.GameplayAPI?.stop();
-                console.log("Геймплей остановлен");
-            } catch (err) {
-                console.error("Ошибка при работе с SDK Яндекс Игр:", err);
-            }
-        } else {
-            console.warn("SDK Яндекс Игр не инициализирован или игра не на платформе Яндекс Игр");
-        }
-    }
 
 function updateNodes(reader) {
         timestamp = Date.now();
@@ -1375,7 +1315,6 @@ if (playerId === ownerPlayerId) {
 
         if (ua && playerCells.length === 0) {
             showOverlays();  // Hide overlays
-            showSDK();  // Show SDK ad
         }
     }
 
