@@ -22,8 +22,6 @@
 
     <!-- Подтверждение права на сайт -->
     <meta name="yandex-verification" content="ae692c51c9b8486f">
-    <!-- Yandex Games SDK -->
-    <script src="https://sdk.games.s3.yandex.net/sdk.js"></script>
 
     <title>Agar.su</title>
 
@@ -46,11 +44,6 @@
     <script src="https://cdn.jsdelivr.net/gh/etoniko/agarsu/log.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/etoniko/agarsu/vector.js"></script>
     <script src="/main_out.js?v=1.2.6"></script>
-
-    <!-- Yandex.Metrika -->
-    <script src="/assets/scripts/yandex.js" defer></script>
-    <!-- Yandex.RTB -->
-    <script src="https://yandex.ru/ads/system/context.js" async></script>
 </head>
 <body>
     <div id="overlays" class="overlays">
@@ -59,7 +52,7 @@
             <a href="#" class="soc"><i style="cursor: not-allowed;" class="fab fa-vk"></i></a>
             <a href="#" class="soc"><i style="cursor: not-allowed;" class="fab fa-discord"></i></a>
         </div>
-        <div class="add-left"><div id="yandex_rtb_R-A-15699059-8"></div></div>
+        <div class="add-left"></div>
         <div class="add-right"></div>
         <div class="add-top"></div>
         <div class="add-bottom"></div>
@@ -832,44 +825,14 @@ function normalizeNick(nick) {
                             СЕРВЕРА
                         </div>
                         <!-- change div -> button | Disabled button xxxevexxx -->
-                        <button id="button-text" onclick="startGame(); return false;" class="nav-button play-button">
+                        <button id="button-text" onclick="startGame();" class="nav-button play-button">
                             <i class="fas fa-play"></i> ИГРАТЬ
                         </button>
                         <script>
-                            let playButtonClickCount = 0; // Счётчик нажатий
-                            let serverSet = false; // Флаг, чтобы вызвать setserver только один раз
-
-                            async function startGame() {
-
-                                setNick(document.getElementById('nick').value + "#" + document.getElementById('pass').value);
-
-                                // Проверяем, инициализирован ли Yandex SDK, и запускаем геймплей
-                                if (window.ysdk) {
-                                    window.ysdk.features.GameplayAPI?.start();
-                                    console.log("Геймплей начат");
-                                } else {
-                                    console.warn("SDK Яндекс Игр не инициализирован");
-                                }
-
-                                playButtonClickCount++; // Увеличиваем счётчик
-
-                                const buttonText = document.getElementById("button-text");
-
-                                if (playButtonClickCount === 2) {
-                                }
-
-                                if (playButtonClickCount === 3) {
-                                    playButtonClickCount = 0; // Сбрасываем счётчик после третьего нажатия
-
-                                    try {
-                                        await window.ysdk.adv.showFullscreenAdv(); // Показ рекламы
-                                        console.log("Реклама показана успешно");
-                                    } catch (error) {
-                                        console.error("Ошибка при показе рекламы:", error);
-                                    } finally {
-                                    }
-                                }
-                            }
+function startGame() {
+    setNick(document.getElementById('nick').value + "#" + document.getElementById('pass').value);
+    setTimeout(startGame, 300);
+}
                         </script>
                         <!-- change div -> button | Disabled button xxxevexxx -->
                         <button id="button-spec" class="spec" onclick="spectate();">
@@ -1281,6 +1244,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
