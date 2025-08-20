@@ -398,85 +398,8 @@ transition: ease filter, transform 0.5s;
 font-size: 17px;
 }
 
-.scoreshint{
-    border: 0px solid #d3d3d357;
-    padding: 5px;
-    background-color: #80808057;
-    border-radius: 0px 10px 10px 10px;
-    padding-bottom: 8px;
-    padding-left: 9px;
-    position: relative;
-    margin-bottom: 0px;
-    overflow-wrap: anywhere;
-    width: 227px;
-    display: flex;
-    flex-direction: column;
-	margin-bottom: 10px;
-	margin-right: 3px;
-}
-.scoreshint:after {
-content: "";
-    border: solid transparent;
-    position: absolute;
-    right: 100%;
-    top: 0px;
-    border-right-color: #80808057;
-    border-width: 0px 13px 9px 0;
-}
-
-/* Убираем полосу прокрутки */
-::-webkit-scrollbar {
-    width: 3px; /* Для вертикальной полосы */
-    height: 0; /* Для горизонтальной полосы */
-}
-
-/* Добавляем стили для индикации прокрутки */
-::-webkit-scrollbar-thumb {
-    background-color: #ffffff3b;
-    border-radius: 10px; /* Закругленные углы */
-}
-
-/* Задаем стиль для области прокрутки */
-::-webkit-scrollbar-track {
-    background: transparent; /* Прозрачный фон для области прокрутки */
-}
 
 
-.add-left{
-    width: 250px;
-    height: 450px;
-    position: absolute;
-    left: 2%;
-    display: flex;
-    align-items: center;
-}
-.add-right{
-width: 240px;
-    height: 400px;
-    position: absolute;
-    right: 2%;
-    display: none;
-    align-items: center;
-}
-.add-top{
-    width: 820px;
-    position: absolute;
-    height: 120px;
-    top: 20px;
-    display: none;
-}
-.add-bottom{
-    width: 410px;
-    position: absolute;
-    height: 150px;
-    bottom: 20px;
-   display: none;
-}
-@media (max-height: 720px) {
-  .add-top, .add-bottom {
-    transform: scale(0.7);
-  }
-}
 
 
 @media (max-width: 599px) {
@@ -488,12 +411,7 @@ width: 240px;
 transform: scale(0.7) translate(-7px, 7px);
 transform-origin: bottom left;
 }
-.add-left{
-display: none !important;
-}
-.add-top{
-display: none !important;
-}
+
   .social {
 position: absolute !important;
 width: 140px !important;
