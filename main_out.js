@@ -849,16 +849,29 @@ wsSend(new Uint8Array([2])); // ping
                  case 2:
         ping = Date.now() - pingstamp;
 
-        // Находим элемент с id "ping" в HTML
-        const pingElement = document.getElementById('ping');
+// Находим элемент с id "ping" в HTML
+const pingElement = document.getElementById('ping');
 
-        // Проверяем, что элемент найден (чтобы избежать ошибок, если его нет)
-        if (pingElement) {
-            // Добавляем текст (значение ping) в элемент
-            pingElement.textContent = ping; // Или pingElement.innerText = ping;
-        } else {
-            console.error("Элемент с id 'ping' не найден в HTML."); // Выводим ошибку в консоль, если элемент не найден
-        }
+// Проверяем, что элемент найден (чтобы избежать ошибок, если его нет)
+if (pingElement) {
+    // Добавляем текст (значение ping) в элемент
+    pingElement.textContent = ping; // или pingElement.innerText = ping;
+
+    // Сначала убираем все предыдущие классы цвета
+    pingElement.classList.remove('ping-green', 'ping-yellow', 'ping-red');
+
+    // Присваиваем цвет в зависимости от значения ping
+    if (ping >= 0 && ping < 50) {
+        pingElement.classList.add('ping-green'); // зелёный
+    } else if (ping >= 50 && ping < 150) {
+        pingElement.classList.add('ping-yellow'); // жёлтый
+    } else {
+        pingElement.classList.add('ping-red'); // красный
+    }
+} else {
+    console.error("Элемент с id 'ping' не найден в HTML."); // Выводим ошибку в консоль
+}
+
         break;
             case 16:
                 // Update nodes
@@ -1313,9 +1326,10 @@ if (playerId === ownerPlayerId) {
             if (node) node.destroy();
         }
 
-        if (ua && playerCells.length === 0) {
-            showOverlays();  // Hide overlays
-        }
+      if (ua && playerCells.length === 0) {
+    if (staticsDiv) staticsDiv.style.display = 'flex';
+	updateShareText();
+}
     }
 
 function sendMouseMove() {
@@ -1448,105 +1462,295 @@ function sendMouseMove() {
 
 
 
+let lastDisplayedScore = 0;
+let lastDisplayedMaxScore = 0;
+let lastDisplayedCellCount = 0;
+let maxScore = 0;
 
-    let lastDisplayedScore = 0;
-    let lastDisplayedMaxScore = 0;
-    let lastDisplayedCellCount = 0;
-    let maxScore = 0;
+// Хранилище истории очков
+let scoreHistory = [];
+let startTime = Date.now();
 
-    function drawGameScene() {
+// Переменные для канваса статистики
+let statsCanvas = null;
+let statsCtx = null;
+let staticsDiv = null; // блок вокруг канваса
 
-        var a, oldtime = Date.now();
-        ++cb;
-        timestamp = oldtime;
-
-        if (playerCells.length > 0) {
-            calcViewZoom();
-            var c = a = 0;
-            for (var d = 0; d < playerCells.length; d++) {
-                playerCells[d].updatePos();
-                a += playerCells[d].x / playerCells.length;
-                c += playerCells[d].y / playerCells.length;
-            }
-            posX = a;
-            posY = c;
-            posSize = viewZoom;
-            nodeX = (nodeX + a) / 2;
-            nodeY = (nodeY + c) / 2;
-        } else {
-            nodeX = (29 * nodeX + posX) / 30;
-            nodeY = (29 * nodeY + posY) / 30;
-            viewZoom = (9 * viewZoom + posSize * viewRange()) / 10;
-        }
-
-        buildQTree();
-        mouseCoordinateChange();
-            drawGrid();
-            drawCenterBackground();
-updateMiniMapPosition();
-
-        nodelist.sort((a, b) => a.size === b.size ? a.id - b.id : a.size - b.size);
-
-        ctx.save();
-        ctx.translate(canvasWidth / 2, canvasHeight / 2);
-        ctx.scale(viewZoom, viewZoom);
-        ctx.translate(-nodeX, -nodeY);
-        for (d = 0; d < Cells.length; d++) Cells[d].drawOneCell(ctx);
-        for (d = 0; d < nodelist.length; d++) nodelist[d].drawOneCell(ctx);
-
-        if (drawLine) {
-            drawLineX = (3 * drawLineX + lineX) / 4;
-            drawLineY = (3 * drawLineY + lineY) / 4;
-            ctx.save();
-            ctx.strokeStyle = "#FFAAAA";
-            ctx.lineWidth = 10;
-            ctx.lineCap = "round";
-            ctx.lineJoin = "round";
-            ctx.globalAlpha = .5;
-            ctx.beginPath();
-            for (d = 0; d < playerCells.length; d++) {
-                ctx.moveTo(playerCells[d].x, playerCells[d].y);
-                ctx.lineTo(drawLineX, drawLineY);
-            }
-            ctx.stroke();
-            ctx.restore();
-        }
-
-        ctx.restore();
-        lbCanvas && lbCanvas.width && ctx.drawImage(lbCanvas, canvasWidth - lbCanvas.width - 10, 10); // draw Leader Board
-        if (chatCanvas != null) ctx.drawImage(chatCanvas, 0, canvasHeight - chatCanvas.height - 50); // draw Leader Board
-
-        // Calculate the current score
-        const currentScore = Math.floor(calcUserScore() / 100);
-        maxScore = Math.max(maxScore, currentScore);
-        const cellCount = playerCells.length;
-
-        // Update the score-max div only if the max score has changed
-        if (maxScore !== lastDisplayedMaxScore) {
-            document.getElementById('score-max').innerText = 'Максимум: ' + maxScore;
-            lastDisplayedMaxScore = maxScore; // Update last displayed max score
-        }
-
-        // Update the score-new div only if the current score has changed
-        if (currentScore !== lastDisplayedScore) {
-            document.getElementById('score-new').innerText = 'Сейчас: ' + currentScore;
-            lastDisplayedScore = currentScore; // Update last displayed score
-        }
-
-        // Update the cell-length div only if the cell count has changed
-        if (cellCount !== lastDisplayedCellCount) {
-            document.getElementById('cell-length').innerText = cellCount;
-            lastDisplayedCellCount = cellCount; // Update last displayed cell count
-        }
-
-        drawSplitIcon(ctx);
-        drawTouch(ctx);
-
-        var deltatime = Date.now() - oldtime;
-        deltatime > 1E3 / 60 ? z -= .01 : deltatime < 1E3 / 65 && (z += .01);
-        .4 > z && (z = .4);
-        1 < z && (z = 1);
+// Инициализация после загрузки DOM
+window.addEventListener('load', () => {
+    statsCanvas = document.getElementById('statsGraph');
+    staticsDiv = document.getElementById('statics');
+    if (statsCanvas) {
+        statsCtx = statsCanvas.getContext('2d');
     }
+});
+
+function formatTimeStats(ms) {
+    const totalSec = Math.floor(ms / 1000);
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+
+    if (h > 0) {
+        return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+    } else {
+        return `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+    }
+}
+
+function compressHistory(history, maxPoints) {
+    while (history.length > maxPoints) {
+        const newHist = [];
+        for (let i = 0; i < history.length; i += 2) {
+            newHist.push(history[i]);
+        }
+        history = newHist;
+    }
+    return history;
+}
+
+function drawStatsGraph() {
+    if (!statsCanvas || !statsCtx) return;
+
+    statsCtx.clearRect(0, 0, statsCanvas.width, statsCanvas.height);
+    if (scoreHistory.length < 2) return;
+
+    scoreHistory = compressHistory(scoreHistory, 200);
+
+    const maxScoreInHistory = Math.max(...scoreHistory.map(p => p.score), 1);
+    const minTime = scoreHistory[0].time;
+    const maxTime = scoreHistory[scoreHistory.length - 1].time;
+    const totalTime = maxTime - minTime || 1;
+
+    statsCtx.beginPath();
+    statsCtx.strokeStyle = 'lime';
+    statsCtx.lineWidth = 2;
+
+    for (let i = 0; i < scoreHistory.length; i++) {
+        const t = scoreHistory[i].time - minTime;
+        const s = scoreHistory[i].score;
+        const x = (t / totalTime) * statsCanvas.width;
+        const y = statsCanvas.height - (s / maxScoreInHistory) * (statsCanvas.height - 15);
+        if (i === 0) statsCtx.moveTo(x, y);
+        else statsCtx.lineTo(x, y);
+    }
+    statsCtx.stroke();
+
+    statsCtx.strokeStyle = '#666';
+    statsCtx.lineWidth = 1;
+    statsCtx.strokeRect(0, 0, statsCanvas.width, statsCanvas.height);
+
+    statsCtx.fillStyle = 'white';
+    statsCtx.font = '10px Arial';
+    statsCtx.textAlign = 'center';
+
+    const tickCount = 7;
+    const padding = 20;
+
+    for (let i = 0; i <= tickCount; i++) {
+        const ratio = i / tickCount;
+        const t = minTime + ratio * totalTime;
+        const label = formatTimeStats(t - startTime);
+        const x = padding + ratio * (statsCanvas.width - 2 * padding);
+        const y = statsCanvas.height - 2;
+        statsCtx.fillText(label, x, y);
+    }
+}
+
+let playerDead = false;
+
+function drawGameScene() {
+    var a, oldtime = Date.now();
+    ++cb;
+    timestamp = oldtime;
+
+    if (playerCells.length > 0) {
+        // Игрок жив
+        playerDead = false;
+
+        // Скрываем блок статистики
+        if (staticsDiv) staticsDiv.style.display = 'none';
+
+        calcViewZoom();
+        var c = a = 0;
+        for (var d = 0; d < playerCells.length; d++) {
+            playerCells[d].updatePos();
+            a += playerCells[d].x / playerCells.length;
+            c += playerCells[d].y / playerCells.length;
+        }
+        posX = a;
+        posY = c;
+        posSize = viewZoom;
+        nodeX = (nodeX + a) / 2;
+        nodeY = (nodeY + c) / 2;
+    } else {
+        // Игрок мёртв
+        nodeX = (29 * nodeX + posX) / 30;
+        nodeY = (29 * nodeY + posY) / 30;
+        viewZoom = (9 * viewZoom + posSize * viewRange()) / 10;
+
+        if (!playerDead) playerDead = true;
+
+        // Показываем блок статистики
+        if (ua && staticsDiv) staticsDiv.style.display = 'flex';
+    }
+
+    // --- СЧЁТ ---
+    const currentScore = Math.floor(calcUserScore() / 100);
+    maxScore = Math.max(maxScore, currentScore);
+    const cellCount = playerCells.length;
+
+    if (!playerDead) {
+        if (scoreHistory.length === 0 || Date.now() - scoreHistory[scoreHistory.length - 1].time > 200) {
+            scoreHistory.push({ time: Date.now(), score: currentScore });
+            const cutoff = Date.now() - 60000;
+            scoreHistory = scoreHistory.filter(p => p.time >= cutoff);
+        }
+    }
+
+    if (maxScore !== lastDisplayedMaxScore) {
+        const scoreMaxElem = document.getElementById('score-max');
+        if (scoreMaxElem) scoreMaxElem.innerText = 'Максимум: ' + maxScore;
+        lastDisplayedMaxScore = maxScore;
+    }
+    if (currentScore !== lastDisplayedScore) {
+        const scoreNewElem = document.getElementById('score-new');
+        if (scoreNewElem) scoreNewElem.innerText = 'Сейчас: ' + currentScore;
+        lastDisplayedScore = currentScore;
+    }
+    if (cellCount !== lastDisplayedCellCount) {
+        const cellLengthElem = document.getElementById('cell-length');
+        if (cellLengthElem) cellLengthElem.innerText = cellCount;
+        lastDisplayedCellCount = cellCount;
+    }
+
+    drawStatsGraph();
+
+    buildQTree();
+    mouseCoordinateChange();
+    drawGrid();
+    drawCenterBackground();
+    updateMiniMapPosition();
+
+    nodelist.sort((a, b) => a.size === b.size ? a.id - b.id : a.size - b.size);
+
+    ctx.save();
+    ctx.translate(canvasWidth / 2, canvasHeight / 2);
+    ctx.scale(viewZoom, viewZoom);
+    ctx.translate(-nodeX, -nodeY);
+    for (d = 0; d < Cells.length; d++) Cells[d].drawOneCell(ctx);
+    for (d = 0; d < nodelist.length; d++) nodelist[d].drawOneCell(ctx);
+
+    if (drawLine) {
+        drawLineX = (3 * drawLineX + lineX) / 4;
+        drawLineY = (3 * drawLineY + lineY) / 4;
+        ctx.save();
+        ctx.strokeStyle = "#FFAAAA";
+        ctx.lineWidth = 10;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.globalAlpha = .5;
+        ctx.beginPath();
+        for (d = 0; d < playerCells.length; d++) {
+            ctx.moveTo(playerCells[d].x, playerCells[d].y);
+            ctx.lineTo(drawLineX, drawLineY);
+        }
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    ctx.restore();
+    lbCanvas && lbCanvas.width && ctx.drawImage(lbCanvas, canvasWidth - lbCanvas.width - 10, 10);
+    if (chatCanvas != null) ctx.drawImage(chatCanvas, 0, canvasHeight - chatCanvas.height - 50);
+
+    var deltatime = Date.now() - oldtime;
+    deltatime > 1E3 / 60 ? z -= .01 : deltatime < 1E3 / 65 && (z += .01);
+    .4 > z && (z = .4);
+    1 < z && (z = 1);
+}
+function getShareMessage() {
+    const maxScore = lastDisplayedMaxScore;
+
+    const lowScores = [
+        "Ничего, зови друзей и попробуй ещё раз — вместе веселее!",
+        "Только начало! Поделись с друзьями и вернись сильнее!",
+        "Быстро умер? Зови друзей, пусть они покажут мастерство!",
+        "Не беда! Сразись с друзьями и побей их рекорд!",
+        "Эй, это шанс доказать друзьям, кто настоящий чемпион!",
+        "Начало положено! Делись результатом и зовите друзей на дуэль!"
+    ];
+
+    const midScores = [
+        "Неплохо! Позови друзей и бросьте друг другу вызов!",
+        "Хорошая игра! Поделись результатом и зови друзей на битву!",
+        "Ты молодец! Покажи друзьям, на что способен!",
+        "С тобой интересно соревноваться! Пусть друзья тоже попробуют!",
+        "Не останавливайся! Поделись результатом и стань героем среди друзей!",
+        "Отличная игра! Зови друзей и создайте настоящий турнир!",
+        "Мощно! Друзья должны это увидеть — поделись!"
+    ];
+
+    const highScores = [
+        "Вау! Легендарный результат! Делись с друзьями и удиви всех!",
+        "Ты на вершине! Покажи друзьям, кто здесь настоящий чемпион!",
+        "Невероятно! Поделись своим результатом и стань героем Agar.su!",
+        "С таким результатом тебя точно заметят! Расскажи всем!",
+        "Ты герой игры! Поделись результатом и зови друзей на реванш!",
+        "Эпично! Покажи друзьям, что рекорды реально побить!",
+        "Мощь! Делись результатом и вдохновляй друзей на битву!",
+        "Ты сделал это! Друзья должны это увидеть — поделись сейчас!"
+    ];
+
+    let messagesArray;
+    if (maxScore < 1000) {
+        messagesArray = lowScores;
+    } else if (maxScore < 10000) {
+        messagesArray = midScores;
+    } else {
+        messagesArray = highScores;
+    }
+
+    const randomIndex = Math.floor(Math.random() * messagesArray.length);
+    return messagesArray[randomIndex];
+}
+
+
+function updateShareText() {
+    const shareTextDiv = document.getElementById('shareText');
+    shareTextDiv.textContent = getShareMessage();
+}
+
+function getStatsText() {
+    return `Моя статистика в игре Agar.su!\n Максимальная масса: ${lastDisplayedMaxScore}\n Время игры: ${formatTimeStats(Date.now() - startTime)}`;
+}
+
+function shareStats(platform) {
+    const text = encodeURIComponent(getStatsText());
+    const urlToShare = encodeURIComponent(location.href);
+    let url = '';
+    
+    switch(platform) {
+        case 'vk': url = `https://vk.com/share.php?url=${urlToShare}&title=${text}`; break;
+        case 'telegram': url = `https://t.me/share/url?url=${urlToShare}&text=${text}`; break;
+        case 'whatsapp': url = `https://wa.me/?text=${text}%20${urlToShare}`; break;
+        case 'facebook': url = `https://www.facebook.com/sharer/sharer.php?u=${urlToShare}&quote=${text}`; break;
+        case 'twitter': url = `https://twitter.com/intent/tweet?url=${urlToShare}&text=${text}`; break;
+    }
+
+    const width = 650; const height = 450;
+    const left = (screen.width/2) - (width/2);
+    const top = (screen.height/2) - (height/2);
+
+    window.open(url, '_blank', `toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=${width},height=${height},top=${top},left=${left}`);
+}
+
+window.addEventListener('load', () => {
+    updateShareText(); // обновляем текст при открытии статистики
+    const platforms = ['vk','telegram','whatsapp','facebook','twitter'];
+    platforms.forEach(p => {
+        document.querySelector(`.${p}`).addEventListener('click', () => shareStats(p));
+    });
+});
 
 
     function drawTouch(ctx) {
@@ -2115,12 +2319,17 @@ function drawLeaderBoard() {
     // var playerStat = null;
     //wHandle.isSpectating = false;
     // Обновленный setNick
-    wHandle.setNick = function (arg) {
-        $('#overlays').hide();
-        userNickName = arg;
-        sendNickName();
-        // userScore = 0;
-    };
+wHandle.setNick = function(arg) {
+    $('#overlays').hide();
+	$('#statics').hide();
+    userNickName = arg;
+    sendNickName();
+
+    scoreHistory = [];
+    startTime = Date.now();
+
+};
+
 
 
     wHandle.setSkins = function (arg) {
@@ -2150,7 +2359,8 @@ function drawLeaderBoard() {
         userNickName = null;
         // wHandle.isSpectating = true;
         // sendUint8(1);
-        hideOverlays()
+        hideOverlays();
+		$('#statics').hide();
     };
     wHandle.setAcid = function (arg) {
         xa = arg
