@@ -30,11 +30,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="/style.css?v=0.4.1" rel="stylesheet">
 
+    <script src="https://unpkg.com/@vkid/sdk@<3.0.0/dist-sdk/umd/index.js"></script>
+
+
     <!-- Скрипты -->
     <script src="https://cdn.jsdelivr.net/gh/etoniko/agarsu/jquery.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/etoniko/agarsu/log.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/etoniko/agarsu/vector.js"></script>
-    <script src="/main_out.js?v=1.4.1"></script>
+    <script src="/main_out.js?v=1.4.2"></script>
 </head>
 <body>
     <div id="overlays" class="overlays">
@@ -969,6 +972,37 @@ setNick(document.getElementById('nick').value + "#" + document.getElementById('p
     <!-- uLogin авторизация -->
     <script src="/assets/scripts/ulogin.js"></script>
     <div id="loginButton" data-ulogin="callback=onUloginToken;display=panel;fields=photo,first_name,last_name;providers=vkontakte,odnoklassniki,mailru,facebook;hidden=other;redirect_uri=https%3A%2F%2Fitana.pw%2Fapi%2Fauth%2Fulogin"></div> 
+<script>
+if ('VKIDSDK' in window) {
+  const VKID = window.VKIDSDK;
+
+  VKID.Config.init({
+    app: 54069355,
+    redirectUrl: 'https://itana.pw/api/auth/vk', // тот же что на сервере
+    responseMode: VKID.ConfigResponseMode.Callback,
+    source: VKID.ConfigSource.LOWCODE,
+    scope: ''
+  });
+
+  const floatingOneTap = new VKID.FloatingOneTap();
+
+  floatingOneTap.render({
+    appName: 'agar.su',
+    oauthList: ['ok_ru', 'mail_ru'],
+    showAlternativeLogin: true
+  })
+  .on(VKID.WidgetEvents.ERROR, vkidOnError)
+  .on(VKID.FloatingOneTapInternalEvents.LOGIN_SUCCESS, function (payload) {
+      const code = payload.code;
+      const deviceId = payload.device_id;
+      wHandle.onVkLogin(code, deviceId); // вызываем свою функцию
+  });
+
+  function vkidOnError(error) {
+    alert("VKID error: " + JSON.stringify(error));
+  }
+}
+</script>
 </div>
 
                 </div>
@@ -1351,6 +1385,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
