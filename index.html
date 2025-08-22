@@ -971,7 +971,7 @@ setNick(document.getElementById('nick').value + "#" + document.getElementById('p
 <div id="loginButton" data-ulogin="callback=onUloginToken;display=panel;fields=photo,first_name,last_name;providers=vkontakte,odnoklassniki,mailru,facebook;hidden=other;redirect_uri=https%3A%2F%2Fitana.pw%2Fapi%2Fauth%2Fulogin"></div> 
 
 <!-- VKID SDK -->
-<script src="https://vk.com/js/api/openapi.js?168"></script>
+<script src="https://unpkg.com/@vkid/sdk@<3.0.0/dist-sdk/umd/index.js"></script>
 <script>
 if ('VKIDSDK' in window) {
     const VKID = window.VKIDSDK;
@@ -1385,6 +1385,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
