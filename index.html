@@ -34,7 +34,7 @@
     <script src="https://cdn.jsdelivr.net/gh/etoniko/agarsu/jquery.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/etoniko/agarsu/log.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/etoniko/agarsu/vector.js"></script>
-    <script src="/main_out.js?v=1.5.2"></script>
+    <script src="/main_out.js?v=1.5.3"></script>
 </head>
 <body>
     <div id="overlays" class="overlays">
@@ -1064,48 +1064,57 @@ let startHeight = 0;
 let startTop = 0;
 let resizing = false;
 
-burger.addEventListener('mousedown', e => {
+// ===== drag & touch для burger =====
+function startResize(e) {
     resizing = true;
-    startY = e.clientY;
+    startY = e.touches ? e.touches[0].clientY : e.clientY;
     startHeight = chatWindow.offsetHeight;
     startTop = chatWindow.offsetTop;
     document.body.style.userSelect = 'none';
-});
+}
 
-document.addEventListener('mousemove', e => {
+function doResize(e) {
     if (!resizing) return;
-    const dy = e.clientY - startY;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const dy = clientY - startY;
     let newHeight = startHeight - dy;
     let newTop = startTop + dy;
-    if (newHeight < 100) {
-        newTop -= (100-newHeight);
-        newHeight = 100;
-    }
-    if (newHeight > 700) {
-        newTop += (newHeight-700);
-        newHeight = 700;
-    }
+
+    if (newHeight < 100) { newTop -= (100-newHeight); newHeight = 100; }
+    if (newHeight > 700) { newTop += (newHeight-700); newHeight = 700; }
+
     chatWindow.style.height = newHeight + 'px';
     chatWindow.style.top = newTop + 'px';
-});
-document.addEventListener('mouseup', () => {
+}
+
+function stopResize() {
     resizing = false;
     document.body.style.userSelect = '';
-});
+}
 
+burger.addEventListener('mousedown', startResize);
+burger.addEventListener('touchstart', startResize, {passive: true});
+document.addEventListener('mousemove', doResize);
+document.addEventListener('touchmove', doResize, {passive: false});
+document.addEventListener('mouseup', stopResize);
+document.addEventListener('touchend', stopResize);
+
+// ===== закрытие чата =====
 closeBtn.addEventListener('click', () => {
     chatWindow.style.display = 'none';
 });
 
+// ===== автопрокрутка =====
 let autoScroll = true;
 let unreadCount = 0;
 
 function scrollToBottom() {
-    feed.scrollTop = 0;
+    feed.scrollTop = feed.scrollHeight;
 }
 
 feed.addEventListener('scroll', () => {
-    autoScroll = feed.scrollTop === 0;
+    const atBottom = feed.scrollHeight - feed.scrollTop === feed.clientHeight;
+    autoScroll = atBottom;
     if (autoScroll) {
         unreadCount = 0;
         alertBox.style.display = 'none';
@@ -1119,6 +1128,30 @@ alertBox.addEventListener('click', () => {
     alertBox.style.display = 'none';
 });
 
+// ===== обновление чата =====
+function onNewMessage(msg) {
+    const item = document.createElement('div');
+    item.className = 'chat-item';
+    item.textContent = msg;
+    feed.appendChild(item);
+
+    if (autoScroll) {
+        scrollToBottom();
+    } else {
+        unreadCount++;
+        alertBox.textContent = `${unreadCount} новых сообщений`;
+        alertBox.style.display = 'block';
+    }
+}
+
+// ===== следим за видимостью вкладки =====
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && autoScroll) {
+        scrollToBottom();
+    }
+});
+
+// стартовая прокрутка
 scrollToBottom();
 </script>
 <div id="onchat" onclick="document.getElementById('chatX_window').style.display = 'flex'; document.getElementById('onchat').style.display = 'none';"><i class="fa fa-arrow-up"></i></div>
@@ -1352,6 +1385,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
