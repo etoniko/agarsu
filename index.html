@@ -28,7 +28,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=new_releases" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="/style.css?v=0.3.2" rel="stylesheet">
+    <link href="/style.css?v=0.3.3" rel="stylesheet">
 
     <!-- Скрипты -->
     <script src="https://cdn.jsdelivr.net/gh/etoniko/agarsu/jquery.js"></script>
@@ -236,7 +236,7 @@
     }
   });
 
-  // --- загрузка файла с проверкой размера ---
+  // --- загрузка файла ---
   uploadCircle.addEventListener('click',()=>imageInput.click());
   imageInput.addEventListener('change',()=>{
     const file=imageInput.files[0]; 
@@ -273,7 +273,7 @@
     reader.readAsDataURL(file);
   });
 
-  // --- проверка nickname по завершении ввода ---
+  // --- проверка nickname ---
   nicknameInput.addEventListener('blur', async ()=>{
     let nick = nicknameInput.value.trim();
     nicknameInput.value = nick.replace(/['`";:]/g,'').slice(0,20);
@@ -292,6 +292,7 @@
       const res = await fetch(`https://itana.pw:6005/check-nick?nickname=${encodeURIComponent(nick.toLowerCase())}&clientId=${clientId}`);
       const data = await res.json();
       if(data.exists) notify('❌ Этот '+(serviceType==='clan'?'клан':'ник')+' уже занят');
+      else if(data.own) notify('✅ Это ваш ник, можно продолжать');
       else if(!data.success) notify('❌ '+data.error);
     }catch(err){notify('❌ Ошибка проверки: '+err.message);}
   });
@@ -339,7 +340,8 @@
     formData.append('nickname',nick);
     formData.append('price',chosenPrice);
     formData.append('serviceType',serviceType);
-    formData.append('clientId',clientId); // <-- теперь clientId всегда отправляется
+    formData.append('clientId',clientId);
+
     let endpoint='';
     if(chosenType==='pass'){
       formData.append('password',pass);
@@ -350,6 +352,7 @@
       formData.append('type',chosenType);
       endpoint='https://itana.pw:6005/submit-skin';
     }
+
     try{
       const res = await fetch(endpoint,{method:'POST',body:formData});
       const data = await res.json();
@@ -1343,6 +1346,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
