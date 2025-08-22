@@ -3014,7 +3014,7 @@ showLogoutNotification();
         }
     };
 wHandle.onVkLogin = async (code, deviceId) => {
-    const res = await fetch(`https://itana.pw/api/auth/vk?code=${code}&device_id=${deviceId}`);
+    const res = await fetch(`https://itana.pw:6003/api/auth/vk?code=${code}&device_id=${deviceId}`);
     if (res.ok) {
         const data = await res.json();
         if (data.error) alert(data.error);
