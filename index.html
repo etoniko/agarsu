@@ -964,41 +964,11 @@ setNick(document.getElementById('nick').value + "#" + document.getElementById('p
                         <div><span>Кабинет</span></div>
                     </div>
 <div class="header-row">
-    <!-- Logout кнопка -->
-    <button style="display:none" id="logoutButton">Выход</button>
-
-    <!-- Login кнопки -->
-    <div id="loginButtons">
-        <button class="login-button" data-provider="google">Войти через Google</button>
-        <button class="login-button" data-provider="vk">Войти через VK</button>
-        <button class="login-button" data-provider="yandex">Войти через Yandex</button>
-        <button class="login-button" data-provider="telegram">Войти через Telegram</button>
-    </div>
+    <button style="display:none" id="logoutButton" onclick="logoutAccount()">Выход</button>
+    <!-- uLogin авторизация -->
+    <script src="/assets/scripts/ulogin.js"></script>
+    <div id="loginButton" data-ulogin="callback=onUloginToken;display=panel;fields=photo,first_name,last_name;providers=vkontakte,odnoklassniki,mailru,facebook;hidden=other;redirect_uri=https%3A%2F%2Fitana.pw%2Fapi%2Fauth%2Fulogin"></div> 
 </div>
-
-<script>
-    // Связываем кнопки с main_out.js
-    const loginButtons = document.querySelectorAll(".login-button");
-    const logoutButton = document.getElementById("logoutButton");
-
-    loginButtons.forEach(btn => {
-        btn.addEventListener("click", () => {
-            const provider = btn.dataset.provider;
-            if (provider && window.wHandle) {
-                // Открываем OAuth окно
-                window.wHandle.startOAuthLogin(provider);
-            }
-        });
-    });
-
-    logoutButton.addEventListener("click", () => {
-        if (window.wHandle) window.wHandle.logoutAccount();
-    });
-</script>
-
-<!-- Опционально: Telegram виджет -->
-<script async src="https://telegram.org/js/telegram-widget.js?7" data-telegram-login="YOUR_BOT_USERNAME" data-size="large" data-radius="5" data-auth-url="https://itana.pw:6003/api/auth/telegram" data-request-access="write"></script>
-
 
 </div>
 
@@ -1382,17 +1352,3 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
