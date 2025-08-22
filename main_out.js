@@ -3013,6 +3013,17 @@ showLogoutNotification();
             else onAccountLoggedIn(data.token);
         }
     };
+wHandle.onVkLogin = async (code, deviceId) => {
+    const res = await fetch(`https://itana.pw:6003/api/auth/vk?code=${code}&device_id=${deviceId}`);
+    if (res.ok) {
+        const data = await res.json();
+        if (data.error) alert(data.error);
+        else wHandle.onAccountLoggedIn(data.token);
+    } else {
+        alert("VK login failed");
+    }
+};
+
 
     const setAccountToken = token => {
         localStorage.accountToken = token;
