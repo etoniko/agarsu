@@ -2995,32 +2995,25 @@ wHandle.logoutAccount = async () => {
     } else onLogout();
 };
 
-// ------------------ ULOGIN ------------------
-wHandle.onUloginToken = async tokenUlogin => {
-    const res = await accountApiGet("auth/ulogin?token=" + tokenUlogin);
-    if (res.ok) {
-        const data = await res.json();
-        if (data.error) alert(data.error);
-        else onAccountLoggedIn(data.token);
-    }
-};
-
-// ------------------ VKID ------------------
-wHandle.onVkLogin = async (code) => {
-    const res = await fetch(`https://itana.pw/api/auth/vk?code=${code}`);
-    if (res.ok) {
-        const data = await res.json();
-        if (data.error) alert(data.error);
-        else wHandle.onAccountLoggedIn(data.token);
-    } else {
-        alert("VK login failed");
-    }
+// ------------------ ACCOUNT LOGOUT ------------------
+const onLogout = () => {
+    localStorage.removeItem('accountData');
+    clearAccountToken();
+    const progressBar = document.querySelector(".progress-fill");
+    if (progressBar) progressBar.style.width = `0%`;
+    const levelCircle = document.getElementById("levelCircle");
+    if (levelCircle) levelCircle.textContent = "0";
+    const progressText = document.getElementById("progressText");
+    if (progressText) progressText.textContent = "0% (0/0)";
+    const accountIDElement = document.getElementById("accountID");
+    if (accountIDElement) accountIDElement.textContent = "ID: 0000";
+    document.getElementById("logoutButton")?.style.display = "none";
+    document.getElementById("loginButton")?.style.display = "";
 };
 
 // ------------------ TOKEN HANDLING ------------------
 const setAccountToken = token => localStorage.accountToken = token;
 const clearAccountToken = () => delete localStorage.accountToken;
-
 const accountApiGet = tag => fetch("https://itana.pw/api/" + tag, {
     headers: { Authorization: `Game ${localStorage.accountToken}` }
 });
@@ -3029,17 +3022,15 @@ const accountApiGet = tag => fetch("https://itana.pw/api/" + tag, {
 wHandle.onAccountLoggedIn = token => {
     setAccountToken(token);
     loadAccountUserData();
-    sendAccountToken();
 };
 
 let accountData;
 const setAccountData = data => {
     accountData = data;
     displayAccountData();
-    document.querySelectorAll(".menu-item")[2].click(); // На главную меню
-
-    logoutButton.style.display = "";
-    loginButton.style.display = "none";
+    document.querySelectorAll(".menu-item")[2]?.click();
+    document.getElementById("logoutButton")?.style.display = "";
+    document.getElementById("loginButton")?.style.display = "none";
 };
 
 const loadAccountUserData = async () => {
@@ -3061,30 +3052,70 @@ const getLevel = xp => ~~((xp / 100 * 2) ** 0.5);
 
 const displayAccountData = () => {
     if (!accountData) return;
-
     const currLevel = getLevel(accountData.xp);
     const nextXp = getXp(currLevel + 1);
     const progressPercent = (accountData.xp / nextXp) * 100;
-
     const progressBar = document.querySelector(".progress-fill");
     if (progressBar) progressBar.style.width = `${progressPercent}%`;
-
     const levelCircle = document.getElementById("levelCircle");
     if (levelCircle) levelCircle.textContent = currLevel;
-
     const progressText = document.getElementById("progressText");
     if (progressText) progressText.textContent = `${Math.round(progressPercent)}% (${accountData.xp}/${nextXp})`;
-
     const accountIDElement = document.getElementById("accountID");
     if (accountIDElement) accountIDElement.textContent = `ID: ${accountData.uid}`;
 };
 
-const onUpdateXp = xp => {
+wHandle.onUpdateXp = xp => {
     if (accountData) {
         accountData.xp = xp;
         displayAccountData();
     }
 };
+
+// ------------------ VKID ------------------
+wHandle.onVkLogin = async (code, device_id) => {
+    try {
+        const res = await fetch(`https://itana.pw/api/auth/vk?code=${code}&device_id=${device_id}`);
+        const data = await res.json();
+        if (data.error) alert(data.error);
+        else wHandle.onAccountLoggedIn(data.token);
+    } catch (err) {
+        alert("VK login failed");
+    }
+};
+
+// ------------------ uLogin ------------------
+wHandle.onUloginToken = async tokenUlogin => {
+    const res = await accountApiGet("auth/ulogin?token=" + tokenUlogin);
+    if (res.ok) {
+        const data = await res.json();
+        if (data.error) alert(data.error);
+        else onAccountLoggedIn(data.token);
+    }
+};
+
+// ------------------ INIT VKID SDK ------------------
+if ('VKIDSDK' in window) {
+    const VKID = window.VKIDSDK;
+    VKID.Config.init({
+        app: 54069355,
+        redirectUrl: 'https://itana.pw/api/auth/vk',
+        responseMode: VKID.ConfigResponseMode.Callback,
+        source: VKID.ConfigSource.LOWCODE,
+        scope: ''
+    });
+
+    const floatingOneTap = new VKID.FloatingOneTap();
+    floatingOneTap.render({
+        appName: 'agar.su',
+        oauthList: ['vkid', 'ok_ru', 'mail_ru'],
+        showAlternativeLogin: true
+    })
+    .on(VKID.WidgetEvents.ERROR, error => alert("VKID error: " + JSON.stringify(error)))
+    .on(VKID.FloatingOneTapInternalEvents.LOGIN_SUCCESS, payload => {
+        wHandle.onVkLogin(payload.code, payload.device_id);
+    });
+}
 
     wHandle.onload = gameLoop;
 })(window, window.jQuery);
