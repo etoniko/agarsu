@@ -229,7 +229,7 @@ display: flex;
 /* Стили для остальных игроков */
 .Lednick{
     overflow: hidden;
-    width: 150px;
+    width: 140px;
     white-space: nowrap;
     text-overflow: ellipsis;
 }
