@@ -1326,7 +1326,8 @@ if (playerId === ownerPlayerId) {
         }
 
         if (ua && playerCells.length === 0) {
-            wjQuery("#statics").show();  // Hide overlays
+            wjQuery("#statics").show();  
+             drawStatsGraph();
 			updateShareText();
         }
     }
@@ -1475,8 +1476,7 @@ let statsCanvas = null;
 let statsCtx = null;
 let staticsDiv = null; // обёртка статистики
 
-let statsFrozen = false; // заморозка при смерти
-let wasAlive = false;    // детектор переходов alive/dead
+let lastScorePush = 0; // для ограничения частоты записи
 
 // ===== УТИЛЫ =====
 function formatTimeStats(ms) {
@@ -1493,64 +1493,29 @@ function compressHistory(history, maxLength) {
     const step = Math.ceil(history.length / maxLength);
     const out = [];
     for (let i = 0; i < history.length; i += step) out.push(history[i]);
-    // гарантируем последний кадр
     if (out[out.length - 1] !== history[history.length - 1]) out.push(history[history.length - 1]);
     return out;
 }
 
-// Останавливаем обновление статистики (заморозка кадра)
-function stopStats() {
-    if (!statsFrozen) {
-        statsFrozen = true;
-        drawStatsGraph(); // дорисуем финальный кадр
-    }
-}
-
-// Новая сессия после возрождения
-function resumeStats() {
-    statsFrozen = false;
-    startTime = Date.now();
-    scoreHistory = [];
-    maxScore = 0;
-    lastDisplayedMaxScore = 0;
-}
-
 // ===== ОСНОВНОЙ РЕНДЕР СЦЕНЫ =====
 function drawGameScene() {
-    var a, oldtime = Date.now();
+    const oldtime = Date.now();
     ++cb;
     timestamp = oldtime;
 
-    const isAlive = playerCells.length > 0;
-
-    // детекция переходов состояний
-    if (isAlive && !wasAlive) {
-        // только что возродились
-        resumeStats();
-    } else if (!isAlive && wasAlive) {
-        // только что умерли
-        stopStats();
+    // ===== Обновляем позицию камеры =====
+    let a = 0, c = 0;
+    for (let d = 0; d < playerCells.length; d++) {
+        playerCells[d].updatePos();
+        a += playerCells[d].x / playerCells.length;
+        c += playerCells[d].y / playerCells.length;
     }
-    wasAlive = isAlive;
 
-    if (isAlive) {
-        calcViewZoom();
-        var c = a = 0;
-        for (var d = 0; d < playerCells.length; d++) {
-            playerCells[d].updatePos();
-            a += playerCells[d].x / playerCells.length;
-            c += playerCells[d].y / playerCells.length;
-        }
-        posX = a;
-        posY = c;
-        posSize = viewZoom;
-        nodeX = (nodeX + a) / 2;
-        nodeY = (nodeY + c) / 2;
-    } else {
-        nodeX = (29 * nodeX + posX) / 30;
-        nodeY = (29 * nodeY + posY) / 30;
-        viewZoom = (9 * viewZoom + posSize * viewRange()) / 10;
-    }
+    posX = a || posX;
+    posY = c || posY;
+    posSize = viewZoom;
+    nodeX = (nodeX + posX) / 2;
+    nodeY = (nodeY + posY) / 2;
 
     buildQTree();
     mouseCoordinateChange();
@@ -1560,13 +1525,16 @@ function drawGameScene() {
 
     nodelist.sort((a, b) => a.size === b.size ? a.id - b.id : a.size - b.size);
 
+    // ===== Отрисовка всех клеток =====
     ctx.save();
     ctx.translate(canvasWidth / 2, canvasHeight / 2);
     ctx.scale(viewZoom, viewZoom);
     ctx.translate(-nodeX, -nodeY);
-    for (d = 0; d < Cells.length; d++) Cells[d].drawOneCell(ctx);
-    for (d = 0; d < nodelist.length; d++) nodelist[d].drawOneCell(ctx);
 
+    for (let d = 0; d < Cells.length; d++) Cells[d].drawOneCell(ctx);
+    for (let d = 0; d < nodelist.length; d++) nodelist[d].drawOneCell(ctx);
+
+    // Линии между игроком и курсором
     if (drawLine) {
         drawLineX = (3 * drawLineX + lineX) / 4;
         drawLineY = (3 * drawLineY + lineY) / 4;
@@ -1577,22 +1545,22 @@ function drawGameScene() {
         ctx.lineJoin = "round";
         ctx.globalAlpha = .5;
         ctx.beginPath();
-        for (d = 0; d < playerCells.length; d++) {
+        for (let d = 0; d < playerCells.length; d++) {
             ctx.moveTo(playerCells[d].x, playerCells[d].y);
             ctx.lineTo(drawLineX, drawLineY);
         }
         ctx.stroke();
         ctx.restore();
     }
-
     ctx.restore();
-    lbCanvas && lbCanvas.width && ctx.drawImage(lbCanvas, canvasWidth - lbCanvas.width - 10, 10);
-    if (chatCanvas != null) ctx.drawImage(chatCanvas, 0, canvasHeight - chatCanvas.height - 50);
 
-    // ===== СЧЁТЫ =====
+    // ===== UI =====
+    if (lbCanvas && lbCanvas.width) ctx.drawImage(lbCanvas, canvasWidth - lbCanvas.width - 10, 10);
+    if (chatCanvas) ctx.drawImage(chatCanvas, 0, canvasHeight - chatCanvas.height - 50);
+
+    // ===== Счёт =====
     const currentScore = Math.floor(calcUserScore() / 100);
     maxScore = Math.max(maxScore, currentScore);
-    const cellCount = playerCells.length;
 
     const elMax = document.getElementById('score-max');
     if (elMax && maxScore !== lastDisplayedMaxScore) {
@@ -1607,49 +1575,46 @@ function drawGameScene() {
     }
 
     const elCells = document.getElementById('cell-length');
-    if (elCells && cellCount !== lastDisplayedCellCount) {
-        elCells.innerText = cellCount;
-        lastDisplayedCellCount = cellCount;
+    if (elCells && playerCells.length !== lastDisplayedCellCount) {
+        elCells.innerText = playerCells.length;
+        lastDisplayedCellCount = playerCells.length;
     }
 
-    // Пишем историю ТОЛЬКО когда живы и не заморожено
-    if (isAlive && !statsFrozen) {
-        scoreHistory.push({ time: Date.now(), score: currentScore });
-        if (scoreHistory.length > 5000) scoreHistory.shift();
+    // ===== Сбор истории (оптимизировано) =====
+    const now = Date.now();
+    if (!lastScorePush || now - lastScorePush > 200) { // раз в 200мс
+        scoreHistory.push({ time: now, score: currentScore });
+        lastScorePush = now;
     }
+    if (scoreHistory.length > 500) scoreHistory.shift(); // ограничение размера
 
     drawSplitIcon(ctx);
     drawTouch(ctx);
 
-    var deltatime = Date.now() - oldtime;
-    deltatime > 1E3 / 60 ? z -= .01 : deltatime < 1E3 / 65 && (z += .01);
-    .4 > z && (z = .4);
-    1 < z && (z = 1);
-
-    // если окно статистики видно и НЕ заморожено — обновляем график в реальном времени
-    if (staticsDiv && staticsDiv.style.display !== 'none' && !statsFrozen) {
-        drawStatsGraph();
-    }
+    // ===== Тайминг =====
+    let deltatime = Date.now() - oldtime;
+    z = deltatime > 1000/60 ? z - 0.01 : deltatime < 1000/65 ? z + 0.01 : z;
+    z = Math.min(Math.max(z, 0.4), 1);
 }
 
-// ===== ГРАФИК =====
+// ===== График =====
 function drawStatsGraph() {
     if (!statsCanvas || !statsCtx) return;
+    if (scoreHistory.length < 2) return;
 
     statsCtx.clearRect(0, 0, statsCanvas.width, statsCanvas.height);
-    if (scoreHistory.length < 2) return;
 
     const data = compressHistory(scoreHistory, 200);
     const n = data.length;
 
-    const paddingX = 5; // отступы по X
-    const paddingY = 5; // верхний отступ
+    const paddingX = 5;
+    const paddingY = 5;
     const innerW = statsCanvas.width - 2 * paddingX;
-    const innerH = statsCanvas.height - paddingY - 15; // 15 — место под подписи
+    const innerH = statsCanvas.height - paddingY - 15;
 
     const maxScoreInHistory = Math.max(...data.map(p => p.score), 1);
     const minTime = data[0].time;
-    const maxTime = data[n - 1].time;
+    const maxTime = data[n-1].time;
     const totalTime = Math.max(1, maxTime - minTime);
 
     // Линия графика
@@ -1662,8 +1627,7 @@ function drawStatsGraph() {
         const s = data[i].score;
         const x = paddingX + (t / totalTime) * innerW;
         const y = paddingY + (1 - s / maxScoreInHistory) * innerH;
-        if (i === 0) statsCtx.moveTo(x, y);
-        else statsCtx.lineTo(x, y);
+        i === 0 ? statsCtx.moveTo(x, y) : statsCtx.lineTo(x, y);
     }
     statsCtx.stroke();
 
@@ -1672,25 +1636,20 @@ function drawStatsGraph() {
     statsCtx.lineWidth = 1;
     statsCtx.strokeRect(0.5, 0.5, statsCanvas.width - 1, statsCanvas.height - 1);
 
-    // Подписи по X: 1 2 3 4 5 … затем 1 3 5 … затем 1 5 9 …
+    // Подписи по X
     statsCtx.fillStyle = 'white';
     statsCtx.font = '10px Arial';
     statsCtx.textAlign = 'center';
     statsCtx.textBaseline = 'bottom';
 
-    const minLabelPx = 20; // минимальная ширина под подпись
+    const minLabelPx = 20;
     const maxLabels = Math.max(1, Math.floor(innerW / minLabelPx));
-
-    // динамический шаг: 1 -> 2 -> 4 -> 8 ...
     let step = 1;
     while (Math.ceil(n / step) > maxLabels) step *= 2;
 
     for (let i = 0; i < n; i += step) {
-        const x = paddingX + (i / (n - 1)) * innerW;
-        const label = String(i + 1);
-        statsCtx.fillText(label, x, statsCanvas.height - 2);
-
-        // маленькая рисочка на оси
+        const x = paddingX + (i / (n-1)) * innerW;
+        statsCtx.fillText(String(i+1), x, statsCanvas.height - 2);
         statsCtx.beginPath();
         statsCtx.moveTo(x, statsCanvas.height - 14);
         statsCtx.lineTo(x, statsCanvas.height - 10);
@@ -1699,7 +1658,7 @@ function drawStatsGraph() {
         statsCtx.stroke();
     }
 
-    // (необязательная) подпись по Y макс. значения
+    // Макс. значение Y
     statsCtx.fillText(String(maxScoreInHistory), 18, paddingY + 8);
 }
 
@@ -1737,13 +1696,8 @@ function getShareMessage() {
         "Ты сделал это! Друзья должны это увидеть — поделись сейчас!"
     ];
 
-    let messagesArray;
-    if (maxScore < 1000) messagesArray = lowScores;
-    else if (maxScore < 10000) messagesArray = midScores;
-    else messagesArray = highScores;
-
-    const randomIndex = Math.floor(Math.random() * messagesArray.length);
-    return messagesArray[randomIndex];
+    let messagesArray = maxScore < 1000 ? lowScores : maxScore < 10000 ? midScores : highScores;
+    return messagesArray[Math.floor(Math.random() * messagesArray.length)];
 }
 
 function updateShareText() {
@@ -2369,6 +2323,12 @@ function drawLeaderBoard() {
         userNickName = arg;
         sendNickName();
          wjQuery("#statics").hide();
+    scoreHistory = []; // очищаем историю для новой сессии
+    startTime = Date.now();
+    lastDisplayedScore = 0;
+    lastDisplayedMaxScore = 0;
+    lastDisplayedCellCount = 0;
+    maxScore = 0;
     };
 
 
