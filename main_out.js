@@ -1184,7 +1184,6 @@ if (passUsers.includes(normalizedName)) {
         nameDiv.style.color = 'gold';
         nameDiv.title = 'Администратор';
     } else if (moders.includes(lowerName)) {
-        nameDiv.style.color = 'silver';
         nameDiv.title = 'Модератор';
     } else {
         nameDiv.style.color = lastMessage.color || '#b8c0cc';
