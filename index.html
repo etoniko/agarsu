@@ -34,7 +34,7 @@
     <script src="https://cdn.jsdelivr.net/gh/etoniko/agarsu/jquery.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/etoniko/agarsu/log.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/etoniko/agarsu/vector.js"></script>
-    <script src="/main_out.js?v=1.3.2"></script>
+    <script src="/main_out.js?v=1.3.0"></script>
 </head>
 <body>
     <div id="overlays" class="overlays">
@@ -820,7 +820,7 @@ function startGame() {
     setNick(document.getElementById('nick').value + "#" + document.getElementById('pass').value);
 setTimeout(function() {
 setNick(document.getElementById('nick').value + "#" + document.getElementById('pass').value);
-}, 1000);
+}, 300);
 }
                         </script>
                         <!-- change div -> button | Disabled button xxxevexxx -->
@@ -1021,7 +1021,7 @@ setNick(document.getElementById('nick').value + "#" + document.getElementById('p
 
   <div class="chatX_window" id="chatX_window">
     <div class="chatX_top">
-      <div class="chatX_burger" id="chatX_burger" draggable="true"><i class="fa-solid fa-bars nresize"></i></div>
+      <div class="chatX_burger" id="chatX_burger"><i class="fa-solid fa-bars nresize"></i></div>
       <div class="chatX_close" onclick="document.getElementById('chatX_window').style.display = 'none'; document.getElementById('onchat').style.display = 'flex';" id="chatX_close"><i class="fa-solid fa-xmark"></i></div>
     </div>
 
@@ -1157,142 +1157,33 @@ scrollToBottom();
             </div>
         </div>
 <div id="onmap" onclick="document.getElementById('map').style.display = 'block'; document.getElementById('onmap').style.display = 'none';"><i class="fa fa-arrow-up"></i></div>
-<div id="statics">
-<div id="statsWrapper">
-<div id="closeStats" onclick="document.getElementById('statics').style.display = 'none';$('#overlays').show();"><i class="fa-solid fa-xmark"></i></div>
-        <h1>Статистика</h1>
-        <canvas id="statsGraph" width="320" height="150"></canvas>
+<script>
+const pingValueElement = document.getElementById('ping'); // Ищем элемент с id="ping"
 
-<div style="color: #01f103f0;text-shadow: #01f103f0 1px 0 10px;">поделиться:</div>
-        <div id="buttons">
-            <button class="social-btn fab fa-vk vk" title="ВКонтакте"></button>
-            <button class="social-btn fab fa-telegram telegram" title="Telegram"></button>
-            <button class="social-btn fab fa-whatsapp whatsapp" title="WhatsApp"></button>
-            <button class="social-btn fab fa-facebook facebook" title="Facebook"></button>
-            <button class="social-btn fab fa-twitter twitter" title="Twitter"></button>
-        </div><div id="shareText"></div>
-<div class="nav-buttons">
-<div onclick="spectate();" class="nav-button serv-button"><i class="fas fa-eye"></i>Наблюдать</div>
-<button id="button-text" onclick="startGame();return false;" class="nav-button play-button"><i class="fas fa-play"></i> ИГРАТЬ</button>
-</div>
-    </div>
-</div>
+// Функция для обновления ping и иконки
+function updatePingIndicator() { // Переименовали функцию
 
-<style>
-#closeStats {
-    position: absolute;
-    top: 15px;
-    right: 20px;
-    font-size: 24px;
-    font-weight: bold;
-    color: #fff;
-    cursor: pointer;
-    transition: color 0.2s, transform 0.2s;
+  // Получаем текущее значение пинга из элемента
+  const ping = parseInt(pingValueElement.textContent);
+
+  // Убираем все существующие классы цветов
+  pingValueElement.classList.remove('ping-green', 'ping-yellow', 'ping-red');
+
+  if (ping >= 0 && ping < 100) {
+    pingValueElement.classList.add('ping-green');
+  } else if (ping >= 100 && ping < 150) {
+    pingValueElement.classList.add('ping-yellow');
+  } else {
+    pingValueElement.classList.add('ping-red');
+  }
 }
 
-#closeStats:hover {
-    color: #ff4d4d;
-    transform: scale(1.2);
-}
-/* Полноэкранный темный фон */
-#statics {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-}
+// Запускаем функцию обновления индикатора при загрузке страницы
+updatePingIndicator();
 
-/* Центрированное окно с контентом */
-#statsWrapper {
-    width: 380px;
-    padding: 25px;
-    background-color: #0e172c;
-    border-radius: 25px;
-    border: 1px solid #ffffff14;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    box-shadow: 0 0 20px rgba(0,0,0,0.5);
-}
-
-/* Заголовок для шаринга */
-#shareText {
-    font-size: 18px;
-    color: #c3c0c0;
-    text-align: center;
-    margin-bottom: 10px;
-}
-
-/* Кнопки */
-#buttons {
-    display: flex;
-    gap: 10px;
-}
-
-.social-btn {
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    border: none;
-    cursor: pointer;
-    background-size: 60% 60%;
-    background-repeat: no-repeat;
-    background-position: center;
-    transition: transform 0.2s, background-color 0.2s; /* Добавляем transition для background-color */
-    font-size: 30px; /* Этот стиль, вероятно, для Font Awesome, но может перекрываться. */
-}
-
-/* Общий :hover эффект */
-.social-btn:hover {
-    transform: scale(1.2);
-}
-
-/* Стили для конкретных соцсетей при наведении */
-
-/* ВКонтакте */
-.social-btn.vk:hover {
-    background-color: #4a76a8; /* Фирменный цвет VK */
-	    box-shadow: #4a76a8 1px 0 10px;
-}
-
-/* Telegram */
-.social-btn.telegram:hover {
-    background-color: #2ca5e2; /* Фирменный цвет Telegram */
-	    box-shadow: #2ca5e2 1px 0 10px;
-}
-
-/* WhatsApp */
-.social-btn.whatsapp:hover {
-    background-color: #25d366; /* Фирменный цвет WhatsApp */
-	    box-shadow: #25d366 1px 0 10px;
-}
-
-/* Facebook */
-.social-btn.facebook:hover {
-    background-color: #1877f2; /* Фирменный цвет Facebook */
-	    box-shadow: #1877f2 1px 0 10px;
-}
-
-/* Twitter */
-.social-btn.twitter:hover {
-    background-color: #1da1f2; /* Фирменный цвет Twitter */
-	    box-shadow: #1da1f2 1px 0 10px;
-}
-
-</style>
-
-
+// Запускаем функцию обновления индикатора каждую секунду (или другой интервал)
+setInterval(updatePingIndicator, 1000);
+</script>
 <div id="freeze" onclick="freeze = false;this.style.display = 'none';">Pause <i style="color:red;"class="fa fa-pause"></i></div>
 <div id="notification-container">
   <div id="logout-notification" class="notification" style="display:none;">Login close</div>
@@ -1321,7 +1212,24 @@ function showLogoutNotification() {
     }, 3000);
 }
 </script>
+<script>
+const observer = new MutationObserver(() => {
+  document.querySelectorAll('.star-container').forEach(container => {
+    const levelElem = container.querySelector('.levelme');
+    if (!levelElem) return;
+    const level = parseInt(levelElem.textContent, 10);
+    const star = container.querySelector('.fa-star');
+    if (!star) return;
+    if (level >= 50) {
+      star.classList.add('high-level');
+    } else {
+      star.classList.remove('high-level');
+    }
+  });
+});
+
+// Запускаем наблюдатель за всей страницей (или более конкретным контейнером)
+observer.observe(document.body, { childList: true, subtree: true });
+</script>
 </body>
 </html>
-
-
