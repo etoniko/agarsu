@@ -10,7 +10,7 @@
                                   supported by Chrome, Edge, Opera and Firefox */
 }
 .admins{background: #ff00008f !important;}
-.moders{background: #de4fd66b !important;}
+.moders{    background: url(https://mir-s3-cdn-cf.behance.net/c710a30…/7d1db74a-a10d-4d59-a3d2-b7af930b6fc0_rwc_-5x193x5120x1095x5120.jpg?h=7ed8056…) !important;background-size: cover !important;color: #fafafa !important;text-shadow: 1px 1px 1px red, 0 0 0em #0000ff00, 0 0 0.2em blue;font-weight: lighter;}
 
 /* Фон полупрозрачный */
 #captcha-overlay {
