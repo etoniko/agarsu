@@ -155,7 +155,7 @@
   let currentStep = 1;
   let chosenSkin = null, chosenType = null, chosenPrice = 0, processedImageUrl = null;
   let serviceType = 'self';
-  let timer = 600, timerInterval = null;
+  let timer = 10*60, timerInterval = null;
 
   const stages = document.querySelectorAll('#shop .stage');
   const stepContents = document.querySelectorAll('#shop #step-content > div.step');
@@ -174,38 +174,34 @@
   const serviceRadios = document.querySelectorAll('input[name="serviceType"]');
 
   // --- уведомления ---
-  const notificationEl = document.createElement('div');
-  notificationEl.id = 'shopNotification';
-  notificationEl.style.cssText = `
-    position:fixed;top:20px;left:50%;transform:translateX(-50%);
-    background:#1b263b;color:#fff;padding:12px 20px;
-    border-radius:12px;font-weight:700;z-index:9999;
-    opacity:0;transition:opacity 0.3s,transform 0.3s;
-  `;
+  const notificationEl=document.createElement('div');
+  notificationEl.id='shopNotification';
+  notificationEl.style.cssText="position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#1b263b;color:#fff;padding:12px 20px;border-radius:12px;font-weight:700;z-index:9999;opacity:0;transition:opacity 0.3s,transform 0.3s;";
   document.body.appendChild(notificationEl);
   function notify(msg,duration=3000){
-    notificationEl.textContent = msg;
-    notificationEl.style.opacity = '1';
-    notificationEl.style.transform = 'translateX(-50%) translateY(0)';
+    notificationEl.textContent=msg;
+    notificationEl.style.opacity='1';
+    notificationEl.style.transform='translateX(-50%) translateY(0)';
     setTimeout(()=>{
-      notificationEl.style.opacity = '0';
-      notificationEl.style.transform = 'translateX(-50%) translateY(-20px)';
-    }, duration);
+      notificationEl.style.opacity='0';
+      notificationEl.style.transform='translateX(-50%) translateY(-20px)';
+    },duration);
   }
 
   // --- переключение для себя / клана ---
   serviceRadios.forEach(r=>{
     r.addEventListener('change',()=>{
-      serviceType = r.value;
-      nicknameInput.placeholder = serviceType==='clan'?'клан':'ник';
-      nicknameInput.title = serviceType==='clan'?'Введите название клана':'Введите ник';
+      serviceType=r.value;
+      nicknameInput.placeholder=serviceType==='clan'?'клан':'ник';
+      nicknameInput.title=serviceType==='clan'?'Введите название клана':'Введите ник';
 
       document.querySelectorAll('#skinsGrid .skin-card').forEach(card=>{
-        const base = Number(card.dataset.base);
-        const price = serviceType==='clan' ? base*2 : base;
-        card.querySelector('.price-label').textContent = `Цена: ${price}`;
-        card.querySelector('img').src = serviceType==='clan' ? card.dataset.srcClan : card.dataset.srcSelf;
+        const base=Number(card.dataset.base);
+        const price=serviceType==='clan'?base*2:base;
+        card.querySelector('.price-label').textContent=`Цена: ${price}`;
+        card.querySelector('img').src=serviceType==='clan'?card.dataset.srcClan:card.dataset.srcSelf;
 
+        // если карточка пароля — меняем заголовок
         if(card.dataset.type==='pass'){
           card.querySelector('h4').textContent = serviceType==='clan' ? 'Пароль на клан' : 'Пароль на ник';
         }
@@ -222,7 +218,7 @@
 
       const base = Number(card.dataset.base);
       const rand = Math.floor(Math.random()*10);
-      chosenPrice = (serviceType==='clan' ? base*2 : base) + rand;
+      chosenPrice = (serviceType==='clan'?base*2:base)+rand;
 
       passLabel.style.display = chosenType==='pass' ? 'block' : 'none';
       uploadCircle.style.display = chosenType==='pass' ? 'none' : 'flex';
@@ -233,45 +229,45 @@
     }
   });
 
-  // --- загрузка файла с проверкой ---
+  // --- загрузка файла с проверкой размера ---
   uploadCircle.addEventListener('click',()=>imageInput.click());
   imageInput.addEventListener('change',()=>{
-    const file = imageInput.files[0]; 
+    const file=imageInput.files[0]; 
     if(!file) return;
 
     if(file.size > 10*1024*1024){
       notify('❌ Файл больше 10MB');
-      imageInput.value = '';
+      imageInput.value='';
       return;
     }
 
-    const name = file.name.toLowerCase();
-    if(chosenType==='gif' && !name.endsWith('.gif')){
+    const name=file.name.toLowerCase();
+    if(chosenType==='gif'&&!name.endsWith('.gif')){
       notify('❌ Только GIF!');
       imageInput.value='';
       return;
     }
-    if(chosenType==='image' && !(/\.(png|jpe?g)$/i.test(name))){
+    if(chosenType==='image'&&!(/\.(png|jpg|jpeg)$/i.test(name))){
       notify('❌ Разрешены PNG/JPG!');
       imageInput.value='';
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = e=>{
-      const img = new Image();
-      img.onload = ()=>{
-        uploadCircle.innerHTML = '';
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        uploadCircle.innerHTML='';
         uploadCircle.appendChild(img);
       };
-      img.src = e.target.result;
-      processedImageUrl = e.target.result;
+      img.src=e.target.result;
+      processedImageUrl=e.target.result;
     };
     reader.readAsDataURL(file);
   });
 
-  // --- проверка никнейма ---
-  nicknameInput.addEventListener('blur', async ()=>{
+  // --- просто ограничение ввода ника ---
+  nicknameInput.addEventListener('blur', ()=>{
     let nick = nicknameInput.value.trim();
     nicknameInput.value = nick.replace(/['`";:]/g,'').slice(0,20);
 
@@ -282,47 +278,28 @@
         return;
       }
     }
-    if(!nick) return;
-
-    try{
-      const res = await fetch(`https://itana.pw:6005/check-nick?nickname=${encodeURIComponent(nick.toLowerCase())}`);
-      const data = await res.json();
-      if(data.exists) notify('❌ Этот '+(serviceType==='clan'?'клан':'ник')+' уже занят');
-      else if(!data.success) notify('❌ '+data.error);
-    }catch(err){
-      notify('❌ Ошибка проверки: '+err.message);
-    }
   });
 
   // --- переход к оплате ---
-  document.getElementById('dataForm').addEventListener('submit', async e=>{
+  document.getElementById('dataForm').addEventListener('submit', e=>{
     e.preventDefault();
     const nick = nicknameInput.value.trim();
     const pass = passwordInput.value.trim();
 
-    if(!nick){
-      notify(serviceType==='clan'?'Введите название клана':'Введите ник');
-      return;
-    }
+    if(!nick){notify(serviceType==='clan'?'Введите название клана':'Введите ник');return;}
     if(serviceType==='clan'){
       const clanPattern = /^(\[.*\]|\|.*\||\{.*\}|\(.*\))$/;
-      if(!clanPattern.test(nick)){
-        notify('❌ У клана должны быть скобки [ ] || { } ( )');
-        return;
-      }
+      if(!clanPattern.test(nick)){notify('❌ У клана должны быть скобки [ ] || { } ( )');return;}
     }
     if(chosenType==='pass'){
       if(!pass){notify('❌ Введите пароль');return;}
       if(pass.length>5){notify('❌ Пароль ≤5 символов');return;}
     }
-    if(chosenType!=='pass' && !processedImageUrl){
-      notify('❌ Загрузите изображение');
-      return;
-    }
+    if(chosenType!=='pass'&&!processedImageUrl){notify('❌ Загрузите изображение');return;}
 
-    finalTitleEl.textContent = `Оплата — ${chosenSkin}`;
-    priceEl.textContent = `${chosenPrice}₽`;
-    paidBtn.disabled = false;
+    finalTitleEl.textContent=`Оплата — ${chosenSkin}`;
+    priceEl.textContent=`${chosenPrice}₽`;
+    paidBtn.disabled=false;
     expiredBox.classList.add('hiddenn');
     startTimer();
     setActiveStep(3);
@@ -331,21 +308,26 @@
   // --- таймер ---
   function startTimer(){
     clearInterval(timerInterval);
-    timer = 600;
+    timer=10*60;
     updateTimer();
-    timerInterval = setInterval(()=>{
-      if(timer>0){ timer--; updateTimer(); }
-      else { clearInterval(timerInterval); onExpired(); }
+    timerInterval=setInterval(()=>{
+      if(timer>0){
+        timer--;
+        updateTimer();
+      }else{
+        clearInterval(timerInterval);
+        onExpired();
+      }
     },1000);
   }
   function updateTimer(){
-    const m = Math.floor(timer/60), s = timer%60;
-    countdownEl.textContent = `${m}:${s.toString().padStart(2,'0')}`;
+    const m=Math.floor(timer/60),s=timer%60;
+    countdownEl.textContent=`${m}:${s.toString().padStart(2,'0')}`;
   }
   function onExpired(){
-    countdownEl.textContent = '00:00';
+    countdownEl.textContent='00:00';
     expiredBox.classList.remove('hiddenn');
-    paidBtn.disabled = true;
+    paidBtn.disabled=true;
   }
 
   // --- кнопки назад ---
@@ -360,7 +342,6 @@
     formData.append('nickname',nick);
     formData.append('price',chosenPrice);
     formData.append('serviceType',serviceType);
-
     let endpoint='';
     if(chosenType==='pass'){
       formData.append('password',pass);
@@ -371,7 +352,6 @@
       formData.append('type',chosenType);
       endpoint='https://itana.pw:6005/submit-skin';
     }
-
     try{
       const res = await fetch(endpoint,{method:'POST',body:formData});
       const data = await res.json();
@@ -406,7 +386,7 @@
   }
 
   function setActiveStep(step){
-    currentStep = step;
+    currentStep=step;
     stages.forEach(s=>s.classList.toggle('active',Number(s.dataset.step)===step));
     stepContents.forEach(c=>c.classList.toggle('active',Number(c.dataset.step)===step));
   }
@@ -1371,5 +1351,6 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
