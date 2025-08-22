@@ -3014,7 +3014,7 @@ showLogoutNotification();
         }
     };
 wHandle.onVkLogin = async (code, deviceId) => {
-    const res = await fetch(`https://itana.pw:6003/api/auth/vk?code=${code}&device_id=${deviceId}`);
+    const res = await fetch(`https://itana.pw/api/auth/vk?code=${code}&device_id=${deviceId}`);
     if (res.ok) {
         const data = await res.json();
         if (data.error) alert(data.error);
@@ -3033,7 +3033,7 @@ wHandle.onVkLogin = async (code, deviceId) => {
         delete localStorage.accountToken;
     };
 
-    const accountApiGet = tag => fetch("https://itana.pw:6003/api/" + tag, { headers: { Authorization: `Game ${localStorage.accountToken}` } });
+    const accountApiGet = tag => fetch("https://itana.pw/api/" + tag, { headers: { Authorization: `Game ${localStorage.accountToken}` } });
 
     wHandle.onAccountLoggedIn = token => {
         setAccountToken(token);
