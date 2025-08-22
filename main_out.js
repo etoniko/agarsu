@@ -2961,8 +2961,6 @@ if (this.id !== 0) {
         }
     };
 
-// === main_out.js ===
-const wHandle = {};
 
 // === DOM элементы ===
 const loginButtons = document.querySelectorAll(".login-button");
