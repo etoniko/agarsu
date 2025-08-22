@@ -2961,143 +2961,150 @@ if (this.id !== 0) {
         }
     };
 
-const onLogout = () => {
-    // Очистка данных аккаунта в памяти
-    accountData = null;
+// === main_out.js ===
+const wHandle = {};
 
-    // Очистка данных в localStorage, связанных с аккаунтом (например, прогресс)
-    localStorage.removeItem('accountData'); // если есть
+// === DOM элементы ===
+const loginButtons = document.querySelectorAll(".login-button");
+const logoutButton = document.getElementById("logoutButton");
 
-    // Очистить токен
-    clearAccountToken();
+let accountData = null;
 
-    // Обновить UI — очистить все элементы с прогрессом
-    const progressBar = document.querySelector(".progress-fill");
-    if (progressBar) progressBar.style.width = `0%`;
+// ======================
+// Токены
+// ======================
+const setAccountToken = token => localStorage.accountToken = token;
+const clearAccountToken = () => delete localStorage.accountToken;
 
-    const levelCircle = document.getElementById("levelCircle");
-    if (levelCircle) levelCircle.textContent = "0";
-
-    const progressText = document.getElementById("progressText");
-    if (progressText) progressText.textContent = "0% (0/0)";
-
-    const accountIDElement = document.getElementById("accountID");
-    if (accountIDElement) accountIDElement.textContent = "ID: 0000";
-
-    // Обновляем кнопки
-    logoutButton.style.display = "none";
-    loginButton.style.display = "";
-showLogoutNotification();
+// ======================
+// API запросы
+// ======================
+const accountApiGet = async tag => {
+    return fetch("https://itana.pw:6003/api/" + tag, {
+        headers: { Authorization: `Game ${localStorage.accountToken || ''}` }
+    });
 };
 
+// ======================
+// Уровень и прогресс
+// ======================
+const getXp = level => Math.floor(100 * (level ** 2 / 2));
+const getLevel = xp => Math.floor(Math.sqrt(xp / 100 * 2));
 
+const displayAccountData = () => {
+    if (!accountData) return;
 
-    wHandle.logoutAccount = async () => {
-        if (localStorage.accountToken) {
-            const res = await accountApiGet("me/logout");
-            if (res.ok) {
-                const data = await res.json();
-                if (data.ok || 401 == data.status) onLogout();
-                if (data.error) alert(data.error);
-            }
-        }
-        else onLogout();
-    }
+    const currLevel = getLevel(accountData.xp || 0);
+    const nextXp = getXp(currLevel + 1);
+    const progressPercent = ((accountData.xp || 0) / nextXp) * 100;
 
+    document.querySelector(".progress-fill")?.style.width = `${progressPercent}%`;
+    document.getElementById("levelCircle")?.textContent = currLevel;
+    document.getElementById("progressText")?.textContent = `${Math.round(progressPercent)}% (${accountData.xp || 0}/${nextXp})`;
+    document.getElementById("accountID")?.textContent = `ID: ${accountData.uid || "0000"}`;
+};
 
-    wHandle.onUloginToken = async tokenUlogin => {
-        const res = await accountApiGet("auth/ulogin?token=" + tokenUlogin);
-        if (res.ok) {
-            const data = await res.json();
-            if (data.error) alert(data.error);
-            else onAccountLoggedIn(data.token);
-        }
-    };
-
-    const setAccountToken = token => {
-        localStorage.accountToken = token;
-    };
-
-    const clearAccountToken = () => {
-        delete localStorage.accountToken;
-    };
-
-    const accountApiGet = tag => fetch("https://itana.pw:6003/api/" + tag, { headers: { Authorization: `Game ${localStorage.accountToken}` } });
-
-    wHandle.onAccountLoggedIn = token => {
-        setAccountToken(token);
-        loadAccountUserData();
-        sendAccountToken();
-    };
-
-    let accountData;
-
-    const setAccountData = data => {
-        accountData = data;
+const onUpdateXp = xp => {
+    if (accountData) {
+        accountData.xp = xp;
         displayAccountData();
-        document.querySelectorAll(".menu-item")[2].click(); // На главную меню
+    }
+};
 
-        logoutButton.style.display = "";
-        loginButton.style.display = "none";
-    };
+// ======================
+// Работа с аккаунтом
+// ======================
+const setAccountData = data => {
+    accountData = data;
+    displayAccountData();
 
-    const loadAccountUserData = async () => {
+    logoutButton.style.display = "";
+    loginButtons.forEach(b => b.style.display = "none");
+};
+
+const loadAccountUserData = async () => {
+    if (!localStorage.accountToken) return;
+    try {
         const res = await accountApiGet("me/login");
         if (res.ok) {
             const data = await res.json();
             if (data.error) {
-                if (401 == data.status) clearAccountToken();
+                if (data.status === 401) clearAccountToken();
                 else alert(data.error);
-            }
-            else setAccountData(data);
+            } else setAccountData(data);
         }
-    };
+    } catch (e) {
+        console.error("Ошибка загрузки данных аккаунта:", e);
+    }
+};
 
-    if (localStorage.accountToken) loadAccountUserData();
+// ======================
+// Logout
+// ======================
+const onLogout = () => {
+    accountData = null;
+    clearAccountToken();
 
-    const getXp = level => ~~(100 * (level ** 2 / 2));
-    const getLevel = xp => ~~((xp / 100 * 2) ** .5);
+    document.querySelector(".progress-fill")?.style.width = "0%";
+    document.getElementById("levelCircle")?.textContent = "0";
+    document.getElementById("progressText")?.textContent = "0% (0/0)";
+    document.getElementById("accountID")?.textContent = "ID: 0000";
 
-    const displayAccountData = () => {
-        const currLevel = getLevel(accountData.xp); // Получаем текущий уровень
-        const nextXp = getXp(currLevel + 1); // Получаем XP для следующего уровня
-        const progressPercent = (accountData.xp / nextXp) * 100; // Рассчитываем процент прогресса
+    logoutButton.style.display = "none";
+    loginButtons.forEach(b => b.style.display = "");
+};
 
-
-        // Обновляем прогресс бар
-        const progressBar = document.querySelector(".progress-fill");
-        if (progressBar) {
-            progressBar.style.width = `${progressPercent}%`;
+wHandle.logoutAccount = async () => {
+    if (!localStorage.accountToken) return onLogout();
+    try {
+        const res = await accountApiGet("me/logout");
+        if (res.ok) {
+            const data = await res.json();
+            if (data.ok || data.status === 401) onLogout();
+            else if (data.error) alert(data.error);
         }
+    } catch (e) {
+        console.error("Ошибка logout:", e);
+    }
+};
 
-        // Обновляем круг с уровнем
-        const levelCircle = document.getElementById("levelCircle");
-        if (levelCircle) {
-            levelCircle.textContent = currLevel;
+// ======================
+// OAuth авторизация через сервер
+// ======================
+const startOAuthLogin = provider => {
+    const oauthWindow = window.open(`https://itana.pw:6003/api/auth/${provider}`, "oauthLogin", "width=600,height=600");
+    const interval = setInterval(async () => {
+        if (oauthWindow.closed) {
+            clearInterval(interval);
+            if (localStorage.accountToken) await loadAccountUserData();
         }
+    }, 500);
+};
 
-        // Обновляем текст с прогрессом
-        const progressText = document.getElementById("progressText");
-        if (progressText) {
-            progressText.textContent = `${Math.round(progressPercent)}% (${accountData.xp}/${nextXp})`;
-        }
+// ======================
+// Кнопки Login/Logout
+// ======================
+loginButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+        const provider = btn.dataset.provider;
+        if (provider) startOAuthLogin(provider);
+    });
+});
 
-        // Отображаем account_id, если элемент существует
-        const accountIDElement = document.getElementById("accountID");
-        if (accountIDElement) {
-            accountIDElement.textContent = `ID: ${accountData.uid}`;
-        }
-    };
+logoutButton.addEventListener("click", () => wHandle.logoutAccount());
 
+// ======================
+// Автологин при наличии токена
+// ======================
+if (localStorage.accountToken) loadAccountUserData();
 
-
-
-    const onUpdateXp = xp => {
-        if (accountData) {
-            accountData.xp = xp;
-            displayAccountData();
-        }
-    };
+// ======================
+// Обработка внешнего входа по токену (например, uLogin/Telegram)
+// ======================
+wHandle.onAccountLoggedIn = token => {
+    setAccountToken(token);
+    loadAccountUserData();
+};
 
     wHandle.onload = gameLoop;
 })(window, window.jQuery);
