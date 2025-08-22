@@ -2187,102 +2187,100 @@ function updateMiniMapPosition() {
     }
 
 function drawLeaderBoard() {
-    const leaderboardDiv = document.getElementById("leaderboard"); // Получаем div для отображения лидеров
-    leaderboardDiv.innerHTML = ""; // Очищаем предыдущее содержимое
+    const leaderboardDiv = document.getElementById("leaderboard");
+    leaderboardDiv.innerHTML = "";
 
-    // Массив запрещённых символов
     const forbiddenSymbols = ["﷽", "𒐫","𒈙","⸻","꧅","ဪ","௵","௸","‱"];
+    const displayedPlayers = 10;
+    let myRank = null;
 
-    // Проверяем, есть ли данные для отображения
     if ((teamScores && teamScores.length > 0) || (leaderBoard.length > 0)) {
         const header = document.createElement("h2");
-        header.innerText = "Топ Сейчас"; // Заголовок
+        header.innerText = "Топ Сейчас";
         leaderboardDiv.appendChild(header);
 
-        const displayedPlayers = 10; // Лимит на отображение 10 игроков
-        let myRank = null; // Переменная для хранения ранга текущего игрока
-
         if (!teamScores || teamScores.length === 0) {
-            // Если не нужно отображать командные очки
             for (let b = 0; b < leaderBoard.length; ++b) {
-                let name = leaderBoard[b].name; // Имя игрока
-                const level = leaderBoard[b].level; // Level игрока
+                let name = leaderBoard[b].name;
+                const level = leaderBoard[b].level;
 
-                // Фильтруем запрещённые символы
                 forbiddenSymbols.forEach(symbol => {
                     if (name.includes(symbol)) name = "";
                 });
-
-                // Пропускаем через функцию цензуры
                 name = censorMessage(name);
-
-                if (!showName) {
-                    name = ""; // Если имя не отображается
-                }
+                if (!showName) name = "";
 
                 const isMe = playerCells.some(cell => cell.id === leaderBoard[b].id);
                 if (isMe) {
                     const myCell = playerCells.find(cell => cell.id === leaderBoard[b].id);
                     if (myCell?.name) {
                         let myName = myCell.name;
-
-                        // Проверка на forbiddenSymbols для моего имени
                         forbiddenSymbols.forEach(symbol => {
                             if (myName.includes(symbol)) myName = "";
                         });
-
-                        // Пропускаем через цензуру
                         myName = censorMessage(myName);
-
                         name = myName;
                         myRank = b + 1;
                     }
                 }
 
-                // Отображаем только первых 10 игроков
                 if (b < displayedPlayers) {
                     const entryDiv = document.createElement("div");
-                    entryDiv.className = "Lednick"; // Добавляем класс Lednick
-                    entryDiv.style.color = isMe ? "#FFAAAA" : "#FFFFFF"; // Цвет строки для isMe
-                    entryDiv.innerHTML = (!noRanking ? `${b + 1}. ` : "") + 
-                        (level !== -1 ? "<div class='star-container'><i class='fas fa-star'></i><span class='levelme'>" + level + "</span></div>" : "") + 
-                        `<span>${name}</span>`; // Добавляем ранг
-                    leaderboardDiv.appendChild(entryDiv); // Добавляем запись в leaderboardDiv
+
+                    // Определяем класс на основе роли
+                    const lowerName = name.toLowerCase();
+                    if (admins.includes(lowerName)) {
+                        entryDiv.className = "Lednick admins";
+                    } else if (moders.includes(lowerName)) {
+                        entryDiv.className = "Lednick moders";
+                    } else {
+                        entryDiv.className = "Lednick";
+                    }
+
+                    entryDiv.style.color = isMe ? "#FFAAAA" : "#FFFFFF";
+                    entryDiv.innerHTML = (!noRanking ? `${b + 1}. ` : "") +
+                        (level !== -1 ? "<div class='star-container'><i class='fas fa-star'></i><span class='levelme'>" + level + "</span></div>" : "") +
+                        `<span>${name}</span>`;
+                    leaderboardDiv.appendChild(entryDiv);
                 }
             }
 
-            // Если мой ранг больше 10, показываем его на 11-й строке
             if (myRank && myRank > displayedPlayers) {
                 const level = accountData ? getLevel(accountData.xp) : -1;
                 let myName = playerCells[0].name;
-
-                // Проверка на forbiddenSymbols для моего имени
                 forbiddenSymbols.forEach(symbol => {
                     if (myName.includes(symbol)) myName = "";
                 });
-
-                // Пропускаем через цензуру
                 myName = censorMessage(myName);
 
                 const myRankDiv = document.createElement("div");
-                myRankDiv.className = "Lednick";
-                myRankDiv.style.color = "#FFAAAA"; // Цвет строки для isMe в 11-й позиции
-                myRankDiv.innerHTML = myRank + ". " + 
-                    (level !== -1 ? "<div class='star-container'><i class='fas fa-star'></i><span class='levelme'>" + level + "</span></div>" : "") + 
-                    `<span>${myName}</span>`; // Показываем мой ранг и имя
+
+                const lowerName = myName.toLowerCase();
+                if (admins.includes(lowerName)) {
+                    myRankDiv.className = "Lednick admins";
+                } else if (moders.includes(lowerName)) {
+                    myRankDiv.className = "Lednick moders";
+                } else {
+                    myRankDiv.className = "Lednick";
+                }
+
+                myRankDiv.style.color = "#FFAAAA";
+                myRankDiv.innerHTML = myRank + ". " +
+                    (level !== -1 ? "<div class='star-container'><i class='fas fa-star'></i><span class='levelme'>" + level + "</span></div>" : "") +
+                    `<span>${myName}</span>`;
                 leaderboardDiv.appendChild(myRankDiv);
             }
         } else {
-            // Если нужно отображать командные очки
             for (let b = 0; b < teamScores.length; ++b) {
                 const teamEntry = document.createElement("div");
-                teamEntry.innerText = `Team ${b + 1}: ${teamScores[b]}`; // Запись для команды
-                teamEntry.style.color = teamColor[b + 1]; // Цвет команды
-                leaderboardDiv.appendChild(teamEntry); // Добавляем запись в leaderboardDiv
+                teamEntry.innerText = `Team ${b + 1}: ${teamScores[b]}`;
+                teamEntry.style.color = teamColor[b + 1];
+                leaderboardDiv.appendChild(teamEntry);
             }
         }
     }
 }
+
 
 
 
