@@ -152,6 +152,17 @@
 
 <script>
 (function(){
+  // --- уникальный clientId ---
+  function getClientId(){
+    let clientId = localStorage.getItem('clientId');
+    if(!clientId){
+      clientId = [...Array(16)].map(()=>Math.floor(Math.random()*16).toString(16)).join('');
+      localStorage.setItem('clientId', clientId);
+    }
+    return clientId;
+  }
+  const clientId = getClientId();
+
   let currentStep = 1;
   let chosenSkin = null, chosenType = null, chosenPrice = 0, processedImageUrl = null;
   let serviceType = 'self';
@@ -174,7 +185,7 @@
   const serviceRadios = document.querySelectorAll('input[name="serviceType"]');
 
   // --- уведомления ---
-  const notificationEl=document.createElement('div');
+  const notificationEl = document.createElement('div');
   notificationEl.id='shopNotification';
   notificationEl.style.cssText="position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#1b263b;color:#fff;padding:12px 20px;border-radius:12px;font-weight:700;z-index:9999;opacity:0;transition:opacity 0.3s,transform 0.3s;";
   document.body.appendChild(notificationEl);
@@ -186,25 +197,24 @@
   }
 
   // --- переключение для себя / клана ---
-serviceRadios.forEach(r=>{
-  r.addEventListener('change',()=>{
-    serviceType=r.value;
-    nicknameInput.placeholder=serviceType==='clan'?'клан':'ник';
-    nicknameInput.title=serviceType==='clan'?'Введите название клана':'Введите ник';
+  serviceRadios.forEach(r=>{
+    r.addEventListener('change',()=>{
+      serviceType=r.value;
+      nicknameInput.placeholder=serviceType==='clan'?'клан':'ник';
+      nicknameInput.title=serviceType==='clan'?'Введите название клана':'Введите ник';
 
-    document.querySelectorAll('#skinsGrid .skin-card').forEach(card=>{
-      const base=Number(card.dataset.base);
-      const price=serviceType==='clan'?base*2:base;
-      card.querySelector('.price-label').textContent=`Цена: ${price}`;
-      card.querySelector('img').src=serviceType==='clan'?card.dataset.srcClan:card.dataset.srcSelf;
+      document.querySelectorAll('#skinsGrid .skin-card').forEach(card=>{
+        const base=Number(card.dataset.base);
+        const price=serviceType==='clan'?base*2:base;
+        card.querySelector('.price-label').textContent=`Цена: ${price}`;
+        card.querySelector('img').src=serviceType==='clan'?card.dataset.srcClan:card.dataset.srcSelf;
 
-      // --- если это карточка пароля, меняем заголовок ---
-      if(card.dataset.type==='pass'){
-        card.querySelector('h4').textContent = serviceType==='clan' ? 'Пароль на клан' : 'Пароль на ник';
-      }
+        if(card.dataset.type==='pass'){
+          card.querySelector('h4').textContent = serviceType==='clan' ? 'Пароль на клан' : 'Пароль на ник';
+        }
+      });
     });
   });
-});
 
   // --- выбор товара ---
   skinsGrid.addEventListener('click', e => {
@@ -264,28 +274,27 @@ serviceRadios.forEach(r=>{
   });
 
   // --- проверка nickname по завершении ввода ---
-nicknameInput.addEventListener('blur', async ()=>{
-  let nick = nicknameInput.value.trim();
-  nicknameInput.value = nick.replace(/['`";:]/g,'').slice(0,20);
+  nicknameInput.addEventListener('blur', async ()=>{
+    let nick = nicknameInput.value.trim();
+    nicknameInput.value = nick.replace(/['`";:]/g,'').slice(0,20);
 
-  if(serviceType==='clan'){
-    const clanPattern = /^(\[.*\]|\|.*\||\{.*\}|\(.*\))$/;
-    if(!clanPattern.test(nick)){
-      notify('❌ У клана должны быть скобки [ ] || { } ( )');
-      return;
+    if(serviceType==='clan'){
+      const clanPattern = /^(\[.*\]|\|.*\||\{.*\}|\(.*\))$/;
+      if(!clanPattern.test(nick)){
+        notify('❌ У клана должны быть скобки [ ] || { } ( )');
+        return;
+      }
     }
-  }
 
-  if(!nick) return; // пустой просто пропускаем проверку
+    if(!nick) return;
 
-  try{
-    const res = await fetch(`https://itana.pw:6005/check-nick?nickname=${encodeURIComponent(nick.toLowerCase())}`);
-    const data = await res.json();
-    if(data.exists) notify('❌ Этот '+(serviceType==='clan'?'клан':'ник')+' уже занят');
-    else if(!data.success) notify('❌ '+data.error);
-  }catch(err){notify('❌ Ошибка проверки: '+err.message);}
-});
-
+    try{
+      const res = await fetch(`https://itana.pw:6005/check-nick?nickname=${encodeURIComponent(nick.toLowerCase())}&clientId=${clientId}`);
+      const data = await res.json();
+      if(data.exists) notify('❌ Этот '+(serviceType==='clan'?'клан':'ник')+' уже занят');
+      else if(!data.success) notify('❌ '+data.error);
+    }catch(err){notify('❌ Ошибка проверки: '+err.message);}
+  });
 
   // --- переход к оплате ---
   document.getElementById('dataForm').addEventListener('submit', async e=>{
@@ -330,6 +339,7 @@ nicknameInput.addEventListener('blur', async ()=>{
     formData.append('nickname',nick);
     formData.append('price',chosenPrice);
     formData.append('serviceType',serviceType);
+    formData.append('clientId',clientId); // <-- теперь clientId всегда отправляется
     let endpoint='';
     if(chosenType==='pass'){
       formData.append('password',pass);
@@ -1333,6 +1343,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
