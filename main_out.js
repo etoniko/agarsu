@@ -408,6 +408,7 @@ wHandle.setserver = function(arg) {
             // Handle keydown event
             $(document).keydown(function (event) {
                 if (event.keyCode === 27) { // Check if the Escape key is pressed
+                    wjQuery("#statics").hide();
                     const overlay = $('#overlays');
                     if (overlay.is(':visible')) {
                         overlay.hide(); // Hide the overlay if currently visible
