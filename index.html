@@ -965,11 +965,10 @@ setNick(document.getElementById('nick').value + "#" + document.getElementById('p
                     </div>
 <div class="header-row">
     <button style="display:none" id="logoutButton" onclick="logoutAccount()">Выход</button>
-<!-- VKID SDK -->
-<div id="VkIdSdkOAuthList"></div>
-
-<script src="/assets/scripts/ulogin.js"></script>
-<script src="https://unpkg.com/@vkid/sdk@<3.0.0/dist-sdk/umd/index.js"></script>
+    <!-- uLogin авторизация -->
+    <script src="/assets/scripts/ulogin.js"></script>
+    <div id="loginButton" data-ulogin="callback=onUloginToken;display=panel;fields=photo,first_name,last_name;providers=vkontakte,odnoklassniki,mailru,facebook;hidden=other;redirect_uri=https%3A%2F%2Fitana.pw%2Fapi%2Fauth%2Fulogin"></div> 
+</div>
 
 </div>
 
@@ -1353,6 +1352,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
