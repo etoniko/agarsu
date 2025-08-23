@@ -92,7 +92,7 @@ ONLY_CLIENT = false;
 
 // Подгружаем список серверов из server.json
 let SERVERS = {};
-let CONNECTION_URL = "itana.pw:6001"; // текущий сервер по умолчанию
+let CONNECTION_URL = "pmori.ru:6001"; // текущий сервер по умолчанию
 
 async function loadServers() {
     try {
