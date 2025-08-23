@@ -1066,8 +1066,8 @@ setNick(document.getElementById('nick').value + "#" + document.getElementById('p
 </style>
 
 <script>
-var overlays = document.getElementById('overlays');
 const canvas = document.getElementById('canvas');
+const overlays = document.getElementById('overlays');
 const recToggle = document.getElementById('recToggle');
 const recInfo = document.getElementById('recInfo');
 const recText = document.getElementById('recText');
@@ -1078,12 +1078,20 @@ const recDot = document.createElement('div');
 recDot.id = 'recDot';
 recToggle.appendChild(recDot);
 
-// MediaRecorder
+// Поток для записи
 const stream = canvas.captureStream(60);
+
+// Проверка поддержки VP9, fallback на VP8
+let mimeType = 'video/webm; codecs=vp9';
+if (!MediaRecorder.isTypeSupported(mimeType)) {
+    mimeType = 'video/webm; codecs=vp8';
+}
+
 const recorder = new MediaRecorder(stream, { 
-    mimeType: 'video/webm; codecs=vp9', 
+    mimeType: mimeType,
     videoBitsPerSecond: 5_000_000 
 });
+
 let chunks = [];
 recorder.ondataavailable = e => chunks.push(e.data);
 recorder.onstop = () => {
@@ -1120,7 +1128,7 @@ recToggle.onclick = () => {
         recText.textContent = 'Идёт запись';
         startTime = Date.now();
         timerInterval = setInterval(updateTimer, 1000);
-        recToggle.textContent = "videocam_off"; // меняем иконку
+        recToggle.innerText = "videocam_off"; // меняем иконку
     } else {
         // Стоп записи
         recorder.stop();
@@ -1130,26 +1138,32 @@ recToggle.onclick = () => {
         clearInterval(timerInterval);
         recTimer.textContent = '00:00';
         recText.textContent = '';
-        recToggle.textContent = "videocam"; // сброс иконки
+        recToggle.innerText = "videocam"; // сброс иконки
     }
 };
-        // Добавляем слушатель события мыши на div-элемент overlays
-        overlays.addEventListener('mousemove', function (event) {
-            // Получаем позицию курсора относительно overlays
-            var x = event.clientX - overlays.offsetLeft;
-            var y = event.clientY - overlays.offsetTop;
 
-            // Создаем событие мыши для канваса
-            var canvasEvent = new MouseEvent('mousemove', {
-                bubbles: true,
-                cancelable: true,
-                clientX: x,
-                clientY: y
-            });
+// Проброс событий мыши на canvas через overlays
+overlays.addEventListener('mousemove', function (event) {
+    // Глобальные координаты — передаем напрямую
+    const canvasEvent = new MouseEvent('mousemove', {
+        bubbles: true,
+        cancelable: true,
+        clientX: event.clientX,
+        clientY: event.clientY
+    });
+    canvas.dispatchEvent(canvasEvent);
+});
 
-            // Передаем событие канвасу
-            canvas.dispatchEvent(canvasEvent);
-        });
+// Если нужно пересчитать координаты внутри overlays:
+overlays.addEventListener('click', function (event) {
+    const rect = overlays.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+
+    // Пример: можно использовать эти координаты отдельно
+    console.log(`Click at overlays: ${x}, ${y}`);
+});
+
 </script>
 
 
@@ -1525,6 +1539,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
