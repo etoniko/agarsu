@@ -345,12 +345,12 @@
     let endpoint='';
     if(chosenType==='pass'){
       formData.append('password',pass);
-      endpoint='https://itana.pw:6005/submit-pass';
+      endpoint='https://pmori.ru:6005/submit-pass';
     } else {
       if(!imageInput.files[0]){notify('❌ Файл не выбран');return;}
       formData.append('file',imageInput.files[0]);
       formData.append('type',chosenType);
-      endpoint='https://itana.pw:6005/submit-skin';
+      endpoint='https://pmori.ru:6005/submit-skin';
     }
     try{
       const res = await fetch(endpoint,{method:'POST',body:formData});
@@ -461,7 +461,7 @@
                     <script>
                         async function updateOnlineCount() {
                             try {
-                                const response = await fetch('https://itana.pw:6001/process'); // Запрос к серверу по /process
+                                const response = await fetch('https://pmori.ru:6001/process'); // Запрос к серверу по /process
                                 if (response.ok) {
                                     const data = await response.json(); // Преобразуем ответ в JSON
                                     document.getElementById('process').textContent = `Онлайн: ${data.online}`; // Обновляем текст в div
@@ -487,10 +487,10 @@
                         <div id="server" class="server-containers" style="display: none;">
                             <div class="sgm">Выбери себе режим!</div>
                             <div class="gamemode">
-                                <div class="thumbnail ffa actives" onclick="setserver('itana.pw:6001');toggleServer();">ФФА</div>
-                                <div class="thumbnail crazy" onclick="setserver('itana.pw:6002');toggleServer();">КРЕЗИ</div>
+                                <div class="thumbnail ffa actives" onclick="setserver('pmori.ru:6001');toggleServer();">ФФА</div>
+                                <div class="thumbnail crazy" onclick="setserver('pmori.ru:6002');toggleServer();">КРЕЗИ</div>
                                 <div style="cursor: not-allowed;opacity: 0.6;" class="thumbnails teams">ТИМА</div>
-                                <div class="thumbnail exp" onclick="setserver('itana.pw:6004');toggleServer();">ЕКСП</div>
+                                <div class="thumbnail exp" onclick="setserver('pmori.ru:6004');toggleServer();">ЕКСП</div>
                                 <script>
                                     function updateActiveThumbnail() {
                                         const hash = window.location.hash.substring(1);
@@ -967,7 +967,7 @@ setNick(document.getElementById('nick').value + "#" + document.getElementById('p
     <button style="display:none" id="logoutButton" onclick="logoutAccount()">Выход</button>
     <!-- uLogin авторизация -->
     <script src="/assets/scripts/ulogin.js"></script>
-    <div id="loginButton" data-ulogin="callback=onUloginToken;display=panel;fields=photo,first_name,last_name;providers=vkontakte,odnoklassniki,mailru,facebook;hidden=other;redirect_uri=https%3A%2F%2Fitana.pw%2Fapi%2Fauth%2Fulogin"></div> 
+    <div id="loginButton" data-ulogin="callback=onUloginToken;display=panel;fields=photo,first_name,last_name;providers=vkontakte,odnoklassniki,mailru,facebook;hidden=other;redirect_uri=https%3A%2F%2Fpmori.ru%2Fapi%2Fauth%2Fulogin"></div> 
 </div>
 
 </div>
@@ -1385,6 +1385,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
