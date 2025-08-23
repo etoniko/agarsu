@@ -821,6 +821,7 @@ display: flex;
 }
 #leaderboard{
 	max-width: 160px;
+    min-width: 150px;
 position: absolute;
     padding: 10px 10px 10px 10px;
     border-radius: 20px 20px 20px 20px;
