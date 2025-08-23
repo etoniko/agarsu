@@ -49,7 +49,6 @@ function fetchSkinList() {
                     skinList[name] = id.trim();
                 }
             });
-            console.log('Скин загружен:', skinList);
         })
         .catch(error => {
             console.error('Ошибка загрузки skinList.txt:', error);
@@ -81,7 +80,6 @@ setInterval(fetchSkinList, 300000);
             const stat = await response.json();
 
             // Выводим данные в консоль и выполняем обработку
-            console.log(stat);
             loadTopPlayerData(stat);
             fetchStats(stat);
         } catch (error) {
@@ -738,7 +736,6 @@ wsSend(new Uint8Array([2])); // ping
     }
 
         function onWsClose(evt) {
-            console.log(evt);
             let serverCloseDiv = document.getElementById("serverclose-overlay");
 
             if (serverCloseDiv) {
@@ -1108,7 +1105,6 @@ fetch('/pass.txt')
             .map(n => normalizeNick(n).toLowerCase()) // нормализуем ник и приводим к нижнему регистру
             .filter(n => n.length > 0);
 
-        console.log('passUsers загружены:', passUsers);
     })
     .catch(err => console.error('Ошибка загрузки pass.txt:', err))
 
@@ -1999,13 +1995,11 @@ function drawWhiteGrid() {
 
     centerBackground.onload = function () {
         isBackgroundLoaded = true;
-        console.log('Фоновое изображение загружено');
         drawCenterBackground();
     };
 
     innerImage.onload = function () {
         isInnerImageLoaded = true;
-        console.log('Внутреннее изображение (скин игрока) загружено');
         drawCenterBackground();
     };
 
