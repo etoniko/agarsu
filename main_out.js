@@ -2993,7 +2993,7 @@ showLogoutNotification();
         delete localStorage.accountToken;
     };
 
-    const accountApiGet = tag => fetch("https://itana.pw:6003/api/" + tag, { headers: { Authorization: `Game ${localStorage.accountToken}` } });
+    const accountApiGet = tag => fetch("https://pmori.ru:6003/api/" + tag, { headers: { Authorization: `Game ${localStorage.accountToken}` } });
 
     wHandle.onAccountLoggedIn = token => {
         setAccountToken(token);
