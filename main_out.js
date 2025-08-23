@@ -2064,17 +2064,12 @@ function drawWhiteGrid() {
     }
 
 
-let lastUpdateTime = 0;
-const updateInterval = 1000; // миллисекунды
-
 function updateMiniMapPosition() {
     const playerDot = document.getElementById('mapposition');
     const mapContainer = document.querySelector('.map-container');
+    const cells = mapContainer.querySelectorAll('div > span');
 
     if (!playerDot || !mapContainer) return;
-
-    const now = Date.now();
-    if (now - lastUpdateTime < updateInterval) return;
 
     // Размеры реальной карты
     const totalMapWidth = rightPos - leftPos;
@@ -2085,25 +2080,37 @@ function updateMiniMapPosition() {
     const miniMapHeight = mapContainer.offsetHeight;
 
     // Относительное положение игрока
-    const relativeX = (nodeX - leftPos) / totalMapWidth;
-    const relativeY = (nodeY - topPos) / totalMapHeight;
+    let relativeX = (nodeX - leftPos) / totalMapWidth;
+    let relativeY = (nodeY - topPos) / totalMapHeight;
 
     // Переводим относительные координаты в мини-карту
-    let miniX = relativeX * miniMapWidth;
-    let miniY = relativeY * miniMapHeight;
-
-    // Радиус точки
-    const dotRadius = playerDot.offsetWidth / 2;
-
-    // Ограничиваем, чтобы не выходило за границы
-    miniX = Math.max(dotRadius, Math.min(miniX, miniMapWidth - dotRadius));
-    miniY = Math.max(dotRadius, Math.min(miniY, miniMapHeight - dotRadius));
+    let miniX = Math.round(relativeX * miniMapWidth);
+    let miniY = Math.round(relativeY * miniMapHeight);
 
     // Устанавливаем позицию точки
+    const dotRadius = playerDot.offsetWidth / 2;
     playerDot.style.left = (miniX - dotRadius) + 'px';
     playerDot.style.top = (miniY - dotRadius) + 'px';
 
-    lastUpdateTime = now;
+    // --- Определяем в какой клетке находится точка ---
+    const cols = 5;
+    const rows = 5;
+    const cellWidth = miniMapWidth / cols;
+    const cellHeight = miniMapHeight / rows;
+
+    const colIndex = Math.floor(miniX / cellWidth); // 0..4
+    const rowIndex = Math.floor(miniY / cellHeight); // 0..4
+    const rowLetters = ['A','B','C','D','E'];
+    const currentCell = rowLetters[rowIndex] + (colIndex + 1);
+
+    // --- Меняем цвет клеток ---
+    cells.forEach(span => {
+        if (span.textContent === currentCell) {
+            span.style.color = 'gold';
+        } else {
+            span.style.color = ''; // стандартный цвет
+        }
+    });
 }
 
 
