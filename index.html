@@ -987,161 +987,31 @@ setNick(document.getElementById('nick').value + "#" + document.getElementById('p
         </div>
     </div>
 
-    <canvas id="canvas"></canvas>
-<div id="recContainer">
-    <button id="recToggle" class="material-icons">videocam</button>
-    <div id="recInfo" style="display: none;">
-        <span id="recText"></span>
-        <span id="recTimer">00:00</span>
-    </div>
-</div>
+      <canvas id="canvas"></canvas>
+    <script>
+        // Получаем элементы канваса и div-элемента overlays
+        var canvas = document.getElementById('canvas');
+        var overlays = document.getElementById('overlays');
 
-<style>
-@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
-/* Скрываем на мобильных */
-@media (max-width: 768px) {
-    #recContainer {
-        display: none !important;
-    }
-}
-#recContainer {
-    position: absolute;
-    top: 30%;
-    right: 10px;
-    transform: translateY(-50%);
-    display: flex;
-    flex-direction: column; 
-    align-items: center;
-    gap: 10px;
-    font-family: Arial, sans-serif;
-}
+        // Добавляем слушатель события мыши на div-элемент overlays
+        overlays.addEventListener('mousemove', function (event) {
+            // Получаем позицию курсора относительно overlays
+            var x = event.clientX - overlays.offsetLeft;
+            var y = event.clientY - overlays.offsetTop;
 
-#recToggle {
-    border: solid #ffffff26 1px;
-    border-radius: 50%;
-    background: rgba(0, 0, 0, 0.3);
-    height: 40px;
-    width: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    color: white;
-    font-size: 20px;
-    position: relative;
-    transition: all 0.2s ease;
-}
+            // Создаем событие мыши для канваса
+            var canvasEvent = new MouseEvent('mousemove', {
+                bubbles: true,
+                cancelable: true,
+                clientX: x,
+                clientY: y
+            });
 
-#recDot {
-    position: absolute;
-    top: 8px;
-    left: 8px;
-    width: 12px;
-    height: 12px;
-    background: red;
-    border-radius: 50%;
-    box-shadow: 0 0 8px red;
-    animation: blink 1s infinite;
-    display: none;
-}
+            // Передаем событие канвасу
+            canvas.dispatchEvent(canvasEvent);
+        });
 
-@keyframes blink {
-    0%, 50%, 100% { opacity: 1; }
-    25%, 75% { opacity: 0; }
-}
-
-#recInfo {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    color: white;
-    text-shadow: 0 0 5px black;
-    font-size: 14px;
-}
-
-#recTimer {
-    font-weight: bold;
-    font-size: 16px;
-}
-</style>
-
-<script>
-const canvas = document.getElementById('canvas');
-const recToggle = document.getElementById('recToggle');
-const recInfo = document.getElementById('recInfo');
-const recText = document.getElementById('recText');
-const recTimer = document.getElementById('recTimer');
-
-// Красная мигающая точка
-const recDot = document.createElement('div');
-recDot.id = 'recDot';
-recToggle.appendChild(recDot);
-
-// Поток для записи
-const stream = canvas.captureStream(60);
-
-// Проверка поддержки VP9, fallback на VP8
-let mimeType = 'video/webm; codecs=vp9';
-if (!MediaRecorder.isTypeSupported(mimeType)) {
-    mimeType = 'video/webm; codecs=vp8';
-}
-
-const recorder = new MediaRecorder(stream, { 
-    mimeType: mimeType,
-    videoBitsPerSecond: 5_000_000 
-});
-
-let chunks = [];
-recorder.ondataavailable = e => chunks.push(e.data);
-recorder.onstop = () => {
-    const blob = new Blob(chunks, { type: 'video/webm' });
-    chunks = [];
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'game_record.webm';
-    a.click();
-    URL.revokeObjectURL(url);
-};
-
-// Таймер
-let recording = false;
-let startTime;
-let timerInterval;
-
-function updateTimer() {
-    let elapsed = Math.floor((Date.now() - startTime)/1000);
-    let minutes = String(Math.floor(elapsed / 60)).padStart(2, '0');
-    let seconds = String(elapsed % 60).padStart(2, '0');
-    recTimer.textContent = `${minutes}:${seconds}`;
-}
-
-// START / STOP запись
-recToggle.onclick = () => {
-    if (!recording) {
-        // Старт записи
-        recorder.start();
-        recording = true;
-        recDot.style.display = 'block';
-        recInfo.style.display = 'flex';
-        recText.textContent = 'Идёт запись';
-        startTime = Date.now();
-        timerInterval = setInterval(updateTimer, 1000);
-        recToggle.innerText = "videocam_off"; // меняем иконку
-    } else {
-        // Стоп записи
-        recorder.stop();
-        recording = false;
-        recDot.style.display = 'none';
-        recInfo.style.display = 'none';
-        clearInterval(timerInterval);
-        recTimer.textContent = '00:00';
-        recText.textContent = '';
-        recToggle.innerText = "videocam"; // сброс иконки
-    }
-};
-</script>
-
+    </script>
 
 
 <style>
@@ -1515,6 +1385,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
