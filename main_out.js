@@ -1465,7 +1465,7 @@ let lastDisplayedScore = 0,
     maxScore = 0;
 
 let scoreHistory = [];       // Полная история для анализа
-const maxGraphPoints = 50;  // Для рисования графика
+const maxGraphPoints = 200;  // Для рисования графика
 let startTime = Date.now();
 
 let statsCanvas, statsCtx, staticsDiv;
@@ -1655,9 +1655,9 @@ function updateStats() {
     // Добавляем в историю
     scoreHistory.push({ time: Date.now() - startTime, score: currentScore });
 
-    // Ограничиваем историю до 50 элементов
-    if (scoreHistory.length > 50) {
-        scoreHistory = compressHistory(scoreHistory, 50);
+    // Ограничиваем историю до 200 элементов
+    if (scoreHistory.length > 200) {
+        scoreHistory = compressHistory(scoreHistory, 200);
     }
 }
 
