@@ -1326,8 +1326,10 @@ if (playerId === ownerPlayerId) {
         }
 
         if (ua && playerCells.length === 0) {
-            wjQuery("#statics").show();  // Hide overlays
-			updateShareText();
+    wjQuery("#statics").show();  
+    updateShareText();    // текст шаринга
+    updateStats();        // обновляем UI
+    drawStatsGraph();     // график
         }
     }
 
@@ -2313,6 +2315,15 @@ function drawLeaderBoard() {
         userNickName = arg;
         sendNickName();
          wjQuery("#statics").hide();
+		 
+		     // сброс статистики для новой игры
+    scoreHistory = [];
+    lastDisplayedScore = 0;
+    lastDisplayedMaxScore = 0;
+    lastDisplayedCellCount = 0;
+    maxScore = 0;
+    startTime = Date.now();
+    drawStatsGraph();
     };
 
 
