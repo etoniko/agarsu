@@ -1469,7 +1469,7 @@ let lastDisplayedScore = 0,
     maxScore = 0;
 
 let scoreHistory = [];       // Полная история для анализа
-const maxGraphPoints = 200;  // Для рисования графика
+const maxGraphPoints = 500;  // Для рисования графика
 let startTime = Date.now();
 
 let statsCanvas, statsCtx, staticsDiv;
@@ -1493,9 +1493,13 @@ const compressHistory = (history, maxLength) => {
     return compressed;
 };
 
-// ===== ГРАФИК =====
 function drawStatsGraph() {
-    if (!statsCanvas || !statsCtx || scoreHistory.length < 2) return;
+    if (!statsCanvas || !statsCtx) return;
+
+    // Всегда очищаем холст
+    statsCtx.clearRect(0, 0, statsCanvas.width, statsCanvas.height);
+
+    if (scoreHistory.length < 2) return; // нечего рисовать, но холст уже чистый
 
     const data = compressHistory(scoreHistory, maxGraphPoints);
     const n = data.length;
@@ -1507,8 +1511,6 @@ function drawStatsGraph() {
     const maxScoreInHistory = Math.max(...data.map(p => p.score), 1);
     const minTime = data[0].time;
     const totalTime = Math.max(1, data[n - 1].time - minTime);
-
-    statsCtx.clearRect(0, 0, statsCanvas.width, statsCanvas.height);
 
     statsCtx.beginPath();
     statsCtx.strokeStyle = 'lime';
@@ -1656,7 +1658,13 @@ function updateStats() {
 
     // Добавляем в историю
     scoreHistory.push({ time: Date.now() - startTime, score: currentScore });
+
+    // Ограничиваем историю до 100 элементов
+    if (scoreHistory.length > 500) {
+        scoreHistory = compressHistory(scoreHistory, 500);
+    }
 }
+
 
 
 
@@ -1667,20 +1675,27 @@ function drawGameScene() {
     ++cb;
     timestamp = oldtime;
 
+    const playerCount = playerCells.length;
+
     // Обновление позиции игрока и масштаба
-    if (playerCells.length > 0) {
+    if (playerCount > 0) {
         calcViewZoom();
-        let a = 0, c = 0;
-        for (let d = 0; d < playerCells.length; d++) {
-            playerCells[d].updatePos();
-            a += playerCells[d].x / playerCells.length;
-            c += playerCells[d].y / playerCells.length;
+        let sumX = 0, sumY = 0;
+        for (let i = 0; i < playerCount; i++) {
+            const cell = playerCells[i];
+            cell.updatePos();
+            sumX += cell.x;
+            sumY += cell.y;
         }
-        posX = a;
-        posY = c;
+        const avgX = sumX / playerCount;
+        const avgY = sumY / playerCount;
+
+        posX = avgX;
+        posY = avgY;
         posSize = viewZoom;
-        nodeX = (nodeX + a) / 2;
-        nodeY = (nodeY + c) / 2;
+
+        nodeX = (nodeX + avgX) / 2;
+        nodeY = (nodeY + avgY) / 2;
     } else {
         nodeX = (29 * nodeX + posX) / 30;
         nodeY = (29 * nodeY + posY) / 30;
@@ -1693,19 +1708,23 @@ function drawGameScene() {
     drawCenterBackground();
     updateMiniMapPosition();
 
-    nodelist.sort((a, b) => a.size === b.size ? a.id - b.id : a.size - b.size);
+    // Сортировка только если есть изменения (можно кэшировать состояние)
+    nodelist.sort((a, b) => a.size - b.size || a.id - b.id);
 
     ctx.save();
     ctx.translate(canvasWidth / 2, canvasHeight / 2);
     ctx.scale(viewZoom, viewZoom);
     ctx.translate(-nodeX, -nodeY);
 
-    for (let d = 0; d < Cells.length; d++) Cells[d].drawOneCell(ctx);
-    for (let d = 0; d < nodelist.length; d++) nodelist[d].drawOneCell(ctx);
+    // Рисуем все клетки
+    for (let i = 0; i < Cells.length; i++) Cells[i].drawOneCell(ctx);
+    for (let i = 0; i < nodelist.length; i++) nodelist[i].drawOneCell(ctx);
 
-    if (drawLine) {
+    // Рисуем линию
+    if (drawLine && playerCount > 0) {
         drawLineX = (3 * drawLineX + lineX) / 4;
         drawLineY = (3 * drawLineY + lineY) / 4;
+
         ctx.save();
         ctx.strokeStyle = "#FFAAAA";
         ctx.lineWidth = 10;
@@ -1713,35 +1732,31 @@ function drawGameScene() {
         ctx.lineJoin = "round";
         ctx.globalAlpha = 0.5;
         ctx.beginPath();
-        for (let d = 0; d < playerCells.length; d++) {
-            ctx.moveTo(playerCells[d].x, playerCells[d].y);
+
+        for (let i = 0; i < playerCount; i++) {
+            const cell = playerCells[i];
+            ctx.moveTo(cell.x, cell.y);
             ctx.lineTo(drawLineX, drawLineY);
         }
+
         ctx.stroke();
         ctx.restore();
     }
 
     ctx.restore();
 
-    if (lbCanvas && lbCanvas.width) {
-        ctx.drawImage(lbCanvas, canvasWidth - lbCanvas.width - 10, 10);
-    }
-    if (chatCanvas) {
-        ctx.drawImage(chatCanvas, 0, canvasHeight - chatCanvas.height - 50);
-    }
+    // Рисуем UI
+    if (lbCanvas?.width) ctx.drawImage(lbCanvas, canvasWidth - lbCanvas.width - 10, 10);
+    if (chatCanvas) ctx.drawImage(chatCanvas, 0, canvasHeight - chatCanvas.height - 50);
 
-    // Обновление UI
     updateStats();
-
     drawSplitIcon(ctx);
     drawTouch(ctx);
 
     // Коррекция FPS
     const deltatime = Date.now() - oldtime;
-    if (deltatime > 1000 / 60) z -= 0.01;
-    else if (deltatime < 1000 / 65) z += 0.01;
-    if (z < 0.4) z = 0.4;
-    if (z > 1) z = 1;
+    if (deltatime > 1000 / 60) z = Math.max(0.4, z - 0.01);
+    else if (deltatime < 1000 / 65) z = Math.min(1, z + 0.01);
 }
 
 
