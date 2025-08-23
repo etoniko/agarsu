@@ -988,6 +988,151 @@ setNick(document.getElementById('nick').value + "#" + document.getElementById('p
     </div>
 
     <canvas id="canvas"></canvas>
+<div id="recContainer">
+    <button id="recToggle" class="material-icons">videocam</button>
+    <div id="recInfo" style="display: none;">
+        <span id="recText"></span>
+        <span id="recTimer">00:00</span>
+    </div>
+</div>
+
+<style>
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+/* Скрываем на мобильных */
+@media (max-width: 768px) {
+    #recContainer {
+        display: none !important;
+    }
+}
+#recContainer {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column; 
+    align-items: center;
+    gap: 10px;
+    font-family: Arial, sans-serif;
+}
+
+#recToggle {
+    border: solid #ffffff26 1px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.3);
+    height: 50px;
+    width: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: white;
+    font-size: 28px;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+#recDot {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 12px;
+    height: 12px;
+    background: red;
+    border-radius: 50%;
+    box-shadow: 0 0 8px red;
+    animation: blink 1s infinite;
+    display: none;
+}
+
+@keyframes blink {
+    0%, 50%, 100% { opacity: 1; }
+    25%, 75% { opacity: 0; }
+}
+
+#recInfo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: white;
+    text-shadow: 0 0 5px black;
+    font-size: 14px;
+}
+
+#recTimer {
+    font-weight: bold;
+    font-size: 16px;
+}
+</style>
+
+<script>
+const canvas = document.getElementById('canvas');
+const recToggle = document.getElementById('recToggle');
+const recInfo = document.getElementById('recInfo');
+const recText = document.getElementById('recText');
+const recTimer = document.getElementById('recTimer');
+
+// Красная мигающая точка
+const recDot = document.createElement('div');
+recDot.id = 'recDot';
+recToggle.appendChild(recDot);
+
+// MediaRecorder
+const stream = canvas.captureStream(60);
+const recorder = new MediaRecorder(stream, { 
+    mimeType: 'video/webm; codecs=vp9', 
+    videoBitsPerSecond: 5_000_000 
+});
+let chunks = [];
+recorder.ondataavailable = e => chunks.push(e.data);
+recorder.onstop = () => {
+    const blob = new Blob(chunks, { type: 'video/webm' });
+    chunks = [];
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'game_record.webm';
+    a.click();
+    URL.revokeObjectURL(url);
+};
+
+// Таймер
+let recording = false;
+let startTime;
+let timerInterval;
+
+function updateTimer() {
+    let elapsed = Math.floor((Date.now() - startTime)/1000);
+    let minutes = String(Math.floor(elapsed / 60)).padStart(2, '0');
+    let seconds = String(elapsed % 60).padStart(2, '0');
+    recTimer.textContent = `${minutes}:${seconds}`;
+}
+
+// START / STOP запись
+recToggle.onclick = () => {
+    if (!recording) {
+        // Старт записи
+        recorder.start();
+        recording = true;
+        recDot.style.display = 'block';
+        recInfo.style.display = 'flex';
+        recText.textContent = 'Идёт запись';
+        startTime = Date.now();
+        timerInterval = setInterval(updateTimer, 1000);
+        recToggle.textContent = "videocam_off"; // меняем иконку
+    } else {
+        // Стоп записи
+        recorder.stop();
+        recording = false;
+        recDot.style.display = 'none';
+        recInfo.style.display = 'none';
+        clearInterval(timerInterval);
+        recTimer.textContent = '00:00';
+        recText.textContent = '';
+        recToggle.textContent = "videocam"; // сброс иконки
+    }
+};
+</script>
     <script>
         // Получаем элементы канваса и div-элемента overlays
         var canvas = document.getElementById('canvas');
@@ -1385,6 +1530,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
