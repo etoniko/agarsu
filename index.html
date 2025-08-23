@@ -1067,7 +1067,6 @@ setNick(document.getElementById('nick').value + "#" + document.getElementById('p
 
 <script>
 const canvas = document.getElementById('canvas');
-const overlays = document.getElementById('overlays');
 const recToggle = document.getElementById('recToggle');
 const recInfo = document.getElementById('recInfo');
 const recText = document.getElementById('recText');
@@ -1141,29 +1140,6 @@ recToggle.onclick = () => {
         recToggle.innerText = "videocam"; // сброс иконки
     }
 };
-
-// Проброс событий мыши на canvas через overlays
-overlays.addEventListener('mousemove', function (event) {
-    // Глобальные координаты — передаем напрямую
-    const canvasEvent = new MouseEvent('mousemove', {
-        bubbles: true,
-        cancelable: true,
-        clientX: event.clientX,
-        clientY: event.clientY
-    });
-    canvas.dispatchEvent(canvasEvent);
-});
-
-// Если нужно пересчитать координаты внутри overlays:
-overlays.addEventListener('click', function (event) {
-    const rect = overlays.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-
-    // Пример: можно использовать эти координаты отдельно
-    console.log(`Click at overlays: ${x}, ${y}`);
-});
-
 </script>
 
 
@@ -1539,6 +1515,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
