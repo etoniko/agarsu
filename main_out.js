@@ -2959,7 +2959,6 @@ const onLogout = () => {
     // Обновляем кнопки
     logoutButton.style.display = "none";
     loginButton.style.display = "";
-    telegram-login-agarsu_auth_bot.style.display = '';
 showLogoutNotification();
 };
 
@@ -3016,7 +3015,6 @@ const setAccountData = data => {
     document.querySelectorAll(".menu-item")[2].click(); // На главную меню
     logoutButton.style.display = "";
     loginButton.style.display = "none";
-    telegram-login-agarsu_auth_bot.style.display = 'none';
 };
 
 const loadAccountUserData = async () => {
