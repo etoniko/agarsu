@@ -2959,6 +2959,7 @@ const onLogout = () => {
     // Обновляем кнопки
     logoutButton.style.display = "none";
     loginButton.style.display = "";
+    authlog.style.display = "";
 showLogoutNotification();
 };
 
@@ -3015,6 +3016,7 @@ const setAccountData = data => {
     document.querySelectorAll(".menu-item")[2].click(); // На главную меню
     logoutButton.style.display = "";
     loginButton.style.display = "none";
+    authlog.style.display = "none";
 };
 
 const loadAccountUserData = async () => {
