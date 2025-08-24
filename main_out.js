@@ -2984,7 +2984,9 @@ async function handleLogin(tokenOrUser, isTelegram = false) {
 }
 
 wHandle.onUloginToken = handleLogin;
-function onTelegramAuth(user) { handleLogin(user, true); }
+    wHandle.onTelegramAuth = function(user) {
+        handleLogin(user, true); // функция handleLogin уже внутри модуля
+    };
 
 // --------------------- Работа с аккаунтом ---------------------
 wHandle.onAccountLoggedIn = token => {
