@@ -34,7 +34,7 @@
     <script src="https://cdn.jsdelivr.net/gh/etoniko/agarsu/jquery.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/etoniko/agarsu/log.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/etoniko/agarsu/vector.js"></script>
-    <script src="/main_out.js?v=4.0.7"></script>
+    <script src="/main_out.js?v=4.0.8"></script>
 </head>
 <body>
     <div id="overlays" class="overlays">
@@ -1052,51 +1052,6 @@ setNick(document.getElementById('nick').value + "#" + document.getElementById('p
     <input class="noPress" id="chat_textbox" type="text" maxlength="120" autocomplete="off" placeholder="Напишите сообщение..." />
   </div>
 
-<script>
-const chatWindow = document.getElementById('chatX_window');
-const feed = document.getElementById('chatX_feed');
-const burger = document.getElementById('chatX_burger');
-
-let startY = 0;
-let startHeight = 0;
-let startTop = 0;
-let resizing = false;
-
-// ===== drag & touch для burger =====
-function startResize(e) {
-    resizing = true;
-    startY = e.touches ? e.touches[0].clientY : e.clientY;
-    startHeight = chatWindow.offsetHeight;
-    startTop = chatWindow.offsetTop;
-    document.body.style.userSelect = 'none';
-}
-
-function doResize(e) {
-    if (!resizing) return;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    const dy = clientY - startY;
-    let newHeight = startHeight - dy;
-    let newTop = startTop + dy;
-
-    if (newHeight < 100) { newTop -= (100-newHeight); newHeight = 100; }
-    if (newHeight > 700) { newTop += (newHeight-700); newHeight = 700; }
-
-    chatWindow.style.height = newHeight + 'px';
-    chatWindow.style.top = newTop + 'px';
-}
-
-function stopResize() {
-    resizing = false;
-    document.body.style.userSelect = '';
-}
-
-burger.addEventListener('mousedown', startResize);
-burger.addEventListener('touchstart', startResize, {passive: true});
-document.addEventListener('mousemove', doResize);
-document.addEventListener('touchmove', doResize, {passive: false});
-document.addEventListener('mouseup', stopResize);
-document.addEventListener('touchend', stopResize);
-</script>
 <div id="onchat" onclick="document.getElementById('chatX_window').style.display = 'flex'; document.getElementById('onchat').style.display = 'none';"><i class="fa fa-arrow-up"></i></div>
 
 
@@ -1328,6 +1283,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
