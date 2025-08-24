@@ -1055,9 +1055,7 @@ setNick(document.getElementById('nick').value + "#" + document.getElementById('p
 <script>
 const chatWindow = document.getElementById('chatX_window');
 const feed = document.getElementById('chatX_feed');
-const alertBox = document.getElementById('chatX_alert');
 const burger = document.getElementById('chatX_burger');
-const closeBtn = document.getElementById('chatX_close');
 
 let startY = 0;
 let startHeight = 0;
@@ -1099,34 +1097,11 @@ document.addEventListener('touchmove', doResize, {passive: false});
 document.addEventListener('mouseup', stopResize);
 document.addEventListener('touchend', stopResize);
 
-// ===== закрытие чата =====
-closeBtn.addEventListener('click', () => {
-    chatWindow.style.display = 'none';
-});
 
 // ===== автопрокрутка =====
-let autoScroll = true;
-let unreadCount = 0;
-
 function scrollToBottom() {
     feed.scrollTop = feed.scrollHeight;
 }
-
-feed.addEventListener('scroll', () => {
-    const atBottom = feed.scrollHeight - feed.scrollTop === feed.clientHeight;
-    autoScroll = atBottom;
-    if (autoScroll) {
-        unreadCount = 0;
-        alertBox.style.display = 'none';
-    }
-});
-
-alertBox.addEventListener('click', () => {
-    scrollToBottom();
-    autoScroll = true;
-    unreadCount = 0;
-    alertBox.style.display = 'none';
-});
 
 // ===== обновление чата =====
 function onNewMessage(msg) {
@@ -1135,19 +1110,13 @@ function onNewMessage(msg) {
     item.textContent = msg;
     feed.appendChild(item);
 
-    if (autoScroll) {
-        scrollToBottom();
-    } else {
-        unreadCount++;
-        alertBox.textContent = `${unreadCount} новых сообщений`;
-        alertBox.style.display = 'block';
-    }
+    scrollToBottom(); // всегда прокручиваем вниз
 }
 
 // ===== следим за видимостью вкладки =====
 document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && autoScroll) {
-        scrollToBottom();
+    if (document.visibilityState === 'visible') {
+        scrollToBottom(); // при возвращении на вкладку прокручиваем вниз
     }
 });
 
@@ -1385,6 +1354,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
