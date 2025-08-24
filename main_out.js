@@ -96,7 +96,7 @@ let CONNECTION_URL = "pmori.ru:6001"; // текущий сервер по умо
 
 async function loadServers() {
     try {
-        const response = await fetch('/assets/scripts/server.json');
+        const response = await fetch('/assets/scripts/server.json?v=0.0.1');
         SERVERS = await response.json();
 
         // Определяем сервер по hash
