@@ -967,13 +967,16 @@ setNick(document.getElementById('nick').value + "#" + document.getElementById('p
     <button style="display:none" id="logoutButton" onclick="logoutAccount()">Выход</button>
 <!-- uLogin авторизация -->
 <script src="/assets/scripts/ulogin.js"></script>
-<div id="loginButton" data-ulogin="callback=wHandle.onUloginToken;display=panel;fields=photo,first_name,last_name;providers=vkontakte,odnoklassniki,mailru,facebook;hidden=other;redirect_uri=https%3A%2F%2Fpmori.ru%2Fapi%2Fauth%2Fulogin"><!-- Telegram авторизация -->
+<div id="loginButton" data-ulogin="callback=wHandle.onUloginToken;display=panel;fields=photo,first_name,last_name;providers=vkontakte,odnoklassniki,mailru,facebook;hidden=other;redirect_uri=https%3A%2F%2Fpmori.ru%2Fapi%2Fauth%2Fulogin"></div>
+<!-- Telegram авторизация -->
+<div id="authlog">
 <script async src="https://telegram.org/js/telegram-widget.js?22"
         data-telegram-login="agarsu_auth_bot"
         data-size="large"
         data-onauth="onTelegramAuth(user)"
         data-request-access="write">
-</script></div>
+</script>
+</div>
 </div>
 
 </div>
@@ -1482,6 +1485,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
