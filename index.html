@@ -977,7 +977,7 @@ setNick(document.getElementById('nick').value + "#" + document.getElementById('p
 
 <script>
 function onTelegramAuth(user) {
-    fetch('https://api.agar.su/auth', {
+    fetch('https://pmori.ru/api/auth/telegram', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(user)
@@ -1502,6 +1502,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
