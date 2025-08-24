@@ -1109,108 +1109,133 @@ fetch('/pass.txt')
     .catch(err => console.error('Ошибка загрузки pass.txt:', err))
 
 
-function drawChatBoard() {
-    if (hideChat) return;
+    const chatWindow = wHandle.document.getElementById('chatX_window');
+    const feed = wHandle.document.getElementById('chatX_feed');
+    const burger = wHandle.document.getElementById('chatX_burger');
 
-    const chatDiv = document.getElementById('chatX_feed');
+    let startY = 0;
+    let startHeight = 0;
+    let startTop = 0;
+    let resizing = false;
 
-    const lastMessage = chatBoard[chatBoard.length - 1];
-    if (!lastMessage) return;
-
-    const msgDiv = document.createElement('div');
-
-    // Определение класса для сообщения на основе роли
-    const lowerName = lastMessage.name.toLowerCase();
-    if (admins.includes(lowerName)) {
-        msgDiv.className = 'chatX_msg admins';
-    } else if (moders.includes(lowerName)) {
-        msgDiv.className = 'chatX_msg moders';
-    } else {
-        msgDiv.className = 'chatX_msg';
+    // ===== drag & touch для burger =====
+    function startResize(e) {
+        resizing = true;
+        startY = e.touches ? e.touches[0].clientY : e.clientY;
+        startHeight = chatWindow.offsetHeight;
+        startTop = chatWindow.offsetTop;
+        wHandle.document.body.style.userSelect = 'none';
     }
 
-    // Контейнер для аватара
-    const avatarXContainer = document.createElement('div');
-    avatarXContainer.className = 'avatarXcontainer';
-	const normalizedName = normalizeNick(lastMessage.name); // нормализуем точно так же, как при загрузке passUsers
-if (passUsers.includes(normalizedName)) {
-    avatarXContainer.style.setProperty('--after-display', 'block');
-}
-    // Аватар
-    const avatar = document.createElement('img');
-    avatar.className = 'chatX_avatar';
-    const skinName = normalizeNick(lastMessage.name);
-    const skinId = skinList[skinName];
-    avatar.src = skinId ? `https://agar.su/skins/${skinId}.png` : 'https://agar.su/skins/4.png';
-    avatar.onerror = () => avatar.src = 'https://agar.su/skins/4.png';
+    function doResize(e) {
+        if (!resizing) return;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const dy = clientY - startY;
+        let newHeight = startHeight - dy;
+        let newTop = startTop + dy;
 
-    // Добавляем аватар в контейнер
-    avatarXContainer.appendChild(avatar);
+        if (newHeight < 100) { newTop -= (100 - newHeight); newHeight = 100; }
+        if (newHeight > 700) { newTop += (newHeight - 700); newHeight = 700; }
 
-    // Добавляем контейнер аватара в сообщение
-    msgDiv.appendChild(avatarXContainer);
-
-    // Контейнер для уровня и ника
-    const nameContainer = document.createElement('div');
-    nameContainer.className = 'chatX_name_container';
-
-    // Звезда и уровень
-    if (typeof lastMessage.playerLevel === 'number' && lastMessage.playerLevel > 0) {
-        const levelContainer = document.createElement('div');
-        levelContainer.className = 'star-container';
-
-        const starIcon = document.createElement('i');
-        starIcon.className = 'fas fa-star';
-
-        const levelSpan = document.createElement('span');
-        levelSpan.className = 'levelme';
-        levelSpan.textContent = lastMessage.playerLevel;
-
-        levelContainer.appendChild(starIcon);
-        levelContainer.appendChild(levelSpan);
-        nameContainer.appendChild(levelContainer);
+        chatWindow.style.height = newHeight + 'px';
+        chatWindow.style.top = newTop + 'px';
     }
 
-    // Имя
-    const nameDiv = document.createElement('div');
-    nameDiv.className = 'chatX_nick';
-    nameDiv.textContent = lastMessage.name + ':';
-
-    // Цвет ника
-    if (admins.includes(lowerName)) {
-        nameDiv.style.color = 'gold';
-        nameDiv.title = 'Администратор';
-    } else if (moders.includes(lowerName)) {
-        nameDiv.title = 'Модератор';
-    } else {
-        nameDiv.style.color = lastMessage.color || '#b8c0cc';
-        nameDiv.title = `${lastMessage.pId || 0}`; // PID только у обычных игроков
+    function stopResize() {
+        resizing = false;
+        wHandle.document.body.style.userSelect = '';
     }
 
-    nameContainer.appendChild(nameDiv);
+    burger.addEventListener('mousedown', startResize);
+    burger.addEventListener('touchstart', startResize, {passive: true});
+    wHandle.document.addEventListener('mousemove', doResize);
+    wHandle.document.addEventListener('touchmove', doResize, {passive: false});
+    wHandle.document.addEventListener('mouseup', stopResize);
+    wHandle.document.addEventListener('touchend', stopResize);
 
-    // Сообщение
-    const textDiv = document.createElement('div');
-    textDiv.className = 'chatX_text';
-    textDiv.textContent = censorMessage(lastMessage.message);
-
-    // Время
-    const timeDiv = document.createElement('div');
-    timeDiv.className = 'chatX_time';
-    timeDiv.textContent = lastMessage.time;
-
-    msgDiv.appendChild(nameContainer);
-    msgDiv.appendChild(textDiv);
-    msgDiv.appendChild(timeDiv);
-
-    chatDiv.prepend(msgDiv);
-
-    // Ограничение сообщений
-    const maxMessages = 50;
-    while (chatDiv.children.length > maxMessages) {
-        chatDiv.removeChild(chatDiv.lastChild);
+    // ===== Автоскролл =====
+    function scrollToBottom() {
+        const atBottom = feed.scrollTop + feed.clientHeight >= feed.scrollHeight - 20;
+        if (atBottom) feed.scrollTop = feed.scrollHeight;
     }
-}
+
+    // ===== drawChatBoard с автоскроллом =====
+    function drawChatBoard() {
+        if (typeof hideChat !== 'undefined' && hideChat) return;
+        if (!chatBoard || chatBoard.length === 0) return;
+
+        const lastMessage = chatBoard[chatBoard.length - 1];
+        if (!lastMessage) return;
+
+        const msgDiv = wHandle.document.createElement('div');
+
+        // Класс сообщения
+        const lowerName = lastMessage.name.toLowerCase();
+        if (admins.includes(lowerName)) msgDiv.className = 'chatX_msg admins';
+        else if (moders.includes(lowerName)) msgDiv.className = 'chatX_msg moders';
+        else msgDiv.className = 'chatX_msg';
+
+        // Аватар
+        const avatarXContainer = wHandle.document.createElement('div');
+        avatarXContainer.className = 'avatarXcontainer';
+        const normalizedName = normalizeNick(lastMessage.name);
+        if (passUsers.includes(normalizedName)) avatarXContainer.style.setProperty('--after-display', 'block');
+
+        const avatar = wHandle.document.createElement('img');
+        avatar.className = 'chatX_avatar';
+        const skinId = skinList[normalizedName];
+        avatar.src = skinId ? `https://agar.su/skins/${skinId}.png` : 'https://agar.su/skins/4.png';
+        avatar.onerror = () => avatar.src = 'https://agar.su/skins/4.png';
+        avatarXContainer.appendChild(avatar);
+        msgDiv.appendChild(avatarXContainer);
+
+        // Имя и уровень
+        const nameContainer = wHandle.document.createElement('div');
+        nameContainer.className = 'chatX_name_container';
+        if (typeof lastMessage.playerLevel === 'number' && lastMessage.playerLevel > 0) {
+            const levelContainer = wHandle.document.createElement('div');
+            levelContainer.className = 'star-container';
+            const starIcon = wHandle.document.createElement('i');
+            starIcon.className = 'fas fa-star';
+            const levelSpan = wHandle.document.createElement('span');
+            levelSpan.className = 'levelme';
+            levelSpan.textContent = lastMessage.playerLevel;
+            levelContainer.appendChild(starIcon);
+            levelContainer.appendChild(levelSpan);
+            nameContainer.appendChild(levelContainer);
+        }
+
+        const nameDiv = wHandle.document.createElement('div');
+        nameDiv.className = 'chatX_nick';
+        nameDiv.textContent = lastMessage.name + ':';
+        if (admins.includes(lowerName)) { nameDiv.style.color = 'gold'; nameDiv.title = 'Администратор'; }
+        else if (moders.includes(lowerName)) { nameDiv.title = 'Модератор'; }
+        else { nameDiv.style.color = lastMessage.color || '#b8c0cc'; nameDiv.title = `${lastMessage.pId || 0}`; }
+
+        nameContainer.appendChild(nameDiv);
+        msgDiv.appendChild(nameContainer);
+
+        // Сообщение
+        const textDiv = wHandle.document.createElement('div');
+        textDiv.className = 'chatX_text';
+        textDiv.textContent = censorMessage(lastMessage.message);
+        msgDiv.appendChild(textDiv);
+
+        // Время
+        const timeDiv = wHandle.document.createElement('div');
+        timeDiv.className = 'chatX_time';
+        timeDiv.textContent = lastMessage.time;
+        msgDiv.appendChild(timeDiv);
+
+        feed.prepend(msgDiv);
+
+        // Ограничение сообщений
+        const maxMessages = 50;
+        while (feed.children.length > maxMessages) feed.removeChild(feed.lastChild);
+
+        // Автоскролл
+        scrollToBottom();
+    }
 
 
 
