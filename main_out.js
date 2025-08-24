@@ -1204,6 +1204,7 @@ if (passUsers.includes(normalizedName)) {
     msgDiv.appendChild(timeDiv);
 
     chatDiv.prepend(msgDiv);
+    chatDiv.scrollTop = chatDiv.scrollHeight;
 
     // Ограничение сообщений
     const maxMessages = 50;
