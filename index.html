@@ -1096,32 +1096,6 @@ document.addEventListener('mousemove', doResize);
 document.addEventListener('touchmove', doResize, {passive: false});
 document.addEventListener('mouseup', stopResize);
 document.addEventListener('touchend', stopResize);
-
-
-// ===== автопрокрутка =====
-function scrollToBottom() {
-    feed.scrollTop = feed.scrollHeight;
-}
-
-// ===== обновление чата =====
-function onNewMessage(msg) {
-    const item = document.createElement('div');
-    item.className = 'chat-item';
-    item.textContent = msg;
-    feed.appendChild(item);
-
-    scrollToBottom(); // всегда прокручиваем вниз
-}
-
-// ===== следим за видимостью вкладки =====
-document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-        scrollToBottom(); // при возвращении на вкладку прокручиваем вниз
-    }
-});
-
-// стартовая прокрутка
-scrollToBottom();
 </script>
 <div id="onchat" onclick="document.getElementById('chatX_window').style.display = 'flex'; document.getElementById('onchat').style.display = 'none';"><i class="fa fa-arrow-up"></i></div>
 
@@ -1354,6 +1328,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
