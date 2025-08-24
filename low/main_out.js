@@ -89,34 +89,26 @@ setInterval(fetchSkinList, 300000);
         }
     };
 
-// ONLY_CLIENT режим
-ONLY_CLIENT = false;
+// Зашитый список серверов прямо в коде
+let SERVERS = {
+    "ffa": "pmori.ru:6001",
+    "crazy": "pmori.ru:6002",
+    "exp": "pmori.ru:6004"
+};
 
-// Подгружаем список серверов из server.json
-let SERVERS = {};
-let CONNECTION_URL = "itana.pw:6001"; // текущий сервер по умолчанию
-
-async function loadServers() {
-    try {
-        const response = await fetch('/assets/scripts/server.json');
-        SERVERS = await response.json();
-
-        // Определяем сервер по hash
-        const hash = location.hash;
-        if (hash && SERVERS[hash.slice(1)]) {
-            CONNECTION_URL = SERVERS[hash.slice(1)];
-        } else {
-            // Берём первый сервер по умолчанию
-            const keys = Object.keys(SERVERS);
-            CONNECTION_URL = keys.length ? SERVERS[keys[0]] : "";
-        }
-
-        console.log("Подключаемся к серверу:", CONNECTION_URL);
-    } catch (err) {
-        console.error("Не удалось загрузить серверы:", err);
+(function selectServer() {
+    const hash = location.hash;
+    if (hash && SERVERS[hash.slice(1)]) {
+        CONNECTION_URL = SERVERS[hash.slice(1)];
+    } else {
+        // Берём первый сервер по умолчанию
+        const keys = Object.keys(SERVERS);
+        CONNECTION_URL = keys.length ? SERVERS[keys[0]] : "";
     }
-}
-loadServers();
+
+    console.log("Подключаемся к серверу:", CONNECTION_URL);
+})();
+
 
 
     var
