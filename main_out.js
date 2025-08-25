@@ -1323,7 +1323,7 @@ if (playerId === ownerPlayerId) {
         }
 
         if (ua && playerCells.length === 0) {
-    wjQuery("#statics").show();  
+    wjQuery("#statics").css("display", "flex");
     updateShareText();    // текст шаринга
     updateStats();        // обновляем UI
     drawStatsGraph();     // график
