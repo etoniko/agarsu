@@ -48,7 +48,8 @@
                 <div class="menu-item" onclick="showContent('shop')"><i class="fas fa-shop"></i><span class="label">Магазин</span></div>
                 <div class="menu-item" onclick="showContent('skinslist')"><i class="fas fa-image"></i><span class="label">Скины</span></div>
                 <div class="menu-item active" onclick="showContent('home')"><i class="fas fa-home"></i><span class="label">Главная</span></div>
-                <div class="menu-item" onclick="showContent('rating');"><i class="fas fa-star"></i><span class="label">Рейтинг</span></div>
+                <div class="menu-item" id="sst" onclick="showContent('rating')"><i class="fas fa-star"></i><span class="label">Рейтинг</span></div>
+                <script>document.getElementById('sst').addEventListener('click', function () {chekstats();});</script>
                 <div class="menu-item" onclick="showContent('store')"><i class="fas fa-user"></i><span class="label">Войти</span></div>
             </div>
 
@@ -929,14 +930,13 @@ setNick(document.getElementById('nick').value + "#" + document.getElementById('p
                 const playerDiv = document.createElement('div');
                 playerDiv.classList.add('top-player');
 
-playerDiv.innerHTML = `
-<div class="time">${player.uid}</div> 
-<div class="rank">${player.position}</div> 
-<div class="nick">${player.account_name}</div> 
-<div class="score">${player.level}</div> 
-<div class="skkinn" style="background-image: url('skins/${player.account_avatar}.png');"></div>
-`;
-
+                playerDiv.innerHTML = `
+                    <div class="rank">${player.position}</div>
+                    <div class="uid">${player.uid}</div>
+                    <div class="nick">${player.account_name}</div>
+                    <div class="score">${level}</div>
+                    <div class="avatar"><img src="${player.account_avatar}" alt="avatar" width="32" height="32"></div>
+                `;
                 container.appendChild(playerDiv);
             });
         }
@@ -952,6 +952,8 @@ playerDiv.innerHTML = `
                 console.error('Error fetching top 100:', err);
             }
         }
+
+        fetchTop100();
     </script>
 </div>
 
