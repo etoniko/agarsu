@@ -1338,7 +1338,7 @@ document.addEventListener('touchend', stopResize);
                         <div class="cell">Масса</div>
                         <div class="cell">Скин</div>
                     </div>
-                    <div id="table-container"></div>
+                    <div id="table-containerwraper"></div>
                     <script>
                         // Функция для получения данных статистики
                         async function fetchStats(stats) { // Изменяем здесь, чтобы принимать stats
@@ -1364,7 +1364,7 @@ document.addEventListener('touchend', stopResize);
 
                         // Функция для отображения статистики
                         function displayStats(stats) {
-                            const container = document.getElementById('table-container');
+                            const container = document.getElementById('table-containerwraper');
                             container.innerHTML = ''; // Очищаем контейнер перед добавлением новых данных
 
                             stats.forEach((player, index) => {
@@ -1561,6 +1561,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
