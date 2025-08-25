@@ -1455,12 +1455,12 @@ stats.forEach((player, index) => {
 }
 .header-rowwraper {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: 1fr 2.5fr 1fr 1fr;
     justify-items: center;
 }
 .top-playerwraper{
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: 1fr 3fr 1fr 1fr;
     align-items: center;
     justify-items: center;
 }
@@ -1470,6 +1470,7 @@ stats.forEach((player, index) => {
     height: 30px;
     border: solid 2px;
     border-radius: 50%;
+   margin-bottom: 2px;
 }
 
 
@@ -1585,6 +1586,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
