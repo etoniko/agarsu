@@ -963,7 +963,7 @@ setNick(document.getElementById('nick').value + "#" + document.getElementById('p
 <div class="header-row">
     <button style="display:none" id="logoutButton" onclick="logoutAccount()">Выход</button>
 <!-- uLogin авторизация -->
-<script src="/assets/scripts/ulogin.js"></script>
+<script src="//ulogin.ru/js/ulogin.js"></script>
 <div id="loginButton" data-ulogin="callback=wHandle.onUloginToken;display=panel;fields=photo,first_name,last_name;providers=vkontakte,odnoklassniki,mailru,facebook;hidden=other;redirect_uri=https%3A%2F%2Fpmori.ru%2Fapi%2Fauth%2Fulogin"></div>
 <!-- Telegram авторизация -->
 <div id="authlog">
@@ -1601,6 +1601,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
