@@ -919,11 +919,11 @@ setNick(document.getElementById('nick').value + "#" + document.getElementById('p
         const getLevel = xp => ~~((xp / 100 * 2) ** 0.5);
 
         // Отображение топ-100
-        function displayStats(stats) {
+        function xpStats(xstats) {
             const container = document.getElementById('table-container');
             container.innerHTML = '';
 
-            stats.forEach(player => {
+            xstats.forEach(player => {
                 const level = getLevel(player.xp);
 
                 const playerDiv = document.createElement('div');
@@ -945,7 +945,7 @@ setNick(document.getElementById('nick').value + "#" + document.getElementById('p
                 const res = await fetch('https://pmori.ru:6003/api/top100');
                 const data = await res.json();
 
-                displayStats(data);
+                xpStats(data);
             } catch (err) {
                 console.error('Error fetching top 100:', err);
             }
@@ -1561,6 +1561,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
