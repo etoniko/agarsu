@@ -1363,6 +1363,7 @@ document.addEventListener('touchend', stopResize);
                             const container = document.getElementById('table-containerwraper');
                             container.innerHTML = ''; // Очищаем контейнер перед добавлением новых данных
 
+
 stats.forEach((player, index) => {
     const playerDiv = document.createElement('div');
     playerDiv.classList.add('top-playerwraper');
@@ -1371,7 +1372,7 @@ stats.forEach((player, index) => {
         <div>${index + 1}</div>
         <div>${player.nick}</div>
         <div>${player.score}</div>
-        <div style="background-image: url('skins/${player.skin}.png');"></div>
+        <div class="skinswraper"style="background-image: url('skins/${player.skin}.png');"></div>
     `;
     container.appendChild(playerDiv);
 });
@@ -1453,7 +1454,22 @@ stats.forEach((player, index) => {
     overflow: scroll;
 }
 .header-rowwraper {
-    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    justify-items: center;
+}
+.top-playerwraper{
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    align-items: center;
+    justify-items: center;
+}
+.skinswraper{
+    background-size: cover;
+    width: 30px;
+    height: 30px;
+    border: solid 2px;
+    border-radius: 50%;
 }
 
 
@@ -1569,6 +1585,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
