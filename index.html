@@ -932,7 +932,7 @@ setNick(document.getElementById('nick').value + "#" + document.getElementById('p
 <div class="time">${player.position}</div> 
 <div class="rank">${player.uid}</div> 
 <div class="nick">${player.account_name}</div> 
-<div class="score">${player.level}</div> 
+<div class="score">${level}</div> 
 <div class="skkinn" style="background-image: url('${player.account_avatar}.png');"></div>
                 `;
                 container.appendChild(playerDiv);
@@ -1482,6 +1482,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
