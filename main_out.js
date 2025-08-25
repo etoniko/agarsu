@@ -2960,8 +2960,9 @@ const onLogout = () => {
     logoutButton.style.display = "none";
     loginButton.style.display = "";
     authlog.style.display = "";
-    showLogoutNotification();
+showLogoutNotification();
 };
+
 
 // --------------------- Работа с токеном ---------------------
 const setAccountToken = token => { localStorage.accountToken = token; };
@@ -2973,32 +2974,20 @@ const accountApiGet = (tag, method = 'GET', body = null) => {
     return fetch("https://pmori.ru:6003/api/" + tag, { method, headers, body: body ? JSON.stringify(body) : null });
 };
 
-// --------------------- Логин через uLogin, Telegram и VKID ---------------------
+// --------------------- Логин через uLogin и Telegram ---------------------
 async function handleLogin(tokenOrUser, isTelegram = false) {
-    let url, options;
-
-    if (isTelegram) {
-        url = 'auth/telegram';
-        options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(tokenOrUser) };
-    } else if (tokenOrUser.code) { // VKID
-        url = 'vk-login';
-        options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(tokenOrUser) };
-    } else { // uLogin
-        url = 'auth/ulogin?token=' + tokenOrUser;
-        options = { method: 'GET' };
-    }
-
+    const url = isTelegram ? 'auth/telegram' : 'auth/ulogin?token=' + tokenOrUser;
+    const options = isTelegram ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(tokenOrUser) } : { method: 'GET' };
     const res = await fetch("https://pmori.ru:6003/api/" + url, options);
     const data = await res.json();
     if (data.error) return alert(data.error);
-
     wHandle.onAccountLoggedIn(data.token);
 }
 
-// --------------------- Обработчики от виджетов ---------------------
 wHandle.onUloginToken = handleLogin;
-wHandle.onTelegramAuth = function(user) { handleLogin(user, true); };
-wHandle.onVKLogin = function(user) { handleLogin(user, false); };
+    wHandle.onTelegramAuth = function(user) {
+        handleLogin(user, true); // функция handleLogin уже внутри модуля
+    };
 
 // --------------------- Работа с аккаунтом ---------------------
 wHandle.onAccountLoggedIn = token => {
@@ -3043,7 +3032,6 @@ const loadAccountUserData = async () => {
 
 if (localStorage.accountToken) loadAccountUserData();
 
-// --------------------- XP / Level ---------------------
 const getXp = level => ~~(100 * (level ** 2 / 2));
 const getLevel = xp => ~~((xp / 100 * 2) ** .5);
 
@@ -3072,9 +3060,6 @@ wHandle.onUpdateXp = xp => {
         displayAccountData();
     }
 };
-
-
-
 
     wHandle.onload = gameLoop;
 })(window, window.jQuery);
