@@ -556,11 +556,15 @@ function onTouchEnd(e) {
 }
 
 function handleWheel(event) {
-    const overlay = $('#overlays');
-    const chatContainer = $('#chatX_feed');
+    // список элементов, при которых нужно блокировать зум
+    const blockSelectors = ['#overlays', '#chatX_feed', '#statics'];
 
-    if (overlay.is(':visible') || isMouseOverElement(chatContainer)) {
-        return;
+    // если хотя бы один из них виден → прерываем
+    for (const selector of blockSelectors) {
+        const el = $(selector);
+        if (el.is(':visible') || isMouseOverElement(el)) {
+            return;
+        }
     }
 
     zoom *= Math.pow(.9, event.wheelDelta / -120 || event.detail || 0);
@@ -568,6 +572,8 @@ function handleWheel(event) {
     if (zoom > 4 / viewZoom) zoom = 4 / viewZoom;
     if (zoom < 0.3) zoom = 0.3;
 }
+
+
 
 function isMouseOverElement(element) {
     const mouseX = event.clientX;
