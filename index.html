@@ -1329,14 +1329,10 @@ document.addEventListener('touchend', stopResize);
  </div>
 </div>
 
-<div class="statr">
+<div class="statsWrapper">
 <div class="headerstats"><h1>Статистика #ffa</h1></div>
- <div class="header-row">
-                        <div class="cell">Время</div>
-                        <div class="cell">Позиция</div>
-                        <div class="cell">Ник</div>
-                        <div class="cell">Масса</div>
-                        <div class="cell">Скин</div>
+ <div class="header-rowwraper">
+                        <div>Время</div><div>Позиция</div><div>Ник</div><div>Масса</div><div>Скин</div>
                     </div>
                     <div id="table-containerwraper"></div>
                     <script>
@@ -1439,6 +1435,7 @@ document.addEventListener('touchend', stopResize);
 }
 .statsWrapper {
     width: 380px;
+    height: 500px;
     padding: 25px;
     background-color: #0e172c;
     border-radius: 25px;
@@ -1449,6 +1446,18 @@ document.addEventListener('touchend', stopResize);
     gap: 10px;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
 }
+
+.table-containerwraper{
+    width: 100%;
+    overflow: scroll;
+}
+.header-rowwraper {
+    display: flex;
+    justify-content: space-around;
+    width: 100%;
+}
+
+
 #shareText {
     font-size: 18px;
     color: #c3c0c0;
@@ -1561,6 +1570,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
