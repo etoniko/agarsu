@@ -12,7 +12,7 @@
     <meta property="og:description" content="Играйте в agar.su — мир клеток, где нужно выживать, поглощая других игроков и избегая опасностей.">
     <meta property="og:image" content="assets/photo/ogimage.jpeg">
     <meta property="og:url" content="https://agar.su">
-    <meta property="og:type" content="website">
+    <meta property="og:type" content="website">л
 
     <title>Agar.su</title>
 
@@ -1369,7 +1369,7 @@ document.addEventListener('touchend', stopResize);
 
                             stats.forEach((player, index) => {
                                 const playerDiv = document.createElement('div');
-                                playerDiv.classList.add('top-player');
+                                playerDiv.classList.add('top-playerwraper');
                                 playerDiv.innerHTML = `
                                 <div class="time">${player.time}</div> <!-- Добавлено время -->
                                 <div class="rank">${index + 1}</div>
@@ -1561,6 +1561,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
