@@ -1332,7 +1332,7 @@ document.addEventListener('touchend', stopResize);
 <div class="statsWrapper">
 <div class="headerstats"><h1>Статистика #ffa</h1></div>
  <div class="header-rowwraper">
-                        <div>Время</div><div>Позиция</div><div>Ник</div><div>Масса</div><div>Скин</div>
+                        <div>Позиция</div><div>Ник</div><div>Масса</div><div>Скин</div>
                     </div>
                     <div id="table-containerwraper"></div>
                     <script>
@@ -1363,18 +1363,18 @@ document.addEventListener('touchend', stopResize);
                             const container = document.getElementById('table-containerwraper');
                             container.innerHTML = ''; // Очищаем контейнер перед добавлением новых данных
 
-                            stats.forEach((player, index) => {
-                                const playerDiv = document.createElement('div');
-                                playerDiv.classList.add('top-player');
-                                playerDiv.innerHTML = `
-                                <div class="time">${player.time}</div> <!-- Добавлено время -->
-                                <div class="rank">${index + 1}</div>
-                                <div class="nick">${player.nick}</div>
-                                <div class="score">${player.score}</div>
-                                <div class="skkinn" style="background-image: url('skins/${player.skin}.png');"></div>
-                            `;
-                                container.appendChild(playerDiv);
-                            });
+stats.forEach((player, index) => {
+    const playerDiv = document.createElement('div');
+    playerDiv.classList.add('top-player');
+    playerDiv.setAttribute('title', player.time); // добавляем атрибут title
+    playerDiv.innerHTML = `
+        <div class="rank">${index + 1}</div>
+        <div class="nick">${player.nick}</div>
+        <div class="score">${player.score}</div>
+        <div class="skkinn" style="background-image: url('skins/${player.skin}.png');"></div>
+    `;
+    container.appendChild(playerDiv);
+});
                         }
 
                     </script>
@@ -1571,6 +1571,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
