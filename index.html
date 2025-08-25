@@ -1000,28 +1000,32 @@ if ('VKIDSDK' in window) {
         oauthList: ['mail_ru', 'ok_ru']
     })
     .on(VKID.WidgetEvents.ERROR, vkidOnError)
-    .on(VKID.OneTapInternalEvents.LOGIN_SUCCESS, function(payload) {
-        try {
-            console.log('VKID LOGIN_SUCCESS payload:', payload);
+.on(VKID.OneTapInternalEvents.LOGIN_SUCCESS, function(payload) {
+    try {
+        console.log('VKID LOGIN_SUCCESS payload:', payload);
 
-            // Формируем объект пользователя для отправки на сервер
-            const user = {
-                code: payload.code,
-                device_id: payload.device_id,
-                raw: payload // сохраняем весь объект на всякий случай
-            };
+        // Формируем объект пользователя для отправки на сервер
+        // Важно: vk2.a.code одноразовый, нужно сразу брать access_token если есть
+        const user = {
+            code: payload.code,           // одноразовый код VKID v2
+            device_id: payload.device_id, // ID устройства
+            access_token: payload.access_token || null, // если VKID вернул токен
+            user_id: payload.user_id || null,           // если VKID вернул ID пользователя
+            raw: payload // сохраняем весь объект на всякий случай
+        };
 
-            console.log('VK User object:', user);
+        console.log('VK User object for server:', user);
 
-            if (typeof onVkIdLogin === 'function') {
-                onVkIdLogin(user); // важно: отправляем на сервер
-            } else {
-                console.error('onVkIdLogin is not defined. Ensure main_out.js is loaded first.');
-            }
-        } catch (err) {
-            console.error('Error processing VKID payload:', err);
+        if (typeof onVkIdLogin === 'function') {
+            onVkIdLogin(user); // отправляем на сервер
+        } else {
+            console.error('onVkIdLogin is not defined. Ensure main_out.js is loaded first.');
         }
-    });
+    } catch (err) {
+        console.error('Error processing VKID payload:', err);
+    }
+});
+
 
 } else {
     console.error('VKIDSDK not found in window. Make sure VKID SDK script is loaded.');
@@ -1548,6 +1552,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
