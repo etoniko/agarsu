@@ -1364,12 +1364,12 @@ document.addEventListener('touchend', stopResize);
 
                         // Функция для отображения статистики
                         function displayStats(stats) {
-                            const container = document.getElementById('table-containerwraper');
+                            const container = document.getElementById('table-container');
                             container.innerHTML = ''; // Очищаем контейнер перед добавлением новых данных
 
                             stats.forEach((player, index) => {
                                 const playerDiv = document.createElement('div');
-                                playerDiv.classList.add('top-playerwraper');
+                                playerDiv.classList.add('top-player');
                                 playerDiv.innerHTML = `
                                 <div class="time">${player.time}</div> <!-- Добавлено время -->
                                 <div class="rank">${index + 1}</div>
@@ -1561,6 +1561,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
