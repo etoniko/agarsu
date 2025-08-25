@@ -2933,37 +2933,6 @@ if (this.id !== 0) {
         }
     };
 
-const onLogout = () => {
-    // Очистка данных аккаунта в памяти
-    accountData = null;
-
-    // Очистка данных в localStorage, связанных с аккаунтом (например, прогресс)
-    localStorage.removeItem('accountData'); // если есть
-
-    // Очистить токен
-    clearAccountToken();
-
-    // Обновить UI — очистить все элементы с прогрессом
-    const progressBar = document.querySelector(".progress-fill");
-    if (progressBar) progressBar.style.width = `0%`;
-
-    const levelCircle = document.getElementById("levelCircle");
-    if (levelCircle) levelCircle.textContent = "0";
-
-    const progressText = document.getElementById("progressText");
-    if (progressText) progressText.textContent = "0% (0/0)";
-
-    const accountIDElement = document.getElementById("accountID");
-    if (accountIDElement) accountIDElement.textContent = "ID: 0000";
-
-    // Обновляем кнопки
-    logoutButton.style.display = "none";
-    loginButton.style.display = "";
-    authlog.style.display = "";
-showLogoutNotification();
-};
-
-
 // --------------------- Работа с токеном ---------------------
 const setAccountToken = token => { localStorage.accountToken = token; };
 const clearAccountToken = () => { delete localStorage.accountToken; };
@@ -2974,26 +2943,40 @@ const accountApiGet = (tag, method = 'GET', body = null) => {
     return fetch("https://pmori.ru:6003/api/" + tag, { method, headers, body: body ? JSON.stringify(body) : null });
 };
 
-// --------------------- Логин через uLogin и Telegram ---------------------
-async function handleLogin(tokenOrUser, isTelegram = false) {
-    const url = isTelegram ? 'auth/telegram' : 'auth/ulogin?token=' + tokenOrUser;
-    const options = isTelegram ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(tokenOrUser) } : { method: 'GET' };
+// --------------------- Логин через uLogin, Telegram и VKID ---------------------
+async function handleLogin(tokenOrUser, type = 'ulogin') {
+    // type = 'ulogin' | 'telegram' | 'vkid'
+    let url, options;
+
+    if (type === 'telegram') {
+        url = 'auth/telegram';
+        options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(tokenOrUser) };
+    } else if (type === 'vkid') {
+        url = 'vk-login';
+        options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(tokenOrUser) };
+    } else {
+        // uLogin
+        url = 'auth/ulogin?token=' + tokenOrUser;
+        options = { method: 'GET' };
+    }
+
     const res = await fetch("https://pmori.ru:6003/api/" + url, options);
     const data = await res.json();
     if (data.error) return alert(data.error);
+
     wHandle.onAccountLoggedIn(data.token);
 }
 
-wHandle.onUloginToken = handleLogin;
-    wHandle.onTelegramAuth = function(user) {
-        handleLogin(user, true); // функция handleLogin уже внутри модуля
-    };
+// Обработчики для разных авторизаций
+wHandle.onUloginToken = token => handleLogin(token, 'ulogin');
+wHandle.onTelegramAuth = user => handleLogin(user, 'telegram');
+wHandle.onVKLogin = user => handleLogin(user, 'vkid'); // user = { code, deviceId } от VKID
 
 // --------------------- Работа с аккаунтом ---------------------
 wHandle.onAccountLoggedIn = token => {
     setAccountToken(token);
     loadAccountUserData();
-    sendAccountToken();
+    sendAccountToken(); // твоя внутренняя логика
 };
 
 wHandle.logoutAccount = async () => {
@@ -3007,13 +2990,30 @@ wHandle.logoutAccount = async () => {
     } else onLogout();
 };
 
+// --------------------- Логика выхода ---------------------
+const onLogout = () => {
+    accountData = null;
+    localStorage.removeItem('accountData');
+    clearAccountToken();
+
+    document.querySelector(".progress-fill")?.style.width = `0%`;
+    document.getElementById("levelCircle") && (document.getElementById("levelCircle").textContent = "0");
+    document.getElementById("progressText") && (document.getElementById("progressText").textContent = "0% (0/0)");
+    document.getElementById("accountID") && (document.getElementById("accountID").textContent = "ID: 0000");
+
+    logoutButton.style.display = "none";
+    loginButton.style.display = "";
+    authlog.style.display = "";
+    showLogoutNotification();
+};
+
 // --------------------- Загрузка и отображение данных ---------------------
 let accountData;
 
 const setAccountData = data => {
     accountData = data;
     displayAccountData();
-    document.querySelectorAll(".menu-item")[2].click(); // На главную меню
+    document.querySelectorAll(".menu-item")[2].click();
     logoutButton.style.display = "";
     loginButton.style.display = "none";
     authlog.style.display = "none";
@@ -3032,6 +3032,7 @@ const loadAccountUserData = async () => {
 
 if (localStorage.accountToken) loadAccountUserData();
 
+// --------------------- XP / Level ---------------------
 const getXp = level => ~~(100 * (level ** 2 / 2));
 const getLevel = xp => ~~((xp / 100 * 2) ** .5);
 
@@ -3041,17 +3042,10 @@ const displayAccountData = () => {
     const nextXp = getXp(currLevel + 1);
     const progressPercent = (accountData.xp / nextXp) * 100;
 
-    const progressBar = document.querySelector(".progress-fill");
-    if (progressBar) progressBar.style.width = `${progressPercent}%`;
-
-    const levelCircle = document.getElementById("levelCircle");
-    if (levelCircle) levelCircle.textContent = currLevel;
-
-    const progressText = document.getElementById("progressText");
-    if (progressText) progressText.textContent = `${Math.round(progressPercent)}% (${accountData.xp}/${nextXp})`;
-
-    const accountIDElement = document.getElementById("accountID");
-    if (accountIDElement) accountIDElement.textContent = `ID: ${accountData.uid}`;
+    document.querySelector(".progress-fill")?.style.width = `${progressPercent}%`;
+    document.getElementById("levelCircle") && (document.getElementById("levelCircle").textContent = currLevel);
+    document.getElementById("progressText") && (document.getElementById("progressText").textContent = `${Math.round(progressPercent)}% (${accountData.xp}/${nextXp})`);
+    document.getElementById("accountID") && (document.getElementById("accountID").textContent = `ID: ${accountData.uid}`);
 };
 
 wHandle.onUpdateXp = xp => {
@@ -3060,6 +3054,7 @@ wHandle.onUpdateXp = xp => {
         displayAccountData();
     }
 };
+
 
     wHandle.onload = gameLoop;
 })(window, window.jQuery);
