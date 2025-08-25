@@ -1306,7 +1306,7 @@ document.addEventListener('touchend', stopResize);
             </div>
         </div>
 <div id="onmap" onclick="document.getElementById('map').style.display = 'block'; document.getElementById('onmap').style.display = 'none';"><i class="fa fa-arrow-up"></i></div>
-<div id="statics">
+<div id="statics" class="overlays">
 <div id="statsWrapper">
 <div id="closeStats" onclick="document.getElementById('statics').style.display = 'none';$('#overlays').show();"><i class="fa-solid fa-xmark"></i></div>
         <h1>Статистика</h1>
@@ -1364,11 +1364,7 @@ document.addEventListener('touchend', stopResize);
     flex-direction: column;
     align-items: center;
     gap: 10px;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
 }
 #shareText {
     font-size: 18px;
@@ -1482,6 +1478,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
