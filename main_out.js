@@ -2975,43 +2975,36 @@ const accountApiGet = (tag, method = 'GET', body = null) => {
 
 // --------------------- Логин через uLogin, Telegram и VKID ---------------------
 async function handleLogin(tokenOrUser, isTelegram = false) {
-    // isTelegram = true → Telegram POST
-    // isTelegram = false → uLogin GET или VKID POST
     let url, options;
 
     if (isTelegram) {
         url = 'auth/telegram';
         options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(tokenOrUser) };
-    } else {
-        // Если пришёл объект VKID
-        if (tokenOrUser.code) {
-            url = 'vk-login';
-            options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(tokenOrUser) };
-        } else {
-            // uLogin
-            url = 'auth/ulogin?token=' + tokenOrUser;
-            options = { method: 'GET' };
-        }
+    } else if (tokenOrUser.code) { // VKID
+        url = 'vk-login';
+        options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(tokenOrUser) };
+    } else { // uLogin
+        url = 'auth/ulogin?token=' + tokenOrUser;
+        options = { method: 'GET' };
     }
 
     const res = await fetch("https://pmori.ru:6003/api/" + url, options);
     const data = await res.json();
     if (data.error) return alert(data.error);
 
-    // Логика: ставим токен и грузим данные
     wHandle.onAccountLoggedIn(data.token);
 }
 
 // --------------------- Обработчики от виджетов ---------------------
 wHandle.onUloginToken = handleLogin;
-wHandle.onTelegramAuth = user => handleLogin(user, true);
-wHandle.onVKLogin = user => handleLogin(user, false);
+wHandle.onTelegramAuth = function(user) { handleLogin(user, true); };
+wHandle.onVKLogin = function(user) { handleLogin(user, false); };
 
 // --------------------- Работа с аккаунтом ---------------------
 wHandle.onAccountLoggedIn = token => {
     setAccountToken(token);
     loadAccountUserData();
-    sendAccountToken(); // если есть твоя внутренняя логика отправки токена куда-то
+    sendAccountToken();
 };
 
 wHandle.logoutAccount = async () => {
@@ -3060,10 +3053,17 @@ const displayAccountData = () => {
     const nextXp = getXp(currLevel + 1);
     const progressPercent = (accountData.xp / nextXp) * 100;
 
-    document.querySelector(".progress-fill")?.style.width = `${progressPercent}%`;
-    document.getElementById("levelCircle") && (document.getElementById("levelCircle").textContent = currLevel);
-    document.getElementById("progressText") && (document.getElementById("progressText").textContent = `${Math.round(progressPercent)}% (${accountData.xp}/${nextXp})`);
-    document.getElementById("accountID") && (document.getElementById("accountID").textContent = `ID: ${accountData.uid}`);
+    const progressBar = document.querySelector(".progress-fill");
+    if (progressBar) progressBar.style.width = `${progressPercent}%`;
+
+    const levelCircle = document.getElementById("levelCircle");
+    if (levelCircle) levelCircle.textContent = currLevel;
+
+    const progressText = document.getElementById("progressText");
+    if (progressText) progressText.textContent = `${Math.round(progressPercent)}% (${accountData.xp}/${nextXp})`;
+
+    const accountIDElement = document.getElementById("accountID");
+    if (accountIDElement) accountIDElement.textContent = `ID: ${accountData.uid}`;
 };
 
 wHandle.onUpdateXp = xp => {
@@ -3072,6 +3072,7 @@ wHandle.onUpdateXp = xp => {
         displayAccountData();
     }
 };
+
 
 
 
