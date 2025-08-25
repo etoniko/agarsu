@@ -964,19 +964,32 @@ setNick(document.getElementById('nick').value + "#" + document.getElementById('p
                         <div><span>Кабинет</span></div>
                     </div>
 <div class="header-row">
-    <button style="display:none" id="logoutButton" onclick="logoutAccount()">Выход</button>
+<!-- Кнопка выхода -->
+<button style="display:none" id="logoutButton" onclick="wHandle.logoutAccount()">Выход</button>
+
 <!-- uLogin авторизация -->
 <script src="/assets/scripts/ulogin.js"></script>
-<div id="loginButton" data-ulogin="callback=wHandle.onUloginToken;display=panel;fields=photo,first_name,last_name;providers=vkontakte,odnoklassniki,mailru,facebook;hidden=other;redirect_uri=https%3A%2F%2Fpmori.ru%2Fapi%2Fauth%2Fulogin"></div>
+<div id="loginButton" 
+     data-ulogin="callback=wHandle.onUloginToken;
+                  display=panel;
+                  fields=photo,first_name,last_name;
+                  providers=vkontakte,odnoklassniki,mailru,facebook;
+                  hidden=other;
+                  redirect_uri=https%3A%2F%2Fpmori.ru%2Fapi%2Fauth%2Fulogin">
+</div>
+
 <!-- Telegram авторизация -->
 <div id="authlog">
 <script async src="https://telegram.org/js/telegram-widget.js?22"
         data-telegram-login="agarsu_auth_bot"
         data-size="large"
-        data-onauth="onTelegramAuth(user)"
+        data-onauth="wHandle.onTelegramAuth(user)"
         data-request-access="write">
 </script>
-<div>
+</div>
+
+<!-- VKID авторизация -->
+<div id="vkidContainer">
   <script src="https://unpkg.com/@vkid/sdk@<3.0.0/dist-sdk/umd/index.js"></script>
   <script type="text/javascript">
     if ('VKIDSDK' in window) {
@@ -987,61 +1000,30 @@ setNick(document.getElementById('nick').value + "#" + document.getElementById('p
         redirectUrl: 'https://agar.su/vk-auth',
         responseMode: VKID.ConfigResponseMode.Callback,
         source: VKID.ConfigSource.LOWCODE,
-        scope: '', // Заполните нужными доступами по необходимости
+        scope: '',
       });
 
       const oneTap = new VKID.OneTap();
 
       oneTap.render({
-        container: document.currentScript.parentElement,
+        container: document.getElementById("vkidContainer"),
         showAlternativeLogin: true,
-        oauthList: [
-          'mail_ru',
-          'ok_ru'
-        ]
+        oauthList: ['mail_ru','ok_ru']
       })
       .on(VKID.WidgetEvents.ERROR, vkidOnError)
-      .on(VKID.OneTapInternalEvents.LOGIN_SUCCESS, function (payload) {
+      .on(VKID.OneTapInternalEvents.LOGIN_SUCCESS, function(payload) {
         const code = payload.code;
         const deviceId = payload.device_id;
 
+        // Логика: просто передаём код в main oujs
+        wHandle.onVKLogin({ code, deviceId });
+      });
 
-    VKID.Auth.exchangeCode(code, deviceId)
-      .then(data => {
-        // Получаем только token и id пользователя
-        const token = data.access_token || data.token;
-        const id = (data.user && data.user.id) || data.user_id || data.id;
-
-        if (!token || !id) {
-          throw new Error('Не удалось получить token или id');
-        }
-
-        const user = { token, id };
-        console.log('VK User:', user);
-
-        // Отправка на сервер
-        fetch('https://pmori.ru:6003/vk-login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(user)
-        })
-        .then(res => res.json())
-        .then(resData => console.log('Сервер ответил:', resData))
-        .catch(err => console.error('Ошибка при отправке на сервер:', err));
-      })
-      .catch(vkidOnError);
-  });
-
-  function vkidOnSuccess(data) {
-    console.log('Успех:', data);
-  }
-
-  function vkidOnError(error) {
-    console.error('Ошибка:', error);
-  }
-}
+      function vkidOnError(error) {
+        console.error('VKID ошибка:', error);
+      }
+    }
   </script>
-</div>
 </div>
 </div>
 
@@ -1551,6 +1533,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
