@@ -930,11 +930,11 @@ setNick(document.getElementById('nick').value + "#" + document.getElementById('p
                 playerDiv.classList.add('top-player');
 
 playerDiv.innerHTML = `
-    <div class="rank">${player.position}</div>
-    <div class="uid">${player.uid}</div>
-    <div class="nick">${player.account_name}</div>
-    <div class="score">${level}</div>
-    <div class="avatar"><img src="${player.account_avatar || 'https://agar.su/skins/4.png'}" alt="avatar" width="32" height="32"></div>
+<div class="time">${player.uid}</div> 
+<div class="rank">${player.position}</div> 
+<div class="nick">${player.account_name}</div> 
+<div class="score">${player.level}</div> 
+<div class="skkinn" style="background-image: url('skins/${player.account_avatar}.png');"></div>
 `;
 
                 container.appendChild(playerDiv);
@@ -1482,6 +1482,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
