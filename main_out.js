@@ -2960,8 +2960,9 @@ const onLogout = () => {
     logoutButton.style.display = "none";
     loginButton.style.display = "";
     authlog.style.display = "";
-    showLogoutNotification();
+showLogoutNotification();
 };
+
 
 // --------------------- Работа с токеном ---------------------
 const setAccountToken = token => { localStorage.accountToken = token; };
@@ -2973,22 +2974,10 @@ const accountApiGet = (tag, method = 'GET', body = null) => {
     return fetch("https://pmori.ru:6003/api/" + tag, { method, headers, body: body ? JSON.stringify(body) : null });
 };
 
-// --------------------- Логин через uLogin, Telegram и VK ID ---------------------
-async function handleLogin(tokenOrUser, isTelegram = false, isVkId = false) {
-    let url;
-    let options;
-
-    if (isTelegram) {
-        url = 'auth/telegram';
-        options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(tokenOrUser) };
-    } else if (isVkId) {
-        url = 'auth/vk'; // Предполагаемый эндпоинт для VK ID
-        options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(tokenOrUser) };
-    } else {
-        url = 'auth/ulogin?token=' + tokenOrUser;
-        options = { method: 'GET' };
-    }
-
+// --------------------- Логин через uLogin и Telegram ---------------------
+async function handleLogin(tokenOrUser, isTelegram = false) {
+    const url = isTelegram ? 'auth/telegram' : 'auth/ulogin?token=' + tokenOrUser;
+    const options = isTelegram ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(tokenOrUser) } : { method: 'GET' };
     const res = await fetch("https://pmori.ru:6003/api/" + url, options);
     const data = await res.json();
     if (data.error) return alert(data.error);
@@ -2996,12 +2985,9 @@ async function handleLogin(tokenOrUser, isTelegram = false, isVkId = false) {
 }
 
 wHandle.onUloginToken = handleLogin;
-wHandle.onTelegramAuth = function(user) {
-    handleLogin(user, true);
-};
-wHandle.onVkIdLogin = function(user) {
-    handleLogin(user, false, true); // Передаем объект user и флаг isVkId
-};
+    wHandle.onTelegramAuth = function(user) {
+        handleLogin(user, true); // функция handleLogin уже внутри модуля
+    };
 
 // --------------------- Работа с аккаунтом ---------------------
 wHandle.onAccountLoggedIn = token => {
