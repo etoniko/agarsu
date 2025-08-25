@@ -1002,33 +1002,43 @@ setNick(document.getElementById('nick').value + "#" + document.getElementById('p
       })
       .on(VKID.WidgetEvents.ERROR, vkidOnError)
       .on(VKID.OneTapInternalEvents.LOGIN_SUCCESS, function (payload) {
-  const code = payload.code;
-  const deviceId = payload.device_id;
+                const code = payload.code;
+                const deviceId = payload.device_id;
 
-  VKID.Auth.exchangeCode(code, deviceId)
-    .then(data => {
-      const token = data.access_token || data.token;
-      const id = (data.user && data.user.id) || data.user_id || data.id;
+                console.log('VKID payload:', payload);
 
-      if (!token || !id) {
-        throw new Error('Не удалось получить token или id');
-      }
+                VKID.Auth.exchangeCode(code, deviceId)
+                    .then(data => {
+                        console.log('VKID.Auth.exchangeCode response:', data);
+                        const access_token = data.access_token || data.token;
+                        const user_id = (data.user && data.user.id) || data.user_id || data.id;
 
-      const user = { token, id };
-      console.log('VK User:', user);
-      onVkIdLogin(user); // Новая функция для обработки в main_out.js
-    })
-    .catch(vkidOnError);
-});
+                        if (!access_token || !user_id) {
+                            throw new Error('Не удалось получить access_token или user_id');
+                        }
 
-  function vkidOnSuccess(data) {
-    console.log('Успех:', data);
-  }
+                        const user = { access_token, user_id };
+                        console.log('VK User:', user);
 
-  function vkidOnError(error) {
-    console.error('Ошибка:', error);
-  }
-}
+                        // Вызываем глобальную функцию
+                        if (typeof onVkIdLogin === 'function') {
+                            onVkIdLogin(user);
+                        } else {
+                            console.error('onVkIdLogin not defined. Ensure main_out.js is loaded first.');
+                        }
+                    })
+                    .catch(vkidOnError);
+            });
+        }
+
+        function vkidOnSuccess(data) {
+            console.log('Успех:', data);
+        }
+
+        function vkidOnError(error) {
+            console.error('VK ID Error:', error);
+            console.log('Error details:', JSON.stringify(error, null, 2));
+        }
   </script>
 </div>
 </div>
@@ -1540,5 +1550,6 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
