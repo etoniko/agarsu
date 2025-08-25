@@ -1009,6 +1009,10 @@ setNick(document.getElementById('nick').value + "#" + document.getElementById('p
     #recContainer {
         display: none !important;
     }
+#statics > div:nth-child(1),
+#statics > div:nth-child(3) {
+  display: none;
+}
 }
 #recContainer {
     position: absolute;
@@ -1586,6 +1590,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
