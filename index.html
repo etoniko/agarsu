@@ -1364,7 +1364,7 @@ document.addEventListener('touchend', stopResize);
 
                         // Функция для отображения статистики
                         function displayStats(stats) {
-                            const container = document.getElementById('table-container');
+                            const container = document.getElementById('table-containerwraper');
                             container.innerHTML = ''; // Очищаем контейнер перед добавлением новых данных
 
                             stats.forEach((player, index) => {
@@ -1561,6 +1561,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
