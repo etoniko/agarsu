@@ -1016,9 +1016,7 @@ setNick(document.getElementById('nick').value + "#" + document.getElementById('p
 
       const user = { token, id };
       console.log('VK User:', user);
-
-      // Вместо прямого fetch вызываем функцию в wHandle
-      wHandle.onVkIdLogin(user); // Новая функция для обработки в main_out.js
+      onVkIdLogin(user); // Новая функция для обработки в main_out.js
     })
     .catch(vkidOnError);
 });
@@ -1542,4 +1540,5 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
