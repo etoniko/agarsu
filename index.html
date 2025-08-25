@@ -1307,10 +1307,14 @@ document.addEventListener('touchend', stopResize);
         </div>
 <div id="onmap" onclick="document.getElementById('map').style.display = 'block'; document.getElementById('onmap').style.display = 'none';"><i class="fa fa-arrow-up"></i></div>
 <div id="statics" class="overlays">
-<div id="statsWrapper">
-<div class="headerstats"><h1>Статистика</h1><div id="closeStats" onclick="document.getElementById('statics').style.display = 'none';$('#overlays').show();"><i class="fa-solid fa-xmark"></i></div></div>
-        <canvas id="statsGraph" width="320" height="150"></canvas>
 
+<div class="statsWrapper">
+<div class="headerstats"><h1>Блогерская Agar.su</h1></div>
+</div>
+
+<div id="statsWrapper" class="statsWrapper">
+<div class="headerstats"><h1>Твоя Статистика</h1><div id="closeStats" onclick="document.getElementById('statics').style.display = 'none';$('#overlays').show();"><i class="fa-solid fa-xmark"></i></div></div>
+        <canvas id="statsGraph" width="320" height="150"></canvas>
 <div style="color: #01f103f0;text-shadow: #01f103f0 1px 0 10px;">поделиться:</div>
         <div id="buttons">
             <button class="social-btn fab fa-vk vk" title="ВКонтакте"></button>
@@ -1322,8 +1326,64 @@ document.addEventListener('touchend', stopResize);
 <div class="nav-buttons">
 <div onclick="spectate();" class="nav-button serv-button"><i class="fas fa-eye"></i>Наблюдать</div>
 <button id="button-text" onclick="startGame();return false;" class="nav-button play-button"><i class="fas fa-play"></i> ИГРАТЬ</button>
+ </div>
 </div>
-    </div>
+
+<div class="statsWrapper">
+<div class="headerstats"><h1>Статистика #ffa</h1></div>
+ <div class="header-row">
+                        <div class="cell">Время</div>
+                        <div class="cell">Позиция</div>
+                        <div class="cell">Ник</div>
+                        <div class="cell">Масса</div>
+                        <div class="cell">Скин</div>
+                    </div>
+                    <div id="table-container"></div>
+                    <script>
+                        // Функция для получения данных статистики
+                        async function fetchStats(stats) { // Изменяем здесь, чтобы принимать stats
+                            try {
+                                // Убедимся, что stats переданы и являются массивом
+                                if (!Array.isArray(stats)) {
+                                    throw new Error('Invalid stats data');
+                                }
+
+                                const skinsMap = await loadSkinsList(); // Загрузка skinsList
+
+                                // Обновляем каждый player в stats
+                                stats.forEach(player => {
+                                    const skinId = skinsMap.get(player.nick.toLowerCase()) || 'PPFtwqH'; // Используем nick напрямую для skinId
+                                    player.skin = skinId; // Установка skin для игрока
+                                });
+
+                                displayStats(stats);
+                            } catch (error) {
+                                console.error('There was a problem with the fetch operation:', error);
+                            }
+                        }
+
+                        // Функция для отображения статистики
+                        function displayStats(stats) {
+                            const container = document.getElementById('table-container');
+                            container.innerHTML = ''; // Очищаем контейнер перед добавлением новых данных
+
+                            stats.forEach((player, index) => {
+                                const playerDiv = document.createElement('div');
+                                playerDiv.classList.add('top-player');
+                                playerDiv.innerHTML = `
+                                <div class="time">${player.time}</div> <!-- Добавлено время -->
+                                <div class="rank">${index + 1}</div>
+                                <div class="nick">${player.nick}</div>
+                                <div class="score">${player.score}</div>
+                                <div class="skkinn" style="background-image: url('skins/${player.skin}.png');"></div>
+                            `;
+                                container.appendChild(playerDiv);
+                            });
+                        }
+
+                    </script>
+</div>
+
 </div>
 <style>
 
@@ -1377,7 +1437,7 @@ document.addEventListener('touchend', stopResize);
 #statics {
     display: none;
 }
-#statsWrapper {
+.statsWrapper {
     width: 380px;
     padding: 25px;
     background-color: #0e172c;
@@ -1501,6 +1561,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
