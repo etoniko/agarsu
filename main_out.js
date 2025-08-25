@@ -2933,6 +2933,36 @@ if (this.id !== 0) {
         }
     };
 
+const onLogout = () => {
+    // Очистка данных аккаунта в памяти
+    accountData = null;
+
+    // Очистка данных в localStorage, связанных с аккаунтом (например, прогресс)
+    localStorage.removeItem('accountData'); // если есть
+
+    // Очистить токен
+    clearAccountToken();
+
+    // Обновить UI — очистить все элементы с прогрессом
+    const progressBar = document.querySelector(".progress-fill");
+    if (progressBar) progressBar.style.width = `0%`;
+
+    const levelCircle = document.getElementById("levelCircle");
+    if (levelCircle) levelCircle.textContent = "0";
+
+    const progressText = document.getElementById("progressText");
+    if (progressText) progressText.textContent = "0% (0/0)";
+
+    const accountIDElement = document.getElementById("accountID");
+    if (accountIDElement) accountIDElement.textContent = "ID: 0000";
+
+    // Обновляем кнопки
+    logoutButton.style.display = "none";
+    loginButton.style.display = "";
+    authlog.style.display = "";
+    showLogoutNotification();
+};
+
 // --------------------- Работа с токеном ---------------------
 const setAccountToken = token => { localStorage.accountToken = token; };
 const clearAccountToken = () => { delete localStorage.accountToken; };
@@ -2944,39 +2974,44 @@ const accountApiGet = (tag, method = 'GET', body = null) => {
 };
 
 // --------------------- Логин через uLogin, Telegram и VKID ---------------------
-async function handleLogin(tokenOrUser, type = 'ulogin') {
-    // type = 'ulogin' | 'telegram' | 'vkid'
+async function handleLogin(tokenOrUser, isTelegram = false) {
+    // isTelegram = true → Telegram POST
+    // isTelegram = false → uLogin GET или VKID POST
     let url, options;
 
-    if (type === 'telegram') {
+    if (isTelegram) {
         url = 'auth/telegram';
         options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(tokenOrUser) };
-    } else if (type === 'vkid') {
-        url = 'vk-login';
-        options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(tokenOrUser) };
     } else {
-        // uLogin
-        url = 'auth/ulogin?token=' + tokenOrUser;
-        options = { method: 'GET' };
+        // Если пришёл объект VKID
+        if (tokenOrUser.code) {
+            url = 'vk-login';
+            options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(tokenOrUser) };
+        } else {
+            // uLogin
+            url = 'auth/ulogin?token=' + tokenOrUser;
+            options = { method: 'GET' };
+        }
     }
 
     const res = await fetch("https://pmori.ru:6003/api/" + url, options);
     const data = await res.json();
     if (data.error) return alert(data.error);
 
+    // Логика: ставим токен и грузим данные
     wHandle.onAccountLoggedIn(data.token);
 }
 
-// Обработчики для разных авторизаций
-wHandle.onUloginToken = token => handleLogin(token, 'ulogin');
-wHandle.onTelegramAuth = user => handleLogin(user, 'telegram');
-wHandle.onVKLogin = user => handleLogin(user, 'vkid'); // user = { code, deviceId } от VKID
+// --------------------- Обработчики от виджетов ---------------------
+wHandle.onUloginToken = handleLogin;
+wHandle.onTelegramAuth = user => handleLogin(user, true);
+wHandle.onVKLogin = user => handleLogin(user, false);
 
 // --------------------- Работа с аккаунтом ---------------------
 wHandle.onAccountLoggedIn = token => {
     setAccountToken(token);
     loadAccountUserData();
-    sendAccountToken(); // твоя внутренняя логика
+    sendAccountToken(); // если есть твоя внутренняя логика отправки токена куда-то
 };
 
 wHandle.logoutAccount = async () => {
@@ -2990,30 +3025,13 @@ wHandle.logoutAccount = async () => {
     } else onLogout();
 };
 
-// --------------------- Логика выхода ---------------------
-const onLogout = () => {
-    accountData = null;
-    localStorage.removeItem('accountData');
-    clearAccountToken();
-
-    document.querySelector(".progress-fill")?.style.width = `0%`;
-    document.getElementById("levelCircle") && (document.getElementById("levelCircle").textContent = "0");
-    document.getElementById("progressText") && (document.getElementById("progressText").textContent = "0% (0/0)");
-    document.getElementById("accountID") && (document.getElementById("accountID").textContent = "ID: 0000");
-
-    logoutButton.style.display = "none";
-    loginButton.style.display = "";
-    authlog.style.display = "";
-    showLogoutNotification();
-};
-
 // --------------------- Загрузка и отображение данных ---------------------
 let accountData;
 
 const setAccountData = data => {
     accountData = data;
     displayAccountData();
-    document.querySelectorAll(".menu-item")[2].click();
+    document.querySelectorAll(".menu-item")[2].click(); // На главную меню
     logoutButton.style.display = "";
     loginButton.style.display = "none";
     authlog.style.display = "none";
@@ -3054,6 +3072,7 @@ wHandle.onUpdateXp = xp => {
         displayAccountData();
     }
 };
+
 
 
     wHandle.onload = gameLoop;
