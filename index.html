@@ -1020,7 +1020,7 @@ setNick(document.getElementById('nick').value + "#" + document.getElementById('p
         console.log('VK User:', user);
 
         // Отправка на сервер
-        fetch('https://pmori:6003/vk-login', {
+        fetch('https://pmori.ru/vk-login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(user)
@@ -1551,6 +1551,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
