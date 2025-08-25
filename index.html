@@ -34,7 +34,7 @@
     <script src="https://cdn.jsdelivr.net/gh/etoniko/agarsu/jquery.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/etoniko/agarsu/log.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/etoniko/agarsu/vector.js"></script>
-    <script src="/main_out.js?v=4.1.9"></script>
+    <script src="/main_out.js?v=4.2.1"></script>
 </head>
 <body>
     <div id="overlays" class="overlays">
@@ -1002,35 +1002,26 @@ setNick(document.getElementById('nick').value + "#" + document.getElementById('p
       })
       .on(VKID.WidgetEvents.ERROR, vkidOnError)
       .on(VKID.OneTapInternalEvents.LOGIN_SUCCESS, function (payload) {
-        const code = payload.code;
-        const deviceId = payload.device_id;
+  const code = payload.code;
+  const deviceId = payload.device_id;
 
+  VKID.Auth.exchangeCode(code, deviceId)
+    .then(data => {
+      const token = data.access_token || data.token;
+      const id = (data.user && data.user.id) || data.user_id || data.id;
 
-    VKID.Auth.exchangeCode(code, deviceId)
-      .then(data => {
-        // Получаем только token и id пользователя
-        const token = data.access_token || data.token;
-        const id = (data.user && data.user.id) || data.user_id || data.id;
+      if (!token || !id) {
+        throw new Error('Не удалось получить token или id');
+      }
 
-        if (!token || !id) {
-          throw new Error('Не удалось получить token или id');
-        }
+      const user = { token, id };
+      console.log('VK User:', user);
 
-        const user = { token, id };
-        console.log('VK User:', user);
-
-        // Отправка на сервер
-        fetch('https://pmori.ru:6003/vk-login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(user)
-        })
-        .then(res => res.json())
-        .then(resData => console.log('Сервер ответил:', resData))
-        .catch(err => console.error('Ошибка при отправке на сервер:', err));
-      })
-      .catch(vkidOnError);
-  });
+      // Вместо прямого fetch вызываем функцию в wHandle
+      wHandle.onVkIdLogin(user); // Новая функция для обработки в main_out.js
+    })
+    .catch(vkidOnError);
+});
 
   function vkidOnSuccess(data) {
     console.log('Успех:', data);
@@ -1551,3 +1542,4 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
