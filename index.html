@@ -902,63 +902,71 @@ setNick(document.getElementById('nick').value + "#" + document.getElementById('p
 
                     </script>
                 </div>
-                <div id="rating" class="content">
-                    <div class="top-info">
-                        <div><span>Лучшие Игроки</span></div>
-                    </div>
-                    <div class="header-row">
-                        <div class="cell">Время</div>
-                        <div class="cell">Позиция</div>
-                        <div class="cell">Ник</div>
-                        <div class="cell">Масса</div>
-                        <div class="cell">Скин</div>
-                    </div>
-                    <div id="table-container"></div>
-                    <script>
-                        // Функция для получения данных статистики
-                        async function fetchStats(stats) { // Изменяем здесь, чтобы принимать stats
-                            try {
-                                // Убедимся, что stats переданы и являются массивом
-                                if (!Array.isArray(stats)) {
-                                    throw new Error('Invalid stats data');
-                                }
+<div id="rating" class="content">
+    <div class="top-info">
+        <div><span>Лучшие Игроки</span></div>
+    </div>
+    <div class="header-row">
+        <div class="cell">Время</div>
+        <div class="cell">Позиция</div>
+        <div class="cell">Ник</div>
+        <div class="cell">Уровень</div>
+        <div class="cell">Скин</div>
+    </div>
+    <div id="table-container"></div>
 
-                                const skinsMap = await loadSkinsList(); // Загрузка skinsList
+    <script>
+        // Функция вычисления уровня из XP
+        const getLevel = xp => ~~((xp / 100 * 2) ** 0.5);
 
-                                // Обновляем каждый player в stats
-                                stats.forEach(player => {
-                                    const skinId = skinsMap.get(player.nick.toLowerCase()) || 'PPFtwqH'; // Используем nick напрямую для skinId
-                                    player.skin = skinId; // Установка skin для игрока
-                                });
+        // Заглушка для загрузки скинов
+        async function loadSkinsList() {
+            return new Map();
+        }
 
-                                displayStats(stats);
-                            } catch (error) {
-                                console.error('There was a problem with the fetch operation:', error);
-                            }
-                        }
+        // Отображение топ-100
+        function displayStats(stats) {
+            const container = document.getElementById('table-container');
+            container.innerHTML = '';
 
-                        // Функция для отображения статистики
-                        function displayStats(stats) {
-                            const container = document.getElementById('table-container');
-                            container.innerHTML = ''; // Очищаем контейнер перед добавлением новых данных
+            stats.forEach((player, index) => {
+                const playerDiv = document.createElement('div');
+                playerDiv.classList.add('top-player');
 
-                            stats.forEach((player, index) => {
-                                const playerDiv = document.createElement('div');
-                                playerDiv.classList.add('top-player');
-                                playerDiv.innerHTML = `
-                                <div class="time">${player.time}</div> <!-- Добавлено время -->
-                                <div class="rank">${index + 1}</div>
-                                <div class="nick">${player.nick}</div>
-                                <div class="score">${player.score}</div>
-                                <div class="skkinn" style="background-image: url('skins/${player.skin}.png');"></div>
-                            `;
-                                container.appendChild(playerDiv);
-                            });
-                        }
+                const level = getLevel(player.xp);
 
-                    </script>
+                playerDiv.innerHTML = `
+                    <div class="time">${player.time || ''}</div>
+                    <div class="rank">${index + 1}</div>
+                    <div class="nick">${player.account_name}</div>
+                    <div class="score">${level}</div>
+                    <div class="skkinn" style="background-image: url('skins/${player.skin || 'PPFtwqH'}.png');"></div>
+                `;
+                container.appendChild(playerDiv);
+            });
+        }
 
-                </div>
+        // Получение данных с сервера
+        async function fetchTop100() {
+            try {
+                const res = await fetch('https://pmori.ru:6003/api/top100');
+                const data = await res.json();
+
+                const skinsMap = await loadSkinsList();
+                data.forEach(player => {
+                    player.skin = skinsMap.get(player.account_name.toLowerCase()) || 'PPFtwqH';
+                });
+
+                displayStats(data);
+            } catch (err) {
+                console.error('Error fetching top 100:', err);
+            }
+        }
+
+        fetchTop100();
+    </script>
+</div>
+
                 <div id="store" class="content">
                     <div class="top-info">
                         <div><span>Кабинет</span></div>
@@ -1485,3 +1493,4 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
