@@ -1365,13 +1365,13 @@ document.addEventListener('touchend', stopResize);
 
 stats.forEach((player, index) => {
     const playerDiv = document.createElement('div');
-    playerDiv.classList.add('top-player');
+    playerDiv.classList.add('top-playerwraper');
     playerDiv.setAttribute('title', player.time); // добавляем атрибут title
     playerDiv.innerHTML = `
-        <div class="rank">${index + 1}</div>
-        <div class="nick">${player.nick}</div>
-        <div class="score">${player.score}</div>
-        <div class="skkinn" style="background-image: url('skins/${player.skin}.png');"></div>
+        <div>${index + 1}</div>
+        <div>${player.nick}</div>
+        <div>${player.score}</div>
+        <div style="background-image: url('skins/${player.skin}.png');"></div>
     `;
     container.appendChild(playerDiv);
 });
@@ -1453,8 +1453,6 @@ stats.forEach((player, index) => {
     overflow: scroll;
 }
 .header-rowwraper {
-    display: flex;
-    justify-content: space-around;
     width: 100%;
 }
 
@@ -1571,6 +1569,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
