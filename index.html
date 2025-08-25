@@ -907,11 +907,11 @@ setNick(document.getElementById('nick').value + "#" + document.getElementById('p
         <div><span>Лучшие Игроки</span></div>
     </div>
     <div class="header-row">
-        <div class="cell">Время</div>
         <div class="cell">Позиция</div>
+        <div class="cell">ID</div>
         <div class="cell">Ник</div>
         <div class="cell">Уровень</div>
-        <div class="cell">Скин</div>
+        <div class="cell">Аватар</div>
     </div>
     <div id="table-container"></div>
 
@@ -919,28 +919,23 @@ setNick(document.getElementById('nick').value + "#" + document.getElementById('p
         // Функция вычисления уровня из XP
         const getLevel = xp => ~~((xp / 100 * 2) ** 0.5);
 
-        // Заглушка для загрузки скинов
-        async function loadSkinsList() {
-            return new Map();
-        }
-
         // Отображение топ-100
         function displayStats(stats) {
             const container = document.getElementById('table-container');
             container.innerHTML = '';
 
-            stats.forEach((player, index) => {
+            stats.forEach(player => {
+                const level = getLevel(player.xp);
+
                 const playerDiv = document.createElement('div');
                 playerDiv.classList.add('top-player');
 
-                const level = getLevel(player.xp);
-
                 playerDiv.innerHTML = `
-                    <div class="time">${player.time || ''}</div>
-                    <div class="rank">${index + 1}</div>
+                    <div class="rank">${player.position}</div>
+                    <div class="uid">${player.uid}</div>
                     <div class="nick">${player.account_name}</div>
                     <div class="score">${level}</div>
-                    <div class="skkinn" style="background-image: url('skins/${player.skin || 'PPFtwqH'}.png');"></div>
+                    <div class="avatar"><img src="${player.account_avatar}" alt="avatar" width="32" height="32"></div>
                 `;
                 container.appendChild(playerDiv);
             });
@@ -952,11 +947,6 @@ setNick(document.getElementById('nick').value + "#" + document.getElementById('p
                 const res = await fetch('https://pmori.ru:6003/api/top100');
                 const data = await res.json();
 
-                const skinsMap = await loadSkinsList();
-                data.forEach(player => {
-                    player.skin = skinsMap.get(player.account_name.toLowerCase()) || 'PPFtwqH';
-                });
-
                 displayStats(data);
             } catch (err) {
                 console.error('Error fetching top 100:', err);
@@ -966,6 +956,7 @@ setNick(document.getElementById('nick').value + "#" + document.getElementById('p
         fetchTop100();
     </script>
 </div>
+
 
                 <div id="store" class="content">
                     <div class="top-info">
@@ -1493,4 +1484,5 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
