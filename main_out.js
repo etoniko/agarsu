@@ -59,7 +59,7 @@ function fetchSkinList() {
 fetchSkinList();
 
 // Периодическая проверка изменений каждые 5 минут
-//setInterval(fetchSkinList, 300000);
+setInterval(fetchSkinList, 300000);
 
 
     // Функция для загрузки данных о топ-1 игроке
@@ -146,8 +146,6 @@ const SERVERS = {
     wHandle.onCaptchaSuccess = function (token) {
         showConnecting(token);
         captchaPassed();
-        document.getElementById("button-text").disabled = false;
-        document.getElementById("button-spec").disabled = false;
     };
 
     let captchaId = null;
@@ -198,6 +196,8 @@ showCaptcha();
 
     // Обновляем setserver функцию для вызова showConnecting() вручную
 wHandle.setserver = function(arg) {
+    console.log("ST SERVER called with arg:", arg); // лог вызова setserver
+
     if (!SERVERS || Object.keys(SERVERS).length === 0) {
         console.warn("Серверы ещё не загружены. Подождите...");
         return;
@@ -214,9 +214,13 @@ wHandle.setserver = function(arg) {
             window.location.hash = "";
         }
 
-        showCaptcha();
+        console.log("Calling showCaptcha() for server:", arg); // лог вызова капчи
+        showCaptcha();  // капча вызывается только здесь
+    } else {
+        console.log("Server unchanged, captcha not called.");
     }
 };
+
     function gameLoop() {
         ma = true;
         document.getElementById("canvas").focus();
