@@ -192,9 +192,7 @@ display: flex;
     text-shadow: 0 0 5px #000; /* Тень для лучшей видимости на разных фонах */
 }
 /* Добавляем стили для топ-1, топ-2 и топ-3 игроков */
-.top-player.top-playerwraper:nth-child(1) {
-    color: #ffd700; /* Золотой цвет для топ-1 */
-}
+
 .top-player{
     display: flex;
     justify-content: space-around;
@@ -217,14 +215,14 @@ display: flex;
 		width: 100px;
 		margin-top: 10px;
 	}
+.top-player:nth-child(1) {color: #ffd700;}
+.top-player:nth-child(2) {color: #2579e7;}
+.top-player:nth-child(3) {color: #fc6579; }
+.top-playerwraper:nth-child(1) {color: #ffd700;}
+.top-playerwraper:nth-child(2) {color: #2579e7;}
+.top-playerwraper:nth-child(3) {color: #fc6579;}
 
-.top-player.top-playerwraper:nth-child(2) {
-    color: #2579e7;
-}
 
-.top-player.top-playerwraper:nth-child(3) {
-    color: #fc6579; 
-}
 
 /* Стили для остальных игроков */
 .Lednick{
