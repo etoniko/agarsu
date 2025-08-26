@@ -136,6 +136,20 @@ const SERVERS = {
     var useHttps = "https:" === wHandle.location.protocol;
 
 
+
+    // Функция получения токена капчи 
+    wHandle.captchaPassed = function () {
+        const captchaContainer = document.getElementById('captcha-overlay');
+        captchaContainer.style.display = 'none';
+    }
+
+    wHandle.onCaptchaSuccess = function (token) {
+        showConnecting(token);
+        captchaPassed();
+        document.getElementById("button-text").disabled = false;
+        document.getElementById("button-spec").disabled = false;
+    };
+
     let captchaId = null;
 
     const renderCaptcha = () => {
@@ -180,13 +194,10 @@ const SERVERS = {
 
         document.head.appendChild(node);
     };
-
 showCaptcha();
 
     // Обновляем setserver функцию для вызова showConnecting() вручную
 wHandle.setserver = function(arg) {
-    console.log("ST SERVER called with arg:", arg); // лог вызова setserver
-
     if (!SERVERS || Object.keys(SERVERS).length === 0) {
         console.warn("Серверы ещё не загружены. Подождите...");
         return;
@@ -203,13 +214,9 @@ wHandle.setserver = function(arg) {
             window.location.hash = "";
         }
 
-        console.log("Calling showCaptcha() for server:", arg); // лог вызова капчи
-        showCaptcha();  // капча вызывается только здесь
-    } else {
-        console.log("Server unchanged, captcha not called.");
+        showCaptcha();
     }
 };
-
     function gameLoop() {
         ma = true;
         document.getElementById("canvas").focus();
