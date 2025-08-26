@@ -194,6 +194,7 @@ const SERVERS = {
 
         document.head.appendChild(node);
     };
+showCaptcha();
 
     // Обновляем setserver функцию для вызова showConnecting() вручную
 wHandle.setserver = function(arg) {
@@ -434,9 +435,6 @@ wHandle.setserver = function(arg) {
         setInterval(sendMouseMove, 50);
 
         wjQuery("#overlays").show();
-
-        showCaptcha();
-        // wsConnect("");
     }
 
 const dpr = window.devicePixelRatio;
