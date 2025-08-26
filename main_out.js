@@ -558,14 +558,12 @@ function onTouchEnd(e) {
 function handleWheel(event) {
     const overlay = $('#overlays');
     const chatContainer = $('#chatX_feed');
-    const statics = $('#statics'); // новый элемент
 
-    // если курсор над любым из элементов, блокируем зум
-    if (overlay.is(':visible') || isMouseOverElement(chatContainer) || isMouseOverElement(statics)) {
+    if (overlay.is(':visible') || isMouseOverElement(chatContainer)) {
         return;
     }
 
-    zoom *= Math.pow(0.9, event.wheelDelta / -120 || event.detail || 0);
+    zoom *= Math.pow(.9, event.wheelDelta / -120 || event.detail || 0);
     if (zoom < 0) zoom = 1;
     if (zoom > 4 / viewZoom) zoom = 4 / viewZoom;
     if (zoom < 0.3) zoom = 0.3;
@@ -2953,7 +2951,7 @@ const onLogout = () => {
 
     logoutButton.style.display = "none";
     loginButton.style.display = "";
-    authlog.style.display = "";
+    showAuthButtons(); // показываем кнопки авторизации
     showLogoutNotification();
 };
 
@@ -3014,13 +3012,27 @@ wHandle.logoutAccount = async () => {
 // --------------------- Load & Display Account Data ---------------------
 let accountData;
 
+const hideAuthButtons = () => {
+    const tgBtn = document.getElementById("telegramLoginButton");
+    const googleBtn = document.getElementById("googleLoginButton");
+    if (tgBtn) tgBtn.style.display = "none";
+    if (googleBtn) googleBtn.style.display = "none";
+};
+
+const showAuthButtons = () => {
+    const tgBtn = document.getElementById("telegramLoginButton");
+    const googleBtn = document.getElementById("googleLoginButton");
+    if (tgBtn) tgBtn.style.display = "";
+    if (googleBtn) googleBtn.style.display = "";
+};
+
 const setAccountData = data => {
     accountData = data;
     displayAccountData();
     document.querySelectorAll(".menu-item")[2].click();
     logoutButton.style.display = "";
     loginButton.style.display = "none";
-    authlog.style.display = "none";
+    hideAuthButtons(); // скрываем кнопки авторизации
 };
 
 const loadAccountUserData = async () => {
@@ -3064,5 +3076,6 @@ wHandle.onUpdateXp = xp => {
         displayAccountData();
     }
 };
+
     wHandle.onload = gameLoop;
 })(window, window.jQuery);
