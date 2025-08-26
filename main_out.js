@@ -146,6 +146,8 @@ const SERVERS = {
     wHandle.onCaptchaSuccess = function (token) {
         showConnecting(token);
         captchaPassed();
+        document.getElementById("button-text").disabled = false;
+        document.getElementById("button-spec").disabled = false;
     };
 
     let captchaId = null;
@@ -174,23 +176,24 @@ const SERVERS = {
 
     };
 
-let captchaCalled = false;
+    const showCaptcha = () => {
+        // Перенаправляем на рендер если библиотека уже загружена
+        if (window.turnstile) return renderCaptcha();
 
-const showCaptcha = () => {
-    if (captchaCalled) return;
-    captchaCalled = true;
+        // Загружаем библиотеку
+        const node = document.createElement('script');
+        node.setAttribute('src', 'https://challenges.cloudflare.com/turnstile/v0/api.js');
+        node.setAttribute('async', 'async');
+        node.setAttribute('defer', 'defer');
+        node.onload = () => {
+            renderCaptcha();
+        };
+        node.onerror = () => {
+            alert("Не удалось загрузить библиотеку Captcha. Попробуйте обновить браузер");
+        };
 
-    console.log("showCaptcha() called");
-
-    if (wHandle.turnstile) return renderCaptcha();
-
-    const node = document.createElement('script');
-    node.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
-    node.async = true;
-    node.defer = true;
-    node.onload = () => renderCaptcha();
-    wHandle.document.head.appendChild(node);
-};
+        document.head.appendChild(node);
+    };
 
 showCaptcha();
 
