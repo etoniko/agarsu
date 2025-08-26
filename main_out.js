@@ -2932,32 +2932,6 @@ if (this.id !== 0) {
     };
 
 
-// --------------------- Logout ---------------------
-const onLogout = () => {
-    accountData = null;
-    localStorage.removeItem('accountData');
-    clearAccountToken();
-
-    const progressBar = document.querySelector(".progress-fill");
-    if (progressBar) progressBar.style.width = `0%`;
-
-    const levelCircle = document.getElementById("levelCircle");
-    if (levelCircle) levelCircle.textContent = "0";
-
-    const progressText = document.getElementById("progressText");
-    if (progressText) progressText.textContent = "0% (0/0)";
-
-    const accountIDElement = document.getElementById("accountID");
-    if (accountIDElement) accountIDElement.textContent = "ID: 0000";
-
-    authlog.style.display = "none";
-    loginButton.style.display = "";
-
-    showLogoutNotification();
-
-    wjQuery("#statics").css("display", "flex");
-};
-
 
 // --------------------- Logout ---------------------
 const onLogout = () => {
@@ -2978,12 +2952,9 @@ const onLogout = () => {
     if (accountIDElement) accountIDElement.textContent = "ID: 0000";
 
     authlog.style.display = "flex";
-    loginButton.style.display = "";
     logoutButton.style.display = "none";
 
-    showLogoutNotification();
 
-    wjQuery("#statics").css("display", "flex");
 };
 
 
@@ -3062,7 +3033,6 @@ const setAccountData = data => {
     accountData = data;
     displayAccountData();
     document.querySelectorAll(".menu-item")[2].click();
-    loginButton.style.display = "none";
     logoutButton.style.display = "";
     authlog.style.display = "none";
 };
