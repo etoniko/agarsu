@@ -87,21 +87,18 @@ setInterval(fetchSkinList, 300000);
         }
     };
 
-// ONLY_CLIENT режим
-ONLY_CLIENT = false;
+    // Список серверов прямо в коде
+    const SERVERS = {
+        "ffa":   "pmori.ru:6001",
+        "crazy": "pmori.ru:6002",
+        "exp":   "pmori.ru:6004"
+    };
+    let CONNECTION_URL = "pmori.ru:6001"; // сервер по умолчанию
 
-// Подгружаем список серверов из server.json
-let SERVERS = {};
-let CONNECTION_URL = "pmori.ru:6001"; // текущий сервер по умолчанию
-
-async function loadServers() {
-    try {
-        const response = await fetch('/assets/scripts/server.json?v=0.0.1');
-        SERVERS = await response.json();
-
-        // Определяем сервер по hash
+    function initServers() {
         const hash = location.hash;
-        let serverKey = "ffa"; // по умолчанию
+        let serverKey = "ffa";
+
         if (hash && SERVERS[hash.slice(1)]) {
             serverKey = hash.slice(1);
             CONNECTION_URL = SERVERS[serverKey];
@@ -110,23 +107,19 @@ async function loadServers() {
             if (keys.length) {
                 serverKey = keys[0];
                 CONNECTION_URL = SERVERS[serverKey];
-            } else {
-                CONNECTION_URL = "";
             }
         }
 
         console.log("Подключаемся к серверу:", CONNECTION_URL);
 
-        // обновляем заголовок
+        // Обновляем заголовок
         const header = document.querySelector(".headerstats h1");
         if (header) {
-            header.textContent = `Статистика ${serverKey}`;
+            header.textContent = "Статистика " + serverKey;
         }
-    } catch (err) {
-        console.error("Не удалось загрузить серверы:", err);
     }
-}
-loadServers();
+
+    initServers();
 
 
 
