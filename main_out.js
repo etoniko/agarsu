@@ -2931,6 +2931,7 @@ if (this.id !== 0) {
         }
     };
 
+
 // --------------------- Logout ---------------------
 const onLogout = () => {
     accountData = null;
@@ -2949,11 +2950,14 @@ const onLogout = () => {
     const accountIDElement = document.getElementById("accountID");
     if (accountIDElement) accountIDElement.textContent = "ID: 0000";
 
-    logoutButton.style.display = "none";
+    authlog.style.display = "none";
     loginButton.style.display = "";
-    showAuthButtons(); // показываем кнопки авторизации
+
     showLogoutNotification();
+
+    wjQuery("#statics").css("display", "flex");
 };
+
 
 // --------------------- Token ---------------------
 const setAccountToken = token => { localStorage.accountToken = token; };
@@ -3030,9 +3034,8 @@ const setAccountData = data => {
     accountData = data;
     displayAccountData();
     document.querySelectorAll(".menu-item")[2].click();
-    logoutButton.style.display = "";
     loginButton.style.display = "none";
-    hideAuthButtons(); // скрываем кнопки авторизации
+    authlog.style.display = "flex";
 };
 
 const loadAccountUserData = async () => {
