@@ -87,39 +87,45 @@ setInterval(fetchSkinList, 300000);
         }
     };
 
-    const SERVERS = {
-        "ffa":   "pmori.ru:6001",
-        "crazy": "pmori.ru:6002",
-        "exp":   "pmori.ru:6004"
-    };
-    let CONNECTION_URL = "pmori.ru:6001";
+ const SERVERS = {
+    "ffa":   "pmori.ru:6001",
+    "crazy": "pmori.ru:6002",
+    "exp":   "pmori.ru:6004"
+};
+let CONNECTION_URL = "pmori.ru:6001";
 
-    function initServers() {
-        const hash = location.hash;
-        let serverKey = "ffa";
+function initServers() {
+    const hash = location.hash;
+    let serverKey = "ffa";
 
-        if (hash && SERVERS[hash.slice(1)]) {
-            serverKey = hash.slice(1);
+    if (hash && SERVERS[hash.slice(1)]) {
+        serverKey = hash.slice(1);
+        CONNECTION_URL = SERVERS[serverKey];
+    } else {
+        const keys = Object.keys(SERVERS);
+        if (keys.length) {
+            serverKey = keys[0];
             CONNECTION_URL = SERVERS[serverKey];
-        } else {
-            const keys = Object.keys(SERVERS);
-            if (keys.length) {
-                serverKey = keys[0];
-                CONNECTION_URL = SERVERS[serverKey];
-            }
-        }
-
-        console.log("Подключаемся к серверу:", CONNECTION_URL);
-
-        // Обновляем заголовок — теперь элемент точно есть
-        const header = document.getElementById("serverTitle");
-        if (header) {
-            header.textContent = "Статистика #" + serverKey;
-            console.log("Обновили заголовок:", header.textContent);
         }
     }
 
-    initServers();
+    // Сначала лог подключения
+    console.log("Подключаемся к серверу:", CONNECTION_URL);
+
+    // Смотрим текущие значения
+    console.log("Текущий serverKey:", serverKey);
+    console.log("Все сервера:", SERVERS);
+
+    // Теперь обновляем заголовок
+    const header = document.getElementById("serverTitle");
+    if (header) {
+        header.textContent = "Статистика #" + serverKey;
+        console.log("Обновили заголовок:", header.textContent);
+    }
+}
+
+initServers();
+
 
 
 
