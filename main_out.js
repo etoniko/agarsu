@@ -136,34 +136,49 @@ const SERVERS = {
     var useHttps = "https:" === wHandle.location.protocol;
 
 
-    let isCaptchaActive = false;
+    let captchaId = null;
 
-    wHandle.captchaPassed = function () {
-        const captchaOverlay = document.getElementById('captcha-overlay');
-        if (captchaOverlay) {
-            captchaOverlay.style.display = 'none';
-            isCaptchaActive = false;
+    const renderCaptcha = () => {
+        if (captchaId !== null) { // Сбрасываем капчу если она уже создана
+            document.getElementById('captcha-overlay').style.display = '';
+            turnstile.reset(captchaId);
+            return;
         }
-    };
 
-    wHandle.onCaptchaSuccess = function (token) {
-        if (typeof showConnecting === 'function') {
-            showConnecting(token); // Предполагаем, что определена где-то
-        }
-        wHandle.captchaPassed();
-        wjQuery('#connect-button, #switch-server').prop('disabled', false);
+        const overlay = document.createElement("div");
+        overlay.id = "captcha-overlay";
+
+        const container = document.createElement("div");
+        container.id = "captcha-container";
+
+        overlay.appendChild(container);
+
+        document.body.prepend(overlay);
+
+        captchaId = turnstile.render(container, {
+            sitekey: "0x4AAAAAAA0keHJ56_KNR0MU",
+            callback: onCaptchaSuccess
+        });
+
     };
 
     const showCaptcha = () => {
-        if (isCaptchaActive) {
-            window.turnstile.reset('#captcha-container');
-            return;
-        }
-        const captchaOverlay = document.getElementById('captcha-overlay');
-        if (captchaOverlay) {
-            captchaOverlay.style.display = 'flex';
-            isCaptchaActive = true;
-        }
+        // Перенаправляем на рендер если библиотека уже загружена
+        if (window.turnstile) return renderCaptcha();
+
+        // Загружаем библиотеку
+        const node = document.createElement('script');
+        node.setAttribute('src', 'https://challenges.cloudflare.com/turnstile/v0/api.js');
+        node.setAttribute('async', 'async');
+        node.setAttribute('defer', 'defer');
+        node.onload = () => {
+            renderCaptcha();
+        };
+        node.onerror = () => {
+            alert("Не удалось загрузить библиотеку Captcha. Попробуйте обновить браузер");
+        };
+
+        document.head.appendChild(node);
     };
 
 showCaptcha();
