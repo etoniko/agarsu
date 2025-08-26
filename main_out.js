@@ -87,44 +87,50 @@ setInterval(fetchSkinList, 300000);
         }
     };
 
- const SERVERS = {
-    "ffa":   "pmori.ru:6001",
-    "crazy": "pmori.ru:6002",
-    "exp":   "pmori.ru:6004"
-};
-let CONNECTION_URL = "pmori.ru:6001";
+  const SERVERS = {
+        "ffa":   "pmori.ru:6001",
+        "crazy": "pmori.ru:6002",
+        "exp":   "pmori.ru:6004"
+    };
+    let CONNECTION_URL = "pmori.ru:6001";
 
-function initServers() {
-    const hash = location.hash;
-    let serverKey = "ffa";
+    function initServers() {
+        let serverKey = "ffa";
+        const hash = wHandle.location.hash;
 
-    if (hash && SERVERS[hash.slice(1)]) {
-        serverKey = hash.slice(1);
-        CONNECTION_URL = SERVERS[serverKey];
-    } else {
-        const keys = Object.keys(SERVERS);
-        if (keys.length) {
-            serverKey = keys[0];
+        if (hash && SERVERS[hash.slice(1)]) {
+            serverKey = hash.slice(1);
             CONNECTION_URL = SERVERS[serverKey];
+        } else {
+            const keys = Object.keys(SERVERS);
+            if (keys.length) {
+                serverKey = keys[0];
+                CONNECTION_URL = SERVERS[serverKey];
+            }
+        }
+
+        // 1. Лог подключения
+        console.log("Подключаемся к серверу:", CONNECTION_URL);
+        console.log("Текущий serverKey:", serverKey);
+        console.log("Все сервера:", SERVERS);
+
+        // 2. Получаем header
+        const header = wjQuery ? wjQuery("#serverTitle") : wHandle.document.getElementById("serverTitle");
+
+        // 3. Обновляем текст
+        if (header) {
+            if (wjQuery) {
+                header.text("Статистика #" + serverKey);
+            } else {
+                header.textContent = "Статистика #" + serverKey;
+            }
+            console.log("Обновили заголовок:", serverKey);
+        } else {
+            console.warn("Элемент #serverTitle не найден!");
         }
     }
 
-    // Сначала лог подключения
-    console.log("Подключаемся к серверу:", CONNECTION_URL);
-
-    // Смотрим текущие значения
-    console.log("Текущий serverKey:", serverKey);
-    console.log("Все сервера:", SERVERS);
-
-    // Теперь обновляем заголовок
-    const header = document.getElementById("serverTitle");
-    if (header) {
-        header.textContent = "Статистика #" + serverKey;
-        console.log("Обновили заголовок:", header.textContent);
-    }
-}
-
-initServers();
+    initServers();
 
 
 
