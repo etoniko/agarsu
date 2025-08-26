@@ -961,19 +961,30 @@ setNick(document.getElementById('nick').value + "#" + document.getElementById('p
                         <div><span>Кабинет</span></div>
                     </div>
 <div class="header-row">
-    <button style="display:none" id="logoutButton" onclick="logoutAccount()">Выход</button>
-<!-- uLogin авторизация -->
-<script src="//ulogin.ru/js/ulogin.js"></script>
-<div id="loginButton" data-ulogin="callback=wHandle.onUloginToken;display=panel;fields=photo,first_name,last_name;providers=vkontakte,odnoklassniki,mailru,facebook;hidden=other;redirect_uri=https%3A%2F%2Fpmori.ru%2Fapi%2Fauth%2Fulogin"></div>
-<!-- Telegram авторизация -->
+
+
+<button style="display:none" id="logoutButton" onclick="logoutAccount()">Выход</button>
+
 <div id="authlog">
-<script async src="https://telegram.org/js/telegram-widget.js?22"
-        data-telegram-login="agarsu_auth_bot"
-        data-size="large"
-        data-onauth="onTelegramAuth(user)"
-        data-request-access="write">
-</script>
+  <!-- Google Authorization -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <div id="g_id_onload"
+       data-client_id="157257230972-jhlcisbgal67sn75gib37fb1m1de5jiu.apps.googleusercontent.com"
+       data-callback="onGoogleAuth">
+  </div>
+  <div class="g_id_signin"></div>
+
+  <!-- Telegram Authorization -->
+  <script async src="https://telegram.org/js/telegram-widget.js?22"
+          data-telegram-login="agarsu_auth_bot"
+          data-size="large"
+          data-onauth="onTelegramAuth(user)"
+          data-request-access="write">
+  </script>
 </div>
+
+
 </div>
 
 </div>
@@ -1601,6 +1612,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
