@@ -92,35 +92,29 @@ setInterval(fetchSkinList, 300000);
         "crazy": "pmori.ru:6002",
         "exp":   "pmori.ru:6004"
     };
-    let CONNECTION_URL = "pmori.ru:6001";
 
-    function initServers() {
-        let serverKey = "ffa";
-        const hash = wHandle.location.hash;
-
-        if (hash && SERVERS[hash.slice(1)]) {
-            serverKey = hash.slice(1);
-            CONNECTION_URL = SERVERS[serverKey];
-        } else {
-            const keys = Object.keys(SERVERS);
-            if (keys.length) {
-                serverKey = keys[0];
-                CONNECTION_URL = SERVERS[serverKey];
-            }
+    function updateServer() {
+        let serverKey = wHandle.location.hash.slice(1);
+        // Если хэша нет или некорректный, ставим 'ffa'
+        if (!SERVERS[serverKey]) {
+            serverKey = "ffa";
+            wHandle.location.hash = "#" + serverKey;
         }
-
+        // Устанавливаем CONNECTION_URL
+        const CONNECTION_URL = SERVERS[serverKey];
         // Обновляем заголовок
         const titleEl = wHandle.document.getElementById('serverTitle');
         if (titleEl) {
-            titleEl.textContent = 'Статистика ' + (hash || '').slice(1);
+            titleEl.textContent = 'Статистика ' + serverKey;
         }
+        return CONNECTION_URL;
     }
-
     // Инициализация при загрузке
-    initServers();
-
-    // Если хэш меняется динамически
-    wHandle.addEventListener('hashchange', initServers);
+    let CONNECTION_URL = updateServer();
+    // Обновление при смене хэша
+    wHandle.addEventListener('hashchange', () => {
+        CONNECTION_URL = updateServer();
+    });
 
 
 
