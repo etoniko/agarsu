@@ -92,29 +92,36 @@ setInterval(fetchSkinList, 300000);
         "crazy": "pmori.ru:6002",
         "exp":   "pmori.ru:6004"
     };
+    const DEFAULT_SERVER = "ffa"; // Явно указываем сервер по умолчанию
+    let CONNECTION_URL = SERVERS[DEFAULT_SERVER]; // Инициализируем URL по умолчанию
 
-    function updateServer() {
-        let serverKey = wHandle.location.hash.slice(1);
-        // Если хэша нет или некорректный, ставим 'ffa'
-        if (!SERVERS[serverKey]) {
-            serverKey = "ffa";
-            wHandle.location.hash = "#" + serverKey;
+    function initServers() {
+        let serverKey = DEFAULT_SERVER; // Начинаем с сервера по умолчанию
+        const hash = wHandle.location.hash;
+
+        if (hash && SERVERS[hash.slice(1)]) {
+            serverKey = hash.slice(1);
+            CONNECTION_URL = SERVERS[serverKey];
+        } else {
+            // Хэш отсутствует или не валиден, используем сервер по умолчанию
+            serverKey = DEFAULT_SERVER;
+            CONNECTION_URL = SERVERS[serverKey];
         }
-        // Устанавливаем CONNECTION_URL
-        const CONNECTION_URL = SERVERS[serverKey];
+
         // Обновляем заголовок
         const titleEl = wHandle.document.getElementById('serverTitle');
         if (titleEl) {
-            titleEl.textContent = 'Статистика ' + serverKey;
+            titleEl.textContent = 'Статистика ' + serverKey; // Используем serverKey для заголовка
+        } else {
+            console.warn("Элемент с id 'serverTitle' не найден."); // Обрабатываем случай, когда элемент не найден
         }
-        return CONNECTION_URL;
     }
+
     // Инициализация при загрузке
-    let CONNECTION_URL = updateServer();
-    // Обновление при смене хэша
-    wHandle.addEventListener('hashchange', () => {
-        CONNECTION_URL = updateServer();
-    });
+    initServers();
+
+    // Если хэш меняется динамически
+    wHandle.addEventListener('hashchange', initServers);
 
 
 
