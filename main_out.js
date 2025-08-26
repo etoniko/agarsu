@@ -59,7 +59,7 @@ function fetchSkinList() {
 fetchSkinList();
 
 // Периодическая проверка изменений каждые 5 минут
-setInterval(fetchSkinList, 300000);
+//setInterval(fetchSkinList, 300000);
 
 
     // Функция для загрузки данных о топ-1 игроке
