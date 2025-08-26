@@ -87,33 +87,29 @@ setInterval(fetchSkinList, 300000);
         }
     };
 
-    const SERVERS = {
+const SERVERS = {
         "ffa":   "pmori.ru:6001",
         "crazy": "pmori.ru:6002",
         "exp":   "pmori.ru:6004"
     };
-    const DEFAULT_SERVER = "ffa"; // Явно указываем сервер по умолчанию
-    let CONNECTION_URL = SERVERS[DEFAULT_SERVER]; // Инициализируем URL по умолчанию
-
+    let CONNECTION_URL = "pmori.ru:6001";
     function initServers() {
-        let serverKey = DEFAULT_SERVER; // Начинаем с сервера по умолчанию
+        let serverKey = "ffa";
         const hash = wHandle.location.hash;
-
         if (hash && SERVERS[hash.slice(1)]) {
             serverKey = hash.slice(1);
             CONNECTION_URL = SERVERS[serverKey];
         } else {
-            // Хэш отсутствует или не валиден, используем сервер по умолчанию
-            serverKey = DEFAULT_SERVER;
-            CONNECTION_URL = SERVERS[serverKey];
+            const keys = Object.keys(SERVERS);
+            if (keys.length) {
+                serverKey = keys[0];
+                CONNECTION_URL = SERVERS[serverKey];
+            }
         }
-
         // Обновляем заголовок
         const titleEl = wHandle.document.getElementById('serverTitle');
         if (titleEl) {
-            titleEl.textContent = 'Статистика ' + serverKey; // Используем serverKey для заголовка
-        } else {
-            console.warn("Элемент с id 'serverTitle' не найден."); // Обрабатываем случай, когда элемент не найден
+            titleEl.textContent = 'Статистика ' + (hash || '').slice(1);
         }
     }
 
