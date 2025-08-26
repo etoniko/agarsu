@@ -87,7 +87,6 @@ setInterval(fetchSkinList, 300000);
         }
     };
 
-    // Список серверов прямо в коде
     const SERVERS = {
         "ffa":   "pmori.ru:6001",
         "crazy": "pmori.ru:6002",
@@ -115,7 +114,9 @@ setInterval(fetchSkinList, 300000);
         // Обновляем заголовок
         const header = document.querySelector(".headerstats h1");
         if (header) {
-            header.textContent = "Статистика " + serverKey;
+            const titleText = "Статистика #" + serverKey;
+            header.textContent = titleText;
+            console.log("Обновили заголовок:", titleText);
         }
     }
 
