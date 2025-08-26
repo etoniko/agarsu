@@ -2959,6 +2959,34 @@ const onLogout = () => {
 };
 
 
+// --------------------- Logout ---------------------
+const onLogout = () => {
+    accountData = null;
+    localStorage.removeItem('accountData');
+    clearAccountToken();
+
+    const progressBar = document.querySelector(".progress-fill");
+    if (progressBar) progressBar.style.width = `0%`;
+
+    const levelCircle = document.getElementById("levelCircle");
+    if (levelCircle) levelCircle.textContent = "0";
+
+    const progressText = document.getElementById("progressText");
+    if (progressText) progressText.textContent = "0% (0/0)";
+
+    const accountIDElement = document.getElementById("accountID");
+    if (accountIDElement) accountIDElement.textContent = "ID: 0000";
+
+    authlog.style.display = "flex";
+    loginButton.style.display = "";
+    logoutButton.style.display = "none";
+
+    showLogoutNotification();
+
+    wjQuery("#statics").css("display", "flex");
+};
+
+
 // --------------------- Token ---------------------
 const setAccountToken = token => { localStorage.accountToken = token; };
 const clearAccountToken = () => { delete localStorage.accountToken; };
@@ -3035,7 +3063,8 @@ const setAccountData = data => {
     displayAccountData();
     document.querySelectorAll(".menu-item")[2].click();
     loginButton.style.display = "none";
-    authlog.style.display = "flex";
+    logoutButton.style.display = "";
+    authlog.style.display = "none";
 };
 
 const loadAccountUserData = async () => {
