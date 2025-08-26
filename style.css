@@ -20,7 +20,7 @@
   width: 100%;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.5); /* Черный фон с прозрачностью */
-  display: flex;
+  display: none;
   justify-content: center; /* Центрируем по горизонтали */
   align-items: center; /* Центрируем по вертикали */
   z-index: 9999; /* Чтобы фон был поверх всех элементов */
