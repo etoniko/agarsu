@@ -2934,17 +2934,12 @@ if (this.id !== 0) {
         }
     };
 
+// --------------------- Logout ---------------------
 const onLogout = () => {
-    // Очистка данных аккаунта в памяти
     accountData = null;
-
-    // Очистка данных в localStorage, связанных с аккаунтом (например, прогресс)
-    localStorage.removeItem('accountData'); // если есть
-
-    // Очистить токен
+    localStorage.removeItem('accountData');
     clearAccountToken();
 
-    // Обновить UI — очистить все элементы с прогрессом
     const progressBar = document.querySelector(".progress-fill");
     if (progressBar) progressBar.style.width = `0%`;
 
@@ -2957,15 +2952,13 @@ const onLogout = () => {
     const accountIDElement = document.getElementById("accountID");
     if (accountIDElement) accountIDElement.textContent = "ID: 0000";
 
-    // Обновляем кнопки
     logoutButton.style.display = "none";
     loginButton.style.display = "";
     authlog.style.display = "";
-showLogoutNotification();
+    showLogoutNotification();
 };
 
-
-// --------------------- Работа с токеном ---------------------
+// --------------------- Token ---------------------
 const setAccountToken = token => { localStorage.accountToken = token; };
 const clearAccountToken = () => { delete localStorage.accountToken; };
 
@@ -2975,22 +2968,33 @@ const accountApiGet = (tag, method = 'GET', body = null) => {
     return fetch("https://pmori.ru:6003/api/" + tag, { method, headers, body: body ? JSON.stringify(body) : null });
 };
 
-// --------------------- Логин через uLogin и Telegram ---------------------
-async function handleLogin(tokenOrUser, isTelegram = false) {
-    const url = isTelegram ? 'auth/telegram' : 'auth/ulogin?token=' + tokenOrUser;
-    const options = isTelegram ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(tokenOrUser) } : { method: 'GET' };
+// --------------------- Login via Telegram / Google ---------------------
+async function handleLogin(tokenOrUser, provider) {
+    let url, options;
+    if (provider === 'telegram') {
+        url = 'auth/telegram';
+        options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(tokenOrUser) };
+    } else if (provider === 'google') {
+        url = 'auth/google';
+        options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ credential: tokenOrUser }) };
+    }
     const res = await fetch("https://pmori.ru:6003/api/" + url, options);
     const data = await res.json();
     if (data.error) return alert(data.error);
     wHandle.onAccountLoggedIn(data.token);
 }
 
-wHandle.onUloginToken = handleLogin;
-    wHandle.onTelegramAuth = function(user) {
-        handleLogin(user, true); // функция handleLogin уже внутри модуля
-    };
+// Telegram callback
+wHandle.onTelegramAuth = function(user) {
+    handleLogin(user, 'telegram');
+};
 
-// --------------------- Работа с аккаунтом ---------------------
+// Google callback
+wHandle.onGoogleAuth = function(response) {
+    handleLogin(response.credential, 'google');
+};
+
+// --------------------- Account ---------------------
 wHandle.onAccountLoggedIn = token => {
     setAccountToken(token);
     loadAccountUserData();
@@ -3008,13 +3012,13 @@ wHandle.logoutAccount = async () => {
     } else onLogout();
 };
 
-// --------------------- Загрузка и отображение данных ---------------------
+// --------------------- Load & Display Account Data ---------------------
 let accountData;
 
 const setAccountData = data => {
     accountData = data;
     displayAccountData();
-    document.querySelectorAll(".menu-item")[2].click(); // На главную меню
+    document.querySelectorAll(".menu-item")[2].click();
     logoutButton.style.display = "";
     loginButton.style.display = "none";
     authlog.style.display = "none";
@@ -3034,7 +3038,7 @@ const loadAccountUserData = async () => {
 if (localStorage.accountToken) loadAccountUserData();
 
 const getXp = level => ~~(100 * (level ** 2 / 2));
-const getLevel = xp => ~~((xp / 100 * 2) ** .5);
+const getLevel = xp => ~~((xp / 100 * 2) ** 0.5);
 
 const displayAccountData = () => {
     if (!accountData) return;
@@ -3061,6 +3065,5 @@ wHandle.onUpdateXp = xp => {
         displayAccountData();
     }
 };
-
     wHandle.onload = gameLoop;
 })(window, window.jQuery);
