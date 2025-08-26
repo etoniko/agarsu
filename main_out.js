@@ -87,30 +87,40 @@ setInterval(fetchSkinList, 300000);
         }
     };
 
-const SERVERS = {
-    "ffa":   "pmori.ru:6001",
-    "crazy": "pmori.ru:6002",
-    "exp":   "pmori.ru:6004"
-};
-let CONNECTION_URL = "pmori.ru:6001";
+    const SERVERS = {
+        "ffa":   "pmori.ru:6001",
+        "crazy": "pmori.ru:6002",
+        "exp":   "pmori.ru:6004"
+    };
+    let CONNECTION_URL = "pmori.ru:6001";
 
-function initServers() {
-    let serverKey = "ffa";
-    const hash = wHandle.location.hash;
+    function initServers() {
+        let serverKey = "ffa";
+        const hash = wHandle.location.hash;
 
-    if (hash && SERVERS[hash.slice(1)]) {
-        serverKey = hash.slice(1);
-        CONNECTION_URL = SERVERS[serverKey];
-    } else {
-        const keys = Object.keys(SERVERS);
-        if (keys.length) {
-            serverKey = keys[0];
+        if (hash && SERVERS[hash.slice(1)]) {
+            serverKey = hash.slice(1);
             CONNECTION_URL = SERVERS[serverKey];
+        } else {
+            const keys = Object.keys(SERVERS);
+            if (keys.length) {
+                serverKey = keys[0];
+                CONNECTION_URL = SERVERS[serverKey];
+            }
+        }
+
+        // Обновляем заголовок
+        const titleEl = wHandle.document.getElementById('serverTitle');
+        if (titleEl) {
+            titleEl.textContent = 'Статистика ' + (hash || '').slice(1);
         }
     }
-}
 
-initServers();
+    // Инициализация при загрузке
+    initServers();
+
+    // Если хэш меняется динамически
+    wHandle.addEventListener('hashchange', initServers);
 
 
 
