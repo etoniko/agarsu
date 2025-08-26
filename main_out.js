@@ -101,20 +101,33 @@ async function loadServers() {
 
         // Определяем сервер по hash
         const hash = location.hash;
+        let serverKey = "ffa"; // по умолчанию
         if (hash && SERVERS[hash.slice(1)]) {
-            CONNECTION_URL = SERVERS[hash.slice(1)];
+            serverKey = hash.slice(1);
+            CONNECTION_URL = SERVERS[serverKey];
         } else {
-            // Берём первый сервер по умолчанию
             const keys = Object.keys(SERVERS);
-            CONNECTION_URL = keys.length ? SERVERS[keys[0]] : "";
+            if (keys.length) {
+                serverKey = keys[0];
+                CONNECTION_URL = SERVERS[serverKey];
+            } else {
+                CONNECTION_URL = "";
+            }
         }
 
         console.log("Подключаемся к серверу:", CONNECTION_URL);
+
+        // обновляем заголовок
+        const header = document.querySelector(".headerstats h1");
+        if (header) {
+            header.textContent = `Статистика ${serverKey}`;
+        }
     } catch (err) {
         console.error("Не удалось загрузить серверы:", err);
     }
 }
 loadServers();
+
 
 
     var
