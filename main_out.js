@@ -556,22 +556,21 @@ function onTouchEnd(e) {
 }
 
 function handleWheel(event) {
-    // список элементов, при которых нужно блокировать зум
-    const blockSelectors = ['#overlays', '#chatX_feed', '#statics'];
+    const overlay = $('#overlays');
+    const chatContainer = $('#chatX_feed');
+    const statics = $('#statics'); // новый элемент
 
-    // если хотя бы один из них виден → прерываем
-    for (const selector of blockSelectors) {
-        const el = $(selector);
-        if (el.is(':visible') || isMouseOverElement(el)) {
-            return;
-        }
+    // если курсор над любым из элементов, блокируем зум
+    if (overlay.is(':visible') || isMouseOverElement(chatContainer) || isMouseOverElement(statics)) {
+        return;
     }
 
-    zoom *= Math.pow(.9, event.wheelDelta / -120 || event.detail || 0);
+    zoom *= Math.pow(0.9, event.wheelDelta / -120 || event.detail || 0);
     if (zoom < 0) zoom = 1;
     if (zoom > 4 / viewZoom) zoom = 4 / viewZoom;
     if (zoom < 0.3) zoom = 0.3;
 }
+
 
 
 
