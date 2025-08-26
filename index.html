@@ -35,7 +35,7 @@
     <script src="https://cdn.jsdelivr.net/gh/etoniko/agarsu/jquery.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/etoniko/agarsu/log.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/etoniko/agarsu/vector.js"></script>
-    <script src="/main_out.js?v=4.3.3"></script>
+    <script src="/main_out.js?v=4.3.4"></script>
 </head>
 <body>
     <div id="overlays" class="overlays">
@@ -1358,7 +1358,10 @@ document.addEventListener('touchend', stopResize);
 </div>
 
 <div class="statsWrapper">
-<div class="headerstats"><h1 id="serverTitle">Статистика #ffa</h1></div>
+<div class="headerstats"><h1 id="serverTitle">Статистика</h1></div>
+<script>
+document.getElementById('serverTitle').textContent = 'Статистика ' + window.location.hash;
+</script>
  <div class="header-rowwraper">
                         <div>Позиция</div><div>Ник</div><div>Масса</div><div>Скин</div>
                     </div>
@@ -1614,6 +1617,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
