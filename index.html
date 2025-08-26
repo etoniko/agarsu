@@ -173,55 +173,73 @@
   const skinsGrid = document.getElementById('skinsGrid');
   const serviceRadios = document.querySelectorAll('input[name="serviceType"]');
 
-  // --- уведомления ---
-  const notificationEl=document.createElement('div');
-  notificationEl.id='shopNotification';
-  notificationEl.style.cssText="position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#1b263b;color:#fff;padding:12px 20px;border-radius:12px;font-weight:700;z-index:9999;opacity:0;transition:opacity 0.3s,transform 0.3s;";
+  // Уведомления
+  const notificationEl = document.createElement('div');
+  notificationEl.id = 'shopNotification';
+  notificationEl.style.cssText = "position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#1b263b;color:#fff;padding:12px 20px;border-radius:12px;font-weight:700;z-index:9999;opacity:0;transition:opacity 0.3s,transform 0.3s;";
   document.body.appendChild(notificationEl);
-  function notify(msg,duration=3000){
-    notificationEl.textContent=msg;
-    notificationEl.style.opacity='1';
-    notificationEl.style.transform='translateX(-50%) translateY(0)';
-    setTimeout(()=>{
-      notificationEl.style.opacity='0';
-      notificationEl.style.transform='translateX(-50%) translateY(-20px)';
-    },duration);
+  function notify(msg, duration = 3000) {
+    notificationEl.textContent = msg;
+    notificationEl.style.opacity = '1';
+    notificationEl.style.transform = 'translateX(-50%) translateY(0)';
+    setTimeout(() => {
+      notificationEl.style.opacity = '0';
+      notificationEl.style.transform = 'translateX(-50%) translateY(-20px)';
+    }, duration);
   }
 
-  // --- переключение для себя / клана ---
-  serviceRadios.forEach(r=>{
-    r.addEventListener('change',()=>{
-      serviceType=r.value;
-      nicknameInput.placeholder=serviceType==='clan'?'клан':'ник';
-      nicknameInput.title=serviceType==='clan'?'Введите название клана':'Введите ник';
+  // Проверка адблокера
+  async function checkAdBlocker() {
+    try {
+      const xhr = new XMLHttpRequest();
+      xhr.open('HEAD', 'https://pmori.ru/api/test', true);
+      xhr.send();
+      return new Promise(resolve => {
+        xhr.onreadystatechange = () => {
+          if (xhr.readyState === 4) {
+            resolve(xhr.status === 200);
+          }
+        };
+      });
+    } catch (e) {
+      notify('⚠ Пожалуйста, отключите блокировщик рекламы для этого сайта.');
+      return false;
+    }
+  }
 
-      document.querySelectorAll('#skinsGrid .skin-card').forEach(card=>{
-        const base=Number(card.dataset.base);
-        const price=serviceType==='clan'?base*2:base;
-        card.querySelector('.price-label').textContent=`Цена: ${price}`;
-        card.querySelector('img').src=serviceType==='clan'?card.dataset.srcClan:card.dataset.srcSelf;
+  // Переключение для себя / клана
+  serviceRadios.forEach(r => {
+    r.addEventListener('change', () => {
+      serviceType = r.value;
+      nicknameInput.placeholder = serviceType === 'clan' ? 'клан' : 'ник';
+      nicknameInput.title = serviceType === 'clan' ? 'Введите название клана' : 'Введите ник';
 
-        // если карточка пароля — меняем заголовок
-        if(card.dataset.type==='pass'){
-          card.querySelector('h4').textContent = serviceType==='clan' ? 'Пароль на клан' : 'Пароль на ник';
+      document.querySelectorAll('#skinsGrid .skin-card').forEach(card => {
+        const base = Number(card.dataset.base);
+        const price = serviceType === 'clan' ? base * 2 : base;
+        card.querySelector('.price-label').textContent = `Цена: ${price}`;
+        card.querySelector('img').src = serviceType === 'clan' ? card.dataset.srcClan : card.dataset.srcSelf;
+
+        if (card.dataset.type === 'pass') {
+          card.querySelector('h4').textContent = serviceType === 'clan' ? 'Пароль на клан' : 'Пароль на ник';
         }
       });
     });
   });
 
-  // --- выбор товара ---
+  // Выбор товара
   skinsGrid.addEventListener('click', e => {
-    if(e.target.tagName==='BUTTON'){
+    if (e.target.tagName === 'BUTTON') {
       const card = e.target.closest('.skin-card');
       chosenSkin = card.querySelector('h4').textContent;
       chosenType = card.dataset.type;
 
       const base = Number(card.dataset.base);
-      const rand = Math.floor(Math.random()*10);
-      chosenPrice = (serviceType==='clan'?base*2:base)+rand;
+      const rand = Math.floor(Math.random() * 10);
+      chosenPrice = (serviceType === 'clan' ? base * 2 : base) + rand;
 
-      passLabel.style.display = chosenType==='pass' ? 'block' : 'none';
-      uploadCircle.style.display = chosenType==='pass' ? 'none' : 'flex';
+      passLabel.style.display = chosenType === 'pass' ? 'block' : 'none';
+      uploadCircle.style.display = chosenType === 'pass' ? 'none' : 'flex';
 
       chosenTitleEl.textContent = `Вы выбрали: ${chosenSkin}`;
       priceEl.textContent = `${chosenPrice}₽`;
@@ -229,166 +247,190 @@
     }
   });
 
-  // --- загрузка файла с проверкой размера ---
-  uploadCircle.addEventListener('click',()=>imageInput.click());
-  imageInput.addEventListener('change',()=>{
-    const file=imageInput.files[0]; 
-    if(!file) return;
+  // Загрузка файла с проверкой размера
+  uploadCircle.addEventListener('click', () => imageInput.click());
+  imageInput.addEventListener('change', () => {
+    const file = imageInput.files[0];
+    if (!file) return;
 
-    if(file.size > 10*1024*1024){
+    if (file.size > 10 * 1024 * 1024) {
       notify('❌ Файл больше 10MB');
-      imageInput.value='';
+      imageInput.value = '';
       return;
     }
 
-    const name=file.name.toLowerCase();
-    if(chosenType==='gif'&&!name.endsWith('.gif')){
+    const name = file.name.toLowerCase();
+    if (chosenType === 'gif' && !name.endsWith('.gif')) {
       notify('❌ Только GIF!');
-      imageInput.value='';
+      imageInput.value = '';
       return;
     }
-    if(chosenType==='image'&&!(/\.(png|jpg|jpeg)$/i.test(name))){
+    if (chosenType === 'image' && !(/\.(png|jpg|jpeg)$/i.test(name))) {
       notify('❌ Разрешены PNG/JPG!');
-      imageInput.value='';
+      imageInput.value = '';
       return;
     }
 
-    const reader=new FileReader();
-    reader.onload=e=>{
-      const img=new Image();
-      img.onload=()=>{
-        uploadCircle.innerHTML='';
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        uploadCircle.innerHTML = '';
         uploadCircle.appendChild(img);
       };
-      img.src=e.target.result;
-      processedImageUrl=e.target.result;
+      img.src = e.target.result;
+      processedImageUrl = e.target.result;
     };
     reader.readAsDataURL(file);
   });
 
-  // --- просто ограничение ввода ника ---
-  nicknameInput.addEventListener('blur', ()=>{
+  // Ограничение ввода ника
+  nicknameInput.addEventListener('blur', () => {
     let nick = nicknameInput.value.trim();
-    nicknameInput.value = nick.replace(/['`";:]/g,'').slice(0,20);
+    nicknameInput.value = nick.replace(/['`";:]/g, '').slice(0, 20);
 
-    if(serviceType==='clan'){
+    if (serviceType === 'clan') {
       const clanPattern = /^(\[.*\]|\|.*\||\{.*\}|\(.*\))$/;
-      if(!clanPattern.test(nick)){
+      if (!clanPattern.test(nick)) {
         notify('❌ У клана должны быть скобки [ ] || { } ( )');
         return;
       }
     }
   });
 
-  // --- переход к оплате ---
-  document.getElementById('dataForm').addEventListener('submit', e=>{
+  // Переход к оплате
+  document.getElementById('dataForm').addEventListener('submit', e => {
     e.preventDefault();
     const nick = nicknameInput.value.trim();
     const pass = passwordInput.value.trim();
 
-    if(!nick){notify(serviceType==='clan'?'Введите название клана':'Введите ник');return;}
-    if(serviceType==='clan'){
+    if (!nick) {
+      notify(serviceType === 'clan' ? 'Введите название клана' : 'Введите ник');
+      return;
+    }
+    if (serviceType === 'clan') {
       const clanPattern = /^(\[.*\]|\|.*\||\{.*\}|\(.*\))$/;
-      if(!clanPattern.test(nick)){notify('❌ У клана должны быть скобки [ ] || { } ( )');return;}
+      if (!clanPattern.test(nick)) {
+        notify('❌ У клана должны быть скобки [ ] || { } ( )');
+        return;
+      }
     }
-    if(chosenType==='pass'){
-      if(!pass){notify('❌ Введите пароль');return;}
-      if(pass.length>5){notify('❌ Пароль ≤5 символов');return;}
+    if (chosenType === 'pass') {
+      if (!pass) {
+        notify('❌ Введите пароль');
+        return;
+      }
+      if (pass.length > 5) {
+        notify('❌ Пароль ≤5 символов');
+        return;
+      }
     }
-    if(chosenType!=='pass'&&!processedImageUrl){notify('❌ Загрузите изображение');return;}
+    if (chosenType !== 'pass' && !processedImageUrl) {
+      notify('❌ Загрузите изображение');
+      return;
+    }
 
-    finalTitleEl.textContent=`Оплата — ${chosenSkin}`;
-    priceEl.textContent=`${chosenPrice}₽`;
-    paidBtn.disabled=false;
+    finalTitleEl.textContent = `Оплата — ${chosenSkin}`;
+    priceEl.textContent = `${chosenPrice}₽`;
+    paidBtn.disabled = false;
     expiredBox.classList.add('hiddenn');
     startTimer();
     setActiveStep(3);
   });
 
-  // --- таймер ---
-  function startTimer(){
+  // Таймер
+  function startTimer() {
     clearInterval(timerInterval);
-    timer=10*60;
+    timer = 10 * 60;
     updateTimer();
-    timerInterval=setInterval(()=>{
-      if(timer>0){
+    timerInterval = setInterval(() => {
+      if (timer > 0) {
         timer--;
         updateTimer();
-      }else{
+      } else {
         clearInterval(timerInterval);
         onExpired();
       }
-    },1000);
+    }, 1000);
   }
-  function updateTimer(){
-    const m=Math.floor(timer/60),s=timer%60;
-    countdownEl.textContent=`${m}:${s.toString().padStart(2,'0')}`;
+  function updateTimer() {
+    const m = Math.floor(timer / 60), s = timer % 60;
+    countdownEl.textContent = `${m}:${s.toString().padStart(2, '0')}`;
   }
-  function onExpired(){
-    countdownEl.textContent='00:00';
+  function onExpired() {
+    countdownEl.textContent = '00:00';
     expiredBox.classList.remove('hiddenn');
-    paidBtn.disabled=true;
+    paidBtn.disabled = true;
   }
 
-  // --- кнопки назад ---
-  document.getElementById('backToChoose').addEventListener('click',()=>setActiveStep(1));
-  document.getElementById('backToData').addEventListener('click',()=>setActiveStep(2));
+  // Кнопки назад
+  document.getElementById('backToChoose').addEventListener('click', () => setActiveStep(1));
+  document.getElementById('backToData').addEventListener('click', () => setActiveStep(2));
 
-  // --- отправка ---
-  paidBtn.addEventListener('click',async ()=>{
+  // Отправка данных
+  paidBtn.addEventListener('click', async () => {
+    if (!(await checkAdBlocker())) return;
+
     const nick = nicknameInput.value.trim();
     const pass = passwordInput.value.trim();
     const formData = new FormData();
-    formData.append('nickname',nick);
-    formData.append('price',chosenPrice);
-    formData.append('serviceType',serviceType);
-    let endpoint='';
-    if(chosenType==='pass'){
-      formData.append('password',pass);
-      endpoint='https://pmori.ru:6005/submit-pass';
+    formData.append('nickname', nick);
+    formData.append('price', chosenPrice);
+    formData.append('serviceType', serviceType);
+    formData.append('submissionType', chosenType);
+    if (chosenType === 'pass') {
+      formData.append('password', pass);
     } else {
-      if(!imageInput.files[0]){notify('❌ Файл не выбран');return;}
-      formData.append('file',imageInput.files[0]);
-      formData.append('type',chosenType);
-      endpoint='https://pmori.ru:6005/submit-skin';
-    }
-    try{
-      const res = await fetch(endpoint,{method:'POST',body:formData});
-      const data = await res.json();
-      if(data.success){
-        notify('✅ Идет модерация 10-30 минут.');
-        resetShop();
-      } else {
-        notify('❌ Ошибка: '+data.error);
+      if (!imageInput.files[0]) {
+        notify('❌ Файл не выбран');
+        return;
       }
-    }catch(err){
-      notify('⚠ Ошибка сети: '+err.message);
+      formData.append('file', imageInput.files[0]);
     }
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', 'https://pmori.ru/api/submit', true);
+    xhr.onreadystatechange = () => {
+      if (xhr.readyState === 4) {
+        if (xhr.status === 200) {
+          const data = JSON.parse(xhr.responseText);
+          if (data.success) {
+            notify('✅ Идет модерация 10-30 минут.');
+            resetShop();
+          } else {
+            notify('❌ Ошибка: ' + data.error);
+          }
+        } else {
+          notify('⚠ Ошибка сети: ' + xhr.statusText);
+        }
+      }
+    };
+    xhr.send(formData);
   });
 
-  // --- начать заново ---
-  document.getElementById('restartBtn').addEventListener('click',resetShop);
-  function resetShop(){
+  // Начать заново
+  document.getElementById('restartBtn').addEventListener('click', resetShop);
+  function resetShop() {
     clearInterval(timerInterval);
     setActiveStep(1);
-    imageInput.value='';
-    uploadCircle.innerHTML='<span>Загрузите изображение</span>';
-    nicknameInput.value='';
-    passwordInput.value='';
-    processedImageUrl=null;
+    imageInput.value = '';
+    uploadCircle.innerHTML = '<span>Загрузите изображение</span>';
+    nicknameInput.value = '';
+    passwordInput.value = '';
+    processedImageUrl = null;
     expiredBox.classList.add('hiddenn');
-    paidBtn.disabled=false;
-    finalTitleEl.textContent='Оплата';
-    priceEl.textContent='100.00₽';
-    chosenSkin=null;
-    chosenType=null;
-    chosenPrice=0;
+    paidBtn.disabled = false;
+    finalTitleEl.textContent = 'Оплата';
+    priceEl.textContent = '100.00₽';
+    chosenSkin = null;
+    chosenType = null;
+    chosenPrice = 0;
   }
 
-  function setActiveStep(step){
-    currentStep=step;
-    stages.forEach(s=>s.classList.toggle('active',Number(s.dataset.step)===step));
-    stepContents.forEach(c=>c.classList.toggle('active',Number(c.dataset.step)===step));
+  function setActiveStep(step) {
+    currentStep = step;
+    stages.forEach(s => s.classList.toggle('active', Number(s.dataset.step) === step));
+    stepContents.forEach(c => c.classList.toggle('active', Number(c.dataset.step) === step));
   }
 
   setActiveStep(1);
@@ -1614,6 +1656,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
