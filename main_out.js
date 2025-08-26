@@ -174,24 +174,24 @@ const SERVERS = {
 
     };
 
-    const showCaptcha = () => {
-        // Перенаправляем на рендер если библиотека уже загружена
-        if (window.turnstile) return renderCaptcha();
+let captchaCalled = false;
 
-        // Загружаем библиотеку
-        const node = document.createElement('script');
-        node.setAttribute('src', 'https://challenges.cloudflare.com/turnstile/v0/api.js');
-        node.setAttribute('async', 'async');
-        node.setAttribute('defer', 'defer');
-        node.onload = () => {
-            renderCaptcha();
-        };
-        node.onerror = () => {
-            alert("Не удалось загрузить библиотеку Captcha. Попробуйте обновить браузер");
-        };
+const showCaptcha = () => {
+    if (captchaCalled) return;
+    captchaCalled = true;
 
-        document.head.appendChild(node);
-    };
+    console.log("showCaptcha() called");
+
+    if (wHandle.turnstile) return renderCaptcha();
+
+    const node = document.createElement('script');
+    node.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+    node.async = true;
+    node.defer = true;
+    node.onload = () => renderCaptcha();
+    wHandle.document.head.appendChild(node);
+};
+
 showCaptcha();
 
     // Обновляем setserver функцию для вызова showConnecting() вручную
