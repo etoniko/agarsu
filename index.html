@@ -31,6 +31,7 @@
     <link href="/style.css?v=4.0.2" rel="stylesheet">
 
     <!-- Скрипты -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://cdn.jsdelivr.net/gh/etoniko/agarsu/jquery.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/etoniko/agarsu/log.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/etoniko/agarsu/vector.js"></script>
@@ -966,14 +967,11 @@ setNick(document.getElementById('nick').value + "#" + document.getElementById('p
 <button style="display:none" id="logoutButton" onclick="logoutAccount()">Выход</button>
 
 <div id="authlog">
-  <!-- Google Authorization -->
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
-
   <div id="g_id_onload"
        data-client_id="157257230972-jhlcisbgal67sn75gib37fb1m1de5jiu.apps.googleusercontent.com"
        data-callback="onGoogleAuth">
   </div>
-  <div class="g_id_signin"></div>
+  <!--<div class="g_id_signin"></div>-->
 
   <!-- Telegram Authorization -->
   <script async src="https://telegram.org/js/telegram-widget.js?22"
@@ -1612,6 +1610,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
