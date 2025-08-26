@@ -92,7 +92,7 @@ setInterval(fetchSkinList, 300000);
         "crazy": "pmori.ru:6002",
         "exp":   "pmori.ru:6004"
     };
-    let CONNECTION_URL = "pmori.ru:6001"; // сервер по умолчанию
+    let CONNECTION_URL = "pmori.ru:6001";
 
     function initServers() {
         const hash = location.hash;
@@ -111,12 +111,11 @@ setInterval(fetchSkinList, 300000);
 
         console.log("Подключаемся к серверу:", CONNECTION_URL);
 
-        // Обновляем заголовок
-        const header = document.querySelector(".headerstats h1");
+        // Обновляем заголовок — теперь элемент точно есть
+        const header = document.getElementById("serverTitle");
         if (header) {
-            const titleText = "Статистика #" + serverKey;
-            header.textContent = titleText;
-            console.log("Обновили заголовок:", titleText);
+            header.textContent = "Статистика #" + serverKey;
+            console.log("Обновили заголовок:", header.textContent);
         }
     }
 
