@@ -997,13 +997,13 @@ transition: ease filter, transform 0.5s;
 	transform: scale(1.1);
 }
 
-.crazy {
+.ms {
     background: #E2E2E2 url(https://i.imgur.com/5J9FUmL.png) top 20px center no-repeat;
 	transition: ease filter, transform 0.5s;
     background-size: 50px auto;
 }
 
-.crazy:hover {
+.ms:hover {
     background-color: #00c1f1;
 	transition: ease filter, transform 0.5s;
 	transform: scale(1.1);
@@ -1039,8 +1039,8 @@ background-size: 50px auto;
 	transition: ease filter, transform 0.5s;
 }
 
-.thumbnail.crazy {
-    --thumbnail-bg-color: #00c1f1; /* Цвет фона для crazy*/
+.thumbnail.ms {
+    --thumbnail-bg-color: #00c1f1; /* Цвет фона для ms*/
 }
 
 /*.thumbnail.teams {
