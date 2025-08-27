@@ -89,7 +89,7 @@ setInterval(fetchSkinList, 300000);
 
 const SERVERS = {
         "ffa":   "pmori.ru:6001",
-        "crazy": "pmori.ru:6002",
+        "ms": "pmori.ru:6002",
         "exp":   "pmori.ru:6004"
     };
     let CONNECTION_URL = "pmori.ru:6001";
