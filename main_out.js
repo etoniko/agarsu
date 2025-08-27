@@ -32,7 +32,7 @@ function normalizeNick(nick) {
 
 // Функция загрузки skinList.txt с нормализацией
 function fetchSkinList() {
-    fetch('/skinlist.txt')
+    fetch('https://agar.su/skinlist.txt')
         .then(response => {
             if (!response.ok) {
                 throw new Error('Ошибка сети: ' + response.status);
@@ -1099,7 +1099,7 @@ const moders = ["banshee"];
 let passUsers = [];
 
 // Загружаем pass.txt и парсим ники
-fetch('/pass.txt')
+fetch('https://agar.su/pass.txt')
     .then(response => {
         if (!response.ok) {
             throw new Error('Ошибка сети: ' + response.status);
@@ -1423,10 +1423,30 @@ function sendMouseMove() {
     }
 
 
-    function redrawGameScene() {
-        drawGameScene();
-        wHandle.requestAnimationFrame(redrawGameScene)
+let lastFrameTime = Date.now();
+let fps = 0;
+let lastFpsUpdate = Date.now();
+
+function redrawGameScene() {
+    drawGameScene();
+
+    // === FPS calculation with 2s update ===
+    const now = Date.now();
+    const delta = now - lastFrameTime;
+    lastFrameTime = now;
+    const currentFps = 1000 / delta;
+    fps = fps * 0.9 + currentFps * 0.1; // сглаживание
+
+    if (now - lastFpsUpdate >= 1000) {
+        const fpsElem = document.getElementById("fps");
+        if (fpsElem) fpsElem.textContent = fps.toFixed(1);
+        lastFpsUpdate = now;
     }
+    // =======================================
+
+    wHandle.requestAnimationFrame(redrawGameScene);
+}
+
 
     function canvasResize() {
         window.scrollTo(0, 0);
@@ -2271,7 +2291,7 @@ function drawLeaderBoard() {
         ustrokecolor && (this._strokeColor = ustrokecolor)
     }
 
-    var nCanvas, ctx, mainCanvas, lbCanvas, chatCanvas, canvasWidth, canvasHeight, qTree = null,
+       var nCanvas, ctx, mainCanvas, lbCanvas, chatCanvas, canvasWidth, canvasHeight, qTree = null,
         ws = null,
         nodeX = 0,
         nodeY = 0,
@@ -2300,7 +2320,7 @@ function drawLeaderBoard() {
         viewZoom = 1,
         showSkin = true,
         showName = true,
-        // showColor = false,
+        showColor = false,
         ua = false,
         // userScore = 0,
         showMass = true,
@@ -2310,6 +2330,7 @@ function drawLeaderBoard() {
         posY = nodeY = ~~((topPos + bottomPos) / 2),
         posSize = 1,
         teamScores = null,
+		closebord = false,
         ma = false,
         // hasOverlay = true,
         drawLine = false,
@@ -2362,6 +2383,9 @@ function drawLeaderBoard() {
     };
     wHandle.setSmooth = function (arg) {
         smoothRender = arg ? 2 : .4
+    };
+	wHandle.setNoBorder = function (arg) {
+        closebord = arg
     };
     wHandle.setChatHide = function (arg) {
         hideChat = arg;
@@ -2428,7 +2452,7 @@ function drawLeaderBoard() {
     // knownNameDict_noDisp = [],
     // ib = ["_canvas'blob"]
     // ;
-    Cell.prototype = {
+Cell.prototype = {
         id: 0,
         points: null,
         pointsAcc: null,
@@ -2452,22 +2476,26 @@ function drawLeaderBoard() {
         isEjected: false,
         isAgitated: false,
         wasSimpleDrawing: true,
-        destroy: function () {
-            var tmp;
-            for (tmp = 0, len = nodelist.length; tmp < len; tmp++)
-                if (nodelist[tmp] === this) {
-                    nodelist.splice(tmp, 1);
-                    break
-                }
-            delete nodes[this.id];
-            tmp = playerCells.indexOf(this);
-            if (-1 != tmp) {
-                ua = true;
-                playerCells.splice(tmp, 1);
-            }
-            this.destroyed = true;
-            Cells.push(this)
-        },
+destroy: function () {
+    var tmp;
+    for (tmp = 0, len = nodelist.length; tmp < len; tmp++) {
+        if (nodelist[tmp] === this) {
+            nodelist.splice(tmp, 1);
+            break;
+        }
+    }
+
+    delete nodes[this.id];
+
+    tmp = playerCells.indexOf(this);
+    if (tmp !== -1) {
+        ua = true;
+        playerCells.splice(tmp, 1);
+    }
+
+    // Убираем анимацию — просто помечаем как destroyed, но не добавляем в Cells
+    this.destroyed = true;
+},
         getNameSize: function () {
             return Math.max(~~(.3 * this.size), 24)
         },
@@ -2579,11 +2607,6 @@ function drawLeaderBoard() {
             a = 0 > a ? 0 : 1 < a ? 1 : a;
             var b = 0 > a ? 0 : 1 < a ? 1 : a;
             this.getNameSize();
-            if (this.destroyed && 1 <= b) {
-                var c = Cells.indexOf(this);
-                -
-                    1 != c && Cells.splice(c, 1)
-            }
             this.x = a * (this.nx - this.ox) + this.ox;
             this.y = a * (this.ny - this.oy) + this.oy;
             this.size = b * (this.nSize - this.oSize) + this.oSize;
@@ -2605,154 +2628,147 @@ function drawLeaderBoard() {
             if (b.length == 1) b = "0" + b;
             return "#" + r + g + b;
         },
-        drawOneCell: function (ctx) {
-            if (this.shouldRender()) {
-                var isSimpleRender = (this.id !== 0 && !this.isVirus && !this.isAgitated && smoothRender > viewZoom);
-                if (this.getNumPoints() < 10) isSimpleRender = true;
+drawOneCell: function (ctx) {
+    if (this.shouldRender()) {
+        var isSimpleRender = (this.id !== 0 && !this.isVirus && !this.isAgitated && smoothRender > viewZoom);
+        if (this.getNumPoints() < 10) isSimpleRender = true;
 
-                if (this.wasSimpleDrawing && !isSimpleRender) {
-                    for (var i = 0; i < this.points.length; i++) {
-                        this.points[i].size = this.size;
-                    }
-                }
-
-                var bigPointSize = this.size;
-                if (!this.wasSimpleDrawing) {
-                    for (var i = 0; i < this.points.length; i++) {
-                        bigPointSize = Math.max(this.points[i].size, bigPointSize);
-                    }
-                }
-
-                this.wasSimpleDrawing = isSimpleRender;
-                ctx.save();
-                this.drawTime = timestamp;
-                var scale = this.updatePos();
-                if (this.destroyed) ctx.globalAlpha *= 1 - scale;
-
-                ctx.lineWidth = 10;
-                ctx.lineCap = "round";
-                ctx.lineJoin = this.isVirus ? "miter" : "round";
-
-                // Определение цвета и прозрачности
-                var isTransparent = transparent.includes(this.name.toLowerCase());
-                if (isTransparent) {
-                    ctx.fillStyle = "rgba(0, 0, 0, 0)";
-                    ctx.strokeStyle = "rgba(0, 0, 0, 0)";
-                } else {
-                    ctx.fillStyle = this.color;
-                    ctx.strokeStyle = isSimpleRender ? this.color : this.getStrokeColor();
-                }
-
-                ctx.beginPath();
-                if (isSimpleRender) {
-                    var lw = this.size * 0.03;
-                    ctx.lineWidth = lw;
-                    ctx.arc(this.x, this.y, this.size - lw * 0.5 + 5, 0, 2 * Math.PI, false);
-                } else {
-                    this.movePoints();
-                    var d = this.getNumPoints();
-                    ctx.moveTo(this.points[0].x, this.points[0].y);
-                    for (var i = 1; i <= d; ++i) {
-                        var p = i % d;
-                        ctx.lineTo(this.points[p].x, this.points[p].y);
-                    }
-                }
-                ctx.closePath();
-
-                // Определение ID скина через skinList
-                var skinName = normalizeNick(this.name);
-                var skinId = skinList[skinName];
-                var skinImage = null;
-
-                if (skinId) {
-                    // Загружаем изображение скина только если ID найден в skinList
-                    if (!skins.hasOwnProperty(skinId)) {
-                        skins[skinId] = new Image();
-                        skins[skinId].src = `skins/${skinId}.png`;
-                    }
-                    if (skins[skinId].complete && skins[skinId].width > 0) {
-                        skinImage = skins[skinId];
-                    }
-                }
-
-                ctx.stroke();
-                ctx.fill();
-
-                // Отображение анимационного скина, если он загружен
-                if (skinImage) {
-                    ctx.save();
-                    ctx.clip();
-
-                    const frameWidth = skinImage.width; // Width of the sprite sheet
-                    const frameHeight = skinImage.height; // Height of the sprite sheet
-
-                    // Определение, является ли скин анимацией
-                    if (frameWidth > frameHeight) {
-                        // Это анимация
-                        const totalFrames = Math.floor(frameWidth / frameHeight); // Total number of frames
-                        const currentFrame = Math.floor((Date.now() / 100) % totalFrames); // Calculate current frame based on time
-
-                        // Calculate source x position for the current frame
-                        const sourceX = currentFrame * frameHeight;
-
-                        // Draw the current frame
-                        ctx.drawImage(skinImage, sourceX, 0, frameHeight, frameHeight,
-                            this.x - bigPointSize, this.y - bigPointSize,
-                            2 * bigPointSize, 2 * bigPointSize);
-                    } else {
-                        // Это статическое изображение
-                        ctx.drawImage(skinImage, 0, 0, frameWidth, frameHeight,
-                            this.x - bigPointSize, this.y - bigPointSize,
-                            2 * bigPointSize, 2 * bigPointSize);
-                    }
-
-                    ctx.restore();
-                }
-
-// Отображение имени
-if (this.id !== 0) {
-    var x = Math.floor(this.x),
-        y = Math.floor(this.y),
-        nameSize = this.getNameSize(),
-        zoomRatio = Math.ceil(10 * viewZoom) * 0.1,
-        invZoomRatio = 1 / zoomRatio;
-
-    // Скрываем имя, если this.size > 10
-    if (showName && (this.name && this.nameCache) && this.size > 10) {
-        // Проверяем запрещённые символы
-        var forbiddenSymbols = ["﷽", "𒐫","𒈙","⸻","꧅","ဪ","௵","௸","‱"];
-        var displayName = this.name;
-
-        forbiddenSymbols.forEach(symbol => {
-            if (displayName.includes(symbol)) displayName = "";
-        });
-
-        // Дополнительно пропускаем через функцию цензуры
-        displayName = censorMessage(displayName);
-
-        this.nameCache.setValue(displayName);
-        this.nameCache.setSize(nameSize);
-        this.nameCache.setScale(zoomRatio);
-        var nameImage = this.nameCache.render(),
-            nameWidth = Math.floor(nameImage.width * invZoomRatio),
-            nameHeight = Math.floor(nameImage.height * invZoomRatio);
-        ctx.drawImage(nameImage, x - Math.floor(nameWidth / 2), y - Math.floor(nameHeight / 2), nameWidth, nameHeight);
-    }
-                     // Отображение массы
-                    //скрываем массу если this.size > 100
-                    if (showMass && ((!this.isVirus && !this.isEjected && !this.isAgitated) && this.size > 100)) {
-                        var mass = Math.floor(this.size * this.size * 0.01);
-                        this.sizeCache.setValue(mass);
-                        this.sizeCache.setScale(zoomRatio);
-                        var massImage = this.sizeCache.render(),
-                            massWidth = Math.floor(massImage.width * invZoomRatio),
-                            massHeight = Math.floor(massImage.height * invZoomRatio);
-                        ctx.drawImage(massImage, x - Math.floor(massWidth / 2), y + Math.floor(massHeight * 0.8), massWidth, massHeight);
-                    }
-}
-                ctx.restore();
+        if (this.wasSimpleDrawing && !isSimpleRender) {
+            for (var i = 0; i < this.points.length; i++) {
+                this.points[i].size = this.size;
             }
         }
+
+        var bigPointSize = this.size;
+        if (!this.wasSimpleDrawing) {
+            for (var i = 0; i < this.points.length; i++) {
+                bigPointSize = Math.max(this.points[i].size, bigPointSize);
+            }
+        }
+
+        this.wasSimpleDrawing = isSimpleRender;
+        ctx.save();
+        this.drawTime = timestamp;
+        var scale = this.updatePos();
+        //if (this.destroyed) ctx.globalAlpha *= 1 - scale;
+
+        ctx.lineWidth = closebord ? 0 : 10;
+        ctx.lineCap = "round";
+        ctx.lineJoin = this.isVirus ? "miter" : "round";
+
+        // Определение цвета и прозрачности
+        var isTransparent = transparent.includes(this.name.toLowerCase());
+        if (isTransparent) {
+            ctx.fillStyle = "rgba(0, 0, 0, 0)";
+            ctx.strokeStyle = "rgba(0, 0, 0, 0)";
+        } else {
+            ctx.fillStyle = this.color;
+            ctx.strokeStyle = isSimpleRender ? this.color : this.getStrokeColor();
+        }
+
+        ctx.beginPath();
+        if (isSimpleRender) {
+            if (closebord) {
+                ctx.lineWidth = 0;
+                ctx.arc(this.x, this.y, this.size, 0, 2 * Math.PI, false);
+            } else {
+                var lw = this.size * 0.03;
+                ctx.lineWidth = lw;
+                ctx.arc(this.x, this.y, this.size - lw * 0.5 + 5, 0, 2 * Math.PI, false);
+            }
+        } else {
+            this.movePoints();
+            var d = this.getNumPoints();
+            ctx.moveTo(this.points[0].x, this.points[0].y);
+            for (var i = 1; i <= d; ++i) {
+                var p = i % d;
+                ctx.lineTo(this.points[p].x, this.points[p].y);
+            }
+        }
+        ctx.closePath();
+
+        // Определение ID скина через skinList
+        var skinName = normalizeNick(this.name);
+        var skinId = skinList[skinName];
+        var skinImage = null;
+
+        if (skinId) {
+            if (!skins.hasOwnProperty(skinId)) {
+                skins[skinId] = new Image();
+                skins[skinId].src = `https://agar.su/skins/${skinId}.png`;
+            }
+            if (skins[skinId].complete && skins[skinId].width > 0) {
+                skinImage = skins[skinId];
+            }
+        }
+
+        if (!closebord) ctx.stroke();
+        ctx.fill();
+
+        // Отображение анимационного скина
+        if (skinImage) {
+            ctx.save();
+            ctx.clip();
+
+            const frameWidth = skinImage.width;
+            const frameHeight = skinImage.height;
+
+            if (frameWidth > frameHeight) {
+                const totalFrames = Math.floor(frameWidth / frameHeight);
+                const currentFrame = Math.floor((Date.now() / 100) % totalFrames);
+                const sourceX = currentFrame * frameHeight;
+
+                ctx.drawImage(skinImage, sourceX, 0, frameHeight, frameHeight,
+                    this.x - bigPointSize, this.y - bigPointSize,
+                    2 * bigPointSize, 2 * bigPointSize);
+            } else {
+                ctx.drawImage(skinImage, 0, 0, frameWidth, frameHeight,
+                    this.x - bigPointSize, this.y - bigPointSize,
+                    2 * bigPointSize, 2 * bigPointSize);
+            }
+            ctx.restore();
+        }
+
+        // Отображение имени и массы
+        if (this.id !== 0) {
+            var x = Math.floor(this.x),
+                y = Math.floor(this.y),
+                nameSize = this.getNameSize(),
+                zoomRatio = Math.ceil(10 * viewZoom) * 0.1,
+                invZoomRatio = 1 / zoomRatio;
+
+            if (showName && (this.name && this.nameCache) && this.size > 10) {
+                var forbiddenSymbols = ["﷽", "𒐫","𒈙","⸻","꧅","ဪ","௵","௸","‱"];
+                var displayName = this.name;
+
+                forbiddenSymbols.forEach(symbol => {
+                    if (displayName.includes(symbol)) displayName = "";
+                });
+
+                displayName = censorMessage(displayName);
+
+                this.nameCache.setValue(displayName);
+                this.nameCache.setSize(nameSize);
+                this.nameCache.setScale(zoomRatio);
+                var nameImage = this.nameCache.render(),
+                    nameWidth = Math.floor(nameImage.width * invZoomRatio),
+                    nameHeight = Math.floor(nameImage.height * invZoomRatio);
+                ctx.drawImage(nameImage, x - Math.floor(nameWidth / 2), y - Math.floor(nameHeight / 2), nameWidth, nameHeight);
+            }
+
+            if (showMass && ((!this.isVirus && !this.isEjected && !this.isAgitated) && this.size > 100)) {
+                var mass = Math.floor(this.size * this.size * 0.01);
+                this.sizeCache.setValue(mass);
+                this.sizeCache.setScale(zoomRatio);
+                var massImage = this.sizeCache.render(),
+                    massWidth = Math.floor(massImage.width * invZoomRatio),
+                    massHeight = Math.floor(massImage.height * invZoomRatio);
+                ctx.drawImage(massImage, x - Math.floor(massWidth / 2), y + Math.floor(massHeight * 0.8), massWidth, massHeight);
+            }
+        }
+        ctx.restore();
+    }
+}
 
     };
     UText.prototype = {
