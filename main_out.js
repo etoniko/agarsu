@@ -1473,10 +1473,44 @@ let lastDisplayedScore = 0,
     maxScore = 0;
 
 let scoreHistory = [];       // Полная история для анализа
-const maxGraphPoints = 200;  // Для рисования графика
-let startTime = Date.now();
+const maxGraphPoints = 100;  // Для рисования графика
+let startTime = timestamp;
 
 let statsCanvas, statsCtx, staticsDiv;
+
+// ===== ОБНОВЛЕНИЕ UI СТАТИСТИКИ =====
+function updateStats() {
+    const currentScore = Math.floor(calcUserScore() / 100);
+    const cellCount = playerCells.length;
+    maxScore = Math.max(maxScore, currentScore);
+
+    if (currentScore !== lastDisplayedScore) {
+        const scoreElem = document.getElementById('score-new');
+        if (scoreElem) scoreElem.innerText = 'Сейчас: ' + currentScore;
+        lastDisplayedScore = currentScore;
+    }
+
+    if (maxScore !== lastDisplayedMaxScore) {
+        const maxElem = document.getElementById('score-max');
+        if (maxElem) maxElem.innerText = 'Максимум: ' + maxScore;
+        lastDisplayedMaxScore = maxScore;
+    }
+
+    if (cellCount !== lastDisplayedCellCount) {
+        const cellElem = document.getElementById('cell-length');
+        if (cellElem) cellElem.innerText = cellCount;
+        lastDisplayedCellCount = cellCount;
+    }
+
+    // Добавляем в историю
+    scoreHistory.push({ time: timestamp - startTime, score: currentScore });
+
+    // Ограничиваем историю до 100 элементов
+    if (scoreHistory.length > 100) {
+        scoreHistory = compressHistory(scoreHistory, 100);
+    }
+}
+
 
 // ===== УТИЛИТЫ =====
 const formatTimeStats = ms => {
@@ -1631,38 +1665,6 @@ window.addEventListener('load', () => {
     });
 });
 
-// ===== ОБНОВЛЕНИЕ UI СТАТИСТИКИ =====
-function updateStats() {
-    const currentScore = Math.floor(calcUserScore() / 100);
-    const cellCount = playerCells.length;
-    maxScore = Math.max(maxScore, currentScore);
-
-    if (currentScore !== lastDisplayedScore) {
-        const scoreElem = document.getElementById('score-new');
-        if (scoreElem) scoreElem.innerText = 'Сейчас: ' + currentScore;
-        lastDisplayedScore = currentScore;
-    }
-
-    if (maxScore !== lastDisplayedMaxScore) {
-        const maxElem = document.getElementById('score-max');
-        if (maxElem) maxElem.innerText = 'Максимум: ' + maxScore;
-        lastDisplayedMaxScore = maxScore;
-    }
-
-    if (cellCount !== lastDisplayedCellCount) {
-        const cellElem = document.getElementById('cell-length');
-        if (cellElem) cellElem.innerText = cellCount;
-        lastDisplayedCellCount = cellCount;
-    }
-
-    // Добавляем в историю
-    scoreHistory.push({ time: timestamp - startTime, score: currentScore });
-
-    // Ограничиваем историю до 200 элементов
-    if (scoreHistory.length > 200) {
-        scoreHistory = compressHistory(scoreHistory, 200);
-    }
-}
 
 
 
@@ -2341,7 +2343,7 @@ function drawLeaderBoard() {
     lastDisplayedMaxScore = 0;
     lastDisplayedCellCount = 0;
     maxScore = 0;
-    startTime = Date.now();
+    startTime = timestamp;
     drawStatsGraph();
     };
 
