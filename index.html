@@ -28,7 +28,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=new_releases" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="/style.css?v=4.0.6" rel="stylesheet">
+    <link href="/style.css?v=4.0.7" rel="stylesheet">
 
     <!-- Скрипты -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -1226,43 +1226,7 @@ recToggle.onclick = () => {
 </script>
 
 
-<style>
-.chatX_window {width: 310px;background: rgba(0, 0, 0, .3);border-radius: 25px;padding: 10px 5px 12px;position: absolute;left: 10px;bottom: 10px;display: flex;flex-direction: column;overflow: hidden;min-height: 100px;max-height: 700px;color: white;box-sizing: border-box;border: solid #ffffff26 1px;}
-.chatX_top { height: 20px; display: flex; align-items: center; justify-content: center; position: relative; margin-bottom: 6px; user-select: none; }
-.chatX_burger { position: absolute; left: 50%; transform: translateX(-50%); width: 20px; height: 20px;display: flex; flex-direction: column; justify-content: center; font-size: 16px; color: white; text-align: center; }
-.chatX_close {position: absolute;right: 6px;width: 18px;height: 18px;line-height: 18px;text-align: center;color: white;font-size: 19px;cursor: pointer;}
-.chatX_feed { flex: 1; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 8px; padding-right: 4px;}
-.chatX_msg {position: relative;display: grid;grid-template-columns: 42px 1fr;background: #80808057;border-radius: 10px;padding: 8px 10px 8px 8px;box-sizing: border-box;column-gap: 15px;}
-.chatX_avatar {width: 50px; height: 50px; border-radius: 100%; object-fit: cover;border: 2px solid;}
-.avatarXcontainer{position: relative;grid-row: 1 / span 2;width: 50px;height: 50px;}
-.avatarXcontainer::after {content: "verified_user";font-family: 'Material Icons';position: absolute;right: 1;bottom: 1;font-size: 19px;color: #08dd24;display: var(--after-display, none);text-shadow: #08dd24de 0 0 10px;}
-.chatX_nick {font-size: 15px;max-width: 185px;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;direction: ltr;font-weight: bold;height: 20px;}
-.chatX_nick--accent { color: #ff4e3e; font-weight: 700; }
-.chatX_text {min-height: 30px;font-size: 14px;color: white;}
-.chatX_time { position: absolute; right: 8px; top: 6px; font-size: 11px; color: #dadada; }
-.chatX_name_container{display: flex;gap: 3px;padding-bottom: 2px;align-items: baseline;}
-#chat_textbox {padding: 10px 20px 10px 5px;box-sizing: border-box;margin-top: 8px;transition: all .5s ease-in-out;background: rgb(133 133 133 / 20%);border: solid 1px #ffffff3d;outline: none;color: #ffffff;text-indent: 12px;width: 100%;border-radius: 20px;}
-#chat_textbox::placeholder { color: #606060; }
-.chatX_alert { position: absolute; top: 30px; right: 10px; background: #ff4e3e; color: #fff; font-size: 13px; padding: 4px 8px; border-radius: 12px; display: none; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
-.nresize{cursor: n-resize !important;}
-::-webkit-scrollbar {width: 3px;height: 0;}
-::-webkit-scrollbar-thumb {background-color:#ffffff3b;border-radius: 10px; }
-::-webkit-scrollbar-track {background: transparent;}
-</style>
-
-  <div class="chatX_window" id="chatX_window">
-    <div class="chatX_top">
-      <div class="chatX_burger" id="chatX_burger"><i class="fa-solid fa-bars nresize"></i></div>
-      <div class="chatX_close" onclick="document.getElementById('chatX_window').style.display = 'none'; document.getElementById('onchat').style.display = 'flex';" id="chatX_close"><i class="fa-solid fa-xmark"></i></div>
-    </div>
-
-    <div class="chatX_feed" id="chatX_feed">
-    </div>
-
-    <div class="chatX_alert" id="chatX_alert"></div>
-
-    <input class="noPress" id="chat_textbox" type="text" maxlength="120" autocomplete="off" placeholder="Напишите сообщение..." />
-  </div>
+<div class="chatX_window" id="chatX_window"><div class="chatX_top"><div class="chatX_burger" id="chatX_burger"><i class="fa-solid fa-bars nresize"></i></div><div class="chatX_close" onclick="document.getElementById('chatX_window').style.display = 'none'; document.getElementById('onchat').style.display = 'flex';" id="chatX_close"><i class="fa-solid fa-xmark"></i></div></div><div class="chatX_feed" id="chatX_feed"></div><div class="chatX_alert" id="chatX_alert"></div><input class="noPress" id="chat_textbox" type="text" maxlength="120" autocomplete="off" placeholder="Напишите сообщение..." /></div>
 
 <script>
 const chatWindow = document.getElementById('chatX_window');
@@ -1655,6 +1619,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
