@@ -454,11 +454,10 @@
                         <div><span>Настройки</span></div>
                     </div>
                     <div class="checkbox-container">
-                        <label><input type="checkbox" class="save" data-box-id="2" onchange="setNames(!$(this).is(':checked'));">Оключить Имена</label>
-                        <label><input type="checkbox" class="save" data-box-id="4" onchange="setColors($(this).is(':checked'));">Без Цветов</label>
-                        <label><input type="checkbox" class="save" data-box-id="5" onchange="setShowMass($(this).is(':checked'));" checked>Показать Массу</label>
-                        <label><input type="checkbox" class="save" data-box-id="6" onchange="setSmooth($(this).is(':checked'));">Простой Рендер</label>
-                        <label><input type="checkbox" class="save" data-box-id="7" onchange="setChatHide($(this).is(':checked'));">Отключить Чат</label>
+                        <label><input type="checkbox" class="save" data-box-id="1" onchange="setNames(!$(this).is(':checked'));">Оключить Имена</label>
+                        <label><input type="checkbox" class="save" data-box-id="3" onchange="setShowMass($(this).is(':checked'));" checked>Показать Массу</label>
+                        <label><input type="checkbox" class="save" data-box-id="4" onchange="setSmooth($(this).is(':checked'));">Простой Рендер</label>
+						<label><input type="checkbox" class="save" data-box-id="5" onchange="setNoBorder($(this).is(':checked'));">Отключить обводку</label>
                         <label><div id="theme-selector"><label>Выберите тему:</label><select id="theme-select"><option value="gradient">Градиент</option><option value="white">Белая</option><option value="black">Черная</option></select></div></label>
                     </div>
                 </div>
@@ -1656,6 +1655,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
