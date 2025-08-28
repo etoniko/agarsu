@@ -1,4 +1,64 @@
 (function (wHandle, wjQuery) {
+	
+	
+	                        // Функция для получения данных статистики
+                        async function fetchStats(stats) { // Изменяем здесь, чтобы принимать stats
+                            try {
+                                // Убедимся, что stats переданы и являются массивом
+                                if (!Array.isArray(stats)) {
+                                    throw new Error('Invalid stats data');
+                                }
+
+                                const skinsMap = await loadSkinsList(); // Загрузка skinsList
+
+                                // Обновляем каждый player в stats
+                                stats.forEach(player => {
+                                    const skinId = skinsMap.get(player.nick.toLowerCase()) || 'PPFtwqH'; // Используем nick напрямую для skinId
+                                    player.skin = skinId; // Установка skin для игрока
+                                });
+
+                                displayStats(stats);
+                            } catch (error) {
+                                console.error('There was a problem with the fetch operation:', error);
+                            }
+                        }
+
+                        // Функция для отображения статистики
+                        function displayStats(stats) {
+                            const container = document.getElementById('table-containerwraper');
+                            container.innerHTML = ''; // Очищаем контейнер перед добавлением новых данных
+
+
+stats.forEach((player, index) => {
+    const playerDiv = document.createElement('div');
+    playerDiv.classList.add('top-playerwraper');
+    playerDiv.setAttribute('title', player.time); // добавляем атрибут title
+    playerDiv.innerHTML = `
+        <div>${index + 1}</div>
+        <div>${player.nick}</div>
+        <div>${player.score}</div>
+        <div class="skinswraper"style="background-image: url('skins/${player.skin}.png');"></div>
+    `;
+    container.appendChild(playerDiv);
+});
+                        }
+	
+	                        async function updateOnlineCount() {
+                            try {
+                                const response = await fetch('https://pmori.ru:6001/process'); // Запрос к серверу по /process
+                                if (response.ok) {
+                                    const data = await response.json(); // Преобразуем ответ в JSON
+                                    document.getElementById('process').textContent = `Онлайн: ${data.online}`; // Обновляем текст в div
+                                } else {
+                                    console.error('Ошибка при получении данных:', response.status);
+                                }
+                            } catch (error) {
+                                console.error('Произошла ошибка:', error);
+                            }
+                        }
+
+                        updateOnlineCount();
+						
 let skinList = {}; // Глобальный объект для скинов
 
 // Функция нормализации ника (берёт ник внутри скобок или обрезает лишнее)
@@ -61,7 +121,12 @@ fetchSkinList();
 // Периодическая проверка изменений каждые 5 минут
 setInterval(fetchSkinList, 300000);
 
-
+wHandle.startGame = function () {
+    setNick(document.getElementById('nick').value + "#" + document.getElementById('pass').value);
+setTimeout(function() {
+setNick(document.getElementById('nick').value + "#" + document.getElementById('pass').value);
+}, 1000);
+}
     // Функция для загрузки данных о топ-1 игроке
     wHandle.chekstats = async function () {
         try {
@@ -194,7 +259,6 @@ const SERVERS = {
 
         document.head.appendChild(node);
     };
-showCaptcha();
 
     // Обновляем setserver функцию для вызова showConnecting() вручную
 wHandle.setserver = function(arg) {
@@ -435,7 +499,9 @@ wHandle.setserver = function(arg) {
         setInterval(sendMouseMove, 50);
 
         wjQuery("#overlays").show();
+		showCaptcha();
     }
+	
 
 const dpr = window.devicePixelRatio;
 
