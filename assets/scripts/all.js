@@ -165,3 +165,26 @@ const observer = new MutationObserver(() => {
   });
 });
 observer.observe(document.body, { childList: true, subtree: true });
+
+        // Получаем элементы канваса и div-элемента overlays
+        var canvas = document.getElementById('canvas');
+        var overlays = document.getElementById('overlays');
+
+        // Добавляем слушатель события мыши на div-элемент overlays
+        overlays.addEventListener('mousemove', function (event) {
+            // Получаем позицию курсора относительно overlays
+            var x = event.clientX - overlays.offsetLeft;
+            var y = event.clientY - overlays.offsetTop;
+
+            // Создаем событие мыши для канваса
+            var canvasEvent = new MouseEvent('mousemove', {
+                bubbles: true,
+                cancelable: true,
+                clientX: x,
+                clientY: y
+            });
+
+            // Передаем событие канвасу
+            canvas.dispatchEvent(canvasEvent);
+        });
+
