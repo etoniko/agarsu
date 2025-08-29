@@ -83,13 +83,11 @@
 const chatWindow = document.getElementById('chatX_window');
 const feed = document.getElementById('chatX_feed');
 const burger = document.getElementById('chatX_burger');
-const emojiPanel = document.getElementById('emoji_panel');
 
 let startY = 0;
 let startHeight = 0;
 let startTop = 0;
 let resizing = false;
-let originalHeight = chatWindow.offsetHeight; // исходная высота чата
 
 // ===== drag & touch для burger =====
 function startResize(e) {
@@ -107,12 +105,11 @@ function doResize(e) {
     let newHeight = startHeight - dy;
     let newTop = startTop + dy;
 
-    if (newHeight < 100) { newTop -= (100 - newHeight); newHeight = 100; }
-    if (newHeight > 700) { newTop += (newHeight - 700); newHeight = 700; }
+    if (newHeight < 100) { newTop -= (100-newHeight); newHeight = 100; }
+    if (newHeight > 700) { newTop += (newHeight-700); newHeight = 700; }
 
     chatWindow.style.height = newHeight + 'px';
     chatWindow.style.top = newTop + 'px';
-    originalHeight = newHeight; // сохраняем текущую высоту
 }
 
 function stopResize() {
@@ -127,50 +124,29 @@ document.addEventListener('touchmove', doResize, {passive: false});
 document.addEventListener('mouseup', stopResize);
 document.addEventListener('touchend', stopResize);
 
-// ===== наблюдатель за панелью эмодзи =====
-const observer = new MutationObserver(() => {
-    const chatHeight = chatWindow.offsetHeight;
-
-    if (emojiPanel.style.display !== 'none') {
-        // панель видна → если чат < 300, поднимаем до 300
-        if (chatHeight < 300) {
-            chatWindow.style.height = '300px';
-        }
-    } else {
-        // панель скрыта → если чат был < 300, возвращаем исходную высоту
-        if (chatHeight <= 300) {
-            chatWindow.style.height = originalHeight + 'px';
-        }
-    }
-});
-
-// следим за изменением стиля display панели
-observer.observe(emojiPanel, { attributes: true, attributeFilter: ['style'] });
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Кнопка чата
-    document.getElementById('onchat').addEventListener('click', () => {
-        chatWindow.style.display = 'flex';
-        document.getElementById('onchat').style.display = 'none';
-    });
+  // Кнопка чата
+  document.getElementById('onchat').addEventListener('click', () => {
+    document.getElementById('chatX_window').style.display = 'flex';
+    document.getElementById('onchat').style.display = 'none';
+  });
 
-    // Кнопка карты
-    document.getElementById('onmap').addEventListener('click', () => {
-        document.getElementById('map').style.display = 'block';
-        document.getElementById('onmap').style.display = 'none';
-    });
+  // Кнопка карты
+  document.getElementById('onmap').addEventListener('click', () => {
+    document.getElementById('map').style.display = 'block';
+    document.getElementById('onmap').style.display = 'none';
+  });
 
-    // Кнопка "Pause"
-    document.getElementById('freeze').addEventListener('click', function () {
-        freeze = false; // предполагаю, это глобальная переменная
-        this.style.display = 'none';
-    });
-
-    $('.homemenu').on('click', function () {
-        $('#overlays').show();
-    });
+  // Кнопка "Pause"
+  document.getElementById('freeze').addEventListener('click', function () {
+    freeze = false; // предполагаю, это глобальная переменная
+    this.style.display = 'none';
+  });
+  $('.homemenu').on('click', function () {
+    $('#overlays').show();
+  });
 });
-
 
 
 
@@ -261,12 +237,6 @@ chatBox.addEventListener("input", () => {
 chatBox.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
         e.preventDefault(); // Предотвращаем стандартное поведение
-
-        // если панелька открыта — закрываем её
-        const emojiPanel = document.getElementById("emoji_panel");
-        if (emojiPanel.classList.contains("active")) {
-            emojiPanel.classList.remove("active");
-        }
 
         if (!e.shiftKey) {
             // Отправляем, только если есть текст
@@ -424,19 +394,11 @@ function placeCaretAtEnd(element) {
 
 
 const emojiBtn = document.getElementById("emoji_btn");
+const emojiPanel = document.getElementById("emoji_panel");
 const chatBoxEl = document.getElementById("chat_textbox");
 const container = document.getElementById('emojiContainer');
 
 let emojiLoaded = false; // Чтобы панель загружала эмодзи только один раз
-
-// хранилище для счётчиков использования
-function getEmojiStats() {
-    const raw = document.cookie.replace(/(?:(?:^|.*;\s*)emojiStats\s*\=\s*([^;]*).*$)|^.*$/, "$1");
-    return raw ? JSON.parse(raw) : {};
-}
-function saveEmojiStats(stats) {
-    document.cookie = "emojiStats=" + JSON.stringify(stats) + "; path=/; max-age=" + (60*60*24*365);
-}
 
 // Переключатель панели
 emojiBtn.addEventListener("click", () => {
@@ -467,58 +429,42 @@ function insertTextAtCursor(el, text) {
     el.dispatchEvent(event);
 }
 
-// клик по эмодзи
+// Клик по эмодзи — вставляем :code: в contenteditable
 emojiPanel.addEventListener("click", (e) => {
     const item = e.target.closest(".emoji-item");
     if (item) {
         const code = item.dataset.code;
         insertTextAtCursor(chatBoxEl, code);
-
-        // увеличиваем счётчик
-        const stats = getEmojiStats();
-        stats[code] = (stats[code] || 0) + 1;
-        saveEmojiStats(stats);
-
-        // пересортируем
-        sortEmojiPanel();
     }
 });
 
 // Функция загрузки эмодзи
 function loadEmojis() {
-    const stats = getEmojiStats();
     for (let i = 1; i <= 290; i++) {
         const gifPath = `/emoji/${i}.gif`;
         const pngPath = `/emoji/${i}.png`;
+
         checkImageExists(gifPath, (exists) => {
             const finalPath = exists ? gifPath : pngPath;
+
+            // Если ни GIF, ни PNG нет — игнорируем
             checkImageExists(finalPath, (exists2) => {
                 if (!exists2) return;
+
                 const item = document.createElement('div');
                 item.className = 'emoji-item';
                 item.dataset.code = `:${i}:`;
+
                 const img = document.createElement('img');
                 img.src = finalPath;
                 img.alt = i;
                 img.className = 'chat-emoji';
+
                 item.appendChild(img);
                 container.appendChild(item);
-                sortEmojiPanel();
             });
         });
     }
-}
-
-function sortEmojiPanel() {
-    const stats = getEmojiStats();
-    const items = Array.from(container.children);
-    items.sort((a, b) => {
-        const ca = stats[a.dataset.code] || 0;
-        const cb = stats[b.dataset.code] || 0;
-        return cb - ca;
-    });
-    container.innerHTML = "";
-    items.forEach(el => container.appendChild(el));
 }
 
 // Проверка существования изображения
@@ -528,7 +474,4 @@ function checkImageExists(url, callback) {
     img.onerror = () => callback(false);
     img.src = url;
 }
-
-
-
 
