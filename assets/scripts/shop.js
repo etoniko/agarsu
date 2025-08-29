@@ -40,7 +40,7 @@ function notify(msg, duration = 3000) {
   async function checkAdBlocker() {
     try {
       const xhr = new XMLHttpRequest();
-      xhr.open('HEAD', 'https://pmori.ru/api/test', true);
+      xhr.open('HEAD', 'https://api.agar.su/api/test', true);
       xhr.send();
       return new Promise(resolve => {
         xhr.onreadystatechange = () => {
@@ -237,7 +237,7 @@ function notify(msg, duration = 3000) {
     }
 
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', 'https://pmori.ru/api/submit', true);
+    xhr.open('POST', 'https://api.agar.su/api/submit', true);
     xhr.onreadystatechange = () => {
       if (xhr.readyState === 4) {
         if (xhr.status === 200) {
@@ -282,3 +282,4 @@ function notify(msg, duration = 3000) {
 
   setActiveStep(1);
 })();
+
