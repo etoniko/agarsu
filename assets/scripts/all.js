@@ -83,11 +83,13 @@
 const chatWindow = document.getElementById('chatX_window');
 const feed = document.getElementById('chatX_feed');
 const burger = document.getElementById('chatX_burger');
+const emojiPanel = document.getElementById('emoji_panel');
 
 let startY = 0;
 let startHeight = 0;
 let startTop = 0;
 let resizing = false;
+let originalHeight = chatWindow.offsetHeight; // исходная высота чата
 
 // ===== drag & touch для burger =====
 function startResize(e) {
@@ -105,11 +107,12 @@ function doResize(e) {
     let newHeight = startHeight - dy;
     let newTop = startTop + dy;
 
-    if (newHeight < 100) { newTop -= (100-newHeight); newHeight = 100; }
-    if (newHeight > 700) { newTop += (newHeight-700); newHeight = 700; }
+    if (newHeight < 100) { newTop -= (100 - newHeight); newHeight = 100; }
+    if (newHeight > 700) { newTop += (newHeight - 700); newHeight = 700; }
 
     chatWindow.style.height = newHeight + 'px';
     chatWindow.style.top = newTop + 'px';
+    originalHeight = newHeight; // сохраняем текущую высоту
 }
 
 function stopResize() {
@@ -124,29 +127,50 @@ document.addEventListener('touchmove', doResize, {passive: false});
 document.addEventListener('mouseup', stopResize);
 document.addEventListener('touchend', stopResize);
 
+// ===== наблюдатель за панелью эмодзи =====
+const observer = new MutationObserver(() => {
+    const chatHeight = chatWindow.offsetHeight;
+
+    if (emojiPanel.style.display !== 'none') {
+        // панель видна → если чат < 300, поднимаем до 300
+        if (chatHeight < 300) {
+            chatWindow.style.height = '300px';
+        }
+    } else {
+        // панель скрыта → если чат был < 300, возвращаем исходную высоту
+        if (chatHeight <= 300) {
+            chatWindow.style.height = originalHeight + 'px';
+        }
+    }
+});
+
+// следим за изменением стиля display панели
+observer.observe(emojiPanel, { attributes: true, attributeFilter: ['style'] });
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Кнопка чата
-  document.getElementById('onchat').addEventListener('click', () => {
-    document.getElementById('chatX_window').style.display = 'flex';
-    document.getElementById('onchat').style.display = 'none';
-  });
+    // Кнопка чата
+    document.getElementById('onchat').addEventListener('click', () => {
+        chatWindow.style.display = 'flex';
+        document.getElementById('onchat').style.display = 'none';
+    });
 
-  // Кнопка карты
-  document.getElementById('onmap').addEventListener('click', () => {
-    document.getElementById('map').style.display = 'block';
-    document.getElementById('onmap').style.display = 'none';
-  });
+    // Кнопка карты
+    document.getElementById('onmap').addEventListener('click', () => {
+        document.getElementById('map').style.display = 'block';
+        document.getElementById('onmap').style.display = 'none';
+    });
 
-  // Кнопка "Pause"
-  document.getElementById('freeze').addEventListener('click', function () {
-    freeze = false; // предполагаю, это глобальная переменная
-    this.style.display = 'none';
-  });
-  $('.homemenu').on('click', function () {
-    $('#overlays').show();
-  });
+    // Кнопка "Pause"
+    document.getElementById('freeze').addEventListener('click', function () {
+        freeze = false; // предполагаю, это глобальная переменная
+        this.style.display = 'none';
+    });
+
+    $('.homemenu').on('click', function () {
+        $('#overlays').show();
+    });
 });
+
 
 
 
@@ -505,5 +529,6 @@ function checkImageExists(url, callback) {
     img.onerror = () => callback(false);
     img.src = url;
 }
+
 
 
