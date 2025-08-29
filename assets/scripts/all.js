@@ -187,6 +187,9 @@ observer.observe(document.body, { childList: true, subtree: true });
             // Передаем событие канвасу
             canvas.dispatchEvent(canvasEvent);
         });
+
+
+
 const chatBox = document.getElementById("chat_textbox");
 let originalText = "";
 
@@ -197,7 +200,15 @@ chatBox.setAttribute("contenteditable", "true");
 chatBox.addEventListener("input", () => {
     // Получаем чистый текст из содержимого
     originalText = getPlainText(chatBox).trim();
-    
+
+    // Ограничение длины текста
+    if (originalText.length > 120) {
+        originalText = originalText.slice(0, 120);
+        setPlainText(chatBox, originalText); // перезаписываем содержимое
+        placeCaretAtEnd(chatBox); // курсор в конец
+        return; // дальнейшая обработка не нужна
+    }
+
     // Преобразуем :code: в эмодзи (GIF с fallback на PNG)
     let html = chatBox.innerHTML;
     const newHtml = html.replace(/:([a-zA-Z0-9_]+):/g, (match, p1) => {
@@ -267,6 +278,11 @@ function getPlainText(element) {
         }
     }
     return text;
+}
+
+// Установка чистого текста внутрь contenteditable (без форматирования)
+function setPlainText(element, text) {
+    element.innerText = text;
 }
 
 // Получение позиции курсора
@@ -373,6 +389,10 @@ function placeCaretAtEnd(element) {
     selection.addRange(range);
 }
 
+
+
+
+
 const emojiBtn = document.getElementById("emoji_btn");
 const emojiPanel = document.getElementById("emoji_panel");
 const chatBoxEl = document.getElementById("chat_textbox");
@@ -454,4 +474,5 @@ function checkImageExists(url, callback) {
     img.onerror = () => callback(false);
     img.src = url;
 }
+
 
