@@ -238,6 +238,12 @@ chatBox.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
         e.preventDefault(); // Предотвращаем стандартное поведение
 
+        // если панелька открыта — закрываем её
+        const emojiPanel = document.getElementById("emoji_panel");
+        if (emojiPanel.classList.contains("active")) {
+            emojiPanel.classList.remove("active");
+        }
+
         if (!e.shiftKey) {
             // Отправляем, только если есть текст
             if (originalText.length > 0) {
@@ -400,6 +406,15 @@ const container = document.getElementById('emojiContainer');
 
 let emojiLoaded = false; // Чтобы панель загружала эмодзи только один раз
 
+// хранилище для счётчиков использования
+function getEmojiStats() {
+    const raw = document.cookie.replace(/(?:(?:^|.*;\s*)emojiStats\s*\=\s*([^;]*).*$)|^.*$/, "$1");
+    return raw ? JSON.parse(raw) : {};
+}
+function saveEmojiStats(stats) {
+    document.cookie = "emojiStats=" + JSON.stringify(stats) + "; path=/; max-age=" + (60*60*24*365);
+}
+
 // Переключатель панели
 emojiBtn.addEventListener("click", () => {
     emojiPanel.classList.toggle("active");
@@ -429,42 +444,58 @@ function insertTextAtCursor(el, text) {
     el.dispatchEvent(event);
 }
 
-// Клик по эмодзи — вставляем :code: в contenteditable
+// клик по эмодзи
 emojiPanel.addEventListener("click", (e) => {
     const item = e.target.closest(".emoji-item");
     if (item) {
         const code = item.dataset.code;
         insertTextAtCursor(chatBoxEl, code);
+
+        // увеличиваем счётчик
+        const stats = getEmojiStats();
+        stats[code] = (stats[code] || 0) + 1;
+        saveEmojiStats(stats);
+
+        // пересортируем
+        sortEmojiPanel();
     }
 });
 
 // Функция загрузки эмодзи
 function loadEmojis() {
+    const stats = getEmojiStats();
     for (let i = 1; i <= 290; i++) {
         const gifPath = `/emoji/${i}.gif`;
         const pngPath = `/emoji/${i}.png`;
-
         checkImageExists(gifPath, (exists) => {
             const finalPath = exists ? gifPath : pngPath;
-
-            // Если ни GIF, ни PNG нет — игнорируем
             checkImageExists(finalPath, (exists2) => {
                 if (!exists2) return;
-
                 const item = document.createElement('div');
                 item.className = 'emoji-item';
                 item.dataset.code = `:${i}:`;
-
                 const img = document.createElement('img');
                 img.src = finalPath;
                 img.alt = i;
                 img.className = 'chat-emoji';
-
                 item.appendChild(img);
                 container.appendChild(item);
+                sortEmojiPanel();
             });
         });
     }
+}
+
+function sortEmojiPanel() {
+    const stats = getEmojiStats();
+    const items = Array.from(container.children);
+    items.sort((a, b) => {
+        const ca = stats[a.dataset.code] || 0;
+        const cb = stats[b.dataset.code] || 0;
+        return cb - ca;
+    });
+    container.innerHTML = "";
+    items.forEach(el => container.appendChild(el));
 }
 
 // Проверка существования изображения
