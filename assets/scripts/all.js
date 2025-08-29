@@ -424,7 +424,6 @@ function placeCaretAtEnd(element) {
 
 
 const emojiBtn = document.getElementById("emoji_btn");
-const emojiPanel = document.getElementById("emoji_panel");
 const chatBoxEl = document.getElementById("chat_textbox");
 const container = document.getElementById('emojiContainer');
 
@@ -529,6 +528,7 @@ function checkImageExists(url, callback) {
     img.onerror = () => callback(false);
     img.src = url;
 }
+
 
 
 
