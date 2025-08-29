@@ -627,7 +627,7 @@ function onTouchEnd(e) {
 
 function handleWheel(event) {
     const overlay = $('.overlays');
-    const chatContainer = $('#chatX_feed');
+    const chatContainer = $('#chatX_window');
 
     if (overlay.is(':visible') || isMouseOverElement(chatContainer)) {
         return;
@@ -1186,13 +1186,11 @@ function drawChatBoard() {
     if (hideChat) return;
 
     const chatDiv = document.getElementById('chatX_feed');
-
     const lastMessage = chatBoard[chatBoard.length - 1];
     if (!lastMessage) return;
 
     const msgDiv = document.createElement('div');
 
-    // Определение класса для сообщения на основе роли
     const lowerName = lastMessage.name.toLowerCase();
     if (admins.includes(lowerName)) {
         msgDiv.className = 'chatX_msg admins';
@@ -1202,32 +1200,25 @@ function drawChatBoard() {
         msgDiv.className = 'chatX_msg';
     }
 
-    // Контейнер для аватара
     const avatarXContainer = document.createElement('div');
     avatarXContainer.className = 'avatarXcontainer';
-	const normalizedName = normalizeNick(lastMessage.name); // нормализуем точно так же, как при загрузке passUsers
-if (passUsers.includes(normalizedName)) {
-    avatarXContainer.style.setProperty('--after-display', 'block');
-}
-    // Аватар
+    const normalizedName = normalizeNick(lastMessage.name);
+    if (passUsers.includes(normalizedName)) {
+        avatarXContainer.style.setProperty('--after-display', 'block');
+    }
+
     const avatar = document.createElement('img');
     avatar.className = 'chatX_avatar';
     const skinName = normalizeNick(lastMessage.name);
     const skinId = skinList[skinName];
     avatar.src = skinId ? `https://agar.su/skins/${skinId}.png` : 'https://agar.su/skins/4.png';
     avatar.onerror = () => avatar.src = 'https://agar.su/skins/4.png';
-
-    // Добавляем аватар в контейнер
     avatarXContainer.appendChild(avatar);
-
-    // Добавляем контейнер аватара в сообщение
     msgDiv.appendChild(avatarXContainer);
 
-    // Контейнер для уровня и ника
     const nameContainer = document.createElement('div');
     nameContainer.className = 'chatX_name_container';
 
-    // Звезда и уровень
     if (typeof lastMessage.playerLevel === 'number' && lastMessage.playerLevel > 0) {
         const levelContainer = document.createElement('div');
         levelContainer.className = 'star-container';
@@ -1244,12 +1235,10 @@ if (passUsers.includes(normalizedName)) {
         nameContainer.appendChild(levelContainer);
     }
 
-    // Имя
     const nameDiv = document.createElement('div');
     nameDiv.className = 'chatX_nick';
     nameDiv.textContent = lastMessage.name + ':';
 
-    // Цвет ника
     if (admins.includes(lowerName)) {
         nameDiv.style.color = 'gold';
         nameDiv.title = 'Администратор';
@@ -1257,17 +1246,24 @@ if (passUsers.includes(normalizedName)) {
         nameDiv.title = 'Модератор';
     } else {
         nameDiv.style.color = lastMessage.color || '#b8c0cc';
-        nameDiv.title = `${lastMessage.pId || 0}`; // PID только у обычных игроков
+        nameDiv.title = `${lastMessage.pId || 0}`;
     }
 
     nameContainer.appendChild(nameDiv);
 
-    // Сообщение
     const textDiv = document.createElement('div');
     textDiv.className = 'chatX_text';
-    textDiv.textContent = censorMessage(lastMessage.message);
+    
+    // --- Обработка эмодзи ---
+    let messageContent = censorMessage(lastMessage.message);
 
-    // Время
+    messageContent = messageContent.replace(/:([a-zA-Z0-9_]+):/g, (match, p1) => {
+        // Попытка вставить GIF, если есть, иначе PNG
+        return `<img src="/emoji/${p1}.gif" onerror="this.src='/emoji/${p1}.png'" alt="${p1}" class="chat-emoji">`;
+    });
+
+    textDiv.innerHTML = messageContent;
+
     const timeDiv = document.createElement('div');
     timeDiv.className = 'chatX_time';
     timeDiv.textContent = lastMessage.time;
@@ -1279,7 +1275,6 @@ if (passUsers.includes(normalizedName)) {
     chatDiv.prepend(msgDiv);
     chatDiv.scrollTop = chatDiv.scrollHeight;
 
-    // Ограничение сообщений
     const maxMessages = 50;
     while (chatDiv.children.length > maxMessages) {
         chatDiv.removeChild(chatDiv.lastChild);
