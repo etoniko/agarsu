@@ -370,7 +370,7 @@ wHandle.setserver = function(arg) {
                         isTyping = false;
                         document.getElementById("chat_textbox").blur();
                         chattxt = document.getElementById("chat_textbox").value;
-                        if (chattxt.trim().length > 0) sendChat(chattxt); // Проверяем после trim
+                        sendChat(chattxt); // Просто отправляем текст без проверок
                         document.getElementById("chat_textbox").value = "";
                     } else {
                         document.getElementById("chat_textbox").focus();
