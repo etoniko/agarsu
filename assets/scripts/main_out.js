@@ -2766,32 +2766,29 @@ drawOneCell: function (ctx) {
         if (!closebord) ctx.stroke();
         ctx.fill();
 
-                // Отображение анимационного скина
-if (skinImage) {
-    ctx.save();
-    ctx.clip();
+        // Отображение анимационного скина
+        if (skinImage) {
+            ctx.save();
+            ctx.clip();
 
-    // Подгонка размера скина к клетке (с увеличением)
-    const skinSize = this.size * 2;  
+            const frameWidth = skinImage.width;
+            const frameHeight = skinImage.height;
 
-    const frameWidth = skinImage.width;
-    const frameHeight = skinImage.height;
+            if (frameWidth > frameHeight) {
+                const totalFrames = Math.floor(frameWidth / frameHeight);
+                const currentFrame = Math.floor((Date.now() / 100) % totalFrames);
+                const sourceX = currentFrame * frameHeight;
 
-    // Масштабируем скин в зависимости от максимального размера
-    const scale = skinSize / Math.max(frameWidth, frameHeight);
-
-    // Масштабируем скин, чтобы он закрывал клетку
-    const scaledWidth = frameWidth * scale;
-    const scaledHeight = frameHeight * scale;
-
-    // Отрисовка скина с точным масштабированием, чтобы он полностью перекрывал клетку
-    ctx.drawImage(skinImage, 0, 0, frameWidth, frameHeight,
-        this.x - scaledWidth / 2, this.y - scaledHeight / 2,  // Центрируем скин
-        scaledWidth, scaledHeight);  // Масштабируем скин по размеру клетки
-
-    ctx.restore();
-}
-
+                ctx.drawImage(skinImage, sourceX, 0, frameHeight, frameHeight,
+                    this.x - bigPointSize, this.y - bigPointSize,
+                    2 * bigPointSize, 2 * bigPointSize);
+            } else {
+                ctx.drawImage(skinImage, 0, 0, frameWidth, frameHeight,
+                    this.x - bigPointSize, this.y - bigPointSize,
+                    2 * bigPointSize, 2 * bigPointSize);
+            }
+            ctx.restore();
+        }
 
         // Отображение имени и массы
         if (this.id !== 0) {
