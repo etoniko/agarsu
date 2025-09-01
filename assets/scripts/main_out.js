@@ -1250,20 +1250,10 @@ function drawChatBoard() {
     }
 
     nameContainer.appendChild(nameDiv);
-
-    const textDiv = document.createElement('div');
-    textDiv.className = 'chatX_text';
-    
-    // --- Обработка эмодзи ---
-    let messageContent = censorMessage(lastMessage.message);
-
-    messageContent = messageContent.replace(/:([a-zA-Z0-9_]+):/g, (match, p1) => {
-        // Попытка вставить GIF, если есть, иначе PNG
-        return `<img src="/emoji/${p1}.gif" onerror="this.src='/emoji/${p1}.png'" alt="${p1}" class="chat-emoji">`;
-    });
-
-    textDiv.innerHTML = messageContent;
-
+const textDiv = document.createElement('div');
+textDiv.className = 'chatX_text';
+let messageContent = censorMessage(lastMessage.message);
+textDiv.textContent = messageContent; // Выводим как есть, безопасно
     const timeDiv = document.createElement('div');
     timeDiv.className = 'chatX_time';
     timeDiv.textContent = lastMessage.time;
