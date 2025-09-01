@@ -652,17 +652,43 @@ function isMouseOverElement(element) {
 }
 
 
-    function buildQTree() {
-        if (.4 > viewZoom) qTree = null;
-        else {
+function buildQTree() {
+    try {
+        if (.4 > viewZoom) {
+            qTree = null;
+        } else {
             var a = Number.POSITIVE_INFINITY,
                 b = Number.POSITIVE_INFINITY,
                 c = Number.NEGATIVE_INFINITY,
                 d = Number.NEGATIVE_INFINITY,
                 e = 0;
+
+            if (!Array.isArray(nodelist)) {
+                throw new Error("nodelist не определён или не является массивом");
+            }
+
             for (var i = 0; i < nodelist.length; i++) {
                 var node = nodelist[i];
+                if (!node) {
+                    console.error("Найден undefined node на позиции", i);
+                    continue;
+                }
+
+                if (typeof node.shouldRender !== "function") {
+                    console.error("node.shouldRender не функция для node на позиции", i);
+                    continue;
+                }
+
                 if (node.shouldRender() && !node.prepareData && 20 < node.size * viewZoom) {
+                    if (typeof node.x !== "number" || typeof node.y !== "number") {
+                        console.error("node.x или node.y не число для node на позиции", i);
+                        continue;
+                    }
+                    if (typeof node.size !== "number") {
+                        console.error("node.size не число для node на позиции", i);
+                        continue;
+                    }
+
                     e = Math.max(node.size, e);
                     a = Math.min(node.x, a);
                     b = Math.min(node.y, b);
@@ -670,6 +696,11 @@ function isMouseOverElement(element) {
                     d = Math.max(node.y, d);
                 }
             }
+
+            if (typeof Quad === "undefined" || typeof Quad.init !== "function") {
+                throw new Error("Quad не определён или не имеет метода init");
+            }
+
             qTree = Quad.init({
                 minX: a - (e + 100),
                 minY: b - (e + 100),
@@ -678,18 +709,39 @@ function isMouseOverElement(element) {
                 maxChildren: 2,
                 maxDepth: 4
             });
+
             for (i = 0; i < nodelist.length; i++) {
                 node = nodelist[i];
-                if (node.shouldRender() && !(20 >= node.size * viewZoom)) {
+                if (!node) continue;
+                if (node.shouldRender && node.points && Array.isArray(node.points) && !(20 >= node.size * viewZoom)) {
                     for (a = 0; a < node.points.length; ++a) {
                         b = node.points[a].x;
                         c = node.points[a].y;
-                        b < nodeX - canvasWidth / 2 / viewZoom || c < nodeY - canvasHeight / 2 / viewZoom || b > nodeX + canvasWidth / 2 / viewZoom || c > nodeY + canvasHeight / 2 / viewZoom || qTree.insert(node.points[a]);
+
+                        if (typeof b !== "number" || typeof c !== "number") {
+                            console.error("node.points[" + a + "] координаты не числа");
+                            continue;
+                        }
+
+                        if (
+                            b >= nodeX - canvasWidth / 2 / viewZoom &&
+                            c >= nodeY - canvasHeight / 2 / viewZoom &&
+                            b <= nodeX + canvasWidth / 2 / viewZoom &&
+                            c <= nodeY + canvasHeight / 2 / viewZoom
+                        ) {
+                            if (!qTree.insert(node.points[a])) {
+                                console.error("Не удалось вставить точку в QuadTree:", node.points[a]);
+                            }
+                        }
                     }
                 }
             }
         }
+    } catch (err) {
+        console.error("Ошибка в buildQTree:", err);
     }
+}
+
 
     function mouseCoordinateChange() {
         X = (rawMouseX - canvasWidth / 2) / viewZoom + nodeX;
@@ -1288,38 +1340,45 @@ function drawChatBoard() {
 
 
 function updateNodes(reader) {
+    try {
         timestamp = Date.now();
         ua = false;
 
-        for (let killedId; killedId = reader.uint32();) {
-            let killer = nodes[reader.uint32()],
-                killedNode = nodes[killedId];
+        // Обработка убитых нод
+        for (let killedId; (killedId = reader.uint32());) {
+            let killer = nodes[reader.uint32()];
+            let killedNode = nodes[killedId];
+
+            if (!killer) console.error("killer не найден для killedId", killedId);
+            if (!killedNode) console.error("killedNode не найден для killedId", killedId);
+
             if (killer && killedNode) {
-                killedNode.destroy();
-                killedNode.ox = killedNode.x;
-                killedNode.oy = killedNode.y;
-                killedNode.oSize = killedNode.size;
-                killedNode.nx = killer.x;
-                killedNode.ny = killer.y;
-                killedNode.nSize = killedNode.size;
-                killedNode.updateTime = timestamp;
+                try {
+                    killedNode.destroy();
+                    killedNode.ox = killedNode.x;
+                    killedNode.oy = killedNode.y;
+                    killedNode.oSize = killedNode.size;
+                    killedNode.nx = killer.x;
+                    killedNode.ny = killer.y;
+                    killedNode.nSize = killedNode.size;
+                    killedNode.updateTime = timestamp;
+                } catch (err) {
+                    console.error("Ошибка при обновлении killedNode", killedNode, err);
+                }
             }
         }
 
-        for (let nodeid; nodeid = reader.uint32();) {
+        // Обновление или создание нод
+        for (let nodeid; (nodeid = reader.uint32());) {
             const type = reader.uint8();
 
-            let posX = 0;
-            let posY = 0;
-            let size = 0;
-            let playerId = 0;
+            let posX = 0, posY = 0, size = 0, playerId = 0;
 
             if (type === 1) {
                 posX = leftPos + (rightPos * 2) * normalizeFractlPart(nodeid);
                 posY = topPos + (bottomPos * 2) * normalizeFractlPart(nodeid * nodeid);
                 size = foodMinSize + nodeid % ((foodMaxSize - foodMinSize) + 1);
-            }
-            else {
+            } else {
                 if (type === 0) playerId = reader.uint32();
                 posX = reader.int32();
                 posY = reader.int32();
@@ -1330,12 +1389,7 @@ function updateNodes(reader) {
             const g = reader.uint8();
             const b = reader.uint8();
 
-            let color = (r << 16 | g << 8 | b).toString(16);
-
-            while (color.length < 6) {
-                color = "0" + color;
-            }
-
+            let color = (r << 16 | g << 8 | b).toString(16).padStart(6, "0");
             color = "#" + color;
 
             let spiked = reader.uint8();
@@ -1348,55 +1402,79 @@ function updateNodes(reader) {
 
             let node = nodes[nodeid];
             if (node) {
-                node = nodes[nodeid];
-                node.updatePos();
-                node.ox = node.x;
-                node.oy = node.y;
-                node.oSize = node.size;
-                node.color = color;
+                try {
+                    node.updatePos();
+                    node.ox = node.x;
+                    node.oy = node.y;
+                    node.oSize = node.size;
+                    node.color = color;
+                } catch (err) {
+                    console.error("Ошибка при обновлении node", node, err);
+                }
             } else {
-                node = new Cell(nodeid, posX, posY, size, color, name, _skin);
-                nodelist.push(node);
-                nodes[nodeid] = node;
-                node.ka = posX;
-                node.la = posY;
-if (playerId === ownerPlayerId) {
-      document.getElementById("overlays").style.display = "none";
-      playerCells.push(node);
-      if (1 == playerCells.length) {
-       nodeX = node.x;
-       nodeY = node.y;
-         }
+                try {
+                    node = new Cell(nodeid, posX, posY, size, color, name, _skin);
+                    nodelist.push(node);
+                    nodes[nodeid] = node;
+                    node.ka = posX;
+                    node.la = posY;
 
-    }
+                    if (playerId === ownerPlayerId) {
+                        const overlay = document.getElementById("overlays");
+                        if (overlay) overlay.style.display = "none";
+                        playerCells.push(node);
+                        if (playerCells.length === 1) {
+                            nodeX = node.x;
+                            nodeY = node.y;
+                        }
+                    }
+                } catch (err) {
+                    console.error("Ошибка при создании новой node для nodeid", nodeid, err);
+                }
             }
 
-            node.isVirus = flagVirus;
-            node.isEjected = flagEjected;
-            node.isAgitated = flagAgitated;
-            node.nx = posX;
-            node.ny = posY;
-            node.setSize(size);
-            node.updateTime = timestamp;
-            node.flag = spiked;
-
-            if (name) node.setName(name);
-
-
+            try {
+                node.isVirus = flagVirus;
+                node.isEjected = flagEjected;
+                node.isAgitated = flagAgitated;
+                node.nx = posX;
+                node.ny = posY;
+                node.setSize(size);
+                node.updateTime = timestamp;
+                node.flag = spiked;
+                if (name) node.setName(name);
+            } catch (err) {
+                console.error("Ошибка при финальном обновлении node", node, err);
+            }
         }
 
+        // Удаление оставшихся нод
         while (reader.canRead) {
             const node = nodes[reader.uint32()];
-            if (node) node.destroy();
+            if (node) {
+                try {
+                    node.destroy();
+                } catch (err) {
+                    console.error("Ошибка при destroy node", node, err);
+                }
+            }
         }
 
+        // Если нет playerCells
         if (ua && playerCells.length === 0) {
-    wjQuery("#statics").css("display", "flex");
-    updateShareText();    // текст шаринга
-    updateStats();        // обновляем UI
-    drawStatsGraph();     // график
+            try {
+                wjQuery("#statics").css("display", "flex");
+                updateShareText();    // текст шаринга
+                updateStats();        // обновляем UI
+                drawStatsGraph();     // график
+            } catch (err) {
+                console.error("Ошибка при обновлении UI для пустых playerCells", err);
+            }
         }
+    } catch (err) {
+        console.error("Ошибка в updateNodes:", err);
     }
+}
 
 function sendMouseMove() {
     if (wsIsOpen()) {
