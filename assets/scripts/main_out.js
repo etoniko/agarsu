@@ -365,13 +365,13 @@ wHandle.setserver = function(arg) {
     }
   }
   break;
-                case 13: // enter
+                   case 13: // enter
                     if (isTyping || hideChat) {
                         isTyping = false;
                         document.getElementById("chat_textbox").blur();
-                        chattxt = document.getElementById("chat_textbox").textContent;
-                        if (chattxt.trim().length > 0) sendChat(chattxt);
-                        document.getElementById("chat_textbox").textContent = "";
+                        chattxt = document.getElementById("chat_textbox").value;
+                        if (chattxt.trim().length > 0) sendChat(chattxt); // Проверяем после trim
+                        document.getElementById("chat_textbox").value = "";
                     } else {
                         document.getElementById("chat_textbox").focus();
                         isTyping = true;
