@@ -654,84 +654,80 @@ function isMouseOverElement(element) {
 
 function buildQTree() {
     try {
-        if (.4 > viewZoom) {
+        if (viewZoom < 0.4) {
             qTree = null;
-        } else {
-            var a = Number.POSITIVE_INFINITY,
-                b = Number.POSITIVE_INFINITY,
-                c = Number.NEGATIVE_INFINITY,
-                d = Number.NEGATIVE_INFINITY,
-                e = 0;
+            return;
+        }
 
-            if (!Array.isArray(nodelist)) {
-                throw new Error("nodelist не определён или не является массивом");
+        let minX = Number.POSITIVE_INFINITY,
+            minY = Number.POSITIVE_INFINITY,
+            maxX = Number.NEGATIVE_INFINITY,
+            maxY = Number.NEGATIVE_INFINITY,
+            maxSize = 0;
+
+        if (!Array.isArray(nodelist)) {
+            throw new Error("nodelist не определён или не является массивом");
+        }
+
+        // Определяем границы QuadTree
+        for (let i = 0; i < nodelist.length; i++) {
+            const node = nodelist[i];
+            if (!node) continue;
+            if (typeof node.shouldRender !== "function") continue;
+
+            if (node.shouldRender() && !node.prepareData && node.size * viewZoom > 20) {
+                if (typeof node.x !== "number" || typeof node.y !== "number" || typeof node.size !== "number") continue;
+
+                maxSize = Math.max(node.size, maxSize);
+                minX = Math.min(node.x, minX);
+                minY = Math.min(node.y, minY);
+                maxX = Math.max(node.x, maxX);
+                maxY = Math.max(node.y, maxY);
             }
+        }
 
-            for (var i = 0; i < nodelist.length; i++) {
-                var node = nodelist[i];
-                if (!node) {
-                    console.error("Найден undefined node на позиции", i);
-                    continue;
-                }
+        if (typeof Quad === "undefined" || typeof Quad.init !== "function") {
+            throw new Error("Quad не определён или не имеет метода init");
+        }
 
-                if (typeof node.shouldRender !== "function") {
-                    console.error("node.shouldRender не функция для node на позиции", i);
-                    continue;
-                }
+        // Добавляем запас границ +500, чтобы уменьшить ошибки вставки
+        const boundaryMargin = maxSize + 500;
+        qTree = Quad.init({
+            minX: minX - boundaryMargin,
+            minY: minY - boundaryMargin,
+            maxX: maxX + boundaryMargin,
+            maxY: maxY + boundaryMargin,
+            maxChildren: 2,
+            maxDepth: 4
+        });
 
-                if (node.shouldRender() && !node.prepareData && 20 < node.size * viewZoom) {
-                    if (typeof node.x !== "number" || typeof node.y !== "number") {
-                        console.error("node.x или node.y не число для node на позиции", i);
-                        continue;
-                    }
-                    if (typeof node.size !== "number") {
-                        console.error("node.size не число для node на позиции", i);
-                        continue;
-                    }
+        let insertErrorCount = 0;
+        const centerX = typeof nodeX !== "undefined" ? nodeX : canvasWidth / 2;
+        const centerY = typeof nodeY !== "undefined" ? nodeY : canvasHeight / 2;
 
-                    e = Math.max(node.size, e);
-                    a = Math.min(node.x, a);
-                    b = Math.min(node.y, b);
-                    c = Math.max(node.x, c);
-                    d = Math.max(node.y, d);
-                }
-            }
+        // Вставка точек в QuadTree
+        for (const node of nodelist) {
+            if (!node || !node.shouldRender || !Array.isArray(node.points) || node.size * viewZoom <= 20) continue;
 
-            if (typeof Quad === "undefined" || typeof Quad.init !== "function") {
-                throw new Error("Quad не определён или не имеет метода init");
-            }
+            for (const point of node.points) {
+                const px = point.x;
+                const py = point.y;
 
-            qTree = Quad.init({
-                minX: a - (e + 100),
-                minY: b - (e + 100),
-                maxX: c + (e + 100),
-                maxY: d + (e + 100),
-                maxChildren: 2,
-                maxDepth: 4
-            });
+                if (typeof px !== "number" || typeof py !== "number") continue;
 
-            for (i = 0; i < nodelist.length; i++) {
-                node = nodelist[i];
-                if (!node) continue;
-                if (node.shouldRender && node.points && Array.isArray(node.points) && !(20 >= node.size * viewZoom)) {
-                    for (a = 0; a < node.points.length; ++a) {
-                        b = node.points[a].x;
-                        c = node.points[a].y;
-
-                        if (typeof b !== "number" || typeof c !== "number") {
-                            console.error("node.points[" + a + "] координаты не числа");
-                            continue;
-                        }
-
-                        if (
-                            b >= nodeX - canvasWidth / 2 / viewZoom &&
-                            c >= nodeY - canvasHeight / 2 / viewZoom &&
-                            b <= nodeX + canvasWidth / 2 / viewZoom &&
-                            c <= nodeY + canvasHeight / 2 / viewZoom
-                        ) {
-                            if (!qTree.insert(node.points[a])) {
-                                console.error("Не удалось вставить точку в QuadTree:", node.points[a]);
-                            }
+                // Проверяем, что точка внутри видимой области
+                if (
+                    px >= centerX - canvasWidth / 2 / viewZoom &&
+                    py >= centerY - canvasHeight / 2 / viewZoom &&
+                    px <= centerX + canvasWidth / 2 / viewZoom &&
+                    py <= centerY + canvasHeight / 2 / viewZoom
+                ) {
+                    if (!qTree.insert(point)) {
+                        insertErrorCount++;
+                        if (insertErrorCount <= 20) {
+                            console.warn("Не удалось вставить точку в QuadTree:", point);
+                        } else if (insertErrorCount === 21) {
+                            console.warn("Дальнейшие ошибки вставки точек скрыты...");
                         }
                     }
                 }
@@ -1339,6 +1335,93 @@ function drawChatBoard() {
     const normalizeFractlPart = n => (n % (Math.PI * 2)) / (Math.PI * 2);
 
 
+function buildQTree() {
+    try {
+        if (viewZoom < 0.4) {
+            qTree = null;
+            return;
+        }
+
+        let minX = Number.POSITIVE_INFINITY,
+            minY = Number.POSITIVE_INFINITY,
+            maxX = Number.NEGATIVE_INFINITY,
+            maxY = Number.NEGATIVE_INFINITY,
+            maxSize = 0;
+
+        if (!Array.isArray(nodelist)) {
+            throw new Error("nodelist не определён или не является массивом");
+        }
+
+        // Определяем границы QuadTree
+        for (let i = 0; i < nodelist.length; i++) {
+            const node = nodelist[i];
+            if (!node) continue;
+            if (typeof node.shouldRender !== "function") continue;
+
+            if (node.shouldRender() && !node.prepareData && node.size * viewZoom > 20) {
+                if (typeof node.x !== "number" || typeof node.y !== "number" || typeof node.size !== "number") continue;
+
+                maxSize = Math.max(node.size, maxSize);
+                minX = Math.min(node.x, minX);
+                minY = Math.min(node.y, minY);
+                maxX = Math.max(node.x, maxX);
+                maxY = Math.max(node.y, maxY);
+            }
+        }
+
+        if (typeof Quad === "undefined" || typeof Quad.init !== "function") {
+            throw new Error("Quad не определён или не имеет метода init");
+        }
+
+        // Добавляем запас границ +500, чтобы уменьшить ошибки вставки
+        const boundaryMargin = maxSize + 500;
+        qTree = Quad.init({
+            minX: minX - boundaryMargin,
+            minY: minY - boundaryMargin,
+            maxX: maxX + boundaryMargin,
+            maxY: maxY + boundaryMargin,
+            maxChildren: 2,
+            maxDepth: 4
+        });
+
+        let insertErrorCount = 0;
+        const centerX = typeof nodeX !== "undefined" ? nodeX : canvasWidth / 2;
+        const centerY = typeof nodeY !== "undefined" ? nodeY : canvasHeight / 2;
+
+        // Вставка точек в QuadTree
+        for (const node of nodelist) {
+            if (!node || !node.shouldRender || !Array.isArray(node.points) || node.size * viewZoom <= 20) continue;
+
+            for (const point of node.points) {
+                const px = point.x;
+                const py = point.y;
+
+                if (typeof px !== "number" || typeof py !== "number") continue;
+
+                // Проверяем, что точка внутри видимой области
+                if (
+                    px >= centerX - canvasWidth / 2 / viewZoom &&
+                    py >= centerY - canvasHeight / 2 / viewZoom &&
+                    px <= centerX + canvasWidth / 2 / viewZoom &&
+                    py <= centerY + canvasHeight / 2 / viewZoom
+                ) {
+                    if (!qTree.insert(point)) {
+                        insertErrorCount++;
+                        if (insertErrorCount <= 20) {
+                            console.warn("Не удалось вставить точку в QuadTree:", point);
+                        } else if (insertErrorCount === 21) {
+                            console.warn("Дальнейшие ошибки вставки точек скрыты...");
+                        }
+                    }
+                }
+            }
+        }
+    } catch (err) {
+        console.error("Ошибка в buildQTree:", err);
+    }
+}
+
+
 function updateNodes(reader) {
     try {
         timestamp = Date.now();
@@ -1371,7 +1454,6 @@ function updateNodes(reader) {
         // Обновление или создание нод
         for (let nodeid; (nodeid = reader.uint32());) {
             const type = reader.uint8();
-
             let posX = 0, posY = 0, size = 0, playerId = 0;
 
             if (type === 1) {
@@ -1388,20 +1470,33 @@ function updateNodes(reader) {
             const r = reader.uint8();
             const g = reader.uint8();
             const b = reader.uint8();
-
-            let color = (r << 16 | g << 8 | b).toString(16).padStart(6, "0");
-            color = "#" + color;
+            let color = "#" + (r << 16 | g << 8 | b).toString(16).padStart(6, "0");
 
             let spiked = reader.uint8();
             let flagVirus = !!(spiked & 0x01);
             let flagEjected = !!(spiked & 0x20);
             let flagAgitated = !!(spiked & 0x10);
             let _skin = "";
-
             const name = reader.utf8();
 
             let node = nodes[nodeid];
-            if (node) {
+            if (!node) {
+                node = new Cell(nodeid, posX, posY, size, color, name, _skin);
+                nodelist.push(node);
+                nodes[nodeid] = node;
+                node.ka = posX;
+                node.la = posY;
+
+                if (playerId === ownerPlayerId) {
+                    const overlay = document.getElementById("overlays");
+                    if (overlay) overlay.style.display = "none";
+                    playerCells.push(node);
+                    if (playerCells.length === 1) {
+                        nodeX = node.x;
+                        nodeY = node.y;
+                    }
+                }
+            } else {
                 try {
                     node.updatePos();
                     node.ox = node.x;
@@ -1411,41 +1506,17 @@ function updateNodes(reader) {
                 } catch (err) {
                     console.error("Ошибка при обновлении node", node, err);
                 }
-            } else {
-                try {
-                    node = new Cell(nodeid, posX, posY, size, color, name, _skin);
-                    nodelist.push(node);
-                    nodes[nodeid] = node;
-                    node.ka = posX;
-                    node.la = posY;
-
-                    if (playerId === ownerPlayerId) {
-                        const overlay = document.getElementById("overlays");
-                        if (overlay) overlay.style.display = "none";
-                        playerCells.push(node);
-                        if (playerCells.length === 1) {
-                            nodeX = node.x;
-                            nodeY = node.y;
-                        }
-                    }
-                } catch (err) {
-                    console.error("Ошибка при создании новой node для nodeid", nodeid, err);
-                }
             }
 
-            try {
-                node.isVirus = flagVirus;
-                node.isEjected = flagEjected;
-                node.isAgitated = flagAgitated;
-                node.nx = posX;
-                node.ny = posY;
-                node.setSize(size);
-                node.updateTime = timestamp;
-                node.flag = spiked;
-                if (name) node.setName(name);
-            } catch (err) {
-                console.error("Ошибка при финальном обновлении node", node, err);
-            }
+            node.isVirus = flagVirus;
+            node.isEjected = flagEjected;
+            node.isAgitated = flagAgitated;
+            node.nx = posX;
+            node.ny = posY;
+            node.setSize(size);
+            node.updateTime = timestamp;
+            node.flag = spiked;
+            if (name) node.setName(name);
         }
 
         // Удаление оставшихся нод
@@ -1464,9 +1535,9 @@ function updateNodes(reader) {
         if (ua && playerCells.length === 0) {
             try {
                 wjQuery("#statics").css("display", "flex");
-                updateShareText();    // текст шаринга
-                updateStats();        // обновляем UI
-                drawStatsGraph();     // график
+                updateShareText();
+                updateStats();
+                drawStatsGraph();
             } catch (err) {
                 console.error("Ошибка при обновлении UI для пустых playerCells", err);
             }
