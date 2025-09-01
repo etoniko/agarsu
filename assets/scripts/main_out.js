@@ -369,9 +369,9 @@ wHandle.setserver = function(arg) {
                     if (isTyping || hideChat) {
                         isTyping = false;
                         document.getElementById("chat_textbox").blur();
-                        chattxt = document.getElementById("chat_textbox").value;
-                        sendChat(chattxt); // Просто отправляем текст без проверок
-                        document.getElementById("chat_textbox").value = "";
+                        chattxt = document.getElementById("chat_textbox").textContent;
+                        if (chattxt.trim().length > 0) sendChat(chattxt);
+                        document.getElementById("chat_textbox").textContent = "";
                     } else {
                         document.getElementById("chat_textbox").focus();
                         isTyping = true;
