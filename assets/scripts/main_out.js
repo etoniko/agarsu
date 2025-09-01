@@ -1250,10 +1250,20 @@ function drawChatBoard() {
     }
 
     nameContainer.appendChild(nameDiv);
-const textDiv = document.createElement('div');
+
+    const textDiv = document.createElement('div');
 textDiv.className = 'chatX_text';
+
 let messageContent = censorMessage(lastMessage.message);
 textDiv.textContent = messageContent; // Выводим как есть, безопасно
+
+// --- Проверяем, похоже ли сообщение на клетку, например B3 ---
+const cellPattern = /^[A-E][1-5]$/; // только A1..E5
+if (cellPattern.test(messageContent)) {
+    highlightCell(messageContent, 3000);
+}
+
+
     const timeDiv = document.createElement('div');
     timeDiv.className = 'chatX_time';
     timeDiv.textContent = lastMessage.time;
@@ -1270,6 +1280,7 @@ textDiv.textContent = messageContent; // Выводим как есть, без�
         chatDiv.removeChild(chatDiv.lastChild);
     }
 }
+
 const normalizeFractlPart = n => (n % (Math.PI * 2)) / (Math.PI * 2);
 function updateNodes(reader) {
         timestamp = Date.now();
@@ -2110,6 +2121,9 @@ function drawWhiteGrid() {
     }
 
 
+let lastCell = '';
+let lastHighlightedSpan = null;
+
 function updateMiniMapPosition() {
     const playerDot = document.getElementById('mapposition');
     const mapContainer = document.querySelector('.map-container');
@@ -2117,48 +2131,63 @@ function updateMiniMapPosition() {
 
     if (!playerDot || !mapContainer) return;
 
-    // Размеры реальной карты
     const totalMapWidth = rightPos - leftPos;
     const totalMapHeight = bottomPos - topPos;
 
-    // Размеры мини-карты
     const miniMapWidth = mapContainer.offsetWidth;
     const miniMapHeight = mapContainer.offsetHeight;
 
-    // Относительное положение игрока
     let relativeX = (nodeX - leftPos) / totalMapWidth;
     let relativeY = (nodeY - topPos) / totalMapHeight;
 
-    // Переводим относительные координаты в мини-карту
     let miniX = Math.round(relativeX * miniMapWidth);
     let miniY = Math.round(relativeY * miniMapHeight);
 
-    // Устанавливаем позицию точки
     const dotRadius = playerDot.offsetWidth / 2;
     playerDot.style.left = (miniX - dotRadius) + 'px';
     playerDot.style.top = (miniY - dotRadius) + 'px';
 
-    // --- Определяем в какой клетке находится точка ---
     const cols = 5;
     const rows = 5;
     const cellWidth = miniMapWidth / cols;
     const cellHeight = miniMapHeight / rows;
 
-    const colIndex = Math.floor(miniX / cellWidth); // 0..4
-    const rowIndex = Math.floor(miniY / cellHeight); // 0..4
+    const colIndex = Math.floor(miniX / cellWidth);
+    const rowIndex = Math.floor(miniY / cellHeight);
     const rowLetters = ['A','B','C','D','E'];
     const currentCell = rowLetters[rowIndex] + (colIndex + 1);
 
-    // --- Меняем цвет клеток ---
-    cells.forEach(span => {
-        if (span.textContent === currentCell) {
-            span.style.color = 'gold';
-        } else {
-            span.style.color = ''; // стандартный цвет
-        }
-    });
+    if (lastCell !== currentCell) {
+        // Убираем подсветку с предыдущей клетки
+        if (lastHighlightedSpan) lastHighlightedSpan.style.color = '';
+        // Находим новый span
+        lastHighlightedSpan = Array.from(cells).find(span => span.textContent === currentCell);
+        if (lastHighlightedSpan) lastHighlightedSpan.style.color = 'gold';
+        lastCell = currentCell;
+    }
 }
 
+wHandle.coord = function () {
+    if (lastCell) sendChat(lastCell);
+}
+
+// --- Подсветка клеток на мини-карте ---
+function highlightCell(cellName, duration = 3000) {
+    const mapContainer = document.querySelector('.map-container');
+    if (!mapContainer) return;
+
+    const span = Array.from(mapContainer.querySelectorAll('div > span'))
+        .find(s => s.textContent === cellName);
+
+    if (!span) return;
+
+    const originalColor = span.style.color;
+    span.style.color = 'lime'; // зелёный цвет
+
+    setTimeout(() => {
+        span.style.color = originalColor || '';
+    }, duration);
+}
 
 
 
