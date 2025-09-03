@@ -200,19 +200,8 @@ const SERVERS = {
 
     var useHttps = "https:" === wHandle.location.protocol;
 
-
-
-    // Функция получения токена капчи 
-    wHandle.captchaPassed = function () {
-        const captchaContainer = document.getElementById('captcha-overlay');
-        captchaContainer.style.display = 'none';
-    }
-
     wHandle.onCaptchaSuccess = function (token) {
         showConnecting(token);
-        captchaPassed();
-        document.getElementById("button-text").disabled = false;
-        document.getElementById("button-spec").disabled = false;
     };
 
     let captchaId = null;
@@ -259,6 +248,21 @@ const SERVERS = {
 
         document.head.appendChild(node);
     };
+
+	function disableCaptcha() {
+    // Убираем оверлей
+    const captchaOverlay = document.getElementById('captcha-overlay');
+    if (captchaOverlay) captchaOverlay.remove();
+
+    // Убираем сам скрипт Turnstile
+    const scripts = document.querySelectorAll('script[src*="challenges.cloudflare.com/turnstile"]');
+    scripts.forEach(s => s.remove());
+
+    // Чистим глобальные ссылки
+    if (window.turnstile) delete window.turnstile;
+    captchaId = null;
+    console.log("Captcha полностью отключена до перезагрузки страницы или соединение нового сервера");
+}
 
     // Обновляем setserver функцию для вызова showConnecting() вручную
 wHandle.setserver = function(arg) {
@@ -711,22 +715,23 @@ function isMouseOverElement(element) {
     let currentWebSocketUrl = null;
 
     function showConnecting(token) {
-        chekstats();
-        // Формируем полный URL для WebSocket
-        const wsUrl = (useHttps ? "wss://" : "ws://") + CONNECTION_URL;
+    chekstats();
+    const wsUrl = (useHttps ? "wss://" : "ws://") + CONNECTION_URL;
 
-        // Проверяем, что соединение не установлено и что текущий URL не совпадает с уже подключенным
-        if (ws && ws.readyState === WebSocket.OPEN && currentWebSocketUrl === wsUrl) {
-            console.log("Соединение уже активно для этого URL, пропускаем повторное подключение.");
-            return;
-        }
+    if (ws && ws.readyState === WebSocket.OPEN && currentWebSocketUrl === wsUrl) {
+        console.log("Соединение уже активно для этого URL, пропускаем повторное подключение.");
+        return;
+    }
 
-        if (ma) {
-            wjQuery("#connecting").show();
-            currentWebSocketUrl = wsUrl; // Запоминаем текущий URL
-            wsConnect(wsUrl, token);
-        }
-    };
+    if (ma) {
+        wjQuery("#connecting").show();
+        currentWebSocketUrl = wsUrl;
+        wsConnect(wsUrl, token);
+
+        // Как только пошли на соединение — сразу вырубаем капчу
+        disableCaptcha();
+    }
+}
 
 
     function wsConnect(undefined, token) {
