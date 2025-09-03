@@ -17,7 +17,7 @@
 <div class="nick">${player.account_name}</div> 
 <div class="score">${level}</div> 
 <div class="skkinn">
-    <img src="${player.account_avatar || '/default-avatar.png'}" onerror="this.src='/default-avatar.png'" />
+    <img src="${player.account_avatar || '/skins/4.png'}" onerror="this.src='/skins/4.png'" />
 </div>
                 `;
                 container.appendChild(playerDiv);
@@ -37,4 +37,5 @@
         }
 
         fetchTop100();
+
 
