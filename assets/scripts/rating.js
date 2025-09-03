@@ -40,3 +40,23 @@ async function xpStats(xstats) {
         container.appendChild(playerDiv);
     });
 }
+// Получение данных с сервера
+async function fetchTop100() {
+    try {
+        // Делаем запрос к API топ-100
+        const res = await fetch('https://pmori.ru:6003/api/top100');
+        
+        // Преобразуем ответ в JSON
+        const data = await res.json();
+
+        // Передаём данные в функцию отображения статистики
+        xpStats(data);
+    } catch (err) {
+        // Ловим любые ошибки при запросе
+        console.error('Error fetching top 100:', err);
+    }
+}
+
+// Вызываем функцию для загрузки статистики
+fetchTop100();
+
