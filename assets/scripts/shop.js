@@ -138,9 +138,9 @@ function notify(msg, duration = 3000) {
     nicknameInput.value = nick.replace(/['`";:]/g, '').slice(0, 20);
 
     if (serviceType === 'clan') {
-      const clanPattern = /^(\[.*\]|\|.*\||\{.*\}|\(.*\))$/;
+      const clanPattern = /^\[.*\]$/;
       if (!clanPattern.test(nick)) {
-        notify('❌ У клана должны быть скобки [ ] || { } ( )');
+        notify('❌ У клана должны быть квадратные скобки [ ]');
         return;
       }
     }
@@ -157,9 +157,9 @@ function notify(msg, duration = 3000) {
       return;
     }
     if (serviceType === 'clan') {
-      const clanPattern = /^(\[.*\]|\|.*\||\{.*\}|\(.*\))$/;
+      const clanPattern = /^\[.*\]$/;
       if (!clanPattern.test(nick)) {
-        notify('❌ У клана должны быть скобки [ ] || { } ( )');
+        notify('❌ У клана должны быть квадратные скобки [ ]');
         return;
       }
     }
@@ -282,4 +282,5 @@ function notify(msg, duration = 3000) {
 
   setActiveStep(1);
 })();
+
 
