@@ -2500,7 +2500,7 @@ function drawLeaderBoard() {
     // var data = {
     //     "action": "test"
     // };
-    var transparent = ["незнакомка","bublik"];
+    var transparent = ["незнакомка","bublik","ник"];
     var
         // delay = 500,
         oldX = -1,
