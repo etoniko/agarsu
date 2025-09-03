@@ -3072,6 +3072,10 @@ wHandle.onTelegramAuth = function(user) {
     handleLogin(user, 'telegram');
 };
 
+
+window.onGoogleAuth = function(response) {
+    wHandle.onGoogleAuth(response);
+};
 // Google callback
 wHandle.onGoogleAuth = function(response) {
     handleLogin(response.credential, 'google');
