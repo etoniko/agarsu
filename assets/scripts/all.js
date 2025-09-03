@@ -187,3 +187,8 @@ observer.observe(document.body, { childList: true, subtree: true });
             // Передаем событие канвасу
             canvas.dispatchEvent(canvasEvent);
         });
+
+$('#closeStats').on('click', function() {
+   document.getElementById('statics').style.display = 'none';
+    $('#overlays').show();    // показать overlays
+});
