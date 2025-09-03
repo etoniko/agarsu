@@ -154,16 +154,25 @@ const observer = new MutationObserver(() => {
   document.querySelectorAll('.star-container').forEach(container => {
     const levelElem = container.querySelector('.levelme');
     if (!levelElem) return;
+    
     const level = parseInt(levelElem.textContent, 10);
     const star = container.querySelector('.fa-star');
     if (!star) return;
-    if (level >= 50) {
+
+    // Сброс классов и цвета
+    star.classList.remove('high-level', 'ultra-level');
+    levelElem.style.color = '';
+
+    if (level >= 70) {
+      star.classList.add('ultra-level'); // можно оставить для визуального эффекта
+      levelElem.style.color = 'gold';
+    } else if (level >= 50) {
       star.classList.add('high-level');
-    } else {
-      star.classList.remove('high-level');
     }
   });
 });
+
+// Запуск наблюдателя
 observer.observe(document.body, { childList: true, subtree: true });
 
         // Получаем элементы канваса и div-элемента overlays
@@ -192,3 +201,4 @@ $('#closeStats').on('click', function() {
    document.getElementById('statics').style.display = 'none';
     $('#overlays').show();    // показать overlays
 });
+
