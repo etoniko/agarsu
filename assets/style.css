@@ -127,6 +127,7 @@ input{font-size:16px;}
 .sgm{padding-bottom:10px;font-family:'ubuntu';color:#ffffff;font-size:20px;}
 .fa-star{color:gold;text-shadow:#FC0 1px 0 10px;}
 .fa-star.high-level{color:#00ffe5;text-shadow:#00ffe5 1px 0 10px;}
+.fa-star.ultra-level{color: red;text-shadow: red 1px 0 10px;}
 .gamemode{display:flex;align-items:center;justify-content:center;}
 .thumbnails{margin:5px;width:70px;font-weight:bold;padding-top:85px;cursor:pointer;text-align:center;color:white;border-radius:4px;}
 .thumbnail{margin:5px;width:70px;font-weight:bold;padding-top:85px;cursor:pointer;text-align:center;color:white;border-radius:4px;}
