@@ -16,7 +16,9 @@
 <div class="rank">${player.uid}</div> 
 <div class="nick">${player.account_name}</div> 
 <div class="score">${level}</div> 
-<div class="skkinn" style="background-image: url('${player.account_avatar}');"></div>
+<div class="skkinn">
+    <img src="${player.account_avatar || '/default-avatar.png'}" onerror="this.src='/default-avatar.png'" />
+</div>
                 `;
                 container.appendChild(playerDiv);
             });
@@ -35,3 +37,4 @@
         }
 
         fetchTop100();
+
