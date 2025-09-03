@@ -202,3 +202,25 @@ $('#closeStats').on('click', function() {
     $('#overlays').show();    // показать overlays
 });
 
+const chatFeed = document.getElementById('chatX_feed');
+const chatInput = document.getElementById('chat_textbox');
+
+chatFeed.addEventListener('contextmenu', function(e) {
+    e.preventDefault(); // отключаем стандартное меню
+
+    let msgElem = e.target.closest('.chatX_msg');
+    if (!msgElem) return;
+
+    const nickElem = msgElem.querySelector('.chatX_nick');
+    if (!nickElem) return;
+
+    // Убираем двоеточие в конце, если оно есть
+    let nick = nickElem.textContent.trim();
+    if (nick.endsWith(':')) {
+        nick = nick.slice(0, -1);
+    }
+
+    chatInput.value = nick + ' >> ';
+    chatInput.focus();
+    chatInput.setSelectionRange(chatInput.value.length, chatInput.value.length);
+});
