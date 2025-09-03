@@ -205,8 +205,9 @@ $('#closeStats').on('click', function() {
 const chatFeed = document.getElementById('chatX_feed');
 const chatInput = document.getElementById('chat_textbox');
 
-chatFeed.addEventListener('contextmenu', function(e) {
-    e.preventDefault(); // отключаем стандартное меню
+chatFeed.addEventListener('click', function(e) {
+    // Проверяем, что это именно левая кнопка мыши
+    if (e.button !== 0) return;
 
     let msgElem = e.target.closest('.chatX_msg');
     if (!msgElem) return;
@@ -214,13 +215,14 @@ chatFeed.addEventListener('contextmenu', function(e) {
     const nickElem = msgElem.querySelector('.chatX_nick');
     if (!nickElem) return;
 
-    // Убираем двоеточие в конце, если оно есть
+    // Убираем двоеточие в конце ника
     let nick = nickElem.textContent.trim();
     if (nick.endsWith(':')) {
         nick = nick.slice(0, -1);
     }
 
-    chatInput.value = nick + ' >> ';
+    chatInput.value = nick + ' << ';
     chatInput.focus();
     chatInput.setSelectionRange(chatInput.value.length, chatInput.value.length);
 });
+
