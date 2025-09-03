@@ -28,7 +28,7 @@ i:hover{cursor:pointer;}
 .top-playerwraper:nth-child(2){color:#2579e7;}
 .top-playerwraper:nth-child(3){color:#fc6579;}
 .Lednick{overflow:hidden;width:100%;white-space:nowrap;text-overflow:ellipsis;}
-.skkinn img{background-size:cover;border-radius:100%;border:solid 2px;	margin:0px 15px 5px 21px;height:50px;width:50px;}
+.skkinn{background-size:cover;border-radius:100%;border:solid 2px;	margin:0px 15px 5px 21px;height:50px;width:50px;}
 .time{font-size:11px !important;	margin-top:10px;color:#8e8e8e;	width:100px;}
 .update-time{float:right;color:#0000006e;font-family:'Ubuntu';cursor:context-menu;font-size:11px;padding-top:5px;padding-right:3px;text-shadow:0px -1px 0px #000000, -1px 0px 0px #000000, 1px 0px 0px #000000, 0px 1px 0px #000000, 1px 1px 0px #000000, -1px -1px 0px #000000, -1px 1px 0px #000000, 1px -1px 0px #000000, 0px 2px 0px #000000;color:#6c757d !important;}
 .gall{margin-bottom:10px;	justify-content:space-around;}
