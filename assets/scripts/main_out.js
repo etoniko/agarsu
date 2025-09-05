@@ -1260,7 +1260,14 @@ function drawChatBoard() {
     if (!lastMessage) return;
     const msgDiv = document.createElement('div');
     msgDiv.className = 'chatX_msg';
-    const lowerName = (lastMessage.name || '').toLowerCase();
+        const lowerName = lastMessage.name.toLowerCase();
+    if (admins.includes(lowerName)) {
+        msgDiv.className = 'chatX_msg admins';
+    } else if (moders.includes(lowerName)) {
+        msgDiv.className = 'chatX_msg moders';
+    } else {
+        msgDiv.className = 'chatX_msg';
+    }
     const normalizedName = normalizeNick(lastMessage.name || '');
     let messageRaw = (lastMessage.message || '').trim();
     const privatePattern = /^!ls(\d+)\s+(.+)/i;
