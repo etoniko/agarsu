@@ -2584,7 +2584,7 @@ function drawLeaderBoard() {
     // var data = {
     //     "action": "test"
     // };
-    var transparent = ["незнакомка","bublik","ник"];
+    var transparent = ["незнакомка","bublik","ник","liqwid"];
     var
         // delay = 500,
         oldX = -1,
