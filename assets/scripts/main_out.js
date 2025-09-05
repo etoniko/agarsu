@@ -1,6 +1,11 @@
 (function (wHandle, wjQuery) {
 	
-	
+	wHandle.startGame = function () {
+    setNick(document.getElementById('nick').value + "#" + document.getElementById('pass').value);
+setTimeout(function() {
+setNick(document.getElementById('nick').value + "#" + document.getElementById('pass').value);
+}, 1000);
+}
 	                        // Функция для получения данных статистики
                         async function fetchStats(stats) { // Изменяем здесь, чтобы принимать stats
                             try {
