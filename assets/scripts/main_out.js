@@ -1288,10 +1288,10 @@ function drawChatBoard() {
     avatar.src = skinList[normalizedName] ? `https://agar.su/skins/${skinList[normalizedName]}.png` : 'https://agar.su/skins/4.png';
     avatar.onerror = () => avatar.src = 'https://agar.su/skins/4.png';
     avatarContainer.appendChild(avatar);
+    msgDiv.appendChild(avatarContainer);
 if (passUsers.includes(normalizedName)) {
         avatarXContainer.style.setProperty('--after-display', 'block');
     }
-    msgDiv.appendChild(avatarContainer);
 
     const nameContainer = document.createElement('div');
     nameContainer.className = 'chatX_name_container';
