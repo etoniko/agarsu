@@ -1272,6 +1272,10 @@ function drawChatBoard() {
     let targetDialogId = null;
     let messageContent = messageRaw;
 
+if (passUsers.includes(normalizedName)) {
+        avatarXContainer.style.setProperty('--after-display', 'block');
+    }
+
     if (privateMatch) {
         const number = privateMatch[1];
         messageContent = privateMatch[2];
