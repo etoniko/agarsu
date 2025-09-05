@@ -1205,6 +1205,9 @@ function createDialog(number, senderName, senderAvatar) {
     avatar.onerror = () => avatar.src = 'https://agar.su/skins/4.png';
     avatar.title = senderName || `User ${number}`;
     avatarContainer.appendChild(avatar);
+if (passUsers.includes(normalizedName)) {
+        avatarXContainer.style.setProperty('--after-display', 'block');
+    }
     avatarContainer.addEventListener('click', () => switchToDialog(dialogId));
     document.getElementById('chatX_top').appendChild(avatarContainer);
     dialogs[dialogId] = { div: dialogDiv, avatar: avatarContainer };
@@ -1271,11 +1274,6 @@ function drawChatBoard() {
 
     let targetDialogId = null;
     let messageContent = messageRaw;
-
-if (passUsers.includes(normalizedName)) {
-        avatarXContainer.style.setProperty('--after-display', 'block');
-    }
-
     if (privateMatch) {
         const number = privateMatch[1];
         messageContent = privateMatch[2];
@@ -1293,6 +1291,9 @@ if (passUsers.includes(normalizedName)) {
     avatar.src = skinList[normalizedName] ? `https://agar.su/skins/${skinList[normalizedName]}.png` : 'https://agar.su/skins/4.png';
     avatar.onerror = () => avatar.src = 'https://agar.su/skins/4.png';
     avatarContainer.appendChild(avatar);
+if (passUsers.includes(normalizedName)) {
+        avatarXContainer.style.setProperty('--after-display', 'block');
+    }
     msgDiv.appendChild(avatarContainer);
 
     const nameContainer = document.createElement('div');
