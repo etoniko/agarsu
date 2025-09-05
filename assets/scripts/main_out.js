@@ -121,12 +121,6 @@ fetchSkinList();
 // Периодическая проверка изменений каждые 5 минут
 setInterval(fetchSkinList, 300000);
 
-wHandle.startGame = function () {
-    setNick(document.getElementById('nick').value + "#" + document.getElementById('pass').value);
-setTimeout(function() {
-setNick(document.getElementById('nick').value + "#" + document.getElementById('pass').value);
-}, 1000);
-}
     // Функция для загрузки данных о топ-1 игроке
     wHandle.chekstats = async function () {
         try {
