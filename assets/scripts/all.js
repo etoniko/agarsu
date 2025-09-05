@@ -236,16 +236,15 @@ leaderboard.addEventListener('click', function(e) {
 });
 
 
-const input = document.getElementById('chat_textbox');
-
-// Если хочешь, чтобы добавлялось число из конкретного блока, на который нажали
 document.querySelectorAll('.chatX_msg').forEach(msg => {
     msg.addEventListener('contextmenu', function(e) {
         e.preventDefault(); // отключаем стандартное меню
         const number = msg.querySelector('.chatX_nick').getAttribute('title');
-        input.value += `!ls${number}`;
+        chatInput.value += `!ls${number} `;
     });
 });
+
+
 
 
 
