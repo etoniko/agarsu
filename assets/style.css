@@ -206,6 +206,7 @@ input{font-size:16px;}
 .shopntf.show {opacity: 1;transform: translateX(-50%) translateY(0);}
 #shop .shop-toast .close{cursor:pointer;opacity:0.8;font-weight:700;}
 #onchat{position:absolute;left:10px;bottom:10px;border:solid #ffffff26 1px;border-radius:25px;background:rgba(0, 0, 0, .3);width:40px;height:40px;padding:5px;display:none;align-items:center;justify-content:center;cursor:pointer;}
+.chatX_container{display: flex;overflow-y: auto;flex-direction: column-reverse;}
 .chatX_top_avatar{cursor: pointer;}
 .chatX_top_avatar:hover{opacity: 0.5;transform:scale(1.2);}
 .chatX_window {width: 310px;background: rgba(0, 0, 0, .3);border-radius: 25px;padding: 8px 3px 8px 8px;position: absolute;left: 10px;bottom: 10px;display: flex;flex-direction: column;overflow: hidden;min-height: 100px;max-height: 700px;color: white;box-sizing: border-box;border: solid #ffffff26 1px;}
