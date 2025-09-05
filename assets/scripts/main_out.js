@@ -1205,9 +1205,6 @@ function createDialog(number, senderName, senderAvatar) {
     avatar.onerror = () => avatar.src = 'https://agar.su/skins/4.png';
     avatar.title = senderName || `User ${number}`;
     avatarContainer.appendChild(avatar);
-if (passUsers.includes(normalizedName)) {
-        avatarXContainer.style.setProperty('--after-display', 'block');
-    }
     avatarContainer.addEventListener('click', () => switchToDialog(dialogId));
     document.getElementById('chatX_top').appendChild(avatarContainer);
     dialogs[dialogId] = { div: dialogDiv, avatar: avatarContainer };
