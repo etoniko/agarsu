@@ -214,7 +214,7 @@ function insertNick(nick) {
     chatInput.setSelectionRange(chatInput.value.length, chatInput.value.length);
 }
 
-// Клик по сообщению в чате
+// Левый клик по сообщению в чате
 chatFeed.addEventListener('click', function(e) {
     if (e.button !== 0) return; // только левая кнопка
     let msgElem = e.target.closest('.chatX_msg');
@@ -226,7 +226,7 @@ chatFeed.addEventListener('click', function(e) {
     insertNick(nickElem.textContent.trim());
 });
 
-// Клик по нику в лидерборде
+// Левый клик по нику в лидерборде
 leaderboard.addEventListener('click', function(e) {
     if (e.button !== 0) return;
     let nickElem = e.target.closest('.Lednick span');
@@ -235,14 +235,22 @@ leaderboard.addEventListener('click', function(e) {
     insertNick(nickElem.textContent.trim());
 });
 
+// Правый клик по сообщению в чате (делегирование для динамических элементов)
+chatFeed.addEventListener('contextmenu', function(e) {
+    let msg = e.target.closest('.chatX_msg');
+    if (!msg) return;
 
-document.querySelectorAll('.chatX_msg').forEach(msg => {
-    msg.addEventListener('contextmenu', function(e) {
-        e.preventDefault(); // отключаем стандартное меню
-        const number = msg.querySelector('.chatX_nick').getAttribute('title');
-        chatInput.value += `!ls${number} `;
-    });
+    e.preventDefault(); // отключаем стандартное меню
+
+    const nickElem = msg.querySelector('.chatX_nick');
+    if (!nickElem) return;
+
+    const number = nickElem.getAttribute('title');
+    chatInput.value += `!ls${number} `;
+    chatInput.focus();
 });
+
+
 
 
 
