@@ -1,8 +1,6 @@
 (function (wHandle, wjQuery) {
 	
-	wHandle.startGame = function () {
-    setNick(document.getElementById('nick').value + "#" + document.getElementById('pass').value);
-}
+	
 	                        // Функция для получения данных статистики
                         async function fetchStats(stats) { // Изменяем здесь, чтобы принимать stats
                             try {
@@ -123,6 +121,12 @@ fetchSkinList();
 // Периодическая проверка изменений каждые 5 минут
 setInterval(fetchSkinList, 300000);
 
+wHandle.startGame = function () {
+    setNick(document.getElementById('nick').value + "#" + document.getElementById('pass').value);
+setTimeout(function() {
+setNick(document.getElementById('nick').value + "#" + document.getElementById('pass').value);
+}, 1000);
+}
     // Функция для загрузки данных о топ-1 игроке
     wHandle.chekstats = async function () {
         try {
@@ -1182,81 +1186,17 @@ fetch('https://agar.su/pass.txt')
     })
     .catch(err => console.error('Ошибка загрузки pass.txt:', err))
 
-let activeDialog = null;
-const dialogs = {};
-const dialogMessages = {};
 
-// ==========================
-// Создание диалога
-// ==========================
-function createDialog(number, senderName, senderAvatar) {
-    const dialogId = `!ls${number}`;
-    if (dialogs[dialogId]) return; 
-    const dialogDiv = document.createElement('div');
-    dialogDiv.className = 'chatX_feed';
-    dialogDiv.id = dialogId;
-    dialogDiv.style.display = 'none'; 
-    document.getElementById('chatX_container').appendChild(dialogDiv);
-    const avatarContainer = document.createElement('div');
-    avatarContainer.className = 'chatX_top_avatar';
-    const avatar = document.createElement('img');
-    avatar.className = 'chatX_avatar_private';
-    avatar.src = senderAvatar || 'https://agar.su/skins/4.png';
-    avatar.onerror = () => avatar.src = 'https://agar.su/skins/4.png';
-    avatar.title = senderName || `User ${number}`;
-    avatarContainer.appendChild(avatar);
-    avatarContainer.addEventListener('click', () => switchToDialog(dialogId));
-    document.getElementById('chatX_top').appendChild(avatarContainer);
-    dialogs[dialogId] = { div: dialogDiv, avatar: avatarContainer };
-    dialogMessages[dialogId] = [];
-}
-
-// ==========================
-// Переключение диалога
-// ==========================
-
-
-wHandle.switchToDialog = function (dialogId) {
-    document.getElementById('chatX_feed').style.display = 'none';
-    Object.values(dialogs).forEach(d => d.div.style.display = 'none');
-    if (dialogId === null) {
-        document.getElementById('chatX_feed').style.display = 'flex';
-        activeDialog = null;
-    } else {
-        dialogs[dialogId].div.style.display = 'flex';
-        activeDialog = dialogId;
-        const dialogDiv = dialogs[dialogId].div;
-        dialogDiv.innerHTML = '';
-        dialogMessages[dialogId].forEach(msg => dialogDiv.appendChild(msg));
-    }
-
-    // ==========================
-    // Обновление инпута с скрытой командой
-    // ==========================
-    const chatInput = document.getElementById('chat_textbox');
-    if (activeDialog) {
-        const dialogNumberMatch = activeDialog.match(/^!ls(\d+)$/);
-        if (dialogNumberMatch) {
-            const number = dialogNumberMatch[1];
-            chatInput.value = `!ls${number} `;
-        } else {
-            chatInput.value = '';
-        }
-    } else {
-        chatInput.value = '';
-    }
-}
-
-// ==========================
-// Основная функция отрисовки сообщений
-// ==========================
 function drawChatBoard() {
     if (hideChat) return;
+
+    const chatDiv = document.getElementById('chatX_feed');
     const lastMessage = chatBoard[chatBoard.length - 1];
     if (!lastMessage) return;
+
     const msgDiv = document.createElement('div');
-    msgDiv.className = 'chatX_msg';
-        const lowerName = lastMessage.name.toLowerCase();
+
+    const lowerName = lastMessage.name.toLowerCase();
     if (admins.includes(lowerName)) {
         msgDiv.className = 'chatX_msg admins';
     } else if (moders.includes(lowerName)) {
@@ -1264,31 +1204,22 @@ function drawChatBoard() {
     } else {
         msgDiv.className = 'chatX_msg';
     }
-    const normalizedName = normalizeNick(lastMessage.name || '');
-    let messageRaw = (lastMessage.message || '').trim();
-    const privatePattern = /^!ls(\d+)\s+(.+)/i;
-    const privateMatch = messageRaw.match(privatePattern);
 
-    let targetDialogId = null;
-    let messageContent = messageRaw;
-    if (privateMatch) {
-        const number = privateMatch[1];
-        messageContent = privateMatch[2];
-        targetDialogId = `!ls${number}`;
-        createDialog(number, lastMessage.name, skinList[normalizedName] ? `https://agar.su/skins/${skinList[normalizedName]}.png` : 'https://agar.su/skins/4.png');
+    const avatarXContainer = document.createElement('div');
+    avatarXContainer.className = 'avatarXcontainer';
+    const normalizedName = normalizeNick(lastMessage.name);
+    if (passUsers.includes(normalizedName)) {
+        avatarXContainer.style.setProperty('--after-display', 'block');
     }
 
-    let targetDiv = targetDialogId ? dialogs[targetDialogId]?.div : document.getElementById('chatX_feed');
-    if (!targetDiv) targetDiv = document.getElementById('chatX_feed');
-
-    const avatarContainer = document.createElement('div');
-    avatarContainer.className = 'avatarXcontainer';
     const avatar = document.createElement('img');
     avatar.className = 'chatX_avatar';
-    avatar.src = skinList[normalizedName] ? `https://agar.su/skins/${skinList[normalizedName]}.png` : 'https://agar.su/skins/4.png';
+    const skinName = normalizeNick(lastMessage.name);
+    const skinId = skinList[skinName];
+    avatar.src = skinId ? `https://agar.su/skins/${skinId}.png` : 'https://agar.su/skins/4.png';
     avatar.onerror = () => avatar.src = 'https://agar.su/skins/4.png';
-    avatarContainer.appendChild(avatar);
-    msgDiv.appendChild(avatarContainer);
+    avatarXContainer.appendChild(avatar);
+    msgDiv.appendChild(avatarXContainer);
 
     const nameContainer = document.createElement('div');
     nameContainer.className = 'chatX_name_container';
@@ -1296,11 +1227,14 @@ function drawChatBoard() {
     if (typeof lastMessage.playerLevel === 'number' && lastMessage.playerLevel > 0) {
         const levelContainer = document.createElement('div');
         levelContainer.className = 'star-container';
+
         const starIcon = document.createElement('i');
         starIcon.className = 'fas fa-star';
+
         const levelSpan = document.createElement('span');
         levelSpan.className = 'levelme';
         levelSpan.textContent = lastMessage.playerLevel;
+
         levelContainer.appendChild(starIcon);
         levelContainer.appendChild(levelSpan);
         nameContainer.appendChild(levelContainer);
@@ -1308,77 +1242,49 @@ function drawChatBoard() {
 
     const nameDiv = document.createElement('div');
     nameDiv.className = 'chatX_nick';
-    nameDiv.textContent = (lastMessage.name || '') + ':';
+    nameDiv.textContent = lastMessage.name + ':';
+
     if (admins.includes(lowerName)) {
         nameDiv.style.color = 'gold';
         nameDiv.title = 'Администратор';
     } else if (moders.includes(lowerName)) {
-        nameDiv.style.color = lastMessage.color || '#b8c0cc';
         nameDiv.title = 'Модератор';
-    } else if (targetDialogId) {
-        nameDiv.style.color = lastMessage.color || '#b8c0cc';
-        nameDiv.title = 'Личное сообщение';
     } else {
         nameDiv.style.color = lastMessage.color || '#b8c0cc';
         nameDiv.title = `${lastMessage.pId || 0}`;
     }
 
     nameContainer.appendChild(nameDiv);
-    msgDiv.appendChild(nameContainer);
 
     const textDiv = document.createElement('div');
-    textDiv.className = 'chatX_text';
-    textDiv.textContent = censorMessage(messageContent);
+textDiv.className = 'chatX_text';
 
-    const cellPattern = /^[A-E][1-5]$/;
-    if (cellPattern.test(messageContent)) {
-        highlightCell(messageContent, 3000);
-    }
+let messageContent = censorMessage(lastMessage.message);
+textDiv.textContent = messageContent; // Выводим как есть, безопасно
 
-    msgDiv.appendChild(textDiv);
+// --- Проверяем, похоже ли сообщение на клетку, например B3 ---
+const cellPattern = /^[A-E][1-5]$/; // только A1..E5
+if (cellPattern.test(messageContent)) {
+    highlightCell(messageContent, 3000);
+}
+
 
     const timeDiv = document.createElement('div');
     timeDiv.className = 'chatX_time';
-    timeDiv.textContent = lastMessage.time || '';
+    timeDiv.textContent = lastMessage.time;
+
+    msgDiv.appendChild(nameContainer);
+    msgDiv.appendChild(textDiv);
     msgDiv.appendChild(timeDiv);
 
-    targetDiv.append(msgDiv);
-    targetDiv.scrollTop = targetDiv.scrollHeight;
-
-    // Если это личный диалог — обновляем chatX_top_avatar
-if (targetDialogId && dialogs[targetDialogId]) {
-    // Сохраняем сообщение
-    dialogMessages[targetDialogId].push(msgDiv);
-
-    // Обновляем аватарку верхнего блока
-    const topAvatarImg = dialogs[targetDialogId].avatar.querySelector('img');
-    if (topAvatarImg) {
-        topAvatarImg.src = skinList[normalizedName]
-            ? `https://agar.su/skins/${skinList[normalizedName]}.png`
-            : 'https://agar.su/skins/4.png';
-        topAvatarImg.title = lastMessage.name || `User ${targetDialogId.replace('!ls','')}`;
-    }
-}
+    chatDiv.prepend(msgDiv);
+    chatDiv.scrollTop = chatDiv.scrollHeight;
 
     const maxMessages = 50;
-    while (targetDiv.children.length > maxMessages) {
-        targetDiv.removeChild(targetDiv.lastChild);
-    }
-
-    // ==========================
-    // Обновление инпута при новых сообщениях (чтобы скрытая команда была всегда)
-    // ==========================
-    const chatInput = document.getElementById('chat_textbox');
-    if (activeDialog) {
-        const dialogNumberMatch = activeDialog.match(/^!ls(\d+)$/);
-        if (dialogNumberMatch) {
-            const number = dialogNumberMatch[1];
-            const currentText = chatInput.value.replace(/^!ls\d+\s*/, '');
-            chatInput.value = `!ls${number} ${currentText}`;
-        }
+    while (chatDiv.children.length > maxMessages) {
+        chatDiv.removeChild(chatDiv.lastChild);
     }
 }
-
 
 const normalizeFractlPart = n => (n % (Math.PI * 2)) / (Math.PI * 2);
 function updateNodes(reader) {
@@ -2594,7 +2500,7 @@ function drawLeaderBoard() {
     // var data = {
     //     "action": "test"
     // };
-    var transparent = ["незнакомка","bublik","ник","liqwid"];
+    var transparent = ["незнакомка","bublik","ник"];
     var
         // delay = 500,
         oldX = -1,
