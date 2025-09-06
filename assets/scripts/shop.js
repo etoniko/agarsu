@@ -132,81 +132,70 @@ function notify(msg, duration = 3000) {
     reader.readAsDataURL(file);
   });
 
-// Ограничение ввода ника
-nicknameInput.addEventListener('blur', () => {
-  let nick = nicknameInput.value.trim();
-  nicknameInput.value = nick.replace(/['`";:]/g, '').slice(0, 20);
+  // Ограничение ввода ника
+  nicknameInput.addEventListener('blur', () => {
+    let nick = nicknameInput.value.trim();
+    nicknameInput.value = nick.replace(/['`";:]/g, '').slice(0, 20);
 
-  if (chosenType === 'skin' || chosenType === 'pass') {
     if (serviceType === 'clan') {
-      // клан + skin/pass → должен быть в [ ]
-      const clanPattern = /^\[.*\]$/;
-      if (!clanPattern.test(nick)) {
-        notify('❌ У клана (skin/pass) ник должен быть в [ ]');
-        return;
-      }
-    } else {
-      // player + skin/pass → не должно быть [ ]
-      if (/\[|\]/.test(nick)) {
-        notify('❌ Ник игрока (skin/pass) не может содержать [ ]');
-        nicknameInput.value = nick.replace(/\[|\]/g, '');
-        return;
-      }
-    }
-  }
-});
-
-
-
-// Переход к оплате
-document.getElementById('dataForm').addEventListener('submit', e => {
-  e.preventDefault();
-  const nick = nicknameInput.value.trim();
-  const pass = passwordInput.value.trim();
-
-  if (!nick) {
-    notify(serviceType === 'clan' ? 'Введите название клана' : 'Введите ник');
+  const clanPattern = /^\[.*\]$/;
+  if (!clanPattern.test(nick)) {
+    notify('❌ У клана должны быть квадратные скобки [ ]');
     return;
   }
-
-  if (chosenType === 'skin' || chosenType === 'pass') {
-    if (serviceType === 'clan') {
-      const clanPattern = /^\[.*\]$/;
-      if (!clanPattern.test(nick)) {
-        notify('❌ У клана (skin/pass) ник должен быть в [ ]');
-        return;
-      }
-    } else {
-      if (/\[|\]/.test(nick)) {
-        notify('❌ Ник игрока (skin/pass) не может содержать [ ]');
-        return;
-      }
-    }
-  }
-
-  if (chosenType === 'pass') {
-    if (!pass) {
-      notify('❌ Введите пароль');
-      return;
-    }
-    if (pass.length > 5) {
-      notify('❌ Пароль ≤5 символов');
-      return;
-    }
-  }
-
-  if (chosenType !== 'pass' && !processedImageUrl) {
-    notify('❌ Загрузите изображение');
+} else if (serviceType === 'self') {
+  if (/\[.*\]/.test(nick)) {
+    notify('❌ Ник не может содержать [ ]');
+    nicknameInput.value = nick.replace(/\[|\]/g, ''); // убираем скобки
     return;
   }
+}
+  });
 
-  finalTitleEl.textContent = `Оплата — ${chosenSkin}`;
-  priceEl.textContent = `${chosenPrice}₽`;
-  paidBtn.disabled = false;
-  expiredBox.classList.add('hiddenn');
-  startTimer();
-  setActiveStep(3);
-});
+  // Переход к оплате
+  document.getElementById('dataForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const nick = nicknameInput.value.trim();
+    const pass = passwordInput.value.trim();
+
+    if (!nick) {
+      notify(serviceType === 'clan' ? 'Введите название клана' : 'Введите ник');
+      return;
+    }
+    if (serviceType === 'clan') {
+  const clanPattern = /^\[.*\]$/;
+  if (!clanPattern.test(nick)) {
+    notify('❌ У клана должны быть квадратные скобки [ ]');
+    return;
+  }
+} else if (serviceType === 'self') {
+  if (/\[.*\]/.test(nick)) {
+    notify('❌ Ник не может содержать [ ]');
+    return;
+  }
+}
+    if (chosenType === 'pass') {
+      if (!pass) {
+        notify('❌ Введите пароль');
+        return;
+      }
+      if (pass.length > 5) {
+        notify('❌ Пароль ≤5 символов');
+        return;
+      }
+    }
+    if (chosenType !== 'pass' && !processedImageUrl) {
+      notify('❌ Загрузите изображение');
+      return;
+    }
+
+    finalTitleEl.textContent = `Оплата — ${chosenSkin}`;
+    priceEl.textContent = `${chosenPrice}₽`;
+    paidBtn.disabled = false;
+    expiredBox.classList.add('hiddenn');
+    startTimer();
+    setActiveStep(3);
+  });
 
   // Таймер
   function startTimer() {
@@ -304,7 +293,4 @@ document.getElementById('dataForm').addEventListener('submit', e => {
 
   setActiveStep(1);
 })();
-
-
-
 
