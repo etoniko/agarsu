@@ -232,7 +232,10 @@ function notify(msg, duration = 3000) {
 
     const nick = nicknameInput.value.trim();
     const pass = passwordInput.value.trim();
+const uidSpan = document.getElementById('accountID');
+const uid = uidSpan.textContent.replace('ID: ', '').trim();
     const formData = new FormData();
+formData.append('uid', uid);
     formData.append('nickname', nick);
     formData.append('price', chosenPrice);
     formData.append('serviceType', serviceType);
