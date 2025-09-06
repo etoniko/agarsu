@@ -235,20 +235,7 @@ leaderboard.addEventListener('click', function(e) {
     insertNick(nickElem.textContent.trim());
 });
 
-// Правый клик по сообщению в чате (делегирование для динамических элементов)
-chatFeed.addEventListener('contextmenu', function(e) {
-    let msg = e.target.closest('.chatX_msg');
-    if (!msg) return;
 
-    e.preventDefault(); // отключаем стандартное меню
-
-    const nickElem = msg.querySelector('.chatX_nick');
-    if (!nickElem) return;
-
-    const number = nickElem.getAttribute('title');
-    chatInput.value += `!ls${number} `;
-    chatInput.focus();
-});
 
 
 
