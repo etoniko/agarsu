@@ -132,27 +132,30 @@ function notify(msg, duration = 3000) {
     reader.readAsDataURL(file);
   });
 
-  // Ограничение ввода ника
+// Ограничение ввода ника
 nicknameInput.addEventListener('blur', () => {
   let nick = nicknameInput.value.trim();
   nicknameInput.value = nick.replace(/['`";:]/g, '').slice(0, 20);
 
-  if (serviceType === 'clan') {
-    const clanPattern = /^\[.*\]$/;
-    if (!clanPattern.test(nick)) {
-      notify('❌ У клана должны быть квадратные скобки [ ]');
-      return;
-    }
-  } else {
-    if (chosenType === 'skin' || chosenType === 'pass') {
+  if (chosenType === 'skin' || chosenType === 'pass') {
+    if (serviceType === 'clan') {
+      // клан + skin/pass → должен быть в [ ]
+      const clanPattern = /^\[.*\]$/;
+      if (!clanPattern.test(nick)) {
+        notify('❌ У клана (skin/pass) ник должен быть в [ ]');
+        return;
+      }
+    } else {
+      // player + skin/pass → не должно быть [ ]
       if (/\[|\]/.test(nick)) {
-        notify('❌ Ник не может содержать [ ] при выбранном скине или пароле');
-        nicknameInput.value = nick.replace(/\[|\]/g, ''); // сразу убираем скобки
+        notify('❌ Ник игрока (skin/pass) не может содержать [ ]');
+        nicknameInput.value = nick.replace(/\[|\]/g, '');
         return;
       }
     }
   }
 });
+
 
 
 // Переход к оплате
@@ -165,16 +168,17 @@ document.getElementById('dataForm').addEventListener('submit', e => {
     notify(serviceType === 'clan' ? 'Введите название клана' : 'Введите ник');
     return;
   }
-  if (serviceType === 'clan') {
-    const clanPattern = /^\[.*\]$/;
-    if (!clanPattern.test(nick)) {
-      notify('❌ У клана должны быть квадратные скобки [ ]');
-      return;
-    }
-  } else {
-    if (chosenType === 'skin' || chosenType === 'pass') {
+
+  if (chosenType === 'skin' || chosenType === 'pass') {
+    if (serviceType === 'clan') {
+      const clanPattern = /^\[.*\]$/;
+      if (!clanPattern.test(nick)) {
+        notify('❌ У клана (skin/pass) ник должен быть в [ ]');
+        return;
+      }
+    } else {
       if (/\[|\]/.test(nick)) {
-        notify('❌ Ник не может содержать [ ] при выбранном скине или пароле');
+        notify('❌ Ник игрока (skin/pass) не может содержать [ ]');
         return;
       }
     }
@@ -190,6 +194,7 @@ document.getElementById('dataForm').addEventListener('submit', e => {
       return;
     }
   }
+
   if (chosenType !== 'pass' && !processedImageUrl) {
     notify('❌ Загрузите изображение');
     return;
@@ -299,6 +304,7 @@ document.getElementById('dataForm').addEventListener('submit', e => {
 
   setActiveStep(1);
 })();
+
 
 
 
