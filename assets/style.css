@@ -213,7 +213,7 @@ input{font-size:16px;}
 .chatX_top{margin-bottom: 7px;flex-shrink:0;height:20px;display:flex;align-items:center;position:relative;user-select:none;padding-left: 5px;gap: 2px;}
 .chatX_burger{position:absolute;left:50%;transform:translateX(-50%);width:20px;height:20px;display:flex;flex-direction:column;justify-content:center;font-size:16px;color:white;text-align:center;}
 .chatX_close{position:absolute;right:6px;width:18px;height:18px;line-height:18px;text-align:center;color:white;font-size:19px;cursor:pointer;}
-.chatX_feed{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-right:3px;}
+.chatX_feed{flex:1;overflow-y:auto;display:flex;flex-direction:column-reverse;gap:8px;padding-right:3px;}
 .chatX_msg{position:relative;display:grid;grid-template-columns:42px 1fr;background:#80808057;border-radius:10px;padding:8px 10px 8px 8px;box-sizing:border-box;column-gap:15px;}
 .chatX_avatar{width:50px;height:50px;border-radius:100%;object-fit:cover;border:2px solid;}
 .chatX_avatar_private{width:20px;height: 20px;}
