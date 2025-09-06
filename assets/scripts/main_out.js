@@ -1342,7 +1342,7 @@ function drawChatBoard() {
     timeDiv.textContent = lastMessage.time || '';
     msgDiv.appendChild(timeDiv);
 
-    targetDiv.prepend(msgDiv);
+    targetDiv.append(msgDiv);
     targetDiv.scrollTop = targetDiv.scrollHeight;
 
     // Если это личный диалог — обновляем chatX_top_avatar
