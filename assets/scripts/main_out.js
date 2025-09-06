@@ -1345,15 +1345,18 @@ function drawChatBoard() {
     targetDiv.prepend(msgDiv);
     targetDiv.scrollTop = targetDiv.scrollHeight;
 
-        // Если это личный диалог — обновляем chatX_top_avatar
+    // Если это личный диалог — обновляем chatX_top_avatar
 if (targetDialogId && dialogs[targetDialogId]) {
+    // Сохраняем сообщение
+    dialogMessages[targetDialogId].push(msgDiv);
+
+    // Обновляем аватарку верхнего блока
     const topAvatarImg = dialogs[targetDialogId].avatar.querySelector('img');
     if (topAvatarImg) {
-        // Подставляем актуальный скин последнего отправителя
         topAvatarImg.src = skinList[normalizedName]
             ? `https://agar.su/skins/${skinList[normalizedName]}.png`
             : 'https://agar.su/skins/4.png';
-        topAvatarImg.title = lastMessage.name || `${number}`;
+        topAvatarImg.title = lastMessage.name || `User ${targetDialogId.replace('!ls','')}`;
     }
 }
 
