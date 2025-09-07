@@ -18,3 +18,4 @@ liqwid
 ᢪКнязь
 [niko]
 я
+[pitbull]
