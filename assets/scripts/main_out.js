@@ -1568,9 +1568,9 @@ function updateStats() {
     // Добавляем в историю
     scoreHistory.push({ time: timestamp - startTime, score: currentScore });
 
-    // Ограничиваем историю до 100 элементов
-    if (scoreHistory.length > 100) {
-        scoreHistory = compressHistory(scoreHistory, 100);
+    // Ограничиваем историю до 50 элементов
+    if (scoreHistory.length > 50) {
+        scoreHistory = compressHistory(scoreHistory, 50);
     }
 }
 
