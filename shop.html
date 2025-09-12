@@ -148,7 +148,7 @@
     async function checkAdBlocker() {
       try {
         const xhr = new XMLHttpRequest();
-        xhr.open('HEAD', '/api/test', true);
+        xhr.open('HEAD', 'https://api.agar.su:6008/api/test', true);
         xhr.send();
         return new Promise(resolve => {
           xhr.onreadystatechange = () => {
@@ -287,7 +287,7 @@
 
       try {
         paidBtn.disabled = true;
-        const resp = await fetch('/api/create-payment', { method: 'POST', body: fd });
+        const resp = await fetch('https://api.agar.su:6008/api/create-payment', { method: 'POST', body: fd });
         const data = await resp.json();
         if (data.success && data.confirmation_url) {
           // редирект на YooKassa
