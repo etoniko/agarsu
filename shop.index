@@ -1,0 +1,331 @@
+<!-- public/index.html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Магазин — оплата YooKassa</title>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;background:#f4f4f4;padding:20px}
+    .card{background:white;padding:12px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.08);margin:10px 0}
+    #skinsGrid{display:flex;gap:8px;flex-wrap:wrap}
+    .skin-card{width:180px;padding:8px;border:1px solid #ddd;border-radius:8px;text-align:center}
+    .skin-card img{width:100%;height:100px;object-fit:cover;border-radius:6px}
+    button{padding:8px 12px;border:none;background:#2b7cff;color:#fff;border-radius:6px;cursor:pointer}
+    .hiddenn{display:none}
+    #shopNotification{position:fixed;right:20px;top:20px;background:#111;color:#fff;padding:10px 14px;border-radius:8px;opacity:0;transform:translateY(-10px);transition:all .25s}
+    #shopNotification.show{opacity:1;transform:translateY(0)}
+    #uploadCircle{width:180px;height:180px;border:2px dashed #ccc;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer}
+    #step-content .step{display:none}
+    #step-content .step.active{display:block}
+  </style>
+</head>
+<body>
+  <h1>Магазин скинов / паролей</h1>
+
+  <div class="card">
+    <div>Твой аккаунт: <span id="accountID">ID: 12345</span></div>
+  </div>
+
+  <div id="step-content">
+    <!-- Step 1: выбор -->
+    <div class="step active" data-step="1">
+      <div class="card">
+        <h3>Выберите продукт</h3>
+        <div id="skinsGrid">
+          <!-- Пример карточек (можно расширять) -->
+          <div class="skin-card" data-base="100" data-type="image" data-src-self="https://via.placeholder.com/180" data-src-clan="https://via.placeholder.com/180/ff0">
+            <img src="https://via.placeholder.com/180" alt="">
+            <h4>Скин 1</h4>
+            <div class="price-label">Цена: 100</div>
+            <button>Выбрать</button>
+          </div>
+
+          <div class="skin-card" data-base="150" data-type="gif" data-src-self="https://via.placeholder.com/180" data-src-clan="https://via.placeholder.com/180/0ff">
+            <img src="https://via.placeholder.com/180" alt="">
+            <h4>Анимация GIF</h4>
+            <div class="price-label">Цена: 150</div>
+            <button>Выбрать</button>
+          </div>
+
+          <div class="skin-card" data-base="80" data-type="pass" data-src-self="" data-src-clan="">
+            <img src="https://via.placeholder.com/180/ccc" alt="">
+            <h4>Пароль на ник</h4>
+            <div class="price-label">Цена: 80</div>
+            <button>Выбрать</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: данные -->
+    <div class="step" data-step="2">
+      <div class="card">
+        <h3 id="chosenTitle">Выбран</h3>
+        <form id="dataForm">
+          <div>
+            <label>
+              <input type="radio" name="serviceType" value="self" checked> Для себя
+            </label>
+            <label>
+              <input type="radio" name="serviceType" value="clan"> Для клана
+            </label>
+          </div>
+
+          <div>
+            <label>Ник / Клан: <input id="nickname" maxlength="20" placeholder="ник"></label>
+          </div>
+
+          <div id="passLabel" style="display:none">
+            <label>Пароль (≤5): <input id="password" maxlength="5" placeholder="pass"></label>
+          </div>
+
+          <div id="uploadCircle" style="margin:10px 0">
+            <span>Загрузите изображение</span>
+          </div>
+          <input id="imageFile" type="file" accept=".png,.jpg,.jpeg,.gif" style="display:none">
+
+          <div style="margin-top:10px">
+            <button id="backToChoose" type="button">Назад</button>
+            <button type="submit">Далее / К оплате</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Step 3: оплата -->
+    <div class="step" data-step="3">
+      <div class="card">
+        <h3 id="finalTitle">Оплата</h3>
+        <div>Сумма: <span id="price">0₽</span></div>
+        <div>Таймер: <span id="countdown">10:00</span></div>
+        <div id="expiredBox" class="hiddenn">Срок истёк</div>
+
+        <div style="margin-top:10px">
+          <button id="paidBtn" disabled>Оплатить</button>
+          <button id="backToData" type="button">Назад</button>
+          <button id="restartBtn" type="button">Начать заново</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="shopNotification" class="shopntf"></div>
+
+  <script>
+  (function(){
+    let currentStep = 1;
+    let chosenSkin = null, chosenType = null, chosenPrice = 0, processedImageUrl = null;
+    let serviceType = 'self';
+    let timer = 10*60, timerInterval = null;
+
+    const stepContents = document.querySelectorAll('#step-content > div.step');
+    const chosenTitleEl = document.getElementById('chosenTitle');
+    const finalTitleEl = document.getElementById('finalTitle');
+    const priceEl = document.getElementById('price');
+    const countdownEl = document.getElementById('countdown');
+    const passLabel = document.getElementById('passLabel');
+    const nicknameInput = document.getElementById('nickname');
+    const passwordInput = document.getElementById('password');
+    const uploadCircle = document.getElementById('uploadCircle');
+    const imageInput = document.getElementById('imageFile');
+    const expiredBox = document.getElementById('expiredBox');
+    const paidBtn = document.getElementById('paidBtn');
+    const skinsGrid = document.getElementById('skinsGrid');
+    const serviceRadios = document.querySelectorAll('input[name="serviceType"]');
+    const backToChoose = document.getElementById('backToChoose');
+    const backToData = document.getElementById('backToData');
+    const restartBtn = document.getElementById('restartBtn');
+    const uidSpan = document.getElementById('accountID');
+
+    // Уведомления
+    const notificationEl = document.getElementById('shopNotification');
+    function notify(msg, duration = 3000) {
+      notificationEl.textContent = msg;
+      notificationEl.classList.add('show');
+      setTimeout(() => notificationEl.classList.remove('show'), duration);
+    }
+
+    // Проверка адблокера
+    async function checkAdBlocker() {
+      try {
+        const xhr = new XMLHttpRequest();
+        xhr.open('HEAD', '/api/test', true);
+        xhr.send();
+        return new Promise(resolve => {
+          xhr.onreadystatechange = () => {
+            if (xhr.readyState === 4) resolve(xhr.status === 200);
+          };
+        });
+      } catch {
+        notify('⚠ Отключите блокировщик рекламы для этого сайта.');
+        return false;
+      }
+    }
+
+    // Переключение сервисов
+    serviceRadios.forEach(r => {
+      r.addEventListener('change', () => {
+        serviceType = r.value;
+        nicknameInput.placeholder = serviceType === 'clan' ? 'клан' : 'ник';
+        nicknameInput.title = serviceType === 'clan' ? 'Введите название клана' : 'Введите ник';
+
+        document.querySelectorAll('#skinsGrid .skin-card').forEach(card => {
+          const base = Number(card.dataset.base);
+          const price = serviceType === 'clan' ? base * 2 : base;
+          card.querySelector('.price-label').textContent = `Цена: ${price}`;
+          card.querySelector('img').src = serviceType === 'clan' ? card.dataset.srcClan : card.dataset.srcSelf;
+          if (card.dataset.type === 'pass') {
+            card.querySelector('h4').textContent = serviceType === 'clan' ? 'Пароль на клан' : 'Пароль на ник';
+          }
+        });
+      });
+    });
+
+    // Выбор товара
+    skinsGrid.addEventListener('click', e => {
+      if (e.target.tagName === 'BUTTON') {
+        const card = e.target.closest('.skin-card');
+        chosenSkin = card.querySelector('h4').textContent;
+        chosenType = card.dataset.type;
+        const base = Number(card.dataset.base);
+        const rand = Math.floor(Math.random() * 10);
+        chosenPrice = (serviceType === 'clan' ? base * 2 : base) + rand;
+        passLabel.style.display = chosenType === 'pass' ? 'block' : 'none';
+        uploadCircle.style.display = chosenType === 'pass' ? 'none' : 'flex';
+        chosenTitleEl.textContent = `Вы выбрали: ${chosenSkin}`;
+        priceEl.textContent = `${chosenPrice}₽`;
+        setActiveStep(2);
+      }
+    });
+
+    // Загрузка файла
+    uploadCircle.addEventListener('click', () => imageInput.click());
+    imageInput.addEventListener('change', () => {
+      const file = imageInput.files[0];
+      if (!file) return;
+      if (file.size > 10 * 1024 * 1024) { notify('❌ Файл >10MB'); imageInput.value=''; return; }
+      const name = file.name.toLowerCase();
+      if (chosenType === 'gif' && !name.endsWith('.gif')) { notify('❌ Только GIF!'); imageInput.value=''; return; }
+      if (chosenType === 'image' && !(/\.(png|jpg|jpeg)$/i.test(name))) { notify('❌ PNG/JPG!'); imageInput.value=''; return; }
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.onload = () => { uploadCircle.innerHTML = ''; uploadCircle.appendChild(img); };
+        img.src = e.target.result;
+        processedImageUrl = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Ограничение ника
+    nicknameInput.addEventListener('blur', () => {
+      let nick = nicknameInput.value.trim();
+      nicknameInput.value = nick.replace(/['`";:]/g, '').slice(0, 20);
+      if (serviceType === 'clan') {
+        if (!/^\[.*\]$/.test(nick)) notify('❌ У клана должны быть [ ]');
+      } else {
+        if (/\[.*\]/.test(nick)) {
+          notify('❌ Ник не может содержать [ ]');
+          nicknameInput.value = nick.replace(/\[|\]/g, '');
+        }
+      }
+    });
+
+    // Переход к оплате
+    document.getElementById('dataForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const nick = nicknameInput.value.trim();
+      const pass = passwordInput ? passwordInput.value.trim() : '';
+      if (!nick) return notify(serviceType === 'clan' ? 'Введите название клана' : 'Введите ник');
+      if (chosenType === 'pass' && !pass) return notify('❌ Введите пароль');
+      if (chosenType !== 'pass' && !processedImageUrl) return notify('❌ Загрузите изображение');
+      finalTitleEl.textContent = `Оплата — ${chosenSkin}`;
+      priceEl.textContent = `${chosenPrice}₽`;
+      paidBtn.disabled = false;
+      expiredBox.classList.add('hiddenn');
+      startTimer();
+      setActiveStep(3);
+    });
+
+    function startTimer() {
+      clearInterval(timerInterval);
+      timer = 10*60; updateTimer();
+      timerInterval = setInterval(() => {
+        if (timer>0) { timer--; updateTimer(); } else { clearInterval(timerInterval); onExpired(); }
+      }, 1000);
+    }
+    function updateTimer() {
+      const m = Math.floor(timer/60), s = timer%60;
+      countdownEl.textContent = `${m}:${s.toString().padStart(2,'0')}`;
+    }
+    function onExpired() {
+      countdownEl.textContent = '00:00';
+      expiredBox.classList.remove('hiddenn');
+      paidBtn.disabled = true;
+    }
+
+    backToChoose.addEventListener('click', () => setActiveStep(1));
+    backToData.addEventListener('click', () => setActiveStep(2));
+    restartBtn.addEventListener('click', resetShop);
+
+    // Нажали оплатить -> отправляем форму + файл на сервер -> сервер создаёт платёж и вернёт confirmation_url
+    paidBtn.addEventListener('click', async () => {
+      if (!(await checkAdBlocker())) return;
+      const uid = uidSpan.textContent.replace('ID:','').trim();
+      const nick = nicknameInput.value.trim();
+      const pass = passwordInput ? passwordInput.value.trim() : '';
+      const fd = new FormData();
+      fd.append('uid', uid);
+      fd.append('nickname', nick);
+      fd.append('price', chosenPrice);
+      fd.append('serviceType', serviceType);
+      fd.append('submissionType', chosenType);
+      if (chosenType === 'pass') fd.append('password', pass);
+      else {
+        if (!imageInput.files[0]) { notify('❌ Файл не выбран'); return; }
+        fd.append('file', imageInput.files[0]);
+      }
+
+      try {
+        paidBtn.disabled = true;
+        const resp = await fetch('/api/create-payment', { method: 'POST', body: fd });
+        const data = await resp.json();
+        if (data.success && data.confirmation_url) {
+          // редирект на YooKassa
+          window.location.href = data.confirmation_url;
+        } else {
+          notify('❌ Ошибка сервера: ' + (data.error || 'unknown'));
+          paidBtn.disabled = false;
+        }
+      } catch (e) {
+        notify('⚠ Ошибка сети: ' + e.message);
+        paidBtn.disabled = false;
+      }
+    });
+
+    function resetShop() {
+      clearInterval(timerInterval);
+      setActiveStep(1);
+      imageInput.value = '';
+      uploadCircle.innerHTML = '<span>Загрузите изображение</span>';
+      nicknameInput.value = '';
+      if (passwordInput) passwordInput.value = '';
+      processedImageUrl = null;
+      expiredBox.classList.add('hiddenn');
+      paidBtn.disabled = false;
+      finalTitleEl.textContent = 'Оплата';
+      priceEl.textContent = '100.00₽';
+      chosenSkin = null; chosenType = null; chosenPrice = 0;
+    }
+
+    function setActiveStep(step) {
+      currentStep = step;
+      stepContents.forEach(c => c.classList.toggle('active', Number(c.dataset.step) === step));
+    }
+
+    setActiveStep(1);
+  })();
+  </script>
+</body>
+</html>
