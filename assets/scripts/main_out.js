@@ -276,10 +276,12 @@ wHandle.setserver = function(arg) {
 
         const foundHash = Object.keys(SERVERS).find(key => SERVERS[key] === arg);
         if (foundHash) {
-            window.location.hash = `#${foundHash}`;
+            // вместо location.hash → history.replaceState
+            history.replaceState(null, "", `#${foundHash}`);
+            setActiveFromHash(); // подсветим активный сервер
         } else {
             console.warn("Неизвестный сервер URL:", arg);
-            window.location.hash = "";
+            history.replaceState(null, "", " ");
         }
 
         showCaptcha();
