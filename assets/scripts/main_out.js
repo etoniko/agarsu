@@ -1477,13 +1477,12 @@ function sendMouseMove() {
 
 
 let lastSendTime = 0;      // хранит время последней отправки
-const MIN_SEND_INTERVAL = 0; // минимальный интервал между отправками в мс
+const MIN_SEND_INTERVAL = 50; // минимальный интервал между отправками в мс
 
 function sendUint8(a) {
     const now = Date.now();
 
     if (now - lastSendTime < MIN_SEND_INTERVAL) {
-        // слишком быстро → игнорируем
         return;
     }
 
