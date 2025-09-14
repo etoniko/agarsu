@@ -1535,8 +1535,8 @@ let lastDisplayedScore = 0,
     lastDisplayedCellCount = 0,
     maxScore = 0;
 
-let scoreHistory = [];       // Полная история для анализа
-const maxGraphPoints = 100;  // Для рисования графика
+let scoreHistory = [];            // Полная история
+const maxGraphPoints = 50;        // Для рисования графика
 let startTime = timestamp;
 
 let statsCanvas, statsCtx, staticsDiv;
@@ -1547,33 +1547,34 @@ function updateStats() {
     const cellCount = playerCells.length;
     maxScore = Math.max(maxScore, currentScore);
 
+    // === Обновляем UI только при изменении ===
     if (currentScore !== lastDisplayedScore) {
-        const scoreElem = document.getElementById('score-new');
-        if (scoreElem) scoreElem.innerText = 'Сейчас: ' + currentScore;
+        const elem = document.getElementById('score-new');
+        if (elem) elem.innerText = `Сейчас: ${currentScore}`;
         lastDisplayedScore = currentScore;
     }
 
     if (maxScore !== lastDisplayedMaxScore) {
-        const maxElem = document.getElementById('score-max');
-        if (maxElem) maxElem.innerText = 'Максимум: ' + maxScore;
+        const elem = document.getElementById('score-max');
+        if (elem) elem.innerText = `Максимум: ${maxScore}`;
         lastDisplayedMaxScore = maxScore;
     }
 
     if (cellCount !== lastDisplayedCellCount) {
-        const cellElem = document.getElementById('cell-length');
-        if (cellElem) cellElem.innerText = cellCount;
+        const elem = document.getElementById('cell-length');
+        if (elem) elem.innerText = cellCount;
         lastDisplayedCellCount = cellCount;
     }
 
-    // Добавляем в историю
-    scoreHistory.push({ time: timestamp - startTime, score: currentScore });
+    // === Добавляем в историю ===
+    scoreHistory.push({
+        time: timestamp - startTime,
+        score: currentScore
+    });
 
-    // Ограничиваем историю до 50 элементов
-    if (scoreHistory.length > 50) {
-        scoreHistory = compressHistory(scoreHistory, 50);
-    }
+    // график всегда используем со сжатием
+    drawStatsGraph(compressHistory(scoreHistory, maxGraphPoints));
 }
-
 
 // ===== УТИЛИТЫ =====
 const formatTimeStats = ms => {
@@ -1581,30 +1582,38 @@ const formatTimeStats = ms => {
     const h = Math.floor(totalSeconds / 3600);
     const m = Math.floor((totalSeconds % 3600) / 60);
     const s = totalSeconds % 60;
-    return h > 0 ? `${h}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}` : `${m}:${s.toString().padStart(2,'0')}`;
+    return h > 0
+        ? `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+        : `${m}:${s.toString().padStart(2, '0')}`;
 };
 
 const compressHistory = (history, maxLength) => {
     if (history.length <= maxLength) return history;
+
     const step = Math.ceil(history.length / maxLength);
     const compressed = [];
-    for (let i = 0; i < history.length; i += step) compressed.push(history[i]);
-    if (compressed[compressed.length - 1] !== history[history.length - 1])
+
+    for (let i = 0; i < history.length; i += step) {
+        compressed.push(history[i]);
+    }
+
+    // гарантируем последнюю точку
+    if (compressed[compressed.length - 1] !== history[history.length - 1]) {
         compressed.push(history[history.length - 1]);
+    }
+
     return compressed;
 };
 
-function drawStatsGraph() {
+function drawStatsGraph(data) {
     if (!statsCanvas || !statsCtx) return;
 
-    // Всегда очищаем холст
+    // очистка холста
     statsCtx.clearRect(0, 0, statsCanvas.width, statsCanvas.height);
 
-    if (scoreHistory.length < 2) return; // нечего рисовать, но холст уже чистый
+    if (!data || data.length < 2) return;
 
-    const data = compressHistory(scoreHistory, maxGraphPoints);
     const n = data.length;
-
     const paddingX = 5, paddingY = 5;
     const innerW = statsCanvas.width - 2 * paddingX;
     const innerH = statsCanvas.height - paddingY - 15;
@@ -1613,6 +1622,7 @@ function drawStatsGraph() {
     const minTime = data[0].time;
     const totalTime = Math.max(1, data[n - 1].time - minTime);
 
+    // линия графика
     statsCtx.beginPath();
     statsCtx.strokeStyle = 'lime';
     statsCtx.lineWidth = 2;
@@ -1624,12 +1634,12 @@ function drawStatsGraph() {
     });
     statsCtx.stroke();
 
-    // Рамка
+    // рамка
     statsCtx.strokeStyle = '#666';
     statsCtx.lineWidth = 1;
     statsCtx.strokeRect(0.5, 0.5, statsCanvas.width - 1, statsCanvas.height - 1);
 
-    // Метки
+    // метки
     statsCtx.fillStyle = 'white';
     statsCtx.font = '10px Arial';
     statsCtx.textAlign = 'center';
@@ -1711,7 +1721,8 @@ function shareStats(platform) {
     };
     const w = 650, h = 450;
     const l = (screen.width - w) / 2, t = (screen.height - h) / 2;
-    window.open(urls[platform] || '', '_blank', `toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=${w},height=${h},top=${t},left=${l}`);
+    window.open(urls[platform] || '', '_blank',
+        `toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=${w},height=${h},top=${t},left=${l}`);
 }
 
 // ===== ИНИЦИАЛИЗАЦИЯ =====
@@ -1727,6 +1738,7 @@ window.addEventListener('load', () => {
         if (btn) btn.addEventListener('click', () => shareStats(p));
     });
 });
+
 
 
 
@@ -2413,21 +2425,26 @@ function drawLeaderBoard() {
     // var playerStat = null;
     //wHandle.isSpectating = false;
     // Обновленный setNick
-    wHandle.setNick = function (arg) {
-        $('#overlays').hide();
-        userNickName = arg;
-        sendNickName();
-         wjQuery("#statics").hide();
-		 
-		     // сброс статистики для новой игры
+wHandle.setNick = function (arg) {
+    $('#overlays').hide();
+    userNickName = arg;
+    sendNickName();
+
+    // скрываем блок статистики
+    $("#statics").hide();
+
+    // сбрасываем статистику
     scoreHistory = [];
     lastDisplayedScore = 0;
     lastDisplayedMaxScore = 0;
     lastDisplayedCellCount = 0;
     maxScore = 0;
     startTime = timestamp;
-    drawStatsGraph();
-    };
+
+    // очищаем график
+    drawStatsGraph([]);
+};
+
 
 
     wHandle.setSkins = function (arg) {
