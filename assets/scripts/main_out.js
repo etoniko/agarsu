@@ -1475,13 +1475,34 @@ function sendMouseMove() {
         return null != ws && ws.readyState == ws.OPEN
     }
 
-    function sendUint8(a) {
+
+let lastSendTime = 0;      // хранит время последней отправки
+const MIN_SEND_INTERVAL = 100; // минимальный интервал между отправками в мс
+
+function sendUint8(a) {
+    const now = Date.now();
+
+    if (now - lastSendTime < MIN_SEND_INTERVAL) {
+        // слишком быстро → игнорируем
+        return;
+    }
+
+    lastSendTime = now;
+
+    if (wsIsOpen()) {
+        var msg = prepareData(1);
+        msg.setUint8(0, a);
+        wsSend(msg);
+    }
+}
+
+    /*function sendUint8(a) {
         if (wsIsOpen()) {
             var msg = prepareData(1);
             msg.setUint8(0, a);
             wsSend(msg)
         }
-    }
+    }*/
 
 
 
