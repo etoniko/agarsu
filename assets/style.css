@@ -267,7 +267,7 @@ input{font-size:16px;}
 #table-containerwraper{width:100%;overflow:scroll;}
 .header-rowwraper{display:grid;grid-template-columns:1fr 2.5fr 1fr 1fr;justify-items:center;}
 .top-playerwraper{display:grid;grid-template-columns:1fr 3fr 1fr 1fr;align-items:center;justify-items:center;}
-.skinswraper{background-size:cover;width:30px;height:30px;border:solid 2px;border-radius:50%;margin-bottom:2px;}
+.skinswraper{background-size:cover;width:32px;height:32px;border:solid 2px;border-radius:50%;margin-bottom:2px;}
 #shareText{font-size:18px;color:#c3c0c0;text-align:center;margin-bottom:10px;}
 #buttons{display:flex;gap:10px;}
 .social-btn{width:45px;height:45px;border-radius:50%;border:none;cursor:pointer;background-size:60% 60%;background-repeat:no-repeat;background-position:center;transition:transform 0.2s, background-color 0.2s;font-size:30px;}
@@ -287,5 +287,4 @@ input{font-size:16px;}
 .closeStats{cursor:pointer;}
 .closeStats i{pointer-events:none;}
 .statsWrapper{font-family:sans-serif;}
-.skinswraper{width:32px;height:32px;background-size:cover;background-position:center;}
 .top-playerwraper div{padding:2px 4px;}
