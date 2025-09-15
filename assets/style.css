@@ -202,7 +202,8 @@ input{font-size:16px;}
 #shop .skins-grid{display:flex;gap:12px;flex-wrap:nowrap;margin-top:20px;justify-content:center;align-items:center;}
 #shop .skin-card{padding:10px;width:160px;text-align:center;color:#eee;}
 #shop .skin-card img{width:100%;border-radius:8px;}
-#shop .btnn{margin-top:8px;padding:8px 12px;border-radius:8px;border:none;background:#016bef;color:white;font-weight:700;cursor:pointer;}
+.btnn{margin-top:8px;padding:8px 12px;border-radius:8px;border:none;background:#016bef;color:white;font-weight:700;cursor:pointer;}
+.btnn:hover {transform: scale(1.05);text-shadow: #ffffffb0 1px 0 10px;}
 #shop .btnn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.2);color:#ccc;}
 #shop .shopnp{width:190px;margin-top:20px;outline:none;border:1px solid #ccc;border-radius:20px;height:30px;padding-left:8px;}
 #shop .price-label{color:#bbb;font-size:0.9rem;}
