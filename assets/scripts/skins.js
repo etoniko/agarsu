@@ -23,27 +23,21 @@ function normalizeNick(nick) {
 
     let n = nick.trim();
 
-    const brackets = { '[': ']', '{': '}', '(': ')', '|': '|' };
-    const firstChar = n.charAt(0);
-    const lastChar = n.charAt(n.length - 1);
+    // Проверяем, начинается ли ник с открывающейся скобки
+    if (n.startsWith('[')) {
+        const endIndex = n.indexOf(']');
+        if (endIndex === -1) return ''; // закрывающей скобки нет
 
-    if (brackets[firstChar]) {
-        const closeChar = brackets[firstChar];
-        const endIndex = n.indexOf(closeChar, 1);
+        const innerNick = n.substring(1, endIndex).trim();
+        if (!innerNick || innerNick !== n.substring(1, endIndex)) return ''; // проверка пробелов внутри
 
-        // Проверяем, что закрывающая скобка есть и ник внутри не пустой
-        if (endIndex === -1) return ''; 
-
-        const innerNick = n.substring(1, endIndex);
-        if (!innerNick || innerNick.trim() !== innerNick) return ''; // нет пробелов в начале/конце
-
-        n = innerNick; 
+        // Возвращаем ник вместе со скобками, игнорируя всё после закрывающейся скобки
+        return `[${innerNick}]`.toLowerCase();
     } else {
         // Ник без скобок: нельзя содержать пробелы в начале/конце
         if (!n || n.trim() !== n) return '';
+        return n.toLowerCase();
     }
-
-    return n.toLowerCase();
 }
 
 
@@ -166,3 +160,4 @@ function normalizeNick(nick) {
                                 updateAvatarDisplay();
                             }
                         });
+
