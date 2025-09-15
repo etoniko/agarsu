@@ -43,20 +43,39 @@ stats.forEach((player, index) => {
 });
                         }
 	
-	                        async function updateOnlineCount() {
-                            try {
-                                const response = await fetch('https://pmori.ru:6001/process'); // Запрос к серверу по /process
-                                if (response.ok) {
-                                    const data = await response.json(); // Преобразуем ответ в JSON
-                                    document.getElementById('process').textContent = `Онлайн: ${data.online}`; // Обновляем текст в div
-                                } else {
-                                    console.error('Ошибка при получении данных:', response.status);
-                                }
-                            } catch (error) {
-                                console.error('Произошла ошибка:', error);
-                            }
-                        }
+function setActiveFromHash() {
+    const hash = location.hash.replace('#','') || 'ffa'; // по умолчанию ffa
+    document.querySelectorAll('.gamemode li').forEach(li => li.classList.remove('active'));
+    const activeLi = document.getElementById(hash);
+    if(activeLi) activeLi.classList.add('active');
+}
 
+// Вызывать при загрузке и при смене хэша
+window.addEventListener('load', setActiveFromHash);
+window.addEventListener('hashchange', setActiveFromHash);
+
+// Обновление онлайн
+async function updateOnlineCount() {
+    const servers = [
+        {id: 'ffa', url: 'https://pmori.ru:6001/process', max: 120},
+        {id: 'ms', url: 'https://pmori.ru:6002/process', max: 120},
+        {id: 'exp', url: 'https://pmori.ru:6004/process', max: 120}
+    ];
+
+    for (const server of servers) {
+        try {
+            const response = await fetch(server.url);
+            if (response.ok) {
+                const data = await response.json();
+                const li = document.getElementById(server.id);
+                li.querySelector('.online-count').textContent = `${data.online}/${server.max}`;
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    }
+}
+setInterval(updateOnlineCount, 5000);
                         updateOnlineCount();
 						
 let skinList = {}; // Глобальный объект для скинов
@@ -285,6 +304,7 @@ wHandle.setserver = function(arg) {
         }
 
         showCaptcha();
+        updateOnlineCount();
     }
 };
     function gameLoop() {
