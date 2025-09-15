@@ -1491,7 +1491,7 @@ function sendMouseMove() {
     }
 
 
-let lastSendTime = 0;      // хранит время последней отправки
+/*let lastSendTime = 0;      // хранит время последней отправки
 const MIN_SEND_INTERVAL = 50; // минимальный интервал между отправками в мс
 
 function sendUint8(a) {
@@ -1508,15 +1508,15 @@ function sendUint8(a) {
         msg.setUint8(0, a);
         wsSend(msg);
     }
-}
+}*/
 
-    /*function sendUint8(a) {
+    function sendUint8(a) {
         if (wsIsOpen()) {
             var msg = prepareData(1);
             msg.setUint8(0, a);
             wsSend(msg)
         }
-    }*/
+    }
 
 
 
