@@ -86,7 +86,7 @@ function normalizeNick(nick) {
 
     let n = nick.trim();
 
-    const brackets = { '[': ']', '{': '}', '(': ')', '|': '|' };
+    const brackets = {'[': ']'};
     const firstChar = n.charAt(0);
     const lastChar = n.charAt(n.length - 1);
 
@@ -123,8 +123,7 @@ function fetchSkinList() {
             data.split('\n').forEach(line => {
                 let [name, id] = line.split(':');
                 if (name && id) {
-                    // Нормализуем ник и заменяем _ на пробелы
-                    name = normalizeNick(name.replace(/_/g, ' '));
+                    name = normalizeNick(name);
                     skinList[name] = id.trim();
                 }
             });
