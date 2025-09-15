@@ -81,6 +81,7 @@ body{font-family:'Roboto', sans-serif;display:flex;height:100%;width:100%;color:
 .sidebar .menu-item i{font-size:20px;} 
 .sidebar .menu-item .label{font-size:16px;} 
 .sidebar .menu-item.active{background-color:#171717;border-right:solid;}
+.sidebar .menu-item:hover{background-color: #171717;}
 .menu-item:hover{transform: scale(1.05);text-shadow: #ffffffb0 1px 0 10px;}
 .setting{position: absolute;margin-left: 140px;background-color: #1b263b;padding: 10px;border-radius: 100%;cursor: pointer;}	
 .main-skin{margin:0 10px;} 
