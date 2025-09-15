@@ -1,3 +1,11 @@
+function showContent(id) {
+                    document.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));
+                    document.querySelectorAll('.content').forEach(content => content.classList.remove('active'));
+
+                    document.querySelector(`.menu-item[onclick="showContent('${id}')"]`).classList.add('active');
+                    document.getElementById(id).classList.add('active');
+                }
+
 function showLogoutNotification() {
     const notif = document.getElementById('logout-notification');
     if (!notif) return;
@@ -175,6 +183,7 @@ leaderboard.addEventListener('click', function(e) {
 
     insertNick(nickElem.textContent.trim());
 });
+
 
 
 
