@@ -109,14 +109,17 @@ const observer = new MutationObserver(() => {
     if (!star) return;
 
     // Сброс классов и цвета
-    star.classList.remove('high-level', 'ultra-level');
+    star.classList.remove('high-level', 'ultra-level', 'old-level');
     levelElem.style.color = '';
 
-    if (level >= 70) {
-      star.classList.add('ultra-level'); // можно оставить для визуального эффекта
+    if (level >= 100) {
+      star.classList.add('old-level');   // новый класс для 100+
+      levelElem.style.color = 'black';   // цвет черный
+    } else if (level >= 70) {
+      star.classList.add('ultra-level'); // 70-99
       levelElem.style.color = 'gold';
     } else if (level >= 50) {
-      star.classList.add('high-level');
+      star.classList.add('high-level');  // 50-69
     }
   });
 });
@@ -183,6 +186,7 @@ leaderboard.addEventListener('click', function(e) {
 
     insertNick(nickElem.textContent.trim());
 });
+
 
 
 
