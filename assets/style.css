@@ -80,7 +80,9 @@ body{font-family:'Roboto', sans-serif;display:flex;height:100%;width:100%;color:
 .overlays{z-index:1;position:absolute;left:0;right:0;top:0;bottom:0;background-color:rgba(0, 0, 0, 0.5);	display:flex;align-items:center;justify-content:center;} 
 .sidebar .menu-item i{font-size:20px;} 
 .sidebar .menu-item .label{font-size:16px;} 
-.sidebar .menu-item.active{background-color:#171717;border-right:solid;}	
+.sidebar .menu-item.active{background-color:#171717;border-right:solid;}
+.menu-item:hover {transform: scale(1.03);text-shadow: #ffffffb0 1px 0 10px;}
+.setting{position: absolute;margin-left: 140px;background-color: #1b263b;padding: 10px;border-radius: 100%;cursor: pointer;}	
 .main-skin{margin:0 10px;} 
 .avatar-containers{display:flex;flex-direction:column;align-items:center;position:relative;}	
 .gallery{width:680px;aspect-ratio:2;grid-template-columns:repeat(6, auto);}
