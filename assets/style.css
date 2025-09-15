@@ -91,7 +91,7 @@ body{font-family:'Roboto', sans-serif;display:flex;height:100%;width:100%;color:
 .content{display:none;text-align:center;} .content.active{display:block;width:100%;}  .top-info{display:flex;justify-content:center;font-size:18px;} .top-info div{display:flex;align-items:center;gap:5px;} .top-info span{background-color:#1b263b;padding:8px 15px;border-radius:20px;}
 #process{font-size:13px;	color:#8e8e8e;}
 .nav-buttons{display:flex;gap:20px;margin-top:10px;justify-content:center;} 
-.nav-button{background-color:white;color:#016bef;padding:10px 20px;border-radius:20px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:10px;border:0;}	
+.nav-button{background-color:white;color:#016bef;padding:10px 20px;border-radius:20px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:10px;border:0;}	
 .spec:hover{transform:scale(1.1);}	
 .serv-button:hover{background-color:#016bef;color:white;} 
 .play-button{background-color:#016bef;color:white;} 
