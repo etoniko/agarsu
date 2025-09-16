@@ -491,23 +491,33 @@ wHandle.setserver = function(arg) {
             wPressed = spacePressed = qPressed = ePressed = rPressed = tPressed = pPressed = false;
         };
 
+let macroInterval = null;
+
 $(document).on("mousedown", function (event) {
     if (!enableMouseClicks || isTyping) return;
 
     const overlay = $('.overlays');
-    if (overlay.is(':visible')) {
-        return; // блокируем клики, если открыт оверлей
-    }
+    if (overlay.is(':visible')) return;
 
-    switch (event.button) {
-        case 0: // левая кнопка
-            sendMouseMove();
-            sendUint8(21);
-            break;
-        case 2: // правая кнопка
-            sendMouseMove();
-            sendUint8(17);
-            break;
+    const handleAction = () => {
+        sendMouseMove();
+        switch (event.button) {
+            case 0: sendUint8(21); break; // левая кнопка
+            case 2: sendUint8(17); break; // правая кнопка
+        }
+    };
+
+    // Выполнить сразу при нажатии
+    handleAction();
+
+    // Запустить макрос с интервалом 100ms
+    macroInterval = setInterval(handleAction, 100);
+});
+
+$(document).on("mouseup", function () {
+    if (macroInterval) {
+        clearInterval(macroInterval);
+        macroInterval = null;
     }
 });
 
@@ -1517,32 +1527,50 @@ function sendMouseMove() {
     }
 
 
-/*let lastSendTime = 0;      // хранит время последней отправки
-const MIN_SEND_INTERVAL = 50; // минимальный интервал между отправками в мс
+let lastSendTime = 0;
+const MIN_SEND_INTERVAL = 100; // мс
+const sendQueue = [];
 
 function sendUint8(a) {
+    // Добавляем значение в очередь
+    sendQueue.push(a);
+
+    // Если сокет закрыт, просто ждём
+    if (!wsIsOpen()) return;
+
     const now = Date.now();
+    const timeSinceLast = now - lastSendTime;
 
-    if (now - lastSendTime < MIN_SEND_INTERVAL) {
-        return;
+    if (timeSinceLast >= MIN_SEND_INTERVAL) {
+        flushQueue();
+    } else {
+        // Запланируем отправку через оставшееся время
+        clearTimeout(sendUint8._timer);
+        sendUint8._timer = setTimeout(flushQueue, MIN_SEND_INTERVAL - timeSinceLast);
     }
+}
 
-    lastSendTime = now;
+function flushQueue() {
+    if (!wsIsOpen() || sendQueue.length === 0) return;
 
-    if (wsIsOpen()) {
-        var msg = prepareData(1);
-        msg.setUint8(0, a);
+    lastSendTime = Date.now();
+
+    // Отправляем все накопленные значения
+    while (sendQueue.length > 0) {
+        const msg = prepareData(1);
+        msg.setUint8(0, sendQueue.shift());
         wsSend(msg);
     }
-}*/
+}
 
-    function sendUint8(a) {
+
+    /*function sendUint8(a) {
         if (wsIsOpen()) {
             var msg = prepareData(1);
             msg.setUint8(0, a);
             wsSend(msg)
         }
-    }
+    }*/
 
 
 
