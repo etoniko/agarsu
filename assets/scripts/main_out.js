@@ -494,10 +494,10 @@ wHandle.setserver = function(arg) {
 $(document).on("mousedown", function (event) {
     if (!enableMouseClicks || isTyping) return;
 
-    const overlay = $('.overlays');
-    if (overlay.is(':visible')) {
-        return; // блокируем клики, если открыт оверлей
-    }
+    const blockedClasses = ['.overlays', '.chatX_window', '.map'];
+    const isBlocked = blockedClasses.some(selector => $(selector).is(':visible'));
+
+    if (isBlocked) return;
 
     switch (event.button) {
         case 0: // левая кнопка
@@ -510,6 +510,7 @@ $(document).on("mousedown", function (event) {
             break;
     }
 });
+
 
 $(document).on("contextmenu", function (event) {
     if (enableMouseClicks) event.preventDefault();
