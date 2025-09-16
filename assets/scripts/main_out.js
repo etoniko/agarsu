@@ -494,6 +494,11 @@ wHandle.setserver = function(arg) {
 $(document).on("mousedown", function (event) {
     if (!enableMouseClicks || isTyping) return;
 
+    const overlay = $('.overlays');
+    if (overlay.is(':visible')) {
+        return; // блокируем клики, если открыт оверлей
+    }
+
     switch (event.button) {
         case 0: // левая кнопка
             sendMouseMove();
