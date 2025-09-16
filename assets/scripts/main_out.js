@@ -491,6 +491,26 @@ wHandle.setserver = function(arg) {
             wPressed = spacePressed = qPressed = ePressed = rPressed = tPressed = pPressed = false;
         };
 
+$(document).on("mousedown", function (event) {
+    if (!enableMouseClicks || isTyping) return;
+
+    switch (event.button) {
+        case 0: // левая кнопка
+            sendMouseMove();
+            sendUint8(21);
+            break;
+        case 2: // правая кнопка
+            sendMouseMove();
+            sendUint8(17);
+            break;
+    }
+});
+
+$(document).on("contextmenu", function (event) {
+    if (enableMouseClicks) event.preventDefault();
+});
+
+
 
         $(document).ready(function () {
             // Handle keydown event
@@ -2419,6 +2439,7 @@ function drawLeaderBoard() {
         showColor = false,
         ua = false,
         // userScore = 0,
+        enableMouseClicks = false,
         showMass = true,
         hideChat = false,
         smoothRender = .4,
@@ -2474,6 +2495,9 @@ function drawLeaderBoard() {
     wHandle.setColors = function (arg) {
         // showColor = arg
     };
+wHandle.setMouseClicks = function (arg) {
+    enableMouseClicks = arg;
+};
     wHandle.setShowMass = function (arg) {
         showMass = arg
     };
