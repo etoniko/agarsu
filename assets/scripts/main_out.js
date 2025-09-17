@@ -491,6 +491,9 @@ wHandle.setserver = function(arg) {
             wPressed = spacePressed = qPressed = ePressed = rPressed = tPressed = pPressed = false;
         };
 
+let macroInterval = null;
+let macroTimeout = null;
+
 $(document).on("mousedown", function (event) {
     if (!enableMouseClicks || isTyping) return;
 
@@ -505,29 +508,20 @@ $(document).on("mousedown", function (event) {
         }
     };
 
-    // сразу выполняем 1 раз
+    // сразу срабатывает
     handleAction();
 
-    // если кнопку продолжают держать → включится макрос
-    setTimeout(() => {
-        setInterval(handleAction, 100);
+    // ждём 200мс — если кнопку всё ещё держат, запускаем макрос
+    macroTimeout = setTimeout(() => {
+        macroInterval = setInterval(handleAction, 100);
     }, 200);
 });
-
 
 $(document).on("mouseup", function () {
     clearTimeout(macroTimeout);
     clearInterval(macroInterval);
     macroTimeout = null;
     macroInterval = null;
-});
-
-
-$(document).on("mouseup", function () {
-    if (macroInterval) {
-        clearInterval(macroInterval);
-        macroInterval = null;
-    }
 });
 
 
