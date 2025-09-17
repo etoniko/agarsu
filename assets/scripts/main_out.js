@@ -491,39 +491,58 @@ wHandle.setserver = function(arg) {
             wPressed = spacePressed = qPressed = ePressed = rPressed = tPressed = pPressed = false;
         };
 
-let macroInterval = null;
-let macroTimeout = null;
+  let leftDown = false;
+    let rightDown = false;
+    let leftInterval = null;
+    let rightTimeout = null;
+    let rightInterval = null;
 
-$(document).on("mousedown", function (event) {
-    if (!enableMouseClicks || isTyping) return;
+    const handleLeft = () => sendUint8(21);  // левая кнопка
+    const handleRight = () => sendUint8(17); // правая кнопка
 
-    const overlay = $('.overlays');
-    if (overlay.is(':visible')) return;
+    $(document).on("mousedown", function (event) {
+        if (!enableMouseClicks || isTyping) return;
 
-    const handleAction = () => {
-        sendMouseMove();
-        switch (event.button) {
-            case 0: sendUint8(21); break; // левая кнопка
-            case 2: sendUint8(17); break; // правая кнопка
+        const overlay = $('.overlays');
+        if (overlay.is(':visible')) return;
+
+        switch (event.which) {
+            case 1: // левая
+                if (!leftDown) {
+                    leftDown = true;
+                    handleLeft(); // сразу одно действие
+                    leftInterval = setInterval(handleLeft, 100); // повтор каждые 100мс
+                }
+                break;
+            case 3: // правая
+                if (!rightDown) {
+                    rightDown = true;
+                    rightTimeout = setTimeout(() => {
+                        if (rightDown) {
+                            rightInterval = setInterval(handleRight, 100);
+                        }
+                    }, 50); // задержка 50мс
+                }
+                break;
         }
-    };
+    });
 
-    // сразу срабатывает
-    handleAction();
-
-    // ждём 150мс — если кнопку всё ещё держат, запускаем макрос
-    macroTimeout = setTimeout(() => {
-        macroInterval = setInterval(handleAction, 100);
-    }, 150);
-});
-
-$(document).on("mouseup", function () {
-    clearTimeout(macroTimeout);
-    clearInterval(macroInterval);
-    macroTimeout = null;
-    macroInterval = null;
-});
-
+    $(document).on("mouseup", function (event) {
+        switch (event.which) {
+            case 1: // левая
+                leftDown = false;
+                clearInterval(leftInterval);
+                leftInterval = null;
+                break;
+            case 3: // правая
+                rightDown = false;
+                clearTimeout(rightTimeout);
+                rightTimeout = null;
+                clearInterval(rightInterval);
+                rightInterval = null;
+                break;
+        }
+    });
 
 $(document).on("contextmenu", function (event) {
     if (enableMouseClicks) event.preventDefault();
