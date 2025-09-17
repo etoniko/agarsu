@@ -491,7 +491,10 @@ wHandle.setserver = function(arg) {
             wPressed = spacePressed = qPressed = ePressed = rPressed = tPressed = pPressed = false;
         };
 
-  let leftDown = false;
+
+
+
+    let leftDown = false;
     let rightDown = false;
     let leftInterval = null;
     let rightTimeout = null;
@@ -511,17 +514,22 @@ wHandle.setserver = function(arg) {
                 if (!leftDown) {
                     leftDown = true;
                     handleLeft(); // сразу одно действие
-                    leftInterval = setInterval(handleLeft, 100); // повтор каждые 100мс
+                    leftInterval = setInterval(() => {
+                        if (leftDown) handleLeft();
+                    }, 100); // повтор каждые 100мс
                 }
                 break;
             case 3: // правая
                 if (!rightDown) {
                     rightDown = true;
+                    handleRight(); // сразу одно действие
                     rightTimeout = setTimeout(() => {
                         if (rightDown) {
-                            rightInterval = setInterval(handleRight, 100);
+                            rightInterval = setInterval(() => {
+                                if (rightDown) handleRight();
+                            }, 100); // повтор каждые 100мс
                         }
-                    }, 50); // задержка 50мс
+                    }, 150); // задержка перед повтором
                 }
                 break;
         }
@@ -543,6 +551,10 @@ wHandle.setserver = function(arg) {
                 break;
         }
     });
+
+
+
+
 
 $(document).on("contextmenu", function (event) {
     if (enableMouseClicks) event.preventDefault();
