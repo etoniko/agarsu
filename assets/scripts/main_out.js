@@ -511,10 +511,10 @@ $(document).on("mousedown", function (event) {
     // сразу срабатывает
     handleAction();
 
-    // ждём 200мс — если кнопку всё ещё держат, запускаем макрос
+    // ждём 150мс — если кнопку всё ещё держат, запускаем макрос
     macroTimeout = setTimeout(() => {
         macroInterval = setInterval(handleAction, 100);
-    }, 200);
+    }, 150);
 });
 
 $(document).on("mouseup", function () {
