@@ -491,8 +491,6 @@ wHandle.setserver = function(arg) {
             wPressed = spacePressed = qPressed = ePressed = rPressed = tPressed = pPressed = false;
         };
 
-let macroInterval = null;
-
 $(document).on("mousedown", function (event) {
     if (!enableMouseClicks || isTyping) return;
 
@@ -507,12 +505,23 @@ $(document).on("mousedown", function (event) {
         }
     };
 
-    // Выполнить сразу при нажатии
+    // сразу выполняем 1 раз
     handleAction();
 
-    // Запустить макрос с интервалом 100ms
-    macroInterval = setInterval(handleAction, 100);
+    // если кнопку продолжают держать → включится макрос
+    setTimeout(() => {
+        setInterval(handleAction, 100);
+    }, 200);
 });
+
+
+$(document).on("mouseup", function () {
+    clearTimeout(macroTimeout);
+    clearInterval(macroInterval);
+    macroTimeout = null;
+    macroInterval = null;
+});
+
 
 $(document).on("mouseup", function () {
     if (macroInterval) {
@@ -1528,27 +1537,31 @@ function sendMouseMove() {
 
 
 let lastSendTime = 0;
-const MIN_SEND_INTERVAL = 100; // мс
-const sendQueue = [];
+const MIN_SEND_INTERVAL = 20; // мс
 
 function sendUint8(a) {
-    // Добавляем значение в очередь
-    sendQueue.push(a);
-
-    // Если сокет закрыт, просто ждём
     if (!wsIsOpen()) return;
 
     const now = Date.now();
     const timeSinceLast = now - lastSendTime;
 
     if (timeSinceLast >= MIN_SEND_INTERVAL) {
-        flushQueue();
+        doSend(a);
     } else {
-        // Запланируем отправку через оставшееся время
         clearTimeout(sendUint8._timer);
-        sendUint8._timer = setTimeout(flushQueue, MIN_SEND_INTERVAL - timeSinceLast);
+        sendUint8._timer = setTimeout(() => doSend(a), MIN_SEND_INTERVAL - timeSinceLast);
     }
 }
+
+function doSend(a) {
+    if (!wsIsOpen()) return;
+    lastSendTime = Date.now();
+
+    const msg = prepareData(1);
+    msg.setUint8(0, a);
+    wsSend(msg);
+}
+
 
 function flushQueue() {
     if (!wsIsOpen() || sendQueue.length === 0) return;
