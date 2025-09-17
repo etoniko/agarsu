@@ -527,9 +527,9 @@ wHandle.setserver = function(arg) {
                         if (rightDown) {
                             rightInterval = setInterval(() => {
                                 if (rightDown) handleRight();
-                            }, 100); // повтор каждые 100мс
+                            }, 50); // повтор каждые 50мс
                         }
-                    }, 110); // задержка перед повтором
+                    }, 105); // задержка перед повтором
                 }
                 break;
         }
