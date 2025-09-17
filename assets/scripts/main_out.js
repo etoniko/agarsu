@@ -1529,55 +1529,13 @@ function sendMouseMove() {
         return null != ws && ws.readyState == ws.OPEN
     }
 
-
-let lastSendTime = 0;
-const MIN_SEND_INTERVAL = 20; // мс
-
-function sendUint8(a) {
-    if (!wsIsOpen()) return;
-
-    const now = Date.now();
-    const timeSinceLast = now - lastSendTime;
-
-    if (timeSinceLast >= MIN_SEND_INTERVAL) {
-        doSend(a);
-    } else {
-        clearTimeout(sendUint8._timer);
-        sendUint8._timer = setTimeout(() => doSend(a), MIN_SEND_INTERVAL - timeSinceLast);
-    }
-}
-
-function doSend(a) {
-    if (!wsIsOpen()) return;
-    lastSendTime = Date.now();
-
-    const msg = prepareData(1);
-    msg.setUint8(0, a);
-    wsSend(msg);
-}
-
-
-function flushQueue() {
-    if (!wsIsOpen() || sendQueue.length === 0) return;
-
-    lastSendTime = Date.now();
-
-    // Отправляем все накопленные значения
-    while (sendQueue.length > 0) {
-        const msg = prepareData(1);
-        msg.setUint8(0, sendQueue.shift());
-        wsSend(msg);
-    }
-}
-
-
-    /*function sendUint8(a) {
+    function sendUint8(a) {
         if (wsIsOpen()) {
             var msg = prepareData(1);
             msg.setUint8(0, a);
             wsSend(msg)
         }
-    }*/
+    }
 
 
 
