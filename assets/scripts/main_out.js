@@ -529,7 +529,7 @@ wHandle.setserver = function(arg) {
                                 if (rightDown) handleRight();
                             }, 50); // повтор каждые 50мс
                         }
-                    }, 105); // задержка перед повтором
+                    }, 120); // задержка перед повтором
                 }
                 break;
         }
