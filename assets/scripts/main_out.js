@@ -167,6 +167,7 @@ setNick(document.getElementById('nick').value + "#" + document.getElementById('p
 
 const SERVERS = {
         "ffa":   "pmori.ru:6001",
+         "ffaBerlin":   "spb.agar.su:6001",
         "ms": "pmori.ru:6002",
         "exp":   "pmori.ru:6004"
     };
