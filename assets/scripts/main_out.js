@@ -55,29 +55,59 @@ window.addEventListener('load', setActiveFromHash);
 window.addEventListener('hashchange', setActiveFromHash);
 
 // Обновление онлайн
-async function updateOnlineCount() {
-    const servers = [
-        {id: 'ffa', url: 'https://pmori.ru:6001/process', max: 120},
-        {id: 'berlin', url: 'https://spb.agar.su:6001/process', max: 120},
-        {id: 'ms', url: 'https://pmori.ru:6002/process', max: 120},
-        {id: 'exp', url: 'https://pmori.ru:6004/process', max: 120}
-    ];
+// Перехват .show() / .hide() overlay для динамического запуска/остановки интервала
+    (function($) {
+        const oldShow = $.fn.show;
+        const oldHide = $.fn.hide;
 
-    for (const server of servers) {
-        try {
-            const response = await fetch(server.url);
-            if (response.ok) {
+        $.fn.show = function(...args) {
+            if (this.is("#overlays")) {
+                // сразу обновляем онлайн
+                updateOnlineCount();
+                // запускаем интервал, если ещё не запущен
+                if (!window.onlineInterval) {
+                    window.onlineInterval = setInterval(updateOnlineCount, 5000);
+                }
+            }
+            return oldShow.apply(this, args);
+        };
+
+        $.fn.hide = function(...args) {
+            if (this.is("#overlays") && window.onlineInterval) {
+                clearInterval(window.onlineInterval);
+                window.onlineInterval = null;
+            }
+            return oldHide.apply(this, args);
+        };
+    })(wjQuery);
+
+    // Функция обновления онлайн
+    async function updateOnlineCount() {
+        const servers = [
+            {id: 'ffa', url: 'https://pmori.ru:6001/process', max: 120},
+            {id: 'berlin', url: 'https://spb.agar.su:6001/process', max: 120},
+            {id: 'ms', url: 'https://pmori.ru:6002/process', max: 120},
+            {id: 'exp', url: 'https://pmori.ru:6004/process', max: 120}
+        ];
+
+        for (const server of servers) {
+            try {
+                const response = await fetch(server.url);
+                if (!response.ok) continue;
                 const data = await response.json();
                 const li = document.getElementById(server.id);
-                li.querySelector('.online-count').textContent = `${data.online}/${server.max}`;
+                if (li) li.querySelector('.online-count').textContent = `${data.online}/${server.max}`;
+            } catch (e) {
+                console.error(`Ошибка обновления сервера ${server.id}:`, e);
             }
-        } catch (error) {
-            console.error(error);
         }
     }
-}
-setInterval(updateOnlineCount, 5000);
-                        updateOnlineCount();
+
+    // Если overlay изначально видим, запускаем сразу обновление и интервал
+    if (wjQuery("#overlays").is(":visible")) {
+        updateOnlineCount();
+        window.onlineInterval = setInterval(updateOnlineCount, 5000);
+    }
 						
 let skinList = {}; // Глобальный объект для скинов
 
