@@ -58,7 +58,7 @@ window.addEventListener('hashchange', setActiveFromHash);
 async function updateOnlineCount() {
     const servers = [
         {id: 'ffa', url: 'https://pmori.ru:6001/process', max: 120},
-        {id: 'ffaBerlin', url: 'https://spb.agar.su:6001/process', max: 120},
+        {id: 'ffaberlin', url: 'https://spb.agar.su:6001/process', max: 120},
         {id: 'ms', url: 'https://pmori.ru:6002/process', max: 120},
         {id: 'exp', url: 'https://pmori.ru:6004/process', max: 120}
     ];
@@ -167,7 +167,7 @@ setNick(document.getElementById('nick').value + "#" + document.getElementById('p
 
 const SERVERS = {
         "ffa":   "pmori.ru:6001",
-         "ffaBerlin":   "spb.agar.su:6001",
+         "ffaberlin":   "spb.agar.su:6001",
         "ms": "pmori.ru:6002",
         "exp":   "pmori.ru:6004"
     };
