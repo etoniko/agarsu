@@ -1280,7 +1280,7 @@ function censorMessage(message) {
 }
 
 const admins = ["нико"];
-const moders = ["banshee"];
+const moders = ["banshee","C O S M O S"];
 
 let passUsers = [];
 
@@ -1315,7 +1315,7 @@ function drawChatBoard() {
     if (admins.includes(lowerName)) {
         msgDiv.className = 'chatX_msg admins';
     } else if (moders.includes(lowerName)) {
-        msgDiv.className = 'chatX_msg moders';
+        msgDiv.className = 'chatX_msg '+ lowerName;
     } else {
         msgDiv.className = 'chatX_msg';
     }
@@ -2395,7 +2395,7 @@ function drawLeaderBoard() {
                     if (admins.includes(lowerName)) {
                         entryDiv.className = "Lednick admins";
                     } else if (moders.includes(lowerName)) {
-                        entryDiv.className = "Lednick moders";
+                        entryDiv.className = "Lednick " + lowerName;
                     } else {
                         entryDiv.className = "Lednick";
                     }
