@@ -2422,7 +2422,7 @@ function drawLeaderBoard() {
                 if (admins.includes(lowerName)) {
                     myRankDiv.className = "Lednick admins";
                 } else if (moders.includes(lowerName)) {
-                    myRankDiv.className = "Lednick moders";
+                    myRankDiv.className = "Lednick" + lowerName;
                 } else {
                     myRankDiv.className = "Lednick";
                 }
