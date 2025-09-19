@@ -1280,7 +1280,7 @@ function censorMessage(message) {
 }
 
 const admins = ["нико"];
-const moders = ["banshee","C O S M O S"];
+const moders = ["banshee","cosmos"];
 
 let passUsers = [];
 
