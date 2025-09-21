@@ -1123,7 +1123,8 @@ if (pingElement) {
                     leaderBoard.push({
                         id: nodeId,
                         name: playerName,
-                        level
+                        level,
+                        xp: playerXp
                     });
                 }
                 drawLeaderBoard();
@@ -1349,6 +1350,10 @@ function drawChatBoard() {
         const levelSpan = document.createElement('span');
         levelSpan.className = 'levelme';
         levelSpan.textContent = lastMessage.playerLevel;
+
+    if (typeof lastMessage.playerXp === 'number') {
+        levelContainer.title = `XP: ${lastMessage.playerXp}`;
+    }
 
         levelContainer.appendChild(starIcon);
         levelContainer.appendChild(levelSpan);
@@ -2402,8 +2407,13 @@ function drawLeaderBoard() {
 
                     entryDiv.style.color = isMe ? "#FFAAAA" : "#FFFFFF";
                     entryDiv.innerHTML = (!noRanking ? `${b + 1}. ` : "") +
-                        (level !== -1 ? "<div class='star-container'><i class='fas fa-star'></i><span class='levelme'>" + level + "</span></div>" : "") +
-                        `<span>${name}</span>`;
+    (level !== -1 
+        ? `<div class='star-container' title="XP: ${leaderBoard[b].xp || 0}">
+             <i class='fas fa-star'></i>
+             <span class='levelme'>${level}</span>
+           </div>` 
+        : "") +
+    `<span>${name}</span>`;
                     leaderboardDiv.appendChild(entryDiv);
                 }
             }
