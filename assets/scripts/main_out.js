@@ -1351,12 +1351,14 @@ function drawChatBoard() {
         levelSpan.className = 'levelme';
         levelSpan.textContent = lastMessage.playerLevel;
 
-    if (typeof lastMessage.playerXp === 'number') {
-        levelContainer.title = `XP: ${lastMessage.playerXp}`;
-    }
+    // tooltip
+        const tooltip = document.createElement('div');
+        tooltip.className = 'tooltip';
+        tooltip.textContent = `XP: ${lastMessage.playerXp}`;
 
         levelContainer.appendChild(starIcon);
         levelContainer.appendChild(levelSpan);
+        levelContainer.appendChild(tooltip);
         nameContainer.appendChild(levelContainer);
     }
 
@@ -2408,9 +2410,10 @@ function drawLeaderBoard() {
                     entryDiv.style.color = isMe ? "#FFAAAA" : "#FFFFFF";
                     entryDiv.innerHTML = (!noRanking ? `${b + 1}. ` : "") +
     (level !== -1 
-        ? `<div class='star-container' title="XP: ${leaderBoard[b].xp || 0}">
+        ? `<div class='star-container'>
              <i class='fas fa-star'></i>
              <span class='levelme'>${level}</span>
+             <div class='tooltip'>XP: ${leaderBoard[b].xp || 0}</div>
            </div>` 
         : "") +
     `<span>${name}</span>`;
@@ -2439,8 +2442,14 @@ function drawLeaderBoard() {
 
                 myRankDiv.style.color = "#FFAAAA";
                 myRankDiv.innerHTML = myRank + ". " +
-                    (level !== -1 ? "<div class='star-container'><i class='fas fa-star'></i><span class='levelme'>" + level + "</span></div>" : "") +
-                    `<span>${myName}</span>`;
+    (level !== -1 
+        ? `<div class='star-container'>
+             <i class='fas fa-star'></i>
+             <span class='levelme'>${level}</span>
+             <div class='tooltip'>XP: ${accountData?.xp || 0}</div>
+           </div>` 
+        : "") +
+    `<span>${myName}</span>`;
                 leaderboardDiv.appendChild(myRankDiv);
             }
         } else {
