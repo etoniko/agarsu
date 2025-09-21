@@ -132,70 +132,68 @@ function notify(msg, duration = 3000) {
     reader.readAsDataURL(file);
   });
 
-  // Ограничение ввода ника
-  nicknameInput.addEventListener('blur', () => {
-    let nick = nicknameInput.value.trim();
-    nicknameInput.value = nick.replace(/['`";:]/g, '').slice(0, 20);
+// Ограничение ввода ника (англ + рус + цифры, [ ] для клана)
+nicknameInput.addEventListener('input', () => {
+  let nick = nicknameInput.value;
 
-    if (serviceType === 'clan') {
-  const clanPattern = /^\[.*\]$/;
-  if (!clanPattern.test(nick)) {
-    notify('❌ У клана должны быть квадратные скобки [ ]');
+  // Разрешаем только: английские, русские буквы, цифры и [ ] для клана
+  nick = nick.replace(/[^a-zA-Zа-яё0-9\[\]]/gi, '');
+
+  // Ограничение длины
+  if (nick.length > 20) nick = nick.slice(0, 20);
+
+  nicknameInput.value = nick;
+});
+
+// Переход к оплате
+document.getElementById('dataForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const nick = nicknameInput.value.trim();
+  const pass = passwordInput.value.trim();
+
+  if (!nick) {
+    notify(serviceType === 'clan' ? 'Введите название клана' : 'Введите ник');
     return;
   }
-} else if (serviceType === 'self') {
-  if (/\[.*\]/.test(nick)) {
-    notify('❌ Ник не может содержать [ ]');
-    nicknameInput.value = nick.replace(/\[|\]/g, ''); // убираем скобки
-    return;
-  }
-}
-  });
 
-  // Переход к оплате
-  document.getElementById('dataForm').addEventListener('submit', e => {
-    e.preventDefault();
-    const nick = nicknameInput.value.trim();
-    const pass = passwordInput.value.trim();
-
-    if (!nick) {
-      notify(serviceType === 'clan' ? 'Введите название клана' : 'Введите ник');
+  // Проверка клана или ника
+  if (serviceType === 'clan') {
+    const clanPattern = /^\[.*\]$/;
+    if (!clanPattern.test(nick)) {
+      notify('❌ У клана должны быть квадратные скобки [ ]');
       return;
     }
-    if (serviceType === 'clan') {
-  const clanPattern = /^\[.*\]$/;
-  if (!clanPattern.test(nick)) {
-    notify('❌ У клана должны быть квадратные скобки [ ]');
-    return;
-  }
-} else if (serviceType === 'self') {
-  if (/\[.*\]/.test(nick)) {
-    notify('❌ Ник не может содержать [ ]');
-    return;
-  }
-}
-    if (chosenType === 'pass') {
-      if (!pass) {
-        notify('❌ Введите пароль');
-        return;
-      }
-      if (pass.length > 5) {
-        notify('❌ Пароль ≤5 символов');
-        return;
-      }
-    }
-    if (chosenType !== 'pass' && !processedImageUrl) {
-      notify('❌ Загрузите изображение');
+  } else if (serviceType === 'self') {
+    if (/\[.*\]/.test(nick)) {
+      notify('❌ Ник не может содержать [ ]');
       return;
     }
+  }
 
-    finalTitleEl.textContent = `Оплата — ${chosenSkin}`;
-    priceEl.textContent = `${chosenPrice}₽`;
-    paidBtn.disabled = false;
-    expiredBox.classList.add('hiddenn');
-    startTimer();
-    setActiveStep(3);
-  });
+  // Проверка пароля (для pass) или изображения
+  if (chosenType === 'pass') {
+    if (!pass) {
+      notify('❌ Введите пароль');
+      return;
+    }
+    if (pass.length > 5) {
+      notify('❌ Пароль ≤5 символов');
+      return;
+    }
+  } else if (!processedImageUrl) {
+    notify('❌ Загрузите изображение');
+    return;
+  }
+
+  // Обновление интерфейса и старт таймера
+  finalTitleEl.textContent = `Оплата — ${chosenSkin}`;
+  priceEl.textContent = `${chosenPrice}₽`;
+  paidBtn.disabled = false;
+  expiredBox.classList.add('hiddenn');
+  startTimer();
+  setActiveStep(3);
+});
+
 
   // Таймер
   function startTimer() {
@@ -296,4 +294,5 @@ formData.append('uid', uid);
 
   setActiveStep(1);
 })();
+
 
