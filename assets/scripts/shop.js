@@ -296,3 +296,10 @@ formData.append('uid', uid);
 })();
 
 
+const skinsGrid = document.getElementById('skinsGrid');
+
+skinsGrid.addEventListener('wheel', function(e) {
+    e.preventDefault(); // предотвращаем вертикальную прокрутку
+    skinsGrid.scrollLeft += e.deltaY; // прокручиваем горизонтально
+});
+
