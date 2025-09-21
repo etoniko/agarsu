@@ -287,10 +287,20 @@ formData.append('uid', uid);
     chosenPrice = 0;
   }
 
-  function setActiveStep(step) {
-    currentStep = step;
-    stepContents.forEach(c => c.classList.toggle('active', Number(c.dataset.step) === step));
-  }
+function setActiveStep(step) {
+  currentStep = step;
+
+  // Меняем активность для step-содержимого
+  stepContents.forEach(c => {
+    c.classList.toggle('active', Number(c.dataset.step) === step);
+  });
+
+  // Меняем активность для верхнего прогресс-бара (.stage)
+  document.querySelectorAll('.stage').forEach(stage => {
+    stage.classList.toggle('active', Number(stage.dataset.step) === step);
+  });
+}
+
 
   setActiveStep(1);
 })();
@@ -302,4 +312,5 @@ skinsGrid.addEventListener('wheel', function(e) {
     e.preventDefault(); // предотвращаем вертикальную прокрутку
     skinsGrid.scrollLeft += e.deltaY; // прокручиваем горизонтально
 });
+
 
