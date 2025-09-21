@@ -309,7 +309,7 @@ input{font-size:16px;}
 .chatX_alert{position:absolute;top:30px;right:10px;background:#ff4e3e;color:#fff;font-size:13px;padding:4px 8px;border-radius:12px;display:none;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.3);}
 .nresize{cursor:n-resize !important;}
 ::-webkit-scrollbar{width:2px;height:0;}
-::-webkit-scrollbar-thumb{background-color:#ffffff3b;border-radius:10px;}
+::-webkit-scrollbar-thumb{background-color:#6c6c6c;border-radius:10px;}
 ::-webkit-scrollbar-track{background:transparent;}
 #recContainer{position:absolute;top:40%;right:10px;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:10px;font-family:Arial, sans-serif;}
 #recToggle{border:solid #ffffff26 1px;border-radius:50%;background:rgba(0, 0, 0, 0.3);height:40px;width:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:white;font-size:20px;position:relative;transition:all 0.2s ease;}
