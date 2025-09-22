@@ -2959,7 +2959,7 @@ drawOneCell: function (ctx) {
                 invZoomRatio = 1 / zoomRatio;
 
             if (showName && (this.name && this.nameCache) && this.size > 10) {
-                var forbiddenSymbols = ["﷽", "𒐫","𒈙","⸻","꧅","ဪ","௵","௸","‱","catぶ","ᶳᵆⁿᶵᵋˢˢᶨˢ༄","⧼♢ᛃ╰🎀ᵁ℘ܔ🎀╯ᛃ♢⧼"];
+                var forbiddenSymbols = ["﷽", "𒐫","𒈙","⸻","꧅","ဪ","௵","௸","‱","catぶ","ᶳᵆⁿᶵᵋˢˢᶨˢ༄","⧼♢ᛃ╰🎀ᵁ℘ܔ🎀╯ᛃ♢⧼","я"];
                 var displayName = this.name;
 
                 forbiddenSymbols.forEach(symbol => {
