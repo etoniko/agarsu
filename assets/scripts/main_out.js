@@ -95,14 +95,14 @@ window.addEventListener('hashchange', setActiveFromHash);
             if (!response.ok) continue;
             const data = await response.json();
 
-            const total = (data.playing ?? 0) + (data.no_playing ?? 0);
             const playing = data.playing ?? 0;
+            const noPlaying = data.no_playing ?? 0;
 
             const li = document.getElementById(server.id);
             if (li) {
                 const spans = li.querySelectorAll('.online-count');
                 if (spans.length >= 2) {
-                    spans[0].textContent = total;         // Всего игроков
+                    spans[0].textContent = noPlaying;             // ❗ Только неиграющие
                     spans[1].textContent = `${playing}/${server.max}`; // Играющих / максимум
                 }
             }
@@ -111,6 +111,7 @@ window.addEventListener('hashchange', setActiveFromHash);
         }
     }
 }
+
 
 
     // Если overlay изначально видим, запускаем сразу обновление и интервал
