@@ -389,6 +389,7 @@ wHandle.setserver = function(arg) {
 });
 
         var spacePressed = false,
+            cPressed = false,
             qPressed = false,
             ePressed = false,
             rPressed = false,
@@ -432,6 +433,14 @@ wHandle.setserver = function(arg) {
                         sendUint8(17);
                         spacePressed = true;
                     }
+                    break;
+                case 67: // coord
+                    if (!cPressed && !isTyping) {
+setTimeout(() => {
+    coord();
+}, 5000);
+ сPressed = true;                   
+}
                     break;
                 case 87: // W
                     if (!wPressed && !isTyping) {
@@ -488,6 +497,9 @@ wHandle.setserver = function(arg) {
                 case 32: // space
                     spacePressed = false;
                     break;
+                case 67: // coords
+                    cPressed = false;
+                    break;
                 case 87: // W
                     wPressed = false;
 
@@ -518,7 +530,7 @@ wHandle.setserver = function(arg) {
         wHandle.onblur = function () {
             sendUint8(19);
             clearInterval(wInterval); // Ensure the interval is cleared on blur
-            wPressed = spacePressed = qPressed = ePressed = rPressed = tPressed = pPressed = false;
+            wPressed = spacePressed = pPressed = qPressed = ePressed = rPressed = tPressed = pPressed = false;
         };
 
 
