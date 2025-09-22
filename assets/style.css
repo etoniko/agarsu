@@ -175,7 +175,7 @@ input{font-size:16px;}
   font-size: 14px;
   border: 1px solid rgb(255 255 255 / 0%);
       display: grid;
-    grid-template-columns: 0fr 3fr 0fr 1fr;
+    grid-template-columns: 0fr 3fr 0fr 0fr 0fr 1fr;
     align-items: center;
     justify-items: start;
     gap: 5px;
