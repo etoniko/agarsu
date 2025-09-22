@@ -436,9 +436,7 @@ wHandle.setserver = function(arg) {
                     break;
                 case 67: // coord
                     if (!cPressed && !isTyping) {
-setTimeout(() => {
-    coord();
-}, 5000);
+    coord(); // coords
  сPressed = true;                   
 }
                     break;
