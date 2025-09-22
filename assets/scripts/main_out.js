@@ -83,24 +83,35 @@ window.addEventListener('hashchange', setActiveFromHash);
 
     // Функция обновления онлайн
     async function updateOnlineCount() {
-        const servers = [
-            {id: 'ffa', url: 'https://pmori.ru:6001/process', max: 120},
-            {id: 'ms', url: 'https://pmori.ru:6002/process', max: 120},
-            {id: 'exp', url: 'https://pmori.ru:6004/process', max: 120}
-        ];
+    const servers = [
+        {id: 'ffa', url: 'https://pmori.ru:6001/process', max: 120},
+        {id: 'ms', url: 'https://pmori.ru:6002/process', max: 120},
+        {id: 'exp', url: 'https://pmori.ru:6004/process', max: 120}
+    ];
 
-        for (const server of servers) {
-            try {
-                const response = await fetch(server.url);
-                if (!response.ok) continue;
-                const data = await response.json();
-                const li = document.getElementById(server.id);
-                if (li) li.querySelector('.online-count').textContent = `${data.online}/${server.max}`;
-            } catch (e) {
-                console.error(`Ошибка обновления сервера ${server.id}:`, e);
+    for (const server of servers) {
+        try {
+            const response = await fetch(server.url);
+            if (!response.ok) continue;
+            const data = await response.json();
+
+            const total = (data.playing ?? 0) + (data.no_playing ?? 0);
+            const playing = data.playing ?? 0;
+
+            const li = document.getElementById(server.id);
+            if (li) {
+                const spans = li.querySelectorAll('.online-count');
+                if (spans.length >= 2) {
+                    spans[0].textContent = total;         // Всего игроков
+                    spans[1].textContent = `${playing}/${server.max}`; // Играющих / максимум
+                }
             }
+        } catch (e) {
+            console.error(`Ошибка обновления сервера ${server.id}:`, e);
         }
     }
+}
+
 
     // Если overlay изначально видим, запускаем сразу обновление и интервал
     if (wjQuery("#overlays").is(":visible")) {
