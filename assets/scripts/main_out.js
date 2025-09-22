@@ -122,6 +122,17 @@ window.addEventListener('hashchange', setActiveFromHash);
 						
 let skinList = {}; // Глобальный объект для скинов
 
+	let forbiddenNicks = [];
+
+// Загружаем список запрещённых ников
+fetch('qwel.txt')
+    .then(res => res.text())
+    .then(text => {
+        forbiddenNicks = text.split(/\r?\n/).map(nick => nick.trim()).filter(nick => nick !== "");
+    })
+    .catch(err => console.error("Ошибка загрузки qwel.txt:", err));
+
+
 // Функция нормализации ника (берёт ник внутри скобок или обрезает лишнее)
 function normalizeNick(nick) {
     if (!nick) return '';
@@ -2959,23 +2970,35 @@ drawOneCell: function (ctx) {
                 invZoomRatio = 1 / zoomRatio;
 
             if (showName && (this.name && this.nameCache) && this.size > 10) {
-                var forbiddenSymbols = ["﷽", "𒐫","𒈙","⸻","꧅","ဪ","௵","௸","‱","catぶ","ᶳᵆⁿᶵᵋˢˢᶨˢ༄","⧼♢ᛃ╰🎀ᵁ℘ܔ🎀╯ᛃ♢⧼","я"];
-                var displayName = this.name;
+    let displayName = this.name;
 
-                forbiddenSymbols.forEach(symbol => {
-                    if (displayName.includes(symbol)) displayName = "";
-                });
+    // Проверяем каждый ник без учёта регистра
+    for (const forbidden of forbiddenNicks) {
+        if (displayName.toLowerCase().includes(forbidden.toLowerCase())) {
+            displayName = "";
+            break;
+        }
+    }
 
-                displayName = censorMessage(displayName);
+    displayName = censorMessage(displayName);
 
-                this.nameCache.setValue(displayName);
-                this.nameCache.setSize(nameSize);
-                this.nameCache.setScale(zoomRatio);
-                var nameImage = this.nameCache.render(),
-                    nameWidth = Math.floor(nameImage.width * invZoomRatio),
-                    nameHeight = Math.floor(nameImage.height * invZoomRatio);
-                ctx.drawImage(nameImage, x - Math.floor(nameWidth / 2), y - Math.floor(nameHeight / 2), nameWidth, nameHeight);
-            }
+    this.nameCache.setValue(displayName);
+    this.nameCache.setSize(nameSize);
+    this.nameCache.setScale(zoomRatio);
+
+    const nameImage = this.nameCache.render(),
+          nameWidth = Math.floor(nameImage.width * invZoomRatio),
+          nameHeight = Math.floor(nameImage.height * invZoomRatio);
+
+    ctx.drawImage(
+        nameImage,
+        x - Math.floor(nameWidth / 2),
+        y - Math.floor(nameHeight / 2),
+        nameWidth,
+        nameHeight
+    );
+}
+
 
             if (showMass && ((!this.isVirus && !this.isEjected && !this.isAgitated) && this.size > 100)) {
                 var mass = Math.floor(this.size * this.size * 0.01);
