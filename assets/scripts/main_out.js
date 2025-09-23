@@ -2973,12 +2973,12 @@ drawOneCell: function (ctx) {
     let displayName = this.name;
 
     // Проверяем каждый ник без учёта регистра
-    for (const forbidden of forbiddenNicks) {
-        if (displayName.toLowerCase().includes(forbidden.toLowerCase())) {
-            displayName = "";
-            break;
-        }
+  for (const forbidden of forbiddenNicks) {
+    if (displayName.toLowerCase() === forbidden.toLowerCase()) {
+        displayName = "";
+        break;
     }
+}
 
     displayName = censorMessage(displayName);
 
