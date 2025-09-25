@@ -132,24 +132,20 @@ function notify(msg, duration = 3000) {
     reader.readAsDataURL(file);
   });
 
-// Ограничение ввода ника (англ + рус + цифры, [ ] для клана)
 nicknameInput.addEventListener('input', () => {
   let nick = nicknameInput.value;
 
-  // Разрешаем только буквы (EN/RU), цифры, [], пробел
-  nick = nick.replace(/[^a-zA-Zа-яё0-9\[\] ]/gi, '');
+  // Разрешаем: латиница, кириллица (вкл. Ёё), цифры, [], пробел
+  nick = nick.replace(/[^a-zA-Zа-яА-ЯёЁ0-9\[\] ]/g, '');
 
   // Заменяем несколько пробелов подряд на один
   nick = nick.replace(/ +/g, ' ');
-
-  // Убираем пробелы в начале и конце
-  nick = nick.trim();
-
   // Ограничение длины
   if (nick.length > 20) nick = nick.slice(0, 20);
 
   nicknameInput.value = nick;
 });
+
 
 
 // Переход к оплате
@@ -319,6 +315,7 @@ skinsGrid.addEventListener('wheel', function(e) {
     e.preventDefault(); // предотвращаем вертикальную прокрутку
     skinsGrid.scrollLeft += e.deltaY; // прокручиваем горизонтально
 });
+
 
 
 
