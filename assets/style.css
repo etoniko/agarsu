@@ -23,6 +23,21 @@ i:hover{cursor:pointer;}
 .header-row{display:flex;justify-content:space-around;}
 .crown{position:absolute;top:-10px;right:50%;transform:translateX(50%);font-size:24px;color:gold;text-shadow:0 0 5px #000;}
 .top-player{display:flex;justify-content:space-around;}	
+#gradient-settings .color-picker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: default; /* текст кликабельным не будет */
+}
+
+#gradient-settings .color-picker input[type="color"] {
+  cursor: pointer;
+  width: 40px;
+  height: 24px;
+  border: none;
+  padding: 0;
+}
 .cell{width:100px;}	
 .rank{width:100px;	margin-top:10px;}	
 .nick{width:150px;margin-top:10px;text-overflow:ellipsis;overflow:hidden;height:20px;}	
