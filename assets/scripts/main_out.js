@@ -2017,14 +2017,12 @@ function drawGameScene() {
     }
 
 
-// Функция для получения значения куки по имени
+// ==================== COOKIE ====================
 function getCookie(name) {
   const value = `; ${document.cookie}`;
   const parts = value.split(`; ${name}=`);
   if (parts.length === 2) return parts.pop().split(';').shift();
 }
-
-// Функция для установки куки
 function setCookie(name, value, days) {
   let expires = "";
   if (days) {
@@ -2035,88 +2033,88 @@ function setCookie(name, value, days) {
   document.cookie = name + "=" + (value || "") + expires + "; path=/";
 }
 
-// Функция для определения темы ОС по умолчанию
+// ==================== DEFAULT THEME ====================
 function getDefaultTheme() {
   if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    return 'black'; // Или 'gradient'
+    return 'black';
   } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
-    return 'white'; // Или 'gradient'
+    return 'white';
   } else {
-    return 'gradient'; // Если невозможно определить
+    return 'gradient';
   }
 }
 
-// Функция отрисовки сетки (БЕЗ аргументов, читает тему из куки или ОС)
+// ==================== GRID DRAW ====================
 function drawGrid() {
   const savedTheme = getCookie('grid_theme');
-  let themeToDraw = savedTheme || getDefaultTheme(); // Используем тему из куки или тему ОС
+  let themeToDraw = savedTheme || getDefaultTheme();
 
   switch (themeToDraw) {
-    case 'gradient':
-      drawGradientGrid();
-      break;
-    case 'white':
-      drawWhiteGrid();
-      break;
-    case 'black':
-      drawBlackGrid();
-      break;
-    default:
-      drawGradientGrid(); // Обработка неизвестной темы
+    case 'gradient': drawGradientGrid(); break;
+    case 'white': drawWhiteGrid(); break;
+    case 'black': drawBlackGrid(); break;
+    default: drawGradientGrid();
   }
 }
 
+// ==================== DOM READY ====================
 document.addEventListener('DOMContentLoaded', function() {
   const selectElement = document.getElementById('theme-select');
+  const centerColor = document.getElementById('gradient-center');
+  const edgeColor = document.getElementById('gradient-edge');
 
-  // Добавляем обработчик события изменения выбранной темы
+  // обработка изменения темы
   selectElement.addEventListener('change', function() {
-    const selectedTheme = this.value;
-    setCookie('grid_theme', selectedTheme, 30); // Сохраняем в куки
-    drawGrid(); // Отрисовываем сетку
+    setCookie('grid_theme', this.value, 30);
+    drawGrid();
   });
 
-  // Проверяем, есть ли тема в куках
+  // обработка изменения цветов
+  [centerColor, edgeColor].forEach(input => {
+    input.addEventListener('input', function() {
+      setCookie('gradient_center', centerColor.value, 30);
+      setCookie('gradient_edge', edgeColor.value, 30);
+      drawGrid();
+    });
+  });
+
+  // загрузка сохранённых значений
   let savedTheme = getCookie('grid_theme');
   if (!savedTheme) {
-      // Если нет темы в куках, получаем тему ОС по умолчанию
-      savedTheme = getDefaultTheme();
-      setCookie('grid_theme', savedTheme, 30); // Сохраняем тему ОС в куки
+    savedTheme = getDefaultTheme();
+    setCookie('grid_theme', savedTheme, 30);
   }
-
-  // Устанавливаем выбранную тему в селекторе
   selectElement.value = savedTheme;
+
+  // загружаем цвета
+  centerColor.value = getCookie('gradient_center') || "#132745";
+  edgeColor.value = getCookie('gradient_edge') || "#000000";
 });
 
+// ==================== GRADIENT ====================
+function drawGradientGrid() {
+  const centerColor = getCookie('gradient_center') || "#132745";
+  const edgeColor = getCookie('gradient_edge') || "#000000";
 
+  const mapCenterX = (leftPos + rightPos) / 2;
+  const mapCenterY = (topPos + bottomPos) / 2;
+  const gradientRadius = Math.sqrt(Math.pow(rightPos - leftPos, 2) + Math.pow(bottomPos - topPos, 2)) / 2;
 
-    // Новая версия с градиентом
-    function drawGradientGrid() {
-        // Позиции центра карты
-        const mapCenterX = (leftPos + rightPos) / 2;
-        const mapCenterY = (topPos + bottomPos) / 2;
+  const gradient = ctx.createRadialGradient(
+      (mapCenterX - nodeX) * viewZoom + canvasWidth / 2,
+      (mapCenterY - nodeY) * viewZoom + canvasHeight / 2,
+      0,
+      (mapCenterX - nodeX) * viewZoom + canvasWidth / 2,
+      (mapCenterY - nodeY) * viewZoom + canvasHeight / 2,
+      gradientRadius * viewZoom
+  );
 
-        // Определяем радиус градиента, чтобы захватить всю карту
-        const gradientRadius = Math.sqrt(Math.pow(rightPos - leftPos, 2) + Math.pow(bottomPos - topPos, 2)) / 2;
+  gradient.addColorStop(0, centerColor);
+  gradient.addColorStop(1, edgeColor);
 
-        // Создаем радиальный градиент, зафиксированный по карте
-        const gradient = ctx.createRadialGradient(
-            (mapCenterX - nodeX) * viewZoom + canvasWidth / 2, // Центр градиента по оси X
-            (mapCenterY - nodeY) * viewZoom + canvasHeight / 2, // Центр градиента по оси Y
-            0,                                                 // Начальный радиус градиента
-            (mapCenterX - nodeX) * viewZoom + canvasWidth / 2, // Центр по X с учетом позиции игрока
-            (mapCenterY - nodeY) * viewZoom + canvasHeight / 2, // Центр по Y с учетом позиции игрока
-            gradientRadius * viewZoom                          // Радиус градиента
-        );
-
-        // Задаем цвета градиента
-        gradient.addColorStop(0, "#132745");
-        gradient.addColorStop(1, "#000000");
-
-        // Заполняем холст градиентом
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-    }
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+}
 
     // Старая версия сетки
 function drawBlackGrid() {
