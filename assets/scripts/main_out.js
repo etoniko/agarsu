@@ -1429,49 +1429,56 @@ function drawChatBoard() {
 
     // --- Правый клик на сообщение ---
     msgDiv.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        const menu = document.createElement('div');
-        menu.className = 'chat-context-menu';
-        menu.style.top = e.clientY + 'px';
-        menu.style.left = e.clientX + 'px';
+    e.preventDefault();
 
-        const ignoreBtn = document.createElement('div');
-        ignoreBtn.textContent = 'Игнорировать игрока';
-        ignoreBtn.onclick = () => {
-            ignoredPlayers.add(lastMessage.pId);
-            msgDiv.remove();
-            document.body.removeChild(menu);
-        };
-        const delMsgBtn = document.createElement('div');
-        delMsgBtn.textContent = 'Удалить сообщение';
-        delMsgBtn.onclick = () => {
-            msgDiv.remove();
-            document.body.removeChild(menu);
-        };
-        const delAllBtn = document.createElement('div');
-        delAllBtn.textContent = 'Удалить все сообщения игрока';
-        delAllBtn.onclick = () => {
-            [...chatDiv.children].forEach(c => {
-                if (c.querySelector('.chatX_nick')?.title.includes(lastMessage.pId)) {
-                    c.remove();
-                }
-            });
-            document.body.removeChild(menu);
-        };
+    const menu = document.createElement('div');
+    menu.className = 'chat-context-menu';
+    menu.style.position = 'absolute';
+    menu.style.top = e.clientY + 'px';
+    menu.style.left = e.clientX + 'px';
+    menu.style.zIndex = 1000;
+    menu.style.background = '#222';
+    menu.style.color = '#fff';
+    menu.style.padding = '5px';
+    menu.style.borderRadius = '5px';
 
-        menu.appendChild(ignoreBtn);
-        menu.appendChild(delMsgBtn);
-        menu.appendChild(delAllBtn);
+    const playerId = lastMessage.pId;
+    const ignoreBtn = document.createElement('div');
+    ignoreBtn.textContent = 'Игнорировать игрока';
+    ignoreBtn.style.cursor = 'pointer';
+    ignoreBtn.onclick = () => {
+        ignoredPlayers.add(playerId);
+        msgDiv.remove();
+        menu.remove();
+    };
 
-        document.body.appendChild(menu);
+    const delMsgBtn = document.createElement('div');
+    delMsgBtn.textContent = 'Удалить сообщение';
+    delMsgBtn.style.cursor = 'pointer';
+    delMsgBtn.onclick = () => {
+        msgDiv.remove();
+        menu.remove();
+    };
 
-        // Закрываем меню при клике в любое место
-        const closeMenu = () => {
-            if (menu.parentElement) menu.remove();
-            document.removeEventListener('click', closeMenu);
-        };
-        setTimeout(() => document.addEventListener('click', closeMenu), 0);
-    });
+    const delAllBtn = document.createElement('div');
+    delAllBtn.textContent = 'Удалить все сообщения игрока';
+    delAllBtn.style.cursor = 'pointer';
+    delAllBtn.onclick = () => {
+        [...chatDiv.children].forEach(c => {
+            if (c.querySelector('.chatX_nick')?.title.includes(playerId)) {
+                c.remove();
+            }
+        });
+        menu.remove();
+    };
+
+    menu.appendChild(ignoreBtn);
+    menu.appendChild(delMsgBtn);
+    menu.appendChild(delAllBtn);
+
+    document.body.appendChild(menu);
+});
+
 
     chatDiv.prepend(msgDiv);
     chatDiv.scrollTop = chatDiv.scrollHeight;
