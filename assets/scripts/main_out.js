@@ -1336,6 +1336,8 @@ fetch('https://agar.su/pass.txt')
     .catch(err => console.error('Ошибка загрузки pass.txt:', err))
 
 
+const ignoredPlayers = new Set();
+
 function drawChatBoard() {
     if (hideChat) return;
 
@@ -1343,13 +1345,16 @@ function drawChatBoard() {
     const lastMessage = chatBoard[chatBoard.length - 1];
     if (!lastMessage) return;
 
+    // --- Игнорируем игрока ---
+    if (ignoredPlayers.has(lastMessage.pId)) return;
+
     const msgDiv = document.createElement('div');
 
     const lowerName = lastMessage.name.toLowerCase();
     if (admins.includes(lowerName)) {
         msgDiv.className = 'chatX_msg admins';
     } else if (moders.includes(lowerName)) {
-        msgDiv.className = 'chatX_msg '+ lowerName;
+        msgDiv.className = 'chatX_msg ' + lowerName;
     } else {
         msgDiv.className = 'chatX_msg';
     }
@@ -1384,7 +1389,6 @@ function drawChatBoard() {
         levelSpan.className = 'levelme';
         levelSpan.textContent = lastMessage.playerLevel;
 
-    // tooltip
         const tooltip = document.createElement('div');
         tooltip.className = 'tooltip';
         tooltip.textContent = `XP: ${lastMessage.playerXp}`;
@@ -1398,31 +1402,22 @@ function drawChatBoard() {
     const nameDiv = document.createElement('div');
     nameDiv.className = 'chatX_nick';
     nameDiv.textContent = lastMessage.name + ':';
+    nameDiv.title = `${lastMessage.pId || 0}`;
 
     if (admins.includes(lowerName)) {
         nameDiv.style.color = 'gold';
-        nameDiv.title = 'Администратор';
+        nameDiv.title += ' (Администратор)';
     } else if (moders.includes(lowerName)) {
-        nameDiv.title = 'Модератор';
+        nameDiv.title += ' (Модератор)';
     } else {
         nameDiv.style.color = lastMessage.color || '#b8c0cc';
-        nameDiv.title = `${lastMessage.pId || 0}`;
     }
 
     nameContainer.appendChild(nameDiv);
 
     const textDiv = document.createElement('div');
-textDiv.className = 'chatX_text';
-
-let messageContent = censorMessage(lastMessage.message);
-textDiv.textContent = messageContent; // Выводим как есть, безопасно
-
-// --- Проверяем, похоже ли сообщение на клетку, например B3 ---
-const cellPattern = /^[A-E][1-5]$/; // только A1..E5
-if (cellPattern.test(messageContent)) {
-    highlightCell(messageContent, 3000);
-}
-
+    textDiv.className = 'chatX_text';
+    textDiv.textContent = censorMessage(lastMessage.message);
 
     const timeDiv = document.createElement('div');
     timeDiv.className = 'chatX_time';
@@ -1432,6 +1427,52 @@ if (cellPattern.test(messageContent)) {
     msgDiv.appendChild(textDiv);
     msgDiv.appendChild(timeDiv);
 
+    // --- Правый клик на сообщение ---
+    msgDiv.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        const menu = document.createElement('div');
+        menu.className = 'chat-context-menu';
+        menu.style.top = e.clientY + 'px';
+        menu.style.left = e.clientX + 'px';
+
+        const ignoreBtn = document.createElement('div');
+        ignoreBtn.textContent = 'Игнорировать игрока';
+        ignoreBtn.onclick = () => {
+            ignoredPlayers.add(lastMessage.pId);
+            msgDiv.remove();
+            document.body.removeChild(menu);
+        };
+        const delMsgBtn = document.createElement('div');
+        delMsgBtn.textContent = 'Удалить сообщение';
+        delMsgBtn.onclick = () => {
+            msgDiv.remove();
+            document.body.removeChild(menu);
+        };
+        const delAllBtn = document.createElement('div');
+        delAllBtn.textContent = 'Удалить все сообщения игрока';
+        delAllBtn.onclick = () => {
+            [...chatDiv.children].forEach(c => {
+                if (c.querySelector('.chatX_nick')?.title.includes(lastMessage.pId)) {
+                    c.remove();
+                }
+            });
+            document.body.removeChild(menu);
+        };
+
+        menu.appendChild(ignoreBtn);
+        menu.appendChild(delMsgBtn);
+        menu.appendChild(delAllBtn);
+
+        document.body.appendChild(menu);
+
+        // Закрываем меню при клике в любое место
+        const closeMenu = () => {
+            if (menu.parentElement) menu.remove();
+            document.removeEventListener('click', closeMenu);
+        };
+        setTimeout(() => document.addEventListener('click', closeMenu), 0);
+    });
+
     chatDiv.prepend(msgDiv);
     chatDiv.scrollTop = chatDiv.scrollHeight;
 
@@ -1440,6 +1481,7 @@ if (cellPattern.test(messageContent)) {
         chatDiv.removeChild(chatDiv.lastChild);
     }
 }
+
 
 const normalizeFractlPart = n => (n % (Math.PI * 2)) / (Math.PI * 2);
 function updateNodes(reader) {
