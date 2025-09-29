@@ -1436,9 +1436,15 @@ function drawChatBoard() {
 
     const menu = document.createElement('div');
     menu.className = 'chat-context-menu';
+    menu.style.position = 'absolute';
     menu.style.top = e.clientY + 'px';
     menu.style.left = e.clientX + 'px';
-    const playerId = lastMessage.pId;
+    menu.style.background = '#222';
+    menu.style.padding = '5px';
+    menu.style.borderRadius = '5px';
+    menu.style.zIndex = 1000;
+
+const playerId = lastMessage.pId;
 
     const ignoreBtn = document.createElement('div');
     ignoreBtn.textContent = 'Игнорировать';
