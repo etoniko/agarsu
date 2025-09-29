@@ -264,7 +264,7 @@ input{font-size:16px;}
 #shop .stage.active .label{color:#016bef;font-weight:700;}
 #shop #step-content > div.step{display:none;}
 #shop #step-content > div.step.active{display:block;}
-#shop .skins-grid{overflow-x: auto;display:flex;gap:12px;flex-wrap:nowrap;margin-top:20px;justify-content:flex-center;align-items:center;}
+#shop .skins-grid{overflow-x: auto;display:flex;gap:12px;flex-wrap:nowrap;margin-top:20px;justify-content:center;align-items:center;}
 #shop .skin-card{/* flex: 0 0 auto; */padding:10px;width:160px;text-align:center;color:#eee;}
 #shop .skin-card img{width:100%;border-radius:8px;}
 .btnn{margin-top:8px;padding:8px 12px;border-radius:8px;border:none;background:#016bef;color:white;font-weight:700;cursor:pointer;}
