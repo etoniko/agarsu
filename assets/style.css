@@ -76,8 +76,6 @@ i:hover{cursor:pointer;}
 #statics > div:nth-child(1), #statics > div:nth-child(3){display:none;}	
 .score-info{left:40%;}	#table-container{height:375px;}
 .chatX_window{transform:scale(0.6) translate(-6px, 6px);transform-origin:bottom left;} 
-.chat-context-menu{position: absolute;background: rgb(0 0 0 / 74%);color: rgb(255, 255, 255);padding: 5px;border-radius: 5px;z-index: 1000;}
-.chat-context-menu div:hover {background: rgb(194 13 13 / 74%);}
 .social{position:absolute;width:140px;height:40px;background:#0e172c;font-size:25px;display:flex;align-items:center;justify-content:center;flex-direction:row;gap:10px;border-radius:25px 25px 0 0;border:#ffffff14 solid 1px;border-bottom:none;left:50%;transform:translateX(-50%);bottom:0px;} 
 .sidebar{background-color:#016bef;display:flex;user-select:none;justify-content:space-evenly;align-items:center;width:100%;	border-radius:0px 0px 25px 25px;	padding:0px 25px 0px 25px;} 
 .sidebar .menu-item{width:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;color:white;cursor:pointer;transition:background-color 0.3s;padding:5px;}
@@ -317,6 +315,9 @@ input{font-size:16px;}
 .chatX_container{display: flex;overflow-y: auto;flex-direction: column-reverse;height: 100%;}
 .chatX_top_avatar{cursor: pointer;}
 .chatX_top_avatar:hover{opacity: 0.5;transform:scale(1.2);}
+.chat-context-menu {position: absolute;background: rgb(0 0 0 / 74%);color: rgb(255, 255, 255);padding: 5px;border-radius: 5px;z-index: 1000;}
+.chat-context-menu div {padding: 3px 8px;cursor: pointer;user-select: none;}
+.chat-context-menu div:hover {background: rgb(194 13 13 / 74%);}
 .chatX_window {width: 310px;background: rgba(0, 0, 0, .3);border-radius: 25px;padding: 8px 3px 8px 8px;position: absolute;left: 10px;bottom: 10px;display: flex;flex-direction: column;overflow: hidden;min-height: 100px;max-height: 700px;color: white;box-sizing: border-box;border: solid #ffffff26 1px;}
 .chatX_top{margin-bottom: 7px;flex-shrink:0;height:20px;display:flex;align-items:center;position:relative;user-select:none;padding-left: 5px;gap: 2px;}
 .chatX_burger{position:absolute;left:50%;transform:translateX(-50%);width:20px;height:20px;display:flex;flex-direction:column;justify-content:center;font-size:16px;color:white;text-align:center;}
