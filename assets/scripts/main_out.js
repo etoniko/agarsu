@@ -1436,19 +1436,12 @@ function drawChatBoard() {
 
     const menu = document.createElement('div');
     menu.className = 'chat-context-menu';
-    menu.style.position = 'absolute';
     menu.style.top = e.clientY + 'px';
     menu.style.left = e.clientX + 'px';
-    menu.style.background = '#222';
-    menu.style.color = '#fff';
-    menu.style.padding = '5px';
-    menu.style.borderRadius = '5px';
-    menu.style.zIndex = 1000;
-
     const playerId = lastMessage.pId;
 
     const ignoreBtn = document.createElement('div');
-    ignoreBtn.textContent = 'Игнорировать игрока';
+    ignoreBtn.textContent = 'Игнорировать';
     ignoreBtn.style.cursor = 'pointer';
     ignoreBtn.onclick = () => {
         ignoredPlayers.add(playerId);
@@ -1465,7 +1458,7 @@ function drawChatBoard() {
     };
 
     const delAllBtn = document.createElement('div');
-    delAllBtn.textContent = 'Удалить все сообщения игрока';
+    delAllBtn.textContent = 'Удалить все сообщения';
     delAllBtn.style.cursor = 'pointer';
     delAllBtn.onclick = () => {
         [...chatDiv.children].forEach(c => {
