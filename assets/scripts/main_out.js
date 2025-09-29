@@ -1431,18 +1431,22 @@ function drawChatBoard() {
     msgDiv.addEventListener('contextmenu', (e) => {
     e.preventDefault();
 
+    // --- Удаляем все старые меню ---
+    document.querySelectorAll('.chat-context-menu').forEach(m => m.remove());
+
     const menu = document.createElement('div');
     menu.className = 'chat-context-menu';
     menu.style.position = 'absolute';
     menu.style.top = e.clientY + 'px';
     menu.style.left = e.clientX + 'px';
-    menu.style.zIndex = 1000;
     menu.style.background = '#222';
     menu.style.color = '#fff';
     menu.style.padding = '5px';
     menu.style.borderRadius = '5px';
+    menu.style.zIndex = 1000;
 
     const playerId = lastMessage.pId;
+
     const ignoreBtn = document.createElement('div');
     ignoreBtn.textContent = 'Игнорировать игрока';
     ignoreBtn.style.cursor = 'pointer';
@@ -1477,7 +1481,18 @@ function drawChatBoard() {
     menu.appendChild(delAllBtn);
 
     document.body.appendChild(menu);
+
+    // --- Закрытие меню при клике в любое место ---
+    const closeMenu = (event) => {
+        if (!menu.contains(event.target)) {
+            menu.remove();
+        }
+    };
+
+    document.addEventListener('click', closeMenu, { once: true });
 });
+
+
 
 
     chatDiv.prepend(msgDiv);
