@@ -166,6 +166,18 @@ function insertNick(nick) {
     chatInput.setSelectionRange(chatInput.value.length, chatInput.value.length);
 }
 
+// Левый клик по сообщению в чате
+chatFeed.addEventListener('click', function(e) {
+    if (e.button !== 0) return; // только левая кнопка
+    let msgElem = e.target.closest('.chatX_msg');
+    if (!msgElem) return;
+
+    const nickElem = msgElem.querySelector('.chatX_nick');
+    if (!nickElem) return;
+
+    insertNick(nickElem.textContent.trim());
+});
+
 // Левый клик по нику в лидерборде
 leaderboard.addEventListener('click', function(e) {
     if (e.button !== 0) return;
@@ -174,10 +186,6 @@ leaderboard.addEventListener('click', function(e) {
 
     insertNick(nickElem.textContent.trim());
 });
-
-
-
-
 
 
 
