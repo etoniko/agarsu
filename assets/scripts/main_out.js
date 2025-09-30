@@ -1313,8 +1313,8 @@ function censorMessage(message) {
     return censoredMessage;
 }
 
-const admins = ["нико", "console"];
-const moders = ["banshee","cosmos"];
+const admins = ["нико"];
+const moders = ["banshee","cosmos","console"];
 
 let passUsers = [];
 
@@ -1417,7 +1417,7 @@ function drawChatBoard() {
     nameDiv.title = `${lastMessage.pId || 0}`;
 
     if (admins.includes(lowerName)) {
-        nameDiv.style.color = 'red';
+        nameDiv.style.color = 'gold';
         nameDiv.title += ' (Администратор)';
     } else if (moders.includes(lowerName)) {
         nameDiv.title += ' (Модератор)';
