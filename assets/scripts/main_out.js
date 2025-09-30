@@ -1314,7 +1314,7 @@ function censorMessage(message) {
 }
 
 const admins = ["нико"];
-const moders = ["banshee","cosmos","console"];
+const moders = ["banshee","cosmos"];
 
 let passUsers = [];
 
@@ -1416,14 +1416,16 @@ function drawChatBoard() {
     nameDiv.textContent = lastMessage.name + ':';
     nameDiv.title = `${lastMessage.pId || 0}`;
 
-    if (admins.includes(lowerName)) {
-        nameDiv.style.color = 'gold';
-        nameDiv.title += ' (Администратор)';
-    } else if (moders.includes(lowerName)) {
-        nameDiv.title += ' (Модератор)';
-    } else {
-		avatar.style.border = `2px solid ${lastMessage.color}`;
-    }
+    if (lastMessage.name.toLowerCase() === 'Console') {
+    nameDiv.style.color = 'red';
+} else if (admins.includes(lowerName)) {
+    nameDiv.style.color = 'gold';
+    nameDiv.title += ' (Администратор)';
+} else if (moders.includes(lowerName)) {
+    nameDiv.title += ' (Модератор)';
+} else {
+    avatar.style.border = `2px solid ${lastMessage.color}`;
+}
 
     nameContainer.appendChild(nameDiv);
 
