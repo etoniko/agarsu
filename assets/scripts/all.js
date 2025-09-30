@@ -164,7 +164,16 @@ function insertNick(nick) {
     chatInput.value = nick + ' << ';
     chatInput.focus();
     chatInput.setSelectionRange(chatInput.value.length, chatInput.value.length);
+
+    if (chatInput.value.includes(' << ')) {
+        document.querySelectorAll('.chatX_text')
+            .forEach(el => el.classList.add('mention'));
+    } else {
+        document.querySelectorAll('.chatX_text')
+            .forEach(el => el.classList.remove('mention'));
+    }
 }
+
 
 // Левый клик по сообщению в чате
 chatFeed.addEventListener('click', function(e) {
@@ -186,6 +195,7 @@ leaderboard.addEventListener('click', function(e) {
 
     insertNick(nickElem.textContent.trim());
 });
+
 
 
 
