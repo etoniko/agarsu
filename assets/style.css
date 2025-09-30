@@ -328,7 +328,7 @@ input{font-size:16px;}
 .chatX_avatar_private{width:20px;height: 20px;}
 .avatarXcontainer{position:relative;grid-row:1 / span 2;width:50px;height:50px;}
 .avatarXcontainer::after{content:"verified_user";font-family:'Material Icons';position:absolute;right:1;bottom:1;font-size:19px;color:#08dd24;display:var(--after-display, none);text-shadow:#08dd24de 0 0 10px;}
-.chatX_nick{font-size:15px;max-width:185px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:ltr;font-weight:bold;height:20px;}
+.chatX_nick{font-size:15px;max-width:185px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:ltr;height:20px;font-family: 'Roboto';}
 .chatX_nick--accent{color:#ff4e3e;font-weight:700;}
 .chatX_text{clip-path: inset(0 0 0% 0);display: inline-block;min-height:30px;font-size:14px;}
 .chatX_text.mention {color: #00ff4f;text-shadow: #00ff4f 1px 0 10px;}
