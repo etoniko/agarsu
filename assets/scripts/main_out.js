@@ -1345,7 +1345,7 @@ function drawChatBoard() {
     const lastMessage = chatBoard[chatBoard.length - 1];
     if (!lastMessage) return;
 
-    // Игнорируем игрока
+    // --- Игнорируем игрока ---
     if (ignoredPlayers.has(lastMessage.pId)) return;
 
     const msgDiv = document.createElement('div');
@@ -1359,7 +1359,6 @@ function drawChatBoard() {
         msgDiv.className = 'chatX_msg';
     }
 
-    // --- Аватар ---
     const avatarXContainer = document.createElement('div');
     avatarXContainer.className = 'avatarXcontainer';
     const normalizedName = normalizeNick(lastMessage.name);
@@ -1376,7 +1375,6 @@ function drawChatBoard() {
     avatarXContainer.appendChild(avatar);
     msgDiv.appendChild(avatarXContainer);
 
-    // --- Имя и уровень ---
     const nameContainer = document.createElement('div');
     nameContainer.className = 'chatX_name_container';
 
@@ -1416,105 +1414,89 @@ function drawChatBoard() {
     }
 
     nameContainer.appendChild(nameDiv);
-    msgDiv.appendChild(nameContainer);
 
-    // --- Текст сообщения ---
     const textDiv = document.createElement('div');
     textDiv.className = 'chatX_text';
     textDiv.textContent = censorMessage(lastMessage.message);
-    msgDiv.appendChild(textDiv);
 
-    // --- Время ---
     const timeDiv = document.createElement('div');
     timeDiv.className = 'chatX_time';
     timeDiv.textContent = lastMessage.time;
+
+    msgDiv.appendChild(nameContainer);
+    msgDiv.appendChild(textDiv);
     msgDiv.appendChild(timeDiv);
 
-    // --- Левый клик: вставка упоминания в input ---
-    msgDiv.addEventListener('click', () => {
-        const chatInput = document.getElementById('chatX_input'); // contentEditable
-        if (!chatInput) return;
-
-        const mention = `@${lastMessage.name} `;
-        const sel = window.getSelection();
-        const range = sel.getRangeAt(0);
-        const span = document.createElement('span');
-        span.className = 'chat-mention';
-        span.textContent = mention;
-
-        range.deleteContents();
-        range.insertNode(span);
-        range.setStartAfter(span);
-        range.setEndAfter(span);
-        sel.removeAllRanges();
-        sel.addRange(range);
-
-        chatInput.focus();
-    });
-
-    // --- Правый клик: контекстное меню ---
+    // --- Правый клик на сообщение ---
     msgDiv.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        document.querySelectorAll('.chat-context-menu').forEach(m => m.remove());
+    e.preventDefault();
 
-        const menu = document.createElement('div');
-        menu.className = 'chat-context-menu';
-        menu.style.top = e.clientY + 'px';
-        menu.style.left = e.clientX + 'px';
+    // --- Удаляем все старые меню ---
+    document.querySelectorAll('.chat-context-menu').forEach(m => m.remove());
 
-        const playerId = lastMessage.pId;
+    const menu = document.createElement('div');
+    menu.className = 'chat-context-menu';
+    menu.style.top = e.clientY + 'px';
+    menu.style.left = e.clientX + 'px';
 
-        const ignoreBtn = document.createElement('div');
-        ignoreBtn.textContent = 'Игнорировать';
-        ignoreBtn.style.cursor = 'pointer';
-        ignoreBtn.onclick = () => {
-            ignoredPlayers.add(playerId);
-            msgDiv.remove();
+const playerId = lastMessage.pId;
+
+    const ignoreBtn = document.createElement('div');
+    ignoreBtn.textContent = 'Игнорировать';
+    ignoreBtn.style.cursor = 'pointer';
+    ignoreBtn.onclick = () => {
+        ignoredPlayers.add(playerId);
+        msgDiv.remove();
+        menu.remove();
+    };
+
+    const delMsgBtn = document.createElement('div');
+    delMsgBtn.textContent = 'Удалить сообщение';
+    delMsgBtn.style.cursor = 'pointer';
+    delMsgBtn.onclick = () => {
+        msgDiv.remove();
+        menu.remove();
+    };
+
+    const delAllBtn = document.createElement('div');
+    delAllBtn.textContent = 'Удалить все сообщения';
+    delAllBtn.style.cursor = 'pointer';
+    delAllBtn.onclick = () => {
+        [...chatDiv.children].forEach(c => {
+            if (c.querySelector('.chatX_nick')?.title.includes(playerId)) {
+                c.remove();
+            }
+        });
+        menu.remove();
+    };
+
+    menu.appendChild(ignoreBtn);
+    menu.appendChild(delMsgBtn);
+    menu.appendChild(delAllBtn);
+
+    document.body.appendChild(menu);
+
+    // --- Закрытие меню при клике в любое место ---
+    const closeMenu = (event) => {
+        if (!menu.contains(event.target)) {
             menu.remove();
-        };
+        }
+    };
 
-        const delMsgBtn = document.createElement('div');
-        delMsgBtn.textContent = 'Удалить сообщение';
-        delMsgBtn.style.cursor = 'pointer';
-        delMsgBtn.onclick = () => {
-            msgDiv.remove();
-            menu.remove();
-        };
+    document.addEventListener('click', closeMenu, { once: true });
+});
 
-        const delAllBtn = document.createElement('div');
-        delAllBtn.textContent = 'Удалить все сообщения';
-        delAllBtn.style.cursor = 'pointer';
-        delAllBtn.onclick = () => {
-            [...chatDiv.children].forEach(c => {
-                if (c.querySelector('.chatX_nick')?.title.includes(playerId)) {
-                    c.remove();
-                }
-            });
-            menu.remove();
-        };
 
-        menu.appendChild(ignoreBtn);
-        menu.appendChild(delMsgBtn);
-        menu.appendChild(delAllBtn);
-        document.body.appendChild(menu);
 
-        const closeMenu = (event) => {
-            if (!menu.contains(event.target)) menu.remove();
-        };
-        document.addEventListener('click', closeMenu, { once: true });
-    });
 
-    // --- Добавляем сообщение в чат ---
     chatDiv.prepend(msgDiv);
     chatDiv.scrollTop = chatDiv.scrollHeight;
 
-    // Ограничение по количеству сообщений
     const maxMessages = 50;
     while (chatDiv.children.length > maxMessages) {
         chatDiv.removeChild(chatDiv.lastChild);
     }
 }
-
 
 
 const normalizeFractlPart = n => (n % (Math.PI * 2)) / (Math.PI * 2);
