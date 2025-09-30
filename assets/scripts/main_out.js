@@ -1410,14 +1410,16 @@ function drawChatBoard() {
     } else if (moders.includes(lowerName)) {
         nameDiv.title += ' (Модератор)';
     } else {
-        nameDiv.style.color = lastMessage.color || '#b8c0cc';
+		avatar.style.border = `2px solid ${lastMessage.color}`;
     }
 
     nameContainer.appendChild(nameDiv);
 
     const textDiv = document.createElement('div');
     textDiv.className = 'chatX_text';
-    textDiv.textContent = censorMessage(lastMessage.message);
+    textDiv.innerHTML = highlightMentions(censorMessage(lastMessage.message || ""));
+
+
 
     const timeDiv = document.createElement('div');
     timeDiv.className = 'chatX_time';
@@ -1485,6 +1487,18 @@ const playerId = lastMessage.pId;
 
     document.addEventListener('click', closeMenu, { once: true });
 });
+
+
+
+
+    chatDiv.prepend(msgDiv);
+    chatDiv.scrollTop = chatDiv.scrollHeight;
+
+    const maxMessages = 50;
+    while (chatDiv.children.length > maxMessages) {
+        chatDiv.removeChild(chatDiv.lastChild);
+    }
+}
 
 
 
