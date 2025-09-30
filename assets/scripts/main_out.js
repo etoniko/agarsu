@@ -1338,6 +1338,18 @@ fetch('https://agar.su/pass.txt')
 
 const ignoredPlayers = new Set();
 
+function highlightMentions(text) {
+    // Экранируем HTML, чтобы текст не ломал структуру
+    text = text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+
+    // Подсветка упоминаний
+    // Ник может содержать любые символы, кроме пробела
+    return text.replace(/@([^\s@]+)/g, '<span class="mention">@$1</span>');
+}
+	
 function drawChatBoard() {
     if (hideChat) return;
 
