@@ -1488,9 +1488,6 @@ const playerId = lastMessage.pId;
     document.addEventListener('click', closeMenu, { once: true });
 });
 
-
-
-
     chatDiv.prepend(msgDiv);
     chatDiv.scrollTop = chatDiv.scrollHeight;
 
@@ -1499,19 +1496,6 @@ const playerId = lastMessage.pId;
         chatDiv.removeChild(chatDiv.lastChild);
     }
 }
-
-
-
-
-    chatDiv.prepend(msgDiv);
-    chatDiv.scrollTop = chatDiv.scrollHeight;
-
-    const maxMessages = 50;
-    while (chatDiv.children.length > maxMessages) {
-        chatDiv.removeChild(chatDiv.lastChild);
-    }
-}
-
 
 const normalizeFractlPart = n => (n % (Math.PI * 2)) / (Math.PI * 2);
 function updateNodes(reader) {
