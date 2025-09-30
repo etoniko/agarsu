@@ -1416,7 +1416,7 @@ function drawChatBoard() {
     nameDiv.textContent = lastMessage.name + ':';
     nameDiv.title = `${lastMessage.pId || 0}`;
 
-    if (lastMessage.name.toLowerCase() === 'Console') {
+    if (lastMessage.name.toLowerCase() === 'console') {
     nameDiv.style.color = 'red';
 } else if (admins.includes(lowerName)) {
     nameDiv.style.color = 'gold';
