@@ -1416,14 +1416,13 @@ function drawChatBoard() {
     nameDiv.textContent = lastMessage.name + ':';
     nameDiv.title = `${lastMessage.pId || 0}`;
 
-    if (lastMessage.name.toLowerCase() === 'console') {
-    nameDiv.style.color = 'red';
-} else if (admins.includes(lowerName)) {
+   if (admins.includes(lowerName)) {
     nameDiv.style.color = 'gold';
     nameDiv.title += ' (Администратор)';
 } else if (moders.includes(lowerName)) {
     nameDiv.title += ' (Модератор)';
 } else {
+	nameDiv.style.color = lastMessage.color || '#b8c0cc';
     avatar.style.border = `2px solid ${lastMessage.color}`;
 }
 
