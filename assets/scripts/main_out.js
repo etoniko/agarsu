@@ -37,18 +37,28 @@ stats.forEach((player, index) => {
         <div>${index + 1}</div>
         <div>${player.nick}</div>
         <div>${player.score}</div>
-        <div class="skinswraper"style="background-image: url('skins/${player.skin}.png');"></div>
+        <div class="skinswraper"style="background-image: url('https://agar.su/skins/${player.skin}.png');"></div>
     `;
     container.appendChild(playerDiv);
 });
                         }
 	
-function setActiveFromHash() {
-    const hash = location.hash.replace('#','') || 'ffa'; // по умолчанию ffa
-    document.querySelectorAll('.gamemode li').forEach(li => li.classList.remove('active'));
-    const activeLi = document.getElementById(hash);
-    if(activeLi) activeLi.classList.add('active');
-}
+    // По умолчанию выбранный сервер
+    let SELECTED_SERVER = wHandle.CONNECTION_URL || "ffa.agar.su:6001";
+
+    // --- Подсветка активного сервера из hash ---
+    function setActiveFromHash() {
+        const hash = location.hash.replace('#','') || 'ffa'; // по умолчанию ffa
+        document.querySelectorAll('.gamemode li').forEach(li => li.classList.remove('active'));
+        const activeLi = document.getElementById(hash);
+        if(activeLi) {
+            activeLi.classList.add('active');
+            // Если сервер ещё не выбран руками — ставим его
+            if (!SELECTED_SERVER) {
+                SELECTED_SERVER = activeLi.dataset.ip;
+            }
+        }
+    }
 
 // Вызывать при загрузке и при смене хэша
 window.addEventListener('load', setActiveFromHash);
@@ -119,6 +129,108 @@ window.addEventListener('hashchange', setActiveFromHash);
         updateOnlineCount();
         window.onlineInterval = setInterval(updateOnlineCount, 5000);
     }
+	
+	wHandle.startGame = function () {
+    setNick(document.getElementById('nick').value + "#" + document.getElementById('pass').value);
+}
+    // Функция для загрузки данных о топ-1 игроке
+    wHandle.chekstats = async function () {
+        try {
+            // Получаем текущий домен из CONNECTION_URL (или другого источника)
+            const domain = CONNECTION_URL || window.location.hostname; // Используем текущий домен если CONNECTION_URL не задан
+
+            // Формируем URL для запроса статистики
+            const statsUrl = `https://${domain}/checkStats`;
+
+            // Выполняем запрос
+            const response = await fetch(statsUrl, { method: 'GET' });
+            if (!response.ok) {
+                throw new Error(`Ошибка запроса: ${response.status}`);
+            }
+
+            const stat = await response.json();
+
+            // Выводим данные в консоль и выполняем обработку
+            loadTopPlayerData(stat);
+            fetchStats(stat);
+        } catch (error) {
+            console.error('Ошибка загрузки данных о топ-1 игроке:', error);
+        }
+    };
+
+const SERVERS = {
+        "ffa":   "ffa.agar.su:6001",
+        "ms": "pmori.ru:6002",
+        "exp":   "pmori.ru:6004"
+    };
+	
+wjQuery(document).ready(() => {
+document.querySelectorAll('.gamemode li').forEach(li => {
+    li.addEventListener('click', () => {
+        const isAlreadyActive = li.classList.contains('active');
+
+        // Снимаем актив со всех и ставим новый
+        document.querySelectorAll('.gamemode li').forEach(l => l.classList.remove('active'));
+        li.classList.add('active');
+
+        // Запоминаем выбранный сервер
+        SELECTED_SERVER = li.dataset.ip;
+
+        // Обновляем заголовок
+        const titleEl = document.getElementById('serverTitle');
+        if(titleEl) titleEl.textContent = 'Статистика ' + li.id;
+
+        // Обновляем hash без дергания страницы
+        history.replaceState(null, '', '#' + li.id);
+
+        // ✅ Если сервер уже был активным — сразу стартуем игру
+        if(isAlreadyActive) {
+            wHandle.startGame();
+        }
+    });
+});
+});
+
+
+function initServers() {
+    let serverKey = "ffa";
+    const hash = wHandle.location.hash.slice(1); // убираем #
+    
+    if (hash && SERVERS[hash]) {
+        // hash совпадает с ключом
+        serverKey = hash;
+    } else {
+        // иначе берём первый доступный сервер
+        const keys = Object.keys(SERVERS);
+        if (keys.length) serverKey = keys[0];
+    }
+
+    // Устанавливаем URL сервера
+    CONNECTION_URL = SERVERS[serverKey];
+    SELECTED_SERVER = CONNECTION_URL; // <--- синхронизируем выбор
+
+    // Подсветим li
+    document.querySelectorAll('.gamemode li').forEach(li => li.classList.remove('active'));
+    const activeLi = document.getElementById(serverKey);
+    if (activeLi) activeLi.classList.add('active');
+
+    // Обновляем заголовок
+    const titleEl = wHandle.document.getElementById('serverTitle');
+    if (titleEl) {
+        titleEl.textContent = 'Статистика ' + serverKey.toUpperCase();
+    }
+}
+
+
+    // Инициализация при загрузке
+    initServers();
+
+    // Если хэш меняется динамически
+    wHandle.addEventListener('hashchange', initServers);
+	
+	
+	
+	
 						
 let skinList = {}; // Глобальный объект для скинов
 
@@ -175,72 +287,6 @@ fetchSkinList();
 
 // Периодическая проверка изменений каждые 5 минут
 setInterval(fetchSkinList, 300000);
-
-wHandle.startGame = function () {
-    setNick(document.getElementById('nick').value + "#" + document.getElementById('pass').value);
-setTimeout(function() {
-setNick(document.getElementById('nick').value + "#" + document.getElementById('pass').value);
-}, 1000);
-}
-    // Функция для загрузки данных о топ-1 игроке
-    wHandle.chekstats = async function () {
-        try {
-            // Получаем текущий домен из CONNECTION_URL (или другого источника)
-            const domain = CONNECTION_URL || window.location.hostname; // Используем текущий домен если CONNECTION_URL не задан
-
-            // Формируем URL для запроса статистики
-            const statsUrl = `https://${domain}/checkStats`;
-
-            // Выполняем запрос
-            const response = await fetch(statsUrl, { method: 'GET' });
-            if (!response.ok) {
-                throw new Error(`Ошибка запроса: ${response.status}`);
-            }
-
-            const stat = await response.json();
-
-            // Выводим данные в консоль и выполняем обработку
-            loadTopPlayerData(stat);
-            fetchStats(stat);
-        } catch (error) {
-            console.error('Ошибка загрузки данных о топ-1 игроке:', error);
-        }
-    };
-
-const SERVERS = {
-        "ffa":   "ffa.agar.su:6001",
-        "ms": "pmori.ru:6002",
-        "exp":   "pmori.ru:6004"
-    };
-    let CONNECTION_URL = "ffa.agar.su:6001";
-    function initServers() {
-        let serverKey = "ffa";
-        const hash = wHandle.location.hash;
-        if (hash && SERVERS[hash.slice(1)]) {
-            serverKey = hash.slice(1);
-            CONNECTION_URL = SERVERS[serverKey];
-        } else {
-            const keys = Object.keys(SERVERS);
-            if (keys.length) {
-                serverKey = keys[0];
-                CONNECTION_URL = SERVERS[serverKey];
-            }
-        }
-        // Обновляем заголовок
-        const titleEl = wHandle.document.getElementById('serverTitle');
-        if (titleEl) {
-            titleEl.textContent = 'Статистика ' + (hash || '').slice(1);
-        }
-    }
-
-    // Инициализация при загрузке
-    initServers();
-
-    // Если хэш меняется динамически
-    wHandle.addEventListener('hashchange', initServers);
-
-
-
 
 
     var
@@ -641,7 +687,7 @@ $(document).on("contextmenu", function (event) {
         setInterval(sendMouseMove, 50);
 
         wjQuery("#overlays").show();
-		showCaptcha();
+		//showCaptcha();
     }
 	
 
@@ -2259,8 +2305,8 @@ function drawWhiteGrid() {
 
                 const skinId = skinList[topPlayerNick];
                 innerImage.src = skinId
-                    ? `skins/${skinId}.png`
-                    : "skins/4.png";
+                    ? `https://agar.su/skins/${skinId}.png`
+                    : "https://agar.su/skins/4.png";
 
                 topPlayerSkin = skinId || 'default';
             }
@@ -2638,13 +2684,14 @@ function drawLeaderBoard() {
     // var playerStat = null;
     //wHandle.isSpectating = false;
     // Обновленный setNick
-    wHandle.setNick = function (arg) {
-        $('#overlays').hide();
-        userNickName = arg;
-        sendNickName();
-         wjQuery("#statics").hide();
-		 
-		     // сброс статистики для новой игры
+	let previousServer = null;
+wHandle.setNick = function (arg) {
+    $('#overlays').hide();
+    userNickName = arg;
+    sendNickName();
+    wjQuery("#statics").hide();
+    
+    // сброс статистики для новой игры
     scoreHistory = [];
     lastDisplayedScore = 0;
     lastDisplayedMaxScore = 0;
@@ -2652,7 +2699,15 @@ function drawLeaderBoard() {
     maxScore = 0;
     startTime = timestamp;
     drawStatsGraph([]);
-    };
+    
+    setserver(SELECTED_SERVER);
+
+    // проверяем, отличается ли сервер от предыдущего
+    if (previousServer !== SELECTED_SERVER) {
+        showCaptcha();
+        previousServer = SELECTED_SERVER; // сохраняем текущий сервер
+    }
+};
 
 
     wHandle.setSkins = function (arg) {
@@ -2684,12 +2739,16 @@ wHandle.setMouseClicks = function (arg) {
             wjQuery('#chat_textbox').show();
         }
     }
-    wHandle.spectate = function () {
+        wHandle.spectate = function () {
+        setserver(SELECTED_SERVER); 
         userNickName = null;
-        // wHandle.isSpectating = true;
-        // sendUint8(1);
         hideOverlays();
-		wjQuery("#statics").hide();
+        wjQuery("#statics").hide();
+		    // проверяем, отличается ли сервер от предыдущего
+    if (previousServer !== SELECTED_SERVER) {
+        showCaptcha();
+        previousServer = SELECTED_SERVER; // сохраняем текущий сервер
+    }
     };
     wHandle.setAcid = function (arg) {
         xa = arg
