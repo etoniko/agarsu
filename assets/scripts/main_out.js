@@ -687,7 +687,7 @@ $(document).on("contextmenu", function (event) {
         setInterval(sendMouseMove, 50);
 
         wjQuery("#overlays").show();
-		//showCaptcha();
+		showCaptcha();
     }
 	
 
@@ -2684,7 +2684,6 @@ function drawLeaderBoard() {
     // var playerStat = null;
     //wHandle.isSpectating = false;
     // Обновленный setNick
-	let previousServer = null;
 wHandle.setNick = function (arg) {
     $('#overlays').hide();
     userNickName = arg;
@@ -2701,12 +2700,6 @@ wHandle.setNick = function (arg) {
     drawStatsGraph([]);
     
     setserver(SELECTED_SERVER);
-
-    // проверяем, отличается ли сервер от предыдущего
-    if (previousServer !== SELECTED_SERVER) {
-        showCaptcha();
-        previousServer = SELECTED_SERVER; // сохраняем текущий сервер
-    }
 };
 
 
@@ -2744,11 +2737,6 @@ wHandle.setMouseClicks = function (arg) {
         userNickName = null;
         hideOverlays();
         wjQuery("#statics").hide();
-		    // проверяем, отличается ли сервер от предыдущего
-    if (previousServer !== SELECTED_SERVER) {
-        showCaptcha();
-        previousServer = SELECTED_SERVER; // сохраняем текущий сервер
-    }
     };
     wHandle.setAcid = function (arg) {
         xa = arg
