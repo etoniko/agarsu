@@ -119,7 +119,7 @@ body{font-family:'Roboto', sans-serif;display:flex;height:100%;width:100%;color:
 .main-skin{margin:0 10px;} 
 .avatar-containers{display:flex;flex-direction:column;align-items:center;position:relative;}	
 .gallery{width:680px;aspect-ratio:2;grid-template-columns:repeat(6, auto);}
-#leaderboard{right:10px;top:10px;font-size:14px;max-width:160px;min-width:150px;position:absolute;padding:10px 10px 10px 10px;border-radius:20px 20px 20px 20px;border:solid #ffffff26 1px;background:rgba(0, 0, 0, .3);}
+#leaderboard{right:10px;top:10px;font-size:14px;max-width:150px;min-width:150px;position:absolute;padding:10px 10px 10px 10px;border-radius:20px 20px 20px 20px;border:solid #ffffff26 1px;background:rgba(0, 0, 0, .3);}
 #map{position:absolute;right:10px;bottom:10px;border:solid #ffffff26 1px;border-radius:25px;background:rgba(0, 0, 0, .3);width:150px;height:180px;padding:5px;}
 } 
 /* PK PK PK PK PK PK PK PK PK PK PK PK PK PK PK PK PK PK PK PK PK PK PK PK PK PK PK PK PK PK PK PK PK  */
