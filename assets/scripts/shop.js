@@ -2,9 +2,9 @@ const forbiddenRegex = /[`'";:ㅤ⁣]/g;
 const yookassaRules = { maxFileSize: 5 * 1024 * 1024 };
 
 function showError(elementId, message) {
-  const el = document.getElementById(elementId);
-  el.textContent = message;
-  el.style.display = 'block';
+  const errorEl = document.getElementById(elementId);
+  errorEl.textContent = message;
+  errorEl.style.display = 'block';
   setTimeout(() => hideError(elementId), 5000);
 }
 
@@ -19,44 +19,51 @@ function showWarning(id, show) {
 function updateCharCount() {
   const input = document.getElementById("nickname");
   const max = document.getElementById('clan').checked ? 6 : 15;
-  document.getElementById("charCount").textContent = `${input.value.length}/${max}`;
+  const length = input.value.length;
+  document.getElementById("charCount").textContent = `${length}/${max}`;
 }
 
 function updateNicknameDisplay() {
   const isClan = document.getElementById('clan').checked;
   const input = document.getElementById('nickname');
+
   input.value = '';
-  input.placeholder = isClan ? '[клан]' : 'ник';
-  input.maxLength = isClan ? 6 : 15;
+
+  if (isClan) {
+    input.placeholder = '[клан]';
+    input.maxLength = 6;
+  } else {
+    input.placeholder = 'ник';
+    input.maxLength = 15;
+  }
+
   updateCharCount();
 }
 
-function sanitizeNickname() {
-  const input = nicknameInput;
-  let value = input.value.replace(forbiddenRegex, '');
-  const isClan = document.getElementById('clan').checked;
-
-  if (isClan) {
-    value = value.replace(/[\[\]]/g, '');
-    if (value.length > 4) value = value.substring(0, 4);
-    input.value = `[${value}]`;
-  } else {
-    if (/[\[\]]/.test(value)) showError('nicknameError', 'Скобки [] запрещены для личного ника');
-    input.value = value.replace(/[\[\]]/g, '');
-  }
-  updateCharCount();
+function blockForbiddenChars(input) {
+  input.addEventListener("input", () => {
+    if (forbiddenRegex.test(input.value)) {
+      input.value = input.value.replace(forbiddenRegex, "");
+      showError(input.id + 'Error', 'Запрещённые символы удалены');
+    }
+    if (input.id === 'nickname') {
+      const isClan = document.getElementById('clan').checked;
+      if (!isClan && /[\[\]]/.test(input.value)) {
+        input.value = input.value.replace(/[\[\]]/g, "");
+        showError('nicknameError', 'Скобки [] запрещены для личного ника');
+      }
+      updateCharCount();
+    }
+  });
 }
 
 const nicknameInput = document.getElementById("nickname");
-nicknameInput.addEventListener("input", () => {
-  sanitizeNickname();
-  if (nicknameInput.value.trim()) showWarning('nicknameWarning', false);
-  calculateCost();
-});
+blockForbiddenChars(nicknameInput);
+blockForbiddenChars(document.getElementById("password"));
 
 nicknameInput.addEventListener("blur", async () => {
-  sanitizeNickname();
-  const value = nicknameInput.value.trim();
+  const isClan = document.getElementById('clan').checked;
+  let value = nicknameInput.value.trim();
   const accountID = document.getElementById("accountID").textContent.replace("ID:", "").trim();
 
   if (!value) {
@@ -65,11 +72,30 @@ nicknameInput.addEventListener("blur", async () => {
   }
   showWarning('nicknameWarning', false);
 
+  if (isClan) {
+    const maxTextLength = 4;
+    value = value.replace(/[\[\]]/g, '');
+    if (value.length > maxTextLength) {
+      value = value.substring(0, maxTextLength);
+      setTimeout(() => {showError('nicknameError', 'Текст обрезан до допустимой длины, для клана должны быть квадратные скобки [ ]');}, 100);
+    }
+    nicknameInput.value = `[${value}]`;
+  } else {
+    if (/[\[\]]/.test(value)) {
+      nicknameInput.value = value.replace(/[\[\]]/g, '');
+      showError('nicknameError', 'Скобки [] запрещены для личного ника');
+    } else {
+      hideError('nicknameError');
+    }
+  }
+
+  updateCharCount();
+
   try {
-    const res = await fetch('https://api.agar.su:8443/check-nickname', {
+    const res = await fetch('https://api.agar.su/check-nickname', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nickname: value, accountID })
+      body: JSON.stringify({ nickname: nicknameInput.value.trim(), accountID })
     });
     const data = await res.json();
     if (data.taken) {
@@ -82,6 +108,13 @@ nicknameInput.addEventListener("blur", async () => {
   } catch (err) {
     console.error('Ошибка проверки ника:', err);
   }
+
+  calculateCost();
+});
+
+nicknameInput.addEventListener("input", () => {
+  updateCharCount();
+  if (nicknameInput.value.trim()) showWarning('nicknameWarning', false);
   calculateCost();
 });
 
@@ -90,7 +123,9 @@ passwordInput.addEventListener("input", () => {
   if (passwordInput.value.length > 5) {
     passwordInput.value = passwordInput.value.substring(0, 5);
     showError('passwordError', 'Пароль не может быть длиннее 5 символов');
-  } else hideError('passwordError');
+  } else {
+    hideError('passwordError');
+  }
   calculateCost();
 });
 
@@ -134,10 +169,10 @@ function previewSkin(file) {
     skinCanvas.style.display = "block";
     const img = new Image();
     img.onload = () => {
-      skinCtx.clearRect(0, 0, 512, 512);
+      skinCtx.clearRect(0, 0, skinCanvas.width, skinCanvas.height);
       skinCtx.save();
       skinCtx.beginPath();
-      skinCtx.arc(256, 256, 256, 0, Math.PI*2);
+      skinCtx.arc(skinCanvas.width/2, skinCanvas.height/2, skinCanvas.width/2, 0, Math.PI*2);
       skinCtx.closePath();
       skinCtx.clip();
       const scale = Math.min(512 / img.width, 512 / img.height);
@@ -148,7 +183,7 @@ function previewSkin(file) {
     };
     img.onerror = () => {
       skinCtx.fillStyle = '#ccc';
-      skinCtx.fillRect(0, 0, 512, 512);
+      skinCtx.fillRect(0, 0, skinCanvas.width, skinCanvas.height);
       skinCtx.fillStyle = '#666';
       skinCtx.font = '20px Arial';
       skinCtx.textAlign = 'center';
@@ -209,15 +244,22 @@ calculateCost();
 
 document.getElementById("paymentForm").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const nickname = nicknameInput.value.trim();
-  if (!nickname) { showWarning('nicknameWarning', true); return; }
+  const rawNickname = nicknameInput.value.trim();
+  if (!rawNickname) {
+    showWarning('nicknameWarning', true);
+    return;
+  }
 
+  const nickname = rawNickname;
   const password = passwordInput.value.trim();
   const file = fileInput.files[0];
   const accountID = document.getElementById("accountID").textContent.replace("ID:", "").trim();
   const serviceType = document.querySelector('input[name="serviceType"]:checked').value;
 
-  if (!password && !file) { showError('formError', 'Выберите хотя бы пароль или скин для оплаты'); return; }
+  if (!password && !file) {
+    showError('formError', 'Выберите хотя бы пароль или скин для оплаты');
+    return;
+  }
 
   const multiplier = getMultiplier();
   const passwordCost = password ? 1 : 0;
@@ -232,19 +274,33 @@ document.getElementById("paymentForm").addEventListener("submit", async (e) => {
   if (password) formData.append("password", password);
 
   if (file) {
-    if (file.type === "image/gif") formData.append("image", file, file.name), sendForm(formData);
-    else skinCanvas.toBlob(blob => { formData.append("image", blob, "skin.png"); sendForm(formData); }, "image/png");
-  } else sendForm(formData);
+    if (file.type === "image/gif") {
+      formData.append("image", file, file.name);
+      sendForm(formData);
+    } else {
+      skinCanvas.toBlob(blob => {
+        formData.append("image", blob, "skin.png");
+        sendForm(formData);
+      }, "image/png");
+      return;
+    }
+  } else {
+    sendForm(formData);
+  }
 });
 
 async function sendForm(formData) {
   try {
-    const res = await fetch("https://api.agar.su:8443/create-payment", { method: "POST", body: formData });
+    const res = await fetch("https://api.agar.su/create-payment", { method: "POST", body: formData });
     if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
     const data = await res.json();
-    if (data?.confirmation?.confirmation_url) window.location.href = data.confirmation.confirmation_url;
-    else if (data?.error) showError('formError', `Ошибка YooKassa: ${data.error.description || 'Неизвестная ошибка'}`);
-    else showError('formError', "Ошибка при создании платежа. Проверьте данные.");
+    if (data?.confirmation?.confirmation_url) {
+      window.location.href = data.confirmation.confirmation_url;
+    } else if (data?.error) {
+      showError('formError', `Ошибка YooKassa: ${data.error.description || 'Неизвестная ошибка'}`);
+    } else {
+      showError('formError', "Ошибка при создании платежа. Проверьте данные.");
+    }
   } catch(err) {
     showError('formError', "Ошибка соединения с сервером. Попробуйте позже.");
     console.error(err);
@@ -253,7 +309,8 @@ async function sendForm(formData) {
 
 const togglePassword = document.getElementById("togglePassword");
 togglePassword.addEventListener("click", () => {
-  passwordInput.type = passwordInput.type === "password" ? "text" : "password";
+  const type = passwordInput.type === "password" ? "text" : "password";
+  passwordInput.type = type;
   togglePassword.classList.toggle("fa-eye");
   togglePassword.classList.toggle("fa-eye-slash");
 });
