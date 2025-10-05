@@ -48,89 +48,66 @@
         <div class="menu-item" onclick="showContent('store')"><i class="fas fa-user"></i><span class="label">Войти</span></div>
       </div>
       <div class="main-content">
-        <div id="shop" class="content">
-          <div class="top-info">
-            <div class="stages">
-              <div class="stage active" data-step="1"><span>1</span>
-                <div class="label">Выбор</div>
-              </div>
-              <div class="stage" data-step="2"><span>2</span>
-                <div class="label">Данные</div>
-              </div>
-              <div class="stage" data-step="3"><span>3</span>
-                <div class="label">Оплата</div>
-              </div>
-            </div>
+<div id="shop" class="content">
+		                    <div class="top-info">
+            <div><span>Создание лички</span></div>
           </div>
-          <div id="step-content">
-            <!-- Шаг 1 -->
-            <div class="step active" data-step="1">
-              <h3>Выберите услугу</h3>
-              <div style="margin-bottom:10px;">
-                <label>
-                  <input type="radio" name="serviceType" value="self" checked> Для себя</label>
-                <label>
-                  <input type="radio" name="serviceType" value="clan"> Для клана</label>
-              </div>
-              <div class="skins-grid" id="skinsGrid">
-                <div class="skin-card" data-type="image" data-base="100" data-src-self="https://agar.su/skins/3.png" data-src-clan="https://agar.su/skins/skinclan.png"><img style="border: solid;border-radius: 100%;margin-bottom: 10px;" src="https://agar.su/skins/3.png" alt="png">
-                  <h4>Скин PNG/JPEG</h4>
-                  <p class="price-label" data-base="100">Цена: 100</p>
-                  <button class="btnn">Выбрать</button>
-                </div>
-                <div class="skin-card" data-type="pass" data-base="100" data-src-self="https://agar.su/assets/photo/shopnick.png" data-src-clan="https://agar.su/assets/photo/shopclan.png"><img style="margin-bottom: 10px;" src="https://agar.su/assets/photo/shopnick.png" alt="pass">
-                  <h4>Пароль на ник</h4>
-                  <p class="price-label" data-base="100">Цена: 100</p>
-                  <button class="btnn">Выбрать</button>
-                </div>
-                <div class="skin-card" data-type="gif" data-base="3000" data-src-self="https://agar.su/assets/photo/console.gif" data-src-clan="https://agar.su/assets/photo/gifclan.gif"><img style="border: solid;border-radius: 100%;margin-bottom: 10px;" src="https://agar.su/assets/photo/console.gif" alt="gif">
-                  <h4>Мульти Скин Gif</h4>
-                  <p class="price-label" data-base="3000">Цена: 3000</p>
-                  <button class="btnn">Выбрать</button>
-                </div>
-              </div>
-            </div>
-            <!-- Шаг 2 -->
-            <div class="step" data-step="2">
-              <h3 id="chosenTitle">Данные для товара</h3>
-              <form id="dataForm">
-                <label>
-                  <input id="nickname" maxlength="16" class="noPress shopnp" type="text" placeholder="ник" title="Введите ник" autocomplete="off">
-                </label>
-                <label id="passLabel" style="display:none;">
-                  <input id="password" maxlength="6" class="noPress shopnp" type="text" placeholder="пароль" title="Введите пароль" autocomplete="off">
-                </label>
-                <div id="uploadCircle">
-                  <input id="imageFile" type="file" accept="image/*" style="display:none;"><span>Загрузите изображение</span></div>
-                <div style="margin-top:12px;">
-                  <button type="button" id="backToChoose" class="btnn ghost">Назад</button>
-                  <button type="submit" class="btnn">Перейти к оплате</button>
-                </div>
-              </form>
-            </div>
-            <!-- Шаг 3 -->
-            <div class="step" data-step="3">
-              <h3 id="finalTitle">Оплата</h3>
-              <p>Переведите точную сумму в течение 10 минут</p>
-              <div class="price" id="price">100.00₽</div>
-              <div class="timer">Осталось: <span id="countdown">10:00</span></div>
-              <div class="reqs">
-                <div class="sbp">СБП: +79969712765 (Сбербанк)</div>
-                <div class="mir">Карта МИР: 2202 2081 8483 3425</div>
-              </div>
-              <div>
-                <button class="btnn ghost" id="backToData">Назад</button>
-                <button class="btnn" id="paidBtn">Я оплатил</button>
-              </div>
-              <div style="font-size: 11px;color: #7e7e7e;margin-top: 10px;display: flex;flex-direction: column;"> ИП: Дараселиа Николоз Ираклиевич ИНН: 503830093674 ООО «АгарСу» </div>
-              <div id="expiredBox" class="hiddenn" style="margin-top:12px; color:#f55; font-weight:700;"> ⛔ Время истекло — начните заново
-                <div style="margin-top:8px;">
-                  <button class="btnn" id="restartBtn">Начать заново</button>
-                </div>
-              </div>
-            </div>
+<div class="shop-container">
+    <div class="avatar-section">
+      <label id="previewContainer" for="fileInput">
+        <canvas id="previewCanvas" width="512" height="512"></canvas>
+        <img id="previewGif" alt="GIF preview">
+      </label>
+      <input type="file" id="fileInput" accept=".png,.jpg,.gif">
+      <div id="fileError" class="error"></div>
+<form id="paymentForm">
+        <div class="radio-group">
+          <label>
+            <input type="radio" name="serviceType" value="personal" id="personal" checked="">
+            <span>Для себя</span>
+          </label>
+          <label>
+            <input type="radio" name="serviceType" value="clan" id="clan">
+            <span>Для клана</span>
+          </label>
+        </div>
+
+        <div class="input-group">
+          
+          <div id="nicknameWrapper">
+            <input type="text" id="nickname" placeholder="ник" required="" maxlength="15" title="Введите ник">
+			<span id="charCount">0/15</span>
           </div>
-          <div id="shopToastContainer" aria-live="polite" aria-atomic="true"></div>
+          <div id="nicknameError" class="error"></div>
+          <div id="nicknameWarning" class="warning">Необходимо указать корректный ник</div>
+        </div>
+        
+        <div class="input-group">
+  
+  <div class="password-wrapper">
+    <input type="password" id="password" placeholder="пароль" maxlength="5">
+    <i id="togglePassword" class="fa-solid fa-eye eye"></i>
+  </div>
+  <div id="passwordError" class="error"></div>
+</div>
+
+
+        <div id="formError" class="error"></div>
+		<button type="submit" id="buyButton" disabled="">КУПИТЬ ЗА 0 РУБЛЕЙ</button>
+      </form>
+    </div>
+
+    
+<div class="oplata">
+<div id="calculator" style="display: none;">
+          <h3>Расчёт стоимости</h3>
+          <p id="clanMultiplier">Множитель: <span id="multiplierText">1x (для себя)</span></p>
+          <p id="passwordCost">Пароль: 0 ₽</p>
+          <p id="skinCost">Скин: 0 ₽</p>
+          <div id="totalAmount">Итого: 0 ₽</div>
+        </div>
+</div>
+  </div>
         </div>
         <div id="settings" class="content">
           <div class="top-info">
@@ -392,6 +369,7 @@
 </body>
 
 </html>
+
 
 
 
