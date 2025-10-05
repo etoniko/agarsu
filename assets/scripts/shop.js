@@ -92,7 +92,7 @@ nicknameInput.addEventListener("blur", async () => {
   updateCharCount();
 
   try {
-    const res = await fetch('https://api.agar.su/check-nickname', {
+    const res = await fetch('https://api.agar.su:8443/check-nickname', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ nickname: nicknameInput.value.trim(), accountID })
@@ -291,7 +291,7 @@ document.getElementById("paymentForm").addEventListener("submit", async (e) => {
 
 async function sendForm(formData) {
   try {
-    const res = await fetch("https://api.agar.su/create-payment", { method: "POST", body: formData });
+    const res = await fetch("https://api.agar.su:8443/create-payment", { method: "POST", body: formData });
     if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
     const data = await res.json();
     if (data?.confirmation?.confirmation_url) {
@@ -314,3 +314,4 @@ togglePassword.addEventListener("click", () => {
   togglePassword.classList.toggle("fa-eye");
   togglePassword.classList.toggle("fa-eye-slash");
 });
+
