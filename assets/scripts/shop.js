@@ -1,321 +1,316 @@
-(function(){
-  let currentStep = 1;
-  let chosenSkin = null, chosenType = null, chosenPrice = 0, processedImageUrl = null;
-  let serviceType = 'self';
-  let timer = 10*60, timerInterval = null;
+const forbiddenRegex = /[`'";:ㅤ⁣]/g;
+const yookassaRules = { maxFileSize: 5 * 1024 * 1024 };
 
-  const stepContents = document.querySelectorAll('#step-content > div.step');
-  const chosenTitleEl = document.getElementById('chosenTitle');
-  const finalTitleEl = document.getElementById('finalTitle');
-  const priceEl = document.getElementById('price');
-  const countdownEl = document.getElementById('countdown');
-  const passLabel = document.getElementById('passLabel');
-  const nicknameInput = document.getElementById('nickname');
-  const passwordInput = document.getElementById('password');
-  const uploadCircle = document.getElementById('uploadCircle');
-  const imageInput = document.getElementById('imageFile');
-  const expiredBox = document.getElementById('expiredBox');
-  const paidBtn = document.getElementById('paidBtn');
-  const skinsGrid = document.getElementById('skinsGrid');
-  const serviceRadios = document.querySelectorAll('input[name="serviceType"]');
-  const backToChoose = document.getElementById('backToChoose');
-  const backToData = document.getElementById('backToData');
-  const restartBtn = document.getElementById('restartBtn');
-
-  // Уведомления
-const notificationEl = document.createElement('div');
-notificationEl.id = 'shopNotification';
-notificationEl.classList.add('shopntf');
-document.body.appendChild(notificationEl);
-
-function notify(msg, duration = 3000) {
-  notificationEl.textContent = msg;
-  notificationEl.classList.add('show');
-  setTimeout(() => {
-    notificationEl.classList.remove('show');
-  }, duration);
+function showError(elementId, message) {
+  const errorEl = document.getElementById(elementId);
+  errorEl.textContent = message;
+  errorEl.style.display = 'block';
+  setTimeout(() => hideError(elementId), 5000);
 }
 
-  // Проверка адблокера
-  async function checkAdBlocker() {
-    try {
-      const xhr = new XMLHttpRequest();
-      xhr.open('HEAD', 'https://api.agar.su/api/test', true);
-      xhr.send();
-      return new Promise(resolve => {
-        xhr.onreadystatechange = () => {
-          if (xhr.readyState === 4) {
-            resolve(xhr.status === 200);
-          }
-        };
-      });
-    } catch (e) {
-      notify('⚠ Пожалуйста, отключите блокировщик рекламы для этого сайта.');
-      return false;
-    }
+function hideError(elementId) {
+  document.getElementById(elementId).style.display = 'none';
+}
+
+function showWarning(id, show) {
+  document.getElementById(id).style.display = show ? 'block' : 'none';
+}
+
+function updateCharCount() {
+  const input = document.getElementById("nickname");
+  const max = document.getElementById('clan').checked ? 6 : 15;
+  const length = input.value.length;
+  document.getElementById("charCount").textContent = `${length}/${max}`;
+}
+
+function updateNicknameDisplay() {
+  const isClan = document.getElementById('clan').checked;
+  const input = document.getElementById('nickname');
+
+  input.value = '';
+
+  if (isClan) {
+    input.placeholder = '[клан]';
+    input.maxLength = 6;
+  } else {
+    input.placeholder = 'ник';
+    input.maxLength = 15;
   }
 
-  // Переключение для себя / клана
-  serviceRadios.forEach(r => {
-    r.addEventListener('change', () => {
-      serviceType = r.value;
-      nicknameInput.placeholder = serviceType === 'clan' ? 'клан' : 'ник';
-      nicknameInput.title = serviceType === 'clan' ? 'Введите название клана' : 'Введите ник';
+  updateCharCount();
+}
 
-      document.querySelectorAll('#skinsGrid .skin-card').forEach(card => {
-        const base = Number(card.dataset.base);
-        const price = serviceType === 'clan' ? base * 2 : base;
-        card.querySelector('.price-label').textContent = `Цена: ${price}`;
-        card.querySelector('img').src = serviceType === 'clan' ? card.dataset.srcClan : card.dataset.srcSelf;
-
-        if (card.dataset.type === 'pass') {
-          card.querySelector('h4').textContent = serviceType === 'clan' ? 'Пароль на клан' : 'Пароль на ник';
-        }
-      });
-    });
-  });
-
-  // Выбор товара
-  skinsGrid.addEventListener('click', e => {
-    if (e.target.tagName === 'BUTTON') {
-      const card = e.target.closest('.skin-card');
-      chosenSkin = card.querySelector('h4').textContent;
-      chosenType = card.dataset.type;
-
-      const base = Number(card.dataset.base);
-      const rand = Math.floor(Math.random() * 10);
-      chosenPrice = (serviceType === 'clan' ? base * 2 : base) + rand;
-
-      passLabel.style.display = chosenType === 'pass' ? 'block' : 'none';
-      uploadCircle.style.display = chosenType === 'pass' ? 'none' : 'flex';
-
-      chosenTitleEl.textContent = `Вы выбрали: ${chosenSkin}`;
-      priceEl.textContent = `${chosenPrice}₽`;
-      setActiveStep(2);
+function blockForbiddenChars(input) {
+  input.addEventListener("input", () => {
+    if (forbiddenRegex.test(input.value)) {
+      input.value = input.value.replace(forbiddenRegex, "");
+      showError(input.id + 'Error', 'Запрещённые символы удалены');
     }
-  });
-
-  // Загрузка файла с проверкой размера
-  uploadCircle.addEventListener('click', () => imageInput.click());
-  imageInput.addEventListener('change', () => {
-    const file = imageInput.files[0];
-    if (!file) return;
-
-    if (file.size > 10 * 1024 * 1024) {
-      notify('❌ Файл больше 10MB');
-      imageInput.value = '';
-      return;
-    }
-
-    const name = file.name.toLowerCase();
-    if (chosenType === 'gif' && !name.endsWith('.gif')) {
-      notify('❌ Только GIF!');
-      imageInput.value = '';
-      return;
-    }
-    if (chosenType === 'image' && !(/\.(png|jpg|jpeg)$/i.test(name))) {
-      notify('❌ Разрешены PNG/JPG!');
-      imageInput.value = '';
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = e => {
-      const img = new Image();
-      img.onload = () => {
-        uploadCircle.innerHTML = '';
-        uploadCircle.appendChild(img);
-      };
-      img.src = e.target.result;
-      processedImageUrl = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
-
-nicknameInput.addEventListener('input', () => {
-  let nick = nicknameInput.value;
-
-  // Разрешаем: латиница, кириллица (вкл. Ёё), цифры, [], пробел
-  nick = nick.replace(/[^a-zA-Zа-яА-ЯёЁ0-9\[\] ]/g, '');
-
-  // Заменяем несколько пробелов подряд на один
-  nick = nick.replace(/ +/g, ' ');
-  // Ограничение длины
-  if (nick.length > 20) nick = nick.slice(0, 20);
-
-  nicknameInput.value = nick;
-});
-
-
-
-// Переход к оплате
-document.getElementById('dataForm').addEventListener('submit', e => {
-  e.preventDefault();
-  const nick = nicknameInput.value.trim();
-  const pass = passwordInput.value.trim();
-
-  if (!nick) {
-    notify(serviceType === 'clan' ? 'Введите название клана' : 'Введите ник');
-    return;
-  }
-
-  // Проверка клана или ника
-  if (serviceType === 'clan') {
-    const clanPattern = /^\[.*\]$/;
-    if (!clanPattern.test(nick)) {
-      notify('❌ У клана должны быть квадратные скобки [ ]');
-      return;
-    }
-  } else if (serviceType === 'self') {
-    if (/\[.*\]/.test(nick)) {
-      notify('❌ Ник не может содержать [ ]');
-      return;
-    }
-  }
-
-  // Проверка пароля (для pass) или изображения
-  if (chosenType === 'pass') {
-    if (!pass) {
-      notify('❌ Введите пароль');
-      return;
-    }
-    if (pass.length > 5) {
-      notify('❌ Пароль ≤5 символов');
-      return;
-    }
-  } else if (!processedImageUrl) {
-    notify('❌ Загрузите изображение');
-    return;
-  }
-
-  // Обновление интерфейса и старт таймера
-  finalTitleEl.textContent = `Оплата — ${chosenSkin}`;
-  priceEl.textContent = `${chosenPrice}₽`;
-  paidBtn.disabled = false;
-  expiredBox.classList.add('hiddenn');
-  startTimer();
-  setActiveStep(3);
-});
-
-
-  // Таймер
-  function startTimer() {
-    clearInterval(timerInterval);
-    timer = 10 * 60;
-    updateTimer();
-    timerInterval = setInterval(() => {
-      if (timer > 0) {
-        timer--;
-        updateTimer();
-      } else {
-        clearInterval(timerInterval);
-        onExpired();
+    if (input.id === 'nickname') {
+      const isClan = document.getElementById('clan').checked;
+      if (!isClan && /[\[\]]/.test(input.value)) {
+        input.value = input.value.replace(/[\[\]]/g, "");
+        showError('nicknameError', 'Скобки [] запрещены для личного ника');
       }
-    }, 1000);
-  }
-  function updateTimer() {
-    const m = Math.floor(timer / 60), s = timer % 60;
-    countdownEl.textContent = `${m}:${s.toString().padStart(2, '0')}`;
-  }
-  function onExpired() {
-    countdownEl.textContent = '00:00';
-    expiredBox.classList.remove('hiddenn');
-    paidBtn.disabled = true;
-  }
+      updateCharCount();
+    }
+  });
+}
 
-  // Кнопки назад
-  backToChoose.addEventListener('click', () => setActiveStep(1));
-  backToData.addEventListener('click', () => setActiveStep(2));
+const nicknameInput = document.getElementById("nickname");
+blockForbiddenChars(nicknameInput);
+blockForbiddenChars(document.getElementById("password"));
 
-  // Отправка данных
-  paidBtn.addEventListener('click', async () => {
-    if (!(await checkAdBlocker())) return;
+nicknameInput.addEventListener("blur", async () => {
+  const isClan = document.getElementById('clan').checked;
+  let value = nicknameInput.value.trim();
+  const accountID = document.getElementById("accountID").textContent.replace("ID:", "").trim();
 
-    const nick = nicknameInput.value.trim();
-    const pass = passwordInput.value.trim();
-const uidSpan = document.getElementById('accountID');
-const uid = uidSpan.textContent.replace('ID: ', '').trim();
-    const formData = new FormData();
-formData.append('uid', uid);
-    formData.append('nickname', nick);
-    formData.append('price', chosenPrice);
-    formData.append('serviceType', serviceType);
-    formData.append('submissionType', chosenType);
-    if (chosenType === 'pass') {
-      formData.append('password', pass);
+  if (!value) {
+    showWarning('nicknameWarning', true);
+    return;
+  }
+  showWarning('nicknameWarning', false);
+
+  if (isClan) {
+    const maxTextLength = 4;
+    value = value.replace(/[\[\]]/g, '');
+    if (value.length > maxTextLength) {
+      value = value.substring(0, maxTextLength);
+      setTimeout(() => {showError('nicknameError', 'Текст обрезан до допустимой длины, для клана должны быть квадратные скобки [ ]');}, 100);
+    }
+    nicknameInput.value = `[${value}]`;
+  } else {
+    if (/[\[\]]/.test(value)) {
+      nicknameInput.value = value.replace(/[\[\]]/g, '');
+      showError('nicknameError', 'Скобки [] запрещены для личного ника');
     } else {
-      if (!imageInput.files[0]) {
-        notify('❌ Файл не выбран');
-        return;
-      }
-      formData.append('file', imageInput.files[0]);
+      hideError('nicknameError');
     }
-
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', 'https://api.agar.su/api/submit', true);
-    xhr.onreadystatechange = () => {
-      if (xhr.readyState === 4) {
-        if (xhr.status === 200) {
-          const data = JSON.parse(xhr.responseText);
-          if (data.success) {
-            notify('✅ Идет модерация 10-30 минут.');
-            resetShop();
-          } else {
-            notify('❌ Ошибка: ' + data.error);
-          }
-        } else {
-          notify('⚠ Ошибка сети: ' + xhr.statusText);
-        }
-      }
-    };
-    xhr.send(formData);
-  });
-
-  // Начать заново
-  restartBtn.addEventListener('click', resetShop);
-  function resetShop() {
-    clearInterval(timerInterval);
-    setActiveStep(1);
-    imageInput.value = '';
-    uploadCircle.innerHTML = '<span>Загрузите изображение</span>';
-    nicknameInput.value = '';
-    passwordInput.value = '';
-    processedImageUrl = null;
-    expiredBox.classList.add('hiddenn');
-    paidBtn.disabled = false;
-    finalTitleEl.textContent = 'Оплата';
-    priceEl.textContent = '100.00₽';
-    chosenSkin = null;
-    chosenType = null;
-    chosenPrice = 0;
   }
 
-function setActiveStep(step) {
-  currentStep = step;
+  updateCharCount();
 
-  // Меняем активность для step-содержимого
-  stepContents.forEach(c => {
-    c.classList.toggle('active', Number(c.dataset.step) === step);
-  });
+  try {
+    const res = await fetch('https://api.agar.su/check-nickname', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nickname: nicknameInput.value.trim(), accountID })
+    });
+    const data = await res.json();
+    if (data.taken) {
+      showError('nicknameError', 'Ник занят');
+      nicknameInput.setCustomValidity('Ник занят');
+    } else {
+      hideError('nicknameError');
+      nicknameInput.setCustomValidity('');
+    }
+  } catch (err) {
+    console.error('Ошибка проверки ника:', err);
+  }
 
-  // Меняем активность для верхнего прогресс-бара (.stage)
-  document.querySelectorAll('.stage').forEach(stage => {
-    stage.classList.toggle('active', Number(stage.dataset.step) === step);
-  });
-}
-
-
-  setActiveStep(1);
-})();
-
-
-const skinsGrid = document.getElementById('skinsGrid');
-
-skinsGrid.addEventListener('wheel', function(e) {
-    e.preventDefault(); // предотвращаем вертикальную прокрутку
-    skinsGrid.scrollLeft += e.deltaY; // прокручиваем горизонтально
+  calculateCost();
 });
 
+nicknameInput.addEventListener("input", () => {
+  updateCharCount();
+  if (nicknameInput.value.trim()) showWarning('nicknameWarning', false);
+  calculateCost();
+});
 
+const passwordInput = document.getElementById("password");
+passwordInput.addEventListener("input", () => {
+  if (passwordInput.value.length > 5) {
+    passwordInput.value = passwordInput.value.substring(0, 5);
+    showError('passwordError', 'Пароль не может быть длиннее 5 символов');
+  } else {
+    hideError('passwordError');
+  }
+  calculateCost();
+});
 
+const previewContainer = document.getElementById("previewContainer");
+const fileInput = document.getElementById("fileInput");
+const skinCanvas = document.getElementById("previewCanvas");
+const skinCtx = skinCanvas.getContext("2d");
+const gifPreview = document.getElementById("previewGif");
 
+fileInput.addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  if (file.size > yookassaRules.maxFileSize) {
+    fileInput.value = '';
+    showError('fileError', 'Файл слишком большой (макс. 5MB)');
+    return;
+  }
+
+  if (!['image/png', 'image/jpeg', 'image/gif'].includes(file.type)) {
+    fileInput.value = '';
+    showError('fileError', 'Неподдерживаемый формат. Только PNG, JPG, GIF');
+    return;
+  }
+
+  previewSkin(file);
+  previewContainer.classList.add('has-image');
+  calculateCost();
+});
+
+function previewSkin(file) {
+  const url = URL.createObjectURL(file);
+  const isGif = file.type === "image/gif";
+
+  if (isGif) {
+    skinCanvas.style.display = "none";
+    gifPreview.style.display = "block";
+    gifPreview.src = url;
+  } else {
+    gifPreview.style.display = "none";
+    skinCanvas.style.display = "block";
+    const img = new Image();
+    img.onload = () => {
+      skinCtx.clearRect(0, 0, skinCanvas.width, skinCanvas.height);
+      skinCtx.save();
+      skinCtx.beginPath();
+      skinCtx.arc(skinCanvas.width/2, skinCanvas.height/2, skinCanvas.width/2, 0, Math.PI*2);
+      skinCtx.closePath();
+      skinCtx.clip();
+      const scale = Math.min(512 / img.width, 512 / img.height);
+      const x = (512 - img.width * scale) / 2;
+      const y = (512 - img.height * scale) / 2;
+      skinCtx.drawImage(img, x, y, img.width * scale, img.height * scale);
+      skinCtx.restore();
+    };
+    img.onerror = () => {
+      skinCtx.fillStyle = '#ccc';
+      skinCtx.fillRect(0, 0, skinCanvas.width, skinCanvas.height);
+      skinCtx.fillStyle = '#666';
+      skinCtx.font = '20px Arial';
+      skinCtx.textAlign = 'center';
+      skinCtx.fillText('Ошибка загрузки', 256, 256);
+    };
+    img.src = url;
+  }
+}
+
+function getMultiplier() {
+  return document.getElementById('clan').checked ? 2 : 1;
+}
+
+function calculateCost() {
+  const nickname = nicknameInput.value.trim();
+  const password = passwordInput.value.trim();
+  const file = fileInput.files[0];
+  const multiplier = getMultiplier();
+
+  let passwordCost = password ? 1 : 0;
+  let skinCost = 0;
+  let skinText = 'Скин: 0 ₽';
+
+  if (file) {
+    skinCost = file.type === 'image/gif' ? 2 : 1;
+    skinText = `Скин: ${skinCost * multiplier} ₽ (${file.type === 'image/gif' ? 'GIF' : 'PNG/JPG'})`;
+  }
+
+  const total = (passwordCost + skinCost) * multiplier;
+
+  document.getElementById('multiplierText').textContent = multiplier === 2 ? '2x (для клана)' : '1x (для себя)';
+  document.getElementById('passwordCost').textContent = `Пароль: ${password ? passwordCost * multiplier : 0} ₽`;
+  document.getElementById('skinCost').textContent = skinText;
+
+  const calculator = document.getElementById('calculator');
+  const buyButton = document.getElementById('buyButton');
+
+  if (total > 0 && nickname && (password || file)) {
+    calculator.style.display = 'block';
+    document.getElementById('totalAmount').textContent = `Итого: ${total} ₽`;
+    buyButton.textContent = `КУПИТЬ ЗА ${total} РУБЛЕЙ`;
+    buyButton.disabled = false;
+  } else {
+    calculator.style.display = 'none';
+    buyButton.disabled = true;
+  }
+}
+
+document.querySelectorAll('input[name="serviceType"]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    updateNicknameDisplay();
+    calculateCost();
+  });
+});
+
+updateNicknameDisplay();
+calculateCost();
+
+document.getElementById("paymentForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const rawNickname = nicknameInput.value.trim();
+  if (!rawNickname) {
+    showWarning('nicknameWarning', true);
+    return;
+  }
+
+  const nickname = rawNickname;
+  const password = passwordInput.value.trim();
+  const file = fileInput.files[0];
+  const accountID = document.getElementById("accountID").textContent.replace("ID:", "").trim();
+  const serviceType = document.querySelector('input[name="serviceType"]:checked').value;
+
+  if (!password && !file) {
+    showError('formError', 'Выберите хотя бы пароль или скин для оплаты');
+    return;
+  }
+
+  const multiplier = getMultiplier();
+  const passwordCost = password ? 1 : 0;
+  const skinCost = file ? (file.type === 'image/gif' ? 2 : 1) : 0;
+  const amount = (passwordCost + skinCost) * multiplier;
+
+  const formData = new FormData();
+  formData.append("name", nickname);
+  formData.append("accountID", accountID);
+  formData.append("amount", amount);
+  formData.append("serviceType", serviceType);
+  if (password) formData.append("password", password);
+
+  if (file) {
+    if (file.type === "image/gif") {
+      formData.append("image", file, file.name);
+      sendForm(formData);
+    } else {
+      skinCanvas.toBlob(blob => {
+        formData.append("image", blob, "skin.png");
+        sendForm(formData);
+      }, "image/png");
+      return;
+    }
+  } else {
+    sendForm(formData);
+  }
+});
+
+async function sendForm(formData) {
+  try {
+    const res = await fetch("https://api.agar.su/create-payment", { method: "POST", body: formData });
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    const data = await res.json();
+    if (data?.confirmation?.confirmation_url) {
+      window.location.href = data.confirmation.confirmation_url;
+    } else if (data?.error) {
+      showError('formError', `Ошибка YooKassa: ${data.error.description || 'Неизвестная ошибка'}`);
+    } else {
+      showError('formError', "Ошибка при создании платежа. Проверьте данные.");
+    }
+  } catch(err) {
+    showError('formError', "Ошибка соединения с сервером. Попробуйте позже.");
+    console.error(err);
+  }
+}
+
+const togglePassword = document.getElementById("togglePassword");
+togglePassword.addEventListener("click", () => {
+  const type = passwordInput.type === "password" ? "text" : "password";
+  passwordInput.type = type;
+  togglePassword.classList.toggle("fa-eye");
+  togglePassword.classList.toggle("fa-eye-slash");
+});
