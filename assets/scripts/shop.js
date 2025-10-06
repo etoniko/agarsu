@@ -209,12 +209,12 @@ function calculateCost() {
   const file = fileInput.files[0];
   const multiplier = getMultiplier();
 
-  let passwordCost = password ? 1 : 0;
+  let passwordCost = password ? 100 : 0;
   let skinCost = 0;
   let skinText = 'Скин: 0 ₽';
 
   if (file) {
-    skinCost = file.type === 'image/gif' ? 2 : 1;
+    skinCost = file.type === 'image/gif' ? 10000 : 100;
     skinText = `Скин: ${skinCost * multiplier} ₽ (${file.type === 'image/gif' ? 'GIF' : 'PNG/JPG'})`;
   }
 
