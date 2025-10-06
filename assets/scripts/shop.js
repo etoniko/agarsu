@@ -66,11 +66,6 @@ nicknameInput.addEventListener("blur", async () => {
   let value = nicknameInput.value.trim();
   const accountID = document.getElementById("accountID").textContent.replace("ID:", "").trim();
 
-  if (!value) {
-    showWarning('nicknameWarning', true);
-    return;
-  }
-  showWarning('nicknameWarning', false);
 
   if (isClan) {
     const maxTextLength = 4;
@@ -114,7 +109,6 @@ nicknameInput.addEventListener("blur", async () => {
 
 nicknameInput.addEventListener("input", () => {
   updateCharCount();
-  if (nicknameInput.value.trim()) showWarning('nicknameWarning', false);
   calculateCost();
 });
 
@@ -221,6 +215,7 @@ function calculateCost() {
   const calculator = document.getElementById('calculator');
   const buyButton = document.getElementById('buyButton');
 
+  // Блокируем кнопку, если нет ника или нет выбора (пароль/скин)
   if (total > 0 && nickname && (password || file)) {
     calculator.style.display = 'block';
     document.getElementById('totalAmount').textContent = `Итого: ${total} ₽`;
@@ -231,6 +226,7 @@ function calculateCost() {
     buyButton.disabled = true;
   }
 }
+
 
 document.querySelectorAll('input[name="serviceType"]').forEach(radio => {
   radio.addEventListener('change', () => {
@@ -245,10 +241,7 @@ calculateCost();
 document.getElementById("paymentForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const rawNickname = nicknameInput.value.trim();
-  if (!rawNickname) {
-    showWarning('nicknameWarning', true);
-    return;
-  }
+
 
   const nickname = rawNickname;
   const password = passwordInput.value.trim();
@@ -314,4 +307,3 @@ togglePassword.addEventListener("click", () => {
   togglePassword.classList.toggle("fa-eye");
   togglePassword.classList.toggle("fa-eye-slash");
 });
-
