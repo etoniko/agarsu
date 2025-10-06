@@ -67,22 +67,34 @@ nicknameInput.addEventListener("blur", async () => {
   const accountID = document.getElementById("accountID").textContent.replace("ID:", "").trim();
 
 
-  if (isClan) {
-    const maxTextLength = 4;
-    value = value.replace(/[\[\]]/g, '');
-    if (value.length > maxTextLength) {
-      value = value.substring(0, maxTextLength);
-      setTimeout(() => {showError('nicknameError', 'Текст обрезан до допустимой длины, для клана должны быть квадратные скобки [ ]');}, 100);
-    }
-    nicknameInput.value = `[${value}]`;
-  } else {
-    if (/[\[\]]/.test(value)) {
-      nicknameInput.value = value.replace(/[\[\]]/g, '');
-      showError('nicknameError', 'Скобки [] запрещены для личного ника');
-    } else {
-      hideError('nicknameError');
-    }
+if (isClan) {
+  const maxTextLength = 4;
+  value = value.replace(/[\[\]]/g, '');
+  if (value.length > maxTextLength) {
+    value = value.substring(0, maxTextLength);
+    setTimeout(() => {
+      showError('nicknameError', 'Текст обрезан до допустимой длины, для клана должны быть квадратные скобки [ ]');
+    }, 100);
   }
+  nicknameInput.value = `[${value}]`;
+} else {
+  const maxPersonalLength = 15;
+  
+  if (/[\[\]]/.test(value)) {
+    value = value.replace(/[\[\]]/g, '');
+    showError('nicknameError', 'Скобки [] запрещены для личного ника');
+  } else if (value.length > maxPersonalLength) {
+    value = value.substring(0, maxPersonalLength);
+    setTimeout(() => {
+      showError('nicknameError', `Личный ник обрезан до ${maxPersonalLength} символов`);
+    }, 100);
+  } else {
+    hideError('nicknameError');
+  }
+
+  nicknameInput.value = value;
+}
+
 
   updateCharCount();
 
