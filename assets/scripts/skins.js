@@ -6,7 +6,7 @@ let currentIndex = 0; // Индекс текущего игрока
 
 // Функция загрузки списка скинов
 async function loadSkinsList() {
-    const response = await fetch('https://api.agar.su:8443/skinlist.txt');
+    const response = await fetch('https://api.agar.su/skinlist.txt');
     const data = await response.text();
     const skinsMap = new Map();
 
@@ -97,19 +97,19 @@ function normalizeNick(nick) {
 
                             if (players.length > 0) {
                                 const currentPlayer = players[currentIndex];
-                                mainSkin.style.backgroundImage = `url(https://api.agar.su:8443/skins/${currentPlayer.id}.png)`; // Выставляем скин
+                                mainSkin.style.backgroundImage = `url(https://api.agar.su/skins/${currentPlayer.id}.png)`; // Выставляем скин
                                 document.getElementById("nick").value = currentPlayer.nick;
 
                                 // Установка предыдущего скина
                                 const prevIndex = (currentIndex - 1 + players.length) % players.length;
                                 if (players[prevIndex]) {
-                                    previousSkin.style.backgroundImage = `url(https://api.agar.su:8443/skins/${players[prevIndex].id}.png)`;
+                                    previousSkin.style.backgroundImage = `url(https://api.agar.su/skins/${players[prevIndex].id}.png)`;
                                 }
 
                                 // Установка следующего скина
                                 const nextIndex = (currentIndex + 1) % players.length;
                                 if (players[nextIndex]) {
-                                    nextSkin.style.backgroundImage = `url(https://api.agar.su:8443/skins/${players[nextIndex].id}.png)`;
+                                    nextSkin.style.backgroundImage = `url(https://api.agar.su/skins/${players[nextIndex].id}.png)`;
                                 }
                             }
                         }
@@ -160,6 +160,7 @@ function normalizeNick(nick) {
                                 updateAvatarDisplay();
                             }
                         });
+
 
 
 
