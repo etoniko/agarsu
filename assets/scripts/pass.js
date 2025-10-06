@@ -54,7 +54,7 @@ function normalizeNick(nick) {
     }
 
     // --- Загрузка списка ников ---
-    fetch('pass.txt?v=0.0.1')
+    fetch('https://api.agar.su:8443/pass.txt')
         .then(response => {
             if (!response.ok) throw new Error('Не удалось загрузить pass.txt');
             return response.text();
@@ -109,4 +109,5 @@ function normalizeNick(nick) {
             setCookie('userPass', '', -1); // Удалить cookie
         }
     });
+
 });
