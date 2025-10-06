@@ -37,7 +37,7 @@ stats.forEach((player, index) => {
         <div>${index + 1}</div>
         <div>${player.nick}</div>
         <div>${player.score}</div>
-        <div class="skinswraper"style="background-image: url('https://api.agar.su:8443/skins/${player.skin}.png');"></div>
+        <div class="skinswraper"style="background-image: url('https://api.agar.su/skins/${player.skin}.png');"></div>
     `;
     container.appendChild(playerDiv);
 });
@@ -260,7 +260,7 @@ function normalizeNick(nick) {
 
 // Функция загрузки skinList.txt с нормализацией
 function fetchSkinList() {
-    fetch('https://api.agar.su:8443/skinlist.txt')
+    fetch('https://api.agar.su/skinlist.txt')
         .then(response => {
             if (!response.ok) {
                 throw new Error('Ошибка сети: ' + response.status);
@@ -1355,7 +1355,7 @@ const moders = ["banshee","cosmos"];
 let passUsers = [];
 
 // Загружаем pass.txt и парсим ники
-fetch('https://api.agar.su:8443/pass.txt')
+fetch('https://api.agar.su/pass.txt')
     .then(response => {
         if (!response.ok) {
             throw new Error('Ошибка сети: ' + response.status);
@@ -1418,8 +1418,8 @@ function drawChatBoard() {
     avatar.className = 'chatX_avatar';
     const skinName = normalizeNick(lastMessage.name);
     const skinId = skinList[skinName];
-    avatar.src = skinId ? `https://api.agar.su:8443/skins/${skinId}.png` : 'https://api.agar.su:8443/skins/4.png';
-    avatar.onerror = () => avatar.src = 'https://api.agar.su:8443/skins/4.png';
+    avatar.src = skinId ? `https://api.agar.su/skins/${skinId}.png` : 'https://api.agar.su/skins/4.png';
+    avatar.onerror = () => avatar.src = 'https://api.agar.su/skins/4.png';
     avatarXContainer.appendChild(avatar);
     msgDiv.appendChild(avatarXContainer);
 
@@ -2305,8 +2305,8 @@ function drawWhiteGrid() {
 
                 const skinId = skinList[topPlayerNick];
                 innerImage.src = skinId
-                    ? `https://api.agar.su:8443/skins/${skinId}.png`
-                    : "https://api.agar.su:8443/skins/4.png";
+                    ? `https://api.agar.su/skins/${skinId}.png`
+                    : "https://api.agar.su/skins/4.png";
 
                 topPlayerSkin = skinId || 'default';
             }
@@ -3031,7 +3031,7 @@ drawOneCell: function (ctx) {
         if (skinId) {
             if (!skins.hasOwnProperty(skinId)) {
                 skins[skinId] = new Image();
-                skins[skinId].src = `https://api.agar.su:8443/skins/${skinId}.png`;
+                skins[skinId].src = `https://api.agar.su/skins/${skinId}.png`;
             }
             if (skins[skinId].complete && skins[skinId].width > 0) {
                 skinImage = skins[skinId];
