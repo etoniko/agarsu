@@ -49,66 +49,53 @@
       </div>
       <div class="main-content">
 <div id="shop" class="content">
-		                    <div class="top-info">
-            <div><span>Создание лички</span></div>
-          </div>
+	<div class="top-info"><div><span>Создание лички</span></div></div>
 <div class="shop-container">
-    <div class="avatar-section">
-      <label id="previewContainer" for="fileInput">
-        <canvas id="previewCanvas" width="512" height="512"></canvas>
-        <img id="previewGif" alt="GIF preview">
-      </label>
-      <input type="file" id="fileInput" accept=".png,.jpg,.gif">
-      <div id="fileError" class="error"></div>
-<form id="paymentForm" autocomplete="off">
-        <div class="radio-group">
-          <label>
-            <input type="radio" name="serviceType" value="personal" id="personal" checked="">
-            <span>Для себя</span>
-          </label>
-          <label>
-            <input type="radio" name="serviceType" value="clan" id="clan">
-            <span>Для клана</span>
-          </label>
-        </div>
+  <div class="avatar-section">
+    <label id="previewContainer" for="fileInput">
+      <canvas id="previewCanvas" width="512" height="512"></canvas>
+      <img id="previewGif" alt="GIF preview">
+    </label>
+    <input type="file" id="fileInput" accept=".png,.jpg,.gif" autocomplete="off">
+    <div id="fileError" class="error"></div>
 
-        <div class="input-group">
-          
-          <div id="nicknameWrapper">
-            <input type="text" id="nickname" placeholder="ник" required="" maxlength="15" title="Введите ник" autocomplete="off">
-			<span id="charCount">0/15</span>
-          </div>
-          <div id="nicknameError" class="error"></div>
-	     <div id="nicknameWarning" class="warning" style="display: block;">Некорректный ник</div>
+    <form id="paymentForm" autocomplete="off">
+      <div class="radio-group">
+        <label><input type="radio" name="serviceType" value="personal" id="personal" checked autocomplete="off"><span>Для себя</span></label>
+        <label><input type="radio" name="serviceType" value="clan" id="clan" autocomplete="off"><span>Для клана</span></label>
+      </div>
+
+      <div class="input-group">
+        <div id="nicknameWrapper">
+          <input type="text" id="nickname" placeholder="ник" required maxlength="15" title="Введите ник" autocomplete="off">
+          <span id="charCount">0/15</span>
         </div>
-        
-        <div class="input-group">
-  
-  <div class="password-wrapper">
-    <input type="password" id="password" placeholder="пароль" maxlength="5" autocomplete="off">
-    <i id="togglePassword" class="fa-solid fa-eye eye"></i>
+        <div id="nicknameError" class="error"></div>
+      </div>
+
+      <div class="input-group">
+        <div class="password-wrapper">
+          <input type="password" id="password" placeholder="пароль" maxlength="5" autocomplete="off">
+          <i id="togglePassword" class="fa-solid fa-eye eye"></i>
+        </div>
+        <div id="passwordError" class="error"></div>
+      </div>
+
+      <div id="formError" class="error"></div>
+      <button type="submit" id="buyButton" disabled>КУПИТЬ ЗА 0 РУБЛЕЙ</button>
+    </form>
   </div>
-  <div id="passwordError" class="error"></div>
-</div>
 
-
-        <div id="formError" class="error"></div>
-		<button type="submit" id="buyButton" disabled="">КУПИТЬ ЗА 0 РУБЛЕЙ</button>
-      </form>
+  <div class="oplata">
+    <div id="calculator" style="display:none">
+      <h3>Расчёт стоимости</h3>
+      <p id="clanMultiplier">Множитель: <span id="multiplierText">1x (для себя)</span></p>
+      <p id="passwordCost">Пароль: 0 ₽</p>
+      <p id="skinCost">Скин: 0 ₽</p>
+      <div id="totalAmount">Итого: 0 ₽</div>
     </div>
-
-    
-<div class="oplata">
-<div id="calculator" style="display: none;">
-          <h3>Расчёт стоимости</h3>
-          <p id="clanMultiplier">Множитель: <span id="multiplierText">1x (для себя)</span></p>
-          <p id="passwordCost">Пароль: 0 ₽</p>
-          <p id="skinCost">Скин: 0 ₽</p>
-          <div id="totalAmount">Итого: 0 ₽</div>
-        </div>
-</div>
   </div>
-        </div>
+</div>
         <div id="settings" class="content">
           <div class="top-info">
             <div><span>Настройки</span></div>
@@ -369,6 +356,7 @@
 </body>
 
 </html>
+
 
 
 
