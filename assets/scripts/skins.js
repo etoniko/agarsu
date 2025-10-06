@@ -6,7 +6,7 @@ let currentIndex = 0; // Индекс текущего игрока
 
 // Функция загрузки списка скинов
 async function loadSkinsList() {
-    const response = await fetch('skinlist.txt?0.0.3');
+    const response = await fetch('https://api.agar.su:8443/skinlist.txt');
     const data = await response.text();
     const skinsMap = new Map();
 
@@ -160,4 +160,5 @@ function normalizeNick(nick) {
                                 updateAvatarDisplay();
                             }
                         });
+
 
