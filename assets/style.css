@@ -157,7 +157,7 @@ input{font-size:16px;}
 .input-container.hidden{opacity:0;}
 .input-container.visible{opacity:1;}
 .topclose{position: absolute;right: 10px;font-size: 16px;}
-.onleaderboard{position: absolute;right: 10px;top: 10px;border: solid #ffffff26 1px;border-radius: 25px;background: rgba(0, 0, 0, .3);width: 40px;height: 40px;padding: 5px;display: none;align-items: center;justify-content: center;cursor: pointer;}
+#onleaderboard{position: absolute;right: 10px;top: 10px;border: solid #ffffff26 1px;border-radius: 25px;background: rgba(0, 0, 0, .3);width: 40px;height: 40px;padding: 5px;display: none;align-items: center;justify-content: center;cursor: pointer;}
 
 .sgm, .photo-gallery{opacity:0;transform:translateY(-20px);transition:opacity 0.1s ease, transform 0.1s ease;}
 .sgm.visible, .photo-gallery.visible{opacity:1;transform:translateY(0);}
