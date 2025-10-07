@@ -2782,7 +2782,7 @@ wHandle.setMouseClicks = function (arg) {
 
     wHandle.connect = wsConnect;
 
-    const transparent = new Set(["незнакомка","bublik","ник","liqwid"]);
+const transparent = new Set(["незнакомка","bublik","ник","liqwid"]);
 const invisible = new Set(["catぶ","ᶳᵆⁿᶵᵋˢˢᶨˢ༄","⧼♢ᛃ╰🎀ᵁ℘ܔ🎀╯ᛃ♢⧼","я","mr.freeman","bewitching"]);
 const rotation = new Set(["нико"]);
 let oldX = -1, oldY = -1, z = 1;
@@ -2960,6 +2960,8 @@ Cell.prototype = {
         return `#${parseColor(1)}${parseColor(3)}${parseColor(5)}`;
     },
 
+  
+
 drawOneCell(ctx) {
     if (!this.shouldRender()) return;
 
@@ -2984,8 +2986,8 @@ drawOneCell(ctx) {
     ctx.strokeStyle = isTransp ? "rgba(0,0,0,0)" : (simpleRender ? this.color : this.getStrokeColor());
 
     ctx.beginPath();
-    // === ЕДА: рисуем звезду вместо круга ===
-if (this.isFood || this.isAgitated) {
+// === ЕДА: рисуем звезду вместо круга ===
+if (this.isFood) {
     const spikes = 5; // можно увеличить для других форм
     const outerRadius = Math.max(1, bigPointSize);
     const innerRadius = outerRadius * 0.45;
@@ -3001,15 +3003,16 @@ if (this.isFood || this.isAgitated) {
     ctx.closePath();
 }
 else if (simpleRender) {
-        const lw = closebord ? 0 : this.size * 0.03;
-        ctx.lineWidth = lw;
-        ctx.arc(this.x, this.y, this.size - lw * 0.5 + 5, 0, 2 * Math.PI, false);
-    } else {
-        this.movePoints();
-        ctx.moveTo(this.points[0].x, this.points[0].y);
-        this.points.forEach(p => ctx.lineTo(p.x, p.y));
-    }
+    const lw = closebord ? 0 : this.size * 0.03;
+    ctx.lineWidth = lw;
+    ctx.arc(this.x, this.y, this.size - lw * 0.5 + 5, 0, 2 * Math.PI, false);
     ctx.closePath();
+} else {
+    this.movePoints();
+    ctx.moveTo(this.points[0].x, this.points[0].y);
+    this.points.forEach(p => ctx.lineTo(p.x, p.y));
+    ctx.closePath();
+}
 
     if (!closebord) ctx.stroke();
     ctx.fill();
@@ -3020,7 +3023,7 @@ else if (simpleRender) {
     if (skinId) {
         if (!skins[skinId]) {
             skins[skinId] = new Image();
-            skins[skinId].src = `https://api.agar.su/skins/${skinId}.png`;
+            skins[skinId].src = `https://agar.su/skins/${skinId}.png`;
         }
         const skinImg = skins[skinId];
         if (skinImg.complete && skinImg.width > 0) {
@@ -3092,6 +3095,7 @@ if (rotation.has(skinName)) {
 
     ctx.restore();
 }
+
 };	
     UText.prototype = {
         _value: "",
