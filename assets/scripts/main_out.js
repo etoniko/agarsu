@@ -130,35 +130,16 @@ window.addEventListener('hashchange', setActiveFromHash);
         window.onlineInterval = setInterval(updateOnlineCount, 5000);
     }
 	
-const forbiddenChars = ["﷽", "𒐫", "𒈙", "⸻", "꧅", "ဪ", "௵", "௸", "‱"];
-const forbiddenWords = ["ПАПАВЛАДИКРФ"]; // добавь нужные слова
-const redirectUrl = "https://252.56.мвд.рф/news/item/45173657"; // куда перенаправлять нарушителя
+	const forbiddenChars = ["﷽", "𒐫","𒈙","⸻","꧅","ဪ","௵","௸","‱"];
 
 wHandle.startGame = function () {
     let nickInput = document.getElementById('nick').value;
     const passInput = document.getElementById('pass').value;
-
-    let wasForbidden = false;
-
-    // Проверка на запрещённые символы
+    // Удаляем все запрещённые символы
     const forbiddenRegex = new RegExp(forbiddenChars.join('|'), 'g');
-    if (forbiddenRegex.test(nickInput)) wasForbidden = true;
     nickInput = nickInput.replace(forbiddenRegex, '');
-
-    // Проверка на запрещённые слова
-    const wordsRegex = new RegExp(forbiddenWords.join('|'), 'gi');
-    if (wordsRegex.test(nickInput)) wasForbidden = true;
-    nickInput = nickInput.replace(wordsRegex, '');
-
-    // Если найдено что-то запрещённое — перенаправляем
-    if (wasForbidden) {
-        window.location.href = redirectUrl;
-        return;
-    }
-
     setNick(nickInput + "#" + passInput);
 }
-
     // Функция для загрузки данных о топ-1 игроке
     wHandle.chekstats = async function () {
         try {
@@ -1563,14 +1544,13 @@ const playerId = lastMessage.pId;
     document.addEventListener('click', closeMenu, { once: true });
 });
 
-    chatDiv.appendChild(msgDiv);
-const scrollStep = 200; // на сколько пикселей прокручиваем за одно сообщение
-chatDiv.scrollTop = Math.min(chatDiv.scrollTop + scrollStep, chatDiv.scrollHeight);
+    chatDiv.prepend(msgDiv);
+    chatDiv.scrollTop = chatDiv.scrollHeight;
 
     const maxMessages = 50;
-while (chatDiv.children.length > maxMessages) {
-    chatDiv.removeChild(chatDiv.firstChild);
-}
+    while (chatDiv.children.length > maxMessages) {
+        chatDiv.removeChild(chatDiv.lastChild);
+    }
 }
 
 const normalizeFractlPart = n => (n % (Math.PI * 2)) / (Math.PI * 2);
@@ -2616,7 +2596,6 @@ function drawLeaderBoard() {
 
 
 
-
     function Cell(uid, ux, uy, usize, ucolor, uname, a) {
         this.id = uid;
         this.ox = this.x = ux;
@@ -2779,6 +2758,7 @@ wHandle.setMouseClicks = function (arg) {
             wHandle.localStorage.AB8 = ~~(100 * Math.random());
         }
     }
+
 
     wHandle.connect = wsConnect;
 
@@ -3023,7 +3003,7 @@ else if (simpleRender) {
     if (skinId) {
         if (!skins[skinId]) {
             skins[skinId] = new Image();
-            skins[skinId].src = `https://agar.su/skins/${skinId}.png`;
+            skins[skinId].src = `https://api.agar.su/skins/${skinId}.png`;
         }
         const skinImg = skins[skinId];
         if (skinImg.complete && skinImg.width > 0) {
@@ -3096,7 +3076,53 @@ if (rotation.has(skinName)) {
     ctx.restore();
 }
 
-};	
+};
+
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
     UText.prototype = {
         _value: "",
         _color: "#000000",
