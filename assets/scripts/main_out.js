@@ -2762,357 +2762,281 @@ wHandle.setMouseClicks = function (arg) {
         }
     }
 
-    // setTimeout(function () {
-    // }, 3E5);
-    // var T = {
-    //     ZW: "EU-London"
-    // };
     wHandle.connect = wsConnect;
 
-    // var data = {
-    //     "action": "test"
-    // };
-    var transparent = ["незнакомка","bublik","ник","liqwid"];
-    var
-        // delay = 500,
-        oldX = -1,
-        oldY = -1,
-        // Canvas = null,
-        z = 1,
-        // scoreText = null,
-        skins = {};
-    // knownNameDict = "".split(";"),
-    // knownNameDict_noDisp = [],
-    // ib = ["_canvas'blob"]
-    // ;
+    const transparent = new Set(["незнакомка","bublik","ник","liqwid"]);
+const invisible = new Set(["catぶ","ᶳᵆⁿᶵᵋˢˢᶨˢ༄","⧼♢ᛃ╰🎀ᵁ℘ܔ🎀╯ᛃ♢⧼","я","mr.freeman","bewitching"]);
+let oldX = -1, oldY = -1, z = 1;
+const skins = {};
+
 Cell.prototype = {
-        id: 0,
-        points: null,
-        pointsAcc: null,
-        name: null,
-        nameCache: null,
-        sizeCache: null,
-        x: 0,
-        y: 0,
-        size: 0,
-        ox: 0,
-        oy: 0,
-        oSize: 0,
-        nx: 0,
-        ny: 0,
-        nSize: 0,
-        flag: 0,
-        updateTime: 0,
-        drawTime: 0,
-        destroyed: false,
-        isVirus: false,
-        isEjected: false,
-        isAgitated: false,
-        wasSimpleDrawing: true,
-destroy: function () {
-    var tmp;
-    for (tmp = 0, len = nodelist.length; tmp < len; tmp++) {
-        if (nodelist[tmp] === this) {
-            nodelist.splice(tmp, 1);
-            break;
+    id: 0,
+    points: [],
+    pointsAcc: [],
+    name: null,
+    nameCache: null,
+    sizeCache: null,
+    x: 0,
+    y: 0,
+    size: 0,
+    ox: 0,
+    oy: 0,
+    oSize: 0,
+    nx: 0,
+    ny: 0,
+    nSize: 0,
+    flag: 0,
+    updateTime: 0,
+    drawTime: 0,
+    destroyed: false,
+    isVirus: false,
+    isEjected: false,
+    isAgitated: false,
+    wasSimpleDrawing: true,
+
+    destroy() {
+        const tmpIndex = nodelist.indexOf(this);
+        if (tmpIndex !== -1) nodelist.splice(tmpIndex, 1);
+        delete nodes[this.id];
+
+        const playerIndex = playerCells.indexOf(this);
+        if (playerIndex !== -1) {
+            ua = true;
+            playerCells.splice(playerIndex, 1);
         }
-    }
 
-    delete nodes[this.id];
+        this.destroyed = true;
+    },
 
-    tmp = playerCells.indexOf(this);
-    if (tmp !== -1) {
-        ua = true;
-        playerCells.splice(tmp, 1);
-    }
+    getNameSize() {
+        return Math.max(~~(0.3 * this.size), 24);
+    },
 
-    // Убираем анимацию — просто помечаем как destroyed, но не добавляем в Cells
-    this.destroyed = true;
-},
-        getNameSize: function () {
-            return Math.max(~~(.3 * this.size), 24)
-        },
-        setName: function (a) {
-            this.name = a;
-            if (null == this.nameCache) {
-                this.nameCache = new UText(this.getNameSize(), "#FFFFFF", true, "#000000");
-                this.nameCache.setValue(this.name);
-            } else {
-                this.nameCache.setSize(this.getNameSize());
-                this.nameCache.setValue(this.name);
-            }
-        },
-        setSize: function (a) {
-            this.nSize = a;
-            var m = ~~(this.size * this.size * 0.01);
-            if (null === this.sizeCache)
-                this.sizeCache = new UText(this.getNameSize() * 0.5, "#FFFFFF", true, "#000000");
-            else this.sizeCache.setSize(this.getNameSize() * 0.5);
-        },
-        createPoints: function () {
-            for (var samplenum = this.getNumPoints(); this.points.length > samplenum;) {
-                var rand = ~~(Math.random() * this.points.length);
-                this.points.splice(rand, 1);
-                this.pointsAcc.splice(rand, 1)
-            }
-            if (0 == this.points.length && 0 < samplenum) {
-                this.points.push({
-                    ref: this,
-                    size: this.size,
-                    x: this.x,
-                    y: this.y
+    setName(name) {
+        this.name = name;
+        const size = this.getNameSize();
+        if (!this.nameCache) {
+            this.nameCache = new UText(size, "#FFFFFF", true, "#000000");
+        } else {
+            this.nameCache.setSize(size);
+        }
+        this.nameCache.setValue(name);
+    },
+
+    setSize(size) {
+        this.nSize = size;
+        const sizeHalf = this.getNameSize() * 0.5;
+        if (!this.sizeCache) {
+            this.sizeCache = new UText(sizeHalf, "#FFFFFF", true, "#000000");
+        } else {
+            this.sizeCache.setSize(sizeHalf);
+        }
+    },
+
+    getNumPoints() {
+        if (this.id === 0) return 16;
+        let minPoints = this.size < 20 ? 0 : 10;
+        if (this.isVirus) minPoints = 30;
+
+        let b = this.isVirus ? this.size : this.size * viewZoom;
+        b *= z;
+        if (this.flag & 32) b *= 0.25;
+
+        return ~~Math.max(b, minPoints);
+    },
+
+    createPoints() {
+        const numPoints = this.getNumPoints();
+
+        while (this.points.length > numPoints) {
+            const idx = ~~(Math.random() * this.points.length);
+            this.points.splice(idx, 1);
+            this.pointsAcc.splice(idx, 1);
+        }
+
+        if (!this.points.length && numPoints > 0) {
+            this.points.push({ ref: this, size: this.size, x: this.x, y: this.y });
+            this.pointsAcc.push(Math.random() - 0.5);
+        }
+
+        while (this.points.length < numPoints) {
+            const idx = ~~(Math.random() * this.points.length);
+            const point = this.points[idx];
+            this.points.splice(idx, 0, { ref: this, size: point.size, x: point.x, y: point.y });
+            this.pointsAcc.splice(idx, 0, this.pointsAcc[idx]);
+        }
+    },
+
+    movePoints() {
+        this.createPoints();
+        const pts = this.points;
+        const acc = this.pointsAcc;
+        const n = pts.length;
+
+        for (let i = 0; i < n; i++) {
+            const prev = acc[(i - 1 + n) % n];
+            const next = acc[(i + 1) % n];
+            acc[i] += (Math.random() - 0.5) * (this.isAgitated ? 3 : 1);
+            acc[i] = Math.max(Math.min(acc[i] * 0.7, 10), -10);
+            acc[i] = (prev + next + 8 * acc[i]) / 10;
+        }
+
+        const ref = this;
+        const isVirus = this.isVirus ? 0 : (this.id / 1e3 + timestamp / 1e4) % (2 * Math.PI);
+
+        for (let j = 0; j < n; j++) {
+            let f = pts[j].size;
+            const prev = pts[(j - 1 + n) % n].size;
+            const next = pts[(j + 1) % n].size;
+
+            if (this.size > 15 && qTree && this.size * viewZoom > 20 && this.id !== 0) {
+                const x = pts[j].x, y = pts[j].y;
+                let collide = false;
+                qTree.retrieve2(x - 5, y - 5, 10, 10, a => {
+                    if (a.ref !== ref && (x - a.x) ** 2 + (y - a.y) ** 2 < 625) collide = true;
                 });
-                this.pointsAcc.push(Math.random() - .5);
+                if (!collide && (x < leftPos || y < topPos || x > rightPos || y > bottomPos)) collide = true;
+                if (collide) acc[j] = Math.max(0, acc[j]) - 1;
             }
-            while (this.points.length < samplenum) {
-                var rand2 = ~~(Math.random() * this.points.length),
-                    point = this.points[rand2];
-                this.points.splice(rand2, 0, {
-                    ref: this,
-                    size: point.size,
-                    x: point.x,
-                    y: point.y
-                });
-                this.pointsAcc.splice(rand2, 0, this.pointsAcc[rand2])
-            }
-        },
-        getNumPoints: function () {
-            if (0 == this.id) return 16;
-            var a = 10;
-            if (20 > this.size) a = 0;
-            if (this.isVirus) a = 30;
-            var b = this.size;
-            if (!this.isVirus) (b *= viewZoom);
-            b *= z;
-            if (this.flag & 32) (b *= .25);
-            return ~~Math.max(b, a);
-        },
-        movePoints: function () {
-            this.createPoints();
-            for (var points = this.points, pointsacc = this.pointsAcc, numpoints = points.length, i = 0; i < numpoints; ++i) {
-                var pos1 = pointsacc[(i - 1 + numpoints) % numpoints],
-                    pos2 = pointsacc[(i + 1) % numpoints];
-                pointsacc[i] += (Math.random() - .5) * (this.isAgitated ? 3 : 1);
-                pointsacc[i] *= .7;
-                10 < pointsacc[i] && (pointsacc[i] = 10);
-                -
-                    10 > pointsacc[i] && (pointsacc[i] = -10);
-                pointsacc[i] = (pos1 + pos2 + 8 * pointsacc[i]) / 10
-            }
-            for (var ref = this, isvirus = this.isVirus ? 0 : (this.id / 1E3 + timestamp / 1E4) % (2 * Math.PI), j = 0; j < numpoints; ++j) {
-                var f = points[j].size,
-                    e = points[(j - 1 + numpoints) % numpoints].size,
-                    m = points[(j + 1) % numpoints].size;
-                if (15 < this.size && null != qTree && 20 < this.size * viewZoom && 0 != this.id) {
-                    var l = false,
-                        n = points[j].x,
-                        q = points[j].y;
-                    qTree.retrieve2(n - 5, q - 5, 10, 10, function (a) {
-                        if (a.ref != ref && 25 > (n - a.x) * (n - a.x) + (q - a.y) * (q - a.y)) {
-                            l = true;
-                        }
-                    });
-                    if (!l && points[j].x < leftPos || points[j].y < topPos || points[j].x > rightPos || points[j].y > bottomPos) {
-                        l = true;
-                    }
-                    if (l) {
-                        if (0 < pointsacc[j]) {
-                            (pointsacc[j] = 0);
-                        }
-                        pointsacc[j] -= 1;
-                    }
-                }
-                f += pointsacc[j];
-                0 > f && (f = 0);
-                f = this.isAgitated ? (19 * f + this.size) / 20 : (12 * f + this.size) / 13;
-                points[j].size = (e + m + 8 * f) / 10;
-                e = 2 * Math.PI / numpoints;
-                m = this.points[j].size;
-                this.isVirus && 0 == j % 2 && (m += 5);
-                points[j].x = this.x + Math.cos(e * j + isvirus) * m;
-                points[j].y = this.y + Math.sin(e * j + isvirus) * m
-            }
-        },
-        updatePos: function () {
-            if (0 == this.id) return 1;
-            var a;
-            a = (timestamp - this.updateTime) / 120;
-            a = 0 > a ? 0 : 1 < a ? 1 : a;
-            var b = 0 > a ? 0 : 1 < a ? 1 : a;
-            this.getNameSize();
-            this.x = a * (this.nx - this.ox) + this.ox;
-            this.y = a * (this.ny - this.oy) + this.oy;
-            this.size = b * (this.nSize - this.oSize) + this.oSize;
-            return b;
-        },
-        shouldRender: function () {
-            if (0 == this.id) {
-                return true
-            } else {
-                return !(this.x + this.size + 40 < nodeX - canvasWidth / 2 / viewZoom || this.y + this.size + 40 < nodeY - canvasHeight / 2 / viewZoom || this.x - this.size - 40 > nodeX + canvasWidth / 2 / viewZoom || this.y - this.size - 40 > nodeY + canvasHeight / 2 / viewZoom);
-            }
-        },
-        getStrokeColor: function () {
-            var r = (~~(parseInt(this.color.substr(1, 2), 16) * 0.9)).toString(16),
-                g = (~~(parseInt(this.color.substr(3, 2), 16) * 0.9)).toString(16),
-                b = (~~(parseInt(this.color.substr(5, 2), 16) * 0.9)).toString(16);
-            if (r.length == 1) r = "0" + r;
-            if (g.length == 1) g = "0" + g;
-            if (b.length == 1) b = "0" + b;
-            return "#" + r + g + b;
-        },
-drawOneCell: function (ctx) {
-    if (this.shouldRender()) {
-        var isSimpleRender = (this.id !== 0 && !this.isVirus && !this.isAgitated && smoothRender > viewZoom);
-        if (this.getNumPoints() < 10) isSimpleRender = true;
 
-        if (this.wasSimpleDrawing && !isSimpleRender) {
-            for (var i = 0; i < this.points.length; i++) {
-                this.points[i].size = this.size;
-            }
+            f = Math.max(0, f + acc[j]);
+            f = this.isAgitated ? (19 * f + this.size) / 20 : (12 * f + this.size) / 13;
+            pts[j].size = (prev + next + 8 * f) / 10;
+
+            const angle = (2 * Math.PI / n) * j;
+            let radius = pts[j].size;
+            if (this.isVirus && j % 2 === 0) radius += 5;
+
+            pts[j].x = this.x + Math.cos(angle + isVirus) * radius;
+            pts[j].y = this.y + Math.sin(angle + isVirus) * radius;
         }
+    },
 
-        var bigPointSize = this.size;
-        if (!this.wasSimpleDrawing) {
-            for (var i = 0; i < this.points.length; i++) {
-                bigPointSize = Math.max(this.points[i].size, bigPointSize);
-            }
-        }
+    updatePos() {
+        if (this.id === 0) return 1;
+        let a = (timestamp - this.updateTime) / 120;
+        a = Math.max(0, Math.min(1, a));
+        const b = a;
+        this.getNameSize();
+        this.x = a * (this.nx - this.ox) + this.ox;
+        this.y = a * (this.ny - this.oy) + this.oy;
+        this.size = b * (this.nSize - this.oSize) + this.oSize;
+        return b;
+    },
 
-        this.wasSimpleDrawing = isSimpleRender;
+    shouldRender() {
+        if (this.id === 0) return true;
+        const margin = 40;
+        return !(this.x + this.size + margin < nodeX - canvasWidth / 2 / viewZoom ||
+                 this.y + this.size + margin < nodeY - canvasHeight / 2 / viewZoom ||
+                 this.x - this.size - margin > nodeX + canvasWidth / 2 / viewZoom ||
+                 this.y - this.size - margin > nodeY + canvasHeight / 2 / viewZoom);
+    },
+
+    getStrokeColor() {
+        const parseColor = i => {
+            let c = (~~(parseInt(this.color.substr(i, 2), 16) * 0.9)).toString(16);
+            return c.length === 1 ? "0" + c : c;
+        };
+        return `#${parseColor(1)}${parseColor(3)}${parseColor(5)}`;
+    },
+
+    drawOneCell(ctx) {
+        if (!this.shouldRender()) return;
+
+        const simpleRender = this.id !== 0 && !this.isVirus && !this.isAgitated && smoothRender > viewZoom || this.getNumPoints() < 10;
+
+        if (!simpleRender && this.wasSimpleDrawing) this.points.forEach(p => p.size = this.size);
+
+        let bigPointSize = this.size;
+        if (!this.wasSimpleDrawing) this.points.forEach(p => bigPointSize = Math.max(bigPointSize, p.size));
+        this.wasSimpleDrawing = simpleRender;
+
         ctx.save();
         this.drawTime = timestamp;
-        var scale = this.updatePos();
-        //if (this.destroyed) ctx.globalAlpha *= 1 - scale;
+        const scale = this.updatePos();
 
         ctx.lineWidth = closebord ? 0 : 10;
         ctx.lineCap = "round";
         ctx.lineJoin = this.isVirus ? "miter" : "round";
 
-        // Определение цвета и прозрачности
-        var isTransparent = transparent.includes(this.name.toLowerCase());
-        if (isTransparent) {
-            ctx.fillStyle = "rgba(0, 0, 0, 0)";
-            ctx.strokeStyle = "rgba(0, 0, 0, 0)";
-        } else {
-            ctx.fillStyle = this.color;
-            ctx.strokeStyle = isSimpleRender ? this.color : this.getStrokeColor();
-        }
+        const isTransp = transparent.has(this.name?.toLowerCase());
+        ctx.fillStyle = isTransp ? "rgba(0,0,0,0)" : this.color;
+        ctx.strokeStyle = isTransp ? "rgba(0,0,0,0)" : (simpleRender ? this.color : this.getStrokeColor());
 
         ctx.beginPath();
-        if (isSimpleRender) {
-            if (closebord) {
-                ctx.lineWidth = 0;
-                ctx.arc(this.x, this.y, this.size, 0, 2 * Math.PI, false);
-            } else {
-                var lw = this.size * 0.03;
-                ctx.lineWidth = lw;
-                ctx.arc(this.x, this.y, this.size - lw * 0.5 + 5, 0, 2 * Math.PI, false);
-            }
+        if (simpleRender) {
+            const lw = closebord ? 0 : this.size * 0.03;
+            ctx.lineWidth = lw;
+            ctx.arc(this.x, this.y, this.size - lw * 0.5 + 5, 0, 2 * Math.PI, false);
         } else {
             this.movePoints();
-            var d = this.getNumPoints();
             ctx.moveTo(this.points[0].x, this.points[0].y);
-            for (var i = 1; i <= d; ++i) {
-                var p = i % d;
-                ctx.lineTo(this.points[p].x, this.points[p].y);
-            }
+            this.points.forEach((p, i) => ctx.lineTo(p.x, p.y));
         }
         ctx.closePath();
-
-        // Определение ID скина через skinList
-        var skinName = normalizeNick(this.name);
-        var skinId = skinList[skinName];
-        var skinImage = null;
-
-        if (skinId) {
-            if (!skins.hasOwnProperty(skinId)) {
-                skins[skinId] = new Image();
-                skins[skinId].src = `https://api.agar.su/skins/${skinId}.png`;
-            }
-            if (skins[skinId].complete && skins[skinId].width > 0) {
-                skinImage = skins[skinId];
-            }
-        }
 
         if (!closebord) ctx.stroke();
         ctx.fill();
 
-        // Отображение анимационного скина
-        if (skinImage) {
-            ctx.save();
-            ctx.clip();
-
-            const frameWidth = skinImage.width;
-            const frameHeight = skinImage.height;
-
-            if (frameWidth > frameHeight) {
-                const totalFrames = Math.floor(frameWidth / frameHeight);
-                const currentFrame = Math.floor((Date.now() / 100) % totalFrames);
-                const sourceX = currentFrame * frameHeight;
-
-                ctx.drawImage(skinImage, sourceX, 0, frameHeight, frameHeight,
-                    this.x - bigPointSize, this.y - bigPointSize,
-                    2 * bigPointSize, 2 * bigPointSize);
-            } else {
-                ctx.drawImage(skinImage, 0, 0, frameWidth, frameHeight,
-                    this.x - bigPointSize, this.y - bigPointSize,
-                    2 * bigPointSize, 2 * bigPointSize);
+        // Скин
+        const skinName = normalizeNick(this.name);
+        const skinId = skinList[skinName];
+        if (skinId) {
+            if (!skins[skinId]) {
+                skins[skinId] = new Image();
+                skins[skinId].src = `https://agar.su/skins/${skinId}.png`;
             }
-            ctx.restore();
+            const skinImg = skins[skinId];
+            if (skinImg.complete && skinImg.width > 0) {
+                ctx.save();
+                ctx.clip();
+                const fw = skinImg.width, fh = skinImg.height;
+                if (fw > fh) {
+                    const frames = Math.floor(fw / fh);
+                    const frame = Math.floor(Date.now() / 100 % frames);
+                    ctx.drawImage(skinImg, frame * fh, 0, fh, fh, this.x - bigPointSize, this.y - bigPointSize, 2 * bigPointSize, 2 * bigPointSize);
+                } else {
+                    ctx.drawImage(skinImg, 0, 0, fw, fh, this.x - bigPointSize, this.y - bigPointSize, 2 * bigPointSize, 2 * bigPointSize);
+                }
+                ctx.restore();
+            }
         }
 
-// Отображение имени и массы
-if (this.id !== 0) {
-	
-    var x = Math.floor(this.x),
-        y = Math.floor(this.y),
-        nameSize = this.getNameSize(),
-        zoomRatio = Math.ceil(10 * viewZoom) * 0.1,
-        invZoomRatio = 1 / zoomRatio;
+        // Имя и масса
+        if (this.id !== 0) {
+            const x = Math.floor(this.x), y = Math.floor(this.y);
+            const zoomRatio = Math.ceil(10 * viewZoom) * 0.1;
+            const invZoom = 1 / zoomRatio;
 
-    if (showName && (this.name && this.nameCache) && this.size > 10) {
-        var forbiddenSymbols = ["﷽", "𒐫","𒈙","⸻","꧅","ဪ","௵","௸","‱"];
-        var invisibleNicks = ["catぶ","ᶳᵆⁿᶵᵋˢˢᶨˢ༄","⧼♢ᛃ╰🎀ᵁ℘ܔ🎀╯ᛃ♢⧼","я","Mr.Freeman","bewitching"]; // сюда добавляй ники, которые должны быть невидимыми
-        var displayName = this.name;
+            if (showName && this.name && this.nameCache && this.size > 10) {
+                let displayName = this.name.toLowerCase();
+                if (invisible.has(displayName)) displayName = "";
+                else displayName = censorMessage(this.name);
 
-        // Если ник в списке невидимых — делаем пустым
-        if (invisibleNicks.includes(displayName.toLowerCase())) {
-            displayName = "";
-        } else {
-            // Убираем запрещённые символы
-            forbiddenSymbols.forEach(symbol => {
-                if (displayName.includes(symbol)) displayName = "";
-            });
-            displayName = censorMessage(displayName);
+                this.nameCache.setValue(displayName);
+                this.nameCache.setSize(this.getNameSize());
+                this.nameCache.setScale(zoomRatio);
+                const img = this.nameCache.render();
+                ctx.drawImage(img, x - Math.floor(img.width * invZoom / 2), y - Math.floor(img.height * invZoom / 2),
+                              Math.floor(img.width * invZoom), Math.floor(img.height * invZoom));
+            }
+
+            if (showMass && !this.isVirus && !this.isEjected && !this.isAgitated && this.size > 100) {
+                const mass = Math.floor(this.size * this.size * 0.01);
+                this.sizeCache.setValue(mass);
+                this.sizeCache.setScale(zoomRatio);
+                const img = this.sizeCache.render();
+                ctx.drawImage(img, x - Math.floor(img.width * invZoom / 2), y + Math.floor(img.height * 0.8 * invZoom),
+                              Math.floor(img.width * invZoom), Math.floor(img.height * invZoom));
+            }
         }
 
-        this.nameCache.setValue(displayName);
-        this.nameCache.setSize(nameSize);
-        this.nameCache.setScale(zoomRatio);
-
-        var nameImage = this.nameCache.render(),
-            nameWidth = Math.floor(nameImage.width * invZoomRatio),
-            nameHeight = Math.floor(nameImage.height * invZoomRatio);
-
-        ctx.drawImage(nameImage, x - Math.floor(nameWidth / 2), y - Math.floor(nameHeight / 2), nameWidth, nameHeight);
-    }
-
-    if (showMass && ((!this.isVirus && !this.isEjected && !this.isAgitated) && this.size > 100)) {
-        var mass = Math.floor(this.size * this.size * 0.01);
-        this.sizeCache.setValue(mass);
-        this.sizeCache.setScale(zoomRatio);
-        var massImage = this.sizeCache.render(),
-            massWidth = Math.floor(massImage.width * invZoomRatio),
-            massHeight = Math.floor(massImage.height * invZoomRatio);
-        ctx.drawImage(massImage, x - Math.floor(massWidth / 2), y + Math.floor(massHeight * 0.8), massWidth, massHeight);
-    }
-}
         ctx.restore();
     }
-}
+};
 
-    };
+	
     UText.prototype = {
         _value: "",
         _color: "#000000",
