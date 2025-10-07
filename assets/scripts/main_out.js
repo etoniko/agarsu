@@ -2938,54 +2938,43 @@ Cell.prototype = {
         return `#${parseColor(1)}${parseColor(3)}${parseColor(5)}`;
     },
 
-drawOneCell(ctx) {
-    if (!this.shouldRender()) return;
+    drawOneCell(ctx) {
+        if (!this.shouldRender()) return;
 
-    // Определяем еду (по размеру и состоянию)
-    const isFood = !this.isVirus && !this.isAgitated && this.size >= foodMinSize && this.size <= foodMaxSize;
+        const simpleRender = this.id !== 0 && !this.isVirus && !this.isAgitated && smoothRender > viewZoom || this.getNumPoints() < 10;
 
-    const simpleRender = this.id !== 0 && !this.isVirus && !this.isAgitated && smoothRender > viewZoom || this.getNumPoints() < 10;
-    if (!simpleRender && this.wasSimpleDrawing)
-        this.points.forEach(p => p.size = this.size);
+        if (!simpleRender && this.wasSimpleDrawing) this.points.forEach(p => p.size = this.size);
 
-    let bigPointSize = this.size;
-    if (!this.wasSimpleDrawing)
-        this.points.forEach(p => bigPointSize = Math.max(bigPointSize, p.size));
+        let bigPointSize = this.size;
+        if (!this.wasSimpleDrawing) this.points.forEach(p => bigPointSize = Math.max(bigPointSize, p.size));
+        this.wasSimpleDrawing = simpleRender;
 
-    this.wasSimpleDrawing = simpleRender;
+        ctx.save();
+        this.drawTime = timestamp;
+        const scale = this.updatePos();
 
-    ctx.save();
-    this.drawTime = timestamp;
-    const scale = this.updatePos();
+        ctx.lineWidth = closebord ? 0 : 10;
+        ctx.lineCap = "round";
+        ctx.lineJoin = this.isVirus ? "miter" : "round";
 
-    ctx.lineWidth = closebord ? 0 : 10;
-    ctx.lineCap = "round";
-    ctx.lineJoin = this.isVirus ? "miter" : "round";
+        const isTransp = transparent.has(this.name?.toLowerCase());
+        ctx.fillStyle = isTransp ? "rgba(0,0,0,0)" : this.color;
+        ctx.strokeStyle = isTransp ? "rgba(0,0,0,0)" : (simpleRender ? this.color : this.getStrokeColor());
 
-    const isTransp = transparent.has(this.name?.toLowerCase());
-    ctx.fillStyle = isTransp ? "rgba(0,0,0,0)" : this.color;
-    ctx.strokeStyle = isTransp ? "rgba(0,0,0,0)" : (simpleRender ? this.color : this.getStrokeColor());
+        ctx.beginPath();
+        if (simpleRender) {
+            const lw = closebord ? 0 : this.size * 0.03;
+            ctx.lineWidth = lw;
+            ctx.arc(this.x, this.y, this.size - lw * 0.5 + 5, 0, 2 * Math.PI, false);
+        } else {
+            this.movePoints();
+            ctx.moveTo(this.points[0].x, this.points[0].y);
+            this.points.forEach((p, i) => ctx.lineTo(p.x, p.y));
+        }
+        ctx.closePath();
 
-    ctx.beginPath();
-
-    if (isFood) {
-        drawStar(ctx, this.x, this.y, 5, this.size, this.size * 0.5);
-    } else if (simpleRender) {
-        // 🟢 Простое рисование круга
-        const lw = closebord ? 0 : this.size * 0.03;
-        ctx.lineWidth = lw;
-        ctx.arc(this.x, this.y, this.size - lw * 0.5 + 5, 0, 2 * Math.PI, false);
-    } else {
-        // 🌀 Сложная форма (игрок / вирус)
-        this.movePoints();
-        ctx.moveTo(this.points[0].x, this.points[0].y);
-        this.points.forEach(p => ctx.lineTo(p.x, p.y));
-    }
-
-    ctx.closePath();
-
-    if (!closebord) ctx.stroke();
-    ctx.fill();
+        if (!closebord) ctx.stroke();
+        ctx.fill();
 
         // Скин
         const skinName = normalizeNick(this.name);
@@ -3043,30 +3032,6 @@ drawOneCell(ctx) {
         ctx.restore();
     }
 };	
-
-function drawStar(ctx, cx, cy, spikes, outerRadius, innerRadius) {
-    let rot = Math.PI / 2 * 3;
-    let x = cx;
-    let y = cy;
-    const step = Math.PI / spikes;
-
-    ctx.moveTo(cx, cy - outerRadius);
-    for (let i = 0; i < spikes; i++) {
-        x = cx + Math.cos(rot) * outerRadius;
-        y = cy + Math.sin(rot) * outerRadius;
-        ctx.lineTo(x, y);
-        rot += step;
-
-        x = cx + Math.cos(rot) * innerRadius;
-        y = cy + Math.sin(rot) * innerRadius;
-        ctx.lineTo(x, y);
-        rot += step;
-    }
-    ctx.lineTo(cx, cy - outerRadius);
-}
-
-
-	
     UText.prototype = {
         _value: "",
         _color: "#000000",
