@@ -87,6 +87,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('onmap').style.display = 'none';
   });
 
+    // Кнопка топ лист
+  document.getElementById('onleaderboard').addEventListener('click', () => {
+    document.getElementById('leaderboard').style.display = 'block';
+    document.getElementById('onleaderboard').style.display = 'none';
+  });
+
   // Кнопка "Pause"
   document.getElementById('freeze').addEventListener('click', function () {
     freeze = false; // предполагаю, это глобальная переменная
