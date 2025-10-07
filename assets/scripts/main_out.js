@@ -2983,7 +2983,7 @@ drawOneCell(ctx) {
     if (skinId) {
         if (!skins[skinId]) {
             skins[skinId] = new Image();
-            skins[skinId].src = `https://agar.su/skins/${skinId}.png`;
+            skins[skinId].src = `https://api.agar.su/skins/${skinId}.png`;
         }
         const skinImg = skins[skinId];
         if (skinImg.complete && skinImg.width > 0) {
