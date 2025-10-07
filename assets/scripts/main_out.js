@@ -130,15 +130,35 @@ window.addEventListener('hashchange', setActiveFromHash);
         window.onlineInterval = setInterval(updateOnlineCount, 5000);
     }
 	
-const forbiddenChars = ["﷽", "𒐫","𒈙","⸻","꧅","ဪ","௵","௸","‱"];
+const forbiddenChars = ["﷽", "𒐫", "𒈙", "⸻", "꧅", "ဪ", "௵", "௸", "‱"];
+const forbiddenWords = ["ПАПАВЛАДИКРФ"]; // добавь нужные слова
+const redirectUrl = "https://252.56.мвд.рф/news/item/45173657"; // куда перенаправлять нарушителя
+
 wHandle.startGame = function () {
     let nickInput = document.getElementById('nick').value;
     const passInput = document.getElementById('pass').value;
-    // Удаляем все запрещённые символы
+
+    let wasForbidden = false;
+
+    // Проверка на запрещённые символы
     const forbiddenRegex = new RegExp(forbiddenChars.join('|'), 'g');
+    if (forbiddenRegex.test(nickInput)) wasForbidden = true;
     nickInput = nickInput.replace(forbiddenRegex, '');
+
+    // Проверка на запрещённые слова
+    const wordsRegex = new RegExp(forbiddenWords.join('|'), 'gi');
+    if (wordsRegex.test(nickInput)) wasForbidden = true;
+    nickInput = nickInput.replace(wordsRegex, '');
+
+    // Если найдено что-то запрещённое — перенаправляем
+    if (wasForbidden) {
+        window.location.href = redirectUrl;
+        return;
+    }
+
     setNick(nickInput + "#" + passInput);
 }
+
     // Функция для загрузки данных о топ-1 игроке
     wHandle.chekstats = async function () {
         try {
