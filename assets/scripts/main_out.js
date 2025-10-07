@@ -2763,6 +2763,7 @@ wHandle.setMouseClicks = function (arg) {
 
     const transparent = new Set(["незнакомка","bublik","ник","liqwid"]);
 const invisible = new Set(["catぶ","ᶳᵆⁿᶵᵋˢˢᶨˢ༄","⧼♢ᛃ╰🎀ᵁ℘ܔ🎀╯ᛃ♢⧼","я","mr.freeman","bewitching"]);
+const rotation = new Set(["нико"]);
 let oldX = -1, oldY = -1, z = 1;
 const skins = {};
 
@@ -2938,99 +2939,122 @@ Cell.prototype = {
         return `#${parseColor(1)}${parseColor(3)}${parseColor(5)}`;
     },
 
-    drawOneCell(ctx) {
-        if (!this.shouldRender()) return;
+drawOneCell(ctx) {
+    if (!this.shouldRender()) return;
 
-        const simpleRender = this.id !== 0 && !this.isVirus && !this.isAgitated && smoothRender > viewZoom || this.getNumPoints() < 10;
+    const simpleRender = this.id !== 0 && !this.isVirus && !this.isAgitated && smoothRender > viewZoom || this.getNumPoints() < 10;
 
-        if (!simpleRender && this.wasSimpleDrawing) this.points.forEach(p => p.size = this.size);
+    if (!simpleRender && this.wasSimpleDrawing) this.points.forEach(p => p.size = this.size);
 
-        let bigPointSize = this.size;
-        if (!this.wasSimpleDrawing) this.points.forEach(p => bigPointSize = Math.max(bigPointSize, p.size));
-        this.wasSimpleDrawing = simpleRender;
+    let bigPointSize = this.size;
+    if (!this.wasSimpleDrawing) this.points.forEach(p => bigPointSize = Math.max(bigPointSize, p.size));
+    this.wasSimpleDrawing = simpleRender;
 
-        ctx.save();
-        this.drawTime = timestamp;
-        const scale = this.updatePos();
+    ctx.save();
+    this.drawTime = timestamp;
+    this.updatePos();
 
-        ctx.lineWidth = closebord ? 0 : 10;
-        ctx.lineCap = "round";
-        ctx.lineJoin = this.isVirus ? "miter" : "round";
+    ctx.lineWidth = closebord ? 0 : 10;
+    ctx.lineCap = "round";
+    ctx.lineJoin = this.isVirus ? "miter" : "round";
 
-        const isTransp = transparent.has(this.name?.toLowerCase());
-        ctx.fillStyle = isTransp ? "rgba(0,0,0,0)" : this.color;
-        ctx.strokeStyle = isTransp ? "rgba(0,0,0,0)" : (simpleRender ? this.color : this.getStrokeColor());
+    const isTransp = transparent.has(this.name?.toLowerCase());
+    ctx.fillStyle = isTransp ? "rgba(0,0,0,0)" : this.color;
+    ctx.strokeStyle = isTransp ? "rgba(0,0,0,0)" : (simpleRender ? this.color : this.getStrokeColor());
 
-        ctx.beginPath();
-        if (simpleRender) {
-            const lw = closebord ? 0 : this.size * 0.03;
-            ctx.lineWidth = lw;
-            ctx.arc(this.x, this.y, this.size - lw * 0.5 + 5, 0, 2 * Math.PI, false);
-        } else {
-            this.movePoints();
-            ctx.moveTo(this.points[0].x, this.points[0].y);
-            this.points.forEach((p, i) => ctx.lineTo(p.x, p.y));
-        }
-        ctx.closePath();
-
-        if (!closebord) ctx.stroke();
-        ctx.fill();
-
-        // Скин
-        const skinName = normalizeNick(this.name);
-        const skinId = skinList[skinName];
-        if (skinId) {
-            if (!skins[skinId]) {
-                skins[skinId] = new Image();
-                skins[skinId].src = `https://agar.su/skins/${skinId}.png`;
-            }
-            const skinImg = skins[skinId];
-            if (skinImg.complete && skinImg.width > 0) {
-                ctx.save();
-                ctx.clip();
-                const fw = skinImg.width, fh = skinImg.height;
-                if (fw > fh) {
-                    const frames = Math.floor(fw / fh);
-                    const frame = Math.floor(Date.now() / 100 % frames);
-                    ctx.drawImage(skinImg, frame * fh, 0, fh, fh, this.x - bigPointSize, this.y - bigPointSize, 2 * bigPointSize, 2 * bigPointSize);
-                } else {
-                    ctx.drawImage(skinImg, 0, 0, fw, fh, this.x - bigPointSize, this.y - bigPointSize, 2 * bigPointSize, 2 * bigPointSize);
-                }
-                ctx.restore();
-            }
-        }
-
-        // Имя и масса
-        if (this.id !== 0) {
-            const x = Math.floor(this.x), y = Math.floor(this.y);
-            const zoomRatio = Math.ceil(10 * viewZoom) * 0.1;
-            const invZoom = 1 / zoomRatio;
-
-            if (showName && this.name && this.nameCache && this.size > 10) {
-                let displayName = this.name.toLowerCase();
-                if (invisible.has(displayName)) displayName = "";
-                else displayName = censorMessage(this.name);
-
-                this.nameCache.setValue(displayName);
-                this.nameCache.setSize(this.getNameSize());
-                this.nameCache.setScale(zoomRatio);
-                const img = this.nameCache.render();
-                ctx.drawImage(img, x - Math.floor(img.width * invZoom / 2), y - Math.floor(img.height * invZoom / 2),
-                              Math.floor(img.width * invZoom), Math.floor(img.height * invZoom));
-            }
-
-            if (showMass && !this.isVirus && !this.isEjected && !this.isAgitated && this.size > 100) {
-                const mass = Math.floor(this.size * this.size * 0.01);
-                this.sizeCache.setValue(mass);
-                this.sizeCache.setScale(zoomRatio);
-                const img = this.sizeCache.render();
-                ctx.drawImage(img, x - Math.floor(img.width * invZoom / 2), y + Math.floor(img.height * 0.8 * invZoom),
-                              Math.floor(img.width * invZoom), Math.floor(img.height * invZoom));
-            }
-        }
-
-        ctx.restore();
+    ctx.beginPath();
+    if (simpleRender) {
+        const lw = closebord ? 0 : this.size * 0.03;
+        ctx.lineWidth = lw;
+        ctx.arc(this.x, this.y, this.size - lw * 0.5 + 5, 0, 2 * Math.PI, false);
+    } else {
+        this.movePoints();
+        ctx.moveTo(this.points[0].x, this.points[0].y);
+        this.points.forEach(p => ctx.lineTo(p.x, p.y));
     }
+    ctx.closePath();
+
+    if (!closebord) ctx.stroke();
+    ctx.fill();
+
+    // === Скин с поворотом ===
+    const skinName = normalizeNick(this.name);
+    const skinId = skinList[skinName];
+    if (skinId) {
+        if (!skins[skinId]) {
+            skins[skinId] = new Image();
+            skins[skinId].src = `https://agar.su/skins/${skinId}.png`;
+        }
+        const skinImg = skins[skinId];
+        if (skinImg.complete && skinImg.width > 0) {
+            ctx.save();
+            ctx.clip();
+
+            const fw = skinImg.width, fh = skinImg.height;
+            const frame = (fw > fh) ? Math.floor(Date.now() / 100 % Math.floor(fw / fh)) : 0;
+            const drawSize = 2 * bigPointSize;
+
+if (rotation.has(skinName)) {
+    if (!this.hasOwnProperty('rotationAngle')) this.rotationAngle = 0;
+
+    const targetAngle = Math.atan2(this.ny - this.oy, this.nx - this.ox);
+    let delta = targetAngle - this.rotationAngle;
+    if (delta > Math.PI) delta -= 2 * Math.PI;
+    if (delta < -Math.PI) delta += 2 * Math.PI;
+
+    // Плавный поворот
+    this.rotationAngle += delta * 0.1;
+
+    // Нормализация угла, чтобы скин не сбивался при полном круге
+    this.rotationAngle = (this.rotationAngle + 2 * Math.PI) % (2 * Math.PI);
+
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.rotationAngle);
+    ctx.drawImage(skinImg,
+        fw > fh ? frame * fh : 0, 0, fh, fh,
+        -bigPointSize, -bigPointSize, drawSize, drawSize
+    );
+} else {
+                ctx.drawImage(skinImg,
+                    fw > fh ? frame * fh : 0, 0, fh, fh,
+                    this.x - bigPointSize, this.y - bigPointSize, drawSize, drawSize
+                );
+            }
+            ctx.restore();
+        }
+    }
+
+    // === Имя и масса ===
+    if (this.id !== 0) {
+        const x = Math.floor(this.x), y = Math.floor(this.y);
+        const zoomRatio = Math.ceil(10 * viewZoom) * 0.1;
+        const invZoom = 1 / zoomRatio;
+
+        if (showName && this.name && this.nameCache && this.size > 10) {
+            let displayName = this.name.toLowerCase();
+            if (invisible.has(displayName)) displayName = "";
+            else displayName = censorMessage(this.name);
+
+            this.nameCache.setValue(displayName);
+            this.nameCache.setSize(this.getNameSize());
+            this.nameCache.setScale(zoomRatio);
+            const img = this.nameCache.render();
+            ctx.drawImage(img, x - Math.floor(img.width * invZoom / 2), y - Math.floor(img.height * invZoom / 2),
+                          Math.floor(img.width * invZoom), Math.floor(img.height * invZoom));
+        }
+
+        if (showMass && !this.isVirus && !this.isEjected && !this.isAgitated && this.size > 100) {
+            const mass = Math.floor(this.size * this.size * 0.01);
+            this.sizeCache.setValue(mass);
+            this.sizeCache.setScale(zoomRatio);
+            const img = this.sizeCache.render();
+            ctx.drawImage(img, x - Math.floor(img.width * invZoom / 2), y + Math.floor(img.height * 0.8 * invZoom),
+                          Math.floor(img.width * invZoom), Math.floor(img.height * invZoom));
+        }
+    }
+
+    ctx.restore();
+}
 };	
     UText.prototype = {
         _value: "",
