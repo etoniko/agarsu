@@ -1595,6 +1595,7 @@ function updateNodes(reader) {
 
         for (let nodeid; nodeid = reader.uint32();) {
             const type = reader.uint8();
+			let isFood = (type === 1);
 
             let posX = 0;
             let posY = 0;
@@ -1657,7 +1658,7 @@ if (playerId === ownerPlayerId) {
 
     }
             }
-
+            node.isFood = isFood;
             node.isVirus = flagVirus;
             node.isEjected = flagEjected;
             node.isAgitated = flagAgitated;
@@ -2983,7 +2984,23 @@ drawOneCell(ctx) {
     ctx.strokeStyle = isTransp ? "rgba(0,0,0,0)" : (simpleRender ? this.color : this.getStrokeColor());
 
     ctx.beginPath();
-    if (simpleRender) {
+    // === ЕДА: рисуем звезду вместо круга ===
+if (this.isFood || this.isAgitated) {
+    const spikes = 5; // можно увеличить для других форм
+    const outerRadius = Math.max(1, bigPointSize);
+    const innerRadius = outerRadius * 0.45;
+
+    for (let i = 0; i < spikes * 2; i++) {
+        const r = (i % 2 === 0) ? outerRadius : innerRadius;
+        const angle = i * Math.PI / spikes; // шаг = PI / spikes
+        const px = this.x + Math.cos(angle) * r;
+        const py = this.y + Math.sin(angle) * r;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+}
+else if (simpleRender) {
         const lw = closebord ? 0 : this.size * 0.03;
         ctx.lineWidth = lw;
         ctx.arc(this.x, this.y, this.size - lw * 0.5 + 5, 0, 2 * Math.PI, false);
