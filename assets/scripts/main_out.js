@@ -1538,7 +1538,16 @@ const playerId = lastMessage.pId;
 });
 
     chatDiv.appendChild(msgDiv);
+const distanceToBottom = chatDiv.scrollHeight - chatDiv.scrollTop - chatDiv.clientHeight;
+const SCROLL_STEP = 60; // насколько вниз двигается чат при каждом новом сообщении
+
+if (distanceToBottom < 200) {
+    // почти внизу — скроллим в низ полностью
     chatDiv.scrollTop = chatDiv.scrollHeight;
+} else {
+    // игрок выше — подталкиваем чат чуть-чуть вниз
+    chatDiv.scrollTop += SCROLL_STEP;
+}
 
     const maxMessages = 50;
     while (chatDiv.children.length > maxMessages) {
