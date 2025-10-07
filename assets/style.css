@@ -9,6 +9,7 @@
 .cosmos{background:url(/assets/photo/cosmos.png) !important; font-weight:lighter;}
 #captcha-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background-color:rgba(0, 0, 0, 0.5);display:flex;justify-content:center;align-items:center;z-index:9999;}
 #captcha-container{z-index:10;}
+.nr{width:150px!important}
 #canvas{touch-action:none;}
 body{font-family:Arial,sans-serif;padding:0;margin:0;overflow:hidden;background-color:#070c16;}
 i:hover{cursor:pointer;}
@@ -20,7 +21,7 @@ i:hover{cursor:pointer;}
 #table-container{overflow-y:auto;margin-top:5px;}
 #table-container::-webkit-scrollbar{width:10px;}
 #table-container::-webkit-scrollbar-thumb{border-radius:5px;background:silver;}
-.header-row{display:flex;justify-content:space-around;}
+.header-row{display:flex;justify-content:space-around;margin-top: 10px;}
 .crown{position:absolute;top:-10px;right:50%;transform:translateX(50%);font-size:24px;color:gold;text-shadow:0 0 5px #000;}
 .top-player{display:flex;justify-content:space-around;}	
 #gradient-settings {
@@ -61,7 +62,7 @@ i:hover{cursor:pointer;}
 .top-playerwraper:nth-child(3){color:#fc6579;}
 .Lednick{overflow:hidden;width:100%;white-space:nowrap;text-overflow:ellipsis;}
 .skkinn{background-size:cover;border-radius:100%;border:solid 2px;	margin:0px 15px 5px 21px;height:50px;width:50px;}
-.time{font-size:11px !important;	margin-top:10px;color:#8e8e8e;	width:100px;}
+.time{margin-top:10px;color:#8e8e8e;width:100px;}
 .update-time{float:right;color:#0000006e;font-family:'Ubuntu';cursor:context-menu;font-size:11px;padding-top:5px;padding-right:3px;text-shadow:0px -1px 0px #000000, -1px 0px 0px #000000, 1px 0px 0px #000000, 0px 1px 0px #000000, 1px 1px 0px #000000, -1px -1px 0px #000000, -1px 1px 0px #000000, 1px -1px 0px #000000, 0px 2px 0px #000000;color:#6c757d !important;}
 .gall{margin-bottom:10px;	justify-content:space-around;}
 .gallery{--s:150px;--g:10px;--f:1.5;display:grid;gap:var(--g);}
