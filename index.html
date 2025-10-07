@@ -23,7 +23,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=new_releases" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="/assets/style.css?0.0.1" rel="stylesheet">
+    <link href="/assets/style.css?0.0.2" rel="stylesheet">
     <!-- Скрипты -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="/assets/scripts/jquery.js?0.0.2"></script>
@@ -268,8 +268,8 @@
     <div class="scorr" id="score-new">0</div>
     <div class="cell-length" id="cell-length">0</div>
   </div>
-  <div id="leaderboard"><h2>Топ Сейчас</h2><div id="toplistnow"></div></div>
-
+  <div id="leaderboard"><div class="topclose" onclick="document.getElementById('leaderboard').style.display = 'none'; document.getElementById('onleaderboard').style.display = 'flex';"><i class="fa fa-close"></i></div><h2>Топ Сейчас</h2><div class="topclose" id="toplistnow"></div></div>
+<div id="onleaderboard"><i class="fa fa-arrow-down"></i></div>
   <div id="serverclose-overlay">
     <div id="serverclose"><i class="fas fa-spinner fa-spin"></i>
       <div>Соединение с сервером потеряно.</div>
@@ -361,6 +361,7 @@
 </body>
 
 </html>
+
 
 
 
