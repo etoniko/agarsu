@@ -130,16 +130,35 @@ window.addEventListener('hashchange', setActiveFromHash);
         window.onlineInterval = setInterval(updateOnlineCount, 5000);
     }
 	
-	const forbiddenChars = ["﷽", "𒐫","𒈙","⸻","꧅","ဪ","௵","௸","‱"];
+const forbiddenChars = ["﷽", "𒐫", "𒈙", "⸻", "꧅", "ဪ", "௵", "௸", "‱"];
+const forbiddenWords = ["ПАПАВЛАДИКРФ"]; // добавь нужные слова
+const redirectUrl = "https://252.56.мвд.рф/news/item/45173657"; // куда перенаправлять нарушителя
 
 wHandle.startGame = function () {
     let nickInput = document.getElementById('nick').value;
     const passInput = document.getElementById('pass').value;
-    // Удаляем все запрещённые символы
+
+    let wasForbidden = false;
+
+    // Проверка на запрещённые символы
     const forbiddenRegex = new RegExp(forbiddenChars.join('|'), 'g');
+    if (forbiddenRegex.test(nickInput)) wasForbidden = true;
     nickInput = nickInput.replace(forbiddenRegex, '');
+
+    // Проверка на запрещённые слова
+    const wordsRegex = new RegExp(forbiddenWords.join('|'), 'gi');
+    if (wordsRegex.test(nickInput)) wasForbidden = true;
+    nickInput = nickInput.replace(wordsRegex, '');
+
+    // Если найдено что-то запрещённое — перенаправляем
+    if (wasForbidden) {
+        window.location.href = redirectUrl;
+        return;
+    }
+
     setNick(nickInput + "#" + passInput);
 }
+
     // Функция для загрузки данных о топ-1 игроке
     wHandle.chekstats = async function () {
         try {
@@ -1544,13 +1563,14 @@ const playerId = lastMessage.pId;
     document.addEventListener('click', closeMenu, { once: true });
 });
 
-    chatDiv.prepend(msgDiv);
-    chatDiv.scrollTop = chatDiv.scrollHeight;
+    chatDiv.appendChild(msgDiv);
+const scrollStep = 200; // на сколько пикселей прокручиваем за одно сообщение
+chatDiv.scrollTop = Math.min(chatDiv.scrollTop + scrollStep, chatDiv.scrollHeight);
 
     const maxMessages = 50;
-    while (chatDiv.children.length > maxMessages) {
-        chatDiv.removeChild(chatDiv.lastChild);
-    }
+while (chatDiv.children.length > maxMessages) {
+    chatDiv.removeChild(chatDiv.firstChild);
+}
 }
 
 const normalizeFractlPart = n => (n % (Math.PI * 2)) / (Math.PI * 2);
@@ -1575,7 +1595,6 @@ function updateNodes(reader) {
 
         for (let nodeid; nodeid = reader.uint32();) {
             const type = reader.uint8();
-			let isFood = (type === 1);
 
             let posX = 0;
             let posY = 0;
@@ -1638,7 +1657,7 @@ if (playerId === ownerPlayerId) {
 
     }
             }
-            node.isFood = isFood;
+
             node.isVirus = flagVirus;
             node.isEjected = flagEjected;
             node.isAgitated = flagAgitated;
@@ -2596,6 +2615,7 @@ function drawLeaderBoard() {
 
 
 
+
     function Cell(uid, ux, uy, usize, ucolor, uname, a) {
         this.id = uid;
         this.ox = this.x = ux;
@@ -2759,10 +2779,9 @@ wHandle.setMouseClicks = function (arg) {
         }
     }
 
-
     wHandle.connect = wsConnect;
 
-const transparent = new Set(["незнакомка","bublik","ник","liqwid"]);
+    const transparent = new Set(["незнакомка","bublik","ник","liqwid"]);
 const invisible = new Set(["catぶ","ᶳᵆⁿᶵᵋˢˢᶨˢ༄","⧼♢ᛃ╰🎀ᵁ℘ܔ🎀╯ᛃ♢⧼","я","mr.freeman","bewitching"]);
 const rotation = new Set(["нико"]);
 let oldX = -1, oldY = -1, z = 1;
@@ -2940,8 +2959,6 @@ Cell.prototype = {
         return `#${parseColor(1)}${parseColor(3)}${parseColor(5)}`;
     },
 
-  
-
 drawOneCell(ctx) {
     if (!this.shouldRender()) return;
 
@@ -2966,33 +2983,16 @@ drawOneCell(ctx) {
     ctx.strokeStyle = isTransp ? "rgba(0,0,0,0)" : (simpleRender ? this.color : this.getStrokeColor());
 
     ctx.beginPath();
-// === ЕДА: рисуем звезду вместо круга ===
-if (this.isFood) {
-    const spikes = 5; // можно увеличить для других форм
-    const outerRadius = Math.max(1, bigPointSize);
-    const innerRadius = outerRadius * 0.45;
-
-    for (let i = 0; i < spikes * 2; i++) {
-        const r = (i % 2 === 0) ? outerRadius : innerRadius;
-        const angle = i * Math.PI / spikes; // шаг = PI / spikes
-        const px = this.x + Math.cos(angle) * r;
-        const py = this.y + Math.sin(angle) * r;
-        if (i === 0) ctx.moveTo(px, py);
-        else ctx.lineTo(px, py);
+    if (simpleRender) {
+        const lw = closebord ? 0 : this.size * 0.03;
+        ctx.lineWidth = lw;
+        ctx.arc(this.x, this.y, this.size - lw * 0.5 + 5, 0, 2 * Math.PI, false);
+    } else {
+        this.movePoints();
+        ctx.moveTo(this.points[0].x, this.points[0].y);
+        this.points.forEach(p => ctx.lineTo(p.x, p.y));
     }
     ctx.closePath();
-}
-else if (simpleRender) {
-    const lw = closebord ? 0 : this.size * 0.03;
-    ctx.lineWidth = lw;
-    ctx.arc(this.x, this.y, this.size - lw * 0.5 + 5, 0, 2 * Math.PI, false);
-    ctx.closePath();
-} else {
-    this.movePoints();
-    ctx.moveTo(this.points[0].x, this.points[0].y);
-    this.points.forEach(p => ctx.lineTo(p.x, p.y));
-    ctx.closePath();
-}
 
     if (!closebord) ctx.stroke();
     ctx.fill();
@@ -3075,54 +3075,7 @@ if (rotation.has(skinName)) {
 
     ctx.restore();
 }
-
-};
-
-
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+};	
     UText.prototype = {
         _value: "",
         _color: "#000000",
