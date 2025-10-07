@@ -2494,18 +2494,14 @@ function highlightCell(cellName, duration = 3000) {
     }
 
 function drawLeaderBoard() {
-    const leaderboardDiv = document.getElementById("leaderboard");
-    leaderboardDiv.innerHTML = "";
+    const toplistDiv = document.getElementById("toplistnow");
+    toplistDiv.innerHTML = ""; // очищаем перед отрисовкой
 
     const forbiddenSymbols = ["﷽", "𒐫","𒈙","⸻","꧅","ဪ","௵","௸","‱"];
     const displayedPlayers = 10;
     let myRank = null;
 
     if ((teamScores && teamScores.length > 0) || (leaderBoard.length > 0)) {
-        const header = document.createElement("h2");
-        header.innerText = "Топ Сейчас";
-        leaderboardDiv.appendChild(header);
-
         if (!teamScores || teamScores.length === 0) {
             for (let b = 0; b < leaderBoard.length; ++b) {
                 let name = leaderBoard[b].name;
@@ -2534,7 +2530,6 @@ function drawLeaderBoard() {
                 if (b < displayedPlayers) {
                     const entryDiv = document.createElement("div");
 
-                    // Определяем класс на основе роли
                     const lowerName = name.toLowerCase();
                     if (admins.includes(lowerName)) {
                         entryDiv.className = "Lednick admins";
@@ -2546,15 +2541,15 @@ function drawLeaderBoard() {
 
                     entryDiv.style.color = isMe ? "#FFAAAA" : "#FFFFFF";
                     entryDiv.innerHTML = (!noRanking ? `${b + 1}. ` : "") +
-    (level !== -1 
-        ? `<div class='star-container'>
-             <i class='fas fa-star'></i>
-             <span class='levelme'>${level}</span>
-             <div class='tooltip'>XP: ${leaderBoard[b].xp || 0}</div>
-           </div>` 
-        : "") +
-    `<span>${name}</span>`;
-                    leaderboardDiv.appendChild(entryDiv);
+                        (level !== -1 
+                            ? `<div class='star-container'>
+                                 <i class='fas fa-star'></i>
+                                 <span class='levelme'>${level}</span>
+                                 <div class='tooltip'>XP: ${leaderBoard[b].xp || 0}</div>
+                               </div>` 
+                            : "") +
+                        `<span>${name}</span>`;
+                    toplistDiv.appendChild(entryDiv);
                 }
             }
 
@@ -2572,33 +2567,34 @@ function drawLeaderBoard() {
                 if (admins.includes(lowerName)) {
                     myRankDiv.className = "Lednick admins";
                 } else if (moders.includes(lowerName)) {
-                    myRankDiv.className = "Lednick" + lowerName;
+                    myRankDiv.className = "Lednick " + lowerName;
                 } else {
                     myRankDiv.className = "Lednick";
                 }
 
                 myRankDiv.style.color = "#FFAAAA";
                 myRankDiv.innerHTML = myRank + ". " +
-    (level !== -1 
-        ? `<div class='star-container'>
-             <i class='fas fa-star'></i>
-             <span class='levelme'>${level}</span>
-             <div class='tooltip'>XP: ${accountData?.xp || 0}</div>
-           </div>` 
-        : "") +
-    `<span>${myName}</span>`;
-                leaderboardDiv.appendChild(myRankDiv);
+                    (level !== -1 
+                        ? `<div class='star-container'>
+                             <i class='fas fa-star'></i>
+                             <span class='levelme'>${level}</span>
+                             <div class='tooltip'>XP: ${accountData?.xp || 0}</div>
+                           </div>` 
+                        : "") +
+                    `<span>${myName}</span>`;
+                toplistDiv.appendChild(myRankDiv);
             }
         } else {
             for (let b = 0; b < teamScores.length; ++b) {
                 const teamEntry = document.createElement("div");
                 teamEntry.innerText = `Team ${b + 1}: ${teamScores[b]}`;
                 teamEntry.style.color = teamColor[b + 1];
-                leaderboardDiv.appendChild(teamEntry);
+                toplistDiv.appendChild(teamEntry);
             }
         }
     }
 }
+
 
 
 
