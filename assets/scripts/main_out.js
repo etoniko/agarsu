@@ -130,8 +130,14 @@ window.addEventListener('hashchange', setActiveFromHash);
         window.onlineInterval = setInterval(updateOnlineCount, 5000);
     }
 	
-	wHandle.startGame = function () {
-    setNick(document.getElementById('nick').value + "#" + document.getElementById('pass').value);
+const forbiddenChars = ["﷽", "𒐫","𒈙","⸻","꧅","ဪ","௵","௸","‱"];
+wHandle.startGame = function () {
+    let nickInput = document.getElementById('nick').value;
+    const passInput = document.getElementById('pass').value;
+    // Удаляем все запрещённые символы
+    const forbiddenRegex = new RegExp(forbiddenChars.join('|'), 'g');
+    nickInput = nickInput.replace(forbiddenRegex, '');
+    setNick(nickInput + "#" + passInput);
 }
     // Функция для загрузки данных о топ-1 игроке
     wHandle.chekstats = async function () {
@@ -2497,7 +2503,6 @@ function drawLeaderBoard() {
     const toplistDiv = document.getElementById("toplistnow");
     toplistDiv.innerHTML = ""; // очищаем перед отрисовкой
 
-    const forbiddenSymbols = ["﷽", "𒐫","𒈙","⸻","꧅","ဪ","௵","௸","‱"];
     const displayedPlayers = 10;
     let myRank = null;
 
@@ -2507,9 +2512,6 @@ function drawLeaderBoard() {
                 let name = leaderBoard[b].name;
                 const level = leaderBoard[b].level;
 
-                forbiddenSymbols.forEach(symbol => {
-                    if (name.includes(symbol)) name = "";
-                });
                 name = censorMessage(name);
                 if (!showName) name = "";
 
@@ -2518,9 +2520,6 @@ function drawLeaderBoard() {
                     const myCell = playerCells.find(cell => cell.id === leaderBoard[b].id);
                     if (myCell?.name) {
                         let myName = myCell.name;
-                        forbiddenSymbols.forEach(symbol => {
-                            if (myName.includes(symbol)) myName = "";
-                        });
                         myName = censorMessage(myName);
                         name = myName;
                         myRank = b + 1;
@@ -2556,9 +2555,6 @@ function drawLeaderBoard() {
             if (myRank && myRank > displayedPlayers) {
                 const level = accountData ? getLevel(accountData.xp) : -1;
                 let myName = playerCells[0].name;
-                forbiddenSymbols.forEach(symbol => {
-                    if (myName.includes(symbol)) myName = "";
-                });
                 myName = censorMessage(myName);
 
                 const myRankDiv = document.createElement("div");
@@ -2594,6 +2590,7 @@ function drawLeaderBoard() {
         }
     }
 }
+
 
 
 
