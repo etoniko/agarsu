@@ -13,7 +13,6 @@
                 playerDiv.classList.add('top-player');
                 playerDiv.innerHTML = `
 <div class="time">${player.position}</div> 
-<div class="rank">${player.uid}</div> 
 <div class="nick">${player.account_name}</div> 
 <div class="score">${level}</div> 
 <div class="skkinn" style="background-image: url('${player.account_avatar}');"></div>
@@ -35,3 +34,4 @@
         }
 
         fetchTop100();
+
