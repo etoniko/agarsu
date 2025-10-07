@@ -1537,7 +1537,7 @@ const playerId = lastMessage.pId;
     document.addEventListener('click', closeMenu, { once: true });
 });
 
-    chatDiv.prepend(msgDiv);
+    chatDiv.appendChild(msgDiv);
     chatDiv.scrollTop = chatDiv.scrollHeight;
 
     const maxMessages = 50;
