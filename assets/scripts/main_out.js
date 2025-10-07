@@ -1539,7 +1539,7 @@ const playerId = lastMessage.pId;
 
     chatDiv.appendChild(msgDiv);
 const distanceToBottom = chatDiv.scrollHeight - chatDiv.scrollTop - chatDiv.clientHeight;
-const SCROLL_STEP = 60; // насколько вниз двигается чат при каждом новом сообщении
+const SCROLL_STEP = 120; // насколько вниз двигается чат при каждом новом сообщении
 
 if (distanceToBottom < 200) {
     // почти внизу — скроллим в низ полностью
