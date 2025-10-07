@@ -2939,7 +2939,6 @@ Cell.prototype = {
     },
 
     drawOneCell(ctx) {
-		const isFood = !this.isVirus && !this.isAgitated && this.size >= foodMinSize && this.size <= foodMaxSize;
         if (!this.shouldRender()) return;
 
         const simpleRender = this.id !== 0 && !this.isVirus && !this.isAgitated && smoothRender > viewZoom || this.getNumPoints() < 10;
@@ -2962,23 +2961,20 @@ Cell.prototype = {
         ctx.fillStyle = isTransp ? "rgba(0,0,0,0)" : this.color;
         ctx.strokeStyle = isTransp ? "rgba(0,0,0,0)" : (simpleRender ? this.color : this.getStrokeColor());
 
-ctx.beginPath();
+        ctx.beginPath();
+        if (simpleRender) {
+            const lw = closebord ? 0 : this.size * 0.03;
+            ctx.lineWidth = lw;
+            ctx.arc(this.x, this.y, this.size - lw * 0.5 + 5, 0, 2 * Math.PI, false);
+        } else {
+            this.movePoints();
+            ctx.moveTo(this.points[0].x, this.points[0].y);
+            this.points.forEach((p, i) => ctx.lineTo(p.x, p.y));
+        }
+        ctx.closePath();
 
-if (isFood) {
-    drawStar(ctx, this.x, this.y, 5, this.size, this.size * 0.5);
-} else if (simpleRender) {
-    const lw = closebord ? 0 : this.size * 0.03;
-    ctx.lineWidth = lw;
-    ctx.arc(this.x, this.y, this.size - lw * 0.5 + 5, 0, 2 * Math.PI, false);
-} else {
-    this.movePoints();
-    ctx.moveTo(this.points[0].x, this.points[0].y);
-    this.points.forEach((p) => ctx.lineTo(p.x, p.y));
-}
-
-ctx.closePath();
-if (!closebord) ctx.stroke();
-ctx.fill();
+        if (!closebord) ctx.stroke();
+        ctx.fill();
 
         // Скин
         const skinName = normalizeNick(this.name);
@@ -3035,31 +3031,7 @@ ctx.fill();
 
         ctx.restore();
     }
-};
-
-		function drawStar(ctx, cx, cy, spikes, outerRadius, innerRadius) {
-    let rot = Math.PI / 2 * 3;
-    let x = cx;
-    let y = cy;
-    const step = Math.PI / spikes;
-
-    ctx.beginPath();
-    ctx.moveTo(cx, cy - outerRadius);
-    for (let i = 0; i < spikes; i++) {
-        x = cx + Math.cos(rot) * outerRadius;
-        y = cy + Math.sin(rot) * outerRadius;
-        ctx.lineTo(x, y);
-        rot += step;
-
-        x = cx + Math.cos(rot) * innerRadius;
-        y = cy + Math.sin(rot) * innerRadius;
-        ctx.lineTo(x, y);
-        rot += step;
-    }
-    ctx.lineTo(cx, cy - outerRadius);
-    ctx.closePath();
-}
-	
+};	
     UText.prototype = {
         _value: "",
         _color: "#000000",
