@@ -107,32 +107,33 @@
           </div>
           <div class="checkbox-container">
 <label>
-  <input type="checkbox" class="save" data-box-id="1" onchange="setNames(!$(this).is(':checked'));">Отключить Имена
+  <input type="checkbox" class="save" data-box-id="1" onchange="wHandle.setSkins($(this).is(':checked'));">Показать Скины
 </label>
 <label>
-  <input type="checkbox" class="save" data-box-id="2" onchange="setShowMass($(this).is(':checked'));" checked>Показать Массу
+  <input type="checkbox" class="save" data-box-id="2" onchange="wHandle.setNames(!$(this).is(':checked'));">Отключить Имена
 </label>
 <label>
-  <input type="checkbox" class="save" data-box-id="3" onchange="setSmooth($(this).is(':checked'));">Простой Рендер
+  <input type="checkbox" class="save" data-box-id="3" onchange="wHandle.setColors($(this).is(':checked'));">Цвета
 </label>
 <label>
-  <input type="checkbox" class="save" data-box-id="4" onchange="setNoBorder($(this).is(':checked'));">Отключить обводку
+  <input type="checkbox" class="save" data-box-id="4" onchange="wHandle.setMouseClicks($(this).is(':checked'));">Поддержка клика мышки
 </label>
 <label>
-  <input type="checkbox" class="save" data-box-id="5" onchange="setMouseClicks($(this).is(':checked'));">Поддержка клика мышки
+  <input type="checkbox" class="save" data-box-id="5" onchange="wHandle.setShowMass($(this).is(':checked'));" checked>Показать Массу
 </label>
 <label>
-  <input type="checkbox" class="save" data-box-id="6" onchange="setGlow($(this).is(':checked'));" checked>Эффект Огня
+  <input type="checkbox" class="save" data-box-id="6" onchange="wHandle.setSmooth($(this).is(':checked'));">Простой Рендер
 </label>
 <label>
-  <input type="checkbox" class="save" data-box-id="7" onchange="setSkins($(this).is(':checked'));">Показать Скины
+  <input type="checkbox" class="save" data-box-id="7" onchange="wHandle.setNoBorder($(this).is(':checked'));">Отключить обводку
 </label>
 <label>
-  <input type="checkbox" class="save" data-box-id="8" onchange="setColors($(this).is(':checked'));">Цвета
+  <input type="checkbox" class="save" data-box-id="8" onchange="wHandle.setChatHide($(this).is(':checked'));">Отключить чат
 </label>
 <label>
-  <input type="checkbox" class="save" data-box-id="9" onchange="setChatHide($(this).is(':checked'));">отключить чат
+  <input type="checkbox" class="save" data-box-id="9" onchange="wHandle.setGlow($(this).is(':checked'));" checked>Эффект Огня
 </label>
+
 
 
 
@@ -380,6 +381,7 @@
 </body>
 
 </html>
+
 
 
 
