@@ -24,7 +24,7 @@
         // Получение данных с сервера
         async function fetchTop100() {
             try {
-                const res = await fetch('https://pmori.ru:6003/api/top100');
+                const res = await fetch('https://api.agar.su:6003/api/top100');
                 const data = await res.json();
 
                 xpStats(data);
@@ -34,4 +34,5 @@
         }
 
         fetchTop100();
+
 
