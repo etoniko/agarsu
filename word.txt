@@ -13,6 +13,7 @@ agar.io
 delta
 agma
 gota
+пидорасина
 www
 http
 https
