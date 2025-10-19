@@ -181,7 +181,7 @@ function previewSkin(file) {
       skinCtx.arc(skinCanvas.width/2, skinCanvas.height/2, skinCanvas.width/2, 0, Math.PI*2);
       skinCtx.closePath();
       skinCtx.clip();
-      const scale = Math.min(512 / img.width, 512 / img.height);
+      const scale = Math.max(512 / img.width, 512 / img.height);
       const x = (512 - img.width * scale) / 2;
       const y = (512 - img.height * scale) / 2;
       skinCtx.drawImage(img, x, y, img.width * scale, img.height * scale);
@@ -319,4 +319,5 @@ togglePassword.addEventListener("click", () => {
   togglePassword.classList.toggle("fa-eye");
   togglePassword.classList.toggle("fa-eye-slash");
 });
+
 
