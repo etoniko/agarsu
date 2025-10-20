@@ -272,7 +272,7 @@ input{font-size:16px;}
 .map-container > div{font-size:12px;}
 #mapposition{position:absolute;width:10px;height:10px;background:#1a73e8;border-radius:10px;}
 #onmap{position:absolute;right:10px;bottom:10px;border:solid #ffffff26 1px;border-radius:25px;background:rgba(0, 0, 0, .3);width:40px;height:40px;padding:5px;display:none;align-items:center;justify-content:center;cursor:pointer;}
-.ping-container{position:absolute;left:12px;font-size:12px;width:70px;}
+.ping-container{position:absolute;left:12px;font-size:12px;width:110px;}
 #ping{font-size:11px;}
 .ping-green{color:#00ff00;}
 .ping-yellow{color:gold;}
