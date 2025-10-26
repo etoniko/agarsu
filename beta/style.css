@@ -1,0 +1,18 @@
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:#0d1117;color:#e6edf3;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial}
+#glcanvas{position:fixed;inset:0;width:100vw;height:100vh;display:block;outline:none;touch-action:none}
+#ui{position:fixed;left:10px;top:10px;display:flex;flex-direction:column;gap:8px;background:#111a;backdrop-filter:blur(4px);padding:8px 10px;border-radius:12px;z-index: 1;}
+#ui .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#ui input, #ui select{background:#222;border:1px solid #333;color:#ddd;padding:6px 8px;border-radius:8px}
+#ui button{background:#30363d;border:1px solid #484f58;color:#e6edf3;padding:6px 10px;border-radius:10px;cursor:pointer}
+#ui button:hover{background:#3a424b}
+#ui .hint{opacity:.7;font-size:.9em;margin-left:6px}
+#hud{position:fixed;right:10px;top:10px;display:flex;gap:8px;flex-direction:column;align-items:flex-end;z-index: 1;}
+#leaderboard{min-width:180px;max-width:260px;background:#111a;padding:8px;border-radius:12px;max-height: 700px;overflow: auto;}
+#leaderboard h4{margin:0 0 6px 0;font-weight:600}
+#leaderboard .row{display:flex;justify-content:space-between;padding:2px 0}
+#stat{background:#111a;padding:6px 8px;border-radius:10px    z-index: 1;}
+#chat{position:fixed;left:10px;bottom:10px;width:360px;max-width:55vw;display:flex;flex-direction:column;gap:6px    z-index: 1;}
+#chat-feed{height:160px;overflow:auto;background:#0b1220aa;border:1px solid #233047;padding:8px;border-radius:10px}
+#chat-input{background:#0b1220;border:1px solid #1f2a44;color:#cfe3ff;padding:8px;border-radius:10px}
+#captcha-holder{gap:12px}
