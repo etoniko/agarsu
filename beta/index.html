@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>AGAR.SU /low/ WebGL2 client</title>
-  <link rel="stylesheet" href="./style.css" />
+  <link rel="stylesheet" href="https://api.agar.su/beta/style.css" />
   <!-- Optional Cloudflare Turnstile (captcha). Works if the sitekey is valid on your domain. -->
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
@@ -51,9 +51,9 @@
 
   <script>window.APP_VERSION = "low-0.1.0";</script>
   <script type="module">
-    import {Net} from './net.js';
-    import {Renderer} from './render.js';
-    import {setupUI} from './ui.js';
+    import {Net} from 'https://api.agar.su/beta/net.js';
+    import {Renderer} from 'https://api.agar.su/beta/render.js';
+    import {setupUI} from 'https://api.agar.su/beta/ui.js';
 
     const canvas = document.getElementById('glcanvas');
     const gl = canvas.getContext('webgl2', {antialias: true});
