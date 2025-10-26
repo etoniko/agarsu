@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AGAR.SU /low/ WebGL2 client</title>
+  <link rel="stylesheet" href="./style.css" />
+  <!-- Optional Cloudflare Turnstile (captcha). Works if the sitekey is valid on your domain. -->
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+</head>
+<body>
+  <div id="ui">
+    <div class="row">
+      <label>Ник:</label>
+      <input id="nick" placeholder="ник" maxlength="16" />
+      <label>Пароль:</label>
+      <input id="pass" placeholder="pass" maxlength="16" />
+      <button id="btnStart">Играть</button>
+      <button id="btnSpectate">Спектатор</button>
+    </div>
+
+    <div class="row">
+      <label>Сервер:</label>
+      <select id="server">
+        <option value="ffa.agar.su:6001">FFA (6001)</option>
+        <option value="ffa.agar.su:6002">FFA Kiev (6002)</option>
+        <option value="ffa.agar.su:6003">Experimental (6003)</option>
+      </select>
+      <button id="btnConnect">Подключиться</button>
+      <span class="hint">Колесо мыши — зум, SPACE — split, W — eject, Enter — чат</span>
+      <span id="ping">—</span> ms
+    </div>
+
+    <div id="captcha-holder" class="row" style="display:none">
+      <div id="captcha"></div>
+      <button id="btnSkipCaptcha" title="Только для разработки">Пропустить капчу</button>
+    </div>
+  </div>
+
+  <div id="hud">
+    <div id="leaderboard"></div>
+    <div id="stat">score: <span id="score">0</span></div>
+  </div>
+
+  <canvas id="glcanvas"></canvas>
+
+  <div id="chat">
+    <div id="chat-feed"></div>
+    <input id="chat-input" placeholder="нажмите Enter чтобы написать…" />
+  </div>
+
+  <script>window.APP_VERSION = "low-0.1.0";</script>
+  <script type="module">
+    import {Net} from './net.js';
+    import {Renderer} from './render.js';
+    import {setupUI} from './ui.js';
+
+    const canvas = document.getElementById('glcanvas');
+    const gl = canvas.getContext('webgl2', {antialias: true});
+    if (!gl) alert("Ваш браузер не поддерживает WebGL2");
+
+    const renderer = new Renderer(gl, canvas);
+    const net = new Net(renderer);
+
+    setupUI({ net, renderer, canvas });
+  </script>
+</body>
+</html>
