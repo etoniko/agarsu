@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="description" content="Eat cells smaller than you and don't get eaten by the bigger ones, as an MMO" />
+  <meta name="keywords" content="agario, agar, io, cell, cells, virus, bacteria, blob, game, games, web game, html5, fun, flash" />
+  <meta name="robots" content="index, follow" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Agar.su 2.0 — PixiJs Redesign</title>
+  <link id="favicon" rel="icon" type="image/png" href="assets/img/favicon.png" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.4.0/pixi.min.js"></script>
+
+  <style>
+/* ===========================
+   Agar.su 2.0 — Glass Design
+   =========================== */
+:root {
+  --bg: #0b0c0f;
+  --panel: #12141a;
+  --panel-2: #1a1d25;
+  --accent: #5ef3a9;
+  --accent-2: #8ab6ff;
+  --text: #e3e6ee;
+  --muted: #8a90a2;
+  --chip: #0f1116;
+  --glass: rgba(18, 20, 26, 0.7);
+  --blur: saturate(140%) blur(12px);
+  --r-lg: 18px;
+  --r-md: 14px;
+  --r-sm: 10px;
+  --shadow-1: 0 12px 36px rgba(0, 0, 0, 0.5);
+  --shadow-2: 0 6px 22px rgba(0, 0, 0, 0.35);
+  --gap: 10px;
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  height: 100%;
+}
+body {
+  margin: 0;
+  background: radial-gradient(1200px 1200px at 10% 10%, #0f1320 0%, var(--bg) 55%) fixed,
+    linear-gradient(180deg, #0a0b10 0%, #0b0c0f 100%) fixed;
+  color: var(--text);
+  font: 14px/1.45 "Inter", system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell;
+  overscroll-behavior: none;
+  user-select: none;
+}
+
+/* Game view */
+#view {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  display: block;
+  background: transparent;
+}
+
+/* ============ HUD ============ */
+#hud-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* ---- Chat (bottom-left) ---- */
+.hud-chat {
+  position: absolute;
+  left: var(--gap);
+  bottom: var(--gap);
+  width: min(380px, 46vw);
+  height: 260px;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: 6px;
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+  border: 1px solid rgba(138, 144, 162, 0.14);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-1);
+  pointer-events: auto;
+  overflow: hidden;
+}
+.hud-chat-content {
+  padding: 10px 12px 0 12px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.hud-chat-input {
+  width: 100%;
+  border: 0;
+  border-top: 1px solid rgba(138, 144, 162, 0.14);
+  padding: 10px 12px;
+  background: color-mix(in oklab, var(--panel), black 6%);
+  color: var(--text);
+  font: inherit;
+  outline: none;
+}
+.hud-message-tile {
+  width: 100%;
+}
+.hud-message-item {
+  font-weight: 700;
+  color: var(--text);
+}
+.hud-message {
+  color: var(--muted);
+}
+.red-text {
+  color: #ff5b5b !important;
+}
+
+/* ---- Leaderboard (top-right) ---- */
+#leaderboard.hud-leaderboard {
+  position: absolute;
+  right: var(--gap);
+  top: var(--gap);
+  width: min(240px, 50vw);
+  max-height: min(52vh, 460px);
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+  border: 1px solid rgba(138, 144, 162, 0.14);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-1);
+  pointer-events: auto;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+#leaderboard .lb-header {
+  font-weight: 900;
+  letter-spacing: 0.3px;
+  margin: 2px 2px 8px 2px;
+  opacity: 0.92;
+}
+/* компактные строки топа */
+.hud-leaderboard-tile {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.hud-leaderboard-tile + .hud-leaderboard-tile {
+  border-top: 1px solid rgba(138, 144, 162, 0.1);
+}
+.lb-rank {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  border-radius: 999px;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #1b2130, #121827);
+  border: 1px solid rgba(138, 144, 162, 0.14);
+}
+.hud-leaderboard-tile:nth-child(1) .lb-rank {
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  color: #061410;
+  border: 0;
+}
+.hud-leaderboard-tile:nth-child(2) .lb-rank {
+  background: linear-gradient(90deg, #c9d6ff, #e2e2e2);
+  color: #0a0c12;
+  border: 0;
+}
+.hud-leaderboard-tile:nth-child(3) .lb-rank {
+  background: linear-gradient(90deg, #ffd6a5, #ffb86b);
+  color: #0a0c12;
+  border: 0;
+}
+.lb-name {
+  min-width: 0;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lb-name .red-text,
+.hud-leaderboard-tile .red-text {
+  color: #ff5b5b !important;
+}
+.lb-score {
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  color: color-mix(in oklab, var(--text), white 12%);
+  opacity: 0.95;
+}
+.hud-leaderboard-tile:hover {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+  border-radius: 12px;
+}
+
+/* ---- Mini-map ---- */
+#minimap-view.hud-minimap {
+backdrop-filter: var(--blur);
+  position: absolute;
+  right: var(--gap);
+  bottom: var(--gap);
+  width: 240px;
+  height: 240px;
+  background: var(--glass);
+  border: 1px solid rgba(138, 144, 162, 0.14);
+  border-radius: 14px;
+  box-shadow: var(--shadow-1);
+  pointer-events: auto;
+}
+
+/* ---- Chips: score/fps ---- */
+#score,
+#fps {
+  position: absolute;
+  right: calc(var(--gap) + 250px + 10px);
+  bottom: var(--gap);
+  display: inline-flex;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+  border: 1px solid rgba(138, 144, 162, 0.14);
+  border-radius: 999px;
+  box-shadow: var(--shadow-2);
+  font-weight: 800;
+  color: var(--text);
+  pointer-events: auto;
+}
+#fps {
+  bottom: calc(var(--gap) + 40px);
+}
+
+/* ======== Меню ======== */
+#user-interface.main-container {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: radial-gradient(800px 800px at 50% 30%, rgba(94, 243, 169, 0.06), rgba(0, 0, 0, 0)),
+    radial-gradient(800px 800px at 70% 70%, rgba(138, 182, 255, 0.06), rgba(0, 0, 0, 0));
+  pointer-events: none;
+}
+.panel {
+  width: min(520px, 92vw);
+  padding: 22px;
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+  border: 1px solid rgba(138, 144, 162, 0.16);
+  border-radius: 22px;
+  box-shadow: var(--shadow-1);
+  display: grid;
+  gap: 16px;
+  pointer-events: auto;
+  animation: fadeIn 0.15s ease-out;
+}
+.title {
+  font-size: 36px;
+  font-weight: 900;
+  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.title::after {
+  content: "PixiJs";
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--bg);
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  padding: 4px 8px;
+  border-radius: 999px;
+  margin-left: 6px;
+}
+.group-y {
+  display: grid;
+  gap: 12px;
+}
+.group-x {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 10px;
+}
+#name {
+  height: 40px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(138, 144, 162, 0.18);
+  background: linear-gradient(180deg, #131722, #0f131b);
+  color: var(--text);
+  outline: none;
+  font-size: 16px;
+}
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 12px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  border: 1px solid rgba(138, 144, 162, 0.18);
+  background: linear-gradient(180deg, #1b2130, #121827);
+  color: var(--text);
+  cursor: pointer;
+  transition: transform 0.08s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.button:hover {
+  border-color: color-mix(in oklab, var(--accent-2), white 12%);
+  box-shadow: var(--shadow-2);
+}
+.button:active {
+  transform: translateY(1px) scale(0.99);
+}
+#play {
+  grid-column: 1 / 3;
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--accent), #00ffa0 20%),
+    color-mix(in oklab, var(--accent-2), #5ef3a9 10%)
+  );
+  color: #072412;
+  border: 0;
+}
+#spectate {
+  background: linear-gradient(180deg, #1a1f2c, #141a24);
+}
+#settings,
+#servers {
+  background: linear-gradient(180deg, #151c27, #10161f);
+}
+
+/* ----- Modals ----- */
+#modals-container {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  z-index: 30;
+  pointer-events: auto;
+}
+.modal {
+  max-width: min(720px, 92vw);
+  width: 100%;
+  max-height: 80vh;
+  background: var(--glass);
+  border: 1px solid rgba(138, 144, 162, 0.16);
+  border-radius: 20px;
+  box-shadow: var(--shadow-1);
+  overflow: hidden;
+}
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: linear-gradient(180deg, #1b2030, #141924);
+}
+.modal-close {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  cursor: pointer;
+  border-radius: 10px;
+  color: var(--text);
+}
+.modal-close:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.modal-settings-content,
+.modal-servers-content {
+  padding: 14px;
+  display: grid;
+  gap: 10px;
+}
+.modal-settings-tile,
+.modal-servers-tile {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #171c28, #121721);
+  border: 1px solid rgba(138, 144, 162, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* ===== Scrollbars (тонкие чёрные без полос) ===== */
+.hud-chat-content,
+#leaderboard {
+  overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable both-edges;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.6) transparent;
+}
+.hud-chat-content::-webkit-scrollbar,
+#leaderboard::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+  background: transparent;
+}
+.hud-chat-content::-webkit-scrollbar-track,
+#leaderboard::-webkit-scrollbar-track {
+  background: transparent;
+}
+.hud-chat-content::-webkit-scrollbar-thumb,
+#leaderboard::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.hud-chat-content::-webkit-scrollbar-thumb:hover,
+#leaderboard::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+.hud-chat-content::-webkit-scrollbar-corner,
+#leaderboard::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --------- Responsive --------- */
+@media (max-width: 720px) {
+  #leaderboard.hud-leaderboard {
+    width: min(240px, 60vw);
+    max-height: 40vh;
+  }
+  #minimap-view.hud-minimap {
+    width: 210px;
+    height: 210px;
+  }
+  #score,
+  #fps {
+    right: calc(var(--gap) + 220px + 8px);
+  }
+  .hud-chat {
+    width: min(360px, 80vw);
+    height: 220px;
+  }
+  .panel {
+    width: min(560px, 94vw);
+  }
+}
+@media (max-width: 480px) {
+  .hud-chat {
+    width: calc(100vw - 2 * var(--gap));
+    left: var(--gap);
+    height: 180px;
+  }
+  #leaderboard.hud-leaderboard {
+    width: calc(100vw - 2 * var(--gap));
+    right: var(--gap);
+    top: var(--gap);
+  }
+  #minimap-view.hud-minimap {
+    right: var(--gap);
+    bottom: calc(72px + var(--gap));
+  }
+  #score,
+  #fps {
+    position: absolute;
+    right: var(--gap);
+    bottom: var(--gap);
+  }
+  #fps {
+    bottom: calc(var(--gap) + 40px);
+  }
+  .group-x {
+    grid-template-columns: 1fr 1fr;
+  }
+  #play {
+    grid-column: 1 / -1;
+  }
+}
+/* ===== Mini-map grid overlay (A1–E5 centered) ===== */
+#minimap-grid {
+  position: absolute;
+  right: var(--gap);
+  bottom: var(--gap);
+  width: 240px;
+  height: 240px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(5, 1fr);
+  border-radius: 14px;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 15;
+}
+
+#minimap-grid .cell {
+  display: flex;
+  align-items: center;       /* по вертикали центр */
+  justify-content: center;   /* по горизонтали центр */
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.35);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+/* убираем крайние линии */
+#minimap-grid .cell:nth-child(5n) {
+  border-right: none;
+}
+#minimap-grid .cell:nth-last-child(-n+5) {
+  border-bottom: none;
+}
+
+/* hover для проверки */
+#minimap-grid .cell:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.65);
+}
+
+  </style>
+</head>
+
+<body>
+  <!-- Game canvas -->
+  <canvas id="view"></canvas>
+
+  <!-- HUD overlay -->
+  <div id="hud-container">
+    <!-- Leaderboard -->
+    <div id="leaderboard" class="hud-leaderboard">
+    </div>
+
+    <!-- Chat -->
+    <div class="hud-chat">
+      <div id="chat-content" class="hud-chat-content"></div>
+      <input id="chat-field" type="text" placeholder="Напишите здесь…" class="hud-chat-input" />
+    </div>
+
+    <!-- Mini-map -->
+    <canvas id="minimap-view" width="250" height="250" class="hud-minimap"></canvas>
+	<div id="minimap-grid">
+  <div class="cell">A1</div><div class="cell">A2</div><div class="cell">A3</div><div class="cell">A4</div><div class="cell">A5</div>
+  <div class="cell">B1</div><div class="cell">B2</div><div class="cell">B3</div><div class="cell">B4</div><div class="cell">B5</div>
+  <div class="cell">C1</div><div class="cell">C2</div><div class="cell">C3</div><div class="cell">C4</div><div class="cell">C5</div>
+  <div class="cell">D1</div><div class="cell">D2</div><div class="cell">D3</div><div class="cell">D4</div><div class="cell">D5</div>
+  <div class="cell">E1</div><div class="cell">E2</div><div class="cell">E3</div><div class="cell">E4</div><div class="cell">E5</div>
+</div>
+
+
+    <!-- Chips -->
+    <div id="score">Score</div>
+    <div id="fps">FPS</div>
+  </div>
+
+  <!-- Centered menu -->
+  <div id="user-interface" class="main-container">
+    <div class="panel">
+      <div class="title">Agar.su</div>
+
+      <div class="group-y">
+        <div class="group-x">
+          <input type="text" id="name" placeholder="Имя" />
+          <div id="settings" class="button">Настройки</div>
+          <div id="servers" class="button">Серверы</div>
+        </div>
+
+        <div class="group-x" style="grid-template-columns: 1fr auto;">
+          <div id="play" class="button">Играть</div>
+          <div id="spectate" class="button">Наблюдать</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal root -->
+  <div id="modals-container">
+  </div>
+
+  <!-- Ваш игровой код -->
+  <script src="main.js"></script>
+
+  <script>
+    // Скрываем меню после "Играть", не мешая вашим хукам
+    (function () {
+      const ui = document.getElementById('user-interface');
+      const play = document.getElementById('play');
+      if (play && ui) play.addEventListener('click', () => ui.style.display = 'none');
+    })();
+
+    (function enhanceLeaderboard(){
+      const root = document.getElementById('leaderboard');
+      if (!root) return;
+
+      const normalize = () => {
+        const rows = Array.from(root.querySelectorAll('.hud-leaderboard-tile'));
+        rows.forEach((row, i) => {
+          // rank
+          if (!row.querySelector('.lb-rank')) {
+            const rank = document.createElement('div');
+            rank.className = 'lb-rank';
+            rank.textContent = (i + 1).toString();
+            row.prepend(rank);
+          }
+          // name
+          if (!row.querySelector('.lb-name')) {
+            const nameWrap = document.createElement('div');
+            nameWrap.className = 'lb-name';
+            // переносим существующие текстовые/спан узлы в nameWrap
+            while (row.childNodes.length > 2) {
+              nameWrap.appendChild(row.childNodes[1]); // после .lb-rank
+            }
+            row.insertBefore(nameWrap, row.lastChild);
+          }
+          // score (если встречается числовой хвост)
+          const tail = row.lastChild;
+          if (tail && tail.nodeType === Node.TEXT_NODE) {
+            const txt = tail.textContent.trim();
+            if (/^\d{1,9}$/.test(txt)) {
+              const score = document.createElement('div');
+              score.className = 'lb-score';
+              score.textContent = txt;
+              row.removeChild(tail);
+              row.appendChild(score);
+            }
+          }
+        });
+      };
+
+      // Первичный прогон и наблюдатель на изменения из main.js
+      normalize();
+      const obs = new MutationObserver(normalize);
+      obs.observe(root, { childList: true, subtree: true });
+    })();
+  </script>
+</body>
+</html>
