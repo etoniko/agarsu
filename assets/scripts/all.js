@@ -195,6 +195,117 @@ leaderboard.addEventListener('click', function(e) {
 
 
 
+(() => {
+  const FPS = 12; // кадров в секунду
+  const FRAME_MS = 1000 / FPS;
+
+  if (!window.__chatxSprites) window.__chatxSprites = new Set();
+
+  const makeAnimatedSprite = (el, src, width, height) => {
+    if (!src || width <= 0 || height <= 0 || width <= height) return;
+    if (el.dataset.spriteified === "1") return;
+
+    // Если это <img> — заменим на <div>
+    let div = el;
+    if (el.tagName === "IMG") {
+      const rect = el.getBoundingClientRect();
+      const computed = getComputedStyle(el);
+      const widthPx = rect.width || parseFloat(computed.width) || height;
+      const heightPx = rect.height || parseFloat(computed.height) || height;
+
+      div = document.createElement("div");
+      div.className = el.className + " anims_animated";
+      const inline = el.getAttribute("style");
+      if (inline) div.setAttribute("style", inline);
+      div.style.backgroundImage = `url("${src}")`;
+      div.style.backgroundRepeat = "no-repeat";
+      div.style.backgroundSize = "auto 100%";
+      div.style.backgroundPosition = "0 0";
+      div.style.width = widthPx + "px";
+      div.style.height = heightPx + "px";
+      div.style.borderRadius = "100%";
+      el.replaceWith(div);
+    }
+
+    const frames = Math.max(1, Math.floor(width / height));
+    const state = {
+      el: div,
+      src,
+      frame: 0,
+      frames,
+      last: performance.now(),
+      interval: FRAME_MS,
+      stepPx: () => Math.round(div.clientHeight),
+    };
+    el.dataset.spriteified = "1";
+    window.__chatxSprites.add(state);
+  };
+
+  const handleElement = (el) => {
+    const style = getComputedStyle(el);
+    let src = null;
+    let naturalWidth = 0;
+    let naturalHeight = 0;
+
+    if (el.tagName === "IMG") {
+      if (!el.complete) {
+        el.addEventListener("load", () => handleElement(el), { once: true });
+        return;
+      }
+      src = el.src;
+      naturalWidth = el.naturalWidth;
+      naturalHeight = el.naturalHeight;
+    } else if (style.backgroundImage && style.backgroundImage.includes("url(")) {
+      src = style.backgroundImage.replace(/^url\(["']?/, "").replace(/["']?\)$/, "");
+      // создаём временное изображение, чтобы узнать размеры
+      const img = new Image();
+      img.onload = () => makeAnimatedSprite(el, src, img.width, img.height);
+      img.src = src;
+      return;
+    }
+
+    makeAnimatedSprite(el, src, naturalWidth, naturalHeight);
+  };
+
+  document.querySelectorAll(".anims").forEach(handleElement);
+
+  if (!window.__chatxSpriteObserver) {
+    window.__chatxSpriteObserver = new MutationObserver((muts) => {
+      for (const m of muts) {
+        m.addedNodes.forEach((n) => {
+          if (n?.nodeType !== 1) return;
+          if (n.matches?.(".anims")) handleElement(n);
+          n.querySelectorAll?.(".anims").forEach(handleElement);
+        });
+      }
+    });
+    window.__chatxSpriteObserver.observe(document.documentElement, { childList: true, subtree: true });
+  }
+
+  const tick = (now) => {
+    for (const s of window.__chatxSprites) {
+      if (!document.body.contains(s.el)) {
+        window.__chatxSprites.delete(s);
+        continue;
+      }
+      if (now - s.last >= s.interval) {
+        s.last = now;
+        s.frame = (s.frame + 1) % s.frames;
+        const x = -(s.frame * s.stepPx());
+        s.el.style.backgroundPosition = `${x}px 0`;
+      }
+    }
+    requestAnimationFrame(tick);
+  };
+
+  if (!window.__chatxSpriteLoopStarted) {
+    window.__chatxSpriteLoopStarted = true;
+    requestAnimationFrame(tick);
+  }
+
+  console.log("[chatX sprite] активировано — поддержка img и background-image");
+})();
+
 
 
 
