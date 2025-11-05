@@ -259,11 +259,77 @@
           </div>
           <div class="header-row">
             <button style="display:none" class="btnn" id="logoutButton" onclick="logoutAccount()">Выход</button>
-            <div id="authlog">
-              <div id="g_id_onload" data-client_id="157257230972-jhlcisbgal67sn75gib37fb1m1de5jiu.apps.googleusercontent.com" data-auto_prompt="false" data-callback="onGoogleAuth"></div>
-              <div class="g_id_signin"></div>
-              <script async src="https://telegram.org/js/telegram-widget.js?22" data-telegram-login="agarsu_auth_bot" data-size="large" data-onauth="onTelegramAuth(user)" data-request-access="write"></script>
-            </div>
+<div id="authlog">
+  <!-- VK -->
+  <div id="vkLoginButton"></div>
+  <script src="https://unpkg.com/@vkid/sdk@<3.0.0/dist-sdk/umd/index.js"></script>
+  <script type="text/javascript">
+    (function () {
+      if (!('VKIDSDK' in window)) return;
+
+      const VKID = window.VKIDSDK;
+
+      // Инициализация VKID
+      VKID.Config.init({
+        app: 54069355,
+        redirectUrl: 'https://api.agar.su/callbackvk',
+        responseMode: VKID.ConfigResponseMode.Callback,
+        source: VKID.ConfigSource.LOWCODE,
+        scope: '' // при необходимости добавь доступы
+      });
+
+      // Рендер OneTap в контейнер
+      const oneTap = new VKID.OneTap();
+      oneTap.render({
+        container: document.getElementById('vkLoginButton'),
+        showAlternativeLogin: true,
+        oauthList: ['mail_ru', 'ok_ru']
+      })
+      .on(VKID.WidgetEvents.ERROR, vkidOnError)
+      .on(VKID.OneTapInternalEvents.LOGIN_SUCCESS, function (payload) {
+        const code = payload.code;
+        const deviceId = payload.device_id;
+
+        // Обмениваем code на токены у VK
+        VKID.Auth.exchangeCode(code, deviceId)
+          .then(vkidOnSuccess)
+          .catch(vkidOnError);
+      });
+
+      // После успешного обмена просто прокидываем всё в твой бэкенд, как у Google/Telegram
+      function vkidOnSuccess(data) {
+        // data обычно содержит access_token/refresh/id_token/user и т.п.
+        // Отдаём как есть на /auth/vk — на сервере проверь сигнатуру и оформи сессию
+        if (window.wHandle && typeof window.wHandle.onVKAuth === 'function') {
+          window.wHandle.onVKAuth(data);
+        } else {
+          // Фолбэк: напрямую через handleLogin, если wHandle.onVKAuth не объявлен
+          if (window.handleLogin) window.handleLogin(data, 'vk');
+        }
+      }
+
+      function vkidOnError(error) {
+        console.error('VKID error:', error);
+        alert('Не удалось авторизоваться через VK. Попробуйте ещё раз.');
+      }
+    })();
+  </script>
+
+  <!-- Google -->
+  <div id="g_id_onload"
+       data-client_id="157257230972-jhlcisbgal67sn75gib37fb1m1de5jiu.apps.googleusercontent.com"
+       data-auto_prompt="false"
+       data-callback="onGoogleAuth"></div>
+  <div class="g_id_signin"></div>
+
+  <!-- Telegram -->
+  <script async src="https://telegram.org/js/telegram-widget.js?22"
+          data-telegram-login="agarsu_auth_bot"
+          data-size="large"
+          data-onauth="onTelegramAuth(user)"
+          data-request-access="write"></script>
+</div>
+
           </div>
         </div>
       </div>
@@ -388,6 +454,7 @@
 </body>
 
 </html>
+
 
 
 
