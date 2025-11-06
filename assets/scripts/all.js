@@ -195,7 +195,6 @@ leaderboard.addEventListener('click', function(e) {
 
 
 
-<script>
 // === Переключение отображения эмодзи-листа ===
 document.getElementById('emoji_toggle').addEventListener('click', () => {
   const list = document.querySelector('#chatX_window .emoji-list');
@@ -213,5 +212,5 @@ document.querySelector('#chatX_window .emoji-list').addEventListener('click', (e
   // Вставляем эмодзи в конец текста
   chatBox.value += emojiCode;
 });
-</script>
+
 
