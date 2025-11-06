@@ -23,7 +23,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=new_releases" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="https://api.agar.su/assets/style.css" rel="stylesheet">
+    <link href="https://api.agar.su/assets/style.css?v=1.0.2" rel="stylesheet">
     <!-- Скрипты -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="/assets/scripts/jquery.js?0.0.2"></script>
@@ -31,7 +31,7 @@
     <script src="/assets/scripts/vector.js?0.0.2"></script>
     <script src="https://api.agar.su/assets/scripts/main_out2.js"></script>
 	<script src="/assets/scripts/shop.js?0.0.3" defer></script>
-	<script src="/assets/scripts/all.js?0.0.7" defer></script>
+	<script src="/assets/scripts/all.js?0.0.32" defer></script>
 	<script src="/assets/scripts/pass.js?0.0.2" defer></script>
 	<script src="/assets/scripts/skins.js?0.0.2" defer></script>
 	<script src="/assets/scripts/rating.js?0.0.4" defer></script>
@@ -288,10 +288,16 @@
       <div class="chatX_close" onclick="document.getElementById('chatX_window').style.display = 'none'; document.getElementById('onchat').style.display = 'flex';" id="chatX_close"><i class="fa-solid fa-xmark"></i></div>
     </div>
     <div class="chatX_container" id="chatX_container">
-      <div class="chatX_feed" id="chatX_feed"></div>
+      <div class="chatX_feed" id="chatX_feed">
+	  	  <div class="emoji-list">
+  <div class="emoji-item" data-code=":1:"><img src="/emoji/1.png" alt=":1:"></div>
+  <div class="emoji-item" data-code=":32:"><img src="/emoji/32.gif" alt=":32:"></div>
+  <div class="emoji-item" data-code=":5:"><img src="/emoji/5.png" alt=":5:"></div>
+</div>		  
+	  </div>
     </div>
     <div class="chatX_emch">
-      <div class="coord" onclick="coord();"><i class="fa-solid fa-location-dot"></i></div>
+      <div class="coord" id="emoji_toggle"><i class="fa-solid fa-face-grin-squint"></i></div>
 	 <input style="display:none;" id="ls"></input>
       <input class="noPress" id="chat_textbox" maxlength="120" placeholder="Напишите сообщение..." autocomplete="off"></input>
     </div>
@@ -399,6 +405,7 @@
 </body>
 
 </html>
+
 
 
 
