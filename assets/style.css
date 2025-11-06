@@ -45,7 +45,25 @@ i:hover{cursor:pointer;}
   align-items: center;
   justify-content: space-between;
 }
+.emoji-list {
+    display: none;
+    padding: 6px;
+    background: rgb(133 133 133 / 65%);
+}
 
+.emoji-item {
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+}
+
+.emoji-item:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+.emoji-item img {
+  height: 28px;
+}
 #gradient-settings input[type="color"] {
   border: none;
   width: 40px;
