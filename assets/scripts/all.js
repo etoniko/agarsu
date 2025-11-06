@@ -195,4 +195,23 @@ leaderboard.addEventListener('click', function(e) {
 
 
 
+<script>
+// === Переключение отображения эмодзи-листа ===
+document.getElementById('emoji_toggle').addEventListener('click', () => {
+  const list = document.querySelector('#chatX_window .emoji-list');
+  list.style.display = (list.style.display === 'flex') ? 'none' : 'flex';
+});
+
+// === Вставка эмодзи ===
+document.querySelector('#chatX_window .emoji-list').addEventListener('click', (e) => {
+  const emojiItem = e.target.closest('.emoji-item');
+  if (!emojiItem) return;
+
+  const emojiCode = emojiItem.dataset.code;
+  const chatBox = document.getElementById('chat_textbox');
+
+  // Вставляем эмодзи в конец текста
+  chatBox.value += emojiCode;
+});
+</script>
 
