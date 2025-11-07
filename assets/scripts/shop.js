@@ -102,7 +102,11 @@ if (isClan) {
     const res = await fetch('https://api.agar.su/check-nickname', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nickname: nicknameInput.value.trim(), accountID })
+      body: JSON.stringify({ nickname: nicknameInput.value.trim() }),
+headers: {
+  'Content-Type': 'application/json',
+  Authorization: `Game ${localStorage.accountToken || ''}`
+}
     });
     const data = await res.json();
     if (data.taken) {
@@ -273,7 +277,6 @@ document.getElementById("paymentForm").addEventListener("submit", async (e) => {
 
   const formData = new FormData();
   formData.append("name", nickname);
-  formData.append("accountID", accountID);
   formData.append("amount", amount);
   formData.append("serviceType", serviceType);
   if (password) formData.append("password", password);
@@ -296,7 +299,11 @@ document.getElementById("paymentForm").addEventListener("submit", async (e) => {
 
 async function sendForm(formData) {
   try {
-    const res = await fetch("https://api.agar.su/create-payment", { method: "POST", body: formData });
+    const res = await fetch("https://api.agar.su/create-payment", { 
+  method: "POST", 
+  body: formData,
+  headers: { Authorization: `Game ${localStorage.accountToken || ''}` }
+});
     if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
     const data = await res.json();
     if (data?.confirmation?.confirmation_url) {
@@ -319,5 +326,4 @@ togglePassword.addEventListener("click", () => {
   togglePassword.classList.toggle("fa-eye");
   togglePassword.classList.toggle("fa-eye-slash");
 });
-
 
