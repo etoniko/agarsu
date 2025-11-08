@@ -1,0 +1,727 @@
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Agar.su — лучшая альтернатива agar.io. Играйте онлайн прямо сейчас: поглощайте клетки, соревнуйтесь с другими игроками и станьте лидером среди всех клонов agar и agario.">
+    <meta name="author" content="Agar.su Team">
+    <meta name="robots" content="index">
+    <!-- Open Graph для социальных сетей -->
+    <meta property="og:title" content="Agar.su - Завоевание начинается!">
+    <meta property="og:description" content="absorb cells, compete with other players, and become the leader among all agar and agario clones.">
+    <meta property="og:image" content="assets/photo/ogimage.jpeg">
+    <meta property="og:url" content="https://agar.su">
+    <meta property="og:type" content="website">
+    <title>Agar.su</title>
+    <!-- Favicon и иконки для Apple устройств -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="icon" href="./icon.svg" type="image/x-icon">
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://agar.su">
+    <!-- Шрифты и стили -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flag-icons/css/flag-icons.min.css">
+    <link href="https://fonts.googleapis.com/css?family=Ubuntu:700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=new_releases" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://api.agar.su/assets/style.css" rel="stylesheet">
+    <!-- Скрипты -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="./assets/scripts/jquery.js?0.0.2"></script>
+    <script src="./assets/scripts/log.js?0.0.2"></script>
+    <script src="./assets/scripts/vector.js?0.0.2"></script>
+    <script src="https://api.agar.su/assets/scripts/main_out2.js"></script>
+	<script src="https://api.agar.su/assets/scripts/shop.js" defer></script>
+	<script src="./assets/scripts/all.js?0.0.35" defer></script>
+	<script src="./assets/scripts/pass.js?0.0.2" defer></script>
+	<script src="./assets/scripts/skins.js?0.0.2" defer></script>
+	<script src="./assets/scripts/rating.js?0.0.4" defer></script>
+</head>
+<body>
+  <div id="overlays" class="overlays">
+    <div class="social"><a href="https://t.me/agarsu" target="_blank" class="tg"><i style="background: radial-gradient(white 9px, #1e90ff00 50%);border-radius: 50%;" class="fab fa-telegram"></i></a><a href="https://vk.com/club233723574" target="_blank" class="soc"><i class="fab fa-vk"></i></a><a href="#" class="soc"><i style="cursor: not-allowed;" class="fab fa-discord"></i></a></div>
+    <div class="center">
+      <div class="sidebar">
+        <div class="menu-item" onclick="showContent('shop')"><i class="fas fa-shop"></i><span class="label">Магазин</span></div>
+        <div class="menu-item" onclick="showContent('skinslist')"><i class="fas fa-image"></i><span class="label">Скины</span></div>
+        <div class="menu-item active" onclick="showContent('home')"><i class="fas fa-home"></i><span class="label">Главная</span></div>
+        <div class="menu-item" onclick="showContent('rating')"><i class="fas fa-star"></i><span class="label">Рейтинг</span></div>
+        <div class="menu-item" onclick="showContent('store')"><i class="fas fa-user"></i><span class="label">Войти</span></div>
+      </div>
+      <div class="main-content">
+
+
+<div id="shop" class="content">
+	<div class="top-info"><div><span>Создание лички</span></div></div>
+<div class="shop-container">
+  <div class="avatar-section">
+    <label id="previewContainer" for="fileInput">
+      <canvas id="previewCanvas" width="512" height="512"></canvas>
+      <img id="previewGif" alt="GIF preview">
+    </label>
+    <input type="file" id="fileInput" accept=".png,.jpg,.gif" autocomplete="off">
+    <div id="fileError" class="error"></div>
+
+    <form id="paymentForm" autocomplete="off">
+      <div class="radio-group">
+        <label><input type="radio" name="serviceType" value="personal" id="personal" checked autocomplete="off"><span>Для себя</span></label>
+        <label><input type="radio" name="serviceType" value="clan" id="clan" autocomplete="off"><span>Для клана</span></label>
+      </div>
+
+      <div class="input-group">
+        <div id="nicknameWrapper">
+          <input type="text" id="nickname" placeholder="Придумай себе ник" required maxlength="15" title="Введите ник" autocomplete="off">
+          <span id="charCount">0/15</span>
+        </div>
+        <div id="nicknameError" class="error"></div>
+      </div>
+
+      <div class="input-group">
+        <div class="password-wrapper">
+          <input type="password" id="password" placeholder="Придумай себе пароль" maxlength="5" autocomplete="off">
+          <i id="togglePassword" class="fa-solid fa-eye eye"></i>
+        </div>
+        <div id="passwordError" class="error"></div>
+      </div>
+
+      <div id="formError" class="error"></div>
+      <button type="submit" id="buyButton" disabled>КУПИТЬ ЗА 0 РУБЛЕЙ</button>
+    </form>
+  </div>
+
+  <div class="oplata">
+    <div id="calculator" style="display:none">
+      <h3>Расчёт стоимости</h3>
+      <p id="clanMultiplier">Множитель: <span id="multiplierText">1x (для себя)</span></p>
+      <p id="passwordCost">Пароль: 0 ₽</p>
+      <p id="skinCost">Скин: 0 ₽</p>
+      <div id="totalAmount">Итого: 0 ₽</div>
+    </div>
+  </div>
+</div>
+        </div>
+
+		  
+        <div id="settings" class="content">
+          <div class="top-info">
+            <div><span>Настройки</span></div>
+          </div>
+          <div class="checkbox-container">
+<label>
+  <input type="checkbox" class="save" data-box-id="1" onchange="setSkins($(this).is(':checked'));">Видеть Скины
+</label>
+<label>
+  <input type="checkbox" class="save" data-box-id="2" onchange="setNames($(this).is(':checked'));">Видеть Имена
+</label>
+<label>
+  <input type="checkbox" class="save" data-box-id="3" onchange="setColors($(this).is(':checked'));">Цвета
+</label>
+<label>
+  <input type="checkbox" class="save" data-box-id="4" onchange="setMouseClicks($(this).is(':checked'));">Поддержка клика мышки
+</label>
+<label>
+  <input type="checkbox" class="save" data-box-id="5" onchange="setShowMass($(this).is(':checked'));" checked>Показать Массу
+</label>
+<label>
+  <input type="checkbox" class="save" data-box-id="6" onchange="setSmooth($(this).is(':checked'));">Простой Рендер
+</label>
+<label>
+  <input type="checkbox" class="save" data-box-id="7" onchange="setNoBorder($(this).is(':checked'));">Отключить обводку
+</label>
+<label>
+  <input type="checkbox" class="save" data-box-id="8" onchange="setChatHide($(this).is(':checked'));">Отключить чат
+</label>
+<label>
+  <input type="checkbox" class="save" data-box-id="9" onchange="setGlow($(this).is(':checked'));" checked>Эффект Лимита
+</label>
+
+
+
+
+			  
+  <div id="theme-selector">
+    <label>Выберите тему:</label>
+    <select id="theme-select">
+      <option value="gradient">Градиент</option>
+      <option value="white">Белая</option>
+      <option value="black">Черная</option>
+    </select>
+  </div>
+
+  <!-- Настройки градиента -->
+  <div id="gradient-settings">
+  <div class="color-picker">
+    <span>Цвет центра:</span>
+    <input type="color" id="gradient-center" value="#132745">
+  </div>
+  <div class="color-picker">
+    <span>Цвет краёв:</span>
+    <input type="color" id="gradient-edge" value="#000000">
+  </div>
+</div>
+</div>
+			  
+          </div>
+        <div id="skinslist" class="content">
+          <div style="display: flex;flex-direction: column;justify-content: space-around;" class="top-info">
+            <div class="gall"><span>Скины</span></div>
+            <ul class="gallery">
+              <li style="background-image: url('https://i.imgur.com/tq33YWv.png');" onclick="selectSkin('Муха');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/dzQIxk0.png');" onclick="selectSkin('Паук');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/fpDpEl9.png');" onclick="selectSkin('Кактус');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/69ChrNV.png');" onclick="selectSkin('Зая');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/qRq5CIg.png');" onclick="selectSkin('Оса');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/TPgKn6V.png');" onclick="selectSkin('Ящерица');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/QPCVdvQ.png');" onclick="selectSkin('Лиса');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/YbmC0tv.png');" onclick="selectSkin('Волк');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/hmVJPmb.png');" onclick="selectSkin('Мамонт');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/RKtDpin.png');" onclick="selectSkin('Динозавр');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/3hxdGAq.png');" onclick="selectSkin('Мороженое');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/zdcHEFS.png');" onclick="selectSkin('Ракета');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/roUvNMV.png');" onclick="selectSkin('Могучая');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/57BzylL.png');" onclick="selectSkin('Фаун');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/rPlbHK7.png');" onclick="selectSkin('Бабушка');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/ruAUEpb.png');" onclick="selectSkin('Гора');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/ipqCMMf.png');" onclick="selectSkin('Космонавт');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/wRiL4Jx.png');" onclick="selectSkin('Первобытный');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/GTxoIhj.png');" onclick="selectSkin('Влюблённый');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/EcW6zbE.png');" onclick="selectSkin('Влюблённая');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/UINxrlJ.png');" onclick="selectSkin('Самба');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/lxAXnAi.png');" onclick="selectSkin('Снеговик');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/7GWqCnY.png');" onclick="selectSkin('Панда');showContent('home')"></li>
+              <li>
+                <a style="display: block;width: 100%;height: 100%;background-image: url('assets/photo/skinstg.png');background-size: cover;" onclick="showContent('shop');"></a>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <!-- Home Content -->
+        <div id="home" class="content active">
+          <div class="top-info">
+            <div><span>agar.su</span>
+              <div onclick="showContent('settings')" class="setting menu-item"><i class="fas fa-gear"></i></div>
+            </div>
+          </div>
+          <div>
+            <div class="line"></div></div>
+          <div class="progress-container">
+            <div class="progress-bar">
+              <div class="level-circle" id="levelCircle">0</div>
+              <div class="progress-fill"></div>
+              <div class="progress-text" id="progressText">0% (0/0)</div>
+            </div>
+          </div><span id="accountID">ID: 0000</span>
+          <div class="avatar-containers">
+            <div class="avatar-container">
+              <div class="previous-skin" id="prevSkin" onclick="showPrevious()"></div>
+              <div class="arrow" id="previous" onclick="showPrevious()">&#10094;</div>
+              <div onclick="showContent('skinslist')" id="skinss" class="main-skin anims"></div>
+              <div class="arrow" id="next" onclick="showNext()">&#10095;</div>
+              <div class="next-skin" id="nextSkin" onclick="showNext()"></div>
+            </div>
+            <div class="input-container">
+              <form>
+                <input type="text" placeholder="Ник" name="name" maxlength="16" class="noPress" id="nick" required autocomplete="username" />
+                <input type="password" placeholder="Пасс" name="pass" maxlength="6" class="noPress" id="pass" required autocomplete="current-password" />
+              </form>
+            </div>
+          </div>
+		  <div class="servers">
+		  <ul class="gamemode">
+<ul class="gamemode">
+  <li data-ip="ffa.agar.su:6001" id="ffa"><span class="fi fi-ru"></span>FFA - 𝙈𝙤𝙨𝙘𝙤𝙬<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/120</span></li>
+  <li data-ip="ffa.agar.su:6002" id="ms"><span class="fi fi-ru"></span>MegaSplit<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/120</span></li>
+  <li data-ip="ffa.agar.su:6003" id="exp"><span class="fi fi-ru"></span>Experemental<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/50</span></li>
+	<li data-ip="ffa.agar.su:6004" id="pvp1"><span class="fi fi-ru"></span>pvp1: 1x1 ffa 1k<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/50</span></li>
+	<li data-ip="ffa.agar.su:6005" id="pvp2"><span class="fi fi-ru"></span>pvp2: 2x2 ms 1k<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/50</span></li>
+	<li data-ip="ffa.agar.su:6006" id="tournament"><span class="fi fi-ru"></span>Tournament<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/120</span></li>
+</ul> 
+</div>
+          <div class="nav-buttons">
+            <button onclick="spectate();" class="nav-button serv-button"><i class="fas fa-eye"></i> НАБЛЮДАТЬ </button>
+            <button onclick="startGame();return false;" class="nav-button play-button"><i class="fas fa-play"></i> ИГРАТЬ </button>
+          </div>
+        </div>
+        <div id="rating" class="content">
+          <div class="top-info">
+            <div><span>Лучшие Игроки</span></div>
+          </div>
+          <div class="header-row">
+            <div class="cell">Позиция</div>
+            <div class="cell nr">Ник</div>
+            <div class="cell">Уровень</div>
+            <div class="cell">Аватар</div>
+          </div>
+          <div id="table-container"></div>
+        </div>
+        <div id="store" class="content">
+          <div class="top-info">
+            <div><span>Кабинет</span></div>
+          </div>
+          <div>
+<div id="myNicknamesBlock" style="display:none;">
+  <div class="tabs" id="myNickClanTabs" data-ready="1">
+    <button id="tabNicknames" type="button" class="tab active">Ваши ники <span class="badge" id="badgeNick">0</span></button>
+    <button id="tabClans" type="button" class="tab">Ваши кланы <span class="badge" id="badgeClan">0</span></button>
+	<button id="logoutButton" class="tab" onclick="logoutAccount()">Выход</button>
+  </div>
+  <div class="list-wrap" id="nickWrap" style=""><ul id="myNickList" class="list"></ul></div>
+  <div class="list-wrap" id="clanWrap" style="display:none;"><ul id="myClanList" class="list"></ul></div>
+</div>
+<div id="authlog">
+  <!-- Google -->
+  <div id="g_id_onload"
+       data-client_id="157257230972-jhlcisbgal67sn75gib37fb1m1de5jiu.apps.googleusercontent.com"
+       data-auto_prompt="false"
+       data-callback="onGoogleAuth"></div>
+  <div class="g_id_signin"></div>
+
+  <!-- Telegram -->
+  <script async src="https://telegram.org/js/telegram-widget.js?22"
+          data-telegram-login="agarsu_auth_bot"
+          data-size="large"
+          data-onauth="onTelegramAuth(user)"
+          data-request-access="write"></script>
+</div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <canvas id="canvas"></canvas>
+  <style>
+  /* Компактная панель управления */
+  .rec-panel {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: grid;
+    gap: 8px;
+    padding: 10px 12px;
+    background: rgba(8, 12, 20, 0.7);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    backdrop-filter: blur(6px);
+    user-select: none;
+    z-index: 9999;
+    min-width: 130px;
+  }
+
+  .rec-btn {
+    all: unset;
+    cursor: pointer;
+    text-align: center;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-weight: 600;
+    background: #1b2a44;
+    outline: 1px solid rgba(255,255,255,0.08);
+  }
+  .rec-btn:hover { filter: brightness(1.1); }
+  .rec-btn:active { transform: translateY(1px); }
+
+  .rec-btn.recording {
+    background: #b51e1e;
+  }
+
+  .time {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-variant-numeric: tabular-nums;
+    justify-content: center;
+  }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #6d7480;
+    box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.7);
+  }
+
+  .recording-dot {
+    background: #ff4757;
+    animation: pulse 1.2s infinite;
+  }
+
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(255, 71, 87, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0); }
+  }
+
+  .hint {
+    font-size: 12px;
+    opacity: 0.8;
+    text-align: center;
+  }
+
+  .link {
+    font-size: 12px;
+    text-align: center;
+    word-break: break-all;
+  }
+</style>
+
+<!-- Мини-панелька: кнопка вкл/выкл + таймер + место для ссылки -->
+<div class="rec-panel" id="recPanel">
+  <button class="rec-btn" id="recBtn" type="button" title="Начать/остановить запись">● Запись</button>
+  <div class="time">
+    <div class="dot" id="dot"></div>
+    <span id="clock">00:00.0</span>
+  </div>
+  <div class="hint">ВКЛ → пишет • ВЫКЛ → сохранит</div>
+  <div class="link" id="downloadLinkBox"></div>
+</div>
+
+<script>
+  // ====== Настройки качества ======
+  // Размер итогового видео управляется размером canvas.
+  // Поставим 1920x1080@60fps (можешь изменить под свои задачи).
+  const TARGET_WIDTH = 1920;
+  const TARGET_HEIGHT = 1080;
+  const FPS = 60;
+  const VIDEO_BITRATE = 12_000_000; // 12 Mbps — отличное качество для WebM
+
+  // ====== Элементы ======
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
+  const recBtn = document.getElementById('recBtn');
+  const clock = document.getElementById('clock');
+  const dot = document.getElementById('dot');
+  const linkBox = document.getElementById('downloadLinkBox');
+
+  // Поднимаем реальный рендер до 1080p с учетом плотности пикселей
+  function resizeCanvasToTarget() {
+    // Используем ровно TARGET_* для предсказуемого качества видео
+    canvas.width = TARGET_WIDTH;
+    canvas.height = TARGET_HEIGHT;
+
+    // Растягиваем на весь экран визуально (CSS уже на 100%/100%)
+    // Можно рисовать в логических пикселях 1:1
+  }
+  resizeCanvasToTarget();
+
+  // ====== Демо-анимация на канвасе (замени на свою отрисовку) ======
+  let t = 0;
+  function draw(ts) {
+    t += 1 / FPS;
+
+    // Фон
+    ctx.fillStyle = '#0b0f17';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Немного графики
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+
+    // Вращающийся градиентный «диск»
+    const r = Math.min(cx, cy) * 0.75;
+    const grd = ctx.createRadialGradient(cx, cy, r * 0.1, cx, cy, r);
+    grd.addColorStop(0, '#193657');
+    grd.addColorStop(1, '#0b0f17');
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Орбиты
+    const count = 90;
+    ctx.save();
+    ctx.translate(cx, cy);
+    for (let i = 0; i < count; i++) {
+      const a = (i / count) * Math.PI * 2 + t * 0.6;
+      const rr = r * 0.85;
+      const x = Math.cos(a) * rr;
+      const y = Math.sin(a) * rr;
+      ctx.fillStyle = 'rgba(200,220,255,0.65)';
+      ctx.beginPath();
+      ctx.arc(x, y, 2 + (i % 5 === 0 ? 2 : 0), 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // Текст-подсказка поверх
+    ctx.fillStyle = 'rgba(231,236,243,0.9)';
+    ctx.font = '28px ui-sans-serif, system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillText('Canvas Demo — Запись включается справа', cx, cy + r + 50);
+
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+
+  // ====== Захват и запись ======
+  let stream = null;
+  let recorder = null;
+  let chunks = [];
+  let isRecording = false;
+
+  // Таймер
+  let startMs = 0;
+  let timerId = null;
+
+  function pickBestMimeType() {
+    const candidates = [
+      'video/webm;codecs=vp9',
+      'video/webm;codecs=vp8',
+      'video/webm',
+    ];
+    for (const mt of candidates) {
+      if (MediaRecorder.isTypeSupported(mt)) return mt;
+    }
+    // Как крайний случай вернём без указания типа — браузер подберёт сам (если умеет)
+    return '';
+  }
+
+  function formatClock(elapsedMs) {
+    const total = Math.floor(elapsedMs);
+    const ms = Math.floor((elapsedMs % 1000) / 100); // десятые
+    const s = Math.floor((total / 1000) % 60);
+    const m = Math.floor((total / 1000 / 60) % 60);
+    const mm = String(m).padStart(2, '0');
+    const ss = String(s).padStart(2, '0');
+    return `${mm}:${ss}.${ms}`;
+  }
+
+  function startTimer() {
+    startMs = performance.now();
+    clock.textContent = '00:00.0';
+    if (timerId) clearInterval(timerId);
+    timerId = setInterval(() => {
+      const now = performance.now();
+      clock.textContent = formatClock(now - startMs);
+    }, 100);
+  }
+
+  function stopTimer() {
+    if (timerId) clearInterval(timerId);
+    timerId = null;
+  }
+
+  function filename() {
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    return `canvas-recording-${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}.webm`;
+  }
+
+  async function startRecording() {
+    // Захват 60fps
+    stream = canvas.captureStream(FPS);
+
+    const mimeType = pickBestMimeType();
+    const options = {};
+    if (mimeType) options.mimeType = mimeType;
+    options.videoBitsPerSecond = VIDEO_BITRATE;
+
+    try {
+      recorder = new MediaRecorder(stream, options);
+    } catch (e) {
+      alert('MediaRecorder не поддерживается этим браузером или выбранный формат недоступен.');
+      console.error(e);
+      return;
+    }
+
+    chunks = [];
+    recorder.ondataavailable = (e) => {
+      if (e.data && e.data.size > 0) chunks.push(e.data);
+    };
+    recorder.onstop = () => {
+      stopTimer();
+      dot.classList.remove('recording-dot');
+      // Собираем видео и сохраняем
+      const blob = new Blob(chunks, { type: recorder.mimeType || 'video/webm' });
+      const url = URL.createObjectURL(blob);
+
+      // Автозагрузка
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename();
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      // Также покажем ссылку (вдруг автозагрузка заблокирована)
+      linkBox.innerHTML = '';
+      const link = document.createElement('a');
+      link.href = url;
+      link.textContent = 'Скачать видео';
+      link.download = filename();
+      link.style.color = '#9ecbff';
+      linkBox.appendChild(link);
+
+      // Очищаем
+      stream.getTracks().forEach(t => t.stop());
+      stream = null;
+      recorder = null;
+      chunks = [];
+    };
+
+    recorder.start(100); // собираем чанки каждые 100мс
+    startTimer();
+    dot.classList.add('recording-dot');
+    isRecording = true;
+    recBtn.classList.add('recording');
+    recBtn.textContent = '■ Остановить';
+  }
+
+  function stopRecording() {
+    if (recorder && recorder.state !== 'inactive') {
+      recorder.stop(); // это вызовет onstop → сохранение файла
+    }
+    isRecording = false;
+    recBtn.classList.remove('recording');
+    recBtn.textContent = '● Запись';
+  }
+
+  recBtn.addEventListener('click', async () => {
+    if (!isRecording) {
+      await startRecording();
+    } else {
+      stopRecording(); // «выкл» — видео сохраняется
+    }
+  });
+
+  // Предупреждение для Safari/iOS
+  (function warnIfLimitedSupport() {
+    const ua = navigator.userAgent.toLowerCase();
+    const isSafari = /^((?!chrome|android).)*safari/.test(ua);
+    if (isSafari) {
+      console.warn('Safari может не поддерживать запись WebM. Проверьте совместимость вашей версии.');
+    }
+  })();
+
+  // (необязательно) Остановка при уходе со страницы
+  window.addEventListener('beforeunload', () => {
+    if (isRecording) stopRecording();
+  });
+</script>
+  <div class="chatX_window" id="chatX_window">
+    <div class="chatX_top" id="chatX_top">
+	<div onclick="switchToDialog(null);" class="chatX_top_avatar"><i class="fa fa-globe"></i></div>
+      <div class="chatX_burger" id="chatX_burger"><i class="fa-solid fa-bars nresize"></i></div>
+      <div class="chatX_close" onclick="document.getElementById('chatX_window').style.display = 'none'; document.getElementById('onchat').style.display = 'flex';" id="chatX_close"><i class="fa-solid fa-xmark"></i></div>
+    </div>
+    <div class="chatX_container" id="chatX_container">
+      <div class="chatX_feed" id="chatX_feed">	  </div>
+    </div>
+	  		  	  	  <div class="emoji-list">
+  <div class="emoji-item" data-code=":50:"><img src="./emoji/50.gif"></div>
+  <div class="emoji-item" data-code=":253:"><img src="./emoji/253.gif"></div>
+  <div class="emoji-item" data-code=":26:"><img src="./emoji/26.gif"></div>
+  <div class="emoji-item" data-code=":104:"><img src="./emoji/104.png"></div>
+  <div class="emoji-item" data-code=":105:"><img src="./emoji/105.png"></div>
+  <div class="emoji-item" data-code=":92:"><img src="./emoji/92.png"></div>
+  <div class="emoji-item" data-code=":5:"><img src="./emoji/5.png"></div>
+</div>
+    <div class="chatX_emch">
+      <div class="coord" id="emoji_toggle"><i class="fa-solid fa-face-grin-squint"></i></div>
+	 <input style="display:none;" id="ls"></input>
+      <input class="noPress" id="chat_textbox" maxlength="120" placeholder="Напишите сообщение..." autocomplete="off"></input>
+    </div>
+  </div>
+  <div id="onchat"><i class="fa fa-message"></i></div>
+  <div class="homemenu"><i class="fas fa-home"></i></div>
+  <div class="score-info" id="score-info">
+    <div class="scorr" id="score-max">0</div>
+    <div class="scorr" id="score-new">0</div>
+    <div class="cell-length" id="cell-length">0</div>
+  </div>
+  <div id="leaderboard"><div class="topclose" onclick="document.getElementById('leaderboard').style.display = 'none'; document.getElementById('onleaderboard').style.display = 'flex';"><i class="fa fa-close"></i></div><h4>Топ Сейчас</h4><div id="toplistnow"></div></div>
+<div id="onleaderboard"><i class="fa fa-bar-chart"></i></div>
+  <div id="serverclose-overlay">
+    <div id="serverclose"><i class="clozs fas fa-spinner fa-spin"></i>
+      <div>Соединение с сервером потеряно.</div>
+		<div class="closereset" onclick="location.reload()" >reset</div>
+    </div>
+  </div>
+  <div id="map" class="map">
+    <div class="map-header">
+      <div class="ping-container">
+    ping: <span id="ping">0</span> | fps: <span id="fps">0</span>
+</div>
+
+      <div class="mapclose" onclick="document.getElementById('map').style.display = 'none'; document.getElementById('onmap').style.display = 'flex';"><i class="fa fa-close"></i></div>
+    </div>
+    <div class="map-container"><span id="mapposition"></span>
+      <div><span>A1</span></div>
+      <div><span>A2</span></div>
+      <div><span>A3</span></div>
+      <div><span>A4</span></div>
+      <div><span>A5</span></div>
+      <div><span>B1</span></div>
+      <div><span>B2</span></div>
+      <div><span>B3</span></div>
+      <div><span>B4</span></div>
+      <div><span>B5</span></div>
+      <div><span>C1</span></div>
+      <div><span>C2</span></div>
+      <div><span>C3</span></div>
+      <div><span>C4</span></div>
+      <div><span>C5</span></div>
+      <div><span>D1</span></div>
+      <div><span>D2</span></div>
+      <div><span>D3</span></div>
+      <div><span>D4</span></div>
+      <div><span>D5</span></div>
+      <div><span>E1</span></div>
+      <div><span>E2</span></div>
+      <div><span>E3</span></div>
+      <div><span>E4</span></div>
+      <div><span>E5</span></div>
+    </div>
+  </div>
+  <div id="onmap"><i class="fa fa-compass"></i></div>
+  <div id="statics" class="overlays">
+    <div class="statsWrapper">
+      <div class="headerstats">
+        <h1>Блогерская Тема</h1></div>
+      <div class="statYout">
+        <a href="https://youtu.be/RvGQwzrDFtE" target="_blank" class="statYoutt"><img src="https://upload.wikimedia.org/wikipedia/commons/4/42/YouTube_icon_%282013-2017%29.png" alt="Play" class="statYoutImg"></a>
+      </div>
+      <h2 class="statTitle">Ждём твоё видео 🎥</h2>
+      <p class="statDesc"><strong>1.</strong> Сними крутое видео по тематике <strong>agar.su</strong> и опубликуй его в социальных сетях: YouTube, TikTok, ВКонтакте.
+        <br><strong>2.</strong> Набери хотябы 10 просмотров.
+        <br><strong>3.</strong> Пришли нам ссылку в Telegram: <a href="https://t.me/agarsu" target="_blank" class="statLink">@agarsu</a> и мы добавим его сюда.</p>
+    </div>
+    <div id="statsWrapper" class="statsWrapper">
+      <div class="headerstats">
+        <h1>Твоя Статистика</h1>
+        <div id="closeStats" class="closeStats"><i class="fa-solid fa-xmark"></i></div>
+      </div>
+      <canvas id="statsGraph" width="320" height="150"></canvas>
+      <div class="share-label">поделиться:</div>
+      <div id="buttons">
+        <button class="social-btn fab fa-vk vk" title="ВКонтакте"></button>
+        <button class="social-btn fab fa-telegram telegram" title="Telegram"></button>
+        <button class="social-btn fab fa-whatsapp whatsapp" title="WhatsApp"></button>
+        <button class="social-btn fab fa-facebook facebook" title="Facebook"></button>
+        <button class="social-btn fab fa-twitter twitter" title="Twitter"></button>
+      </div>
+      <div id="shareText"></div>
+      <div class="nav-buttons">
+        <div onclick="spectate();" class="nav-button serv-button"><i class="fas fa-eye"></i>Наблюдать</div>
+        <button id="button-text" onclick="startGame();return false;" class="nav-button play-button"><i class="fas fa-play"></i> ИГРАТЬ</button>
+      </div>
+    </div>
+    <div class="statsWrapper">
+      <div class="headerstats">
+        <h1 id="serverTitle">Статистика ffa</h1></div>
+      <div class="header-rowwraper">
+        <div>Позиция</div>
+        <div>Ник</div>
+        <div>Счет</div>
+        <div>Скин</div>
+      </div>
+      <div id="table-containerwraper"></div>
+    </div>
+  </div>
+  <div id="freeze">Pause <i style="color:red;" class="fa fa-pause"></i></div>
+  <div id="notification-container">
+    <div id="logout-notification" class="notification">Login close</div>
+  </div>
+</body>
+
+</html>
