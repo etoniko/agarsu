@@ -358,162 +358,164 @@
 
 <!-- ===== JS ===== -->
 <script>
-(function(){
-  const canvas = document.getElementById('canvas'); // только читаем
-  if(!canvas) { console.error('Нет #canvas'); return; }
+(() => {
+  const canvas = document.getElementById('canvas');
+  if (!canvas) return console.error('Recorder: нет #canvas');
 
-  // --- панель и элементы
-  const panel = document.getElementById('recPanel');
-  const dragHandle = document.getElementById('recDrag');
-  const startBtn = document.getElementById('startBtn');
-  const pauseBtn = document.getElementById('pauseBtn');
-  const resumeBtn = document.getElementById('resumeBtn');
-  const stopBtn = document.getElementById('stopBtn');
-  const saveBtn = document.getElementById('saveBtn');
-  const fpsIn = document.getElementById('fpsIn');
-  const bpsIn = document.getElementById('bpsIn');
-  const mimeSel = document.getElementById('mimeSel');
-  const statusTxt = document.getElementById('statusTxt');
-  const dot = document.getElementById('dot');
-  const timerEl = document.getElementById('timer');
-  const timerMini = document.getElementById('timerMini');
-  const miniBtn = document.getElementById('miniBtn');
-  const closeBtn = document.getElementById('closeBtn');
+  // === UI: плавающая кнопка ===
+  const btn = document.createElement('button');
+  btn.id = 'recBtn';
+  Object.assign(btn.style, {
+    position:'absolute', zIndex:2147483647, left:'0px', top:'0px',
+    width:'52px', height:'52px', borderRadius:'999px',
+    border:'1px solid rgba(255,255,255,.25)', background:'rgba(20,20,25,.9)',
+    color:'#eaeaea', font:'600 12px/1 system-ui,Segoe UI,Roboto,Arial',
+    cursor:'pointer', boxShadow:'0 8px 24px rgba(0,0,0,.35)', userSelect:'none'
+  });
+  btn.textContent = 'REC';
+  const tip = document.createElement('div');
+  Object.assign(tip.style, {
+    position:'absolute', top:'58px', left:0, whiteSpace:'nowrap',
+    background:'rgba(20,20,25,.85)', color:'#cfd6e4', padding:'6px 8px',
+    border:'1px solid rgba(255,255,255,.15)', borderRadius:'8px',
+    font:'11px/1.2 system-ui', display:'none'
+  });
+  tip.textContent = '';
+  const timer = document.createElement('div');
+  Object.assign(timer.style, {
+    position:'absolute', top:'-8px', right:'-8px',
+    background:'#22c55e', color:'#0b0f14', border:'1px solid #0b0f14',
+    borderRadius:'999px', padding:'2px 6px', font:'700 11px/1 system-ui', display:'none'
+  });
+  timer.textContent = '00:00';
+  document.body.appendChild(btn);
+  document.body.appendChild(tip);
+  btn.appendChild(timer);
 
-  // --- размещаем панель в левом верхнем углу канваса
-  positionPanelInCanvas(10,10);
-
-  // --- перетаскивание внутри рамок канваса
-  (function enableDragWithinCanvas(){
-    let sx=0, sy=0, startLeft=0, startTop=0, dragging=false;
-    dragHandle.addEventListener('mousedown', e=>{
-      dragging=true; sx=e.clientX; sy=e.clientY;
-      const r = panel.getBoundingClientRect();
-      startLeft=r.left; startTop=r.top;
-      e.preventDefault();
-    });
-    window.addEventListener('mousemove', e=>{
-      if(!dragging) return;
-      const dx=e.clientX-sx, dy=e.clientY-sy;
-      const desiredLeft=startLeft+dx, desiredTop=startTop+dy;
-      placeClamped(desiredLeft, desiredTop);
-    });
-    window.addEventListener('mouseup', ()=> dragging=false);
-    window.addEventListener('resize', ()=> clampToCanvas());
-    window.addEventListener('scroll', ()=> clampToCanvas());
+  // Размещаем и ограничиваем перемещение внутри канваса
+  function place(offsetX=10, offsetY=10){
+    const cr = canvas.getBoundingClientRect();
+    btn.style.left = (cr.left + offsetX) + 'px';
+    btn.style.top  = (cr.top  + offsetY) + 'px';
+    tip.style.left = btn.style.left; tip.style.top = (parseFloat(btn.style.top)+58)+'px';
+  }
+  function clamp(absL, absT){
+    const cr = canvas.getBoundingClientRect();
+    const br = btn.getBoundingClientRect();
+    const L = Math.min(Math.max(absL, cr.left), cr.right - br.width);
+    const T = Math.min(Math.max(absT, cr.top ), cr.bottom - br.height);
+    btn.style.left=L+'px'; btn.style.top=T+'px';
+    tip.style.left=L+'px'; tip.style.top=(T+58)+'px';
+  }
+  place();
+  (function drag(){
+    let on=false,sx=0,sy=0,sl=0,st=0;
+    btn.addEventListener('mousedown',e=>{ if(state!=='idle') return; on=true;sx=e.clientX;sy=e.clientY; const r=btn.getBoundingClientRect(); sl=r.left; st=r.top; e.preventDefault();});
+    window.addEventListener('mousemove',e=>{ if(!on) return; clamp(sl+e.clientX-sx, st+e.clientY-sy);});
+    window.addEventListener('mouseup',()=> on=false);
+    window.addEventListener('resize',()=> place());
+    window.addEventListener('scroll',()=> place());
   })();
 
-  function positionPanelInCanvas(offsetX, offsetY){
-    const cr = canvas.getBoundingClientRect();
-    panel.style.left = (cr.left + offsetX) + 'px';
-    panel.style.top  = (cr.top  + offsetY) + 'px';
-  }
-  function placeClamped(absLeft, absTop){
-    const cr = canvas.getBoundingClientRect();
-    const pr = panel.getBoundingClientRect();
-    const minL = cr.left, maxL = cr.right - pr.width;
-    const minT = cr.top,  maxT = cr.bottom - pr.height;
-    const L = Math.min(Math.max(absLeft,  minL), maxL);
-    const T = Math.min(Math.max(absTop,   minT), maxT);
-    panel.style.left = L+'px';
-    panel.style.top  = T+'px';
-  }
-  function clampToCanvas(){
-    const r = panel.getBoundingClientRect();
-    placeClamped(r.left, r.top);
-  }
-
-  // --- рекордер
-  let mediaRecorder=null, chunks=[], lastBlob=null, timerInt=null;
-  let startedAt=0, elapsedBeforePause=0;
-
+  // === Recorder ===
+  let state='idle', mr=null, chunks=[], displayStream=null, timerInt=null, t0=0, pausedAccum=0;
   function setState(s){
-    statusTxt.textContent=s;
-    dot.className = s==='recording' ? 'dot green' : 'dot';
-    startBtn.disabled = !(s==='idle'||s==='stopped');
-    pauseBtn.disabled = !(s==='recording');
-    resumeBtn.disabled= !(s==='paused');
-    stopBtn.disabled  = !(s==='recording'||s==='paused');
-    saveBtn.disabled  = !lastBlob;
+    state=s;
+    btn.style.background = s==='recording' ? 'rgba(20,50,25,.95)' : 'rgba(20,20,25,.9)';
+    btn.textContent = s==='recording' ? '■' : s==='paused' ? '▶' : 'REC';
+    if(s==='recording'||s==='paused') btn.appendChild(timer);
+    timer.style.display = (s==='recording'||s==='paused') ? 'block' : 'none';
   }
-  function fmtHMS(ms){
-    const s=Math.floor(ms/1000);
-    const h=String(Math.floor(s/3600)).padStart(2,'0');
-    const m=String(Math.floor(s%3600/60)).padStart(2,'0');
-    const sec=String(s%60).padStart(2,'0');
-    return `${h}:${m}:${sec}`;
-  }
-  function fmtMMSS(ms){
-    const s=Math.floor(ms/1000);
-    const m=String(Math.floor(s/60)).padStart(2,'0');
-    const sec=String(s%60).padStart(2,'0');
-    return `${m}:${sec}`;
-  }
-  function startTimer(){
-    clearInterval(timerInt);
-    timerInt=setInterval(()=>{
-      const now=performance.now();
-      const base=elapsedBeforePause + (mediaRecorder && mediaRecorder.state==='recording' ? now-startedAt : 0);
-      timerEl.textContent=fmtHMS(base);
-      timerMini.textContent=fmtMMSS(base);
-    },200);
-  }
-  function stopTimer(){ clearInterval(timerInt); timerEl.textContent='00:00:00'; timerMini.textContent='00:00'; }
+  function fmtMMSS(ms){ const s=Math.floor(ms/1000), m=String(Math.floor(s/60)).padStart(2,'0'), ss=String(s%60).padStart(2,'0'); return `${m}:${ss}`; }
+  function startTimer(){ clearInterval(timerInt); t0=performance.now(); timerInt=setInterval(()=>{ const running=(mr && mr.state==='recording')? performance.now()-t0:0; timer.textContent=fmtMMSS(pausedAccum+running); },200);}
+  function stopTimer(){ clearInterval(timerInt); timer.textContent='00:00'; pausedAccum=0; }
 
-  function pickMime(pref){
-    const list=[pref,'video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm;codecs=h264','video/mp4;codecs=h264','video/webm',''];
+  function pickMime(){
+    const pref = 'video/webm;codecs=vp9';
+    const list=[pref,'video/webm;codecs=vp8','video/webm;codecs=h264','video/webm',''];
     for(const t of list){ if(t && MediaRecorder.isTypeSupported(t)) return t; }
     return '';
   }
 
-  startBtn.onclick = () => {
+  async function start() {
     try{
-      const fps = Math.max(1, Math.min(120, parseInt(fpsIn.value||60,10)));
-      const bps = Math.max(100_000, parseInt(bpsIn.value||10_000_000,10));
-      const type = pickMime(mimeSel.value||'');
+      // 1) Захватываем вкладку/экран
+      const fps = 60, bps = 15_000_000;
+      displayStream = await navigator.mediaDevices.getDisplayMedia({
+        video: { frameRate: fps, displaySurface:'browser' },
+        audio: false
+      });
+      const vtrack = displayStream.getVideoTracks()[0];
 
-      const stream = canvas.captureStream(fps); // читаем поток с канваса
-      chunks=[]; lastBlob=null; elapsedBeforePause=0; startedAt=performance.now();
+      // 2) Пытаемся обрезать строго по канвасу (Region Capture)
+      let cropped = false;
+      if ('CropTarget' in window && vtrack && vtrack.cropTo) {
+        try {
+          const target = await window.CropTarget.fromElement(canvas);
+          await vtrack.cropTo(target);
+          cropped = true;
+          tip.textContent = 'Region Capture: пишем только canvas';
+        } catch (_) {}
+      }
+      if (!cropped) {
+        tip.textContent = 'Обрезка недоступна: пишем вкладку целиком';
+      }
+      tip.style.display = 'block';
+      setTimeout(()=> tip.style.display='none', 3000);
 
-      mediaRecorder = new MediaRecorder(stream, { mimeType:type, bitsPerSecond:bps });
-      mediaRecorder.ondataavailable = e=>{ if(e.data && e.data.size) chunks.push(e.data); };
-      mediaRecorder.onstop = ()=>{
-        const blob = new Blob(chunks, { type: mediaRecorder.mimeType });
-        lastBlob = blob;
-        const ext = blob.type.includes('mp4') ? 'mp4' : 'webm';
-        const ts = new Date().toISOString().replace(/[:.]/g,'-');
-        const name = `canvas-${canvas.width}x${canvas.height}-${ts}.${ext}`;
-        download(blob, name); // автосохранение по требованию «выкл»
-        setState('stopped'); stopTimer();
+      chunks=[];
+      mr = new MediaRecorder(displayStream, { mimeType: pickMime(), videoBitsPerSecond: bps });
+      mr.ondataavailable = e => { if(e.data.size) chunks.push(e.data); };
+      mr.onstop = () => {
+        const blob = new Blob(chunks, { type: mr.mimeType });
+        const name = `agar-canvas-${new Date().toISOString().replace(/[:.]/g,'-')}.${blob.type.includes('mp4')?'mp4':'webm'}`;
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+        document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 0);
+        setState('idle'); stopTimer();
       };
-      mediaRecorder.onpause = ()=>{ elapsedBeforePause += performance.now()-startedAt; setState('paused'); };
-      mediaRecorder.onresume= ()=>{ startedAt=performance.now(); setState('recording'); };
+      mr.onpause = ()=>{ pausedAccum += performance.now()-t0; setState('paused'); };
+      mr.onresume= ()=>{ t0 = performance.now(); setState('recording'); };
 
-      mediaRecorder.start();
+      mr.start();
       setState('recording'); startTimer();
-    }catch(err){ alert('Старт записи не удался: '+err); setState('idle'); }
-  };
 
-  pauseBtn.onclick  = ()=>{ if(mediaRecorder && mediaRecorder.state==='recording') mediaRecorder.pause(); };
-  resumeBtn.onclick = ()=>{ if(mediaRecorder && mediaRecorder.state==='paused') mediaRecorder.resume(); };
-  stopBtn.onclick   = ()=>{ if(mediaRecorder && (mediaRecorder.state==='recording'||mediaRecorder.state==='paused')) mediaRecorder.stop(); };
-  saveBtn.onclick   = ()=>{ if(lastBlob) download(lastBlob, `canvas-save-${Date.now()}.${lastBlob.type.includes('mp4')?'mp4':'webm'}`); };
-
-  function download(blob, filename){
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(blob); a.download=filename; document.body.appendChild(a); a.click();
-    setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 0);
+      // клик-поведение: при записи — пауза/продолжить; при паузе — продолжить; при idle — старт
+    }catch(err){
+      alert('Старт записи невозможен: ' + err);
+      cleanup();
+      setState('idle'); stopTimer();
+    }
+  }
+  function pause(){ if(mr && mr.state==='recording') mr.pause(); }
+  function resume(){ if(mr && mr.state==='paused') mr.resume(); }
+  function stop(){
+    try{ if(mr && (mr.state==='recording'||mr.state==='paused')) mr.stop(); } finally { cleanup(); }
+  }
+  function cleanup(){
+    if(displayStream){ displayStream.getTracks().forEach(t=>t.stop()); displayStream=null; }
   }
 
-  // мини-режим и закрыть
-  miniBtn.onclick = ()=> panel.classList.toggle('mini');
-  closeBtn.onclick = ()=> panel.style.display='none';
+  // Клик по кнопке: idle -> start, recording -> pause, paused -> resume (долгое удержание = стоп)
+  let pressT=0, holdInt=null;
+  btn.addEventListener('mousedown', ()=>{
+    pressT=Date.now();
+    holdInt=setInterval(()=>{
+      if(state==='recording' || state==='paused'){
+        if(Date.now()-pressT>700){ stop(); clearInterval(holdInt); }
+      }
+    },50);
+  });
+  btn.addEventListener('mouseup', ()=>{
+    clearInterval(holdInt);
+    if(state==='idle') start();
+    else if(state==='recording') pause();
+    else if(state==='paused') resume();
+  });
 
-  // начальное состояние
   setState('idle');
-
 })();
 </script>
+
 
 
 
