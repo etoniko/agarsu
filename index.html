@@ -257,8 +257,38 @@
           <div class="top-info">
             <div><span>Кабинет</span></div>
           </div>
-<!-- PersonalAccount (локально-инкапсулированный UI) -->
-	<div> <div id="myNicknamesSection" style="display:none;"> <h3>Ваши ники</h3> <table id="myNicknamesTable" class="table"> <thead> <tr> <th>Ваш ник</th> <th>Пароль</th> </tr> </thead> <tbody id="myNicknamesBody"></tbody> </table> </div>		
+          <div class="header-row">
+			  <div id="myNicknamesSection" style="display:none;">
+  <h3>Ваши ники</h3>
+  <table id="myNicknamesTable" class="table">
+    <thead>
+      <tr>
+        <th>Ваш ник</th>
+        <th>Пароль</th>
+      </tr>
+    </thead>
+    <tbody id="myNicknamesBody"></tbody>
+  </table>
+</div>
+
+            <button style="display:none" class="btnn" id="logoutButton" onclick="logoutAccount()">Выход</button>
+<div id="authlog">
+  <!-- Google -->
+  <div id="g_id_onload"
+       data-client_id="157257230972-jhlcisbgal67sn75gib37fb1m1de5jiu.apps.googleusercontent.com"
+       data-auto_prompt="false"
+       data-callback="onGoogleAuth"></div>
+  <div class="g_id_signin"></div>
+
+  <!-- Telegram -->
+  <script async src="https://telegram.org/js/telegram-widget.js?22"
+          data-telegram-login="agarsu_auth_bot"
+          data-size="large"
+          data-onauth="onTelegramAuth(user)"
+          data-request-access="write"></script>
+</div>
+
+          </div>
         </div>
       </div>
     </div>
@@ -391,234 +421,3 @@
 </body>
 
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
