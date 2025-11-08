@@ -258,10 +258,16 @@
             <div><span>Кабинет</span></div>
           </div>
           <div>
-<div id="myNicknamesBlock" style="display:none;">
+
+
+
+
+
+<div id="myNicknamesBlock">
   <style>
     #myNicknamesBlock { color:#e5edff; font-family:sans-serif; }
-    #myNicknamesBlock .tabs { display:none; margin:6px 0 10px; gap:8px; }
+    /* Табы — НЕ скрываем по CSS */
+    #myNicknamesBlock .tabs { margin:6px 0 10px; gap:8px; display:flex; }
     #myNicknamesBlock .tab {
       padding:8px 12px; border:1px solid #2b3242; border-radius:10px;
       background:#101625; color:#dbe5ff; cursor:pointer;
@@ -272,6 +278,8 @@
       padding:2px 6px; border-radius:999px; background:#1f2a44;
       font-size:12px; color:#8fb7ff;
     }
+
+    /* Листы */
     #myNicknamesBlock .list-wrap {
       border:1px solid #2b3242; border-radius:12px;
       max-height:360px; overflow:auto; background:#0e1422;
@@ -284,6 +292,8 @@
     }
     #myNicknamesBlock .list li:last-child { border-bottom:0; }
     #myNicknamesBlock .list li:hover { background:#121a2b; }
+
+    /* Аватар/скин */
     #myNicknamesBlock .skin {
       width:28px; height:28px; border-radius:50%;
       flex:0 0 28px; object-fit:cover;
@@ -293,6 +303,8 @@
       display:flex; align-items:center; justify-content:center;
       background:#283044; color:#9fb3d9; font-size:12px; font-weight:700;
     }
+
+    /* Ник + пароль */
     #myNicknamesBlock .nick { font-weight:600; cursor:pointer; }
     #myNicknamesBlock .nick:hover { text-decoration:underline; }
     #myNicknamesBlock .passbox { margin-left:auto; display:flex; align-items:center; gap:6px; height:36px; }
@@ -310,7 +322,7 @@
     #myNicknamesBlock .icon-btn i { font-size:16px; pointer-events:none; }
   </style>
 
-  <div class="tabs" id="myNickClanTabs">
+  <div class="tabs" id="myNickClanTabs" data-ready="1">
     <button id="tabNicknames" type="button" class="tab active">
       Ваши ники <span class="badge" id="badgeNick">0</span>
     </button>
@@ -319,15 +331,20 @@
     </button>
   </div>
 
-  <div class="list-wrap" id="nickWrap" style="display:none;">
+  <div class="list-wrap" id="nickWrap" style="">
     <ul id="myNickList" class="list"></ul>
   </div>
 
   <div class="list-wrap" id="clanWrap" style="display:none;">
     <ul id="myClanList" class="list"></ul>
   </div>
-	 </div>
-	
+</div>
+
+
+
+
+
+			  
 
 
             <button style="display:none" class="btnn" id="logoutButton" onclick="logoutAccount()">Выход</button>
@@ -480,6 +497,7 @@
 </body>
 
 </html>
+
 
 
 
