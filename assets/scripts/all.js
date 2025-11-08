@@ -164,33 +164,31 @@ const chatFeed = document.getElementById('chatX_feed');
 const leaderboard = document.getElementById('leaderboard');
 const chatInput = document.getElementById('chat_textbox');
 
-// Общая функция для вставки ника в чат
+// Функция для вставки ника в чат
 function insertNick(nick) {
+    nick = nick.trim().replace(/\s+/g, ' '); // заменяем все пробелы на "_"
     if (nick.endsWith(':')) nick = nick.slice(0, -1); // убираем двоеточие
-    chatInput.value = '@'+ nick + ' ';
+    chatInput.value = '@' + nick + ' ';
     chatInput.focus();
     chatInput.setSelectionRange(chatInput.value.length, chatInput.value.length);
 }
 
-// Левый клик по сообщению в чате
-chatFeed.addEventListener('click', function(e) {
-    if (e.button !== 0) return; // только левая кнопка
-    let msgElem = e.target.closest('.chatX_msg');
+// ЛКМ по сообщению в чате
+chatFeed.addEventListener('click', (e) => {
+    if (e.button !== 0) return;
+    const msgElem = e.target.closest('.chatX_msg');
     if (!msgElem) return;
-
     const nickElem = msgElem.querySelector('.chatX_nick');
     if (!nickElem) return;
-
-    insertNick(nickElem.textContent.trim());
+    insertNick(nickElem.textContent);
 });
 
-// Левый клик по нику в лидерборде
-leaderboard.addEventListener('click', function(e) {
+// ЛКМ по нику в лидерборде
+leaderboard.addEventListener('click', (e) => {
     if (e.button !== 0) return;
-    let nickElem = e.target.closest('.Lednick span');
+    const nickElem = e.target.closest('.Lednick span');
     if (!nickElem) return;
-
-    insertNick(nickElem.textContent.trim());
+    insertNick(nickElem.textContent);
 });
 
 
@@ -212,5 +210,6 @@ document.querySelector('#chatX_window .emoji-list').addEventListener('click', (e
   // Вставляем эмодзи в конец текста
   chatBox.value += emojiCode;
 });
+
 
 
