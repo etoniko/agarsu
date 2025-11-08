@@ -166,11 +166,11 @@ const chatInput = document.getElementById('chat_textbox');
 
 // Функция для вставки ника в чат
 function insertNick(nick) {
-    nick = nick.trim().replace(/\s+/g, ' '); // заменяем все пробелы на "_"
-    if (nick.endsWith(':')) nick = nick.slice(0, -1); // убираем двоеточие
-    chatInput.value = '@' + nick + ' ';
-    chatInput.focus();
-    chatInput.setSelectionRange(chatInput.value.length, chatInput.value.length);
+  nick = nick.trim().replace(/\s+/g, '\u00A0'); // NBSP
+  if (nick.endsWith(':')) nick = nick.slice(0, -1);
+  chatInput.value = '@' + nick + ' ';
+  chatInput.focus();
+  chatInput.setSelectionRange(chatInput.value.length, chatInput.value.length);
 }
 
 // ЛКМ по сообщению в чате
@@ -210,6 +210,7 @@ document.querySelector('#chatX_window .emoji-list').addEventListener('click', (e
   // Вставляем эмодзи в конец текста
   chatBox.value += emojiCode;
 });
+
 
 
 
