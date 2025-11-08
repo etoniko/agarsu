@@ -289,315 +289,238 @@
     </div>
   </div>
   <canvas id="canvas"></canvas>
-  <style>
-  /* Компактная панель управления */
-  .rec-panel {
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    display: grid;
-    gap: 8px;
-    padding: 10px 12px;
-    background: rgba(8, 12, 20, 0.7);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 14px;
-    backdrop-filter: blur(6px);
-    user-select: none;
-    z-index: 9999;
-    min-width: 130px;
+<!-- ===== CSS ===== -->
+<style>
+  #recPanel{
+    position:absolute; z-index:999999; left:0; top:0;
+    font:12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    color:#eaeaea; background:rgba(20,20,25,.9); border:1px solid rgba(255,255,255,.12);
+    border-radius:10px; padding:10px; width:260px; box-shadow:0 8px 24px rgba(0,0,0,.35);
+    user-select:none; backdrop-filter: blur(6px);
   }
-
-  .rec-btn {
-    all: unset;
-    cursor: pointer;
-    text-align: center;
-    padding: 10px 14px;
-    border-radius: 12px;
-    font-weight: 600;
-    background: #1b2a44;
-    outline: 1px solid rgba(255,255,255,0.08);
+  #recPanel.mini{width:auto; padding:6px 8px}
+  #recPanel header{display:flex; align-items:center; gap:8px; margin-bottom:8px; cursor:move}
+  #recPanel .title{font-weight:700}
+  #recPanel .spacer{flex:1}
+  #recPanel button, #recPanel select, #recPanel input{
+    font:inherit; color:#eaeaea; background:#2a2a33; border:1px solid #3d3d48;
+    border-radius:8px; padding:6px 10px; cursor:pointer
   }
-  .rec-btn:hover { filter: brightness(1.1); }
-  .rec-btn:active { transform: translateY(1px); }
-
-  .rec-btn.recording {
-    background: #b51e1e;
-  }
-
-  .time {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-variant-numeric: tabular-nums;
-    justify-content: center;
-  }
-
-  .dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #6d7480;
-    box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.7);
-  }
-
-  .recording-dot {
-    background: #ff4757;
-    animation: pulse 1.2s infinite;
-  }
-
-  @keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.7); }
-    70% { box-shadow: 0 0 0 10px rgba(255, 71, 87, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0); }
-  }
-
-  .hint {
-    font-size: 12px;
-    opacity: 0.8;
-    text-align: center;
-  }
-
-  .link {
-    font-size: 12px;
-    text-align: center;
-    word-break: break-all;
-  }
+  #recPanel button:disabled{opacity:.5; cursor:not-allowed}
+  #recPanel .row{display:flex; gap:8px; align-items:center; margin:6px 0}
+  #recPanel .pill{padding:4px 8px; border-radius:999px; background:#23232b}
+  #recPanel .dot{width:8px; height:8px; border-radius:50%; background:#ef4444; display:inline-block; margin-right:6px}
+  #recPanel .green{background:#22c55e}
+  #recPanel .timer{font-variant-numeric:tabular-nums; font-weight:700}
+  #recPanel .mini-only{display:none}
+  #recPanel.mini .mini-hide{display:none}
+  #recPanel.mini .mini-only{display:inline-flex}
 </style>
 
-<!-- Мини-панелька: кнопка вкл/выкл + таймер + место для ссылки -->
-<div class="rec-panel" id="recPanel">
-  <button class="rec-btn" id="recBtn" type="button" title="Начать/остановить запись">● Запись</button>
-  <div class="time">
-    <div class="dot" id="dot"></div>
-    <span id="clock">00:00.0</span>
+<!-- ===== HTML (панель не внутри canvas) ===== -->
+<div id="recPanel" aria-live="polite">
+  <header id="recDrag">
+    <span class="title">Canvas Recorder</span>
+    <span class="spacer"></span>
+    <button id="miniBtn" title="Мини-режим">—</button>
+    <button id="closeBtn" title="Скрыть">×</button>
+  </header>
+
+  <div class="row mini-hide">
+    <label>FPS&nbsp;<input id="fpsIn" type="number" min="1" max="120" value="60" style="width:70px"></label>
+    <label>Bitrate&nbsp;<input id="bpsIn" type="number" min="100000" step="100000" value="10000000" style="width:110px"></label>
   </div>
-  <div class="hint">ВКЛ → пишет • ВЫКЛ → сохранит</div>
-  <div class="link" id="downloadLinkBox"></div>
+
+  <div class="row mini-hide">
+    <select id="mimeSel" title="Формат">
+      <option value="">Авто (рекомендуется)</option>
+      <option value="video/webm;codecs=vp9">video/webm;codecs=vp9</option>
+      <option value="video/webm;codecs=vp8">video/webm;codecs=vp8</option>
+      <option value="video/webm;codecs=h264">video/webm;codecs=h264</option>
+      <option value="video/mp4;codecs=h264">video/mp4;codecs=h264 (не везде)</option>
+    </select>
+  </div>
+
+  <div class="row">
+    <button id="startBtn">● Старт</button>
+    <button id="pauseBtn" disabled>⏸ Пауза</button>
+    <button id="resumeBtn" disabled>▶ Продолжить</button>
+    <button id="stopBtn" disabled>■ Стоп</button>
+    <button id="saveBtn" disabled>💾 Сохранить</button>
+  </div>
+
+  <div class="row">
+    <span id="statusPill" class="pill"><span class="dot" id="dot"></span><span id="statusTxt">stopped</span></span>
+    <span class="pill">Время: <span class="timer" id="timer">00:00:00</span></span>
+    <span class="pill mini-only">REC <span class="timer" id="timerMini">00:00</span></span>
+  </div>
 </div>
 
+<!-- ===== JS ===== -->
 <script>
-  // ====== Настройки качества ======
-  // Размер итогового видео управляется размером canvas.
-  // Поставим 1920x1080@60fps (можешь изменить под свои задачи).
-  const TARGET_WIDTH = 1920;
-  const TARGET_HEIGHT = 1080;
-  const FPS = 60;
-  const VIDEO_BITRATE = 12_000_000; // 12 Mbps — отличное качество для WebM
+(function(){
+  const canvas = document.getElementById('canvas'); // только читаем
+  if(!canvas) { console.error('Нет #canvas'); return; }
 
-  // ====== Элементы ======
-  const canvas = document.getElementById('canvas');
-  const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
-  const recBtn = document.getElementById('recBtn');
-  const clock = document.getElementById('clock');
+  // --- панель и элементы
+  const panel = document.getElementById('recPanel');
+  const dragHandle = document.getElementById('recDrag');
+  const startBtn = document.getElementById('startBtn');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const resumeBtn = document.getElementById('resumeBtn');
+  const stopBtn = document.getElementById('stopBtn');
+  const saveBtn = document.getElementById('saveBtn');
+  const fpsIn = document.getElementById('fpsIn');
+  const bpsIn = document.getElementById('bpsIn');
+  const mimeSel = document.getElementById('mimeSel');
+  const statusTxt = document.getElementById('statusTxt');
   const dot = document.getElementById('dot');
-  const linkBox = document.getElementById('downloadLinkBox');
+  const timerEl = document.getElementById('timer');
+  const timerMini = document.getElementById('timerMini');
+  const miniBtn = document.getElementById('miniBtn');
+  const closeBtn = document.getElementById('closeBtn');
 
-  // Поднимаем реальный рендер до 1080p с учетом плотности пикселей
-  function resizeCanvasToTarget() {
-    // Используем ровно TARGET_* для предсказуемого качества видео
-    canvas.width = TARGET_WIDTH;
-    canvas.height = TARGET_HEIGHT;
+  // --- размещаем панель в левом верхнем углу канваса
+  positionPanelInCanvas(10,10);
 
-    // Растягиваем на весь экран визуально (CSS уже на 100%/100%)
-    // Можно рисовать в логических пикселях 1:1
+  // --- перетаскивание внутри рамок канваса
+  (function enableDragWithinCanvas(){
+    let sx=0, sy=0, startLeft=0, startTop=0, dragging=false;
+    dragHandle.addEventListener('mousedown', e=>{
+      dragging=true; sx=e.clientX; sy=e.clientY;
+      const r = panel.getBoundingClientRect();
+      startLeft=r.left; startTop=r.top;
+      e.preventDefault();
+    });
+    window.addEventListener('mousemove', e=>{
+      if(!dragging) return;
+      const dx=e.clientX-sx, dy=e.clientY-sy;
+      const desiredLeft=startLeft+dx, desiredTop=startTop+dy;
+      placeClamped(desiredLeft, desiredTop);
+    });
+    window.addEventListener('mouseup', ()=> dragging=false);
+    window.addEventListener('resize', ()=> clampToCanvas());
+    window.addEventListener('scroll', ()=> clampToCanvas());
+  })();
+
+  function positionPanelInCanvas(offsetX, offsetY){
+    const cr = canvas.getBoundingClientRect();
+    panel.style.left = (cr.left + offsetX) + 'px';
+    panel.style.top  = (cr.top  + offsetY) + 'px';
   }
-  resizeCanvasToTarget();
-
-  // ====== Демо-анимация на канвасе (замени на свою отрисовку) ======
-  let t = 0;
-  function draw(ts) {
-    t += 1 / FPS;
-
-    // Фон
-    ctx.fillStyle = '#0b0f17';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Немного графики
-    const cx = canvas.width / 2;
-    const cy = canvas.height / 2;
-
-    // Вращающийся градиентный «диск»
-    const r = Math.min(cx, cy) * 0.75;
-    const grd = ctx.createRadialGradient(cx, cy, r * 0.1, cx, cy, r);
-    grd.addColorStop(0, '#193657');
-    grd.addColorStop(1, '#0b0f17');
-    ctx.fillStyle = grd;
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Орбиты
-    const count = 90;
-    ctx.save();
-    ctx.translate(cx, cy);
-    for (let i = 0; i < count; i++) {
-      const a = (i / count) * Math.PI * 2 + t * 0.6;
-      const rr = r * 0.85;
-      const x = Math.cos(a) * rr;
-      const y = Math.sin(a) * rr;
-      ctx.fillStyle = 'rgba(200,220,255,0.65)';
-      ctx.beginPath();
-      ctx.arc(x, y, 2 + (i % 5 === 0 ? 2 : 0), 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.restore();
-
-    // Текст-подсказка поверх
-    ctx.fillStyle = 'rgba(231,236,243,0.9)';
-    ctx.font = '28px ui-sans-serif, system-ui';
-    ctx.textAlign = 'center';
-    ctx.fillText('Canvas Demo — Запись включается справа', cx, cy + r + 50);
-
-    requestAnimationFrame(draw);
+  function placeClamped(absLeft, absTop){
+    const cr = canvas.getBoundingClientRect();
+    const pr = panel.getBoundingClientRect();
+    const minL = cr.left, maxL = cr.right - pr.width;
+    const minT = cr.top,  maxT = cr.bottom - pr.height;
+    const L = Math.min(Math.max(absLeft,  minL), maxL);
+    const T = Math.min(Math.max(absTop,   minT), maxT);
+    panel.style.left = L+'px';
+    panel.style.top  = T+'px';
   }
-  requestAnimationFrame(draw);
+  function clampToCanvas(){
+    const r = panel.getBoundingClientRect();
+    placeClamped(r.left, r.top);
+  }
 
-  // ====== Захват и запись ======
-  let stream = null;
-  let recorder = null;
-  let chunks = [];
-  let isRecording = false;
+  // --- рекордер
+  let mediaRecorder=null, chunks=[], lastBlob=null, timerInt=null;
+  let startedAt=0, elapsedBeforePause=0;
 
-  // Таймер
-  let startMs = 0;
-  let timerId = null;
+  function setState(s){
+    statusTxt.textContent=s;
+    dot.className = s==='recording' ? 'dot green' : 'dot';
+    startBtn.disabled = !(s==='idle'||s==='stopped');
+    pauseBtn.disabled = !(s==='recording');
+    resumeBtn.disabled= !(s==='paused');
+    stopBtn.disabled  = !(s==='recording'||s==='paused');
+    saveBtn.disabled  = !lastBlob;
+  }
+  function fmtHMS(ms){
+    const s=Math.floor(ms/1000);
+    const h=String(Math.floor(s/3600)).padStart(2,'0');
+    const m=String(Math.floor(s%3600/60)).padStart(2,'0');
+    const sec=String(s%60).padStart(2,'0');
+    return `${h}:${m}:${sec}`;
+  }
+  function fmtMMSS(ms){
+    const s=Math.floor(ms/1000);
+    const m=String(Math.floor(s/60)).padStart(2,'0');
+    const sec=String(s%60).padStart(2,'0');
+    return `${m}:${sec}`;
+  }
+  function startTimer(){
+    clearInterval(timerInt);
+    timerInt=setInterval(()=>{
+      const now=performance.now();
+      const base=elapsedBeforePause + (mediaRecorder && mediaRecorder.state==='recording' ? now-startedAt : 0);
+      timerEl.textContent=fmtHMS(base);
+      timerMini.textContent=fmtMMSS(base);
+    },200);
+  }
+  function stopTimer(){ clearInterval(timerInt); timerEl.textContent='00:00:00'; timerMini.textContent='00:00'; }
 
-  function pickBestMimeType() {
-    const candidates = [
-      'video/webm;codecs=vp9',
-      'video/webm;codecs=vp8',
-      'video/webm',
-    ];
-    for (const mt of candidates) {
-      if (MediaRecorder.isTypeSupported(mt)) return mt;
-    }
-    // Как крайний случай вернём без указания типа — браузер подберёт сам (если умеет)
+  function pickMime(pref){
+    const list=[pref,'video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm;codecs=h264','video/mp4;codecs=h264','video/webm',''];
+    for(const t of list){ if(t && MediaRecorder.isTypeSupported(t)) return t; }
     return '';
   }
 
-  function formatClock(elapsedMs) {
-    const total = Math.floor(elapsedMs);
-    const ms = Math.floor((elapsedMs % 1000) / 100); // десятые
-    const s = Math.floor((total / 1000) % 60);
-    const m = Math.floor((total / 1000 / 60) % 60);
-    const mm = String(m).padStart(2, '0');
-    const ss = String(s).padStart(2, '0');
-    return `${mm}:${ss}.${ms}`;
+  startBtn.onclick = () => {
+    try{
+      const fps = Math.max(1, Math.min(120, parseInt(fpsIn.value||60,10)));
+      const bps = Math.max(100_000, parseInt(bpsIn.value||10_000_000,10));
+      const type = pickMime(mimeSel.value||'');
+
+      const stream = canvas.captureStream(fps); // читаем поток с канваса
+      chunks=[]; lastBlob=null; elapsedBeforePause=0; startedAt=performance.now();
+
+      mediaRecorder = new MediaRecorder(stream, { mimeType:type, bitsPerSecond:bps });
+      mediaRecorder.ondataavailable = e=>{ if(e.data && e.data.size) chunks.push(e.data); };
+      mediaRecorder.onstop = ()=>{
+        const blob = new Blob(chunks, { type: mediaRecorder.mimeType });
+        lastBlob = blob;
+        const ext = blob.type.includes('mp4') ? 'mp4' : 'webm';
+        const ts = new Date().toISOString().replace(/[:.]/g,'-');
+        const name = `canvas-${canvas.width}x${canvas.height}-${ts}.${ext}`;
+        download(blob, name); // автосохранение по требованию «выкл»
+        setState('stopped'); stopTimer();
+      };
+      mediaRecorder.onpause = ()=>{ elapsedBeforePause += performance.now()-startedAt; setState('paused'); };
+      mediaRecorder.onresume= ()=>{ startedAt=performance.now(); setState('recording'); };
+
+      mediaRecorder.start();
+      setState('recording'); startTimer();
+    }catch(err){ alert('Старт записи не удался: '+err); setState('idle'); }
+  };
+
+  pauseBtn.onclick  = ()=>{ if(mediaRecorder && mediaRecorder.state==='recording') mediaRecorder.pause(); };
+  resumeBtn.onclick = ()=>{ if(mediaRecorder && mediaRecorder.state==='paused') mediaRecorder.resume(); };
+  stopBtn.onclick   = ()=>{ if(mediaRecorder && (mediaRecorder.state==='recording'||mediaRecorder.state==='paused')) mediaRecorder.stop(); };
+  saveBtn.onclick   = ()=>{ if(lastBlob) download(lastBlob, `canvas-save-${Date.now()}.${lastBlob.type.includes('mp4')?'mp4':'webm'}`); };
+
+  function download(blob, filename){
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download=filename; document.body.appendChild(a); a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 0);
   }
 
-  function startTimer() {
-    startMs = performance.now();
-    clock.textContent = '00:00.0';
-    if (timerId) clearInterval(timerId);
-    timerId = setInterval(() => {
-      const now = performance.now();
-      clock.textContent = formatClock(now - startMs);
-    }, 100);
-  }
+  // мини-режим и закрыть
+  miniBtn.onclick = ()=> panel.classList.toggle('mini');
+  closeBtn.onclick = ()=> panel.style.display='none';
 
-  function stopTimer() {
-    if (timerId) clearInterval(timerId);
-    timerId = null;
-  }
+  // начальное состояние
+  setState('idle');
 
-  function filename() {
-    const d = new Date();
-    const pad = (n) => String(n).padStart(2, '0');
-    return `canvas-recording-${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}.webm`;
-  }
-
-  async function startRecording() {
-    // Захват 60fps
-    stream = canvas.captureStream(FPS);
-
-    const mimeType = pickBestMimeType();
-    const options = {};
-    if (mimeType) options.mimeType = mimeType;
-    options.videoBitsPerSecond = VIDEO_BITRATE;
-
-    try {
-      recorder = new MediaRecorder(stream, options);
-    } catch (e) {
-      alert('MediaRecorder не поддерживается этим браузером или выбранный формат недоступен.');
-      console.error(e);
-      return;
-    }
-
-    chunks = [];
-    recorder.ondataavailable = (e) => {
-      if (e.data && e.data.size > 0) chunks.push(e.data);
-    };
-    recorder.onstop = () => {
-      stopTimer();
-      dot.classList.remove('recording-dot');
-      // Собираем видео и сохраняем
-      const blob = new Blob(chunks, { type: recorder.mimeType || 'video/webm' });
-      const url = URL.createObjectURL(blob);
-
-      // Автозагрузка
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename();
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-
-      // Также покажем ссылку (вдруг автозагрузка заблокирована)
-      linkBox.innerHTML = '';
-      const link = document.createElement('a');
-      link.href = url;
-      link.textContent = 'Скачать видео';
-      link.download = filename();
-      link.style.color = '#9ecbff';
-      linkBox.appendChild(link);
-
-      // Очищаем
-      stream.getTracks().forEach(t => t.stop());
-      stream = null;
-      recorder = null;
-      chunks = [];
-    };
-
-    recorder.start(100); // собираем чанки каждые 100мс
-    startTimer();
-    dot.classList.add('recording-dot');
-    isRecording = true;
-    recBtn.classList.add('recording');
-    recBtn.textContent = '■ Остановить';
-  }
-
-  function stopRecording() {
-    if (recorder && recorder.state !== 'inactive') {
-      recorder.stop(); // это вызовет onstop → сохранение файла
-    }
-    isRecording = false;
-    recBtn.classList.remove('recording');
-    recBtn.textContent = '● Запись';
-  }
-
-  recBtn.addEventListener('click', async () => {
-    if (!isRecording) {
-      await startRecording();
-    } else {
-      stopRecording(); // «выкл» — видео сохраняется
-    }
-  });
-
-  // Предупреждение для Safari/iOS
-  (function warnIfLimitedSupport() {
-    const ua = navigator.userAgent.toLowerCase();
-    const isSafari = /^((?!chrome|android).)*safari/.test(ua);
-    if (isSafari) {
-      console.warn('Safari может не поддерживать запись WebM. Проверьте совместимость вашей версии.');
-    }
-  })();
-
-  // (необязательно) Остановка при уходе со страницы
-  window.addEventListener('beforeunload', () => {
-    if (isRecording) stopRecording();
-  });
+})();
 </script>
+
+
+
+
+
+	
+  
   <div class="chatX_window" id="chatX_window">
     <div class="chatX_top" id="chatX_top">
 	<div onclick="switchToDialog(null);" class="chatX_top_avatar"><i class="fa fa-globe"></i></div>
