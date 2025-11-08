@@ -257,19 +257,60 @@
           <div class="top-info">
             <div><span>Кабинет</span></div>
           </div>
-          <div class="header-row">
-			  <div id="myNicknamesSection" style="display:none;">
-  <h3>Ваши ники</h3>
-  <table id="myNicknamesTable" class="table">
-    <thead>
-      <tr>
-        <th>Ваш ник</th>
-        <th>Пароль</th>
-      </tr>
-    </thead>
-    <tbody id="myNicknamesBody"></tbody>
-  </table>
+          <div>
+<!-- Локальные стили, жёстко привязаны к ID секций (не глобально) -->
+<style>
+  /* Стили только внутри наших секций */
+  #myNicknamesSection .table-wrap { max-height: 360px; overflow: auto; border: 1px solid #e5e7eb; border-radius: 12px; }
+  #myNicknamesSection table { width: 100%; border-collapse: separate; border-spacing: 0; }
+  #myNicknamesSection thead th { position: sticky; top: 0; background: #fafafa; z-index: 1; padding: 10px; font-weight: 600; border-bottom: 1px solid #e5e7eb; }
+  #myNicknamesSection tbody td { padding: 10px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+  #myNicknamesSection tr:hover { background: #f8fafc; }
+  #myNicknamesSection .cell { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  #myNicknamesSection .skin { width: 28px; height: 28px; border-radius: 50%; flex: 0 0 28px; object-fit: cover; box-shadow: 0 0 0 1px #e2e8f0 inset; }
+  #myNicknamesSection .skin--empty { display:flex; align-items:center; justify-content:center; background:#e2e8f0; color:#475569; font-size:12px; font-weight:700; }
+  #myNicknamesSection .nick { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #myNicknamesSection .clan { font-size: 12px; color: #64748b; margin-left: 6px; }
+  #myNicknamesSection .passbox { display:flex; align-items:center; gap:8px; }
+  #myNicknamesSection .passbox input { width: 140px; padding: 6px 8px; border:1px solid #e5e7eb; border-radius: 8px; background:#fff; }
+  #myNicknamesSection .btn { padding: 6px 10px; border:1px solid #e5e7eb; border-radius: 8px; background:#fff; cursor:pointer; }
+  #myNicknamesSection .btn:hover { background:#f1f5f9; }
+  #myNicknamesSection .btn.primary { background:#0ea5e9; color:white; border-color:#0ea5e9; }
+  #myNicknamesSection .btn.primary:hover { background:#0284c7; }
+  #myNicknamesSection .muted { color:#94a3b8; }
+
+  #myClansSection { display:none; margin-top:18px; }
+  #myClansSection .wrap { border:1px solid #e5e7eb; border-radius:12px; padding:12px; max-height: 260px; overflow:auto; }
+  #myClansSection ul { list-style:none; margin:0; padding:0; }
+  #myClansSection li { display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-bottom:1px dashed #e5e7eb; }
+  #myClansSection li:last-child { border-bottom:0; }
+  #myClansSection .tag { font-weight:700; color:#334155; background:#f1f5f9; padding:2px 8px; border-radius:999px; }
+  #myClansSection .count { font-size:12px; color:#64748b; }
+</style>
+
+<div id="myNicknamesSection" style="display:none;">
+  <h3 style="margin: 6px 0 10px;">Ваши ники</h3>
+  <div class="table-wrap">
+    <table id="myNicknamesTable" class="table">
+      <thead>
+        <tr>
+          <th style="width:38%;">Ник</th>
+          <th style="width:32%;">Пароль</th>
+          <th style="width:30%;">Действия</th>
+        </tr>
+      </thead>
+      <tbody id="myNicknamesBody"></tbody>
+    </table>
+  </div>
 </div>
+
+<div id="myClansSection" style="display:none;">
+  <h3 style="margin: 14px 0 10px;">Ваши кланы</h3>
+  <div class="wrap">
+    <ul id="myClansList"></ul>
+  </div>
+</div>
+
 
             <button style="display:none" class="btnn" id="logoutButton" onclick="logoutAccount()">Выход</button>
 <div id="authlog">
@@ -421,3 +462,4 @@
 </body>
 
 </html>
+
