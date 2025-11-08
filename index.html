@@ -265,7 +265,11 @@
 
 <div id="myNicknamesBlock">
   <style>
-    #myNicknamesBlock { color:#e5edff; font-family:sans-serif; }
+    #myNicknamesBlock {
+      display: none; /* ← СКРЫТ ПО УМОЛЧАНИЮ */
+      color: #e5edff;
+      font-family: sans-serif;
+    }
     #myNicknamesBlock .tabs { margin:6px 0 10px; gap:8px; display:flex; }
     #myNicknamesBlock .tab {
       padding:8px 12px; border:1px solid #2b3242; border-radius:10px;
@@ -309,11 +313,12 @@
     #myNicknamesBlock .icon-btn {
       height:36px; width:36px; display:flex; align-items:center; justify-content:center;
       border:1px solid #2b3242; border-radius:8px;
-      background:#0d1322; color:#dbe5ff; cursor: 'pointer';
+      background:#0d1322; color:#dbe5ff; cursor:pointer;
     }
     #myNicknamesBlock .icon-btn:hover { background:#141b2e; }
     #myNicknamesBlock .icon-btn i { font-size:16px; pointer-events:none; }
   </style>
+
   <div class="tabs" id="myNickClanTabs" data-ready="1">
     <button id="tabNicknames" type="button" class="tab active">
       Ваши ники <span class="badge" id="badgeNick">0</span>
@@ -487,6 +492,7 @@
 </body>
 
 </html>
+
 
 
 
