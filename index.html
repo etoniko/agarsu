@@ -258,90 +258,14 @@
             <div><span>Кабинет</span></div>
           </div>
           <div>
-
-
-
-
-
-<div id="myNicknamesBlock">
-  <style>
-    #myNicknamesBlock {
-      display: none; /* ← СКРЫТ ПО УМОЛЧАНИЮ */
-      color: #e5edff;
-      font-family: sans-serif;
-    }
-    #myNicknamesBlock .tabs { margin:6px 0 10px; gap:8px; display:flex; }
-    #myNicknamesBlock .tab {
-      padding:8px 12px; border:1px solid #2b3242; border-radius:10px;
-      background:#101625; color:#dbe5ff; cursor:pointer;
-      display:inline-flex; align-items:center; gap:8px; line-height:1;
-    }
-    #myNicknamesBlock .tab.active { background:#1976d2; border-color:#1976d2; color:#fff; }
-    #myNicknamesBlock .badge {
-      padding:2px 6px; border-radius:999px; background:#1f2a44;
-      font-size:12px; color:#8fb7ff;
-    }
-    #myNicknamesBlock .list-wrap {
-      border:1px solid #2b3242; border-radius:12px;
-      max-height:280px; overflow:auto; background:#0e1422;
-    }
-    #myNicknamesBlock .list { list-style:none; margin:0; padding:0; }
-    #myNicknamesBlock .list li {
-      display:flex; align-items:center; gap:10px;
-      padding:8px 10px; border-bottom:1px solid #1c2233;
-      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-    }
-    #myNicknamesBlock .list li:last-child { border-bottom:0; }
-    #myNicknamesBlock .list li:hover { background:#121a2b; }
-    #myNicknamesBlock .skin {
-      width:28px; height:28px; border-radius:50%;
-      flex:0 0 28px; object-fit:cover;
-      box-shadow:0 0 0 1px #2b3242 inset;
-    }
-    #myNicknamesBlock .skin--empty {
-      display:flex; align-items:center; justify-content:center;
-      background:#283044; color:#9fb3d9; font-size:12px; font-weight:700;
-    }
-    #myNicknamesBlock .nick { font-weight:600; cursor:pointer; }
-    #myNicknamesBlock .nick:hover { text-decoration:underline; }
-    #myNicknamesBlock .passbox { margin-left:auto; display:flex; align-items:center; gap:6px; height:36px; }
-    #myNicknamesBlock .passbox input {
-      height:100%; box-sizing:border-box; padding:0 8px;
-      border:1px solid #2b3242; border-radius:8px;
-      background:#0d1322; color:#e5edff; width:160px; font-size:14px;
-    }
-    #myNicknamesBlock .icon-btn {
-      height:36px; width:36px; display:flex; align-items:center; justify-content:center;
-      border:1px solid #2b3242; border-radius:8px;
-      background:#0d1322; color:#dbe5ff; cursor:pointer;
-    }
-    #myNicknamesBlock .icon-btn:hover { background:#141b2e; }
-    #myNicknamesBlock .icon-btn i { font-size:16px; pointer-events:none; }
-  </style>
-
+<div id="myNicknamesBlock" style="display:none;">
   <div class="tabs" id="myNickClanTabs" data-ready="1">
-    <button id="tabNicknames" type="button" class="tab active">
-      Ваши ники <span class="badge" id="badgeNick">0</span>
-    </button>
-    <button id="tabClans" type="button" class="tab">
-      Ваши кланы <span class="badge" id="badgeClan">0</span>
-    </button>
+    <button id="tabNicknames" type="button" class="tab active">Ваши ники <span class="badge" id="badgeNick">0</span></button>
+    <button id="tabClans" type="button" class="tab">Ваши кланы <span class="badge" id="badgeClan">0</span></button>
   </div>
-  <div class="list-wrap" id="nickWrap" style="">
-    <ul id="myNickList" class="list"></ul>
-  </div>
-  <div class="list-wrap" id="clanWrap" style="display:none;">
-    <ul id="myClanList" class="list"></ul>
-  </div>
+  <div class="list-wrap" id="nickWrap" style=""><ul id="myNickList" class="list"></ul></div>
+  <div class="list-wrap" id="clanWrap" style="display:none;"><ul id="myClanList" class="list"></ul></div>
 </div>
-
-
-
-
-
-			  
-
-
             <button style="display:none" class="btnn" id="logoutButton" onclick="logoutAccount()">Выход</button>
 <div id="authlog">
   <!-- Google -->
@@ -492,6 +416,7 @@
 </body>
 
 </html>
+
 
 
 
