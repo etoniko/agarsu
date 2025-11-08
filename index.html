@@ -259,41 +259,22 @@
           </div>
           <div>
 <style>
-  /* локально, без глобала */
-  #myNickClanTabs { display:flex; gap:8px; margin:6px 0 10px; }
-  #myNickClanTabs .tab {
-    padding:8px 12px; border:1px solid #2b3242; border-radius:10px;
-    background:#101625; color:#dbe5ff; cursor:pointer; line-height:1;
-  }
-  #myNickClanTabs .tab .badge {
-    margin-left:8px; padding:2px 6px; border-radius:999px; background:#1f2a44; font-size:12px; color:#8fb7ff;
-  }
-  #myNickClanTabs .tab.active { background:#1976d2; border-color:#1976d2; color:#fff; }
-  #myNicknamesSection .table-wrap { max-height: 360px; overflow:auto; border:1px solid #2b3242; border-radius:12px; }
-  #myNicknamesSection table { width:100%; border-collapse:separate; border-spacing:0; }
-  #myNicknamesSection thead th { position:sticky; top:0; background:#0e1422; color:#cfe1ff; z-index:1; padding:10px; font-weight:600; border-bottom:1px solid #2b3242; }
-  #myNicknamesSection tbody td { padding:10px; border-bottom:1px solid #1c2233; vertical-align:middle; color:#e5edff; }
-  #myNicknamesSection tr:hover { background:#121a2b; }
-  #myNicknamesSection .cell { display:flex; align-items:center; gap:10px; min-width:0; }
-  #myNicknamesSection .skin { width:28px; height:28px; border-radius:50%; flex:0 0 28px; object-fit:cover; box-shadow:0 0 0 1px #2b3242 inset; }
-  #myNicknamesSection .skin--empty { display:flex; align-items:center; justify-content:center; background:#283044; color:#9fb3d9; font-size:12px; font-weight:700; }
-  #myNicknamesSection .nick { font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  #myNicknamesSection .clan { font-size:12px; color:#8aa6d9; margin-left:6px; }
-  #myNicknamesSection .passbox { display:flex; align-items:center; gap:8px; }
-  #myNicknamesSection .passbox input { width:140px; padding:6px 8px; border:1px solid #2b3242; border-radius:8px; background:#0d1322; color:#e5edff; }
-  #myNicknamesSection .btn { padding:6px 10px; border:1px solid #2b3242; border-radius:8px; background:#0d1322; color:#dbe5ff; cursor:pointer; }
-  #myNicknamesSection .btn:hover { background:#141b2e; }
-  #myNicknamesSection .btn.primary { background:#1e88e5; border-color:#1e88e5; color:#fff; }
-  #myNicknamesSection .btn.primary:hover { background:#1976d2; }
-  #myNicknamesSection .muted { color:#7a8bb0; }
-
-  #myClansSection { display:none; }
-  #myClansSection .wrap { border:1px solid #2b3242; border-radius:12px; padding:12px; max-height:260px; overflow:auto; background:#0e1422; }
-  #myClansSection ul { list-style:none; margin:0; padding:0; }
-  #myClansSection li { display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-bottom:1px dashed #1f2740; color:#e5edff; }
-  #myClansSection li:last-child { border-bottom:0; }
-  #myClansSection .tag { font-weight:700; color:#dbe5ff; background:#1f2a44; padding:2px 8px; border-radius:999px; }
-  #myClansSection .count { font-size:12px; color:#8aa6d9; }
+#myNicknamesSection .table-wrap { max-height: 360px; overflow:auto; border:1px solid #2b3242; border-radius:12px; }
+#myNicknamesSection table { width:100%; border-collapse:separate; border-spacing:0; }
+#myNicknamesSection thead th { position:sticky; top:0; background:#0e1422; color:#cfe1ff; z-index:1; padding:10px; font-weight:600; border-bottom:1px solid #2b3242; }
+#myNicknamesSection tbody td { padding:10px; border-bottom:1px solid #1c2233; vertical-align:middle; color:#e5edff; }
+#myNicknamesSection tr:hover { background:#121a2b; }
+#myNicknamesSection .cell { display:flex; align-items:center; gap:10px; min-width:0; }
+#myNicknamesSection .skin { width:28px; height:28px; border-radius:50%; flex:0 0 28px; object-fit:cover; box-shadow:0 0 0 1px #2b3242 inset; }
+#myNicknamesSection .skin--empty { display:flex; align-items:center; justify-content:center; background:#283044; color:#9fb3d9; font-size:12px; font-weight:700; }
+#myNicknamesSection .nick { font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; }
+#myNicknamesSection .nick:hover { text-decoration:underline; }
+#myNicknamesSection .clan { font-size:12px; color:#8aa6d9; margin-left:6px; }
+#myNicknamesSection .passbox { display:flex; align-items:center; gap:8px; }
+#myNicknamesSection .passbox input { width:160px; padding:6px 8px; border:1px solid #2b3242; border-radius:8px; background:#0d1322; color:#e5edff; }
+#myNicknamesSection .icon-btn { width:36px; height:36px; border:1px solid #2b3242; border-radius:8px; background:#0d1322; color:#dbe5ff; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:18px; }
+#myNicknamesSection .icon-btn:hover { background:#141b2e; }
+#myNicknamesSection .muted { color:#7a8bb0; }
 </style>
 
 <div id="myNickClanTabs" style="display:none;">
@@ -306,15 +287,15 @@
     <table id="myNicknamesTable" class="table">
       <thead>
         <tr>
-          <th style="width:38%;">Ник</th>
-          <th style="width:32%;">Пароль</th>
-          <th style="width:30%;">Действия</th>
+          <th style="width:56%;">Ник</th>
+          <th style="width:44%;">Пароль</th>
         </tr>
       </thead>
       <tbody id="myNicknamesBody"></tbody>
     </table>
   </div>
 </div>
+
 
 <div id="myClansSection" style="display:none;">
   <div class="wrap">
@@ -474,5 +455,6 @@
 </body>
 
 </html>
+
 
 
