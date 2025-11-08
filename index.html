@@ -266,7 +266,6 @@
 <div id="myNicknamesBlock">
   <style>
     #myNicknamesBlock { color:#e5edff; font-family:sans-serif; }
-    /* Табы — НЕ скрываем по CSS */
     #myNicknamesBlock .tabs { margin:6px 0 10px; gap:8px; display:flex; }
     #myNicknamesBlock .tab {
       padding:8px 12px; border:1px solid #2b3242; border-radius:10px;
@@ -278,8 +277,6 @@
       padding:2px 6px; border-radius:999px; background:#1f2a44;
       font-size:12px; color:#8fb7ff;
     }
-
-    /* Листы */
     #myNicknamesBlock .list-wrap {
       border:1px solid #2b3242; border-radius:12px;
       max-height:360px; overflow:auto; background:#0e1422;
@@ -292,8 +289,6 @@
     }
     #myNicknamesBlock .list li:last-child { border-bottom:0; }
     #myNicknamesBlock .list li:hover { background:#121a2b; }
-
-    /* Аватар/скин */
     #myNicknamesBlock .skin {
       width:28px; height:28px; border-radius:50%;
       flex:0 0 28px; object-fit:cover;
@@ -303,8 +298,6 @@
       display:flex; align-items:center; justify-content:center;
       background:#283044; color:#9fb3d9; font-size:12px; font-weight:700;
     }
-
-    /* Ник + пароль */
     #myNicknamesBlock .nick { font-weight:600; cursor:pointer; }
     #myNicknamesBlock .nick:hover { text-decoration:underline; }
     #myNicknamesBlock .passbox { margin-left:auto; display:flex; align-items:center; gap:6px; height:36px; }
@@ -316,12 +309,11 @@
     #myNicknamesBlock .icon-btn {
       height:36px; width:36px; display:flex; align-items:center; justify-content:center;
       border:1px solid #2b3242; border-radius:8px;
-      background:#0d1322; color:#dbe5ff; cursor:pointer;
+      background:#0d1322; color:#dbe5ff; cursor: 'pointer';
     }
     #myNicknamesBlock .icon-btn:hover { background:#141b2e; }
     #myNicknamesBlock .icon-btn i { font-size:16px; pointer-events:none; }
   </style>
-
   <div class="tabs" id="myNickClanTabs" data-ready="1">
     <button id="tabNicknames" type="button" class="tab active">
       Ваши ники <span class="badge" id="badgeNick">0</span>
@@ -330,11 +322,9 @@
       Ваши кланы <span class="badge" id="badgeClan">0</span>
     </button>
   </div>
-
   <div class="list-wrap" id="nickWrap" style="">
     <ul id="myNickList" class="list"></ul>
   </div>
-
   <div class="list-wrap" id="clanWrap" style="display:none;">
     <ul id="myClanList" class="list"></ul>
   </div>
@@ -497,6 +487,7 @@
 </body>
 
 </html>
+
 
 
 
