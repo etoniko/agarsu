@@ -289,7 +289,261 @@
     </div>
   </div>
   <canvas id="canvas"></canvas>
+  <script>
+(() => {
+  const TAG = "__CANVAS_REC_ONLY__";
+  if (window[TAG]) { console.warn("Recorder already running"); return; }
+  window[TAG] = true;
 
+  // ====== helpers ======
+  const pickMime = () => {
+    const prefs = [
+      'video/webm;codecs=vp9',
+      'video/webm;codecs=vp8',
+      'video/webm'
+    ];
+    for (const t of prefs) { if (MediaRecorder.isTypeSupported(t)) return t; }
+    return ''; // let browser choose
+  };
+
+  const formatTime = (ms) => {
+    const s = Math.floor(ms/1000)%60;
+    const m = Math.floor(ms/60000)%60;
+    const h = Math.floor(ms/3600000);
+    const pad = n => String(n).padStart(2,'0');
+    return (h? `${h}:`:'') + `${pad(m)}:${pad(s)}`;
+  };
+
+  const downloadBlob = (blob, name) => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+  };
+
+  // ====== find canvas ======
+  const canvas = document.getElementById('canvas');
+  if (!canvas || !(canvas instanceof HTMLCanvasElement)) {
+    alert('Не найден <canvas id="canvas">');
+    window[TAG] = false;
+    return;
+  }
+
+  // ====== UI (shadow DOM) ======
+  const host = document.createElement('div');
+  Object.assign(host.style, {
+    position: 'fixed', inset: '16px auto auto 16px', zIndex: 2147483647
+  });
+  document.documentElement.appendChild(host);
+  const root = host.attachShadow({ mode: 'open' });
+  root.innerHTML = `
+    <style>
+      :host{ all:initial; }
+      .p{ font: 13px/1.4 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+          color:#e9e9ee;background:#17171a;border:1px solid #333;border-radius:12px;
+          box-shadow:0 8px 24px rgba(0,0,0,.35); min-width: 280px; }
+      .h{ display:flex; align-items:center; gap:8px; padding:10px 12px; border-bottom:1px solid #2b2b30; cursor:move; user-select:none;}
+      .dot{ width:10px; height:10px; border-radius:50%; background:#666; box-shadow:0 0 0 0 rgba(255,64,64,.6); }
+      .ttl{ font-weight:600; letter-spacing:.2px; }
+      .b{ padding:10px 12px; display:grid; gap:10px;}
+      .row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+      .btn{ appearance:none; border:1px solid #3a3a40; background:#222227; color:#eee; padding:8px 12px; border-radius:10px; font-weight:600; cursor:pointer;}
+      .btn[disabled]{ opacity:.4; cursor:not-allowed;}
+      .sel,.num,.chk{ background:#1d1d22; border:1px solid #2e2e35; color:#e9e9ee; border-radius:10px; padding:6px 10px; }
+      .num{ width:90px; }
+      .stat{ font-variant-numeric: tabular-nums; color:#9aa0a6; }
+      .hint{ color:#9aa0a6; font-size:12px;}
+      .pill{ padding:4px 8px; background:#101014; border:1px solid #2b2b30; border-radius:999px; }
+    </style>
+    <div class="p">
+      <div class="h" id="drag">
+        <div class="dot" id="dot"></div>
+        <div class="ttl">Canvas Recorder</div>
+        <div style="margin-left:auto" class="pill" id="dim"></div>
+      </div>
+      <div class="b">
+        <div class="row">
+          <button class="btn" id="start">● Start</button>
+          <button class="btn" id="pause" disabled>Pause</button>
+          <button class="btn" id="stop" disabled>Stop & Save</button>
+          <span class="stat" id="timer">00:00</span>
+        </div>
+        <div class="row">
+          <label>FPS:
+            <select class="sel" id="fps">
+              <option value="60"selected>60</option>
+              <option value="50">50</option>
+              <option value="30">30</option>
+              <option value="24">24</option>
+            </select>
+          </label>
+          <label>Битрейт (видео kbps):
+            <input class="num" id="vbr" type="number" min="100" max="50000" step="100" value="8000">
+          </label>
+          <label class="row">
+            <input class="chk" id="mic" type="checkbox">
+            <span>Микрофон</span>
+          </label>
+        </div>
+        <div class="hint">Записывает ТОЛЬКО содержимое #canvas. Файл: WebM.</div>
+      </div>
+    </div>
+  `;
+
+  // draggable
+  (() => {
+    const drag = root.getElementById('drag');
+    let sx=0, sy=0, ox=host.offsetLeft, oy=host.offsetTop, d=false;
+    drag.addEventListener('pointerdown', e => { d=true; sx=e.clientX; sy=e.clientY; ox=host.offsetLeft; oy=host.offsetTop; drag.setPointerCapture(e.pointerId); });
+    drag.addEventListener('pointermove', e => { if(!d) return; host.style.left = (ox + e.clientX - sx)+'px'; host.style.top = (oy + e.clientY - sy)+'px'; });
+    drag.addEventListener('pointerup', () => d=false);
+  })();
+
+  const $ = id => root.getElementById(id);
+  const dot   = $('dot');
+  const dim   = $('dim');
+  const btnS  = $('start');
+  const btnP  = $('pause');
+  const btnT  = $('stop');
+  const timer = $('timer');
+  const fpsEl = $('fps');
+  const vbrEl = $('vbr');
+  const micEl = $('mic');
+
+  const updateDim = () => dim.textContent = `${canvas.width}×${canvas.height}`;
+  setTimeout(updateDim, 1000);
+
+  let chunks = [];
+  let rec = null;
+  let startedAt = 0;
+  let tInt = null;
+  let stream = null;
+  let micStream = null;
+
+  const setState = (state) => {
+    // idle | recording | paused
+    if (state === 'idle') {
+      btnS.disabled = false;
+      btnP.disabled = true;
+      btnT.disabled = true;
+      dot.style.background = '#666';
+      dot.style.boxShadow = 'none';
+    } else if (state === 'recording') {
+      btnS.disabled = true;
+      btnP.disabled = false;
+      btnT.disabled = false;
+      dot.style.background = '#e53935';
+      dot.style.boxShadow = '0 0 0 9px rgba(229,57,53,.15)';
+    } else if (state === 'paused') {
+      btnS.disabled = true;
+      btnP.disabled = false;
+      btnT.disabled = false;
+      dot.style.background = '#f6c945';
+      dot.style.boxShadow = '0 0 0 9px rgba(246,201,69,.15)';
+    }
+  };
+  setState('idle');
+
+  const tick = () => {
+    const now = Date.now();
+    timer.textContent = formatTime(now - startedAt);
+  };
+
+  const buildFileName = () => {
+    const d = new Date();
+    const iso = d.toISOString().replace(/[:.]/g,'-');
+    return `canvas-record-${canvas.width}x${canvas.height}-${iso}.webm`;
+  };
+
+  async function startRec() {
+    try {
+      // fresh buffers
+      chunks = [];
+
+      const fps = parseInt(fpsEl.value, 10) || 30;
+      const vbr = Math.max(100, Math.min(50000, parseInt(vbrEl.value,10) || 8000)) * 1000;
+
+      // capture only the canvas video
+      const cvsStream = canvas.captureStream(fps);
+
+      // optional mic track
+      if (micEl.checked) {
+        micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        const audioTrack = micStream.getAudioTracks()[0];
+        if (audioTrack) cvsStream.addTrack(audioTrack);
+      }
+
+      // prefer chosen mime
+      const mimeType = pickMime();
+      const options = { mimeType, videoBitsPerSecond: vbr };
+      rec = new MediaRecorder(cvsStream, options);
+
+      stream = cvsStream;
+
+      rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+      rec.onstop = () => {
+        clearInterval(tInt); tInt = null;
+        setState('idle');
+        try {
+          const blob = new Blob(chunks, { type: rec.mimeType || 'video/webm' });
+          downloadBlob(blob, buildFileName());
+        } catch (err) {
+          console.error(err);
+          alert('Ошибка сохранения записи');
+        } finally {
+          chunks = [];
+          // cleanup streams
+          stream?.getTracks().forEach(t=>t.stop());
+          micStream?.getTracks().forEach(t=>t.stop());
+          stream = null; micStream = null; rec = null;
+          dot.style.boxShadow = 'none';
+        }
+      };
+
+      rec.start(250); // gather chunks every 250ms
+      startedAt = Date.now();
+      timer.textContent = '00:00';
+      if (!tInt) tInt = setInterval(tick, 250);
+      setState('recording');
+
+    } catch (e) {
+      console.error(e);
+      alert('Не удалось запустить запись. Возможно, браузер не поддерживает MediaRecorder/WebM.');
+      setState('idle');
+    }
+  }
+
+  function stopRec() {
+    try { rec?.stop(); } catch(e){ console.warn(e); }
+  }
+
+  function togglePause() {
+    if (!rec) return;
+    if (rec.state === 'recording') {
+      rec.pause();
+      setState('paused');
+    } else if (rec.state === 'paused') {
+      rec.resume();
+      setState('recording');
+    }
+  }
+
+  btnS.addEventListener('click', startRec);
+  btnT.addEventListener('click', stopRec);
+  btnP.addEventListener('click', togglePause);
+
+  // clean up if page unloads
+  window.addEventListener('beforeunload', () => {
+    try { if(rec && rec.state!=='inactive') rec.stop(); } catch {}
+    try { stream?.getTracks().forEach(t=>t.stop()); } catch {}
+    try { micStream?.getTracks().forEach(t=>t.stop()); } catch {}
+    window[TAG]=false;
+  });
+
+})();
+</script>
 
 
 
