@@ -39,7 +39,68 @@ i:hover{cursor:pointer;}
   font-size: 14px;
   color: #fff; /* если у тебя тёмная тема */
 }
-
+    #myNicknamesBlock {
+      color: #e5edff;
+      font-family: sans-serif;
+    }
+    #myNicknamesBlock .tabs { margin:6px 0 10px; gap:8px; display:flex; }
+    #myNicknamesBlock .tab {
+      padding:8px 12px; border:1px solid #2b3242; border-radius:10px;
+      background:#101625; color:#dbe5ff; cursor:pointer;
+      display:inline-flex; align-items:center; gap:8px; line-height:1;
+    }
+	#myNicknamesBlock .tab:hover{background: #121a2b;}
+    #myNicknamesBlock .tab.active {     background: #016bef;border-color: #016bef;color: #fff;font-weight: bold; }
+    #myNicknamesBlock .badge {
+    padding: 2px 6px;
+    border-radius: 100%;
+    background: #1f2a44;
+    font-size: 12px;
+    color: #8fb7ff;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    }
+    #myNicknamesBlock .list-wrap {
+      border:1px solid #2b3242; border-radius:12px;
+      max-height:305px; overflow:auto; background:#0e1422;
+    }
+    #myNicknamesBlock .list { margin:0; padding:0; }
+    #myNicknamesBlock .list li {
+      display:flex; align-items:center; gap:10px;
+      padding:8px 10px; border-bottom:1px solid #1c2233;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    #myNicknamesBlock .list li:last-child { border-bottom:0; }
+    #myNicknamesBlock .list li:hover { background:#121a2b; }
+    #myNicknamesBlock .skin {
+      width:28px; height:28px; border-radius:50%;
+      flex:0 0 28px; object-fit:cover;
+      box-shadow:0 0 0 1px #2b3242 inset;
+    }
+    #myNicknamesBlock .skin--empty {
+      display:flex; align-items:center; justify-content:center;
+      background:#283044; color:#9fb3d9; font-size:12px; font-weight:700;
+    }
+    #myNicknamesBlock .nick { font-weight:600; cursor:pointer; }
+    #myNicknamesBlock .nick:hover { text-decoration:underline; }
+    #myNicknamesBlock .passbox { margin-left:auto; display:flex; align-items:center; gap:6px; height:36px; }
+    #myNicknamesBlock .passbox input {
+      height:100%; box-sizing:border-box; padding:0 8px;
+      border:1px solid #2b3242; border-radius:8px;
+      background:#0d1322; color:#e5edff; width:160px; font-size:14px;
+    }
+    #myNicknamesBlock .icon-btn {
+      height:36px; width:36px; display:flex; align-items:center; justify-content:center;
+      border:1px solid #2b3242; border-radius:8px;
+      background:#0d1322; color:#dbe5ff; cursor:pointer;
+    }
+    #myNicknamesBlock .icon-btn:hover { background:#141b2e; }
+    #myNicknamesBlock .icon-btn i { font-size:16px; pointer-events:none; }
+.chatX_text.blurred { filter: blur(2px); cursor: pointer; transition: filter .15s; }
+.chatX_text.blurred.revealed { filter: none; }
 #gradient-settings label {
   display: flex;
   align-items: center;
@@ -49,6 +110,9 @@ i:hover{cursor:pointer;}
     display: none;
     padding: 6px;
     background: rgb(133 133 133 / 65%);
+    width: 283px;
+    margin-top: 8px;
+    justify-content: space-between;
 }
 
 .emoji-item {
@@ -64,6 +128,13 @@ i:hover{cursor:pointer;}
 .emoji-item img {
   height: 28px;
 }
+.chat-emoji {
+  width: 20px;
+  height: 20px;
+  vertical-align: middle;
+  margin: 0 2px;
+}
+
 #gradient-settings input[type="color"] {
   border: none;
   width: 40px;
@@ -404,7 +475,7 @@ input{font-size:16px;}
 .social-btn.facebook:hover{background-color:#1877f2;box-shadow:#1877f2 1px 0 10px;}
 .social-btn.twitter:hover{background-color:#1da1f2;box-shadow:#1da1f2 1px 0 10px;}
 .statYout{width:100%;height:250px;display:flex;justify-content:center;align-items:center;}
-.statYoutt{position:relative;width:100%;height:100%;display:block;background:url(/assets/photo/bloger.jpg) center/cover no-repeat;text-decoration:none;}
+.statYoutt{position:relative;width:100%;height:100%;display:block;background:url(https://api.agar.su/assets/photo/bloger.jpg) center/cover no-repeat;text-decoration:none;}
 .statYoutImg{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:60px;height:40px;}
 .statTitle{color:#fff200f0;text-shadow:#fff200f0 1px 0 10px;font-size:20px;}
 .statDesc{font-size:15px;line-height:1.6;font-weight:500;}
