@@ -51,8 +51,10 @@ stats.forEach((player, index) => {
         const hash = location.hash.replace('#','') || 'ffa'; // по умолчанию ffa
         document.querySelectorAll('.gamemode li').forEach(li => li.classList.remove('active'));
         const activeLi = document.getElementById(hash);
+		const titleEl = document.getElementById('serverTitle');
         if(activeLi) {
             activeLi.classList.add('active');
+			titleEl.textContent = `Статистика ${hash}`;
             // Если сервер ещё не выбран руками — ставим его
             if (!SELECTED_SERVER) {
                 SELECTED_SERVER = activeLi.dataset.ip;
@@ -95,8 +97,11 @@ window.addEventListener('hashchange', setActiveFromHash);
     async function updateOnlineCount() {
     const servers = [
         {id: 'ffa', url: 'https://ffa.agar.su:6001/process', max: 120},
-        {id: 'ms', url: 'https://pmori.ru:6002/process', max: 120},
-        {id: 'exp', url: 'https://pmori.ru:6004/process', max: 120}
+        {id: 'ms', url: 'https://ffa.agar.su:6002/process', max: 120},
+        {id: 'exp', url: 'https://ffa.agar.su:6003/process', max: 120},
+		{id: 'pvp1', url: 'https://ffa.agar.su:6004/process', max: 50},
+		{id: 'pvp2', url: 'https://ffa.agar.su:6005/process', max: 50},
+		{id: 'tournament', url: 'https://ffa.agar.su:6006/process', max: 120}
     ];
 
     for (const server of servers) {
@@ -130,34 +135,28 @@ window.addEventListener('hashchange', setActiveFromHash);
         window.onlineInterval = setInterval(updateOnlineCount, 5000);
     }
 	
-const forbiddenChars = ["﷽", "𒐫", "𒈙", "⸻", "꧅", "ဪ", "௵", "௸", "‱"];
-const forbiddenWords = ["ПАПАВЛАДИКРФ"]; // добавь нужные слова
-const redirectUrl = "https://252.56.мвд.рф/news/item/45173657"; // куда перенаправлять нарушителя
+const forbiddenChars = [
+  "﷽", "𒐫", "𒈙", "⸻", "꧅", "ဪ", "௵", "௸", "‱", "ㅤ", "⁣",
+  "‎ ", "​", "‌", "‍", "‎", "‏", " ", " ", " ", " ", " ",
+  " ", " ", " ", " ", " ", " ", "​", "﻿", "￼", " "
+];
 
 wHandle.startGame = function () {
-    let nickInput = document.getElementById('nick').value;
-    const passInput = document.getElementById('pass').value;
+    let nickInput = document.getElementById('nick').value.trim();
+    let passInput = document.getElementById('pass').value;
 
-    let wasForbidden = false;
-
-    // Проверка на запрещённые символы
+    // Удаляем запрещённые символы
     const forbiddenRegex = new RegExp(forbiddenChars.join('|'), 'g');
-    if (forbiddenRegex.test(nickInput)) wasForbidden = true;
     nickInput = nickInput.replace(forbiddenRegex, '');
 
-    // Проверка на запрещённые слова
-    const wordsRegex = new RegExp(forbiddenWords.join('|'), 'gi');
-    if (wordsRegex.test(nickInput)) wasForbidden = true;
-    nickInput = nickInput.replace(wordsRegex, '');
-
-    // Если найдено что-то запрещённое — перенаправляем
-    if (wasForbidden) {
-        window.location.href = redirectUrl;
-        return;
-    }
+    // Ограничиваем длину
+    if (nickInput.length > 16) nickInput = nickInput.substring(0, 16);
+    if (passInput.length > 8) passInput = passInput.substring(0, 8);
 
     setNick(nickInput + "#" + passInput);
-}
+};
+
+
 
     // Функция для загрузки данных о топ-1 игроке
     wHandle.chekstats = async function () {
@@ -186,14 +185,18 @@ wHandle.startGame = function () {
 
 const SERVERS = {
         "ffa":   "ffa.agar.su:6001",
-        "ms": "pmori.ru:6002",
-        "exp":   "pmori.ru:6004"
+        "ms":    "ffa.agar.su:6002",
+        "exp":   "ffa.agar.su:6003",
+		"pvp1":  "ffa.agar.su:6004",
+		"pvp2":  "ffa.agar.su:6005",
+		"tournament":  "ffa.agar.su:6006",
     };
 	
 wjQuery(document).ready(() => {
 document.querySelectorAll('.gamemode li').forEach(li => {
     li.addEventListener('click', () => {
         const isAlreadyActive = li.classList.contains('active');
+		const titleEl = document.getElementById('serverTitle');
 
         // Снимаем актив со всех и ставим новый
         document.querySelectorAll('.gamemode li').forEach(l => l.classList.remove('active'));
@@ -201,14 +204,9 @@ document.querySelectorAll('.gamemode li').forEach(li => {
 
         // Запоминаем выбранный сервер
         SELECTED_SERVER = li.dataset.ip;
-
-        // Обновляем заголовок
-        const titleEl = document.getElementById('serverTitle');
-        if(titleEl) titleEl.textContent = 'Статистика ' + li.id;
-
         // Обновляем hash без дергания страницы
         history.replaceState(null, '', '#' + li.id);
-
+titleEl.textContent = `Статистика ${li.id}`;
         // ✅ Если сервер уже был активным — сразу стартуем игру
         if(isAlreadyActive) {
             wHandle.startGame();
@@ -239,12 +237,6 @@ function initServers() {
     document.querySelectorAll('.gamemode li').forEach(li => li.classList.remove('active'));
     const activeLi = document.getElementById(serverKey);
     if (activeLi) activeLi.classList.add('active');
-
-    // Обновляем заголовок
-    const titleEl = wHandle.document.getElementById('serverTitle');
-    if (titleEl) {
-        titleEl.textContent = 'Статистика ' + serverKey.toUpperCase();
-    }
 }
 
 
@@ -254,7 +246,8 @@ function initServers() {
     // Если хэш меняется динамически
     wHandle.addEventListener('hashchange', initServers);
 	
-	
+
+
 	
 	
 						
@@ -500,18 +493,41 @@ wHandle.setserver = function(arg) {
     }
   }
   break;
-                   case 13: // enter
-                    if (isTyping || hideChat) {
-                        isTyping = false;
-                        document.getElementById("chat_textbox").blur();
-                        chattxt = document.getElementById("chat_textbox").value;
-                        if (chattxt.trim().length > 0) sendChat(chattxt); // Проверяем после trim
-                        document.getElementById("chat_textbox").value = "";
-                    } else {
-                        document.getElementById("chat_textbox").focus();
-                        isTyping = true;
-                    }
-                    break;
+case 13: // Enter
+    if (isTyping || hideChat) {
+        isTyping = false;
+
+        const chatInput = document.getElementById("chat_textbox");
+        const lsInput = document.getElementById("ls");
+
+        // Берем текст из обоих полей
+        const lsText = lsInput ? lsInput.value.trim() : "";
+        const chatText = chatInput ? chatInput.value.trim() : "";
+
+        // Объединяем, если есть текст
+        let combinedText = "";
+        if (lsText && chatText) {
+            combinedText = lsText + " " + chatText;
+        } else if (lsText) {
+            combinedText = lsText;
+        } else if (chatText) {
+            combinedText = chatText;
+        }
+
+        if (combinedText.length > 0) sendChat(combinedText);
+
+        // очищаем поля
+        if (chatInput) chatInput.value = "";
+        if (lsInput) lsInput.value = "";
+        if (chatInput) chatInput.blur();
+        if (lsInput) lsInput.blur();
+    } else {
+        document.getElementById("chat_textbox").focus();
+        isTyping = true;
+    }
+    break;
+
+
                 case 32: // space
                     if (!spacePressed && !isTyping) {
                         sendMouseMove();
@@ -522,7 +538,7 @@ wHandle.setserver = function(arg) {
                 case 67: // coord
                     if (!cPressed && !isTyping) {
     coord(); // coords
- сPressed = true;                   
+ cPressed = true;                   
 }
                     break;
                 case 87: // W
@@ -705,15 +721,11 @@ $(document).on("contextmenu", function (event) {
 
         wHandle.onresize = canvasResize;
         canvasResize();
-        if (wHandle.requestAnimationFrame) {
-            wHandle.requestAnimationFrame(redrawGameScene);
-        } else {
-            setInterval(drawGameScene, 1E3 / 60);
-        }
+        wHandle.requestAnimationFrame(redrawGameScene);
         setInterval(sendMouseMove, 50);
-
         wjQuery("#overlays").show();
 		showCaptcha();
+		setInterval(updateStats, 100);
     }
 	
 
@@ -934,7 +946,6 @@ function isMouseOverElement(element) {
     }
 
     if (ma) {
-        wjQuery("#connecting").show();
         currentWebSocketUrl = wsUrl;
         wsConnect(wsUrl, token);
 
@@ -966,8 +977,6 @@ function isMouseOverElement(element) {
         nodelist = [];
         Cells = [];
         leaderBoard = [];
-        mainCanvas = teamScores = null;
-        // userScore = 0;
         log.info("Connecting to " + wsUrl + "..");
 
         // Передаем токен при подключении xxxevexxx
@@ -1000,9 +1009,9 @@ let pingstamp = 0;
 
 
     function onWsOpen() {
+    const serverCloseDiv = document.getElementById("serverclose-overlay");
+    if (serverCloseDiv) serverCloseDiv.style.display = "none";
         var msg;
-        // delay = 500;
-        wjQuery("#connecting").hide();
 
         sendAccountToken();
 
@@ -1017,38 +1026,16 @@ let pingstamp = 0;
         wsSend(msg);
         sendNickName();
         log.info("Connection successful!");
-     setInterval(() => {
-        pingstamp = Date.now();        
-wsSend(new Uint8Array([2])); // ping
+     setInterval(() => {    
+    pingstamp = Date.now();           
+	wsSend(new Uint8Array([2])); // ping        
     }, 3000);
     }
 
         function onWsClose(evt) {
-            let serverCloseDiv = document.getElementById("serverclose-overlay");
-
-            if (serverCloseDiv) {
-                serverCloseDiv.style.display = "block";
-                startCountdown();
-            } else {
-                console.warn("Элемент с id 'serverclose-overlay' не найден.");
-            }
+    const serverCloseDiv = document.getElementById("serverclose-overlay");
+    if (serverCloseDiv) serverCloseDiv.style.display = "block";
         }
-
-        function startCountdown() {
-            let countdownElement = document.getElementById("countdownclose");
-            let seconds = 10;
-
-            let countdownInterval = setInterval(function() {
-                seconds--;
-                countdownElement.textContent = "Перезагрузка через: " + seconds;
-
-                if (seconds <= 0) {
-                    clearInterval(countdownInterval);
-                    location.reload(); // Перезагружаем страницу
-                }
-            }, 1000); // Обновляем каждую секунду
-        }
-
 
 
     function onWsMessage(msg) {
@@ -1192,11 +1179,35 @@ if (pingElement) {
                     drawLineY = lineY;
                 }
                 break;
-            case 48:
-                // Update leaderboard (custom text)
-                setCustomLB = true;
-                noRanking = true;
-                break;
+case 48:
+    // Update leaderboard (custom text)
+    setCustomLB = true;
+    noRanking = true;
+
+    // читаем количество строк
+    const count = msg.getUint32(offset, true);
+    offset += 4;
+
+    leaderBoard = [];
+    for (let i = 0; i < count; i++) {
+        // элемент ID (у турнира обычно 0)
+        const nodeId = msg.getUint32(offset, true);
+        offset += 4;
+
+        // читаем UTF-16 строку
+        const text = getString();
+
+        leaderBoard.push({
+            id: null,      // системная строка → без нумерации
+            name: text,
+            level: -1,
+            xp: 0
+        });
+    }
+
+    drawLeaderBoard();
+    break;
+
             case 49:
                 // Update leaderboard (ffa)
                 if (!setCustomLB) {
@@ -1221,17 +1232,6 @@ if (pingElement) {
                         level,
                         xp: playerXp
                     });
-                }
-                drawLeaderBoard();
-                break;
-            case 50:
-                // Update leaderboard (teams)
-                teamScores = [];
-                const LBteamNum = msg.getUint32(offset, true);
-                offset += 4;
-                for (let i = 0; i < LBteamNum; ++i) {
-                    teamScores.push(msg.getFloat32(offset, true));
-                    offset += 4;
                 }
                 drawLeaderBoard();
                 break;
@@ -1376,46 +1376,147 @@ function censorMessage(message) {
 }
 
 const admins = ["нико"];
-const moders = ["banshee","cosmos"];
+const moders = ["banshee","cosmos","rizwer"];
 
 let passUsers = [];
+const ignoredPlayers = new Set();
+let activeDialog = null;
+const dialogs = {};
+const dialogMessages = {};
+const maxGlobalMessages = 50; // для глобального чата
+const maxDialogMessages = 100; // для ЛС
 
-// Загружаем pass.txt и парсим ники
+// ==========================
+// Загрузка pass.txt
+// ==========================
 fetch('https://api.agar.su/pass.txt')
     .then(response => {
-        if (!response.ok) {
-            throw new Error('Ошибка сети: ' + response.status);
-        }
+        if (!response.ok) throw new Error('Ошибка сети: ' + response.status);
         return response.text();
     })
     .then(text => {
-        passUsers = text
-            .split('\n')
-            .map(n => normalizeNick(n).toLowerCase()) // нормализуем ник и приводим к нижнему регистру
+        passUsers = text.split('\n')
+            .map(n => normalizeNick(n).toLowerCase())
             .filter(n => n.length > 0);
-
     })
-    .catch(err => console.error('Ошибка загрузки pass.txt:', err))
+    .catch(err => console.error('Ошибка загрузки pass.txt:', err));
 
-
-const ignoredPlayers = new Set();
-
+// ==========================
+// Подсветка упоминаний
+// ==========================
+// 2) Хайлайтер: разрешаем NBSP внутри упоминания
 function highlightMentions(text) {
-    // Экранируем HTML, чтобы текст не ломал структуру
-    text = text
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
+  // Экранируем HTML
+  text = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 
-    // Подсветка упоминаний
-    // Ник может содержать любые символы, кроме пробела
-    return text.replace(/@([^\s@]+)/g, '<span class="mention">@$1</span>');
+  // Разрешаем \u00A0 (NBSP) как «пробел внутри ника»
+  return text.replace(
+    /@((?:[^\s@]|\u00A0)+)/g,
+    '<span class="mention">@$1</span>'
+  );
 }
-	
+
+
+// ==========================
+// Создание личного диалога
+// ==========================
+function createDialog(number, senderName, senderAvatar) {
+    const dialogId = `!ls${number}`;
+    if (dialogs[dialogId]) return;
+
+    const dialogDiv = document.createElement('div');
+    dialogDiv.className = 'chatX_feed';
+    dialogDiv.id = dialogId;
+    dialogDiv.style.display = 'none';
+    document.getElementById('chatX_container').appendChild(dialogDiv);
+
+    const avatarContainer = document.createElement('div');
+    avatarContainer.className = 'chatX_top_avatar';
+    const avatar = document.createElement('img');
+    avatar.className = 'chatX_avatar_private';
+    avatar.src = senderAvatar || 'https://api.agar.su/skins/4.png';
+    avatar.onerror = () => avatar.src = 'https://api.agar.su/skins/4.png';
+    avatar.title = senderName || `User ${number}`;
+    avatarContainer.appendChild(avatar);
+
+    avatarContainer.addEventListener('click', () => switchToDialog(dialogId));
+    document.getElementById('chatX_top').appendChild(avatarContainer);
+
+    dialogs[dialogId] = { div: dialogDiv, avatar: avatarContainer };
+    dialogMessages[dialogId] = [];
+}
+
+function replaceEmojis(text) {
+    const gifEmojis = [50, 253, 26]; // номера gif-эмодзи
+
+    return text.replace(/:([0-9]+):/g, (match, p1) => {
+        const num = Number(p1);
+        const ext = gifEmojis.includes(num) ? 'gif' : 'png';
+        return `<img class="chat-emoji" src="/emoji/${num}.${ext}">`;
+    });
+}
+
+
+// ==========================
+// Переключение диалога
+// ==========================
+wHandle.switchToDialog = function (dialogId) {
+    document.getElementById('chatX_feed').style.display = 'none';
+    Object.values(dialogs).forEach(d => d.div.style.display = 'none');
+
+    if (!dialogId) {
+        document.getElementById('chatX_feed').style.display = 'flex';
+        activeDialog = null;
+    } else {
+        dialogs[dialogId].div.style.display = 'flex';
+        activeDialog = dialogId;
+        const dialogDiv = dialogs[dialogId].div;
+        dialogDiv.innerHTML = '';
+        dialogMessages[dialogId].forEach(msg => dialogDiv.appendChild(msg));
+    }
+
+    const chatInput = document.getElementById('ls');
+    if (activeDialog) {
+        const dialogNumberMatch = activeDialog.match(/^!ls(\d+)$/);
+        chatInput.value = dialogNumberMatch ? `!ls${dialogNumberMatch[1]} ` : '';
+    } else chatInput.value = '';
+}
+
+// Суммарные хиты мата по игроку (сбросятся сами при новом pId)
+const profanityCountByPlayer = new Map(); // pId -> number
+const BLUR_THRESHOLD = 3; // после N ругательных слов начинаем блюрить
+
+function countProfanity(message){
+  if (!badWordsSet) return 0;
+  return message
+    .split(/\s+/).filter(Boolean)
+    .reduce((n, w) => n + (badWordsSet.has(w.toLowerCase()) ? 1 : 0), 0);
+}
+
+function shouldBlurAndRecord(pId, message){
+  // --- ИСКЛЮЧЕНИЕ ДЛЯ pId 0 ---
+  if (pId === 0 || pId === '0') return false;
+
+  const hits = countProfanity(message);
+  if (hits > 0) {
+    const prev = profanityCountByPlayer.get(pId) || 0;
+    const next = prev + hits;
+    profanityCountByPlayer.set(pId, next);
+    return next >= BLUR_THRESHOLD;
+  }
+  // если уже перевалил ранее — продолжаем блюрить
+  return (profanityCountByPlayer.get(pId) || 0) >= BLUR_THRESHOLD;
+}
+
+
+// ==========================
+// Основная функция отрисовки сообщений
+// ==========================
 function drawChatBoard() {
     if (hideChat) return;
-
-    const chatDiv = document.getElementById('chatX_feed');
     const lastMessage = chatBoard[chatBoard.length - 1];
     if (!lastMessage) return;
 
@@ -1423,32 +1524,45 @@ function drawChatBoard() {
     if (ignoredPlayers.has(lastMessage.pId)) return;
 
     const msgDiv = document.createElement('div');
-
     const lowerName = lastMessage.name.toLowerCase();
-    if (admins.includes(lowerName)) {
-        msgDiv.className = 'chatX_msg admins';
-    } else if (moders.includes(lowerName)) {
-        msgDiv.className = 'chatX_msg ' + lowerName;
-    } else {
-        msgDiv.className = 'chatX_msg';
+
+    if (admins.includes(lowerName)) msgDiv.className = 'chatX_msg admins';
+    else if (moders.includes(lowerName)) msgDiv.className = 'chatX_msg ' + lowerName;
+    else msgDiv.className = 'chatX_msg';
+
+    const normalizedName = normalizeNick(lastMessage.name || '');
+    let messageRaw = (lastMessage.message || '').trim();
+
+    // Проверка на ЛС
+    const privatePattern = /^!ls(\d+)\s+(.+)/i;
+    const privateMatch = messageRaw.match(privatePattern);
+
+    let targetDialogId = null;
+    let messageContent = messageRaw;
+    if (privateMatch) {
+        const number = privateMatch[1];
+        messageContent = privateMatch[2];
+        targetDialogId = `!ls${number}`;
+        createDialog(number, lastMessage.name, skinList[normalizedName] ? `https://api.agar.su/skins/${skinList[normalizedName]}.png` : 'https://api.agar.su/skins/4.png');
     }
 
-    const avatarXContainer = document.createElement('div');
-    avatarXContainer.className = 'avatarXcontainer';
-    const normalizedName = normalizeNick(lastMessage.name);
-    if (passUsers.includes(normalizedName)) {
-        avatarXContainer.style.setProperty('--after-display', 'block');
-    }
+    let targetDiv = targetDialogId ? dialogs[targetDialogId]?.div : document.getElementById('chatX_feed');
+    if (!targetDiv) targetDiv = document.getElementById('chatX_feed');
+
+    // --- Аватарка ---
+    const avatarContainer = document.createElement('div');
+    avatarContainer.className = 'avatarXcontainer';
+    if (passUsers.includes(normalizedName)) avatarContainer.style.setProperty('--after-display', 'block');
 
     const avatar = document.createElement('img');
     avatar.className = 'chatX_avatar';
-    const skinName = normalizeNick(lastMessage.name);
-    const skinId = skinList[skinName];
+    const skinId = skinList[normalizedName];
     avatar.src = skinId ? `https://api.agar.su/skins/${skinId}.png` : 'https://api.agar.su/skins/4.png';
     avatar.onerror = () => avatar.src = 'https://api.agar.su/skins/4.png';
-    avatarXContainer.appendChild(avatar);
-    msgDiv.appendChild(avatarXContainer);
+    avatarContainer.appendChild(avatar);
+    msgDiv.appendChild(avatarContainer);
 
+    // --- Имя и уровень ---
     const nameContainer = document.createElement('div');
     nameContainer.className = 'chatX_name_container';
 
@@ -1476,102 +1590,162 @@ function drawChatBoard() {
     const nameDiv = document.createElement('div');
     nameDiv.className = 'chatX_nick';
     nameDiv.textContent = lastMessage.name + ':';
-    nameDiv.title = `${lastMessage.pId || 0}`;
 
-   if (admins.includes(lowerName)) {
-    nameDiv.style.color = 'gold';
-    nameDiv.title += ' (Администратор)';
-} else if (moders.includes(lowerName)) {
-    nameDiv.title += ' (Модератор)';
-} else {
-	nameDiv.style.color = lastMessage.color || '#b8c0cc';
-    avatar.style.border = `2px solid ${lastMessage.color}`;
-}
+    if (admins.includes(lowerName)) {
+        nameDiv.style.color = 'gold';
+        nameDiv.title = `${lastMessage.pId} (Администратор)`;
+    } else if (moders.includes(lowerName)) {
+        nameDiv.style.color = lastMessage.color || '#b8c0cc';
+        nameDiv.title = `${lastMessage.pId} (Модератор)`;
+    } else if (targetDialogId) {
+        nameDiv.style.color = lastMessage.color || '#b8c0cc';
+        nameDiv.title = 'Личное сообщение';
+    } else {
+        nameDiv.style.color = lastMessage.color || '#b8c0cc';
+        avatar.style.border = `2px solid ${lastMessage.color}`;
+        nameDiv.title = `${lastMessage.pId || 0}`;
+    }
 
     nameContainer.appendChild(nameDiv);
+    msgDiv.appendChild(nameContainer);
 
-    const textDiv = document.createElement('div');
-    textDiv.className = 'chatX_text';
-    textDiv.innerHTML = highlightMentions(censorMessage(lastMessage.message || ""));
+// --- Сообщение ---
+const textDiv = document.createElement('div');
+textDiv.className = 'chatX_text';
 
+// сначала цензурим, как у вас
+const safeHtml = replaceEmojis(highlightMentions(censorMessage(messageContent)));
+textDiv.innerHTML = safeHtml;
 
+// решение: после подсчёта — блюрим при необходимости
+if (shouldBlurAndRecord(lastMessage.pId, messageContent)) {
+  textDiv.classList.add('blurred');
+  textDiv.title = 'Скрыто из-за токсичности. Нажмите, чтобы показать.';
+  textDiv.addEventListener('click', () => textDiv.classList.toggle('revealed'));
+}
 
+msgDiv.appendChild(textDiv);
+
+    // --- Время ---
     const timeDiv = document.createElement('div');
     timeDiv.className = 'chatX_time';
-    timeDiv.textContent = lastMessage.time;
-
-    msgDiv.appendChild(nameContainer);
-    msgDiv.appendChild(textDiv);
+    timeDiv.textContent = lastMessage.time || '';
     msgDiv.appendChild(timeDiv);
 
-    // --- Правый клик на сообщение ---
+    // --- Контекстное меню ---
     msgDiv.addEventListener('contextmenu', (e) => {
-    e.preventDefault();
+        e.preventDefault();
+        document.querySelectorAll('.chat-context-menu').forEach(m => m.remove());
 
-    // --- Удаляем все старые меню ---
-    document.querySelectorAll('.chat-context-menu').forEach(m => m.remove());
+        const menu = document.createElement('div');
+        menu.className = 'chat-context-menu';
+        menu.style.top = e.clientY + 'px';
+        menu.style.left = e.clientX + 'px';
 
-    const menu = document.createElement('div');
-    menu.className = 'chat-context-menu';
-    menu.style.top = e.clientY + 'px';
-    menu.style.left = e.clientX + 'px';
+        const playerId = lastMessage.pId;
+		
+		const pmBtn = document.createElement('div');
+pmBtn.textContent = 'Личное сообщение';
+pmBtn.style.cursor = 'pointer';
+pmBtn.onclick = () => {
+    // Создаём ЛС диалог
+    createDialog(playerId, lastMessage.name, skinList[normalizeNick(lastMessage.name)] ? 
+        `https://api.agar.su/skins/${skinList[normalizeNick(lastMessage.name)]}.png` : 'https://api.agar.su/skins/4.png');
+    switchToDialog(`!ls${playerId}`);
+    menu.remove();
+};
 
-const playerId = lastMessage.pId;
+        const ignoreBtn = document.createElement('div');
+        ignoreBtn.textContent = 'Игнорировать';
+        ignoreBtn.style.cursor = 'pointer';
+        ignoreBtn.onclick = () => { ignoredPlayers.add(playerId); msgDiv.remove(); menu.remove(); };
 
-    const ignoreBtn = document.createElement('div');
-    ignoreBtn.textContent = 'Игнорировать';
-    ignoreBtn.style.cursor = 'pointer';
-    ignoreBtn.onclick = () => {
-        ignoredPlayers.add(playerId);
-        msgDiv.remove();
-        menu.remove();
-    };
+        const clearIgnoreBtn = document.createElement('div');
+        clearIgnoreBtn.textContent = 'Удалить всех из игнора';
+        clearIgnoreBtn.style.cursor = 'pointer';
+        clearIgnoreBtn.onclick = () => { ignoredPlayers.clear(); menu.remove(); };
 
-    const delMsgBtn = document.createElement('div');
-    delMsgBtn.textContent = 'Удалить сообщение';
-    delMsgBtn.style.cursor = 'pointer';
-    delMsgBtn.onclick = () => {
-        msgDiv.remove();
-        menu.remove();
-    };
+        const delMsgBtn = document.createElement('div');
+        delMsgBtn.textContent = 'Удалить сообщение';
+        delMsgBtn.style.cursor = 'pointer';
+        delMsgBtn.onclick = () => { msgDiv.remove(); menu.remove(); };
 
-    const delAllBtn = document.createElement('div');
-    delAllBtn.textContent = 'Удалить все сообщения';
-    delAllBtn.style.cursor = 'pointer';
-    delAllBtn.onclick = () => {
-        [...chatDiv.children].forEach(c => {
-            if (c.querySelector('.chatX_nick')?.title.includes(playerId)) {
-                c.remove();
-            }
-        });
-        menu.remove();
-    };
-
-    menu.appendChild(ignoreBtn);
-    menu.appendChild(delMsgBtn);
-    menu.appendChild(delAllBtn);
-
-    document.body.appendChild(menu);
-
-    // --- Закрытие меню при клике в любое место ---
-    const closeMenu = (event) => {
-        if (!menu.contains(event.target)) {
+        const delAllBtn = document.createElement('div');
+        delAllBtn.textContent = 'Удалить все сообщения игрока';
+        delAllBtn.style.cursor = 'pointer';
+        delAllBtn.onclick = () => {
+            [...targetDiv.children].forEach(c => {
+                if (c.querySelector('.chatX_nick')?.title.includes(playerId)) c.remove();
+            });
             menu.remove();
+        };
+        menu.appendChild(pmBtn);
+        menu.appendChild(ignoreBtn);
+        menu.appendChild(clearIgnoreBtn);
+        menu.appendChild(delMsgBtn);
+        menu.appendChild(delAllBtn);
+
+        document.body.appendChild(menu);
+        const closeMenu = (event) => { if (!menu.contains(event.target)) menu.remove(); };
+        document.addEventListener('click', closeMenu, { once: true });
+    });
+
+    targetDiv.appendChild(msgDiv);
+
+    // --- Скролл ---
+    const scrollStep = 200;
+    targetDiv.scrollTop = Math.min(targetDiv.scrollTop + scrollStep, targetDiv.scrollHeight);
+
+    // --- Хранение сообщений для ЛС ---
+    if (targetDialogId && dialogs[targetDialogId]) {
+        dialogMessages[targetDialogId].push(msgDiv);
+        const topAvatarImg = dialogs[targetDialogId].avatar.querySelector('img');
+        if (topAvatarImg) {
+            topAvatarImg.src = skinList[normalizedName]
+                ? `https://api.agar.su/skins/${skinList[normalizedName]}.png`
+                : 'https://api.agar.su/skins/4.png';
+            topAvatarImg.title = lastMessage.name || `User ${targetDialogId.replace('!ls','')}`;
         }
-    };
+    }
 
-    document.addEventListener('click', closeMenu, { once: true });
-});
+    // --- Ограничение количества сообщений ---
+    if (targetDialogId) {
+        while (targetDiv.children.length > maxDialogMessages) targetDiv.removeChild(targetDiv.firstChild);
+    } else {
+        while (targetDiv.children.length > maxGlobalMessages) targetDiv.removeChild(targetDiv.firstChild);
+    }
 
-    chatDiv.appendChild(msgDiv);
-const scrollStep = 200; // на сколько пикселей прокручиваем за одно сообщение
-chatDiv.scrollTop = Math.min(chatDiv.scrollTop + scrollStep, chatDiv.scrollHeight);
-
-    const maxMessages = 50;
-while (chatDiv.children.length > maxMessages) {
-    chatDiv.removeChild(chatDiv.firstChild);
+    // --- Обновление инпута для ЛС ---
+    const chatInput = document.getElementById('ls');
+    if (activeDialog) {
+        const dialogNumberMatch = activeDialog.match(/^!ls(\d+)$/);
+        if (dialogNumberMatch) {
+            const number = dialogNumberMatch[1];
+            const currentText = chatInput.value.replace(/^!ls\d+\s*/, '');
+            chatInput.value = `!ls${number} ${currentText}`;
+        }
+    }
 }
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 const normalizeFractlPart = n => (n % (Math.PI * 2)) / (Math.PI * 2);
 function updateNodes(reader) {
@@ -1629,7 +1803,6 @@ function updateNodes(reader) {
             let flagVirus = !!(spiked & 0x01);
             let flagEjected = !!(spiked & 0x20);
             let flagAgitated = !!(spiked & 0x10);
-            let _skin = "";
 
             const name = reader.utf8();
 
@@ -1642,7 +1815,7 @@ function updateNodes(reader) {
                 node.oSize = node.size;
                 node.color = color;
             } else {
-                node = new Cell(nodeid, posX, posY, size, color, name, _skin);
+                node = new Cell(nodeid, posX, posY, size, color, name);
                 nodelist.push(node);
                 nodes[nodeid] = node;
                 node.ka = posX;
@@ -1680,8 +1853,8 @@ if (playerId === ownerPlayerId) {
         if (ua && playerCells.length === 0) {
     wjQuery("#statics").css("display", "flex");
     updateShareText();    // текст шаринга
-    updateStats();        // обновляем UI
     drawStatsGraph();     // график
+	chekstats();
         }
     }
 
@@ -1689,7 +1862,7 @@ function sendMouseMove() {
     if (wsIsOpen()) {
         if (freeze) {
             // Отправляем зафиксированные координаты, шар не двигается
-            if (!(Math.abs(oldX - posX) < 0.01 && Math.abs(oldY - posY) < 0.01)) {
+            if (!(Math.abs(oldX - posX) < 0.1 && Math.abs(oldY - posY) < 0.1)) {
                 oldX = posX;
                 oldY = posY;
 
@@ -1705,7 +1878,7 @@ function sendMouseMove() {
             let msgX = rawMouseX - canvasWidth / 2;
             let msgY = rawMouseY - canvasHeight / 2;
 
-            if (64 <= msgX * msgX + msgY * msgY && !(Math.abs(oldX - X) < 0.01 && Math.abs(oldY - Y) < 0.01)) {
+            if (64 <= msgX * msgX + msgY * msgY && !(Math.abs(oldX - X) < 0.1 && Math.abs(oldY - Y) < 0.1)) {
                 oldX = X;
                 oldY = Y;
 
@@ -1772,12 +1945,6 @@ function sendMouseMove() {
 
 
 
-function redrawGameScene() {
-    drawGameScene();
-    wHandle.requestAnimationFrame(redrawGameScene);
-}
-
-
     function canvasResize() {
         window.scrollTo(0, 0);
 
@@ -1795,9 +1962,6 @@ function redrawGameScene() {
         // Масштабируйте контекст холста, чтобы изображение не размывалось
         nCanvas.style.width = `${wHandle.innerWidth}px`; // Установка стиля для правильного отображения
         nCanvas.style.height = `${wHandle.innerHeight}px`;
-
-        // Обновите отрисовку
-        drawGameScene();
     }
 
     function viewRange() {
@@ -1817,6 +1981,9 @@ function redrawGameScene() {
 
 
 // ===== ПЕРЕМЕННЫЕ =====
+let fpsEMA = 0;            // сглаженный FPS (эксп. среднее)
+let lastFpsUpdate = 0;     // когда последний раз писали в DOM
+
 let lastDisplayedScore = 0,
     lastDisplayedMaxScore = 0,
     lastDisplayedCellCount = 0,
@@ -2018,6 +2185,26 @@ window.addEventListener('load', () => {
 
 
 
+let lastTime = performance.now();
+let fps = 0;
+let fpsUpdateTime = 0; // время последнего обновления HTML
+
+function redrawGameScene(now) {
+    const delta = now - lastTime; // время кадра
+    lastTime = now;
+    fps = Math.round(1000 / delta);
+
+    // Обновляем HTML только раз в 500 мс (раз в полсекунды)
+    if (now - fpsUpdateTime >= 500) {
+        document.getElementById('fps').textContent = fps;
+        fpsUpdateTime = now;
+    }
+
+    drawGameScene();
+
+    wHandle.requestAnimationFrame(redrawGameScene);
+}
+
 
 
 
@@ -2059,7 +2246,7 @@ function drawGameScene() {
     drawCenterBackground();
     updateMiniMapPosition();
 
-    // Сортировка только если есть изменения (можно кэшировать состояние)
+
     nodelist.sort((a, b) => a.size - b.size || a.id - b.id);
 
     ctx.save();
@@ -2068,7 +2255,7 @@ function drawGameScene() {
     ctx.translate(-nodeX, -nodeY);
 
     // Рисуем все клетки
-    for (let i = 0; i < Cells.length; i++) Cells[i].drawOneCell(ctx);
+    //for (let i = 0; i < Cells.length; i++) Cells[i].drawOneCell(ctx);
     for (let i = 0; i < nodelist.length; i++) nodelist[i].drawOneCell(ctx);
 
     // Рисуем линию
@@ -2100,14 +2287,8 @@ function drawGameScene() {
     if (lbCanvas?.width) ctx.drawImage(lbCanvas, canvasWidth - lbCanvas.width - 10, 10);
     if (chatCanvas) ctx.drawImage(chatCanvas, 0, canvasHeight - chatCanvas.height - 50);
 
-    updateStats();
     drawSplitIcon(ctx);
     drawTouch(ctx);
-
-    // Коррекция FPS
-    const deltatime = Date.now() - oldtime;
-    if (deltatime > 1000 / 60) z = Math.max(0.4, z - 0.01);
-    else if (deltatime < 1000 / 65) z = Math.min(1, z + 0.01);
 }
 
 
@@ -2520,95 +2701,102 @@ function highlightCell(cellName, duration = 3000) {
     }
 
 function drawLeaderBoard() {
-    const toplistDiv = document.getElementById("toplistnow");
-    toplistDiv.innerHTML = ""; // очищаем перед отрисовкой
+  const toplistDiv = document.getElementById("toplistnow");
+  toplistDiv.innerHTML = ""; // очищаем
 
-    const displayedPlayers = 10;
-    let myRank = null;
+  const displayedPlayers = 10;
+  let myRank = null;
 
-    if ((teamScores && teamScores.length > 0) || (leaderBoard.length > 0)) {
-        if (!teamScores || teamScores.length === 0) {
-            for (let b = 0; b < leaderBoard.length; ++b) {
-                let name = leaderBoard[b].name;
-                const level = leaderBoard[b].level;
+  if (leaderBoard && leaderBoard.length > 0) {
+    for (let b = 0; b < leaderBoard.length; ++b) {
+      let name = leaderBoard[b].name || "Игрок";
+      const level = leaderBoard[b].level;
+      const isSystemLine = leaderBoard[b].id == null; // турнир/арена строка без id
 
-                name = censorMessage(name);
-                if (!showName) name = "";
+      name = censorMessage(name);
+      if (!showName && !isSystemLine) name = "";
 
-                const isMe = playerCells.some(cell => cell.id === leaderBoard[b].id);
-                if (isMe) {
-                    const myCell = playerCells.find(cell => cell.id === leaderBoard[b].id);
-                    if (myCell?.name) {
-                        let myName = myCell.name;
-                        myName = censorMessage(myName);
-                        name = myName;
-                        myRank = b + 1;
-                    }
-                }
+      let isMe = false;
 
-                if (b < displayedPlayers) {
-                    const entryDiv = document.createElement("div");
+if (!isSystemLine) {
+    // Обычный FFA — сравнение по ID
+    isMe = playerCells.some(cell => cell.id === leaderBoard[b].id);
+}
 
-                    const lowerName = name.toLowerCase();
-                    if (admins.includes(lowerName)) {
-                        entryDiv.className = "Lednick admins";
-                    } else if (moders.includes(lowerName)) {
-                        entryDiv.className = "Lednick " + lowerName;
-                    } else {
-                        entryDiv.className = "Lednick";
-                    }
-
-                    entryDiv.style.color = isMe ? "#FFAAAA" : "#FFFFFF";
-                    entryDiv.innerHTML = (!noRanking ? `${b + 1}. ` : "") +
-                        (level !== -1 
-                            ? `<div class='star-container'>
-                                 <i class='fas fa-star'></i>
-                                 <span class='levelme'>${level}</span>
-                                 <div class='tooltip'>XP: ${leaderBoard[b].xp || 0}</div>
-                               </div>` 
-                            : "") +
-                        `<span>${name}</span>`;
-                    toplistDiv.appendChild(entryDiv);
-                }
-            }
-
-            if (myRank && myRank > displayedPlayers) {
-                const level = accountData ? getLevel(accountData.xp) : -1;
-                let myName = playerCells[0].name;
-                myName = censorMessage(myName);
-
-                const myRankDiv = document.createElement("div");
-
-                const lowerName = myName.toLowerCase();
-                if (admins.includes(lowerName)) {
-                    myRankDiv.className = "Lednick admins";
-                } else if (moders.includes(lowerName)) {
-                    myRankDiv.className = "Lednick " + lowerName;
-                } else {
-                    myRankDiv.className = "Lednick";
-                }
-
-                myRankDiv.style.color = "#FFAAAA";
-                myRankDiv.innerHTML = myRank + ". " +
-                    (level !== -1 
-                        ? `<div class='star-container'>
-                             <i class='fas fa-star'></i>
-                             <span class='levelme'>${level}</span>
-                             <div class='tooltip'>XP: ${accountData?.xp || 0}</div>
-                           </div>` 
-                        : "") +
-                    `<span>${myName}</span>`;
-                toplistDiv.appendChild(myRankDiv);
-            }
-        } else {
-            for (let b = 0; b < teamScores.length; ++b) {
-                const teamEntry = document.createElement("div");
-                teamEntry.innerText = `Team ${b + 1}: ${teamScores[b]}`;
-                teamEntry.style.color = teamColor[b + 1];
-                toplistDiv.appendChild(teamEntry);
-            }
-        }
+// --- ДОБАВИ ЭТО ---
+// Если кастомный (пакет 48) — сравниваем по имени
+if (noRanking && leaderBoard[b].name) {
+    const myName = censorMessage(playerCells[0]?.name || "");
+    if (myName && myName.toLowerCase() === leaderBoard[b].name.toLowerCase()) {
+        isMe = true;
     }
+}
+
+      if (isMe) {
+        const myCell = playerCells.find(cell => cell.id === leaderBoard[b].id);
+        if (myCell?.name) {
+          name = censorMessage(myCell.name);
+          myRank = b + 1;
+        }
+      }
+
+      if (b < displayedPlayers) {
+        const entryDiv = document.createElement("div");
+
+        const lowerName = (name || "").toLowerCase();
+        if (!isSystemLine && admins.includes(lowerName)) {
+          entryDiv.className = "Lednick admins";
+        } else if (!isSystemLine && moders.includes(lowerName)) {
+          entryDiv.className = "Lednick " + lowerName;
+        } else {
+          entryDiv.className = "Lednick";
+        }
+
+        // --- Ключевое ---
+        const numberHtml = isSystemLine ? "" : `${b + 1}. `;
+        if (isSystemLine) entryDiv.style.textAlign = "center";
+
+        entryDiv.style.color = isMe ? "#FFAAAA" : "#FFFFFF";
+        entryDiv.innerHTML =
+          numberHtml +
+          (level !== -1 && !isSystemLine
+            ? `<div class='star-container'>
+                 <i class='fas fa-star'></i>
+                 <span class='levelme'>${level}</span>
+                 <div class='tooltip'>XP: ${leaderBoard[b].xp || 0}</div>
+               </div>`
+            : "") +
+          `<span>${name}</span>`;
+
+        toplistDiv.appendChild(entryDiv);
+      }
+    }
+
+    // показываем мой ранг если я вне топа
+    if (myRank && myRank > displayedPlayers) {
+      const level = accountData ? getLevel(accountData.xp) : -1;
+      let myName = censorMessage(playerCells[0].name);
+
+      const myRankDiv = document.createElement("div");
+      const lowerName = myName.toLowerCase();
+      if (admins.includes(lowerName)) myRankDiv.className = "Lednick admins";
+      else if (moders.includes(lowerName)) myRankDiv.className = "Lednick " + lowerName;
+      else myRankDiv.className = "Lednick";
+
+      myRankDiv.style.color = "#FFAAAA";
+      myRankDiv.innerHTML =
+        myRank + ". " +
+        (level !== -1
+          ? `<div class='star-container'>
+               <i class='fas fa-star'></i>
+               <span class='levelme'>${level}</span>
+               <div class='tooltip'>XP: ${accountData?.xp || 0}</div>
+             </div>`
+          : "") +
+        `<span>${myName}</span>`;
+      toplistDiv.appendChild(myRankDiv);
+    }
+  }
 }
 
 
@@ -2616,7 +2804,8 @@ function drawLeaderBoard() {
 
 
 
-    function Cell(uid, ux, uy, usize, ucolor, uname, a) {
+
+    function Cell(uid, ux, uy, usize, ucolor, uname) {
         this.id = uid;
         this.ox = this.x = ux;
         this.oy = this.y = uy;
@@ -2626,7 +2815,6 @@ function drawLeaderBoard() {
         this.pointsAcc = [];
         this.createPoints();
         this.setName(uname)
-        this._skin = a;
     }
 
     function UText(usize, ucolor, ustroke, ustrokecolor) {
@@ -2663,20 +2851,11 @@ function drawLeaderBoard() {
         mapWidth = 0,
         mapHeight = 0,
         viewZoom = 1,
-        showSkin = true,
-        showName = true,
-        showColor = false,
         ua = false,
         // userScore = 0,
-        enableMouseClicks = false,
-        showMass = true,
-        hideChat = false,
-        smoothRender = .4,
         posX = nodeX = ~~((leftPos + rightPos) / 2),
         posY = nodeY = ~~((topPos + bottomPos) / 2),
         posSize = 1,
-        teamScores = null,
-		closebord = false,
         ma = false,
         // hasOverlay = true,
         drawLine = false,
@@ -2684,9 +2863,6 @@ function drawLeaderBoard() {
         lineY = 0,
         drawLineX = 0,
         drawLineY = 0,
-        // Ra = 0,
-        teamColor = ["#333333", "#FF3333", "#33FF33", "#3333FF"],
-        xa = false,
         zoom = 1,
         isTouchStart = "ontouchstart" in wHandle && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
         splitIcon = new Image,
@@ -2694,11 +2870,9 @@ function drawLeaderBoard() {
         noRanking = false;
     splitIcon.src = "assets/photo/split.png";
     ejectIcon.src = "assets/photo/eject.png";
-    // var wCanvas = document.createElement("canvas");
-    // var playerStat = null;
-    //wHandle.isSpectating = false;
-    // Обновленный setNick
-wHandle.setNick = function (arg) {
+    wHandle.connect = wsConnect;
+	
+		wHandle.setNick = function (arg) {
     $('#overlays').hide();
     userNickName = arg;
     sendNickName();
@@ -2715,75 +2889,79 @@ wHandle.setNick = function (arg) {
     
     setserver(SELECTED_SERVER);
 };
-
-
-    wHandle.setSkins = function (arg) {
-        showSkin = arg
-    };
-    wHandle.setNames = function (arg) {
-        showName = arg
-    };
-    wHandle.setColors = function (arg) {
-        // showColor = arg
-    };
-wHandle.setMouseClicks = function (arg) {
-    enableMouseClicks = arg;
-};
-    wHandle.setShowMass = function (arg) {
-        showMass = arg
-    };
-    wHandle.setSmooth = function (arg) {
-        smoothRender = arg ? 2 : .4
-    };
-	wHandle.setNoBorder = function (arg) {
-        closebord = arg
-    };
-    wHandle.setChatHide = function (arg) {
-        hideChat = arg;
-        if (hideChat) {
-            wjQuery('#chat_textbox').hide();
-        } else {
-            wjQuery('#chat_textbox').show();
-        }
-    }
         wHandle.spectate = function () {
         setserver(SELECTED_SERVER); 
         userNickName = null;
         hideOverlays();
         wjQuery("#statics").hide();
     };
-    wHandle.setAcid = function (arg) {
-        xa = arg
-    };
+	
+	// === Настройки по умолчанию ===
+let showSkin = true,
+    showName = true,
+    showColor = true,
+    showMass = true,
+    hideChat = false,
+    smoothRender = 0.4,
+    closebord = false,
+    enableMouseClicks = false,
+    showGlow = true; // чекбокс эффекта огня
 
-    if (null != wHandle.localStorage) {
-        wjQuery(window).load(function () {
-            wjQuery(".save").each(function () {
-                var id = $(this).data("box-id");
-                var value = wHandle.localStorage.getItem("checkbox-" + id);
-                if (value && value == "true" && 0 != id) {
-                    $(this).prop("checked", "true");
-                    $(this).trigger("change");
-                } else if (id == 0 && value != null) {
-                    $(this).val(value);
-                }
-            });
-            wjQuery(".save").change(function () {
-                var id = $(this).data('box-id');
-                var value = (id == 0) ? $(this).val() : $(this).prop('checked');
-                wHandle.localStorage.setItem("checkbox-" + id, value);
-            });
-        });
-        if (null == wHandle.localStorage.AB8) {
-            wHandle.localStorage.AB8 = ~~(100 * Math.random());
+// === Функции для чекбоксов ===
+wHandle.setSkins = function(arg){ showSkin = arg; };
+wHandle.setNames = function(arg){ showName = arg; };
+wHandle.setColors = function(arg){ showColor = arg; };
+wHandle.setMouseClicks = function(arg){ enableMouseClicks = arg; };
+wHandle.setShowMass = function(arg){ showMass = arg; };
+wHandle.setSmooth = function(arg){ smoothRender = arg ? 2 : 0.4; };
+wHandle.setNoBorder = function(arg){ closebord = arg; };
+wHandle.setChatHide = function(arg){ hideChat = arg; };
+wHandle.setGlow = function(arg){ showGlow = arg; };
+
+
+// === Восстановление состояния чекбоксов из куки ===
+wjQuery(window).on('load', function() {
+    wjQuery(".save").each(function(){
+        const id = $(this).data("box-id");
+        const value = getCookie("checkbox-" + id);
+        
+        // Если куки есть — используем её
+        if (value !== undefined && value !== null) {
+            $(this).prop("checked", value === "true");
+        } else {
+            // Если куки нет — используем значение по умолчанию из JS
+            switch(id) {
+                case 1: $(this).prop("checked", showSkin); break;
+                case 2: $(this).prop("checked", showName); break;
+                case 3: $(this).prop("checked", showColor); break;
+                case 4: $(this).prop("checked", enableMouseClicks); break;
+                case 5: $(this).prop("checked", showMass); break;
+                case 6: $(this).prop("checked", smoothRender > 0.4); break;
+                case 7: $(this).prop("checked", closebord); break;
+                case 8: $(this).prop("checked", hideChat); break;
+                case 9: $(this).prop("checked", showGlow); break;
+            }
         }
-    }
+    });
 
-    wHandle.connect = wsConnect;
+    // Применяем функции сразу после восстановления
+    wjQuery(".save").trigger("change");
 
-    const transparent = new Set(["незнакомка","bublik","ник","liqwid"]);
-const invisible = new Set(["catぶ","ᶳᵆⁿᶵᵋˢˢᶨˢ༄","⧼♢ᛃ╰🎀ᵁ℘ܔ🎀╯ᛃ♢⧼","я","mr.freeman","bewitching"]);
-const rotation = new Set(["нико"]);
+    // Сохраняем изменения в куки
+    wjQuery(".save").on("change", function(){
+        const id = $(this).data("box-id");
+        const value = $(this).prop("checked");
+        setCookie("checkbox-" + id, value, 365); // кука на 1 год
+    });
+});
+
+
+
+
+const transparent = new Set(["незнакомка","bublik","ник","liqwid","zombie"]);
+const invisible = new Set(["catぶ","ᶳᵆⁿᶵᵋˢˢᶨˢ༄","⧼♢ᛃ╰🎀ᵁ℘ܔ🎀╯ᛃ♢⧼","я","mr.freeman","bewitching","zombie","liquid"]); // невидимый ник
+const invisible2 = new Set(["ghost", "невидимка", "shadow", "invis", "cat2","zombie"]); // невидимая масса
+const rotation = new Set(["нико","zombie"]); //поворот скина
 let oldX = -1, oldY = -1, z = 1;
 const skins = {};
 
@@ -2951,53 +3129,66 @@ Cell.prototype = {
                  this.y - this.size - margin > nodeY + canvasHeight / 2 / viewZoom);
     },
 
+    // === НОВОЕ: возвращает цвет, с учётом глобальной опции showColor === false
+    getEffectiveColor() {
+        return showColor ? (this.color || "#FFFFFF") : "#AAAAAA";
+    },
+
+    // getStrokeColor теперь использует getEffectiveColor (чтобы обводка не показывала "старый" цвет)
     getStrokeColor() {
+        const base = this.getEffectiveColor();
+        // base ожидается в формате "#RRGGBB"
         const parseColor = i => {
-            let c = (~~(parseInt(this.color.substr(i, 2), 16) * 0.9)).toString(16);
+            // безопасно дергаем подстроки, если base короткий — возвращаем "00"
+            const hexPart = base && base.length >= i + 2 ? base.substr(i, 2) : "00";
+            let c = Math.floor(parseInt(hexPart, 16) * 0.9).toString(16);
             return c.length === 1 ? "0" + c : c;
         };
         return `#${parseColor(1)}${parseColor(3)}${parseColor(5)}`;
     },
 
-drawOneCell(ctx) {
-    if (!this.shouldRender()) return;
+    drawOneCell(ctx) {
+        if (!this.shouldRender()) return;
 
-    const simpleRender = this.id !== 0 && !this.isVirus && !this.isAgitated && smoothRender > viewZoom || this.getNumPoints() < 10;
+        const simpleRender = this.id !== 0 && !this.isVirus && !this.isAgitated && smoothRender > viewZoom || this.getNumPoints() < 10;
 
-    if (!simpleRender && this.wasSimpleDrawing) this.points.forEach(p => p.size = this.size);
+        if (!simpleRender && this.wasSimpleDrawing) this.points.forEach(p => p.size = this.size);
 
-    let bigPointSize = this.size;
-    if (!this.wasSimpleDrawing) this.points.forEach(p => bigPointSize = Math.max(bigPointSize, p.size));
-    this.wasSimpleDrawing = simpleRender;
+        let bigPointSize = this.size;
+        if (!this.wasSimpleDrawing) this.points.forEach(p => bigPointSize = Math.max(bigPointSize, p.size));
+        this.wasSimpleDrawing = simpleRender;
 
-    ctx.save();
-    this.drawTime = timestamp;
-    this.updatePos();
+        ctx.save();
+        this.drawTime = timestamp;
+        this.updatePos();
 
-    ctx.lineWidth = closebord ? 0 : 10;
-    ctx.lineCap = "round";
-    ctx.lineJoin = this.isVirus ? "miter" : "round";
+        ctx.lineWidth = closebord ? 0 : 10;
+        ctx.lineCap = "round";
+        ctx.lineJoin = this.isVirus ? "miter" : "round";
 
-    const isTransp = transparent.has(this.name?.toLowerCase());
-    ctx.fillStyle = isTransp ? "rgba(0,0,0,0)" : this.color;
-    ctx.strokeStyle = isTransp ? "rgba(0,0,0,0)" : (simpleRender ? this.color : this.getStrokeColor());
+        const isTransp = transparent.has(this.name?.toLowerCase());
+        // используем единый "эффективный" цвет для fill и (при необходимости) stroke
+        const cellColor = this.getEffectiveColor();
 
-    ctx.beginPath();
-    if (simpleRender) {
-        const lw = closebord ? 0 : this.size * 0.03;
-        ctx.lineWidth = lw;
-        ctx.arc(this.x, this.y, this.size - lw * 0.5 + 5, 0, 2 * Math.PI, false);
-    } else {
-        this.movePoints();
-        ctx.moveTo(this.points[0].x, this.points[0].y);
-        this.points.forEach(p => ctx.lineTo(p.x, p.y));
-    }
-    ctx.closePath();
+        ctx.fillStyle = isTransp ? "rgba(0,0,0,0)" : cellColor;
+        ctx.strokeStyle = isTransp ? "rgba(0,0,0,0)" : (simpleRender ? cellColor : this.getStrokeColor());
 
-    if (!closebord) ctx.stroke();
-    ctx.fill();
+        ctx.beginPath();
+        if (simpleRender) {
+            ctx.arc(this.x, this.y, this.size, 0, 2 * Math.PI);
+        } else {
+            this.movePoints();
+            ctx.moveTo(this.points[0].x, this.points[0].y);
+            this.points.forEach(p => ctx.lineTo(p.x, p.y));
+        }
+        ctx.closePath();
 
-    // === Скин с поворотом ===
+        if (!closebord) ctx.stroke();
+        ctx.fill();
+
+
+// === СКИН ===
+if (showSkin) {
     const skinName = normalizeNick(this.name);
     const skinId = skinList[skinName];
     if (skinId) {
@@ -3010,72 +3201,172 @@ drawOneCell(ctx) {
             ctx.save();
             ctx.clip();
 
+            // === ПЛАВНОЕ ПРИБЛИЖЕНИЕ СКИНА ===
+            if (typeof this.skinZoom === "undefined") this.skinZoom = 1;
+            if (typeof this.skinPhase === "undefined") this.skinPhase = 0;
+
+            if (this.glowActive && showGlow) {
+                this.skinPhase += 0.05; // скорость приближения
+                const targetZoom = 1 + Math.abs(Math.sin(this.skinPhase)) * 0.08; // только рост, ≥1
+                this.skinZoom += (targetZoom - this.skinZoom) * 0.1; // плавное приближение
+            } else {
+                // плавный возврат к нормальному размеру
+                this.skinZoom += (1 - this.skinZoom) * 0.05;
+                this.skinPhase = 0;
+            }
+
             const fw = skinImg.width, fh = skinImg.height;
             const frame = (fw > fh) ? Math.floor(Date.now() / 100 % Math.floor(fw / fh)) : 0;
-            const drawSize = 2 * bigPointSize;
+            const sz = simpleRender ? this.size * this.skinZoom : (bigPointSize * this.skinZoom);
 
 if (rotation.has(skinName)) {
-    if (!this.hasOwnProperty('rotationAngle')) this.rotationAngle = 0;
+    if (!this._rot) {
+        this._rot = {
+            target: 0,      // "развёрнутый" целевой угол (может расти бесконечно)
+            current: 0,     // текущий угол, которым крутим картинку
+            lastAngle: null // последний "сырой" atan2 в диапазоне [-π, π]
+        };
+    }
 
-    const targetAngle = Math.atan2(this.ny - this.oy, this.nx - this.ox);
-    let delta = targetAngle - this.rotationAngle;
-    if (delta > Math.PI) delta -= 2 * Math.PI;
-    if (delta < -Math.PI) delta += 2 * Math.PI;
+    // вектор движения клетки за последний апдейт
+    const vx = this.nx - this.ox;
+    const vy = this.ny - this.oy;
 
-    // Плавный поворот
-    this.rotationAngle += delta * 0.1;
+    // если почти не двигаемся — оставляем прежнее направление
+    let rawAngle;
+    if (Math.abs(vx) < 1e-6 && Math.abs(vy) < 1e-6) {
+        rawAngle = this._rot.lastAngle ?? this._rot.current;
+    } else {
+        rawAngle = Math.atan2(vy, vx); // всегда в [-π, π]
+    }
 
-    // Нормализация угла, чтобы скин не сбивался при полном круге
-    this.rotationAngle = (this.rotationAngle + 2 * Math.PI) % (2 * Math.PI);
+    if (this._rot.lastAngle == null) {
+        // инициализация при первом кадре
+        this._rot.lastAngle = rawAngle;
+        this._rot.target = rawAngle;
+        this._rot.current = rawAngle;
+    } else {
+        // считаем локальную разницу и "разворачиваем" её, чтобы не было скачков на ±π
+        let d = rawAngle - this._rot.lastAngle;
+        if (d > Math.PI) d -= 2 * Math.PI;
+        if (d < -Math.PI) d += 2 * Math.PI;
+
+        // накапливаем целевой угол (без лимита на количество оборотов)
+        this._rot.target += d;
+        this._rot.lastAngle = rawAngle;
+    }
+
+    // плавно подтягиваемся к целевому (чем больше коэффициент, тем быстрее)
+    this._rot.current += (this._rot.target - this._rot.current) * 0.12;
 
     ctx.translate(this.x, this.y);
-    ctx.rotate(this.rotationAngle);
-    ctx.drawImage(skinImg,
+    ctx.rotate(this._rot.current);
+    ctx.drawImage(
+        skinImg,
         fw > fh ? frame * fh : 0, 0, fh, fh,
-        -bigPointSize, -bigPointSize, drawSize, drawSize
+        -sz, -sz, sz * 2, sz * 2
     );
 } else {
-                ctx.drawImage(skinImg,
-                    fw > fh ? frame * fh : 0, 0, fh, fh,
-                    this.x - bigPointSize, this.y - bigPointSize, drawSize, drawSize
-                );
-            }
+    ctx.drawImage(
+        skinImg,
+        fw > fh ? frame * fh : 0, 0, fh, fh,
+        this.x - sz, this.y - sz, sz * 2, sz * 2
+    );
+}
+
+
             ctx.restore();
         }
     }
+}
 
-    // === Имя и масса ===
-    if (this.id !== 0) {
-        const x = Math.floor(this.x), y = Math.floor(this.y);
-        const zoomRatio = Math.ceil(10 * viewZoom) * 0.1;
-        const invZoom = 1 / zoomRatio;
+// === ЭФФЕКТ ПОВЕРХ СКИНА ===
+const mass = Math.floor(this.size * this.size * 0.01);
+if (typeof this.glowActive === 'undefined') this.glowActive = false;
+if (!this.glowActive && mass >= 22400) this.glowActive = true;
+if (this.glowActive && mass <= 22300) this.glowActive = false;
 
-        if (showName && this.name && this.nameCache && this.size > 10) {
-            let displayName = this.name.toLowerCase();
-            if (invisible.has(displayName)) displayName = "";
-            else displayName = censorMessage(this.name);
-
-            this.nameCache.setValue(displayName);
-            this.nameCache.setSize(this.getNameSize());
-            this.nameCache.setScale(zoomRatio);
-            const img = this.nameCache.render();
-            ctx.drawImage(img, x - Math.floor(img.width * invZoom / 2), y - Math.floor(img.height * invZoom / 2),
-                          Math.floor(img.width * invZoom), Math.floor(img.height * invZoom));
-        }
-
-        if (showMass && !this.isVirus && !this.isEjected && !this.isAgitated && this.size > 100) {
-            const mass = Math.floor(this.size * this.size * 0.01);
-            this.sizeCache.setValue(mass);
-            this.sizeCache.setScale(zoomRatio);
-            const img = this.sizeCache.render();
-            ctx.drawImage(img, x - Math.floor(img.width * invZoom / 2), y + Math.floor(img.height * 0.8 * invZoom),
-                          Math.floor(img.width * invZoom), Math.floor(img.height * invZoom));
-        }
+if (this.glowActive && showGlow) {
+    const effectId = "glow"; 
+    if (!skins[effectId]) {
+        skins[effectId] = new Image();
+        skins[effectId].src = `https://api.agar.su/assets/photo/limited.png`; // теперь обычный PNG
     }
 
-    ctx.restore();
+    const effectImg = skins[effectId];
+    if (effectImg.complete && effectImg.width > 0) {
+        ctx.save();
+        ctx.clip();
+
+        const edrawSize = 2 * bigPointSize;
+
+        ctx.globalAlpha = 1;
+        ctx.drawImage(
+            effectImg,
+            this.x - edrawSize / 2,
+            this.y - edrawSize / 2,
+            edrawSize,
+            edrawSize
+        );
+
+        ctx.restore();
+    }
 }
-};	
+
+
+
+// === В БЛОКЕ ОТРИСОВКИ ИМЕНИ И МАССЫ ===
+if (this.id !== 0) {
+    const x = (this.x), y = (this.y);
+    const zoomRatio = Math.ceil(10 * viewZoom) * 0.1;
+    const invZoom = 1 / zoomRatio;
+
+    // ---- Проверяем, принадлежит ли ник invisible2 ----
+    const lowerName = this.name?.toLowerCase() || "";
+    const isInvisible2 = invisible2.has(lowerName);
+
+    // === ИМЯ ===
+    if (showName && this.name && this.nameCache && this.size > 10 && !isInvisible2) {
+        let displayName = lowerName;
+        if (invisible.has(displayName)) displayName = "";
+        else displayName = censorMessage(this.name);
+
+        this.nameCache.setValue(displayName);
+        this.nameCache.setSize(this.getNameSize());
+        this.nameCache.setScale(zoomRatio);
+        const img = this.nameCache.render();
+        ctx.drawImage(
+            img,
+            x - (img.width * invZoom / 2),
+            y - (img.height * invZoom / 2),
+            (img.width * invZoom),
+            (img.height * invZoom)
+        );
+    }
+
+    // === МАССА ===
+    if (showMass && !this.isVirus && !this.isEjected && !this.isAgitated && this.size > 100 && !isInvisible2) {
+        const mass = Math.floor(this.size * this.size * 0.01);
+        this.sizeCache.setValue(mass);
+        this.sizeCache.setScale(zoomRatio);
+        const img = this.sizeCache.render();
+        ctx.drawImage(
+            img,
+            x - (img.width * invZoom / 2),
+            y + (img.height * 0.9 * invZoom),
+            (img.width * invZoom),
+            (img.height * invZoom)
+        );
+    }
+}
+
+
+
+
+        ctx.restore();
+    }
+};
+
     UText.prototype = {
         _value: "",
         _color: "#000000",
@@ -3258,41 +3549,243 @@ if (rotation.has(skinName)) {
         }
     };
 
+// === ПАРСИНГ НИКА ===
+function parseFullNick(full) {
+  const str = String(full || '').trim();
+  const [nickPart, pass = ''] = str.split('#', 2);
+  const hasClan = /\[[^\]]+\]/.test(nickPart);
+  const cleanNick = nickPart.replace(/\[|\]/g, '').trim(); // "r2b" или "Player"
+  return { str, nickPart, pass: pass.trim(), hasClan, cleanNick };
+}
+
+// === СКИН — РАБОТАЕТ ДЛЯ НИКОВ И КЛАНОВ (skinList — объект) ===
+function getSkinUrlForNick(nickname) {
+  try {
+    if (typeof skinList !== 'object' || !skinList) return null;
+
+    // Чистое имя без [] и в нижнем регистре
+    const cleanKey = nickname.replace(/\[|\]/g, '').trim().toLowerCase();
+
+    // Ищем в skinList
+    const code = skinList[cleanKey];
+    if (code) {
+      return `https://api.agar.su/skins/${code}.png`;
+    }
+
+    // Если не нашли — пробуем с []
+    const withBrackets = `[${cleanKey}]`;
+    const code2 = skinList[withBrackets];
+    return code2 ? `https://api.agar.su/skins/${code2}.png` : null;
+
+  } catch (e) {
+    console.error('Skin error:', e);
+    return null;
+  }
+}
+
+// === ПАРОЛЬ С ГЛАЗКОМ ===
+function makePasswordBox(pass) {
+  const wrap = document.createElement('div');
+  wrap.className = 'passbox';
+  const input = document.createElement('input');
+  input.type = 'password';
+  input.value = pass || '';
+  input.readOnly = true;
+  const btn = document.createElement('button');
+  btn.type = 'button'; btn.className = 'icon-btn';
+  const icon = document.createElement('i'); icon.className = 'fa fa-eye';
+  btn.appendChild(icon);
+  btn.onclick = () => {
+    const show = input.type === 'password';
+    input.type = show ? 'text' : 'password';
+    icon.className = show ? 'fa fa-eye-slash' : 'fa fa-eye';
+  };
+  wrap.append(input, btn);
+  return wrap;
+}
+
+// === РЕНДЕР КАРТОЧКИ ===
+function renderCard(list, fullNick) {
+  const { str, nickPart, pass, hasClan, cleanNick } = parseFullNick(fullNick);
+  const label = hasClan ? nickPart : (nickPart || '?');
+
+  const li = document.createElement('li');
+
+  const skinUrl = getSkinUrlForNick(cleanNick);
+  const avatar = skinUrl
+    ? Object.assign(document.createElement('img'), { className: 'skin', src: skinUrl, loading: 'lazy' })
+    : Object.assign(document.createElement('div'), { className: 'skin skin--empty', textContent: label.charAt(0).toUpperCase() });
+
+  const name = document.createElement('div');
+  name.className = 'nick';
+  name.textContent = label;
+  name.title = str;
+  name.onclick = () => {
+    try { if (typeof setNick === 'function') setNick(str); } catch(e) {}
+  };
+
+  const passBox = makePasswordBox(pass);
+  li.append(avatar, name, passBox);
+  list.appendChild(li);
+}
+
+// === ЗАГРУЗКА НИКОВ (С ЖЁСТКИМ СКРЫТИЕМ ПРИ НЕАВТОРИЗАЦИИ) ===
+async function loadMyNicknames() {
+  const block = document.getElementById('myNicknamesBlock');
+  const nickList = document.getElementById('myNickList');
+  const clanList = document.getElementById('myClanList');
+  const badgeNick = document.getElementById('badgeNick');
+  const badgeClan = document.getElementById('badgeClan');
+
+  // Нет токена — выходим (CSS скрывает)
+  if (!localStorage.accountToken) return;
+
+  // На всякий случай покажем блок в состоянии "загружается"
+  if (block) block.style.display = '';
+
+  try {
+    const res = await accountApiGet('me/nicknames');
+    if (!res.ok) {
+      if (res.status === 401) {
+        clearAccountToken();
+        onLogout();
+      }
+      return;
+    }
+
+    const data = await res.json();
+
+    // ОЧИСТКА списков, если они есть
+    if (nickList) nickList.innerHTML = '';
+    if (clanList) clanList.innerHTML = '';
+
+    let nickCount = 0, clanCount = 0;
+
+    if (Array.isArray(data?.nicknames) && data.nicknames.length) {
+      data.nicknames.forEach(row => {
+        const full = String(row.nickname || '');
+        const pass = (row.password ?? '').trim();
+        const finalNick = pass && !full.includes('#') ? `${full}#${pass}` : full;
+        const parsed = parseFullNick(finalNick);
+
+        if (parsed.hasClan) {
+          if (clanList) renderCard(clanList, finalNick);
+          clanCount++;
+        } else if (parsed.nickPart) {
+          if (nickList) renderCard(nickList, finalNick);
+          nickCount++;
+        }
+      });
+    } else {
+      // Пусто: плейсхолдеры
+      if (nickList) {
+        const li = document.createElement('li');
+        li.className = 'empty';
+        li.textContent = 'Вы не покупали ники';
+        nickList.appendChild(li);
+      }
+      if (clanList) {
+        const li = document.createElement('li');
+        li.className = 'empty';
+        li.textContent = 'Вы не покупали кланы';
+        clanList.appendChild(li);
+      }
+    }
+
+    // Бейджи
+    if (badgeNick) badgeNick.textContent = String(nickCount);
+    if (badgeClan) badgeClan.textContent = String(clanCount);
+
+    // Показать блок и включить табы
+    if (block) block.style.display = '';
+    wireTabsOnce();
+    showNickClanTab('nicks');
+
+  } catch (e) {
+    console.error('Ошибка загрузки ников:', e);
+    // можно показать сообщение об ошибке вместо полного скрытия
+    if (block) block.style.display = '';
+    if (nickList && !nickList.children.length) {
+      const li = document.createElement('li');
+      li.className = 'error';
+      li.textContent = 'Не удалось загрузить никнеймы';
+      nickList.appendChild(li);
+    }
+  }
+}
+
+// === ТАБЫ ===
+function showNickClanTab(which) {
+  const tabN = document.getElementById('tabNicknames');
+  const tabC = document.getElementById('tabClans');
+  const nick = document.getElementById('nickWrap');
+  const clan = document.getElementById('clanWrap');
+  if (!tabN || !tabC || !nick || !clan) return;
+  tabN.classList.toggle('active', which === 'nicks');
+  tabC.classList.toggle('active', which === 'clans');
+  nick.style.display = which === 'nicks' ? '' : 'none';
+  clan.style.display = which === 'clans' ? '' : 'none';
+}
+
+function wireTabsOnce() {
+  const wrap = document.getElementById('myNickClanTabs');
+  const tabN = document.getElementById('tabNicknames');
+  const tabC = document.getElementById('tabClans');
+  if (!wrap || !tabN || !tabC || wrap.dataset.wired) return;
+  tabN.onclick = () => showNickClanTab('nicks');
+  tabC.onclick = () => showNickClanTab('clans');
+  wrap.dataset.wired = '1';
+}
+
+
 
 
 // --------------------- Logout ---------------------
 const onLogout = () => {
-    accountData = null;
-    localStorage.removeItem('accountData');
-    clearAccountToken();
+accountData = null;
+  localStorage.removeItem('accountData');
+  clearAccountToken();
 
-    const progressBar = document.querySelector(".progress-fill");
-    if (progressBar) progressBar.style.width = `0%`;
+  // === СКРЫВАЕМ БЛОК (на всякий) ===
+  const block = document.getElementById('myNicknamesBlock');
+  if (block) block.style.display = 'none';
 
-    const levelCircle = document.getElementById("levelCircle");
-    if (levelCircle) levelCircle.textContent = "0";
+  // === ОЧИСТКА (опционально) ===
+  const nickList = document.getElementById('myNickList');
+  const clanList = document.getElementById('myClanList');
+  const badgeNick = document.getElementById('badgeNick');
+  const badgeClan = document.getElementById('badgeClan');
+  if (nickList) nickList.innerHTML = '';
+  if (clanList) clanList.innerHTML = '';
+  if (badgeNick) badgeNick.textContent = '0';
+  if (badgeClan) badgeClan.textContent = '0';
 
-    const progressText = document.getElementById("progressText");
-    if (progressText) progressText.textContent = "0% (0/0)";
+  // Прогресс, UI и т.д.
+  const progressBar = document.querySelector(".progress-fill");
+  if (progressBar) progressBar.style.width = `0%`;
+  const levelCircle = document.getElementById("levelCircle");
+  if (levelCircle) levelCircle.textContent = "0";
+  const progressText = document.getElementById("progressText");
+  if (progressText) progressText.textContent = "0% (0/0)";
+  const accountIDElement = document.getElementById("accountID");
+  if (accountIDElement) accountIDElement.textContent = "ID: 0000";
 
-    const accountIDElement = document.getElementById("accountID");
-    if (accountIDElement) accountIDElement.textContent = "ID: 0000";
+  const authlog = document.getElementById("authlog");
+  const logoutButton = document.getElementById("logoutButton");
+  if (authlog) authlog.style.display = "flex";
 
-    authlog.style.display = "flex";
-    logoutButton.style.display = "none";
-
-
+  showAuthButtons();
 };
 
 
 // --------------------- Token ---------------------
 const setAccountToken = token => { localStorage.accountToken = token; };
-const clearAccountToken = () => { delete localStorage.accountToken; };
+const clearAccountToken = () => { localStorage.removeItem('accountToken'); };
 
 const accountApiGet = (tag, method = 'GET', body = null) => {
     const headers = { Authorization: `Game ${localStorage.accountToken}` };
     if (body) headers['Content-Type'] = 'application/json';
-    return fetch("https://pmori.ru:6003/api/" + tag, { method, headers, body: body ? JSON.stringify(body) : null });
+    return fetch("https://api.agar.su/api/" + tag, { method, headers, body: body ? JSON.stringify(body) : null });
 };
 
 // --------------------- Login via Telegram / Google ---------------------
@@ -3305,7 +3798,7 @@ async function handleLogin(tokenOrUser, provider) {
         url = 'auth/google';
         options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ credential: tokenOrUser }) };
     }
-    const res = await fetch("https://pmori.ru:6003/api/" + url, options);
+    const res = await fetch("https://api.agar.su/api/" + url, options);
     const data = await res.json();
     if (data.error) return alert(data.error);
     wHandle.onAccountLoggedIn(data.token);
@@ -3325,6 +3818,7 @@ wHandle.onGoogleAuth = function(response) {
 wHandle.onAccountLoggedIn = token => {
     setAccountToken(token);
     loadAccountUserData();
+	loadMyNicknames();
     sendAccountToken();
 };
 
@@ -3359,6 +3853,7 @@ const showAuthButtons = () => {
 const setAccountData = data => {
     accountData = data;
     displayAccountData();
+	loadMyNicknames();
     document.querySelectorAll(".menu-item")[2].click();
     logoutButton.style.display = "";
     authlog.style.display = "none";
