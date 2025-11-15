@@ -2772,9 +2772,10 @@ if (noRanking && leaderBoard[b].name) {
         if (isSystemLine) entryDiv.style.textAlign = "center";
 
         entryDiv.style.color = isMe ? "#FFAAAA" : "#FFFFFF";
-		  // --- YouTube иконка для ютуберов ---
+// --- YouTube иконка для ютуберов ---
 let ytHtml = '';
-const ytIndex = youtubers.indexOf(leaderBoard[b].name);
+const cleanName = (leaderBoard[b].name || "").trim();
+const ytIndex = youtubers.indexOf(cleanName);
 if (ytIndex !== -1 && url_youtubers[ytIndex] && !isSystemLine) {
     ytHtml = `<a href="${url_youtubers[ytIndex]}" target="_blank" style="margin-left: 6px; color: #ff0000;" title="YouTube канал">
                 <i class="fab fa-youtube"></i>
@@ -2807,10 +2808,11 @@ if (ytIndex !== -1 && url_youtubers[ytIndex] && !isSystemLine) {
       else myRankDiv.className = "Lednick";
 
       myRankDiv.style.color = "#FFAAAA";
-		// --- YouTube иконка для "мой ранг" ---
+// --- YouTube иконка для "мой ранг" ---
 let myYtHtml = '';
 if (playerCells[0]?.name) {
-    const ytIndex = youtubers.indexOf(playerCells[0].name);
+    const cleanMyName = playerCells[0].name.trim();
+    const ytIndex = youtubers.indexOf(cleanMyName);
     if (ytIndex !== -1 && url_youtubers[ytIndex]) {
         myYtHtml = `<a href="${url_youtubers[ytIndex]}" target="_blank" style="margin-left: 6px; color: #ff0000;" title="YouTube канал">
                       <i class="fab fa-youtube"></i>
