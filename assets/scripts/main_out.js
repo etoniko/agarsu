@@ -1377,6 +1377,8 @@ function censorMessage(message) {
 
 const admins = ["нико"];
 const moders = ["banshee","cosmos","rizwer"];
+const youtubers = ["SalRuz", "MORCOV"];
+const url_youtubers = ["https://youtube.com/@SalRuzO", "https://www.youtube.com/@MORCCVA"];
 
 let passUsers = [];
 const ignoredPlayers = new Set();
@@ -1515,10 +1517,6 @@ function shouldBlurAndRecord(pId, message){
 // ==========================
 // Основная функция отрисовки сообщений
 // ==========================
-
-const youtubers = ["SalRuz", "MORCOV"];
-const url_youtubers = ["https://youtube.com/@SalRuzO", "https://www.youtube.com/@MORCCVA"];
-	
 function drawChatBoard() {
     if (hideChat) return;
     const lastMessage = chatBoard[chatBoard.length - 1];
@@ -2791,7 +2789,7 @@ if (ytIndex !== -1 && url_youtubers[ytIndex] && !isSystemLine) {
                  <div class='tooltip'>XP: ${leaderBoard[b].xp || 0}</div>
                </div>`
             : "") +
-          `<span>${name}</span>`;
+          ` <span>${name}</span>`;
 
         toplistDiv.appendChild(entryDiv);
       }
@@ -2828,7 +2826,7 @@ if (playerCells[0]?.name) {
                <div class='tooltip'>XP: ${accountData?.xp || 0}</div>
              </div>`
           : "") +
-        `<span>${myName}</span>`;
+        ` <span>${myName}</span>`;
       toplistDiv.appendChild(myRankDiv);
     }
   }
