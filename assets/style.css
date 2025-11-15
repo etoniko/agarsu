@@ -6,6 +6,7 @@
     color: #ffffff !important;
     font-weight: lighter;
 }
+
 .cosmos{background:url(/assets/photo/cosmos.png) !important; font-weight:lighter;}
 .rizwer{background: linear-gradient(90deg,rgba(2, 0, 36, 1) 0%, rgba(9, 9, 121, 1) 35%, rgba(0, 212, 255, 1) 100%) !important;}
 #captcha-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background-color:rgba(0, 0, 0, 0.5);display:flex;justify-content:center;align-items:center;z-index:9999;}
@@ -165,6 +166,7 @@ i:hover{cursor:pointer;}
 .tg{color:#006cf1;transition:ease filter, transform 0.5s;}
 .tg:hover{color:#035dcb;	transform:scale(1.1);	transition:ease filter, transform 0.5s;}
 .fa-arrow-up{font-size:17px;}
+.fa-youtube{background: radial-gradient(white 4px, #1e90ff00 1%);color: red;}
 #toplistnow{font-size: 13.4px;padding-top: 5px;}
 /* MOBILE MOBILE MOBILE MOBILE MOBILE MOBILE MOBILE MOBILE MOBILE MOBILE MOBILE MOBILE MOBILE MOBILE MOBILE MOBILE MOBILE MOBILE MOBILE MOBILE MOBILE MOBILE MOBILE MOBILE MOBILE MOBILE MOBILE MOBILE MOBILE MOBILE MOBILE MOBILE MOBILE  */
 @media (max-width:599px){
