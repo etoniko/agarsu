@@ -1377,7 +1377,7 @@ function censorMessage(message) {
 
 const admins = ["нико"];
 const moders = ["banshee","cosmos","rizwer"];
-const youtubers = ["SalRuz", "MORCOV"];
+const youtubers = ["salruz", "morcov"];
 const url_youtubers = ["https://youtube.com/@SalRuzO", "https://www.youtube.com/@MORCCVA"];
 
 let passUsers = [];
