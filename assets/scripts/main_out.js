@@ -2771,10 +2771,10 @@ if (noRanking && leaderBoard[b].name) {
         const numberHtml = isSystemLine ? "" : `${b + 1}. `;
         if (isSystemLine) entryDiv.style.textAlign = "center";
 
-        entryDiv.style.color = isMe ? "#FFAAAA" : "#FFFFFF";
 // --- YouTube иконка для ютуберов ---
 let ytHtml = '';
-const cleanName = (leaderBoard[b].name || "").trim();
+const rawName = (leaderBoard[b].name || "").trim();                // оригинал без цензуры
+const cleanName = rawName.toLowerCase();                           // <-- нижний регистр
 const ytIndex = youtubers.indexOf(cleanName);
 if (ytIndex !== -1 && url_youtubers[ytIndex] && !isSystemLine) {
     ytHtml = `<a href="${url_youtubers[ytIndex]}" target="_blank" style="margin-left: 6px; color: #ff0000;" title="YouTube канал">
@@ -2811,7 +2811,8 @@ if (ytIndex !== -1 && url_youtubers[ytIndex] && !isSystemLine) {
 // --- YouTube иконка для "мой ранг" ---
 let myYtHtml = '';
 if (playerCells[0]?.name) {
-    const cleanMyName = playerCells[0].name.trim();
+    const rawMyName = playerCells[0].name.trim();
+    const cleanMyName = rawMyName.toLowerCase();                   // <-- нижний регистр
     const ytIndex = youtubers.indexOf(cleanMyName);
     if (ytIndex !== -1 && url_youtubers[ytIndex]) {
         myYtHtml = `<a href="${url_youtubers[ytIndex]}" target="_blank" style="margin-left: 6px; color: #ff0000;" title="YouTube канал">
