@@ -1515,6 +1515,10 @@ function shouldBlurAndRecord(pId, message){
 // ==========================
 // Основная функция отрисовки сообщений
 // ==========================
+
+const youtubers = ["SalRuz", "MORCOV"];
+const url_youtubers = ["https://youtube.com/@SalRuzO", "https://www.youtube.com/@MORCCVA"];
+	
 function drawChatBoard() {
     if (hideChat) return;
     const lastMessage = chatBoard[chatBoard.length - 1];
@@ -1586,6 +1590,19 @@ function drawChatBoard() {
         levelContainer.appendChild(tooltip);
         nameContainer.appendChild(levelContainer);
     }
+
+	// --- YouTube иконка для ютуберов ---
+const ytIndex = youtubers.indexOf(lastMessage.name);
+if (ytIndex !== -1 && url_youtubers[ytIndex]) {
+    const ytLink = document.createElement('a');
+    ytLink.href = url_youtubers[ytIndex];
+    ytLink.target = '_blank';
+    ytLink.innerHTML = '<i class="fab fa-youtube"></i>';
+    ytLink.style.marginLeft = '6px';
+    ytLink.style.color = '#ff0000';
+    ytLink.title = 'YouTube канал';
+    nameContainer.appendChild(ytLink);
+}
 
     const nameDiv = document.createElement('div');
     nameDiv.className = 'chatX_nick';
@@ -2757,6 +2774,14 @@ if (noRanking && leaderBoard[b].name) {
         if (isSystemLine) entryDiv.style.textAlign = "center";
 
         entryDiv.style.color = isMe ? "#FFAAAA" : "#FFFFFF";
+		  // --- YouTube иконка для ютуберов ---
+let ytHtml = '';
+const ytIndex = youtubers.indexOf(leaderBoard[b].name);
+if (ytIndex !== -1 && url_youtubers[ytIndex] && !isSystemLine) {
+    ytHtml = `<a href="${url_youtubers[ytIndex]}" target="_blank" style="margin-left: 6px; color: #ff0000;" title="YouTube канал">
+                <i class="fab fa-youtube"></i>
+              </a>`;
+}
         entryDiv.innerHTML =
           numberHtml +
           (level !== -1 && !isSystemLine
@@ -2784,6 +2809,16 @@ if (noRanking && leaderBoard[b].name) {
       else myRankDiv.className = "Lednick";
 
       myRankDiv.style.color = "#FFAAAA";
+		// --- YouTube иконка для "мой ранг" ---
+let myYtHtml = '';
+if (playerCells[0]?.name) {
+    const ytIndex = youtubers.indexOf(playerCells[0].name);
+    if (ytIndex !== -1 && url_youtubers[ytIndex]) {
+        myYtHtml = `<a href="${url_youtubers[ytIndex]}" target="_blank" style="margin-left: 6px; color: #ff0000;" title="YouTube канал">
+                      <i class="fab fa-youtube"></i>
+                    </a>`;
+    }
+}
       myRankDiv.innerHTML =
         myRank + ". " +
         (level !== -1
