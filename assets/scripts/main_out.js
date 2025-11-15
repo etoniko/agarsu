@@ -2773,11 +2773,10 @@ if (noRanking && leaderBoard[b].name) {
 
 // --- YouTube иконка для ютуберов ---
 let ytHtml = '';
-const rawName = (leaderBoard[b].name || "").trim();                // оригинал без цензуры
-const cleanName = rawName.toLowerCase();                           // <-- нижний регистр
-const ytIndex = youtubers.indexOf(cleanName);
+const rawName = (leaderBoard[b].name || "").trim().toLowerCase(); // 
+const ytIndex = youtubers.indexOf(rawName);
 if (ytIndex !== -1 && url_youtubers[ytIndex] && !isSystemLine) {
-    ytHtml = `<a href="${url_youtubers[ytIndex]}" target="_blank" style="margin-left: 6px; color: #ff0000;" title="YouTube канал">
+    ytHtml = ` <a href="${url_youtubers[ytIndex]}" target="_blank" style="margin-left: 6px; color: #ff0000;" title="YouTube канал">
                 <i class="fab fa-youtube"></i>
               </a>`;
 }
@@ -2811,11 +2810,10 @@ if (ytIndex !== -1 && url_youtubers[ytIndex] && !isSystemLine) {
 // --- YouTube иконка для "мой ранг" ---
 let myYtHtml = '';
 if (playerCells[0]?.name) {
-    const rawMyName = playerCells[0].name.trim();
-    const cleanMyName = rawMyName.toLowerCase();                   // <-- нижний регистр
-    const ytIndex = youtubers.indexOf(cleanMyName);
+    const rawMyName = playerCells[0].name.trim().toLowerCase();
+    const ytIndex = youtubers.indexOf(rawMyName);
     if (ytIndex !== -1 && url_youtubers[ytIndex]) {
-        myYtHtml = `<a href="${url_youtubers[ytIndex]}" target="_blank" style="margin-left: 6px; color: #ff0000;" title="YouTube канал">
+        myYtHtml = ` <a href="${url_youtubers[ytIndex]}" target="_blank" style="margin-left: 6px; color: #ff0000;" title="YouTube канал">
                       <i class="fab fa-youtube"></i>
                     </a>`;
     }
