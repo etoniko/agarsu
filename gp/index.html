@@ -217,7 +217,7 @@
           </div>
           <div class="nav-buttons">
             <button onclick="spectate();" class="nav-button serv-button"><i class="fas fa-eye"></i> SPECTATE </button>
-            <button onclick="startGame();return false;" class="nav-button play-button"><i class="fas fa-play"></i> PLAY </button>
+            <button onclick="startGame();gp.player.ready;return false;" class="nav-button play-button"><i class="fas fa-play"></i> PLAY </button>
           </div>
         </div>
 
@@ -392,8 +392,6 @@
   <script>
     window.onGPInit = async (gp) => {
         console.log('GamePush SDK initialized');
-        await gp.player.ready;
-        gp.game.ready();
     };
   </script>
 </body>
