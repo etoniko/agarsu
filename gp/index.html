@@ -1,222 +1,195 @@
-<html lang="ru">
+<!DOCTYPE html>
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="description" content="Agar.su — лучшая альтернатива agar.io. Играйте онлайн прямо сейчас: поглощайте клетки, соревнуйтесь с другими игроками и станьте лидером среди всех клонов agar и agario.">
+    <meta name="description" content="Agar.su — the best alternative to agar.io. Play online right now: absorb cells, compete with other players and become the leader among all agar and agario clones.">
     <meta name="author" content="Agar.su Team">
     <meta name="robots" content="index">
-    <!-- Open Graph для социальных сетей -->
-    <meta property="og:title" content="Agar.su - Завоевание начинается!">
-    <meta property="og:description" content="absorb cells, compete with other players, and become the leader among all agar and agario clones.">
+    <!-- Open Graph for social networks -->
+    <meta property="og:title" content="Agar.su - The Conquest Begins!">
+    <meta property="og:description" content="Absorb cells, compete with other players, and become the leader among all agar and agario clones.">
     <meta property="og:image" content="assets/photo/ogimage.jpeg">
     <meta property="og:url" content="https://agar.su">
     <meta property="og:type" content="website">
     <title>Agar.su</title>
-    <!-- Favicon и иконки для Apple устройств -->
+    <!-- Favicon and Apple icons -->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="icon" href="/icon.svg" type="image/x-icon">
     <!-- Canonical URL -->
     <link rel="canonical" href="https://agar.su">
-    <!-- Шрифты и стили -->
+    <!-- Fonts and styles -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flag-icons/css/flag-icons.min.css">
     <link href="https://fonts.googleapis.com/css?family=Ubuntu:700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=new_releases" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="/assets/style.css?0.0.04" rel="stylesheet">
-    <!-- Скрипты -->
+    <link href="https://agar.su/assets/style.css?0.0.04" rel="stylesheet">
+    <!-- Scripts -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="/assets/scripts/jquery.js?0.0.2"></script>
-    <script src="/assets/scripts/log.js?0.0.2"></script>
-    <script src="/assets/scripts/vector.js?0.0.2"></script>
+    <script src="https://agar.su/assets/scripts/jquery.js?0.0.2"></script>
+    <script src="https://agar.su/assets/scripts/log.js?0.0.2"></script>
+    <script src="https://agar.su/assets/scripts/vector.js?0.0.2"></script>
     <script src="https://api.agar.su/assets/scripts/gp.js"></script>
-	<script src="/assets/scripts/shop.js" defer></script>
-	<script src="/assets/scripts/all.js?0.0.35" defer></script>
-	<script src="/assets/scripts/pass.js?0.0.2" defer></script>
-	<script src="/assets/scripts/skins.js?0.0.2" defer></script>
-	<script src="/assets/scripts/rating.js?0.0.4" defer></script>
-	<script async src="https://gamepush.com/sdk/gamepush.js?projectId=25200&publicToken=5DXsYLvhOpBnuHjsIdeupMHEmkpKu24m&callback=onGPInit"></script>
+    <script src="https://agar.su/assets/scripts/shop.js" defer></script>
+    <script src="https://agar.su/assets/scripts/all.js?0.0.35" defer></script>
+    <script src="https://agar.su/assets/scripts/pass.js?0.0.2" defer></script>
+    <script src="https://agar.su/assets/scripts/skins.js?0.0.2" defer></script>
+    <script src="https://agar.su/assets/scripts/rating.js?0.0.4" defer></script>
+    <script async src="https://gamepush.com/sdk/gamepush.js?projectId=25200&publicToken=5DXsYLvhOpBnuHjsIdeupMHEmkpKu24m&callback=onGPInit"></script>
 </head>
 <body>
   <div id="overlays" class="overlays">
-    <div class="social"><a href="https://t.me/agarsu" target="_blank" class="tg"><i style="background: radial-gradient(white 9px, #1e90ff00 50%);border-radius: 50%;" class="fab fa-telegram"></i></a><a href="https://vk.com/club233723574" target="_blank" class="soc"><i class="fab fa-vk"></i></a><a href="#" class="soc"><i style="cursor: not-allowed;" class="fab fa-discord"></i></a></div>
+    <div class="social">
+      <a href="https://t.me/agarsu" target="_blank" class="tg"><i style="background: radial-gradient(white 9px, #1e90ff00 50%);border-radius: 50%;" class="fab fa-telegram"></i></a>
+      <a href="https://vk.com/club233723574" target="_blank" class="soc"><i class="fab fa-vk"></i></a>
+      <a href="#" class="soc"><i style="cursor: not-allowed;" class="fab fa-discord"></i></a>
+    </div>
     <div class="center">
       <div class="sidebar">
-        <div class="menu-item" onclick="showContent('shop')"><i class="fas fa-shop"></i><span class="label">Магазин</span></div>
-        <div class="menu-item" onclick="showContent('skinslist')"><i class="fas fa-image"></i><span class="label">Скины</span></div>
-        <div class="menu-item active" onclick="showContent('home')"><i class="fas fa-home"></i><span class="label">Главная</span></div>
-        <div class="menu-item" onclick="showContent('rating')"><i class="fas fa-star"></i><span class="label">Рейтинг</span></div>
-        <div class="menu-item" onclick="showContent('store')"><i class="fas fa-user"></i><span class="label">Войти</span></div>
+        <div class="menu-item" onclick="showContent('shop')"><i class="fas fa-shop"></i><span class="label">Shop</span></div>
+        <div class="menu-item" onclick="showContent('skinslist')"><i class="fas fa-image"></i><span class="label">Skins</span></div>
+        <div class="menu-item active" onclick="showContent('home')"><i class="fas fa-home"></i><span class="label">Home</span></div>
+        <div class="menu-item" onclick="showContent('rating')"><i class="fas fa-star"></i><span class="label">Rating</span></div>
+        <div class="menu-item" onclick="showContent('store')"><i class="fas fa-user"></i><span class="label">Login</span></div>
       </div>
       <div class="main-content">
-
-
-<div id="shop" class="content">
-	<div class="top-info"><div><span>Создание лички</span></div></div>
-<div class="shop-container">
-  <div class="avatar-section">
-    <label id="previewContainer" for="fileInput">
-      <canvas id="previewCanvas" width="512" height="512"></canvas>
-      <img id="previewGif" alt="GIF preview">
-    </label>
-    <input type="file" id="fileInput" accept=".png,.jpg,.gif" autocomplete="off">
-    <div id="fileError" class="error"></div>
-
-    <form id="paymentForm" autocomplete="off">
-      <div class="radio-group">
-        <label><input type="radio" name="serviceType" value="personal" id="personal" checked autocomplete="off"><span>Для себя</span></label>
-        <label><input type="radio" name="serviceType" value="clan" id="clan" autocomplete="off"><span>Для клана</span></label>
-      </div>
-
-      <div class="input-group">
-        <div id="nicknameWrapper">
-          <input type="text" id="nickname" placeholder="Придумай себе ник" required maxlength="15" title="Введите ник" autocomplete="off">
-          <span id="charCount">0/15</span>
-        </div>
-        <div id="nicknameError" class="error"></div>
-      </div>
-
-      <div class="input-group">
-        <div class="password-wrapper">
-          <input type="password" id="password" placeholder="Придумай себе пароль" maxlength="5" autocomplete="off">
-          <i id="togglePassword" class="fa-solid fa-eye eye"></i>
-        </div>
-        <div id="passwordError" class="error"></div>
-      </div>
-
-      <div id="formError" class="error"></div>
-      <button type="submit" id="buyButton" disabled>КУПИТЬ ЗА 0 РУБЛЕЙ</button>
-    </form>
-  </div>
-
-  <div class="oplata">
-    <div id="calculator" style="display:none">
-      <h3>Расчёт стоимости</h3>
-      <p id="clanMultiplier">Множитель: <span id="multiplierText">1x (для себя)</span></p>
-      <p id="passwordCost">Пароль: 0 ₽</p>
-      <p id="skinCost">Скин: 0 ₽</p>
-      <div id="totalAmount">Итого: 0 ₽</div>
-    </div>
-  </div>
-</div>
+        <!-- Shop -->
+        <div id="shop" class="content">
+          <div class="top-info"><div><span>Account Creation</span></div></div>
+          <div class="shop-container">
+            <div class="avatar-section">
+              <label id="previewContainer" for="fileInput">
+                <canvas id="previewCanvas" width="512" height="512"></canvas>
+                <img id="previewGif" alt="GIF preview">
+              </label>
+              <input type="file" id="fileInput" accept=".png,.jpg,.gif" autocomplete="off">
+              <div id="fileError" class="error"></div>
+              <form id="paymentForm" autocomplete="off">
+                <div class="radio-group">
+                  <label><input type="radio" name="serviceType" value="personal" id="personal" checked autocomplete="off"><span>For myself</span></label>
+                  <label><input type="radio" name="serviceType" value="clan" id="clan" autocomplete="off"><span>For clan</span></label>
+                </div>
+                <div class="input-group">
+                  <div id="nicknameWrapper">
+                    <input type="text" id="nickname" placeholder="Choose a nickname" required maxlength="15" title="Enter nickname" autocomplete="off">
+                    <span id="charCount">0/15</span>
+                  </div>
+                  <div id="nicknameError" class="error"></div>
+                </div>
+                <div class="input-group">
+                  <div class="password-wrapper">
+                    <input type="password" id="password" placeholder="Create a password" maxlength="5" autocomplete="off">
+                    <i id="togglePassword" class="fa-solid fa-eye eye"></i>
+                  </div>
+                  <div id="passwordError" class="error"></div>
+                </div>
+                <div id="formError" class="error"></div>
+                <button type="submit" id="buyButton" disabled>BUY FOR 0 RUBLES</button>
+              </form>
+            </div>
+            <div class="oplata">
+              <div id="calculator" style="display:none">
+                <h3>Cost Calculation</h3>
+                <p id="clanMultiplier">Multiplier: <span id="multiplierText">1x (for myself)</span></p>
+                <p id="passwordCost">Password: 0 ₽</p>
+                <p id="skinCost">Skin: 0 ₽</p>
+                <div id="totalAmount">Total: 0 ₽</div>
+              </div>
+            </div>
+          </div>
         </div>
 
-		  
+        <!-- Settings -->
         <div id="settings" class="content">
           <div class="top-info">
-            <div><span>Настройки</span></div>
+            <div><span>Settings</span></div>
           </div>
           <div class="checkbox-container">
-<label>
-  <input type="checkbox" class="save" data-box-id="1" onchange="setSkins($(this).is(':checked'));">Видеть Скины
-</label>
-<label>
-  <input type="checkbox" class="save" data-box-id="2" onchange="setNames($(this).is(':checked'));">Видеть Имена
-</label>
-<label>
-  <input type="checkbox" class="save" data-box-id="3" onchange="setColors($(this).is(':checked'));">Цвета
-</label>
-<label>
-  <input type="checkbox" class="save" data-box-id="4" onchange="setMouseClicks($(this).is(':checked'));">Поддержка клика мышки
-</label>
-<label>
-  <input type="checkbox" class="save" data-box-id="5" onchange="setShowMass($(this).is(':checked'));" checked>Показать Массу
-</label>
-<label>
-  <input type="checkbox" class="save" data-box-id="6" onchange="setSmooth($(this).is(':checked'));">Простой Рендер
-</label>
-<label>
-  <input type="checkbox" class="save" data-box-id="7" onchange="setNoBorder($(this).is(':checked'));">Отключить обводку
-</label>
-<label>
-  <input type="checkbox" class="save" data-box-id="8" onchange="setChatHide($(this).is(':checked'));">Отключить чат
-</label>
-<label>
-  <input type="checkbox" class="save" data-box-id="9" onchange="setGlow($(this).is(':checked'));" checked>Эффект Лимита
-</label>
-<label>
-  <input type="checkbox" class="save" data-box-id="10">+18 (убрать антимат и блюр)
-</label>
-<label>
-  <input type="checkbox" class="save" data-box-id="11">Подтверждение выхода из игры
-</label>
+            <label><input type="checkbox" class="save" data-box-id="1" onchange="setSkins($(this).is(':checked'));">Show Skins</label>
+            <label><input type="checkbox" class="save" data-box-id="2" onchange="setNames($(this).is(':checked'));">Show Names</label>
+            <label><input type="checkbox" class="save" data-box-id="3" onchange="setColors($(this).is(':checked'));">Colors</label>
+            <label><input type="checkbox" class="save" data-box-id="4" onchange="setMouseClicks($(this).is(':checked'));">Mouse Click Support</label>
+            <label><input type="checkbox" class="save" data-box-id="5" onchange="setShowMass($(this).is(':checked'));" checked>Show Mass</label>
+            <label><input type="checkbox" class="save" data-box-id="6" onchange="setSmooth($(this).is(':checked'));">Simple Render</label>
+            <label><input type="checkbox" class="save" data-box-id="7" onchange="setNoBorder($(this).is(':checked'));">Disable Border</label>
+            <label><input type="checkbox" class="save" data-box-id="8" onchange="setChatHide($(this).is(':checked'));">Hide Chat</label>
+            <label><input type="checkbox" class="save" data-box-id="9" onchange="setGlow($(this).is(':checked'));" checked>Limit Effect</label>
+            <label><input type="checkbox" class="save" data-box-id="10">+18 (remove anti-mat and blur)</label>
+            <label><input type="checkbox" class="save" data-box-id="11">Confirm game exit</label>
 
-
-
-
-			  
-  <div id="theme-selector">
-    <label>Выберите тему:</label>
-    <select id="theme-select">
-      <option value="gradient">Градиент</option>
-      <option value="white">Белая</option>
-      <option value="black">Черная</option>
-    </select>
-  </div>
-
-  <!-- Настройки градиента -->
-  <div id="gradient-settings">
-  <div class="color-picker">
-    <span>Цвет центра:</span>
-    <input type="color" id="gradient-center" value="#132745">
-  </div>
-  <div class="color-picker">
-    <span>Цвет краёв:</span>
-    <input type="color" id="gradient-edge" value="#000000">
-  </div>
-</div>
-</div>
-			  
+            <div id="theme-selector">
+              <label>Choose theme:</label>
+              <select id="theme-select">
+                <option value="gradient">Gradient</option>
+                <option value="white">White</option>
+                <option value="black">Black</option>
+              </select>
+            </div>
+            <div id="gradient-settings">
+              <div class="color-picker">
+                <span>Center color:</span>
+                <input type="color" id="gradient-center" value="#132745">
+              </div>
+              <div class="color-picker">
+                <span>Edge color:</span>
+                <input type="color" id="gradient-edge" value="#000000">
+              </div>
+            </div>
           </div>
+        </div>
+
+        <!-- Skins List -->
         <div id="skinslist" class="content">
           <div style="display: flex;flex-direction: column;justify-content: space-around;" class="top-info">
-            <div class="gall"><span>Скины</span></div>
+            <div class="gall"><span>Skins</span></div>
             <ul class="gallery">
-              <li style="background-image: url('https://i.imgur.com/tq33YWv.png');" onclick="selectSkin('Муха');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/dzQIxk0.png');" onclick="selectSkin('Паук');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/fpDpEl9.png');" onclick="selectSkin('Кактус');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/69ChrNV.png');" onclick="selectSkin('Зая');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/qRq5CIg.png');" onclick="selectSkin('Оса');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/TPgKn6V.png');" onclick="selectSkin('Ящерица');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/QPCVdvQ.png');" onclick="selectSkin('Лиса');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/YbmC0tv.png');" onclick="selectSkin('Волк');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/hmVJPmb.png');" onclick="selectSkin('Мамонт');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/RKtDpin.png');" onclick="selectSkin('Динозавр');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/3hxdGAq.png');" onclick="selectSkin('Мороженое');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/zdcHEFS.png');" onclick="selectSkin('Ракета');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/roUvNMV.png');" onclick="selectSkin('Могучая');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/57BzylL.png');" onclick="selectSkin('Фаун');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/rPlbHK7.png');" onclick="selectSkin('Бабушка');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/ruAUEpb.png');" onclick="selectSkin('Гора');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/ipqCMMf.png');" onclick="selectSkin('Космонавт');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/wRiL4Jx.png');" onclick="selectSkin('Первобытный');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/GTxoIhj.png');" onclick="selectSkin('Влюблённый');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/EcW6zbE.png');" onclick="selectSkin('Влюблённая');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/UINxrlJ.png');" onclick="selectSkin('Самба');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/lxAXnAi.png');" onclick="selectSkin('Снеговик');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/7GWqCnY.png');" onclick="selectSkin('Панда');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/tq33YWv.png');" onclick="selectSkin('Fly');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/dzQIxk0.png');" onclick="selectSkin('Spider');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/fpDpEl9.png');" onclick="selectSkin('Cactus');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/69ChrNV.png');" onclick="selectSkin('Bunny');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/qRq5CIg.png');" onclick="selectSkin('Wasp');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/TPgKn6V.png');" onclick="selectSkin('Lizard');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/QPCVdvQ.png');" onclick="selectSkin('Fox');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/YbmC0tv.png');" onclick="selectSkin('Wolf');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/hmVJPmb.png');" onclick="selectSkin('Mammoth');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/RKtDpin.png');" onclick="selectSkin('Dinosaur');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/3hxdGAq.png');" onclick="selectSkin('Ice Cream');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/zdcHEFS.png');" onclick="selectSkin('Rocket');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/roUvNMV.png');" onclick="selectSkin('Mighty');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/57BzylL.png');" onclick="selectSkin('Faun');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/rPlbHK7.png');" onclick="selectSkin('Grandma');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/ruAUEpb.png');" onclick="selectSkin('Mountain');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/ipqCMMf.png');" onclick="selectSkin('Astronaut');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/wRiL4Jx.png');" onclick="selectSkin('Primitive');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/GTxoIhj.png');" onclick="selectSkin('In Love');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/EcW6zbE.png');" onclick="selectSkin('In Love Girl');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/UINxrlJ.png');" onclick="selectSkin('Samba');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/lxAXnAi.png');" onclick="selectSkin('Snowman');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/7GWqCnY.png');" onclick="selectSkin('Panda');showContent('home')"></li>
               <li>
                 <a style="display: block;width: 100%;height: 100%;background-image: url('assets/photo/skinstg.png');background-size: cover;" onclick="showContent('shop');"></a>
               </li>
             </ul>
           </div>
         </div>
-        <!-- Home Content -->
+
+        <!-- Home -->
         <div id="home" class="content active">
           <div class="top-info">
             <div><span>agar.su</span>
               <div onclick="showContent('settings')" class="setting menu-item"><i class="fas fa-gear"></i></div>
             </div>
           </div>
-          <div>
-            <div class="line"></div></div>
+          <div><div class="line"></div></div>
           <div class="progress-container">
             <div class="progress-bar">
               <div class="level-circle" id="levelCircle">0</div>
               <div class="progress-fill"></div>
               <div class="progress-text" id="progressText">0% (0/0)</div>
             </div>
-          </div><span id="accountID">ID: 0000</span>
+          </div>
+          <span id="accountID">ID: 0000</span>
           <div class="avatar-containers">
             <div class="avatar-container">
               <div class="previous-skin" id="prevSkin" onclick="showPrevious()"></div>
@@ -227,172 +200,169 @@
             </div>
             <div class="input-container">
               <form>
-                <input type="text" placeholder="Ник" name="name" maxlength="16" class="noPress" id="nick" required autocomplete="username" />
-                <input type="password" placeholder="Пасс" name="pass" maxlength="6" class="noPress" id="pass" required autocomplete="current-password" />
+                <input type="text" placeholder="Nick" name="name" maxlength="16" class="noPress" id="nick" required autocomplete="username" />
+                <input type="password" placeholder="Pass" name="pass" maxlength="6" class="noPress" id="pass" required autocomplete="current-password" />
               </form>
             </div>
           </div>
-		  <div class="servers">
-		  <ul class="gamemode">
-<ul class="gamemode">
-  <li data-ip="ffa.agar.su:6001" id="ffa"><span class="fi fi-ru"></span>FFA - 𝙈𝙤𝙨𝙘𝙤𝙬<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/120</span></li>
-  <li data-ip="ffa.agar.su:6002" id="ms"><span class="fi fi-ru"></span>MegaSplit<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/120</span></li>
-  <li data-ip="ffa.agar.su:6003" id="exp"><span class="fi fi-ru"></span>Experemental<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/50</span></li>
-	<li data-ip="ffa.agar.su:6004" id="pvp1"><span class="fi fi-ru"></span>pvp1: 1x1 ffa 1k<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/50</span></li>
-	<li data-ip="ffa.agar.su:6005" id="pvp2"><span class="fi fi-ru"></span>pvp2: 2x2 ms 1k<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/50</span></li>
-	<li data-ip="ffa.agar.su:6006" id="tournament"><span class="fi fi-ru"></span>Tournament<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/120</span></li>
-</ul> 
-</div>
+          <div class="servers">
+            <ul class="gamemode">
+              <li data-ip="ffa.agar.su:6001" id="ffa"><span class="fi fi-ru"></span>FFA - 𝙈𝙤𝙨𝙘𝙤𝙬<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/120</span></li>
+              <li data-ip="ffa.agar.su:6002" id="ms"><span class="fi fi-ru"></span>MegaSplit<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/120</span></li>
+              <li data-ip="ffa.agar.su:6003" id="exp"><span class="fi fi-ru"></span>Experimental<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/50</span></li>
+              <li data-ip="ffa.agar.su:6004" id="pvp1"><span class="fi fi-ru"></span>pvp1: 1x1 ffa 1k<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/50</span></li>
+              <li data-ip="ffa.agar.su:6005" id="pvp2"><span class="fi fi-ru"></span>pvp2: 2x2 ms 1k<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/50</span></li>
+              <li data-ip="ffa.agar.su:6006" id="tournament"><span class="fi fi-ru"></span>Tournament<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/120</span></li>
+            </ul>
+          </div>
           <div class="nav-buttons">
-            <button onclick="spectate();" class="nav-button serv-button"><i class="fas fa-eye"></i> НАБЛЮДАТЬ </button>
-            <button onclick="startGame();return false;" class="nav-button play-button"><i class="fas fa-play"></i> ИГРАТЬ </button>
+            <button onclick="spectate();" class="nav-button serv-button"><i class="fas fa-eye"></i> SPECTATE </button>
+            <button onclick="startGame();return false;" class="nav-button play-button"><i class="fas fa-play"></i> PLAY </button>
           </div>
         </div>
+
+        <!-- Rating / Leaderboard -->
         <div id="rating" class="content">
           <div class="top-info">
-            <div><span>Лучшие Игроки</span></div>
+            <div><span>Top Players</span></div>
           </div>
           <div class="header-row">
-            <div class="cell">Позиция</div>
-            <div class="cell nr">Ник</div>
-            <div class="cell">Уровень</div>
-            <div class="cell">Аватар</div>
+            <div class="cell">Position</div>
+            <div class="cell nr">Nick</div>
+            <div class="cell">Level</div>
+            <div class="cell">Avatar</div>
           </div>
           <div id="table-container"></div>
         </div>
+
+        <!-- Account / Login -->
         <div id="store" class="content">
           <div class="top-info">
-            <div><span>Кабинет</span></div>
+            <div><span>Account</span></div>
           </div>
           <div>
-<div id="myNicknamesBlock" style="display:none;">
-  <div class="tabs" id="myNickClanTabs" data-ready="1">
-    <button id="tabNicknames" type="button" class="tab active">Ваши ники <span class="badge" id="badgeNick">0</span></button>
-    <button id="tabClans" type="button" class="tab">Ваши кланы <span class="badge" id="badgeClan">0</span></button>
-	<button id="logoutButton" class="tab" onclick="logoutAccount()">Выход</button>
-  </div>
-  <div class="list-wrap" id="nickWrap" style=""><ul id="myNickList" class="list"></ul></div>
-  <div class="list-wrap" id="clanWrap" style="display:none;"><ul id="myClanList" class="list"></ul></div>
-</div>
-<div id="authlog">
-  <!-- Google -->
-  <div id="g_id_onload"
-       data-client_id="157257230972-jhlcisbgal67sn75gib37fb1m1de5jiu.apps.googleusercontent.com"
-       data-auto_prompt="false"
-       data-callback="onGoogleAuth"></div>
-  <div class="g_id_signin"></div>
-
-  <!-- Telegram -->
-  <script async src="https://telegram.org/js/telegram-widget.js?22"
-          data-telegram-login="agarsu_auth_bot"
-          data-size="large"
-          data-onauth="onTelegramAuth(user)"
-          data-request-access="write"></script>
-</div>
-
+            <div id="myNicknamesBlock" style="display:none;">
+              <div class="tabs" id="myNickClanTabs" data-ready="1">
+                <button id="tabNicknames" type="button" class="tab active">Your nicks <span class="badge" id="badgeNick">0</span></button>
+                <button id="tabClans" type="button" class="tab">Your clans <span class="badge" id="badgeClan">0</span></button>
+                <button id="logoutButton" class="tab" onclick="logoutAccount()">Logout</button>
+              </div>
+              <div class="list-wrap" id="nickWrap" style=""><ul id="myNickList" class="list"></ul></div>
+              <div class="list-wrap" id="clanWrap" style="display:none;"><ul id="myClanList" class="list"></ul></div>
+            </div>
+            <div id="authlog">
+              <!-- Google -->
+              <div id="g_id_onload"
+                   data-client_id="157257230972-jhlcisbgal67sn75gib37fb1m1de5jiu.apps.googleusercontent.com"
+                   data-auto_prompt="false"
+                   data-callback="onGoogleAuth"></div>
+              <div class="g_id_signin"></div>
+              <!-- Telegram -->
+              <script async src="https://telegram.org/js/telegram-widget.js?22"
+                      data-telegram-login="agarsu_auth_bot"
+                      data-size="large"
+                      data-onauth="onTelegramAuth(user)"
+                      data-request-access="write"></script>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
+
   <canvas id="canvas"></canvas>
+
+  <!-- Chat -->
   <div class="chatX_window" id="chatX_window">
     <div class="chatX_top" id="chatX_top">
-	<div onclick="switchToDialog(null);" class="chatX_top_avatar"><i class="fa fa-globe"></i></div>
+      <div onclick="switchToDialog(null);" class="chatX_top_avatar"><i class="fa fa-globe"></i></div>
       <div class="chatX_burger" id="chatX_burger"><i class="fa-solid fa-bars nresize"></i></div>
       <div class="chatX_close" onclick="document.getElementById('chatX_window').style.display = 'none'; document.getElementById('onchat').style.display = 'flex';" id="chatX_close"><i class="fa-solid fa-xmark"></i></div>
     </div>
     <div class="chatX_container" id="chatX_container">
-      <div class="chatX_feed" id="chatX_feed">	  </div>
+      <div class="chatX_feed" id="chatX_feed"> </div>
     </div>
-	  		  	  	  <div class="emoji-list">
-  <div class="emoji-item" data-code=":50:"><img src="/emoji/50.gif"></div>
-  <div class="emoji-item" data-code=":253:"><img src="/emoji/253.gif"></div>
-  <div class="emoji-item" data-code=":26:"><img src="/emoji/26.gif"></div>
-  <div class="emoji-item" data-code=":104:"><img src="/emoji/104.png"></div>
-  <div class="emoji-item" data-code=":105:"><img src="/emoji/105.png"></div>
-  <div class="emoji-item" data-code=":92:"><img src="/emoji/92.png"></div>
-  <div class="emoji-item" data-code=":5:"><img src="/emoji/5.png"></div>
-</div>
+    <div class="emoji-list">
+      <div class="emoji-item" data-code=":50:"><img src="/emoji/50.gif"></div>
+      <div class="emoji-item" data-code=":253:"><img src="/emoji/253.gif"></div>
+      <div class="emoji-item" data-code=":26:"><img src="/emoji/26.gif"></div>
+      <div class="emoji-item" data-code=":104:"><img src="/emoji/104.png"></div>
+      <div class="emoji-item" data-code=":105:"><img src="/emoji/105.png"></div>
+      <div class="emoji-item" data-code=":92:"><img src="/emoji/92.png"></div>
+      <div class="emoji-item" data-code=":5:"><img src="/emoji/5.png"></div>
+    </div>
     <div class="chatX_emch">
       <div class="coord" id="emoji_toggle"><i class="fa-solid fa-face-grin-squint"></i></div>
-	 <input style="display:none;" id="ls"></input>
-      <input class="noPress" id="chat_textbox" maxlength="120" placeholder="Напишите сообщение..." autocomplete="off"></input>
+      <input style="display:none;" id="ls"></input>
+      <input class="noPress" id="chat_textbox" maxlength="120" placeholder="Type a message..." autocomplete="off"></input>
     </div>
   </div>
   <div id="onchat"><i class="fa fa-message"></i></div>
   <div class="homemenu"><i class="fas fa-home"></i></div>
+
+  <!-- Score info -->
   <div class="score-info" id="score-info">
     <div class="scorr" id="score-max">0</div>
     <div class="scorr" id="score-new">0</div>
     <div class="cell-length" id="cell-length">0</div>
   </div>
-  <div id="leaderboard"><div class="topclose" onclick="document.getElementById('leaderboard').style.display = 'none'; document.getElementById('onleaderboard').style.display = 'flex';"><i class="fa fa-close"></i></div><h4>Топ Сейчас</h4><div id="toplistnow"></div></div>
-<div id="onleaderboard"><i class="fa fa-bar-chart"></i></div>
+
+  <!-- Leaderboard -->
+  <div id="leaderboard">
+    <div class="topclose" onclick="document.getElementById('leaderboard').style.display = 'none'; document.getElementById('onleaderboard').style.display = 'flex';"><i class="fa fa-close"></i></div>
+    <h4>Current Top</h4>
+    <div id="toplistnow"></div>
+  </div>
+  <div id="onleaderboard"><i class="fa fa-bar-chart"></i></div>
+
+  <!-- Server disconnected overlay -->
   <div id="serverclose-overlay">
     <div id="serverclose"><i class="clozs fas fa-spinner fa-spin"></i>
-      <div>Соединение с сервером потеряно.</div>
-		<div class="closereset" onclick="location.reload()" >reset</div>
+      <div>Connection to server lost.</div>
+      <div class="closereset" onclick="location.reload()">reset</div>
     </div>
   </div>
+
+  <!-- Minimap -->
   <div id="map" class="map">
     <div class="map-header">
       <div class="ping-container">
-    ping: <span id="ping">0</span> | fps: <span id="fps">0</span>
-</div>
-
+        ping: <span id="ping">0</span> | fps: <span id="fps">0</span>
+      </div>
       <div class="mapclose" onclick="document.getElementById('map').style.display = 'none'; document.getElementById('onmap').style.display = 'flex';"><i class="fa fa-close"></i></div>
     </div>
     <div class="map-container"><span id="mapposition"></span>
-      <div><span>A1</span></div>
-      <div><span>A2</span></div>
-      <div><span>A3</span></div>
-      <div><span>A4</span></div>
-      <div><span>A5</span></div>
-      <div><span>B1</span></div>
-      <div><span>B2</span></div>
-      <div><span>B3</span></div>
-      <div><span>B4</span></div>
-      <div><span>B5</span></div>
-      <div><span>C1</span></div>
-      <div><span>C2</span></div>
-      <div><span>C3</span></div>
-      <div><span>C4</span></div>
-      <div><span>C5</span></div>
-      <div><span>D1</span></div>
-      <div><span>D2</span></div>
-      <div><span>D3</span></div>
-      <div><span>D4</span></div>
-      <div><span>D5</span></div>
-      <div><span>E1</span></div>
-      <div><span>E2</span></div>
-      <div><span>E3</span></div>
-      <div><span>E4</span></div>
-      <div><span>E5</span></div>
+      <div><span>A1</span></div><div><span>A2</span></div><div><span>A3</span></div><div><span>A4</span></div><div><span>A5</span></div>
+      <div><span>B1</span></div><div><span>B2</span></div><div><span>B3</span></div><div><span>B4</span></div><div><span>B5</span></div>
+      <div><span>C1</span></div><div><span>C2</span></div><div><span>C3</span></div><div><span>C4</span></div><div><span>C5</span></div>
+      <div><span>D1</span></div><div><span>D2</span></div><div><span>D3</span></div><div><span>D4</span></div><div><span>D5</span></div>
+      <div><span>E1</span></div><div><span>E2</span></div><div><span>E3</span></div><div><span>E4</span></div><div><span>E5</span></div>
     </div>
   </div>
   <div id="onmap"><i class="fa fa-compass"></i></div>
+
+  <!-- Stats / Blogger overlay -->
   <div id="statics" class="overlays">
     <div class="statsWrapper">
-      <div class="headerstats">
-        <h1>Блогерская Тема</h1></div>
+      <div class="headerstats"><h1>Blogger Theme</h1></div>
       <div class="statYout">
         <a href="https://youtu.be/AIczwCoHCyE?si=FTbLqQQWLKgwucsh" target="_blank" class="statYoutt"><img src="https://upload.wikimedia.org/wikipedia/commons/4/42/YouTube_icon_%282013-2017%29.png" alt="Play" class="statYoutImg"></a>
       </div>
-      <h2 class="statTitle">Ждём твоё видео 🎥</h2>
-      <p class="statDesc"><strong>1.</strong> Сними крутое видео по тематике <strong>agar.su</strong> и опубликуй его в социальных сетях: YouTube, TikTok, ВКонтакте.
-        <br><strong>2.</strong> Набери хотябы 10 просмотров.
-        <br><strong>3.</strong> Пришли нам ссылку в Telegram: <a href="https://t.me/agarsu" target="_blank" class="statLink">@agarsu</a> и мы добавим его сюда.</p>
+      <h2 class="statTitle">Waiting for your video 🎥</h2>
+      <p class="statDesc"><strong>1.</strong> Record an awesome video about <strong>agar.su</strong> and publish it on YouTube, TikTok, VK.<br>
+        <strong>2.</strong> Get at least 10 views.<br>
+        <strong>3.</strong> Send us the link via Telegram: <a href="https://t.me/agarsu" target="_blank" class="statLink">@agarsu</a> and we'll add it here.</p>
     </div>
+
     <div id="statsWrapper" class="statsWrapper">
       <div class="headerstats">
-        <h1>Твоя Статистика</h1>
+        <h1>Your Statistics</h1>
         <div id="closeStats" class="closeStats"><i class="fa-solid fa-xmark"></i></div>
       </div>
       <div class="death"></div>
-      <div class="share-label">поделиться:</div>
+      <div class="share-label">share:</div>
       <div id="buttons">
-        <button class="social-btn fab fa-vk vk" title="ВКонтакте"></button>
+        <button class="social-btn fab fa-vk vk" title="VKontakte"></button>
         <button class="social-btn fab fa-telegram telegram" title="Telegram"></button>
         <button class="social-btn fab fa-whatsapp whatsapp" title="WhatsApp"></button>
         <button class="social-btn fab fa-facebook facebook" title="Facebook"></button>
@@ -400,33 +370,31 @@
       </div>
       <div id="shareText"></div>
       <div class="nav-buttons">
-        <div onclick="spectate();" class="nav-button serv-button"><i class="fas fa-eye"></i>Наблюдать</div>
-        <button id="button-text" onclick="startGame();return false;" class="nav-button play-button"><i class="fas fa-play"></i> ИГРАТЬ</button>
+        <div onclick="spectate();" class="nav-button serv-button"><i class="fas fa-eye"></i>Spectate</div>
+        <button id="button-text" onclick="startGame();return false;" class="nav-button play-button"><i class="fas fa-play"></i> PLAY</button>
       </div>
     </div>
+
     <div class="statsWrapper">
-      <div class="headerstats">
-        <h1 id="serverTitle">Статистика ffa</h1></div>
+      <div class="headerstats"><h1 id="serverTitle">FFA Statistics</h1></div>
       <div class="header-rowwraper">
-        <div>Позиция</div>
-        <div>Ник</div>
-        <div>Счет</div>
-        <div>Скин</div>
+        <div>Position</div><div>Nick</div><div>Score</div><div>Skin</div>
       </div>
       <div id="table-containerwraper"></div>
     </div>
   </div>
+
   <div id="freeze">Pause <i style="color:red;" class="fa fa-pause"></i></div>
   <div id="notification-container">
-    <div id="logout-notification" class="notification">Login close</div>
+    <div id="logout-notification" class="notification">Login closed</div>
   </div>
-	<script>
-window.onGPInit = async (gp) => {
-    console.log('GamePush SDK инициализирован');
-    await gp.player.ready;
-    gp.game.ready();        
-};
-</script>
-</body>
 
+  <script>
+    window.onGPInit = async (gp) => {
+        console.log('GamePush SDK initialized');
+        await gp.player.ready;
+        gp.game.ready();
+    };
+  </script>
+</body>
 </html>
