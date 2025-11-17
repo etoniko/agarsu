@@ -425,6 +425,47 @@ window.onGPInit = async (gp) => {
     console.log('GamePush SDK инициализирован');       
 };
 </script>
+	<script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // Получаем параметры из URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const lang = urlParams.get('_gp_lang'); // например: ru, en, de и т.д.
+      const bust = urlParams.get('bust'); // просто игнорируем, но он нужен для сброса кэша
+
+      // Если параметр языка есть и он "ru" — переключаемся на русский
+      if (lang === 'ru') {
+        // Меняем lang у <html>
+        document.documentElement.lang = 'ru';
+
+        // Проходим по всем элементам с атрибутом data-ru
+        document.querySelectorAll('[data-ru]').forEach(el => {
+          const ruText = el.getAttribute('data-ru');
+          if (ruText) {
+            // Сохраняем английский текст в data-en (если ещё нет)
+            if (!el.hasAttribute('data-en')) {
+              el.setAttribute('data-en', el.textContent.trim());
+            }
+            el.textContent = ruText;
+          }
+        });
+
+        // Опционально: можно добавить data-de, data-fr и т.д. для других языков
+      }
+      
+      // Если нужно поддерживать переключение обратно на en (например ?_gp_lang=en)
+      else if (lang === 'en' || !lang) {
+        document.documentElement.lang = 'en';
+        document.querySelectorAll('[data-en]').forEach(el => {
+          const enText = el.getAttribute('data-en');
+          if (enText) {
+            el.textContent = enText;
+          }
+        });
+      }
+
+      // Можно легко расширить на другие языки (de, es, fr и т.д.)
+    });
+  </script>
 </body>
 
 </html>
