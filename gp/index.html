@@ -1,4 +1,4 @@
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -42,17 +42,17 @@
     <div class="social"><a href="https://t.me/agarsu" target="_blank" class="tg"><i style="background: radial-gradient(white 9px, #1e90ff00 50%);border-radius: 50%;" class="fab fa-telegram"></i></a><a href="https://vk.com/club233723574" target="_blank" class="soc"><i class="fab fa-vk"></i></a><a href="#" class="soc"><i style="cursor: not-allowed;" class="fab fa-discord"></i></a></div>
     <div class="center">
       <div class="sidebar">
-        <div class="menu-item" onclick="showContent('shop')"><i class="fas fa-shop"></i><span class="label">Магазин</span></div>
-        <div class="menu-item" onclick="showContent('skinslist')"><i class="fas fa-image"></i><span class="label">Скины</span></div>
-        <div class="menu-item active" onclick="showContent('home')"><i class="fas fa-home"></i><span class="label">Главная</span></div>
-        <div class="menu-item" onclick="showContent('rating')"><i class="fas fa-star"></i><span class="label">Рейтинг</span></div>
-        <div class="menu-item" onclick="showContent('store')"><i class="fas fa-user"></i><span class="label">Войти</span></div>
+        <div class="menu-item" onclick="showContent('shop')"><i class="fas fa-shop"></i><span class="label" data-ru="Магазин">Магазин</span></div>
+        <div class="menu-item" onclick="showContent('skinslist')"><i class="fas fa-image"></i><span class="label" data-ru="Скины">Скины</span></div>
+        <div class="menu-item active" onclick="showContent('home')"><i class="fas fa-home"></i><span class="label" data-ru="Главная">Главная</span></div>
+        <div class="menu-item" onclick="showContent('rating')"><i class="fas fa-star"></i><span class="label" data-ru="Рейтинг">Рейтинг</span></div>
+        <div class="menu-item" onclick="showContent('store')"><i class="fas fa-user"></i><span class="label" data-ru="Войти">Войти</span></div>
       </div>
       <div class="main-content">
 
 
 <div id="shop" class="content">
-	<div class="top-info"><div><span>Создание лички</span></div></div>
+	<div class="top-info"><div><span data-ru="Создание лички">Создание лички</span></div></div>
 <div class="shop-container">
   <div class="avatar-section">
     <label id="previewContainer" for="fileInput">
@@ -64,8 +64,8 @@
 
     <form id="paymentForm" autocomplete="off">
       <div class="radio-group">
-        <label><input type="radio" name="serviceType" value="personal" id="personal" checked autocomplete="off"><span>Для себя</span></label>
-        <label><input type="radio" name="serviceType" value="clan" id="clan" autocomplete="off"><span>Для клана</span></label>
+        <label><input type="radio" name="serviceType" value="personal" id="personal" checked autocomplete="off"><span data-ru="Для себя">Для себя</span></label>
+        <label><input type="radio" name="serviceType" value="clan" id="clan" autocomplete="off"><span data-ru="Для клана">Для клана</span></label>
       </div>
 
       <div class="input-group">
@@ -85,17 +85,17 @@
       </div>
 
       <div id="formError" class="error"></div>
-      <button type="submit" id="buyButton" disabled>КУПИТЬ ЗА 0 РУБЛЕЙ</button>
+      <button type="submit" id="buyButton" disabled data-ru="КУПИТЬ ЗА 0 РУБЛЕЙ">КУПИТЬ ЗА 0 РУБЛЕЙ</button>
     </form>
   </div>
 
   <div class="oplata">
     <div id="calculator" style="display:none">
-      <h3>Расчёт стоимости</h3>
-      <p id="clanMultiplier">Множитель: <span id="multiplierText">1x (для себя)</span></p>
-      <p id="passwordCost">Пароль: 0 ₽</p>
-      <p id="skinCost">Скин: 0 ₽</p>
-      <div id="totalAmount">Итого: 0 ₽</div>
+      <h3 data-ru="Расчёт стоимости">Расчёт стоимости</h3>
+      <p id="clanMultiplier" data-ru="Множитель:">Множитель: <span id="multiplierText" data-ru="1x (для себя)">1x (для себя)</span></p>
+      <p id="passwordCost" data-ru="Пароль: 0 ₽">Пароль: 0 ₽</p>
+      <p id="skinCost" data-ru="Скин: 0 ₽">Скин: 0 ₽</p>
+      <div id="totalAmount" data-ru="Итого: 0 ₽">Итого: 0 ₽</div>
     </div>
   </div>
 </div>
@@ -104,41 +104,41 @@
 		  
         <div id="settings" class="content">
           <div class="top-info">
-            <div><span>Настройки</span></div>
+            <div><span data-ru="Настройки">Настройки</span></div>
           </div>
           <div class="checkbox-container">
 <label>
-  <input type="checkbox" class="save" data-box-id="1" onchange="setSkins($(this).is(':checked'));">Видеть Скины
+  <input type="checkbox" class="save" data-box-id="1" onchange="setSkins($(this).is(':checked'));" data-ru="Видеть Скины">Видеть Скины
 </label>
 <label>
-  <input type="checkbox" class="save" data-box-id="2" onchange="setNames($(this).is(':checked'));">Видеть Имена
+  <input type="checkbox" class="save" data-box-id="2" onchange="setNames($(this).is(':checked'));" data-ru="Видеть Имена">Видеть Имена
 </label>
 <label>
-  <input type="checkbox" class="save" data-box-id="3" onchange="setColors($(this).is(':checked'));">Цвета
+  <input type="checkbox" class="save" data-box-id="3" onchange="setColors($(this).is(':checked'));" data-ru="Цвета">Цвета
 </label>
 <label>
-  <input type="checkbox" class="save" data-box-id="4" onchange="setMouseClicks($(this).is(':checked'));">Поддержка клика мышки
+  <input type="checkbox" class="save" data-box-id="4" onchange="setMouseClicks($(this).is(':checked'));" data-ru="Поддержка клика мышки">Поддержка клика мышки
 </label>
 <label>
-  <input type="checkbox" class="save" data-box-id="5" onchange="setShowMass($(this).is(':checked'));" checked>Показать Массу
+  <input type="checkbox" class="save" data-box-id="5" onchange="setShowMass($(this).is(':checked'));" checked data-ru="Показать Массу">Показать Массу
 </label>
 <label>
-  <input type="checkbox" class="save" data-box-id="6" onchange="setSmooth($(this).is(':checked'));">Простой Рендер
+  <input type="checkbox" class="save" data-box-id="6" onchange="setSmooth($(this).is(':checked'));" data-ru="Простой Рендер">Простой Рендер
 </label>
 <label>
-  <input type="checkbox" class="save" data-box-id="7" onchange="setNoBorder($(this).is(':checked'));">Отключить обводку
+  <input type="checkbox" class="save" data-box-id="7" onchange="setNoBorder($(this).is(':checked'));" data-ru="Отключить обводку">Отключить обводку
 </label>
 <label>
-  <input type="checkbox" class="save" data-box-id="8" onchange="setChatHide($(this).is(':checked'));">Отключить чат
+  <input type="checkbox" class="save" data-box-id="8" onchange="setChatHide($(this).is(':checked'));" data-ru="Отключить чат">Отключить чат
 </label>
 <label>
-  <input type="checkbox" class="save" data-box-id="9" onchange="setGlow($(this).is(':checked'));" checked>Эффект Лимита
+  <input type="checkbox" class="save" data-box-id="9" onchange="setGlow($(this).is(':checked'));" checked data-ru="Эффект Лимита">Эффект Лимита
 </label>
 <label>
-  <input type="checkbox" class="save" data-box-id="10">+18 (убрать антимат и блюр)
+  <input type="checkbox" class="save" data-box-id="10" data-ru="+18 (убрать антимат и блюр)">+18 (убрать антимат и блюр)
 </label>
 <label>
-  <input type="checkbox" class="save" data-box-id="11">Подтверждение выхода из игры
+  <input type="checkbox" class="save" data-box-id="11" data-ru="Подтверждение выхода из игры">Подтверждение выхода из игры
 </label>
 
 
@@ -146,22 +146,22 @@
 
 			  
   <div id="theme-selector">
-    <label>Выберите тему:</label>
+    <label data-ru="">Выберите тему:</label>
     <select id="theme-select">
-      <option value="gradient">Градиент</option>
-      <option value="white">Белая</option>
-      <option value="black">Черная</option>
+      <option value="gradient" data-ru="Градиент">Градиент</option>
+      <option value="white" data-ru="Белая">Белая</option>
+      <option value="black" data-ru="Черная">Черная</option>
     </select>
   </div>
 
   <!-- Настройки градиента -->
   <div id="gradient-settings">
   <div class="color-picker">
-    <span>Цвет центра:</span>
+    <span data-ru="Цвет центра:">Цвет центра:</span>
     <input type="color" id="gradient-center" value="#132745">
   </div>
   <div class="color-picker">
-    <span>Цвет краёв:</span>
+    <span data-ru="Цвет краёв:">Цвет краёв:</span>
     <input type="color" id="gradient-edge" value="#000000">
   </div>
 </div>
@@ -170,7 +170,7 @@
           </div>
         <div id="skinslist" class="content">
           <div style="display: flex;flex-direction: column;justify-content: space-around;" class="top-info">
-            <div class="gall"><span>Скины</span></div>
+            <div class="gall"><span data-ru="Скины">Скины</span></div>
             <ul class="gallery">
               <li style="background-image: url('https://i.imgur.com/tq33YWv.png');" onclick="selectSkin('Муха');showContent('home')"></li>
               <li style="background-image: url('https://i.imgur.com/dzQIxk0.png');" onclick="selectSkin('Паук');showContent('home')"></li>
@@ -244,32 +244,32 @@
 </ul> 
 </div>
           <div class="nav-buttons">
-            <button onclick="spectate();" class="nav-button serv-button"><i class="fas fa-eye"></i> НАБЛЮДАТЬ </button>
-            <button onclick="startGame();return false;gp.game.ready();" class="nav-button play-button"><i class="fas fa-play"></i> ИГРАТЬ </button>
+            <button onclick="spectate();" class="nav-button serv-button"><i class="fas fa-eye"></i data-ru=" НАБЛЮДАТЬ "> НАБЛЮДАТЬ </button>
+            <button onclick="startGame();return false;gp.game.ready();" class="nav-button play-button"><i class="fas fa-play"></i data-ru=" ИГРАТЬ "> ИГРАТЬ </button>
           </div>
         </div>
         <div id="rating" class="content">
           <div class="top-info">
-            <div><span>Лучшие Игроки</span></div>
+            <div><span data-ru="Лучшие Игроки">Лучшие Игроки</span></div>
           </div>
           <div class="header-row">
-            <div class="cell">Позиция</div>
-            <div class="cell nr">Ник</div>
-            <div class="cell">Уровень</div>
-            <div class="cell">Аватар</div>
+            <div class="cell" data-ru="Позиция">Позиция</div>
+            <div class="cell nr" data-ru="Ник">Ник</div>
+            <div class="cell" data-ru="Уровень">Уровень</div>
+            <div class="cell" data-ru="Аватар">Аватар</div>
           </div>
           <div id="table-container"></div>
         </div>
         <div id="store" class="content">
           <div class="top-info">
-            <div><span>Кабинет</span></div>
+            <div><span data-ru="Кабинет">Кабинет</span></div>
           </div>
           <div>
 <div id="myNicknamesBlock" style="display:none;">
   <div class="tabs" id="myNickClanTabs" data-ready="1">
-    <button id="tabNicknames" type="button" class="tab active">Ваши ники <span class="badge" id="badgeNick">0</span></button>
-    <button id="tabClans" type="button" class="tab">Ваши кланы <span class="badge" id="badgeClan">0</span></button>
-	<button id="logoutButton" class="tab" onclick="logoutAccount()">Выход</button>
+    <button id="tabNicknames" type="button" class="tab active" data-ru="Ваши ники ">Ваши ники <span class="badge" id="badgeNick">0</span></button>
+    <button id="tabClans" type="button" class="tab" data-ru="Ваши кланы ">Ваши кланы <span class="badge" id="badgeClan">0</span></button>
+	<button id="logoutButton" class="tab" onclick="logoutAccount()" data-ru="Выход">Выход</button>
   </div>
   <div class="list-wrap" id="nickWrap" style=""><ul id="myNickList" class="list"></ul></div>
   <div class="list-wrap" id="clanWrap" style="display:none;"><ul id="myClanList" class="list"></ul></div>
@@ -327,11 +327,11 @@
     <div class="scorr" id="score-new">0</div>
     <div class="cell-length" id="cell-length">0</div>
   </div>
-  <div id="leaderboard"><div class="topclose" onclick="document.getElementById('leaderboard').style.display = 'none'; document.getElementById('onleaderboard').style.display = 'flex';"><i class="fa fa-close"></i></div><h4>Топ Сейчас</h4><div id="toplistnow"></div></div>
+  <div id="leaderboard"><div class="topclose" onclick="document.getElementById('leaderboard').style.display = 'none'; document.getElementById('onleaderboard').style.display = 'flex';"><i class="fa fa-close"></i></div><h4 data-ru="Топ Сейчас">Топ Сейчас</h4><div id="toplistnow"></div></div>
 <div id="onleaderboard"><i class="fa fa-bar-chart"></i></div>
   <div id="serverclose-overlay">
     <div id="serverclose"><i class="clozs fas fa-spinner fa-spin"></i>
-      <div>Соединение с сервером потеряно.</div>
+      <div data-ru="Соединение с сервером потеряно.">Соединение с сервером потеряно.</div>
 		<div class="closereset" onclick="location.reload()" >reset</div>
     </div>
   </div>
@@ -375,22 +375,22 @@
   <div id="statics" class="overlays">
     <div class="statsWrapper">
       <div class="headerstats">
-        <h1>Блогерская Тема</h1></div>
+        <h1 data-ru="Блогерская Тема">Блогерская Тема</h1></div>
       <div class="statYout">
         <a href="https://youtu.be/AIczwCoHCyE?si=FTbLqQQWLKgwucsh" target="_blank" class="statYoutt"><img src="https://upload.wikimedia.org/wikipedia/commons/4/42/YouTube_icon_%282013-2017%29.png" alt="Play" class="statYoutImg"></a>
       </div>
-      <h2 class="statTitle">Ждём твоё видео 🎥</h2>
-      <p class="statDesc"><strong>1.</strong> Сними крутое видео по тематике <strong>agar.su</strong> и опубликуй его в социальных сетях: YouTube, TikTok, ВКонтакте.
-        <br><strong>2.</strong> Набери хотябы 10 просмотров.
-        <br><strong>3.</strong> Пришли нам ссылку в Telegram: <a href="https://t.me/agarsu" target="_blank" class="statLink">@agarsu</a> и мы добавим его сюда.</p>
+      <h2 class="statTitle" data-ru="Ждём твоё видео 🎥">Ждём твоё видео 🎥</h2>
+      <p class="statDesc"><strong>1.</strong data-ru=" Сними крутое видео по тематике "> Сними крутое видео по тематике <strong>agar.su</strong data-ru=" и опубликуй его в социальных сетях: YouTube, TikTok, ВКонтакте."> и опубликуй его в социальных сетях: YouTube, TikTok, ВКонтакте.
+        <br><strong>2.</strong data-ru=" Набери хотябы 10 просмотров."> Набери хотябы 10 просмотров.
+        <br><strong>3.</strong data-ru=" Пришли нам ссылку в Telegram: "> Пришли нам ссылку в Telegram: <a href="https://t.me/agarsu" target="_blank" class="statLink">@agarsu</a data-ru="и мы добавим его сюда."> и мы добавим его сюда.</p>
     </div>
     <div id="statsWrapper" class="statsWrapper">
       <div class="headerstats">
-        <h1>Твоя Статистика</h1>
+        <h1 data-ru="Твоя Статистика">Твоя Статистика</h1>
         <div id="closeStats" class="closeStats"><i class="fa-solid fa-xmark"></i></div>
       </div>
       <div class="death"></div>
-      <div class="share-label">поделиться:</div>
+      <div class="share-label" data-ru="поделиться:">поделиться:</div>
       <div id="buttons">
         <button class="social-btn fab fa-vk vk" title="ВКонтакте"></button>
         <button class="social-btn fab fa-telegram telegram" title="Telegram"></button>
@@ -400,18 +400,18 @@
       </div>
       <div id="shareText"></div>
       <div class="nav-buttons">
-        <div onclick="spectate();" class="nav-button serv-button"><i class="fas fa-eye"></i>Наблюдать</div>
-        <button id="button-text" onclick="startGame();return false;" class="nav-button play-button"><i class="fas fa-play"></i> ИГРАТЬ</button>
+        <div onclick="spectate();" class="nav-button serv-button"><i class="fas fa-eye"></i data-ru="Наблюдать">Наблюдать</div>
+        <button id="button-text" onclick="startGame();return false;" class="nav-button play-button"><i class="fas fa-play"></i data-ru=" ИГРАТЬ"> ИГРАТЬ</button>
       </div>
     </div>
     <div class="statsWrapper">
       <div class="headerstats">
-        <h1 id="serverTitle">Статистика ffa</h1></div>
+        <h1 id="serverTitle" data-ru="Статистика ffa">Статистика ffa</h1></div>
       <div class="header-rowwraper">
-        <div>Позиция</div>
-        <div>Ник</div>
-        <div>Счет</div>
-        <div>Скин</div>
+        <div data-ru="Позиция">Позиция</div>
+        <div data-ru="Ник">Ник</div>
+        <div data-ru="Счет">Счет</div>
+        <div data-ru="Скин">Скин</div>
       </div>
       <div id="table-containerwraper"></div>
     </div>
