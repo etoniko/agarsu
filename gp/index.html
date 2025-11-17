@@ -423,13 +423,7 @@
 	<script>
 window.onGPInit = async (gp) => {
     console.log('GamePush SDK инициализирован');
-    // 1. Ждём синхронизацию игрока с сервером (обязательно)
     await gp.player.ready;
-    // 2. Определяем язык игры (обязательно!)
-    const lang = gp.language.get(); // возвращает "ru", "en", "es" и т.д.
-    const supportedLangs = ['ru', 'en']; // добавь сюда все языки, которые у тебя есть
-    const gameLang = supportedLangs.includes(lang) ? lang : 'en'; // fallback на английский
-    document.documentElement.lang = gameLang;
     gp.game.ready();        
 };
 </script>
