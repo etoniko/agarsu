@@ -35,6 +35,7 @@
 	<script src="/assets/scripts/pass.js?0.0.2" defer></script>
 	<script src="/assets/scripts/skins.js?0.0.2" defer></script>
 	<script src="/assets/scripts/rating.js?0.0.4" defer></script>
+	<script async src="https://gamepush.com/sdk/gamepush.js?projectId=25200&publicToken=5DXsYLvhOpBnuHjsIdeupMHEmkpKu24m&callback=onGPInit"></script>
 </head>
 <body>
   <div id="overlays" class="overlays">
@@ -419,6 +420,19 @@
   <div id="notification-container">
     <div id="logout-notification" class="notification">Login close</div>
   </div>
+	<script>
+window.onGPInit = async (gp) => {
+    console.log('GamePush SDK инициализирован');
+    // 1. Ждём синхронизацию игрока с сервером (обязательно)
+    await gp.player.ready;
+    // 2. Определяем язык игры (обязательно!)
+    const lang = gp.language.get(); // возвращает "ru", "en", "es" и т.д.
+    const supportedLangs = ['ru', 'en']; // добавь сюда все языки, которые у тебя есть
+    const gameLang = supportedLangs.includes(lang) ? lang : 'en'; // fallback на английский
+    document.documentElement.lang = gameLang;
+    gp.game.ready();        
+};
+</script>
 </body>
 
 </html>
