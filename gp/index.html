@@ -35,7 +35,49 @@
 	<script src="/assets/scripts/pass.js?0.0.2" defer></script>
 	<script src="/assets/scripts/skins.js?0.0.2" defer></script>
 	<script src="/assets/scripts/rating.js?0.0.4" defer></script>
-	<script async src="https://gamepush.com/sdk/gamepush.js?projectId=25200&publicToken=5DXsYLvhOpBnuHjsIdeupMHEmkpKu24m&callback=onGPInit"></script>
+<!-- Ваш текущий скрипт SDK остаётся -->
+<script async src="https://gamepush.com/sdk/gamepush.js?projectId=25200&publicToken=5DXsYLvhOpBnuHjsIdeupMHEmkpKu24m&callback=onGPInit"></script>
+
+<script>
+window.onGPInit = async (gp) => {
+    console.log('GamePush SDK инициализирован');
+    
+    try {
+        // 1. Ждём готовности игрока (синхронизация с сервером) — это активирует "SDK login detected"
+        await gp.player.ready;
+        console.log('Игрок готов');
+        
+        // 2. Вызываем gameStart() — ключ для "Игровой прогресс" и задач (0/7 → обновится)
+        gp.gameStart();  // Сигнал: игра загружена и готова к работе
+        console.log('Игра запущена');
+        
+        // 3. Опционально: Автоматический логин (если нужно)
+        // gp.player.login();  // Откроет оверлей для входа
+        
+        // 4. Пример сохранения прогресса (для галочки "Игровой прогресс")
+        // Вызовите это после какого-то действия в игре, напр. после уровня
+        // gp.progress.set({ level: 1, score: 100 });  // Или используйте gp.player.sync() для кастомных данных
+        
+        // 5. Пример для задач/достижений (если настроены в панели)
+        // gp.achievements.grant('first_level');  // Раздаёт achievement по ID
+        
+        // Здесь запускайте основную логику игры
+        startYourGame();  // Ваша функция запуска игры
+        
+    } catch (error) {
+        console.error('Ошибка инициализации GamePush:', error);
+    }
+};
+
+// Функция для теста сохранения прогресса (вызовите из игры)
+function saveProgress() {
+    // Предполагаем, что gp доступен глобально (или передайте его)
+    if (window.gp) {
+        window.gp.progress.set({ test: 'done' });
+        console.log('Прогресс сохранён');
+    }
+}
+</script>
 </head>
 <body>
   <div id="overlays" class="overlays">
@@ -420,12 +462,6 @@
   <div id="notification-container">
     <div id="logout-notification" class="notification">Login close</div>
   </div>
-	<script>
-window.onGPInit = async (gp) => {undefined
-    console.log('GamePush SDK инициализирован'); 
-								 gp.player.on("ready")
-};
-</script>
 	<script>
     document.addEventListener('DOMContentLoaded', function () {
       // Получаем параметры из URL
