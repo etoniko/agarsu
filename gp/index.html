@@ -421,8 +421,9 @@
     <div id="logout-notification" class="notification">Login close</div>
   </div>
 	<script>
-window.onGPInit = async (gp) => {
-    console.log('GamePush SDK инициализирован');       
+window.onGPInit = async (gp) => {undefined
+    console.log('GamePush SDK инициализирован'); 
+								 gp.player.on("ready")
 };
 </script>
 	<script>
