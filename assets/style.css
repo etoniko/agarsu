@@ -101,8 +101,8 @@ i:hover{cursor:pointer;}
     }
     #myNicknamesBlock .icon-btn:hover { background:#141b2e; }
     #myNicknamesBlock .icon-btn i { font-size:16px; pointer-events:none; }
-.chatX_text.blurred { filter: blur(2px); cursor: pointer; transition: filter .15s; }
-.chatX_text.blurred.revealed { filter: none; }
+.chatX_msg.blurred { filter: blur(2px); cursor: pointer; transition: filter .15s; }
+.cchatX_msg.blurred.revealed { filter: none; }
 #gradient-settings label {
   display: flex;
   align-items: center;
