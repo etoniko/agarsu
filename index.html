@@ -23,7 +23,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=new_releases" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="/assets/style.css?0.0.06" rel="stylesheet">
+    <link href="/assets/style.css?0.0.07" rel="stylesheet">
     <!-- Скрипты -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="/assets/scripts/jquery.js?0.0.2"></script>
@@ -224,22 +224,17 @@
               <div class="arrow" id="next" onclick="showNext()">&#10095;</div>
               <div class="next-skin" id="nextSkin" onclick="showNext()"></div>
             </div>
-            <div class="input-container">
-              <form>
-                <input type="text" placeholder="Ник" name="name" maxlength="16" class="noPress" id="nick" required autocomplete="username" />
-                <input type="password" placeholder="Пасс" name="pass" maxlength="6" class="noPress" id="pass" required autocomplete="current-password" />
-				  <div style="display:none;" id="selectedColor"></div>
+
+     <div class="from-send">
+     <input type="text" placeholder="Ник" name="name" maxlength="16" class="noPress" id="nick" required="" autocomplete="username">
+     <input type="password" placeholder="Пасс" name="pass" maxlength="6" class="noPress" id="pass" required="" autocomplete="current-password" style="display: block;">
+	<div class="selectedIcon">
+		<div id="selectedColor"></div>
+	</div>
                             <div id="colorList" class="hidden"></div>
-              </form>
+</div>
+
 				<style>
-#selectedColor {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 2px solid #000;
-  cursor: pointer;
-  margin-bottom: 10px;
-}
 
 #colorList {
 display: flex;
@@ -463,6 +458,7 @@ display: flex;
 </body>
 
 </html>
+
 
 
 
