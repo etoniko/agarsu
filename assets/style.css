@@ -237,9 +237,9 @@ input{font-size:16px;}
 .selectedIcon{width: 30px;min-width: 30px;border-left: 1px solid rgb(204, 204, 204);height: 30px;display: flex;justify-content: center;align-items: center;}
 #selectedColor{width: 12px;height: 12px;cursor: pointer;border-radius: 50%;border-image: initial;border: 2px solid rgb(204, 204, 204);display: none;}
 .from-send{display: flex;width: 230px;background: white;margin-top: 10px;align-items: center;border-radius: 20px;}
-#colorList {display: flex;flex-wrap: wrap;gap: 4px;padding: 5px;border: 1px solid #0003;position: absolute;top: 195px;background: aliceblue;z-index: 1;width: 280px;margin-left: auto;margin-right: auto;left: 0;right: 0;text-align: center;height: 140px;}
+#colorList {display: flex;flex-wrap: wrap;gap: 4px;padding: 5px;border: 1px solid #0003;position: absolute;top: 195px;background: aliceblue;z-index: 1;width: 280px;margin-left: auto;margin-right: auto;left: 0;right: 0;text-align: center;height: 140px;border-radius: 13px;}
 .item {width: 12px;height: 12px;border-radius: 4px;border: 1px solid #0003;cursor: pointer;}
-.item:hover {outline: 2px solid black;}
+.item:hover {transform:scale(1.5)}
 .hidden {display: none !important;}
 #skinss{width:150px;height:150px;background-size:cover;border-radius:100%;cursor:pointer;background-image:url(https://i.imgur.com/4tui4GP.png);transition:ease filter, transform 0.5s;	border:solid;}
 .avatar-container{display:flex;align-items:center;justify-content:center;position:relative;}
