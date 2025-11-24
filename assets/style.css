@@ -244,8 +244,8 @@ input{font-size:16px;}
 .avatar-container{display:flex;align-items:center;justify-content:center;position:relative;}
 .previous-skin, .next-skin{width:60px;height:60px;border-radius:50%;background-size:cover;background-position:center;opacity:0.5;transition:transform 0.3s ease, opacity 0.3s ease;cursor:pointer;}
 .previous-skin:hover, .next-skin:hover{transform:scale(1.1);opacity:0.8;}
-.arrow{font-size:24px;cursor:pointer;color:#0d84fb;user-select:none;padding:5px;}
-.arrow:hover{color:#0073e6;}
+.arrow{font-size:24px;cursor:pointer;color: #ffffff;user-select:none;padding:5px;}
+.arrow:hover{color:#b5b5b5;}
 .scale-down{transform:scale(0.9);transition:transform 0.3s ease;}
 .checkbox-container{display:flex;flex-direction:column;align-items:flex-start;}
 .homemenu{position:absolute;left:10px;top:10px;border:solid #ffffff26 1px;border-radius:25px;background:rgba(0, 0, 0, .3);width:40px;height:40px;padding:5px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;}
