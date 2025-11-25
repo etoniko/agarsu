@@ -23,7 +23,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=new_releases" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="/assets/style.css?0.0.17" rel="stylesheet">
+    <link href="/assets/style.css?0.0.18" rel="stylesheet">
     <!-- Скрипты -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="/assets/scripts/jquery.js?0.0.2"></script>
@@ -297,7 +297,7 @@
     </div>
   </div>
   <canvas id="canvas"></canvas>
-  <div class="chatX_window" id="chatX_window">
+  <div class="noscroll chatX_window" id="chatX_window">
     <div class="chatX_top" id="chatX_top">
 	<div onclick="switchToDialog(null);" class="chatX_top_avatar"><i class="fa fa-globe"></i></div>
       <div class="chatX_burger" id="chatX_burger"><i class="fa-solid fa-bars nresize"></i></div>
@@ -324,7 +324,7 @@
   <div id="onchat"><i class="fa fa-message"></i></div>
   <div class="homemenu"><i class="fas fa-home"></i></div>
   <div class="adminpanel" onclick="openAdminPanel();"></div>
-  <div class="admin-panel"><div id="playerList" class="player-list"></div></div>
+  <div class="noscroll admin-panel"><div id="playerList" class="player-list"></div></div>
   <div class="score-info" id="score-info">
     <div class="scorr" id="score-max">0</div>
     <div class="scorr" id="score-new">0</div>
@@ -426,6 +426,7 @@
 </body>
 
 </html>
+
 
 
 
