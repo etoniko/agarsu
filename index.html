@@ -324,6 +324,14 @@
   <div id="onchat"><i class="fa fa-message"></i></div>
   <div class="homemenu"><i class="fas fa-home"></i></div>
   <div class="adminpanel" onclick="openAdminPanel();"></div>
+	<div id="adminPanelOverlay" class="admin-overlay hidden"></div>
+<div id="adminPanel" class="admin-panel hidden">
+    <div class="admin-header">
+        <h2>Админ-панель</h2>
+        <button id="closeAdminBtn">×</button>
+    </div>
+    <div id="playerList" class="player-list"></div>
+</div>
   <div class="score-info" id="score-info">
     <div class="scorr" id="score-max">0</div>
     <div class="scorr" id="score-new">0</div>
@@ -425,6 +433,7 @@
 </body>
 
 </html>
+
 
 
 
