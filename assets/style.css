@@ -251,7 +251,8 @@ input{font-size:16px;}
 .homemenu{position:absolute;left:10px;top:10px;border:solid #ffffff26 1px;border-radius:25px;background:rgba(0, 0, 0, .3);width:40px;height:40px;padding:5px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;}
 .adminpanel{position: absolute;right: 200px;top: 10px;border: solid #ffffff26 1px;border-radius: 25px;height: 40px;display: none;align-items: center;justify-content: center;cursor: pointer;font-size: 14px;padding: 5px 20px 5px 20px;}
 .admin-panel{display:none;position: absolute;right: 200px;top: 53px;border: solid #ffffff26 1px;border-radius: 10px;height: 300px;font-size: 14px;padding: 5px 20px 5px 20px;width: 600px;}
-.infoApanel{display:flex;gap: 10px;justify-content: space-evenly;overflow: auto;height: 280px;}
+.player-list{overflow: auto;height: 280px;}
+.infoApanel{display:flex;gap: 10px;justify-content: space-evenly;}
 .infoAplayer{display: flex;gap: 10px;justify-content: space-evenly;}
 
 
