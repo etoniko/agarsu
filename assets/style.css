@@ -250,7 +250,10 @@ input{font-size:16px;}
 .checkbox-container{display:flex;flex-direction:column;align-items:flex-start;}
 .homemenu{position:absolute;left:10px;top:10px;border:solid #ffffff26 1px;border-radius:25px;background:rgba(0, 0, 0, .3);width:40px;height:40px;padding:5px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;}
 .adminpanel{position: absolute;right: 200px;top: 10px;border: solid #ffffff26 1px;border-radius: 25px;height: 40px;display: none;align-items: center;justify-content: center;cursor: pointer;font-size: 14px;padding: 5px 20px 5px 20px;}
-.admin-panel {display:none;position: absolute;right: 200px;top: 53px;border: solid #ffffff26 1px;border-radius: 10px;height: 300px;cursor: pointer;font-size: 14px;padding: 5px 20px 5px 20px;width: 600px;}
+.admin-panel{display:none;position: absolute;right: 200px;top: 53px;border: solid #ffffff26 1px;border-radius: 10px;height: 300px;font-size: 14px;padding: 5px 20px 5px 20px;width: 600px;}
+.infoApanel{display:flex;gap: 10px;justify-content: space-evenly;}
+.infoAplayer{display: flex;gap: 10px;justify-content: space-evenly;}
+
 
 .score-info{position:absolute;font-size:12px;display:flex;transform:translate(-50%);top:10px;gap:5px;}
 .scorr{padding:5px 10px 5px 10px;border-radius:20px 20px 20px 20px;border:solid #ffffff26 1px;background:rgba(0, 0, 0, .3);}
