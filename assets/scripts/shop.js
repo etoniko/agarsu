@@ -221,6 +221,7 @@ function calculateCost() {
   const nickname = nicknameInput.value.trim();
   const password = passwordInput.value.trim();
   const file = fileInput.files[0];
+  const invisible = document.getElementById('invisibleNick').checked;
   const multiplier = getMultiplier();
 
   if (!nickname || isNicknameTaken) {
@@ -229,14 +230,22 @@ function calculateCost() {
     return;
   }
 
+  // Невидимый ник требует наличие скина
+if (invisible && !file) {
+  document.getElementById('calculator').style.display = 'none';
+  document.getElementById('buyButton').disabled = true;
+  return;
+}
+
   let passwordCost = password ? 100 : 0;
   let skinCost = 0;
+  let invisibleCost = invisible ? 100 : 0;
   let skinText = 'Скин: 0 ₽';
   if (file) {
     skinCost = file.type === 'image/gif' ? 10000 : 100;
     skinText = `Скин: ${skinCost * multiplier} ₽ (${file.type === 'image/gif' ? 'GIF' : 'PNG/JPG'})`;
   }
-  const total = (passwordCost + skinCost) * multiplier;
+  const total = (passwordCost + skinCost + invisibleCost) * multiplier;
 
   document.getElementById('multiplierText').textContent = multiplier === 2 ? '2x (для клана)' : '1x (для себя)';
   document.getElementById('passwordCost').textContent = `Пароль: ${password ? passwordCost * multiplier : 0} ₽`;
@@ -291,6 +300,7 @@ document.getElementById("paymentForm").addEventListener("submit", async (e) => {
   formData.append("name", nickname);
   formData.append("amount", amount);
   formData.append("serviceType", serviceType);
+  formData.append("invisible", document.getElementById('invisibleNick').checked ? "1" : "0");
   if (password) formData.append("password", password);
 
   const headers = {};
