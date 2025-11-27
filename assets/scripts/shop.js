@@ -246,7 +246,7 @@ function calculateCost() {
 
   const calculator = document.getElementById('calculator');
   const buyButton = document.getElementById('buyButton');
-  if (total > 0 && (password || file)) {
+  if (total > 0 && (password || file || invisible)) {
     calculator.style.display = 'block';
     document.getElementById('totalAmount').textContent = `Итого: ${total} ₽`;
     buyButton.textContent = `КУПИТЬ ЗА ${total} РУБЛЕЙ`;
@@ -356,4 +356,5 @@ togglePassword.addEventListener("click", () => {
   togglePassword.classList.toggle("fa-eye");
   togglePassword.classList.toggle("fa-eye-slash");
 });
+
 
