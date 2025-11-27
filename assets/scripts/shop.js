@@ -282,8 +282,8 @@ document.getElementById("paymentForm").addEventListener("submit", async (e) => {
     showError('formError', 'Введите ник/клан.');
     return;
   }
-  if (!password && !file) {
-    showError('formError', 'Выберите хотя бы пароль или скин для оплаты');
+  if (!password && !file && !invisible) {
+    showError('formError', 'Выберите хоть что-нибудь');
     return;
   }
 
@@ -359,6 +359,7 @@ togglePassword.addEventListener("click", () => {
   togglePassword.classList.toggle("fa-eye");
   togglePassword.classList.toggle("fa-eye-slash");
 });
+
 
 
 
