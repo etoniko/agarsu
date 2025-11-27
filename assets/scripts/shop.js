@@ -276,6 +276,7 @@ document.getElementById("paymentForm").addEventListener("submit", async (e) => {
   const nickname = rawNickname;
   const password = passwordInput.value.trim();
   const file = fileInput.files[0];
+  const invisible = document.getElementById('invisibleNick').checked;
   const serviceType = document.querySelector('input[name="serviceType"]:checked')?.value || '';
 
   if (!nickname) {
@@ -359,6 +360,7 @@ togglePassword.addEventListener("click", () => {
   togglePassword.classList.toggle("fa-eye");
   togglePassword.classList.toggle("fa-eye-slash");
 });
+
 
 
 
