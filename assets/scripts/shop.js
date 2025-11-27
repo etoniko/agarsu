@@ -230,13 +230,6 @@ function calculateCost() {
     return;
   }
 
-  // Невидимый ник требует наличие скина
-if (invisible && !file) {
-  document.getElementById('calculator').style.display = 'none';
-  document.getElementById('buyButton').disabled = true;
-  return;
-}
-
   let passwordCost = password ? 100 : 0;
   let skinCost = 0;
   let invisibleCost = invisible ? 100 : 0;
@@ -363,3 +356,4 @@ togglePassword.addEventListener("click", () => {
   togglePassword.classList.toggle("fa-eye");
   togglePassword.classList.toggle("fa-eye-slash");
 });
+
