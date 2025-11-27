@@ -243,6 +243,7 @@ function calculateCost() {
   document.getElementById('multiplierText').textContent = multiplier === 2 ? '2x (для клана)' : '1x (для себя)';
   document.getElementById('passwordCost').textContent = `Пароль: ${password ? passwordCost * multiplier : 0} ₽`;
   document.getElementById('skinCost').textContent = skinText;
+  document.getElementById('invisibleCost').textContent = invisible ? `Невидимый ник: ${invisibleCost * multiplier} ₽` : '';
 
   const calculator = document.getElementById('calculator');
   const buyButton = document.getElementById('buyButton');
@@ -356,5 +357,6 @@ togglePassword.addEventListener("click", () => {
   togglePassword.classList.toggle("fa-eye");
   togglePassword.classList.toggle("fa-eye-slash");
 });
+
 
 
