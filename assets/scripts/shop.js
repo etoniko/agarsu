@@ -143,6 +143,7 @@ nicknameInput.addEventListener("input", () => {
 });
 
 const passwordInput = document.getElementById("password");
+const invisibleNickCheckbox = document.getElementById("invisibleNick");
 passwordInput.addEventListener("input", () => {
   if (passwordInput.value.length > 5) {
     passwordInput.value = passwordInput.value.substring(0, 5);
@@ -155,8 +156,6 @@ passwordInput.addEventListener("input", () => {
 
 const previewContainer = document.getElementById("previewContainer");
 const fileInput = document.getElementById("fileInput");
-const invisibleCheckbox = document.getElementById('invisibleNick');
-invisibleCheckbox.addEventListener('change', calculateCost);
 const skinCanvas = document.getElementById("previewCanvas");
 const skinCtx = skinCanvas.getContext("2d");
 const gifPreview = document.getElementById("previewGif");
@@ -223,7 +222,6 @@ function calculateCost() {
   const nickname = nicknameInput.value.trim();
   const password = passwordInput.value.trim();
   const file = fileInput.files[0];
-  const invisible = document.getElementById('invisibleNick').checked;
   const multiplier = getMultiplier();
 
   if (!nickname || isNicknameTaken) {
@@ -233,23 +231,22 @@ function calculateCost() {
   }
 
   let passwordCost = password ? 100 : 0;
+  let invisibleCost = invisibleNickCheckbox.checked ? 100 : 0;
   let skinCost = 0;
-  let invisibleCost = invisible ? 100 : 0;
   let skinText = 'Скин: 0 ₽';
   if (file) {
     skinCost = file.type === 'image/gif' ? 10000 : 100;
     skinText = `Скин: ${skinCost * multiplier} ₽ (${file.type === 'image/gif' ? 'GIF' : 'PNG/JPG'})`;
   }
-  const total = (passwordCost + skinCost + invisibleCost) * multiplier;
+    const total = (passwordCost + skinCost + invisibleCost) * multiplier;
 
   document.getElementById('multiplierText').textContent = multiplier === 2 ? '2x (для клана)' : '1x (для себя)';
   document.getElementById('passwordCost').textContent = `Пароль: ${password ? passwordCost * multiplier : 0} ₽`;
   document.getElementById('skinCost').textContent = skinText;
-  document.getElementById('invisibleCost').textContent = invisible ? `Невидимый ник: ${invisibleCost * multiplier} ₽` : '';
 
   const calculator = document.getElementById('calculator');
   const buyButton = document.getElementById('buyButton');
-  if (total > 0 && (password || file || invisible)) {
+    if (total > 0 && (password || file || invisibleNickCheckbox.checked)) {
     calculator.style.display = 'block';
     document.getElementById('totalAmount').textContent = `Итого: ${total} ₽`;
     buyButton.textContent = `КУПИТЬ ЗА ${total} РУБЛЕЙ`;
@@ -276,15 +273,14 @@ document.getElementById("paymentForm").addEventListener("submit", async (e) => {
   const nickname = rawNickname;
   const password = passwordInput.value.trim();
   const file = fileInput.files[0];
-  const invisible = document.getElementById('invisibleNick').checked;
   const serviceType = document.querySelector('input[name="serviceType"]:checked')?.value || '';
 
   if (!nickname) {
     showError('formError', 'Введите ник/клан.');
     return;
   }
-  if (!password && !file && !invisible) {
-    showError('formError', 'Выберите хоть что-нибудь');
+    if (!password && !file && !invisibleNickCheckbox.checked) {
+    showError('formError', 'Выберите хотя бы пароль или скин для оплаты');
     return;
   }
 
@@ -297,7 +293,6 @@ document.getElementById("paymentForm").addEventListener("submit", async (e) => {
   formData.append("name", nickname);
   formData.append("amount", amount);
   formData.append("serviceType", serviceType);
-  formData.append("invisible", document.getElementById('invisibleNick').checked ? "1" : "0");
   if (password) formData.append("password", password);
 
   const headers = {};
@@ -320,6 +315,9 @@ document.getElementById("paymentForm").addEventListener("submit", async (e) => {
       }, "image/png");
     }
   } else {
+	  if (invisibleNickCheckbox.checked) {
+      formData.append("invisible", "1");
+    }
     await sendForm(formData, headers);
   }
 });
@@ -362,7 +360,4 @@ togglePassword.addEventListener("click", () => {
 });
 
 
-
-
-
-
+invisibleNickCheckbox.addEventListener("change", calculateCost);
