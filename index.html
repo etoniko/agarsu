@@ -23,14 +23,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=new_releases" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="/assets/style.css?0.0.19" rel="stylesheet">
+    <link href="/assets/style.css?0.0.20" rel="stylesheet">
     <!-- Скрипты -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="/assets/scripts/jquery.js?0.0.2"></script>
     <script src="/assets/scripts/log.js?0.0.2"></script>
     <script src="/assets/scripts/vector.js?0.0.2"></script>
     <script src="https://api.agar.su/assets/scripts/main_out2.js"></script>
-	<script src="/assets/scripts/shop.js" defer></script>
+	<script src="/assets/scripts/shop.js?0.0.2" defer></script>
 	<script src="/assets/scripts/all.js?0.0.35" defer></script>
 	<script src="/assets/scripts/pass.js?0.0.2" defer></script>
 	<script src="/assets/scripts/skins.js?0.0.2" defer></script>
@@ -71,6 +71,7 @@
         <div id="nicknameWrapper">
           <input type="text" id="nickname" placeholder="Придумай себе ник" required maxlength="15" title="Введите ник" autocomplete="off">
           <span id="charCount">0/15</span>
+		<label style="display: flex;gap: 4px;"><input type="checkbox" id="invisibleNick"> Невидимый ник</label>
         </div>
         <div id="nicknameError" class="error"></div>
       </div>
@@ -426,6 +427,7 @@
 </body>
 
 </html>
+
 
 
 
