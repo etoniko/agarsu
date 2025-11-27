@@ -155,6 +155,8 @@ passwordInput.addEventListener("input", () => {
 
 const previewContainer = document.getElementById("previewContainer");
 const fileInput = document.getElementById("fileInput");
+const invisibleCheckbox = document.getElementById('invisibleNick');
+invisibleCheckbox.addEventListener('change', calculateCost);
 const skinCanvas = document.getElementById("previewCanvas");
 const skinCtx = skinCanvas.getContext("2d");
 const gifPreview = document.getElementById("previewGif");
@@ -357,6 +359,7 @@ togglePassword.addEventListener("click", () => {
   togglePassword.classList.toggle("fa-eye");
   togglePassword.classList.toggle("fa-eye-slash");
 });
+
 
 
 
