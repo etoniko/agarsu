@@ -215,6 +215,17 @@
         <div class="control-row">
             <label aria-labelledby="Brightness">Brightness</label><input type="range" min="0" max="200" value="100" id="brightness"><button>Reset</button>
         </div>
+<div class="control-row">
+    <label>Background</label>
+    <select id="bgType">
+        <option value="transparent">Transparent</option>
+        <option value="color">Custom Color</option>
+    </select>
+    <input type="color" id="bgColorPicker" value="#ffffff" style="display:inline-block; margin-left: 10px;">
+</div>
+
+
+
     </div>
 </main>
 
@@ -223,6 +234,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const circleBox = document.querySelector('.circle-box');
     const downloadBtn = document.querySelector('.download-btn');
     const controls = document.querySelector('.controls');
+	const bgTypeSelect = document.getElementById("bgType");
+const bgColorPicker = document.getElementById("bgColorPicker");
+
+bgTypeSelect.addEventListener("change", () => {
+    if (bgTypeSelect.value === "color") {
+        bgColorPicker.style.display = "inline-block";
+    } else {
+        bgColorPicker.style.display = "none";
+    }
+});
 
     let img = null;
     const canvasSize = 512;
@@ -372,6 +393,13 @@ circleBox.addEventListener('wheel', (e) => {
         const drawHeight = img.height * zoom;
         const drawX = (canvasSize - drawWidth) / 2 + offsetX;
         const drawY = (canvasSize - drawHeight) / 2 + offsetY;
+		const bgType = document.getElementById('bgType').value;
+const bgColor = document.getElementById('bgColorPicker').value;
+
+if (bgType === "color") {
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, canvasSize, canvasSize);
+}
 
         ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
 
@@ -423,9 +451,21 @@ circleBox.addEventListener('wheel', (e) => {
         const rotation = document.getElementById('rotation').value;
         const contrast = document.getElementById('contrast').value;
         const brightness = document.getElementById('brightness').value;
+		const bgType = document.getElementById('bgType').value;
+const bgColor = document.getElementById('bgColorPicker').value;
+
+if (bgType === "color") {
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, canvasSize, canvasSize);
+}
 
         ctx.filter =
             `hue-rotate(${hue}deg) blur(${blur}px) sepia(${sepia}%) saturate(${saturate}%) contrast(${contrast}%) brightness(${brightness}%)`;
+
+		if (bgType === "color") {
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, canvasSize, canvasSize);
+}
 
         ctx.save();
         ctx.translate(canvasSize / 2, canvasSize / 2);
@@ -447,7 +487,7 @@ circleBox.addEventListener('wheel', (e) => {
 
         const a = document.createElement('a');
         a.href = tempCanvas.toDataURL('image/png');
-        a.download = 'cropped_image.png';
+        a.download = Math.floor(Math.random() * 1e8) + '.png';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -458,4 +498,5 @@ circleBox.addEventListener('wheel', (e) => {
 
 
 </body></html>
+
 
