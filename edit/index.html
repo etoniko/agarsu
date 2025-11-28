@@ -176,7 +176,93 @@
     height: 200px;
     overflow: auto;
       }
+	  
+	    #bgType {
+    font-size: 16px;
+    padding: 12px 16px;
+  }
     }
+	/* Красивый стиль для select */
+#bgType {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-color: var(--panel);
+    color: var(--text);
+    border: 1px solid #ffffff22;
+    padding: 3px 8px;
+    border-radius: 8px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+}
+
+#bgType:hover {
+  border-color: var(--accent);
+  background-color: #1c2535;
+}
+
+#bgType:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+
+/* Стрелка для select */
+#bgType::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--text);
+  border-bottom: 2px solid var(--text);
+  transform: translateY(-50%) rotate(45deg);
+  pointer-events: none;
+}
+
+	/* Красивый стиль для color picker */
+#bgColorPicker {
+    -webkit-appearance: none;
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    padding: 0;
+    background: none;
+    vertical-align: middle;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    margin-left: 10px;
+}
+
+/* Для WebKit-браузеров (Chrome, Safari) */
+#bgColorPicker::-webkit-color-swatch-wrapper {
+  padding: 0;
+  border-radius: 8px;
+}
+
+#bgColorPicker::-webkit-color-swatch {
+  border: 2px solid #ffffff22;
+  border-radius: 8px;
+}
+
+/* При наведении */
+#bgColorPicker:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 6px var(--accent);
+  border-radius: 8px;
+}
+
+/* Для Firefox */
+#bgColorPicker::-moz-color-swatch {
+  border: 2px solid #ffffff22;
+  border-radius: 8px;
+}
+
   </style>
 </head>
 <body>
