@@ -1,0 +1,6 @@
+User-agent: *
+Disallow: /*?sdk=
+Allow: /edit
+Allow: /beta
+Allow: /
+Sitemap: https://agar.su/sitemap.xml
