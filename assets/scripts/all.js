@@ -103,36 +103,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-
-
-const observer = new MutationObserver(() => {
-  document.querySelectorAll('.star-container').forEach(container => {
-    const levelElem = container.querySelector('.levelme');
-    if (!levelElem) return;
-    
-    const level = parseInt(levelElem.textContent, 10);
-    const star = container.querySelector('.fa-star');
-    if (!star) return;
-
-    // Сброс классов и цвета
-    star.classList.remove('high-level', 'ultra-level', 'old-level');
-    levelElem.style.color = '';
-
-    if (level >= 100) {
-      star.classList.add('old-level');   // новый класс для 100+
-      levelElem.style.color = 'black';   // цвет черный
-    } else if (level >= 70) {
-      star.classList.add('ultra-level'); // 70-99
-      levelElem.style.color = 'gold';
-    } else if (level >= 50) {
-      star.classList.add('high-level');  // 50-69
-    }
-  });
-});
-
-// Запуск наблюдателя
-observer.observe(document.body, { childList: true, subtree: true });
-
         // Получаем элементы канваса и div-элемента overlays
         var canvas = document.getElementById('canvas');
         var overlays = document.getElementById('overlays');
@@ -210,6 +180,7 @@ document.querySelector('#chatX_window .emoji-list').addEventListener('click', (e
   // Вставляем эмодзи в конец текста
   chatBox.value += emojiCode;
 });
+
 
 
 
