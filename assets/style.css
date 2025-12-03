@@ -286,21 +286,10 @@ input{font-size:16px;}
 .sgm.hidden, .photo-gallery.hidden{opacity:0;transform:translateY(-20px);}
 .sgm{padding-bottom:10px;font-family:'ubuntu';color:#ffffff;font-size:20px;}
 .fa-star{color:gold;text-shadow:#FC0 1px 0 10px;}
-.fa-star.high-level{color:#00ffe5;text-shadow:#00ffe5 1px 0 10px;}
-.fa-star.ultra-level{color: red;text-shadow: red 1px 0 10px;}
-.fa-star.old-level {font-size: 23px;
-  color: #ffffff; /* белая звезда */
-  text-shadow: 
-    0 0 6px #ffffff,
-    0 0 12px #ffffff,
-    0 0 24px #ffffff;
-  animation: white-glow 2.5s infinite alternate ease-in-out;
-  transition: transform 0.3s ease;
-}
-
-.fa-star.old-level:hover {
-  transform: scale(1.3) rotate(8deg);
-}
+.fa-star.azure{color:#00ffe5;text-shadow:#00ffe5 1px 0 10px;}
+.fa-star.red{color: red;text-shadow: red 1px 0 10px;}
+.fa-star.white {font-size: 23px;color: #ffffff; /* белая звезда */text-shadow: 0 0 6px #ffffff,0 0 12px #ffffff,0 0 24px #ffffff;animation: white-glow 2.5s infinite alternate ease-in-out;transition: transform 0.3s ease;}
+.fa-star.white:hover {transform: scale(1.3) rotate(8deg);}
 
 /* Анимация мягкого свечения */
 @keyframes white-glow {
