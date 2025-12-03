@@ -545,3 +545,13 @@ input{font-size:16px;}
 .pvp-no { background:#880000; color:white; }
 .pvp-no:hover { background:#bb0000; }
 .pvp-never { background:#333; color:#ff6666; font-size:14px; }
+
+#pvpConfirmModal{right: 10px;
+    top: 280px;
+    font-size: 14px;
+    position: absolute;
+    padding: 10px 10px 10px 10px;
+    border-radius: 20px 20px 20px 20px;
+    border: solid #ffffff26 1px;
+    background: rgba(0, 0, 0, .3);
+}
