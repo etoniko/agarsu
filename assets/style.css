@@ -501,3 +501,47 @@ input{font-size:16px;}
 .closeStats i{pointer-events:none;}
 .statsWrapper{font-family:sans-serif;}
 .top-playerwraper div{padding:2px 4px;}
+/* === PVP ПРИГЛАШЕНИЯ === */
+.pvp-modal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999999;
+    font-family: Arial, sans-serif;
+}
+.pvp-modal-content {
+    background: #1a1a1a;
+    padding: 25px 30px;
+    border-radius: 16px;
+    border: 3px solid #333;
+    text-align: center;
+    color: #fff;
+    box-shadow: 0 0 30px rgba(0,255,0,0.4);
+    min-width: 320px;
+}
+.pvp-modal h3 { 
+    margin: 0 0 15px; 
+    color: #00ff00; 
+    font-size: 22px;
+}
+.pvp-modal p { 
+    margin: 15px 0; 
+    font-size: 18px; 
+}
+.pvp-buttons button {
+    margin: 8px;
+    padding: 12px 24px;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    min-width: 110px;
+}
+.pvp-yes { background:#008800; color:white; }
+.pvp-yes:hover { background:#00bb00; }
+.pvp-no { background:#880000; color:white; }
+.pvp-no:hover { background:#bb0000; }
+.pvp-never { background:#333; color:#ff6666; font-size:14px; }
