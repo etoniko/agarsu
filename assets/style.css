@@ -351,9 +351,8 @@ input{font-size:16px;}
 #accountID{position:absolute;right:20px;top:20px;background-color:#1b263b;padding:9.5px 15px;border-radius:20px;}
 .line{width:100%;height:2px;background-color:#ffffff;margin:10px 0px 10px 0px;}
 #l1eaderboard{max-width:150px;position:absolute;padding:10px 10px 10px 10px;border-radius:20px 20px 20px 20px;border:solid #ffffff26 1px;background:rgba(0, 0, 0, .3);}
-.star-container{width: 20px;height: 11px;font-size:20px;position:relative;display:inline-block;white-space:nowrap} 
-.levelme{pointer-events: none;position:absolute;top:50%;left:50%;transform:translate(-50%, -50%);font-size:8px;color:#6a6a6a;font-family:'Ubuntu';display: inline-block;width: 20px;height: 20px;background-size: contain;background-repeat: no-repeat;background-position: center center;}
-.star-container:hover{transform:scale(1.5);transition:opacity 0.2s, transform 0.3s;}
+.star-container{font-size:20px;position:relative;display:inline-block;white-space:nowrap} 
+.levelme{pointer-events: none;position:absolute;top:50%;left:50%;transform:translate(-50%, -50%);font-size:10px;color:#6a6a6a;font-family:'Ubuntu';}
 .star-container .tooltip {
     visibility: hidden;
     opacity: 0;
@@ -361,9 +360,9 @@ input{font-size:16px;}
     background: rgb(0 0 0 / 74%);
     color: #fff;
     text-align: center;
-    padding: 3px 6px;
+    padding: 4px 8px;
     border-radius: 6px;
-    font-size: 8px;
+    font-size: 12px;
     font-weight: bold;
     position: absolute;
     top: 50%;              /* ровно по центру звезды по вертикали */
