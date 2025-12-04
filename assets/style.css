@@ -342,7 +342,7 @@ input{font-size:16px;}
 #l1eaderboard{max-width:150px;position:absolute;padding:10px 10px 10px 10px;border-radius:20px 20px 20px 20px;border:solid #ffffff26 1px;background:rgba(0, 0, 0, .3);}
 .star-container{font-size:20px;position:relative;display:inline-block;white-space:nowrap} 
 .levelme{pointer-events: none;position:absolute;top:50%;left:50%;transform:translate(-50%, -50%);font-size:8px;color:#585858;font-family:'Ubuntu';}
-.levelme.red{color:gold;}
+.levelme.red{color: gold;font-family: fantasy;}
 .star-container .tooltip {
     visibility: hidden;
     opacity: 0;
