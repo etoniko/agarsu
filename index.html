@@ -427,9 +427,82 @@
   <div id="notification-container">
     <div id="logout-notification" class="notification">Login close</div>
   </div>
+
+	<div id="legalBanner" style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:999999;display:flex;align-items:center;justify-content:center;padding:15px;font-family:Arial,sans-serif;color:#fff;overflow-y:auto;">
+  <div style="background: rgb(16 16 16);max-width:720px;width:100%;padding: 25px 25px;text-align:center;position:relative;max-height:90vh;overflow-y:auto;border: 1px solid rgb(154 154 154 / 30%);">
+    <div style="background: rgba(255,255,255,0.08);border-radius:12px;padding:20px;text-align:left;font-size:15px;line-height:1.7;border: 1px solid rgb(154 154 154 / 30%);">
+      <b style="font-size:18px;display:block;">Правила игры и использования сервиса:</b>
+      <ul style="list-style-type:disc;padding-left:25px;">
+        <li>Запрещено использование читов, ботов, макросов, скриптов и любых сторонних программ, модифицирующих игровой процесс. Нарушение влечёт перманентный бан аккаунта без возврата средств.</li>
+        <li>В чате и на форумах запрещены: мат, оскорбления, угрозы, разжигание ненависти, спам, реклама сторонних ресурсов, политические дискуссии и любые формы дискриминации. Нарушение — бан от 1 дня до перманентного.</li>
+        <li>Администрация сайта оставляет за собой право блокировать аккаунт, удалять контент или ограничивать доступ без объяснения причин и без возврата донатных средств, если действия пользователя противоречат интересам сообщества или нарушают законы РФ.</li>
+        <li>Все покупки в магазине (скины, ники, пароли, кланы и т.д.) являются виртуальными услугами развлекательного характера. Они не являются товаром и не подлежат возврату в соответствии со ст. 32 Закона РФ «О защите прав потребителей» (услуги в сфере досуга). </li>
+		<li>Оплата услуг осуществляется в рамках закона № 422-ФЗ «О самозанятых». Чек формируется автоматически через приложение «Мой налог».</li>
+        <li>Сервис предназначен исключительно для лиц старше 12 лет в соответствии с Федеральным законом № 436-ФЗ «О защите детей от информации, причиняющей вред их здоровью и развитию». Использование сайта несовершеннолетними возможно только под контролем родителей.</li>
+        <li>Пользователь несёт полную ответственность за безопасность своего аккаунта. Администрация не компенсирует потери в случае взлома или передачи данных третьим лицам.</li>
+        <li>Сайт не связан с официальным Agar.io или компанией Miniclip. Все права на оригинальную игру принадлежат их владельцам. Agar.su — частный Русский сервер на доменном зоне Soviet Union.</li>
+      </ul>
+      <p style="margin-top:20px;">Полные правила доступны в <a href="/rules.html" style="color: #007bff;" target="_blank">отдельном документе</a>.</p>
+    </div>
+    <div style="background:rgba(255,255,255,0.08);border-radius:12px;padding:20px;margin:25px 0;text-align:left;font-size:15px;line-height:1.7;border: 1px solid rgb(154 154 154 / 30%);">
+      <b style="font-size:18px;display:block;margin-bottom:15px;">Кратко о сборе данных:</b>
+      <p>Мы собираем минимальный объём персональных данных для работы сайта: никнейм, хэшированный пароль, IP-адрес, cookie, данные авторизации через Google/Telegram, загруженные скины и статистику игр. Данные используются для предоставления услуг, предотвращения нарушений и улучшения сервиса. Мы не передаём данные третьим лицам без вашего согласия или требования закона. Срок хранения — до удаления аккаунта.</p>
+      <p>Полная <a href="/privacy.html" style="color: 007bff;" target="_blank">Политика конфиденциальности</a> и <a href="/offer.html" style="color: 007bff;" target="_blank">Публичная оферта</a>.</p>
+    </div>
+
+    <div style="margin:30px 0;display:flex;flex-direction:column;gap:16px;font-size:16px;">
+      <label style="display:flex;align-items:center;gap:12px;justify-content:flex-start;cursor:pointer;">
+        <input type="checkbox" id="check1" style="width:24px;height:24px;accent-color: #007bff;">
+        Мне исполнилось 12 лет (ФЗ-436)
+      </label>
+      <label style="display:flex;align-items:center;gap:12px;justify-content:flex-start;cursor:pointer;">
+        <input type="checkbox" id="check2" style="width:24px;height:24px;accent-color: #007bff;">
+        Я принимаю правила, публичную оферту и политику конфиденциальности
+      </label>
+      <label style="display:flex;align-items:center;gap:12px;justify-content:flex-start;cursor:pointer;">
+        <input type="checkbox" id="check3" style="width:24px;height:24px;accent-color: #007bff;">
+        Согласен на использование cookie и обработку персональных данных (ФЗ-152)
+      </label>
+    </div>
+
+    <button id="acceptBtn" disabled="" style="background: linear-gradient(45deg, rgb(0 187 255), rgb(0 102 255));color:#000;font-weight:bold;font-size:26px;padding:18px 50px;border:none;border-radius:50px;cursor:pointer;width:100%;margin-top:15px;opacity:0.5;transition:opacity 0.3s;">
+      ПРИНЯТЬ И ИГРАТЬ
+    </button>
+
+    <div style="margin-top:30px;font-size:14px;color:#888;">
+      12+ • Частный сервер • © 2025 Agar.su<br>
+      Не связан с Miniclip Agar.io. Все права защищены.
+	  Реквизиты владельца сайта:
+Самозанятый Дараселиа Николоз Ираклиевич
+ИНН: 503830093674 • Плательщик НПД №422-ФЗ от 27.11.2018
+ikometai@ya.ru
+    </div>
+  </div>
+</div>
+	<script>
+// Легальный баннер 2025 — запоминает согласие навсегда
+if (localStorage.getItem('1agar_legal_accepted_2025') === 'true') {
+  document.getElementById('legalBanner').remove();
+} else {
+  const btn = document.getElementById('acceptBtn');
+  const checks = document.querySelectorAll('#check1,#check2,#check3');
+  
+  checks.forEach(ch => ch.addEventListener('change', () => {
+    btn.disabled = ![...checks].every(c => c.checked);
+    btn.style.opacity = btn.disabled ? '0.5' : '1';
+  }));
+
+  btn.addEventListener('click', () => {
+    localStorage.setItem('1agar_legal_accepted_2025', 'true');
+    document.getElementById('legalBanner').style.opacity = '0';
+    setTimeout(() => document.getElementById('legalBanner').remove(), 500);
+  });
+}
+</script>
 </body>
 
 </html>
+
 
 
 
