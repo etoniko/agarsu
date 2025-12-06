@@ -444,7 +444,13 @@
     </div>
     <div style="background:rgba(255,255,255,0.08);border-radius:12px;padding:20px;margin:25px 0;text-align:left;font-size:15px;line-height:1.7;border: 1px solid rgb(154 154 154 / 30%);">
       <b style="font-size:18px;display:block;">Кратко о сборе данных:</b>
-      <p>Мы собираем минимальный объём персональных данных для работы сайта: никнейм, хэшированный пароль, IP-адрес, cookie, данные авторизации через Google/Telegram, загруженные скины и статистику игр. Данные используются для предоставления услуг, предотвращения нарушений и улучшения сервиса. Мы не передаём данные третьим лицам без вашего согласия или требования закона. Срок хранения — до удаления аккаунта.</p>
+      <p>Мы собираем только необходимые данные: никнейм, хэшированный пароль, IP-адрес, cookie-файлы, данные авторизации Google/Telegram, загруженные скины и игровую статистику.
+Данные используются исключительно для работы сервиса, предотвращения нарушений и улучшения игры.
+Мы не передаём ваши данные третьим лицам, кроме случаев, предусмотренных законодательством РФ.
+Срок хранения
+При отсутствии активности в течение 160 дней аккаунт и все связанные с ним данные автоматически и безвозвратно удаляются.
+Досрочное удаление
+Вы можете удалить аккаунт и все данные в любой момент. Для этого отправьте письмо на ikometai@ya.ru с указанием ника и ID аккаунта. Удаление будет выполнено в течение 1–3 рабочих дней.</p>
       <p>Полная <a href="/privacy.html" style="color: 007bff;" target="_blank">Политика конфиденциальности</a> и <a href="/offer.html" style="color: 007bff;" target="_blank">Публичная оферта</a>.</p>
     </div>
 
@@ -496,8 +502,15 @@ if (localStorage.getItem('1agar_legal_accepted_2025') === 'true') {
     document.getElementById('legalBanner').style.opacity = '0';
     setTimeout(() => document.getElementById('legalBanner').remove(), 500);
   });
+
+	document.getElementById('button-text').addEventListener('click', function(e) {
+    if (localStorage.getItem('1agar_legal_accepted_2025') !== 'true') {
+      e.preventDefault(); e.stopPropagation(); alert('Сначала подтвердите согласие'); return false;
+    }
+  });
 }
 </script>
 </body>
 
 </html>
+
