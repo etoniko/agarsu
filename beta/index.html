@@ -1,672 +1,401 @@
-<!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8" />
-  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="description" content="Eat cells smaller than you and don't get eaten by the bigger ones, as an MMO" />
-  <meta name="keywords" content="agario, agar, io, cell, cells, virus, bacteria, blob, game, games, web game, html5, fun, flash" />
-  <meta name="robots" content="index, follow" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <title>Agar.su 2.0 — PixiJs Redesign</title>
-	<meta name="robots" content="index, follow" />
-  <link id="favicon" rel="icon" type="image/png" href="https://agar.su/icon.svg" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.4.0/pixi.min.js"></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Agar.su — лучшая альтернатива agar.io. Играйте онлайн прямо сейчас: поглощайте клетки, соревнуйтесь с другими игроками и станьте лидером среди всех клонов agar и agario.">
+    <meta name="author" content="Agar.su Team">
+    <meta name="robots" content="index">
+    <!-- Open Graph для социальных сетей -->
+    <meta property="og:title" content="Agar.su - Завоевание начинается!">
+    <meta property="og:description" content="absorb cells, compete with other players, and become the leader among all agar and agario clones.">
+    <meta property="og:image" content="/assets/photo/og.png">
+    <meta property="og:url" content="https://agar.su">
+    <meta property="og:type" content="website">
+	<meta name="yandex-verification" content="a454c4468218ca1c" />
+    <title>Agar.su |Beta</title>
+    <!-- Favicon и иконки для Apple устройств -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="icon" href="/icon.svg" type="image/x-icon">
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://agar.su">
+    <!-- Шрифты и стили -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flag-icons/css/flag-icons.min.css">
+    <link href="https://fonts.googleapis.com/css?family=Ubuntu:700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=new_releases" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="/assets/style.css?0.0.33" rel="stylesheet">
+    <!-- Скрипты -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="/assets/scripts/jquery.js?0.0.2"></script>
+    <script src="/assets/scripts/log.js?0.0.2"></script>
+    <script src="/assets/scripts/vector.js?0.0.2"></script>
+    <script src="https://api.agar.su/assets/scripts/main_out2.js"></script>
+	<script src="https://api.agar.su/assets/scripts/shop.js" defer></script>
+	<script src="https://api.agar.su/assets/scripts/all.js" defer></script>
+	<script src="/assets/scripts/pass.js?0.0.2" defer></script>
+	<script src="/assets/scripts/skins.js?0.0.2" defer></script>
+	<script src="/assets/scripts/rating.js?0.0.4" defer></script>
+	<style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
 
-  <style>
-/* ===========================
-   Agar.su 2.0 — Glass Design
-   =========================== */
-:root {
-  --bg: #0b0c0f;
-  --panel: #12141a;
-  --panel-2: #1a1d25;
-  --accent: #5ef3a9;
-  --accent-2: #8ab6ff;
-  --text: #e3e6ee;
-  --muted: #8a90a2;
-  --chip: #0f1116;
-  --glass: rgba(18, 20, 26, 0.7);
-  --blur: saturate(140%) blur(12px);
-  --r-lg: 18px;
-  --r-md: 14px;
-  --r-sm: 10px;
-  --shadow-1: 0 12px 36px rgba(0, 0, 0, 0.5);
-  --shadow-2: 0 6px 22px rgba(0, 0, 0, 0.35);
-  --gap: 10px;
-}
+        * { box-sizing: border-box; }
+        body, html {
+            margin: 0; padding: 0; height: 100%;
+            font-family: 'Roboto', sans-serif;
+            background: #f8f9fc;
+            color: #2d2d2d;
+            overflow: hidden;
+        }
 
-* {
-  box-sizing: border-box;
-}
-html,
-body {
-  height: 100%;
-}
-body {
-  margin: 0;
-  background: radial-gradient(1200px 1200px at 10% 10%, #0f1320 0%, var(--bg) 55%) fixed,
-    linear-gradient(180deg, #0a0b10 0%, #0b0c0f 100%) fixed;
-  color: var(--text);
-  font: 14px/1.45 "Inter", system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell;
-  overscroll-behavior: none;
-  user-select: none;
-}
+        /* Сетка как в Agar.io */
+        .background-grid {
+            position: fixed;
+            inset: 0;
+            background:linear-gradient(rgb(0 0 0 / 13%) 1px, #00000000 1px), linear-gradient(90deg, rgb(0 0 0 / 13%) 1px, #00000000 1px);
+            background-size: 50px 50px;
+            opacity: 0.5;
+            z-index: 1;
+        }
 
-/* Game view */
-#view {
-  position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100vh;
-  display: block;
-  background: transparent;
-}
+        /* Canvas с пузырями */
+        #agarCanvas {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+        }
 
-/* ============ HUD ============ */
-#hud-container {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-}
+        .container {
+            position: relative;
+            z-index: 3;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+        }
 
-/* ---- Chat (bottom-left) ---- */
-.hud-chat {
-  position: absolute;
-  left: var(--gap);
-  bottom: var(--gap);
-  width: min(380px, 46vw);
-  height: 260px;
-  display: grid;
-  grid-template-rows: 1fr auto;
-  gap: 6px;
-  background: var(--glass);
-  -webkit-backdrop-filter: var(--blur);
-  backdrop-filter: var(--blur);
-  border: 1px solid rgba(138, 144, 162, 0.14);
-  border-radius: var(--r-lg);
-  box-shadow: var(--shadow-1);
-  pointer-events: auto;
-  overflow: hidden;
-}
-.hud-chat-content {
-  padding: 10px 12px 0 12px;
-  overflow: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.hud-chat-input {
-  width: 100%;
-  border: 0;
-  border-top: 1px solid rgba(138, 144, 162, 0.14);
-  padding: 10px 12px;
-  background: color-mix(in oklab, var(--panel), black 6%);
-  color: var(--text);
-  font: inherit;
-  outline: none;
-}
-.hud-message-tile {
-  width: 100%;
-}
-.hud-message-item {
-  font-weight: 700;
-  color: var(--text);
-}
-.hud-message {
-  color: var(--muted);
-}
-.red-text {
-  color: #ff5b5b !important;
-}
+        h1 {
+            font-size: clamp(2rem, 8vw, 3.5rem);
+            font-weight: 700;
+            margin: 0 0 16px 0;
+            color: #1a1a1a;
+        }
 
-/* ---- Leaderboard (top-right) ---- */
-#leaderboard.hud-leaderboard {
-  position: absolute;
-  right: var(--gap);
-  top: var(--gap);
-  width: min(240px, 50vw);
-  max-height: min(52vh, 460px);
-  display: flex;
-  flex-direction: column;
-  padding: 10px;
-  background: var(--glass);
-  -webkit-backdrop-filter: var(--blur);
-  backdrop-filter: var(--blur);
-  border: 1px solid rgba(138, 144, 162, 0.14);
-  border-radius: var(--r-lg);
-  box-shadow: var(--shadow-1);
-  pointer-events: auto;
-  overflow: auto;
-  overscroll-behavior: contain;
-}
-#leaderboard .lb-header {
-  font-weight: 900;
-  letter-spacing: 0.3px;
-  margin: 2px 2px 8px 2px;
-  opacity: 0.92;
-}
-/* компактные строки топа */
-.hud-leaderboard-tile {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 8px;
-  background: transparent;
-  border: none;
-  box-shadow: none;
-}
+        .subtitle {
+            font-size: clamp(1rem, 4vw, 1.35rem);
+            color: #444;
+            max-width: 800px;
+            line-height: 1.6;
+            margin: 0 0 40px 0;
+        }
 
-.hud-leaderboard-tile + .hud-leaderboard-tile {
-  border-top: 1px solid rgba(138, 144, 162, 0.1);
-}
-.lb-rank {
-  width: 28px;
-  height: 28px;
-  display: grid;
-  place-items: center;
-  font-weight: 900;
-  border-radius: 999px;
-  flex-shrink: 0;
-  background: linear-gradient(180deg, #1b2130, #121827);
-  border: 1px solid rgba(138, 144, 162, 0.14);
-}
-.hud-leaderboard-tile:nth-child(1) .lb-rank {
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
-  color: #061410;
-  border: 0;
-}
-.hud-leaderboard-tile:nth-child(2) .lb-rank {
-  background: linear-gradient(90deg, #c9d6ff, #e2e2e2);
-  color: #0a0c12;
-  border: 0;
-}
-.hud-leaderboard-tile:nth-child(3) .lb-rank {
-  background: linear-gradient(90deg, #ffd6a5, #ffb86b);
-  color: #0a0c12;
-  border: 0;
-}
-.lb-name {
-  min-width: 0;
-  font-weight: 700;
-  color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.lb-name .red-text,
-.hud-leaderboard-tile .red-text {
-  color: #ff5b5b !important;
-}
-.lb-score {
-  font-variant-numeric: tabular-nums;
-  font-weight: 800;
-  color: color-mix(in oklab, var(--text), white 12%);
-  opacity: 0.95;
-}
-.hud-leaderboard-tile:hover {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
-  border-radius: 12px;
-}
+        .timer-box {
+            background: #ffffff;
+            padding: clamp(20px, 5vw, 40px) clamp(30px, 8vw, 70px);
+            border-radius: 20px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+            border: 1px solid #e8e8e8;
+            margin: 20px 0;
+        }
 
-/* ---- Mini-map ---- */
-#minimap-view.hud-minimap {
-backdrop-filter: var(--blur);
-  position: absolute;
-  right: var(--gap);
-  bottom: var(--gap);
-  width: 240px;
-  height: 240px;
-  background: var(--glass);
-  border: 1px solid rgba(138, 144, 162, 0.14);
-  border-radius: 14px;
-  box-shadow: var(--shadow-1);
-  pointer-events: auto;
-}
+        .timer {
+            font-size: clamp(2.5rem, 10vw, 5.5rem);
+            font-weight: 700;
+            color: #2c3e50;
+            letter-spacing: 4px;
+            margin: 0;
+            font-variant-numeric: tabular-nums;
+        }
 
-/* ---- Chips: score/fps ---- */
-#score,
-#fps {
-  position: absolute;
-  right: calc(var(--gap) + 250px + 10px);
-  bottom: var(--gap);
-  display: inline-flex;
-  gap: 8px;
-  padding: 8px 10px;
-  background: var(--glass);
-  -webkit-backdrop-filter: var(--blur);
-  backdrop-filter: var(--blur);
-  border: 1px solid rgba(138, 144, 162, 0.14);
-  border-radius: 999px;
-  box-shadow: var(--shadow-2);
-  font-weight: 800;
-  color: var(--text);
-  pointer-events: auto;
-}
-#fps {
-  bottom: calc(var(--gap) + 40px);
-}
+        .timer-label {
+            font-size: clamp(0.9rem, 3vw, 1.1rem);
+            color: #666;
+            margin-top: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
 
-/* ======== Меню ======== */
-#user-interface.main-container {
-  position: fixed;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  padding: 24px;
-  background: radial-gradient(800px 800px at 50% 30%, rgba(94, 243, 169, 0.06), rgba(0, 0, 0, 0)),
-    radial-gradient(800px 800px at 70% 70%, rgba(138, 182, 255, 0.06), rgba(0, 0, 0, 0));
-  pointer-events: none;
-}
-.panel {
-  width: min(520px, 92vw);
-  padding: 22px;
-  background: var(--glass);
-  -webkit-backdrop-filter: var(--blur);
-  backdrop-filter: var(--blur);
-  border: 1px solid rgba(138, 144, 162, 0.16);
-  border-radius: 22px;
-  box-shadow: var(--shadow-1);
-  display: grid;
-  gap: 16px;
-  pointer-events: auto;
-  animation: fadeIn 0.15s ease-out;
-}
-.title {
-  font-size: 36px;
-  font-weight: 900;
-  letter-spacing: 0.3px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.title::after {
-  content: "PixiJs";
-  font-size: 12px;
-  font-weight: 800;
-  color: var(--bg);
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
-  padding: 4px 8px;
-  border-radius: 999px;
-  margin-left: 6px;
-}
-.group-y {
-  display: grid;
-  gap: 12px;
-}
-.group-x {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  gap: 10px;
-}
-#name {
-  height: 40px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(138, 144, 162, 0.18);
-  background: linear-gradient(180deg, #131722, #0f131b);
-  color: var(--text);
-  outline: none;
-  font-size: 16px;
-}
-.button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 40px;
-  padding: 0 14px;
-  border-radius: 12px;
-  font-weight: 800;
-  letter-spacing: 0.3px;
-  border: 1px solid rgba(138, 144, 162, 0.18);
-  background: linear-gradient(180deg, #1b2130, #121827);
-  color: var(--text);
-  cursor: pointer;
-  transition: transform 0.08s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-}
-.button:hover {
-  border-color: color-mix(in oklab, var(--accent-2), white 12%);
-  box-shadow: var(--shadow-2);
-}
-.button:active {
-  transform: translateY(1px) scale(0.99);
-}
-#play {
-  grid-column: 1 / 3;
-  background: linear-gradient(
-    90deg,
-    color-mix(in oklab, var(--accent), #00ffa0 20%),
-    color-mix(in oklab, var(--accent-2), #5ef3a9 10%)
-  );
-  color: #072412;
-  border: 0;
-}
-#spectate {
-  background: linear-gradient(180deg, #1a1f2c, #141a24);
-}
-#settings,
-#servers {
-  background: linear-gradient(180deg, #151c27, #10161f);
-}
+        .social-section {
+            margin-top: 50px;
+        }
 
-/* ----- Modals ----- */
-#modals-container {
-  position: fixed;
-  inset: 0;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.45);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
-  z-index: 30;
-  pointer-events: auto;
-}
-.modal {
-  max-width: min(720px, 92vw);
-  width: 100%;
-  max-height: 80vh;
-  background: var(--glass);
-  border: 1px solid rgba(138, 144, 162, 0.16);
-  border-radius: 20px;
-  box-shadow: var(--shadow-1);
-  overflow: hidden;
-}
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 14px;
-  background: linear-gradient(180deg, #1b2030, #141924);
-}
-.modal-close {
-  width: 34px;
-  height: 34px;
-  display: grid;
-  place-items: center;
-  font-size: 22px;
-  cursor: pointer;
-  border-radius: 10px;
-  color: var(--text);
-}
-.modal-close:hover {
-  background: rgba(255, 255, 255, 0.06);
-}
-.modal-settings-content,
-.modal-servers-content {
-  padding: 14px;
-  display: grid;
-  gap: 10px;
-}
-.modal-settings-tile,
-.modal-servers-tile {
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: linear-gradient(180deg, #171c28, #121721);
-  border: 1px solid rgba(138, 144, 162, 0.12);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
+        .social-title {
+            font-size: clamp(1rem, 3.5vw, 1.2rem);
+            color: #444;
+            margin-bottom: 20px;
+        }
 
-/* ===== Scrollbars (тонкие чёрные без полос) ===== */
-.hud-chat-content,
-#leaderboard {
-  overflow: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-gutter: stable both-edges;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.6) transparent;
-}
-.hud-chat-content::-webkit-scrollbar,
-#leaderboard::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-  background: transparent;
-}
-.hud-chat-content::-webkit-scrollbar-track,
-#leaderboard::-webkit-scrollbar-track {
-  background: transparent;
-}
-.hud-chat-content::-webkit-scrollbar-thumb,
-#leaderboard::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.6);
-  border-radius: 999px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-.hud-chat-content::-webkit-scrollbar-thumb:hover,
-#leaderboard::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.8);
-}
-.hud-chat-content::-webkit-scrollbar-corner,
-#leaderboard::-webkit-scrollbar-corner {
-  background: transparent;
-}
+        .social-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: clamp(15px, 4vw, 30px);
+            justify-content: center;
+        }
 
-/* Animations */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+        .social-links a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            min-width: 220px;
+            padding: 14px 24px;
+            background: #fff;
+            border-radius: 14px;
+            color: #333;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: clamp(1rem, 3.5vw, 1.1rem);
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.06);
+        }
 
-/* --------- Responsive --------- */
-@media (max-width: 720px) {
-  #leaderboard.hud-leaderboard {
-    width: min(240px, 60vw);
-    max-height: 40vh;
-  }
-  #minimap-view.hud-minimap {
-    width: 210px;
-    height: 210px;
-  }
-  #score,
-  #fps {
-    right: calc(var(--gap) + 220px + 8px);
-  }
-  .hud-chat {
-    width: min(360px, 80vw);
-    height: 220px;
-  }
-  .panel {
-    width: min(560px, 94vw);
-  }
-}
-@media (max-width: 480px) {
-  .hud-chat {
-    width: calc(100vw - 2 * var(--gap));
-    left: var(--gap);
-    height: 180px;
-  }
-  #leaderboard.hud-leaderboard {
-    width: calc(100vw - 2 * var(--gap));
-    right: var(--gap);
-    top: var(--gap);
-  }
-  #minimap-view.hud-minimap {
-    right: var(--gap);
-    bottom: calc(72px + var(--gap));
-  }
-  #score,
-  #fps {
-    position: absolute;
-    right: var(--gap);
-    bottom: var(--gap);
-  }
-  #fps {
-    bottom: calc(var(--gap) + 40px);
-  }
-  .group-x {
-    grid-template-columns: 1fr 1fr;
-  }
-  #play {
-    grid-column: 1 / -1;
-  }
-}
-/* ===== Mini-map grid overlay (A1–E5 centered) ===== */
-#minimap-grid {
-  position: absolute;
-  right: var(--gap);
-  bottom: var(--gap);
-  width: 240px;
-  height: 240px;
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  grid-template-rows: repeat(5, 1fr);
-  border-radius: 14px;
-  overflow: hidden;
-  pointer-events: none;
-  z-index: 15;
-}
+        .social-links a:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+            background: #f3f3f3;
+        }
 
-#minimap-grid .cell {
-  display: flex;
-  align-items: center;       /* по вертикали центр */
-  justify-content: center;   /* по горизонтали центр */
-  font-size: 12px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.35);
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  transition: color 0.2s ease, background 0.2s ease;
-}
+        i { font-size: clamp(1.4rem, 4vw, 1.6rem); }
 
-/* убираем крайние линии */
-#minimap-grid .cell:nth-child(5n) {
-  border-right: none;
-}
-#minimap-grid .cell:nth-last-child(-n+5) {
-  border-bottom: none;
-}
-
-/* hover для проверки */
-#minimap-grid .cell:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.65);
-}
-
-  </style>
+        .telegram { color: #0088cc; }
+        .discord { color: #5865F2; }
+        .vk { color: #4a76a8; }
+    </style>
 </head>
-
 <body>
-  <!-- Game canvas -->
-  <canvas id="view"></canvas>
 
-  <!-- HUD overlay -->
-  <div id="hud-container">
-    <!-- Leaderboard -->
-    <div id="leaderboard" class="hud-leaderboard">
-    </div>
+    <div class="background-grid"></div>
+    <canvas id="agarCanvas"></canvas>
 
-    <!-- Chat -->
-    <div class="hud-chat">
-      <div id="chat-content" class="hud-chat-content"></div>
-      <input id="chat-field" type="text" placeholder="Напишите здесь…" class="hud-chat-input" />
-    </div>
+    <div class="container">
+        <h1>Ведутся технические работы</h1>
+        <p class="subtitle">
+            Плановое обновление серверов и инфраструктуры.<br>
+            Игра будет вновь доступна <strong>12 декабря 2025 года в 00:00 (МСК)</strong>.
+        </p>
 
-    <!-- Mini-map -->
-    <canvas id="minimap-view" width="250" height="250" class="hud-minimap"></canvas>
-	<div id="minimap-grid">
-  <div class="cell">A1</div><div class="cell">A2</div><div class="cell">A3</div><div class="cell">A4</div><div class="cell">A5</div>
-  <div class="cell">B1</div><div class="cell">B2</div><div class="cell">B3</div><div class="cell">B4</div><div class="cell">B5</div>
-  <div class="cell">C1</div><div class="cell">C2</div><div class="cell">C3</div><div class="cell">C4</div><div class="cell">C5</div>
-  <div class="cell">D1</div><div class="cell">D2</div><div class="cell">D3</div><div class="cell">D4</div><div class="cell">D5</div>
-  <div class="cell">E1</div><div class="cell">E2</div><div class="cell">E3</div><div class="cell">E4</div><div class="cell">E5</div>
-</div>
-
-
-    <!-- Chips -->
-    <div id="score">Score</div>
-    <div id="fps">FPS</div>
-  </div>
-
-  <!-- Centered menu -->
-  <div id="user-interface" class="main-container">
-    <div class="panel">
-      <div class="title">Agar.su</div>
-
-      <div class="group-y">
-        <div class="group-x">
-          <input type="text" id="name" placeholder="Имя" />
-          <div id="settings" class="button">Настройки</div>
-          <div id="servers" class="button">Серверы</div>
+        <div class="timer-box">
+            <div class="timer" id="countdown">--:--:--</div>
+            <div class="timer-label">Осталось до запуска игры</div>
         </div>
 
-        <div class="group-x" style="grid-template-columns: 1fr auto;">
-          <div id="play" class="button">Играть</div>
-          <div id="spectate" class="button">Наблюдать</div>
+        <div class="social-section">
+            <div class="social-title">Следите за новостями в наших сообществах:</div>
+            <div class="social-links">
+                <a href="https://t.me/agarsu" class="telegram" target="_blank">
+                    <i class="fab fa-telegram-plane"></i> Telegram
+                </a>
+                <a href="https://vk.com/agario" class="vk" target="_blank">
+                    <i class="fab fa-vk"></i> ВКонтакте
+                </a>
+                <a href="https://playigry.ru/" class="discord" target="_blank">
+                    <i class="fa-solid fa-gamepad"></i> Другие игры
+                </a>
+            </div>
         </div>
-      </div>
     </div>
-  </div>
 
-  <!-- Modal root -->
-  <div id="modals-container">
-  </div>
+<script>
+/* ---------------- TIMER ---------------- */
+const targetDate = new Date('2025-12-12T00:00:00+03:00');
+const countdownEl = document.getElementById('countdown');
+function updateTimer() {
+    const now = new Date();
+    const diff = targetDate - now;
+    if (diff <= 0) {
+        countdownEl.textContent = "00:00:00";
+        document.querySelector('.timer-label').textContent = "Сервер запущен!";
+        return;
+    }
+    const days = Math.floor(diff / 86400000);
+    const hours = Math.floor((diff % 86400000) / 3600000);
+    const minutes = Math.floor((diff % 3600000) / 60000);
+    const seconds = Math.floor((diff % 60000) / 1000);
+    countdownEl.textContent = days > 0
+        ? `${days}д ${hours.toString().padStart(2,'0')}:${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`
+        : `${hours.toString().padStart(2,'0')}:${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
+}
+updateTimer();
+setInterval(updateTimer, 1000);
 
-  <!-- Ваш игровой код -->
-  <script src="https://api.agar.su/x/main.js"></script>
+const canvas = document.getElementById("agarCanvas");
+const ctx = canvas.getContext("2d");
+let W = canvas.width = window.innerWidth;
+let H = canvas.height = window.innerHeight;
 
-  <script>
-    // Скрываем меню после "Играть", не мешая вашим хукам
-    (function () {
-      const ui = document.getElementById('user-interface');
-      const play = document.getElementById('play');
-      if (play && ui) play.addEventListener('click', () => ui.style.display = 'none');
-    })();
+window.addEventListener("resize", () => {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+});
 
-    (function enhanceLeaderboard(){
-      const root = document.getElementById('leaderboard');
-      if (!root) return;
+let skins = [];
+const cache = {};
 
-      const normalize = () => {
-        const rows = Array.from(root.querySelectorAll('.hud-leaderboard-tile'));
-        rows.forEach((row, i) => {
-          // rank
-          if (!row.querySelector('.lb-rank')) {
-            const rank = document.createElement('div');
-            rank.className = 'lb-rank';
-            rank.textContent = (i + 1).toString();
-            row.prepend(rank);
-          }
-          // name
-          if (!row.querySelector('.lb-name')) {
-            const nameWrap = document.createElement('div');
-            nameWrap.className = 'lb-name';
-            // переносим существующие текстовые/спан узлы в nameWrap
-            while (row.childNodes.length > 2) {
-              nameWrap.appendChild(row.childNodes[1]); // после .lb-rank
+class Ball {
+    constructor() { this.reset(); }
+
+    reset() {
+        this.x = Math.random() * W;
+        this.y = Math.random() * H;
+        this.r = 40 + Math.random() * 80;
+        this.vx = (Math.random() - 0.5) * 0.8;
+        this.vy = (Math.random() - 0.5) * 0.8;
+
+        if (skins.length === 0) {
+            this.name = ["Player","Bot","Agar","Guest"][Math.floor(Math.random()*4)];
+            this.id = null;
+        } else {
+            const s = skins[Math.floor(Math.random() * skins.length)];
+            this.name = s.name.length > 16 ? s.name.slice(0,13)+"…" : s.name;
+            this.id = s.id;
+        }
+
+        this.color = `hsl(${Math.random()*360}, 90%, 65%)`;
+        this.frame = 0;
+        this.frameTime = 0;
+
+        if (this.id && !cache[this.id]) this.preload();
+    }
+
+    preload() {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+            const isAnimated = img.naturalWidth > img.naturalHeight;
+            const frames = isAnimated ? Math.round(img.naturalWidth / img.naturalHeight) : 1;
+            cache[this.id] = {
+                img,
+                animated: isAnimated,
+                frames,
+                frameWidth: isAnimated ? img.naturalHeight : img.naturalWidth,
+                height: img.naturalHeight
+            };
+        };
+        img.onerror = () => cache[this.id] = false;
+        img.src = `https://api.agar.su/skins/${this.id}.png`;
+    }
+
+    update(dt) {
+        this.x += this.vx;
+        this.y += this.vy;
+
+        // анимация
+        if (this.id && cache[this.id]?.animated) {
+            this.frameTime += dt;
+            if (this.frameTime > 80) {
+                this.frameTime = 0;
+                this.frame = (this.frame + 1) % cache[this.id].frames;
             }
-            row.insertBefore(nameWrap, row.lastChild);
-          }
-          // score (если встречается числовой хвост)
-          const tail = row.lastChild;
-          if (tail && tail.nodeType === Node.TEXT_NODE) {
-            const txt = tail.textContent.trim();
-            if (/^\d{1,9}$/.test(txt)) {
-              const score = document.createElement('div');
-              score.className = 'lb-score';
-              score.textContent = txt;
-              row.removeChild(tail);
-              row.appendChild(score);
-            }
-          }
-        });
-      };
+        }
 
-      // Первичный прогон и наблюдатель на изменения из main.js
-      normalize();
-      const obs = new MutationObserver(normalize);
-      obs.observe(root, { childList: true, subtree: true });
-    })();
-  </script>
+        if (this.x < -200 || this.x > W+200 || this.y < -200 || this.y > H+200) {
+            this.reset();
+        }
+    }
+
+    draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+
+        // Обводка
+        ctx.lineWidth = 7;
+        ctx.strokeStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(0, 0, this.r + 3, 0, Math.PI*2);
+        ctx.stroke();
+
+        // Клиппинг
+        ctx.beginPath();
+        ctx.arc(0, 0, this.r, 0, Math.PI*2);
+        ctx.clip();
+
+        const skinData = this.id && cache[this.id];
+
+        if (skinData && skinData.img) {
+            const size = this.r * 2.1;
+            if (skinData.animated) {
+                ctx.drawImage(
+                    skinData.img,
+                    this.frame * skinData.frameWidth, 0,
+                    skinData.frameWidth, skinData.height,
+                    -size/2, -size/2, size, size
+                );
+            } else {
+                ctx.drawImage(skinData.img, -size/2, -size/2, size, size);
+            }
+        } else {
+            ctx.globalAlpha = 0.3;
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(0, 0, this.r, 0, Math.PI*2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+        }
+
+        ctx.restore();
+
+        // Ник по центру
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.font = `bold ${this.r / 2.8}px Roboto,Arial`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.strokeStyle = "#000";
+        ctx.lineWidth = this.r / 12;
+        ctx.strokeText(this.name, 0, 2);
+        ctx.fillStyle = "#fff";
+        ctx.fillText(this.name, 0, 2);
+        ctx.restore();
+    }
+}
+
+const balls = Array.from({length: 40}, () => new Ball());
+let lastTime = 0;
+
+function loop(time) {
+    if (!lastTime) lastTime = time;
+    const dt = time - lastTime;
+    lastTime = time;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // КЛЮЧЕВАЯ СТРОКА — СОРТИРОВКА ПО РАЗМЕРУ (от маленького к большому)
+    balls.sort((a, b) => a.r - b.r);
+
+    // Рисуем от маленьких к большим — большие будут сверху!
+    balls.forEach(ball => {
+        ball.update(dt);
+        ball.draw();
+    });
+
+    requestAnimationFrame(loop);
+}
+
+/* ---------------- ЗАГРУЗКА СКИНОВ ---------------- */
+fetch('https://api.agar.su/skinlist.txt?t=' + Date.now())
+    .then(r => r.text())
+    .then(text => {
+        skins = text.trim().split('\n')
+            .map(line => {
+                const [name, id] = line.split(':');
+                return { name: name?.trim() || 'unknown', id: id?.trim() };
+            })
+            .filter(s => s.id);
+
+        console.log(`Загружено ${skins.length} скинов`);
+        balls.forEach(b => b.reset());
+    })
+    .catch(() => console.warn("Не удалось загрузить skinlist.txt"));
+
+requestAnimationFrame(loop);
+</script>
+
 </body>
+
 </html>
+
+
+
