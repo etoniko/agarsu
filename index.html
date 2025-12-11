@@ -250,7 +250,7 @@
 </div>
           <div class="nav-buttons">
             <button onclick="spectate();" class="nav-button serv-button"><i class="fas fa-eye"></i> НАБЛЮДАТЬ </button>
-            <button onclick="if(localStorage.getItem('1agar_legal_accepted_2025')==='true'){startGame()}else{alert('Сначала подтвердите согласие');return false}" class="nav-button play-button"><i class="fas fa-play"></i> ИГРАТЬ </button>
+            <button onclick="startGame();return false" class="nav-button play-button"><i class="fas fa-play"></i> ИГРАТЬ </button>
           </div>
         </div>
         <div id="rating" class="content">
@@ -415,7 +415,7 @@
       <div id="shareText"></div>
       <div class="nav-buttons">
         <div onclick="spectate();" class="nav-button serv-button"><i class="fas fa-eye"></i>Наблюдать</div>
-        <button id="button-text" onclick="if(localStorage.getItem('1agar_legal_accepted_2025')==='true'){startGame()}else{alert('Сначала подтвердите согласие');return false}" class="nav-button play-button"><i class="fas fa-play"></i> ИГРАТЬ</button>
+        <button id="button-text" onclick="startGame();return false" class="nav-button play-button"><i class="fas fa-play"></i> ИГРАТЬ</button>
       </div>
     </div>
     <div class="statsWrapper">
@@ -591,5 +591,6 @@ if (localStorage.getItem('agar_legal_accepted_2025') === 'true') {
 </body>
 
 </html>
+
 
 
