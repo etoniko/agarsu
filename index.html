@@ -24,6 +24,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=new_releases" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="/assets/style.css?0.0.34" rel="stylesheet">
     <!-- Скрипты -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="/assets/scripts/jquery.js?0.0.2"></script>
@@ -35,368 +36,559 @@
 	<script src="/assets/scripts/pass.js?0.0.2" defer></script>
 	<script src="/assets/scripts/skins.js?0.0.2" defer></script>
 	<script src="/assets/scripts/rating.js?0.0.4" defer></script>
-	<style>
-        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
-
-        * { box-sizing: border-box; }
-        body, html {
-            margin: 0; padding: 0; height: 100%;
-            font-family: 'Roboto', sans-serif;
-            background: #f8f9fc;
-            color: #2d2d2d;
-            overflow: hidden;
-        }
-
-        /* Сетка как в Agar.io */
-        .background-grid {
-            position: fixed;
-            inset: 0;
-            background:linear-gradient(rgb(0 0 0 / 13%) 1px, #00000000 1px), linear-gradient(90deg, rgb(0 0 0 / 13%) 1px, #00000000 1px);
-            background-size: 50px 50px;
-            opacity: 0.5;
-            z-index: 1;
-        }
-
-        /* Canvas с пузырями */
-        #agarCanvas {
-            position: fixed;
-            inset: 0;
-            z-index: 1;
-        }
-
-        .container {
-            position: relative;
-            z-index: 3;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            text-align: center;
-        }
-
-        h1 {
-            font-size: clamp(2rem, 8vw, 3.5rem);
-            font-weight: 700;
-            margin: 0 0 16px 0;
-            color: #1a1a1a;
-        }
-
-        .subtitle {
-            font-size: clamp(1rem, 4vw, 1.35rem);
-            color: #444;
-            max-width: 800px;
-            line-height: 1.6;
-            margin: 0 0 40px 0;
-        }
-
-        .timer-box {
-            background: #ffffff;
-            padding: clamp(20px, 5vw, 40px) clamp(30px, 8vw, 70px);
-            border-radius: 20px;
-            box-shadow: 0 12px 40px rgba(0,0,0,0.12);
-            border: 1px solid #e8e8e8;
-            margin: 20px 0;
-        }
-
-        .timer {
-            font-size: clamp(2.5rem, 10vw, 5.5rem);
-            font-weight: 700;
-            color: #2c3e50;
-            letter-spacing: 4px;
-            margin: 0;
-            font-variant-numeric: tabular-nums;
-        }
-
-        .timer-label {
-            font-size: clamp(0.9rem, 3vw, 1.1rem);
-            color: #666;
-            margin-top: 12px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        .social-section {
-            margin-top: 50px;
-        }
-
-        .social-title {
-            font-size: clamp(1rem, 3.5vw, 1.2rem);
-            color: #444;
-            margin-bottom: 20px;
-        }
-
-        .social-links {
-            display: flex;
-            flex-wrap: wrap;
-            gap: clamp(15px, 4vw, 30px);
-            justify-content: center;
-        }
-
-        .social-links a {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            min-width: 220px;
-            padding: 14px 24px;
-            background: #fff;
-            border-radius: 14px;
-            color: #333;
-            text-decoration: none;
-            font-weight: 500;
-            font-size: clamp(1rem, 3.5vw, 1.1rem);
-            transition: all 0.3s ease;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.06);
-        }
-
-        .social-links a:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
-            background: #f3f3f3;
-        }
-
-        i { font-size: clamp(1.4rem, 4vw, 1.6rem); }
-
-        .telegram { color: #0088cc; }
-        .discord { color: #5865F2; }
-        .vk { color: #4a76a8; }
-    </style>
 </head>
 <body>
+  <div id="overlays" class="overlays">
+    <div class="social"><a href="https://t.me/agarsu" target="_blank" class="tg"><i style="background: radial-gradient(white 9px, #1e90ff00 50%);border-radius: 50%;" class="fab fa-telegram"></i></a><a href="https://vk.com/club233723574" target="_blank" class="soc"><i class="fab fa-vk"></i></a><a href="#" class="soc"><i style="cursor: not-allowed;" class="fab fa-discord"></i></a></div>
+    <div class="center">
+      <div class="sidebar">
+        <div class="menu-item" onclick="showContent('shop')"><i class="fas fa-shop"></i><span class="label">Магазин</span></div>
+        <div class="menu-item" onclick="showContent('skinslist')"><i class="fas fa-image"></i><span class="label">Скины</span></div>
+        <div class="menu-item active" onclick="showContent('home')"><i class="fas fa-home"></i><span class="label">Главная</span></div>
+        <div class="menu-item" onclick="showContent('rating')"><i class="fas fa-star"></i><span class="label">Рейтинг</span></div>
+        <div class="menu-item" onclick="showContent('store')"><i class="fas fa-user"></i><span class="label">Войти</span></div>
+      </div>
+      <div class="main-content">
 
-    <div class="background-grid"></div>
-    <canvas id="agarCanvas"></canvas>
 
-    <div class="container">
-        <h1>Ведутся технические работы</h1>
-        <p class="subtitle">
-            Плановое обновление серверов и инфраструктуры.<br>
-            Игра будет вновь доступна <strong>12 декабря 2025 года в 00:00 (МСК)</strong>.
-        </p>
+<div id="shop" class="content">
+	<div class="top-info"><div><span>Создание лички</span></div></div>
+<div class="shop-container">
+  <div class="avatar-section">
+    <label id="previewContainer" for="fileInput">
+      <canvas id="previewCanvas" width="512" height="512"></canvas>
+      <img id="previewGif" alt="GIF preview">
+    </label>
+    <input type="file" id="fileInput" accept=".png,.jpg,.gif" autocomplete="off">
+    <div id="fileError" class="error"></div>
 
-        <div class="timer-box">
-            <div class="timer" id="countdown">--:--:--</div>
-            <div class="timer-label">Осталось до запуска игры</div>
+    <form id="paymentForm" autocomplete="off">
+      <div class="radio-group">
+        <label><input type="radio" name="serviceType" value="personal" id="personal" checked autocomplete="off"><span>Для себя</span></label>
+        <label><input type="radio" name="serviceType" value="clan" id="clan" autocomplete="off"><span>Для клана</span></label>
+      </div>
+
+      <div class="input-group">
+        <div id="nicknameWrapper">
+          <input type="text" id="nickname" placeholder="Придумай себе ник" required maxlength="15" title="Введите ник" autocomplete="off">
+          <span id="charCount">0/15</span>
+		<label style="display: flex;gap: 4px;"><input type="checkbox" id="invisibleNick"> Невидимый ник</label>
+        </div>
+        <div id="nicknameError" class="error"></div>
+      </div>
+
+      <div class="input-group">
+        <div class="password-wrapper">
+          <input type="password" id="password" placeholder="Придумай себе пароль" maxlength="5" autocomplete="off">
+          <i id="togglePassword" class="fa-solid fa-eye eye"></i>
+        </div>
+        <div id="passwordError" class="error"></div>
+      </div>
+
+      <div id="formError" class="error"></div>
+      <button type="submit" id="buyButton" disabled>КУПИТЬ ЗА 0 РУБЛЕЙ</button>
+    </form>
+  </div>
+
+  <div class="oplata">
+    <div id="calculator" style="display:none">
+      <h3>Расчёт стоимости</h3>
+      <p id="clanMultiplier">Множитель: <span id="multiplierText">1x (для себя)</span></p>
+      <p id="passwordCost">Пароль: 0 ₽</p>
+      <p id="skinCost">Скин: 0 ₽</p>
+	   <p id="invisibleCost">Невидимый ник: 0 ₽</p>
+      <div id="totalAmount">Итого: 0 ₽</div>
+    </div>
+  </div>
+</div>
         </div>
 
-        <div class="social-section">
-            <div class="social-title">Следите за новостями в наших сообществах:</div>
-            <div class="social-links">
-                <a href="https://t.me/agarsu" class="telegram" target="_blank">
-                    <i class="fab fa-telegram-plane"></i> Telegram
-                </a>
-                <a href="https://vk.com/agario" class="vk" target="_blank">
-                    <i class="fab fa-vk"></i> ВКонтакте
-                </a>
-                <a href="https://playigry.ru/" class="discord" target="_blank">
-                    <i class="fa-solid fa-gamepad"></i> Другие игры
-                </a>
+		  
+        <div id="settings" class="content">
+          <div class="top-info">
+            <div><span>Настройки</span></div>
+          </div>
+          <div class="checkbox-container">
+<label>
+  <input type="checkbox" class="save" data-box-id="1" onchange="setSkins($(this).is(':checked'));">Видеть Скины
+</label>
+<label>
+  <input type="checkbox" class="save" data-box-id="2" onchange="setNames($(this).is(':checked'));">Видеть Имена
+</label>
+<label>
+  <input type="checkbox" class="save" data-box-id="3" onchange="setColors($(this).is(':checked'));">Цвета
+</label>
+<label>
+  <input type="checkbox" class="save" data-box-id="4" onchange="setMouseClicks($(this).is(':checked'));">Поддержка клика мышки
+</label>
+<label>
+  <input type="checkbox" class="save" data-box-id="5" onchange="setShowMass($(this).is(':checked'));" checked>Показать Массу
+</label>
+<label>
+  <input type="checkbox" class="save" data-box-id="6" onchange="setSmooth($(this).is(':checked'));">Простой Рендер
+</label>
+<label>
+  <input type="checkbox" class="save" data-box-id="7" onchange="setNoBorder($(this).is(':checked'));">Отключить обводку
+</label>
+<label>
+  <input type="checkbox" class="save" data-box-id="8" onchange="setChatHide($(this).is(':checked'));">Отключить чат
+</label>
+<label>
+  <input type="checkbox" class="save" data-box-id="9" onchange="setGlow($(this).is(':checked'));" checked>Эффект Лимита
+</label>
+<label>
+  <input type="checkbox" class="save" data-box-id="10">+18 (убрать антимат и блюр)
+</label>
+<label>
+  <input type="checkbox" class="save" data-box-id="11">Подтверждение выхода из игры
+</label>
+
+
+
+
+			  
+  <div id="theme-selector">
+    <label>Выберите тему:</label>
+    <select id="theme-select">
+      <option value="gradient">Градиент</option>
+      <option value="white">Белая</option>
+      <option value="black">Черная</option>
+    </select>
+  </div>
+
+  <!-- Настройки градиента -->
+  <div id="gradient-settings">
+  <div class="color-picker">
+    <span>Цвет центра:</span>
+    <input type="color" id="gradient-center" value="#132745">
+  </div>
+  <div class="color-picker">
+    <span>Цвет краёв:</span>
+    <input type="color" id="gradient-edge" value="#000000">
+  </div>
+</div>
+</div>
+			  
+          </div>
+        <div id="skinslist" class="content">
+          <div style="display: flex;flex-direction: column;justify-content: space-around;" class="top-info">
+            <div class="gall"><span>Скины</span></div>
+            <ul class="gallery">
+              <li style="background-image: url('https://i.imgur.com/tq33YWv.png');" onclick="selectSkin('Муха');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/dzQIxk0.png');" onclick="selectSkin('Паук');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/fpDpEl9.png');" onclick="selectSkin('Кактус');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/69ChrNV.png');" onclick="selectSkin('Зая');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/qRq5CIg.png');" onclick="selectSkin('Оса');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/TPgKn6V.png');" onclick="selectSkin('Ящерица');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/QPCVdvQ.png');" onclick="selectSkin('Лиса');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/YbmC0tv.png');" onclick="selectSkin('Волк');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/hmVJPmb.png');" onclick="selectSkin('Мамонт');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/RKtDpin.png');" onclick="selectSkin('Динозавр');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/3hxdGAq.png');" onclick="selectSkin('Мороженое');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/zdcHEFS.png');" onclick="selectSkin('Ракета');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/roUvNMV.png');" onclick="selectSkin('Могучая');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/57BzylL.png');" onclick="selectSkin('Фаун');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/rPlbHK7.png');" onclick="selectSkin('Бабушка');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/ruAUEpb.png');" onclick="selectSkin('Гора');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/ipqCMMf.png');" onclick="selectSkin('Космонавт');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/wRiL4Jx.png');" onclick="selectSkin('Первобытный');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/GTxoIhj.png');" onclick="selectSkin('Влюблённый');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/EcW6zbE.png');" onclick="selectSkin('Влюблённая');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/UINxrlJ.png');" onclick="selectSkin('Самба');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/lxAXnAi.png');" onclick="selectSkin('Снеговик');showContent('home')"></li>
+              <li style="background-image: url('https://i.imgur.com/7GWqCnY.png');" onclick="selectSkin('Панда');showContent('home')"></li>
+              <li>
+                <a style="display: block;width: 100%;height: 100%;background-image: url('/assets/photo/skinstg.png');background-size: cover;" onclick="showContent('shop');"></a>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <!-- Home Content -->
+        <div id="home" class="content active">
+          <div class="top-info">
+            <div><span>agar.su</span>
+              <div onclick="showContent('settings')" class="setting menu-item"><i class="fas fa-gear"></i></div>
             </div>
+          </div>
+          <div>
+            <div class="line"></div></div>
+          <div class="progress-container">
+            <div class="progress-bar">
+              <div class="level-circle" id="levelCircle">0</div>
+              <div class="progress-fill"></div>
+              <div class="progress-text" id="progressText">0% (0/0)</div>
+            </div>
+          </div><span id="accountID">ID: 0000</span>
+          <div class="avatar-containers">
+            <div class="avatar-container">
+              <div class="previous-skin" id="prevSkin" onclick="showPrevious()"></div>
+              <div class="arrow" id="previous" onclick="showPrevious()">&#10094;</div>
+              <div onclick="showContent('skinslist')" id="skinss" class="main-skin anims"></div>
+              <div class="arrow" id="next" onclick="showNext()">&#10095;</div>
+              <div class="next-skin" id="nextSkin" onclick="showNext()"></div>
+            </div>
+     <div class="from-send">
+     <input type="text" placeholder="Ник" name="name" maxlength="16" class="noPress" id="nick" required="" autocomplete="username">
+     <input type="password" placeholder="Пасс" name="pass" maxlength="6" class="noPress" id="pass" required="" autocomplete="current-password" style="display: block;">
+	<div class="selectedIcon">
+		<div id="selectedColor"></div>
+	</div>
+                            <div id="colorList"></div>
+</div>
+          </div>
+		  <div class="servers">
+		  <ul class="gamemode">
+<ul class="gamemode">
+  <li data-ip="fsb-lybanka.ru:6001" id="ffa"><span class="fi fi-ru"></span>FFA - 𝙈𝙤𝙨𝙘𝙤𝙬<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/200</span></li>
+	<li data-ip="ffa.agar.su:6008" id="ffasolo"><span class="fi fi-ru"></span>FFA - 𝐒𝐨𝐥𝐨<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/120</span></li>
+  <li data-ip="ffa.agar.su:6002" id="ms"><span class="fi fi-ru"></span>MegaSplit5k1<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/120</span></li>
+  <li data-ip="ffa.agar.su:6003" id="exp"><span class="fi fi-ru"></span>Experemental<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/50</span></li>
+	<li data-ip="ffa.agar.su:6004" id="pvp1"><span class="fi fi-ru"></span>pvp1: 1x1 ffa 1k<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/50</span></li>
+	<li data-ip="ffa.agar.su:6005" id="pvp2"><span class="fi fi-ru"></span>pvp2: 2x2 ms 1k<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/50</span></li>
+	<li data-ip="ffa.agar.su:6006" id="tournament"><span class="fi fi-ru"></span>Tournament<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/120</span></li>
+</ul> 
+</div>
+          <div class="nav-buttons">
+            <button onclick="spectate();" class="nav-button serv-button"><i class="fas fa-eye"></i> НАБЛЮДАТЬ </button>
+            <button onclick="if(localStorage.getItem('1agar_legal_accepted_2025')==='true'){startGame()}else{alert('Сначала подтвердите согласие');return false}" class="nav-button play-button"><i class="fas fa-play"></i> ИГРАТЬ </button>
+          </div>
         </div>
+        <div id="rating" class="content">
+          <div class="top-info">
+            <div><span>Лучшие Игроки</span></div>
+          </div>
+          <div class="header-row">
+            <div class="cell">Позиция</div>
+            <div class="cell nr">Ник</div>
+            <div class="cell">Уровень</div>
+            <div class="cell">Аватар</div>
+          </div>
+          <div id="table-container"></div>
+        </div>
+        <div id="store" class="content">
+          <div class="top-info">
+            <div><span>Кабинет</span></div>
+          </div>
+          <div>
+<div id="myNicknamesBlock" style="display:none;">
+  <div class="tabs" id="myNickClanTabs" data-ready="1">
+    <button id="tabNicknames" type="button" class="tab active">Ваши ники <span class="badge" id="badgeNick">0</span></button>
+    <button id="tabClans" type="button" class="tab">Ваши кланы <span class="badge" id="badgeClan">0</span></button>
+	<button id="logoutButton" class="tab" onclick="logoutAccount()">Выход</button>
+  </div>
+  <div class="list-wrap" id="nickWrap" style=""><ul id="myNickList" class="list"></ul></div>
+  <div class="list-wrap" id="clanWrap" style="display:none;"><ul id="myClanList" class="list"></ul></div>
+</div>
+<div id="authlog">
+  <!-- Google -->
+  <div id="g_id_onload"
+       data-client_id="157257230972-jhlcisbgal67sn75gib37fb1m1de5jiu.apps.googleusercontent.com"
+       data-auto_prompt="false"
+       data-callback="onGoogleAuth"></div>
+  <div class="g_id_signin"></div>
+
+  <!-- Telegram -->
+  <script async src="https://telegram.org/js/telegram-widget.js?22"
+          data-telegram-login="agarsu_auth_bot"
+          data-size="large"
+          data-onauth="onTelegramAuth(user)"
+          data-request-access="write"></script>
+</div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <canvas id="canvas"></canvas>
+  <div class="noscroll chatX_window" id="chatX_window">
+    <div class="chatX_top" id="chatX_top">
+	<div onclick="switchToDialog(null);" class="chatX_top_avatar"><i class="fa fa-globe"></i></div>
+      <div class="chatX_burger" id="chatX_burger"><i class="fa-solid fa-bars nresize"></i></div>
+      <div class="chatX_close" onclick="document.getElementById('chatX_window').style.display = 'none'; document.getElementById('onchat').style.display = 'flex';" id="chatX_close"><i class="fa-solid fa-xmark"></i></div>
+    </div>
+    <div class="chatX_container" id="chatX_container">
+      <div class="chatX_feed" id="chatX_feed">	  </div>
+    </div>
+	  		  	  	  <div class="emoji-list">
+  <div class="emoji-item" data-code=":50:"><img src="/emoji/50.gif"></div>
+  <div class="emoji-item" data-code=":253:"><img src="/emoji/253.gif"></div>
+  <div class="emoji-item" data-code=":26:"><img src="/emoji/26.gif"></div>
+  <div class="emoji-item" data-code=":104:"><img src="/emoji/104.png"></div>
+  <div class="emoji-item" data-code=":105:"><img src="/emoji/105.png"></div>
+  <div class="emoji-item" data-code=":92:"><img src="/emoji/92.png"></div>
+  <div class="emoji-item" data-code=":5:"><img src="/emoji/5.png"></div>
+</div>
+    <div class="chatX_emch">
+      <div class="coord" id="emoji_toggle"><i class="fa-solid fa-face-grin-squint"></i></div>
+	 <input style="display:none;" id="ls"></input>
+      <input class="noPress" id="chat_textbox" maxlength="120" placeholder="Напишите сообщение..." autocomplete="off"></input>
+    </div>
+  </div>
+  <div id="onchat"><i class="fa fa-message"></i></div>
+  <div class="homemenu"><i class="fas fa-home"></i></div>
+  <div class="adminpanel" onclick="openAdminPanel();"></div>
+  <div class="noscroll admin-panel"><div id="playerList" class="player-list"></div></div>
+  <div class="score-info" id="score-info">
+    <div class="scorr" id="score-max">0</div>
+    <div class="scorr" id="score-new">0</div>
+    <div class="cell-length" id="cell-length">0</div>
+  </div>
+  <div id="leaderboard"><div class="topclose" onclick="document.getElementById('leaderboard').style.display = 'none'; document.getElementById('onleaderboard').style.display = 'flex';"><i class="fa fa-close"></i></div><h4>Топ Сейчас</h4><div id="toplistnow"></div></div>
+<div id="onleaderboard"><i class="fa fa-bar-chart"></i></div>
+  <div id="serverclose-overlay">
+    <div id="serverclose"><i class="clozs fas fa-spinner fa-spin"></i>
+      <div>Соединение с сервером потеряно.</div>
+		<div class="closereset" onclick="location.reload()" >reset</div>
+    </div>
+  </div>
+  <div id="map" class="map">
+    <div class="map-header">
+      <div class="ping-container">
+    ping: <span id="ping">0</span> | fps: <span id="fps">0</span>
+</div>
+
+      <div class="mapclose" onclick="document.getElementById('map').style.display = 'none'; document.getElementById('onmap').style.display = 'flex';"><i class="fa fa-close"></i></div>
+    </div>
+    <div class="map-container"><span id="mapposition"></span>
+      <div><span>A1</span></div>
+      <div><span>A2</span></div>
+      <div><span>A3</span></div>
+      <div><span>A4</span></div>
+      <div><span>A5</span></div>
+      <div><span>B1</span></div>
+      <div><span>B2</span></div>
+      <div><span>B3</span></div>
+      <div><span>B4</span></div>
+      <div><span>B5</span></div>
+      <div><span>C1</span></div>
+      <div><span>C2</span></div>
+      <div><span>C3</span></div>
+      <div><span>C4</span></div>
+      <div><span>C5</span></div>
+      <div><span>D1</span></div>
+      <div><span>D2</span></div>
+      <div><span>D3</span></div>
+      <div><span>D4</span></div>
+      <div><span>D5</span></div>
+      <div><span>E1</span></div>
+      <div><span>E2</span></div>
+      <div><span>E3</span></div>
+      <div><span>E4</span></div>
+      <div><span>E5</span></div>
+    </div>
+  </div>
+  <div id="onmap"><i class="fa fa-compass"></i></div>
+  <div id="statics" class="overlays">
+    <div class="statsWrapper">
+      <div class="headerstats">
+        <h1>Блогерская Тема</h1></div>
+      <div class="statYout">
+        <a href="https://youtu.be/AIczwCoHCyE?si=FTbLqQQWLKgwucsh" target="_blank" class="statYoutt"><img src="https://upload.wikimedia.org/wikipedia/commons/4/42/YouTube_icon_%282013-2017%29.png" alt="Play" class="statYoutImg"></a>
+      </div>
+      <h2 class="statTitle">Ждём твоё видео 🎥</h2>
+      <p class="statDesc"><strong>1.</strong> Сними крутое видео по тематике <strong>agar.su</strong> и опубликуй его в социальных сетях: YouTube, TikTok, ВКонтакте.
+        <br><strong>2.</strong> Набери хотябы 10 просмотров.
+        <br><strong>3.</strong> Пришли нам ссылку в Telegram: <a href="https://t.me/agarsu" target="_blank" class="statLink">@agarsu</a> и мы добавим его сюда.</p>
+    </div>
+    <div id="statsWrapper" class="statsWrapper">
+      <div class="headerstats">
+        <h1>Твоя Статистика</h1>
+        <div id="closeStats" class="closeStats"><i class="fa-solid fa-xmark"></i></div>
+      </div>
+      <div class="death"></div>
+      <div class="share-label">поделиться:</div>
+      <div id="buttons">
+        <button class="social-btn fab fa-vk vk" title="ВКонтакте"></button>
+        <button class="social-btn fab fa-telegram telegram" title="Telegram"></button>
+        <button class="social-btn fab fa-whatsapp whatsapp" title="WhatsApp"></button>
+        <button class="social-btn fab fa-facebook facebook" title="Facebook"></button>
+        <button class="social-btn fab fa-twitter twitter" title="Twitter"></button>
+      </div>
+      <div id="shareText"></div>
+      <div class="nav-buttons">
+        <div onclick="spectate();" class="nav-button serv-button"><i class="fas fa-eye"></i>Наблюдать</div>
+        <button id="button-text" onclick="if(localStorage.getItem('1agar_legal_accepted_2025')==='true'){startGame()}else{alert('Сначала подтвердите согласие');return false}" class="nav-button play-button"><i class="fas fa-play"></i> ИГРАТЬ</button>
+      </div>
+    </div>
+    <div class="statsWrapper">
+      <div class="headerstats">
+        <h1 id="serverTitle">Статистика ffa</h1></div>
+      <div class="header-rowwraper">
+        <div>Позиция</div>
+        <div>Ник</div>
+        <div>Счет</div>
+        <div>Скин</div>
+      </div>
+      <div id="table-containerwraper"></div>
+    </div>
+  </div>
+  <div id="freeze">Pause <i style="color:red;" class="fa fa-pause"></i></div>
+  <div id="notification-container">
+    <div id="logout-notification" class="notification">Login close</div>
+  </div>
+
+  <footer class="footer">
+    © 2025 agar.su — Все права защищены ·
+    <a href="privacy.html">Политика конфиденциальности</a> ·
+    <a href="rules.html">Правила сайта</a> ·
+    <a href="offer.html">Публичная оферта</a>
+</footer>
+
+<div id="legalBanner" style="backdrop-filter: blur(20px);position:fixed;top:0;left:0;right:0;bottom:0;z-index:999999;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;padding:15px;font-family:'Segoe UI',Arial,sans-serif;color:#fff;overflow-y:auto;">
+  <div style="background:#111;max-width:760px;max-width: 500px;padding:30px;border-radius:16px;position:relative;max-height:95vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,0.6);border:1px solid #333;overflow: auto;">
+    
+    <h2 style="margin:0 0 20px;font-size:24px;text-align:center;">Добро пожаловать в Agar.su</h2>
+    
+    <!-- Аккордеон -->
+    <div class="accordion">
+      <!-- Правила -->
+      <div class="acc-item">
+        <div class="acc-header">Правила игры и использования сервиса <span style="float:right;">▼</span></div>
+        <div class="acc-body">
+          <ul style="margin:12px 0;padding-left:22px;line-height:1.6;">
+            <li>Запрещено использование читов, ботов, макросов — перманентный бан без возврата средств</li>
+            <li>Мат, оскорбления, спам, обсуждение политики — бан от 1 дня до бессрочного</li>
+            <li>Администрация вправе заблокировать любой аккаунт без объяснения причин</li>
+            <li>Все покупки являются виртуальными услугами — возврат денежных средств не предусмотрен</li>
+            <li>Оплата через самозанятого — чек формируется автоматически в приложении «Мой налог»</li>
+            <li>Сервис предназначен только для лиц старше 12 лет (ФЗ-436)</li>
+            <li>Сайт не имеет отношения к официальному Agar.io и компании Miniclip</li>
+          </ul>
+          <p style="margin-top:10px;font-size:14px;"><a href="/rules.html" target="_blank" style="color:#4da6ff;">Полные правила →</a></p>
+        </div>
+      </div>
+
+      <!-- Конфиденциальность -->
+      <div class="acc-item">
+        <div class="acc-header">Сбор и обработка данных <span style="float:right;">▼</span></div>
+        <div class="acc-body">
+          <p style="line-height:1.6;font-size:15px;margin:12px 0;">
+            Мы собираем минимум данных: никнейм, хэшированный пароль, IP, cookie, данные авторизации Google/Telegram, скины и игровую статистику.<br><br>
+            Данные используются только для работы сервиса, предотвращения нарушений и улучшения игры.<br>
+            Мы не передаём данные третьим лицам, кроме случаев, предусмотренных законодательством РФ.<br>
+            Срок хранения — до 3 лет после последней активности.<br>
+            По вашему запросу на <strong>ikometai@ya.ru</strong> аккаунт и все данные удаляются безвозвратно в течение 1–3 дней.
+          </p>
+          <p style="font-size:14px;"><a href="/privacy.html" target="_blank" style="color:#4da6ff;">Политика конфиденциальности</a> • <a href="/offer.html" target="_blank" style="color:#4da6ff;">Публичная оферта</a></p>
+        </div>
+      </div>
     </div>
 
+    <!-- Чекбоксы и год рождения -->
+    <div style="margin:25px 0 20px;flex-grow:1;">
+      <div style="margin-bottom:18px;">
+        <label style="display:block;margin-bottom:8px;font-weight:600;">Год рождения <span style="color:#ff6b6b;">*</span></label>
+        <select id="birthYear" style="width:100%;padding:12px;border-radius:8px;border:1px solid #444;background:#222;color:#fff;font-size:16px;">
+          <option value="">— Выберите год —</option>
+        </select>
+        <div id="ageError" style="color:#ff6b6b;margin-top:6px;font-size:14px;display:none;">Вам должно быть 12 лет или больше</div>
+      </div>
+
+      <label style="display:flex;align-items:flex-start;gap:12px;margin:14px 0;cursor:pointer;">
+        <input type="checkbox" id="check2" style="margin-top:3px;width:20px;height:20px;accent-color:#007bff;flex-shrink:0;">
+        <span>Я принимаю <a href="/rules.html" target="_blank" style="color:#4da6ff;text-decoration:underline;">Правила</a>, <a href="/offer.html" target="_blank" style="color:#4da6ff;text-decoration:underline;">Публичную оферту</a> и <a href="/privacy.html" target="_blank" style="color:#4da6ff;text-decoration:underline;">Политику конфиденциальности</a></span>
+      </label>
+
+      <label style="display:flex;align-items:flex-start;gap:12px;margin:14px 0;cursor:pointer;">
+        <input type="checkbox" id="check3" style="margin-top:3px;width:20px;height:20px;accent-color:#007bff;flex-shrink:0;">
+        <span>Согласен на использование cookie и обработку персональных данных в соответствии с ФЗ-152</span>
+      </label>
+    </div>
+
+    <!-- Кнопка -->
+    <button id="acceptBtn" disabled style="background:linear-gradient(45deg,#00bbff,#0066ff);color:#fff;font-weight:bold;font-size:19px;padding:14px;border:none;border-radius:12px;cursor:pointer;opacity:0.5;transition:all .3s;">
+      ПРИНЯТЬ И ИГРАТЬ
+    </button>
+
+    <!-- Футер -->
+    <div style="margin-top:20px;font-size:13px;color:#888;text-align:center;line-height:1.5;">
+      12+ • Частный сервер Agar.su • © 2025<br>
+      Не связан с Miniclip и официальным Agar.io<br><br>
+      <strong>Самозанятый Дараселия Николоз Ираклиевич</strong><br>
+      ИНН 503830093674 • Плательщик НПД (№422-ФЗ от 27.11.2018)<br>
+      ikometai@ya.ru
+    </div>
+  </div>
+</div>
+
 <script>
-/* ---------------- TIMER ---------------- */
-const targetDate = new Date('2025-12-12T00:00:00+03:00');
-const countdownEl = document.getElementById('countdown');
-function updateTimer() {
-    const now = new Date();
-    const diff = targetDate - now;
-    if (diff <= 0) {
-        countdownEl.textContent = "00:00:00";
-        document.querySelector('.timer-label').textContent = "Сервер запущен!";
-        return;
-    }
-    const days = Math.floor(diff / 86400000);
-    const hours = Math.floor((diff % 86400000) / 3600000);
-    const minutes = Math.floor((diff % 3600000) / 60000);
-    const seconds = Math.floor((diff % 60000) / 1000);
-    countdownEl.textContent = days > 0
-        ? `${days}д ${hours.toString().padStart(2,'0')}:${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`
-        : `${hours.toString().padStart(2,'0')}:${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
+// Генерация годов (от текущего года до 1900)
+const currentYear = new Date().getFullYear();
+const birthYearSelect = document.getElementById('birthYear');
+for (let year = currentYear; year >= 1920; year--) {
+  const option = document.createElement('option');
+  option.value = year;
+  option.textContent = year;
+  birthYearSelect.appendChild(option);
 }
-updateTimer();
-setInterval(updateTimer, 1000);
 
-const canvas = document.getElementById("agarCanvas");
-const ctx = canvas.getContext("2d");
-let W = canvas.width = window.innerWidth;
-let H = canvas.height = window.innerHeight;
-
-window.addEventListener("resize", () => {
-    W = canvas.width = window.innerWidth;
-    H = canvas.height = window.innerHeight;
+// Аккордеон
+document.querySelectorAll('.acc-header').forEach(header => {
+  header.addEventListener('click', () => {
+    const body = header.nextElementSibling;
+    const isOpen = body.style.maxHeight;
+    
+    // Закрываем все
+    document.querySelectorAll('.acc-body').forEach(b => {
+      b.style.maxHeight = null;
+      b.previousElementSibling.querySelector('span').textContent = '▼';
+    });
+    
+    // Открываем текущий, если был закрыт
+    if (!isOpen) {
+      body.style.maxHeight = body.scrollHeight + 'px';
+      header.querySelector('span').textContent = '▲';
+    }
+  });
 });
 
-let skins = [];
-const cache = {};
+// Проверка возраста и чекбоксов
+const birthYear = document.getElementById('birthYear');
+const ageError = document.getElementById('ageError');
+const check2 = document.getElementById('check2');
+const check3 = document.getElementById('check3');
+const acceptBtn = document.getElementById('acceptBtn');
 
-class Ball {
-    constructor() { this.reset(); }
-
-    reset() {
-        this.x = Math.random() * W;
-        this.y = Math.random() * H;
-        this.r = 40 + Math.random() * 80;
-        this.vx = (Math.random() - 0.5) * 0.8;
-        this.vy = (Math.random() - 0.5) * 0.8;
-
-        if (skins.length === 0) {
-            this.name = ["Player","Bot","Agar","Guest"][Math.floor(Math.random()*4)];
-            this.id = null;
-        } else {
-            const s = skins[Math.floor(Math.random() * skins.length)];
-            this.name = s.name.length > 16 ? s.name.slice(0,13)+"…" : s.name;
-            this.id = s.id;
-        }
-
-        this.color = `hsl(${Math.random()*360}, 90%, 65%)`;
-        this.frame = 0;
-        this.frameTime = 0;
-
-        if (this.id && !cache[this.id]) this.preload();
-    }
-
-    preload() {
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        img.onload = () => {
-            const isAnimated = img.naturalWidth > img.naturalHeight;
-            const frames = isAnimated ? Math.round(img.naturalWidth / img.naturalHeight) : 1;
-            cache[this.id] = {
-                img,
-                animated: isAnimated,
-                frames,
-                frameWidth: isAnimated ? img.naturalHeight : img.naturalWidth,
-                height: img.naturalHeight
-            };
-        };
-        img.onerror = () => cache[this.id] = false;
-        img.src = `https://api.agar.su/skins/${this.id}.png`;
-    }
-
-    update(dt) {
-        this.x += this.vx;
-        this.y += this.vy;
-
-        // анимация
-        if (this.id && cache[this.id]?.animated) {
-            this.frameTime += dt;
-            if (this.frameTime > 80) {
-                this.frameTime = 0;
-                this.frame = (this.frame + 1) % cache[this.id].frames;
-            }
-        }
-
-        if (this.x < -200 || this.x > W+200 || this.y < -200 || this.y > H+200) {
-            this.reset();
-        }
-    }
-
-    draw() {
-        ctx.save();
-        ctx.translate(this.x, this.y);
-
-        // Обводка
-        ctx.lineWidth = 7;
-        ctx.strokeStyle = this.color;
-        ctx.beginPath();
-        ctx.arc(0, 0, this.r + 3, 0, Math.PI*2);
-        ctx.stroke();
-
-        // Клиппинг
-        ctx.beginPath();
-        ctx.arc(0, 0, this.r, 0, Math.PI*2);
-        ctx.clip();
-
-        const skinData = this.id && cache[this.id];
-
-        if (skinData && skinData.img) {
-            const size = this.r * 2.1;
-            if (skinData.animated) {
-                ctx.drawImage(
-                    skinData.img,
-                    this.frame * skinData.frameWidth, 0,
-                    skinData.frameWidth, skinData.height,
-                    -size/2, -size/2, size, size
-                );
-            } else {
-                ctx.drawImage(skinData.img, -size/2, -size/2, size, size);
-            }
-        } else {
-            ctx.globalAlpha = 0.3;
-            ctx.fillStyle = this.color;
-            ctx.beginPath();
-            ctx.arc(0, 0, this.r, 0, Math.PI*2);
-            ctx.fill();
-            ctx.globalAlpha = 1;
-        }
-
-        ctx.restore();
-
-        // Ник по центру
-        ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.font = `bold ${this.r / 2.8}px Roboto,Arial`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.strokeStyle = "#000";
-        ctx.lineWidth = this.r / 12;
-        ctx.strokeText(this.name, 0, 2);
-        ctx.fillStyle = "#fff";
-        ctx.fillText(this.name, 0, 2);
-        ctx.restore();
-    }
+function checkAll() {
+  const year = parseInt(birthYear.value);
+  const ageValid = year && (currentYear - year >= 12);
+  
+  ageError.style.display = birthYear.value && !ageValid ? 'block' : 'none';
+  
+  const allOk = ageValid && check2.checked && check3.checked;
+  acceptBtn.disabled = !allOk;
+  acceptBtn.style.opacity = allOk ? '1' : '0.5';
+  acceptBtn.style.cursor = allOk ? 'pointer' : 'not-allowed';
 }
 
-const balls = Array.from({length: 40}, () => new Ball());
-let lastTime = 0;
+birthYear.addEventListener('change', checkAll);
+check2.addEventListener('change', checkAll);
+check3.addEventListener('change', checkAll);
 
-function loop(time) {
-    if (!lastTime) lastTime = time;
-    const dt = time - lastTime;
-    lastTime = time;
-
-    ctx.clearRect(0, 0, W, H);
-
-    // КЛЮЧЕВАЯ СТРОКА — СОРТИРОВКА ПО РАЗМЕРУ (от маленького к большому)
-    balls.sort((a, b) => a.r - b.r);
-
-    // Рисуем от маленьких к большим — большие будут сверху!
-    balls.forEach(ball => {
-        ball.update(dt);
-        ball.draw();
-    });
-
-    requestAnimationFrame(loop);
+// Принятие
+if (localStorage.getItem('agar_legal_accepted_2025') === 'true') {
+  document.getElementById('legalBanner').remove();
+} else {
+  acceptBtn.addEventListener('click', () => {
+    if (acceptBtn.disabled) return;
+    localStorage.setItem('agar_legal_accepted_2025', 'true');
+    const banner = document.getElementById('legalBanner');
+    banner.style.opacity = '0';
+    banner.style.transition = 'opacity 0.5s';
+    setTimeout(() => banner.remove(), 500);
+  });
 }
-
-/* ---------------- ЗАГРУЗКА СКИНОВ ---------------- */
-fetch('https://api.agar.su/skinlist.txt?t=' + Date.now())
-    .then(r => r.text())
-    .then(text => {
-        skins = text.trim().split('\n')
-            .map(line => {
-                const [name, id] = line.split(':');
-                return { name: name?.trim() || 'unknown', id: id?.trim() };
-            })
-            .filter(s => s.id);
-
-        console.log(`Загружено ${skins.length} скинов`);
-        balls.forEach(b => b.reset());
-    })
-    .catch(() => console.warn("Не удалось загрузить skinlist.txt"));
-
-requestAnimationFrame(loop);
 </script>
 
+<style>
+.acc-item { border-bottom:1px solid #333; }
+.acc-header { padding:16px 0; cursor:pointer; user-select:none; font-weight:600; }
+.acc-body { 
+  max-height:0; overflow:hidden; transition:max-height .4s ease; 
+  padding:0 4px; background:rgba(255,255,255,0.03); border-radius:8px; margin-bottom:8px;
+}
+</style>
 </body>
 
 </html>
-
-
-
-
-
