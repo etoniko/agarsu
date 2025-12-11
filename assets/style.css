@@ -32,9 +32,9 @@
 /* Если вдруг на маленьких экранах текст не влезает — переносим */
 @media (max-width: 600px) {
     .footer {
-        white-space: normal;
         padding: 0 20px;
-        font-size: 13px;
+        font-size: 8px;
+        bottom: 0;
     }
 }
 .cosmos{background:url(/assets/photo/cosmos.png) !important; font-weight:lighter;}
