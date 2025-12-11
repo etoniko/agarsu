@@ -6,7 +6,37 @@
     color: #ffffff !important;
     font-weight: lighter;
 }
+.footer {
+    position: absolute;
+    left: 50%;
+    bottom: 20px;                  /* отступ от низа, можно менять */
+    transform: translateX(-50%);
+    z-index: 10;
+    color: #b7b7b7;
+    font-size: 14px;
+    white-space: nowrap;           /* чтобы не разъезжалось на мобилках */
+    text-align: center;
+}
 
+.footer a {
+    color: #b7b7b7;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.footer a:hover {
+    color: #ffffff;
+    text-decoration: underline;
+}
+
+/* Если вдруг на маленьких экранах текст не влезает — переносим */
+@media (max-width: 600px) {
+    .footer {
+        white-space: normal;
+        padding: 0 20px;
+        font-size: 13px;
+    }
+}
 .cosmos{background:url(/assets/photo/cosmos.png) !important; font-weight:lighter;}
 .rizwer{background: linear-gradient(90deg,rgba(2, 0, 36, 1) 0%, rgba(9, 9, 121, 1) 35%, rgba(0, 212, 255, 1) 100%) !important;}
 #captcha-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background-color:rgba(0, 0, 0, 0.5);display:flex;justify-content:center;align-items:center;z-index:9999;}
