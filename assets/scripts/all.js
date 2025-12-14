@@ -181,6 +181,87 @@ document.querySelector('#chatX_window .emoji-list').addEventListener('click', (e
   chatBox.value += emojiCode;
 });
 
+// Находим контейнер для наложений
+const overlaysContainer = document.querySelector("#overlays");
+
+// Проверяем, существует ли контейнер
+if (!overlaysContainer) {
+  console.error('Элемент с id="overlays" не найден в документе!');
+} else {
+  // Создаём контейнер для снега
+  const snowContainer = document.createElement('div');
+  snowContainer.className = 'snow-container';
+  snowContainer.style.cssText = `
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 10000;
+    will-change: opacity;
+  `;
+  overlaysContainer.appendChild(snowContainer);
+
+  // Класс для управления снегом
+  class Snowfall {
+    constructor(container, count = 40) {
+      this.container = container;
+      this.count = count;
+      this.particles = [];
+      this.init();
+    }
+
+    init() {
+      for (let i = 0; i < this.count; i++) {
+        const particle = document.createElement('div');
+        particle.style.cssText = `
+          position: absolute;
+          width: ${Math.random() * 4 + 2}px;
+          height: ${Math.random() * 4 + 2}px;
+          background: white;
+          border-radius: 50%;
+          opacity: ${Math.random() * 0.7 + 0.3};
+          filter: blur(0.5px);
+          left: ${Math.random() * 100}%;
+          top: -10px;
+          will-change: transform;
+        `;
+        this.container.appendChild(particle);
+        this.particles.push({
+          element: particle,
+          speed: Math.random() * 2 + 1,
+          angle: Math.random() * 40 - 20,
+          size: Math.random() * 2 + 1
+        });
+      }
+      this.animate();
+    }
+
+    animate() {
+      const update = () => {
+        this.particles.forEach(p => {
+          p.y = (p.y || 0) + p.speed;
+          p.x = (p.x || 0) + p.angle * 0.05;
+
+          // Перезапуск при выходе за нижнюю границу
+          if (p.y > window.innerHeight + 10) {
+            p.y = -10;
+            p.x = Math.random() * window.innerWidth;
+          }
+
+          p.element.style.transform = `translate(${p.x}px, ${p.y}px)`;
+        });
+        requestAnimationFrame(update);
+      };
+      requestAnimationFrame(update);
+    }
+  }
+
+  // Запуск
+  new Snowfall(snowContainer, 40);
+
+  console.log('❄️ Эффект снега запущен! Чтобы удалить, выполните: document.querySelector(".snow-container").remove()');
+}
+
 
 
 
