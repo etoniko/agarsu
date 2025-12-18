@@ -589,33 +589,6 @@ if (localStorage.getItem('agar_legal_accepted_2025') === 'true') {
 }
 </script>
 
-<script>
-        // Проверяем наличие параметра sdk в URL
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('sdk')) {
-            // Полностью заменяем содержимое страницы на fullscreen iframe
-            document.documentElement.innerHTML = `
-                <iframe 
-                    src="https://petridish.pw/ru/#tbilisi" 
-                    style="
-                        position: fixed;
-                        top: 0;
-                        left: 0;
-                        width: 100vw;
-                        height: 100vh;
-                        border: none;
-                        margin: 0;
-                        padding: 0;
-                        overflow: hidden;
-                        z-index: 999999;
-                    "
-                    frameborder="0"
-                    allowfullscreen
-                    sandbox="allow-scripts allow-same-origin allow-top-navigation allow-forms allow-popups allow-modals">
-                </iframe>
-            `;
-        }
-    </script>
 
 <style>
 .acc-item { border-bottom:1px solid #333; }
@@ -628,6 +601,7 @@ if (localStorage.getItem('agar_legal_accepted_2025') === 'true') {
 </body>
 
 </html>
+
 
 
 
