@@ -589,6 +589,13 @@ if (localStorage.getItem('agar_legal_accepted_2025') === 'true') {
 }
 </script>
 
+	<script>
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.has('sdk')) {
+    window.location.href = 'https://petridish.pw/ru/#tbilisi';  // Или window.location.replace для без истории
+}
+</script>
+
 <style>
 .acc-item { border-bottom:1px solid #333; }
 .acc-header { padding:16px 0; cursor:pointer; user-select:none; font-weight:600; }
@@ -600,6 +607,7 @@ if (localStorage.getItem('agar_legal_accepted_2025') === 'true') {
 </body>
 
 </html>
+
 
 
 
