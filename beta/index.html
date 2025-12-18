@@ -1,400 +1,297 @@
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="description" content="Agar.su — лучшая альтернатива agar.io. Играйте онлайн прямо сейчас: поглощайте клетки, соревнуйтесь с другими игроками и станьте лидером среди всех клонов agar и agario.">
-    <meta name="author" content="Agar.su Team">
-    <meta name="robots" content="index">
-    <!-- Open Graph для социальных сетей -->
-    <meta property="og:title" content="Agar.su - Завоевание начинается!">
-    <meta property="og:description" content="absorb cells, compete with other players, and become the leader among all agar and agario clones.">
-    <meta property="og:image" content="/assets/photo/og.png">
-    <meta property="og:url" content="https://agar.su">
-    <meta property="og:type" content="website">
-	<meta name="yandex-verification" content="a454c4468218ca1c" />
-    <title>Agar.su |Beta</title>
-    <!-- Favicon и иконки для Apple устройств -->
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="icon" href="/icon.svg" type="image/x-icon">
-    <!-- Canonical URL -->
-    <link rel="canonical" href="https://agar.su">
-    <!-- Шрифты и стили -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flag-icons/css/flag-icons.min.css">
-    <link href="https://fonts.googleapis.com/css?family=Ubuntu:700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=new_releases" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- Скрипты -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="/assets/scripts/jquery.js?0.0.2"></script>
-    <script src="/assets/scripts/log.js?0.0.2"></script>
-    <script src="/assets/scripts/vector.js?0.0.2"></script>
-    <script src="https://api.agar.su/assets/scripts/main_out2.js"></script>
-	<script src="https://api.agar.su/assets/scripts/shop.js" defer></script>
-	<script src="https://api.agar.su/assets/scripts/all.js" defer></script>
-	<script src="/assets/scripts/pass.js?0.0.2" defer></script>
-	<script src="/assets/scripts/skins.js?0.0.2" defer></script>
-	<script src="/assets/scripts/rating.js?0.0.4" defer></script>
-	<style>
-        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
-
-        * { box-sizing: border-box; }
-        body, html {
-            margin: 0; padding: 0; height: 100%;
-            font-family: 'Roboto', sans-serif;
-            background: #f8f9fc;
-            color: #2d2d2d;
-            overflow: hidden;
-        }
-
-        /* Сетка как в Agar.io */
-        .background-grid {
-            position: fixed;
-            inset: 0;
-            background:linear-gradient(rgb(0 0 0 / 13%) 1px, #00000000 1px), linear-gradient(90deg, rgb(0 0 0 / 13%) 1px, #00000000 1px);
-            background-size: 50px 50px;
-            opacity: 0.5;
-            z-index: 1;
-        }
-
-        /* Canvas с пузырями */
-        #agarCanvas {
-            position: fixed;
-            inset: 0;
-            z-index: 1;
-        }
-
-        .container {
-            position: relative;
-            z-index: 3;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            text-align: center;
-        }
-
-        h1 {
-            font-size: clamp(2rem, 8vw, 3.5rem);
-            font-weight: 700;
-            margin: 0 0 16px 0;
-            color: #1a1a1a;
-        }
-
-        .subtitle {
-            font-size: clamp(1rem, 4vw, 1.35rem);
-            color: #444;
-            max-width: 800px;
-            line-height: 1.6;
-            margin: 0 0 40px 0;
-        }
-
-        .timer-box {
-            background: #ffffff;
-            padding: clamp(20px, 5vw, 40px) clamp(30px, 8vw, 70px);
-            border-radius: 20px;
-            box-shadow: 0 12px 40px rgba(0,0,0,0.12);
-            border: 1px solid #e8e8e8;
-            margin: 20px 0;
-        }
-
-        .timer {
-            font-size: clamp(2.5rem, 10vw, 5.5rem);
-            font-weight: 700;
-            color: #2c3e50;
-            letter-spacing: 4px;
-            margin: 0;
-            font-variant-numeric: tabular-nums;
-        }
-
-        .timer-label {
-            font-size: clamp(0.9rem, 3vw, 1.1rem);
-            color: #666;
-            margin-top: 12px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        .social-section {
-            margin-top: 50px;
-        }
-
-        .social-title {
-            font-size: clamp(1rem, 3.5vw, 1.2rem);
-            color: #444;
-            margin-bottom: 20px;
-        }
-
-        .social-links {
-            display: flex;
-            flex-wrap: wrap;
-            gap: clamp(15px, 4vw, 30px);
-            justify-content: center;
-        }
-
-        .social-links a {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            min-width: 220px;
-            padding: 14px 24px;
-            background: #fff;
-            border-radius: 14px;
-            color: #333;
-            text-decoration: none;
-            font-weight: 500;
-            font-size: clamp(1rem, 3.5vw, 1.1rem);
-            transition: all 0.3s ease;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.06);
-        }
-
-        .social-links a:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
-            background: #f3f3f3;
-        }
-
-        i { font-size: clamp(1.4rem, 4vw, 1.6rem); }
-
-        .telegram { color: #0088cc; }
-        .discord { color: #5865F2; }
-        .vk { color: #4a76a8; }
-    </style>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="description" content="Eat cells smaller than you and don't get eaten by the bigger ones, as an MMO" />
+  <title>Agar.su — Black/White Edition</title>
+  <link id="favicon" rel="icon" type="image/png" href="https://agar.su/icon.svg" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.4.0/pixi.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #000000;
+      color: #ffffff;
+      height: 100vh;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    /* Главное меню */
+    #user-interface {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 420px;
+      max-width: 90vw;
+      background: rgba(20, 20, 20, 0.85);
+      backdrop-filter: blur(20px);
+      border-radius: 24px;
+      padding: 50px 30px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 100;
+    }
+    
+    .title {
+      font-size: 56px;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 50px;
+      background: linear-gradient(90deg, #ffffff, #e0e0e0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -2px;
+    }
+    
+    .input-group {
+      margin-bottom: 28px;
+    }
+    
+    input#name {
+      width: 100%;
+      padding: 18px 20px;
+      border-radius: 14px;
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      background: rgba(30, 30, 30, 0.7);
+      color: #ffffff;
+      font-size: 17px;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+    
+    input#name:focus {
+      border-color: #ffffff;
+      box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.15);
+    }
+    
+    input#name::placeholder {
+      color: #888888;
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 34px;
+    }
+    
+    .button {
+      flex: 1;
+      padding: 16px;
+      background: rgba(40, 40, 40, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 14px;
+      text-align: center;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .button:hover {
+      background: rgba(70, 70, 70, 0.9);
+      border-color: #ffffff;
+      transform: translateY(-3px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.6);
+    }
+    
+    .button:active {
+      transform: translateY(0);
+    }
+    
+    .primary-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+    
+    #play {
+      background: linear-gradient(135deg, #ffffff, #e0e0e0);
+      color: #000000;
+      font-size: 19px;
+      font-weight: 700;
+      border: none;
+    }
+    
+    #play:hover {
+      background: linear-gradient(135deg, #f0f0f0, #ffffff);
+      box-shadow: 0 15px 30px rgba(255, 255, 255, 0.2);
+    }
+    
+    /* HUD элементы */
+    .hud-element {
+      position: absolute;
+      background: rgba(15, 15, 15, 0.8);
+      backdrop-filter: blur(12px);
+      border-radius: 14px;
+      padding: 12px 18px;
+      font-size: 15px;
+      font-weight: 600;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    #score {
+      top: 20px;
+      left: 20px;
+    }
+    
+    #fps {
+      top: 20px;
+      right: 20px;
+    }
+    
+    #leaderboard {
+      z-index: 1;
+      top: 10px;
+      right: 10px;
+      width: 300px;
+      max-height: 320px;
+      overflow-y: auto;
+      padding: 20px;
+      scrollbar-width: none;
+    }
+    
+    /* Чат */
+    .hud-chat {
+      z-index: 1;
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      width: 380px;
+      background: rgba(15, 15, 15, 0.85);
+      backdrop-filter: blur(12px);
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      overflow: hidden;
+    }
+    
+    #chat-content {
+      height: 220px;
+      padding: 18px;
+      overflow-y: auto;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #e0e0e0;
+    }
+    
+    #chat-field {
+      width: 100%;
+      padding: 16px 20px;
+      background: rgba(30, 30, 30, 0.7);
+      border: none;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+      font-size: 15px;
+      outline: none;
+    }
+    
+    #chat-field::placeholder {
+      color: #777777;
+    }
+	.hud-message{color: white;}
+    
+    /* Миникарта */
+    #minimap-grid {
+      position: absolute;
+      width: 260px;
+      height: 260px;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      grid-template-rows: repeat(5, 1fr);
+      pointer-events: none;
+      opacity: 0.5;
+      font-size: 11px;
+      font-weight: 700;
+      bottom: 10px;
+      right: 10px;
+      z-index: 1;
+    }
+    
+    .cell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #aaaaaa;
+      border: 0.5px solid rgba(255, 255, 255, 0.08);
+    }
+    
+    .hud-minimap {
+      position: absolute;
+      border-radius: 18px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    /* Игровой канвас */
+    #view {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000000;
+    }
+    
+    #modals-container {
+      display: none;
+      position: absolute;
+      inset: 0;
+      z-index: 200;
+    }
+  </style>
 </head>
 <body>
-
-    <div class="background-grid"></div>
-    <canvas id="agarCanvas"></canvas>
-
-    <div class="container">
-        <h1>Ведутся технические работы</h1>
-        <p class="subtitle">
-            Плановое обновление серверов и инфраструктуры.<br>
-            Игра будет вновь доступна <strong>12 декабря 2025 года в 00:00 (МСК)</strong>.
-        </p>
-
-        <div class="timer-box">
-            <div class="timer" id="countdown">--:--:--</div>
-            <div class="timer-label">Осталось до запуска игры</div>
-        </div>
-
-        <div class="social-section">
-            <div class="social-title">Следите за новостями в наших сообществах:</div>
-            <div class="social-links">
-                <a href="https://t.me/agarsu" class="telegram" target="_blank">
-                    <i class="fab fa-telegram-plane"></i> Telegram
-                </a>
-                <a href="https://vk.com/agario" class="vk" target="_blank">
-                    <i class="fab fa-vk"></i> ВКонтакте
-                </a>
-                <a href="https://playigry.ru/" class="discord" target="_blank">
-                    <i class="fa-solid fa-gamepad"></i> Другие игры
-                </a>
-            </div>
-        </div>
+  <!-- Главное меню -->
+  <div id="user-interface" class="main-container">
+    <div class="title">Agar.su</div>
+    <div class="input-group">
+      <input type="text" id="name" placeholder="Введите ваше имя" />
     </div>
+    <div class="button-group">
+      <div id="settings" class="button">Настройки</div>
+      <div id="servers" class="button">Серверы</div>
+    </div>
+    <div class="primary-buttons">
+      <div id="play" class="button">Играть</div>
+      <div id="spectate" class="button">Наблюдать</div>
+    </div>
+    <div id="modals-container"></div>
+  </div>
 
-<script>
-/* ---------------- TIMER ---------------- */
-const targetDate = new Date('2025-12-12T00:00:00+03:00');
-const countdownEl = document.getElementById('countdown');
-function updateTimer() {
-    const now = new Date();
-    const diff = targetDate - now;
-    if (diff <= 0) {
-        countdownEl.textContent = "00:00:00";
-        document.querySelector('.timer-label').textContent = "Сервер запущен!";
-        return;
-    }
-    const days = Math.floor(diff / 86400000);
-    const hours = Math.floor((diff % 86400000) / 3600000);
-    const minutes = Math.floor((diff % 3600000) / 60000);
-    const seconds = Math.floor((diff % 60000) / 1000);
-    countdownEl.textContent = days > 0
-        ? `${days}д ${hours.toString().padStart(2,'0')}:${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`
-        : `${hours.toString().padStart(2,'0')}:${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
-}
-updateTimer();
-setInterval(updateTimer, 1000);
+  <!-- HUD элементы -->
+  <div id="score" class="hud-element">Score: 0</div>
+  <div id="fps" class="hud-element">FPS: --</div>
+  <div id="leaderboard" class="hud-element"></div>
 
-const canvas = document.getElementById("agarCanvas");
-const ctx = canvas.getContext("2d");
-let W = canvas.width = window.innerWidth;
-let H = canvas.height = window.innerHeight;
+  <!-- Чат -->
+  <div class="hud-chat">
+    <div id="chat-content"></div>
+    <input id="chat-field" type="text" placeholder="Напишите здесь…" />
+  </div>
 
-window.addEventListener("resize", () => {
-    W = canvas.width = window.innerWidth;
-    H = canvas.height = window.innerHeight;
-});
+  <!-- Миникарта -->
+  <div id="minimap-grid">
+    <canvas id="minimap-view" width="260" height="260" class="hud-minimap"></canvas>
+    <div class="cell">A1</div><div class="cell">A2</div><div class="cell">A3</div><div class="cell">A4</div><div class="cell">A5</div>
+    <div class="cell">B1</div><div class="cell">B2</div><div class="cell">B3</div><div class="cell">B4</div><div class="cell">B5</div>
+    <div class="cell">C1</div><div class="cell">C2</div><div class="cell">C3</div><div class="cell">C4</div><div class="cell">C5</div>
+    <div class="cell">D1</div><div class="cell">D2</div><div class="cell">D3</div><div class="cell">D4</div><div class="cell">D5</div>
+    <div class="cell">E1</div><div class="cell">E2</div><div class="cell">E3</div><div class="cell">E4</div><div class="cell">E5</div>
+  </div>
 
-let skins = [];
-const cache = {};
+  <!-- Игровой канвас -->
+  <canvas id="view"></canvas>
 
-class Ball {
-    constructor() { this.reset(); }
-
-    reset() {
-        this.x = Math.random() * W;
-        this.y = Math.random() * H;
-        this.r = 40 + Math.random() * 80;
-        this.vx = (Math.random() - 0.5) * 0.8;
-        this.vy = (Math.random() - 0.5) * 0.8;
-
-        if (skins.length === 0) {
-            this.name = ["Player","Bot","Agar","Guest"][Math.floor(Math.random()*4)];
-            this.id = null;
-        } else {
-            const s = skins[Math.floor(Math.random() * skins.length)];
-            this.name = s.name.length > 16 ? s.name.slice(0,13)+"…" : s.name;
-            this.id = s.id;
-        }
-
-        this.color = `hsl(${Math.random()*360}, 90%, 65%)`;
-        this.frame = 0;
-        this.frameTime = 0;
-
-        if (this.id && !cache[this.id]) this.preload();
-    }
-
-    preload() {
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        img.onload = () => {
-            const isAnimated = img.naturalWidth > img.naturalHeight;
-            const frames = isAnimated ? Math.round(img.naturalWidth / img.naturalHeight) : 1;
-            cache[this.id] = {
-                img,
-                animated: isAnimated,
-                frames,
-                frameWidth: isAnimated ? img.naturalHeight : img.naturalWidth,
-                height: img.naturalHeight
-            };
-        };
-        img.onerror = () => cache[this.id] = false;
-        img.src = `https://api.agar.su/skins/${this.id}.png`;
-    }
-
-    update(dt) {
-        this.x += this.vx;
-        this.y += this.vy;
-
-        // анимация
-        if (this.id && cache[this.id]?.animated) {
-            this.frameTime += dt;
-            if (this.frameTime > 80) {
-                this.frameTime = 0;
-                this.frame = (this.frame + 1) % cache[this.id].frames;
-            }
-        }
-
-        if (this.x < -200 || this.x > W+200 || this.y < -200 || this.y > H+200) {
-            this.reset();
-        }
-    }
-
-    draw() {
-        ctx.save();
-        ctx.translate(this.x, this.y);
-
-        // Обводка
-        ctx.lineWidth = 7;
-        ctx.strokeStyle = this.color;
-        ctx.beginPath();
-        ctx.arc(0, 0, this.r + 3, 0, Math.PI*2);
-        ctx.stroke();
-
-        // Клиппинг
-        ctx.beginPath();
-        ctx.arc(0, 0, this.r, 0, Math.PI*2);
-        ctx.clip();
-
-        const skinData = this.id && cache[this.id];
-
-        if (skinData && skinData.img) {
-            const size = this.r * 2.1;
-            if (skinData.animated) {
-                ctx.drawImage(
-                    skinData.img,
-                    this.frame * skinData.frameWidth, 0,
-                    skinData.frameWidth, skinData.height,
-                    -size/2, -size/2, size, size
-                );
-            } else {
-                ctx.drawImage(skinData.img, -size/2, -size/2, size, size);
-            }
-        } else {
-            ctx.globalAlpha = 0.3;
-            ctx.fillStyle = this.color;
-            ctx.beginPath();
-            ctx.arc(0, 0, this.r, 0, Math.PI*2);
-            ctx.fill();
-            ctx.globalAlpha = 1;
-        }
-
-        ctx.restore();
-
-        // Ник по центру
-        ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.font = `bold ${this.r / 2.8}px Roboto,Arial`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.strokeStyle = "#000";
-        ctx.lineWidth = this.r / 12;
-        ctx.strokeText(this.name, 0, 2);
-        ctx.fillStyle = "#fff";
-        ctx.fillText(this.name, 0, 2);
-        ctx.restore();
-    }
-}
-
-const balls = Array.from({length: 40}, () => new Ball());
-let lastTime = 0;
-
-function loop(time) {
-    if (!lastTime) lastTime = time;
-    const dt = time - lastTime;
-    lastTime = time;
-
-    ctx.clearRect(0, 0, W, H);
-
-    // КЛЮЧЕВАЯ СТРОКА — СОРТИРОВКА ПО РАЗМЕРУ (от маленького к большому)
-    balls.sort((a, b) => a.r - b.r);
-
-    // Рисуем от маленьких к большим — большие будут сверху!
-    balls.forEach(ball => {
-        ball.update(dt);
-        ball.draw();
-    });
-
-    requestAnimationFrame(loop);
-}
-
-/* ---------------- ЗАГРУЗКА СКИНОВ ---------------- */
-fetch('https://api.agar.su/skinlist.txt?t=' + Date.now())
-    .then(r => r.text())
-    .then(text => {
-        skins = text.trim().split('\n')
-            .map(line => {
-                const [name, id] = line.split(':');
-                return { name: name?.trim() || 'unknown', id: id?.trim() };
-            })
-            .filter(s => s.id);
-
-        console.log(`Загружено ${skins.length} скинов`);
-        balls.forEach(b => b.reset());
-    })
-    .catch(() => console.warn("Не удалось загрузить skinlist.txt"));
-
-requestAnimationFrame(loop);
-</script>
-
+  <script src="main.js"></script>
 </body>
-
 </html>
-
-
-
