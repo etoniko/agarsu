@@ -133,19 +133,48 @@
         .start-button-wrapper {
             text-align: center;
             margin: 40px 0 60px;
+			    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
         }
-        #startBtn {
-            width: 90%;
-            max-width: 400px;
-            padding: 18px;
-            font-size: 1.2rem;
-            font-weight: 600;
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 14px;
-            cursor: pointer;
-        }
+.btn {
+    width: 90%;
+    max-width: 400px;
+    padding: 18px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    border-radius: 14px;
+    cursor: pointer;
+    border: 2px solid var(--primary);
+    transition: all 0.25s ease;
+}
+
+/* по умолчанию */
+.btn-start {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-gallery {
+    background: white;
+    color: var(--primary);
+}
+
+/* hover на галерее */
+.btn-gallery:hover {
+    background: var(--primary);
+    color: white;
+}
+.start-button-wrapper:has(.btn-gallery:hover) .btn-start {
+    background: white;
+    color: var(--primary);
+}
+
+
+				#payBtn:hover {
+		background:#0c59cb;
+		}
         #builder {
             display: none;
             max-width: 500px;
@@ -257,12 +286,143 @@
             text-align: center;
             font-size: 0.9rem;
         }
-				#startBtn:hover {
-		background:#0c59cb;
-		}
-				#payBtn:hover {
-		background:#0c59cb;
-		}
+		
+		
+		/* Новые стили для галереи */
+        #gallery {
+            display: none;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .gallery-title {
+            text-align: center;
+            font-size: 1.5rem;
+            margin: 30px 0 20px;
+        }
+        .gallery-grid {
+            display: grid;
+            gap: 24px;
+            margin-bottom: 50px;
+        }
+@media (max-width: 767px) {
+    .gallery-grid {
+        grid-template-columns: repeat(1, 1fr);
+    }
+}
+
+@media (min-width: 768px) {
+    .gallery-grid {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+        .skin-card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 20px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .skin-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 16px 40px rgba(0,0,0,0.12);
+        }
+        .skin-card img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .skin-card h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+        }
+        .skin-card .password-icon {
+            font-size: 1.2rem;
+            color: var(--primary);
+        }
+        .pagination {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .pagination button {
+            background: var(--gray-btn);
+            color: var(--text);
+            border: none;
+            padding: 8px 16px;
+            margin: 0 4px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .pagination button:hover {
+            background: var(--primary);
+            color: white;
+        }
+        .pagination button.active {
+            background: var(--primary);
+            color: white;
+        }
+        #galleryBtn {
+            width: 90%;
+            max-width: 400px;
+            padding: 18px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            background: var(--yellow);
+            color: var(--text);
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            margin: 20px auto;
+            display: block;
+        }
+        #galleryBtn:hover {
+            background: #d97706;
+        }
+        #backToMainBtn {
+            display: block;
+            background: var(--gray-btn);
+            color: var(--text-light);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 500;
+            font-size: 1rem;
+            cursor: pointer;
+            margin: 20px auto;
+        }
+        #backToMainBtn:hover {
+            background: var(--gray-hover);
+        }
+		/* Стили для селекта сортировки */
+#sortSelect {
+    display: block;
+    margin: 20px auto; /* Центрирование и отступы */
+    padding: 12px 20px; /* Внутренние отступы для удобства */
+    border-radius: 12px; /* Скругление углов в стиле страницы */
+    border: 1px solid var(--border); /* Граница в стиле переменных */
+    background: var(--primary-light); /* Фон в стиле primary-light */
+    font-size: 1rem; /* Размер шрифта */
+    font-weight: 500; /* Вес шрифта */
+    color: var(--text); /* Цвет текста */
+    cursor: pointer; /* Курсор указателя */
+    width: 200px; /* Фиксированная ширина для аккуратности */
+    transition: background 0.3s ease, border-color 0.3s ease; /* Плавные переходы */
+}
+
+#sortSelect:focus {
+    outline: none; /* Убрать outline */
+    border-color: var(--primary); /* Подсветка при фокусе */
+}
     </style>
 </head>
 <body>
@@ -331,19 +491,25 @@
                         <strong>Важно:</strong> Это цифровая услуга. Функции активируются автоматически после оплаты.<br>
                         Возврат после активации невозможен (ст. 26.1 Закона «О защите прав потребителей»).
                     </div>
-            <div class="start-button-wrapper">
-                <button id="startBtn"
-                    onclick="
-                        document.querySelector('.prices-title').style.display = 'none';
-                        document.querySelector('.prices-grid').style.display = 'none';
-						document.querySelector('.legal-notice').style.display = 'none';
-                        document.querySelector('.start-button-wrapper').style.display = 'none';
-                        document.getElementById('builder').style.display = 'block';
-                        document.getElementById('backBtn').style.display = 'block';
-                    ">
-                    Начать оформление
-                </button>
-            </div>
+<div class="start-button-wrapper">
+
+    <button class="btn btn-start" onclick="
+        document.querySelector('.prices-title').style.display = 'none';
+        document.querySelector('.prices-grid').style.display = 'none';
+        document.querySelector('.legal-notice').style.display = 'none';
+        document.querySelector('.start-button-wrapper').style.display = 'none';
+        document.getElementById('builder').style.display = 'block';
+        document.getElementById('backBtn').style.display = 'block';
+    ">
+        Начать оформление
+    </button>
+
+    <button class="btn btn-gallery" onclick="showGallery();">
+        Галерея скинов
+    </button>
+
+</div>
+
             <div id="builder">
                 <form id="paymentForm">
                     <h2>Создание Лички</h2>
@@ -352,7 +518,7 @@
                     document.querySelector('.prices-title').style.display = 'block';
 					document.querySelector('.legal-notice').style.display = 'block';
                     document.querySelector('.prices-grid').style.display = 'grid';
-                    document.querySelector('.start-button-wrapper').style.display = 'block';
+                    document.querySelector('.start-button-wrapper').style.display = 'flex';
                     document.getElementById('builder').style.display = 'none';
                     this.style.display = 'none';
                 ">
@@ -417,6 +583,19 @@
             </div>
         </div>
     </div>
+				<!-- Секция галереи (третий лист) -->
+<!-- Секция галереи (третий лист) -->
+<div id="gallery" style="display: none;">
+    <!-- Добавленный селект для сортировки -->
+    <select id="sortSelect" onchange="sortGallery()">
+        <option value="all">Все</option>
+        <option value="password">С паролем</option>
+        <option value="no-password">Без пароля</option>
+    </select>
+    <div class="gallery-grid" id="galleryGrid"></div>
+    <div class="pagination" id="pagination"></div>
+    <button id="backToMainBtn" onclick="hideGallery()"><i class="fa-solid fa-arrow-left"></i> Назад к магазину</button>
+</div>
     <footer>
         <p><strong>ИП Дараселиа Николоз Ираклиевич</strong> · ИНН 503830093674</p>
         <p>ikometai@ya.ru · +7 (996) 971-27-65</p>
@@ -788,5 +967,143 @@ togglePassword.addEventListener("click", () => {
 
 invisibleNickCheckbox.addEventListener("change", calculateCost);
     </script>
+	<script>
+// Существующий скрипт (если есть, например, для формы builder) можно добавить сюда
+
+// Полный скрипт для галереи (без модального окна)
+let skins = []; // Массив {nick: '', code: ''}
+let passwords = new Set(); // Сет ников с паролями
+let filteredSkins = []; // Для фильтрованных скинов
+const itemsPerPage = 25;
+let currentPage = 1;
+
+// Функция загрузки данных
+async function loadData() {
+    try {
+        // Fetch skinlist.txt
+        const skinResponse = await fetch('https://api.agar.su/skinlist.txt');
+        const skinText = await skinResponse.text();
+        const skinLines = skinText.trim().split('\n');
+        skins = skinLines.map(line => {
+            const [nick, code] = line.split(':');
+            return { nick: nick.trim(), code: code.trim() };
+        }).reverse(); // Реверс: новые (последние строки) сначала
+
+        // Fetch pass.txt
+        const passResponse = await fetch('https://api.agar.su/pass.txt');
+        const passText = await passResponse.text();
+        const passLines = passText.trim().split('\n');
+        passLines.forEach(nick => passwords.add(nick.trim()));
+
+        filteredSkins = skins; // Изначально все
+        renderGallery(currentPage);
+    } catch (error) {
+        console.error('Ошибка загрузки данных:', error);
+        document.getElementById('galleryGrid').innerHTML = '<p>Ошибка загрузки галереи. Попробуйте позже.</p>';
+    }
+}
+
+// Функция рендеринга галереи
+function renderGallery(page) {
+    const grid = document.getElementById('galleryGrid');
+    grid.innerHTML = '';
+
+    const start = (page - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    const pageSkins = filteredSkins.slice(start, end);
+
+    pageSkins.forEach(skin => {
+        const card = document.createElement('div');
+        card.className = 'skin-card';
+        card.innerHTML = `
+            <img src="https://api.agar.su/skins/${skin.code}.png" alt="Скин ${skin.nick}">
+            <h4>${skin.nick}            <span class="password-icon material-icons">
+                ${passwords.has(skin.nick) ? 'lock' : 'lock_open'}
+            </span></h4>
+            <p>ID: ${skin.code}</p> <!-- Улучшение: отображение code как ID -->
+        `;
+        grid.appendChild(card);
+    });
+
+    renderPagination();
+}
+
+// Функция рендеринга пагинации
+function renderPagination() {
+    const pagination = document.getElementById('pagination');
+    pagination.innerHTML = '';
+    const totalPages = Math.ceil(filteredSkins.length / itemsPerPage);
+
+    for (let i = 1; i <= totalPages; i++) {
+        const btn = document.createElement('button');
+        btn.textContent = i;
+        if (i === currentPage) btn.classList.add('active');
+        btn.onclick = () => {
+            currentPage = i;
+            renderGallery(i);
+        };
+        pagination.appendChild(btn);
+    }
+}
+
+// Функция сортировки
+function sortGallery() {
+    const sortValue = document.getElementById('sortSelect').value;
+    if (sortValue === 'password') {
+        filteredSkins = skins.filter(skin => passwords.has(skin.nick));
+    } else if (sortValue === 'no-password') {
+        filteredSkins = skins.filter(skin => !passwords.has(skin.nick));
+    } else {
+        filteredSkins = skins;
+    }
+    currentPage = 1; // Сброс страницы
+    renderGallery(currentPage);
+}
+
+// Показ галереи (скрывает основной контент, показывает галерею, меняет заголовок)
+function showGallery() {
+    document.querySelector('.container').style.display = 'none'; // Скрыть основной контент
+    document.getElementById('gallery').style.display = 'block';
+    
+    // Изменение заголовка
+    const header = document.querySelector('header');
+    const originalTitle = document.getElementById('pageTitle').textContent;
+    const originalP = header.querySelector('p').textContent;
+    const originalBadge = header.querySelector('.robokassa-badge').outerHTML;
+
+    // Сохраняем оригиналы в data-атрибуты для восстановления
+    header.setAttribute('data-original-title', originalTitle);
+    header.setAttribute('data-original-p', originalP);
+    header.setAttribute('data-original-badge', originalBadge);
+
+    document.getElementById('pageTitle').textContent = 'Галерея Скинов';
+    header.querySelector('p').style.display = 'none'; // Скрываем описание
+    header.querySelector('.robokassa-badge').style.display = 'none'; // Скрываем бейдж
+
+    loadData(); // Загрузка данных при показе
+}
+
+// Скрытие галереи и восстановление
+function hideGallery() {
+    document.getElementById('gallery').style.display = 'none';
+    document.querySelector('.container').style.display = 'block';
+    
+    // Восстановление заголовка
+    const header = document.querySelector('header');
+    document.getElementById('pageTitle').textContent = header.getAttribute('data-original-title');
+    header.querySelector('p').textContent = header.getAttribute('data-original-p');
+    header.querySelector('p').style.display = 'block';
+    const badgeContainer = header.querySelector('.robokassa-badge');
+    if (badgeContainer) {
+        badgeContainer.outerHTML = header.getAttribute('data-original-badge');
+        header.querySelector('.robokassa-badge').style.display = 'inline-flex'; // Восстанавливаем видимость
+    }
+}
+
+// Автоматический показ галереи если ?gallery в URL
+if (window.location.search.includes('?gallery')) {
+    showGallery();
+}
+	</script>
 </body>
 </html>
