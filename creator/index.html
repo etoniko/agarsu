@@ -1046,26 +1046,32 @@ function renderPagination() {
         return btn;
     };
 
-    let startPage = currentPage;
-    let endPage = currentPage + 2;
+    // Определяем диапазон: 3 страницы вокруг текущей
+    let startPage = currentPage - 2; // 2 назад
+    let endPage = currentPage;
 
-    // Ограничиваем диапазон последней страницей
-    if (endPage >= totalPages) {
+    // Корректировка границ
+    if (startPage < 1) {
+        startPage = 1;
+        endPage = Math.min(3, totalPages);
+    }
+    if (endPage > totalPages - 1) {
         endPage = totalPages - 1;
-        startPage = Math.max(endPage - 2, 1);
+        startPage = Math.max(totalPages - 2, 1);
     }
 
-    // Основной диапазон страниц
+    // Добавляем диапазон
     for (let i = startPage; i <= endPage; i++) {
         pagination.appendChild(createButton(i, i));
     }
 
-    // Многоточие и последняя страница
+    // Если есть еще страницы после диапазона, добавляем многоточие и последнюю
     if (endPage < totalPages) {
         pagination.appendChild(createButton('...', '...'));
         pagination.appendChild(createButton(totalPages, totalPages));
     }
 }
+
 
 
 
