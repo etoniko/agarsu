@@ -1046,31 +1046,27 @@ function renderPagination() {
         return btn;
     };
 
-    let startPage = Math.max(currentPage - 1, 1);
-    let endPage = Math.min(currentPage + 1, totalPages);
+    let startPage = currentPage;
+    let endPage = currentPage + 2;
 
-    // Всегда показываем первую страницу
-    pagination.appendChild(createButton(1, 1));
-
-    if (startPage > 2) {
-        pagination.appendChild(createButton('...', '...'));
+    // Ограничиваем диапазон последней страницей
+    if (endPage >= totalPages) {
+        endPage = totalPages - 1;
+        startPage = Math.max(endPage - 2, 1);
     }
 
+    // Основной диапазон страниц
     for (let i = startPage; i <= endPage; i++) {
-        if (i !== 1 && i !== totalPages) {
-            pagination.appendChild(createButton(i, i));
-        }
+        pagination.appendChild(createButton(i, i));
     }
 
-    if (endPage < totalPages - 1) {
+    // Многоточие и последняя страница
+    if (endPage < totalPages) {
         pagination.appendChild(createButton('...', '...'));
-    }
-
-    // Всегда показываем последнюю страницу
-    if (totalPages > 1) {
         pagination.appendChild(createButton(totalPages, totalPages));
     }
 }
+
 
 
 // Функция сортировки
