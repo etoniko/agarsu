@@ -74,17 +74,18 @@
     color: var(--text-light);
     border: none;
     padding: 8px 12px;
-    border-radius: 12px;
+    border-radius: 100%;
     font-weight: 500;
-    font-size: 12px;
+    font-size: 16px;
     cursor: pointer;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
     position: absolute;
+    right: 8px;
+    top: 8px;
         }
         #backBtn:hover {
             background: var(--gray-hover);
         }
-        #backBtn i { margin-right: 8px; }
         .prices-title {
             text-align: center;
             font-size: 1.5rem;
@@ -176,6 +177,7 @@
 		background:#0c59cb;
 		}
         #builder {
+			position: relative;
             display: none;
             max-width: 500px;
             margin: 0 auto 80px;
@@ -540,9 +542,7 @@
 </div>
 
             <div id="builder">
-                <form id="paymentForm">
-                    <h2>Создание Лички</h2>
-					            <button id="backBtn"
+			<button id="backBtn"
                 onclick="
                     document.querySelector('.prices-title').style.display = 'block';
 					document.querySelector('.legal-notice').style.display = 'block';
@@ -551,8 +551,9 @@
                     document.getElementById('builder').style.display = 'none';
                     this.style.display = 'none';
                 ">
-                <i class="fa-solid fa-arrow-left"></i> Назад
-            </button>
+                <i class="fa-solid fa-close"></i></button>
+                <form id="paymentForm">
+                    <h2>Создание Лички</h2>
                     <label id="previewContainer" for="fileInput">
                         <span id="uploadText">Загрузить изображение</span>
                         <canvas id="previewCanvas" width="512" height="512"></canvas>
