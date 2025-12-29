@@ -1033,17 +1033,45 @@ function renderPagination() {
     pagination.innerHTML = '';
     const totalPages = Math.ceil(filteredSkins.length / itemsPerPage);
 
-    for (let i = 1; i <= totalPages; i++) {
+    const createButton = (text, page) => {
         const btn = document.createElement('button');
-        btn.textContent = i;
-        if (i === currentPage) btn.classList.add('active');
+        btn.textContent = text;
+        if (page === currentPage) btn.classList.add('active');
         btn.onclick = () => {
-            currentPage = i;
-            renderGallery(i);
+            if (page !== '...') {
+                currentPage = page;
+                renderGallery(currentPage);
+            }
         };
-        pagination.appendChild(btn);
+        return btn;
+    };
+
+    let startPage = Math.max(currentPage - 1, 1);
+    let endPage = Math.min(currentPage + 1, totalPages);
+
+    // Всегда показываем первую страницу
+    pagination.appendChild(createButton(1, 1));
+
+    if (startPage > 2) {
+        pagination.appendChild(createButton('...', '...'));
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        if (i !== 1 && i !== totalPages) {
+            pagination.appendChild(createButton(i, i));
+        }
+    }
+
+    if (endPage < totalPages - 1) {
+        pagination.appendChild(createButton('...', '...'));
+    }
+
+    // Всегда показываем последнюю страницу
+    if (totalPages > 1) {
+        pagination.appendChild(createButton(totalPages, totalPages));
     }
 }
+
 
 // Функция сортировки
 function sortGallery() {
