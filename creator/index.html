@@ -52,7 +52,7 @@
             color: var(--text-light);
             margin-bottom: 20px;
         }
-        .robokassa-badge {
+        .yooukassa-badge {
             display: inline-flex;
             align-items: center;
             gap: 8px;
@@ -227,7 +227,7 @@
         .type-selection input[type="radio"]:checked + span { background: var(--primary); color: white; display: block; width: 100%; height: 100%; border-radius: 12px;padding: 10px; }
         .form-group { margin-bottom: 24px; }
         .form-group label { font-weight: 500; margin-bottom: 8px; display: block; }
-        input[type="text"], input[type="password"] {
+        input[type="text"], input[type="password"], input[type="email"] {
             width: 100%; padding: 16px; border: 1px solid var(--border);
             border-radius: 12px; font-size: 1rem;
         }
@@ -422,6 +422,36 @@
     outline: none; /* Убрать outline */
     border-color: var(--primary); /* Подсветка при фокусе */
 }
+
+		.tooltip-icon {
+    position: relative;
+    cursor: pointer;
+    font-size: 1.2rem;
+    margin-left: 6px;
+    vertical-align: middle;
+    color: var(--primary);
+}
+
+.tooltip-text {
+    visibility: hidden;
+    width: 220px;
+    background-color: var(--primary);
+    color: #fff;
+    text-align: center;
+    border-radius: 8px;
+    padding: 8px;
+    position: absolute;
+    z-index: 10;
+    top: -5px;
+    left: 110%;
+    font-size: 0.85rem;
+    line-height: 1.2;
+}
+
+.tooltip-icon:hover .tooltip-text {
+    visibility: visible;
+}
+
     </style>
 </head>
 <body>
@@ -429,9 +459,9 @@
         <header>
             <h1 id="pageTitle">Creator Agar.su (тест)</h1>
             <p>Создайте свою личность по своему вкусу</p>
-            <div class="robokassa-badge">
+            <div class="yooukassa-badge">
                 <i class="material-icons">lock</i>
-                Оплата через Robokassa
+                Оплата через Юkassa
             </div>
         </header>
         <div class="container">
@@ -573,9 +603,21 @@
                     <div class="agreement">
                         <label style="display:flex; align-items:flex-start; gap:12px;">
                             <input type="checkbox" id="agreement" required style="width:22px; height:22px; margin-top:2px;">
-                            <span>Согласен с <a href="https://agar.su/rules" target="_blank">правилом пользования,<a href="https://agar.su/offer" target="_blank"> публичной офертой</a> и <a href="https://agar.su/privacy" target="_blank">политикой конфиденциальности</a></span>
+                            <span>Согласен с <a href="https://agar.su/rules" target="_blank">правилами пользования,<a href="https://agar.su/offer" target="_blank"> публичной офертой</a> и <a href="https://agar.su/privacy" target="_blank">политикой конфиденциальности</a></span>
                         </label>
                     </div>
+					<div class="form-group">
+    <label for="email">
+        Email (обязательно)
+        <span class="tooltip-icon">
+            <i class="material-icons">help_outline</i>
+            <span class="tooltip-text">Почта нужна для отправки чека после оплаты.</span>
+        </span>
+    </label>
+    <input type="email" id="email" placeholder="example@mail.com" required>
+    <p id="emailError" class="error"></p>
+</div>
+
                     <button id="payBtn" type="submit" disabled>Оплатить</button>
                     <p id="formError" class="error"></p>
                 </form>
@@ -1100,7 +1142,7 @@ function showGallery() {
     const header = document.querySelector('header');
     const originalTitle = document.getElementById('pageTitle').textContent;
     const originalP = header.querySelector('p').textContent;
-    const originalBadge = header.querySelector('.robokassa-badge').outerHTML;
+    const originalBadge = header.querySelector('.yooukassa-badge').outerHTML;
 
     // Сохраняем оригиналы в data-атрибуты для восстановления
     header.setAttribute('data-original-title', originalTitle);
@@ -1109,7 +1151,7 @@ function showGallery() {
 
     document.getElementById('pageTitle').textContent = 'Галерея Скинов';
     header.querySelector('p').style.display = 'none'; // Скрываем описание
-    header.querySelector('.robokassa-badge').style.display = 'none'; // Скрываем бейдж
+    header.querySelector('.yooukassa-badge').style.display = 'none'; // Скрываем бейдж
 
     loadData(); // Загрузка данных при показе
 }
@@ -1124,10 +1166,10 @@ function hideGallery() {
     document.getElementById('pageTitle').textContent = header.getAttribute('data-original-title');
     header.querySelector('p').textContent = header.getAttribute('data-original-p');
     header.querySelector('p').style.display = 'block';
-    const badgeContainer = header.querySelector('.robokassa-badge');
+    const badgeContainer = header.querySelector('.yooukassa-badge');
     if (badgeContainer) {
         badgeContainer.outerHTML = header.getAttribute('data-original-badge');
-        header.querySelector('.robokassa-badge').style.display = 'inline-flex'; // Восстанавливаем видимость
+        header.querySelector('.yooukassa-badge').style.display = 'inline-flex'; // Восстанавливаем видимость
     }
 }
 
