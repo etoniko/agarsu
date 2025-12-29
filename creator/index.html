@@ -1038,39 +1038,41 @@ function renderPagination() {
         btn.textContent = text;
         if (page === currentPage) btn.classList.add('active');
         btn.onclick = () => {
-            if (page !== '...') {
-                currentPage = page;
-                renderGallery(currentPage);
-            }
+            currentPage = page;
+            renderGallery(currentPage);
         };
         return btn;
     };
 
-    // Определяем диапазон: 3 страницы вокруг текущей
-    let startPage = currentPage - 2; // 2 назад
-    let endPage = currentPage;
+    let pages = [];
 
-    // Корректировка границ
-    if (startPage < 1) {
-        startPage = 1;
-        endPage = Math.min(3, totalPages);
-    }
-    if (endPage > totalPages - 1) {
-        endPage = totalPages - 1;
-        startPage = Math.max(totalPages - 2, 1);
-    }
+    // Левая, середина, правая
+    let left = currentPage - 1;
+    let middle = currentPage;
+    let right = currentPage + 1;
 
-    // Добавляем диапазон
-    for (let i = startPage; i <= endPage; i++) {
-        pagination.appendChild(createButton(i, i));
+    if (left < 1) left = 1;
+    if (right > totalPages) right = totalPages;
+
+    // Добавляем 1, если диапазон не начинается с 1
+    if (left > 1) {
+        pages.push(1);
     }
 
-    // Если есть еще страницы после диапазона, добавляем многоточие и последнюю
-    if (endPage < totalPages) {
-        pagination.appendChild(createButton('...', '...'));
-        pagination.appendChild(createButton(totalPages, totalPages));
+    // Добавляем диапазон (левая, средина, правая)
+    for (let i = left; i <= right; i++) {
+        pages.push(i);
     }
+
+    // Добавляем последнюю страницу, если диапазон не доходит до конца
+    if (right < totalPages) {
+        pages.push(totalPages);
+    }
+
+    // Отрисовка
+    pages.forEach(p => pagination.appendChild(createButton(p, p)));
 }
+
 
 
 
