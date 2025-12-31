@@ -998,9 +998,10 @@ spawn() {
   this.border.top = reader.getFloat64()
   this.border.right = reader.getFloat64()
   this.border.bottom = reader.getFloat64()
-  // Вычисляем размеры еды и ограничиваем их разумными значениями
-  const rawMinSize = Math.sqrt(reader.getUint16() * 100);
-  const rawMaxSize = Math.sqrt(reader.getUint16() * 100);
+  // Размеры еды: сервер отправляет радиус напрямую (как и для клеток игроков)
+  // Убираем умножение на 100 и sqrt, так как это радиус, а не масса
+  const rawMinSize = reader.getUint16();
+  const rawMaxSize = reader.getUint16();
   // Ограничение: еда обычно должна быть маленькой (5-15 пикселей в радиусе)
   const MAX_FOOD_RADIUS = 15;
   this.foodMinSize = Math.min(rawMinSize, MAX_FOOD_RADIUS);
