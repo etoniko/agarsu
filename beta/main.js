@@ -998,8 +998,8 @@ spawn() {
   this.border.top = reader.getFloat64()
   this.border.right = reader.getFloat64()
   this.border.bottom = reader.getFloat64()
-  this.foodMinSize = Math.sqrt(reader.getUint16() * 100);
-  this.foodMaxSize = Math.sqrt(reader.getUint16() * 100);
+  this.foodMinSize = Math.sqrt(reader.getUint16());
+  this.foodMaxSize = Math.sqrt(reader.getUint16());
   this.ownerPlayerId = reader.getUint32()
   this.border.width = this.border.right - this.border.left
   this.border.height = this.border.bottom - this.border.top
