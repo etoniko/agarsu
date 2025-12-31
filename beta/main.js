@@ -998,8 +998,17 @@ spawn() {
   this.border.top = reader.getFloat64()
   this.border.right = reader.getFloat64()
   this.border.bottom = reader.getFloat64()
-  this.foodMinSize = Math.sqrt(reader.getUint16());
-  this.foodMaxSize = Math.sqrt(reader.getUint16());
+  // Вычисляем размеры еды и ограничиваем их разумными значениями
+  const rawMinSize = Math.sqrt(reader.getUint16() * 100);
+  const rawMaxSize = Math.sqrt(reader.getUint16() * 100);
+  // Ограничение: еда обычно должна быть маленькой (5-15 пикселей в радиусе)
+  const MAX_FOOD_RADIUS = 15;
+  this.foodMinSize = Math.min(rawMinSize, MAX_FOOD_RADIUS);
+  this.foodMaxSize = Math.min(rawMaxSize, MAX_FOOD_RADIUS);
+  // Убеждаемся, что min <= max
+  if (this.foodMinSize > this.foodMaxSize) {
+    this.foodMaxSize = this.foodMinSize;
+  }
   this.ownerPlayerId = reader.getUint32()
   this.border.width = this.border.right - this.border.left
   this.border.height = this.border.bottom - this.border.top
@@ -1102,7 +1111,14 @@ spawn() {
     // еда
     posX = CORE.net.border.left + (CORE.net.border.right * 2) * normalizeFractlPart(id);
     posY = CORE.net.border.top  + (CORE.net.border.bottom * 2) * normalizeFractlPart(id * id);
-    size = CORE.net.foodMinSize + id % ((CORE.net.foodMaxSize - CORE.net.foodMinSize) + 1);
+    // Исправление: правильная формула для размера еды с защитой от деления на ноль
+    const sizeRange = Math.max(1, CORE.net.foodMaxSize - CORE.net.foodMinSize);
+    size = CORE.net.foodMinSize + (id % sizeRange);
+    // Ограничение максимального размера еды (обычно еда должна быть маленькой)
+    const MAX_FOOD_SIZE = 15; // максимальный радиус еды
+    if (size > MAX_FOOD_SIZE) {
+      size = MAX_FOOD_SIZE;
+    }
   } else {
     if (type === 0) playerId = reader.uint32();
     posX = reader.int32();
