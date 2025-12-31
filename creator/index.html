@@ -644,7 +644,7 @@
 		<a href="https://agar.su/rules" target="_blank"><strong>правила сервиса</strong></a><a href="https://agar.su/offer" target="_blank"><strong> · публичная оферта · </strong></a><a href="https://agar.su/privacy" target="_blank"><strong>политика конфиденциальности</strong></a>
     </footer>
     <script>
-       const forbiddenRegex = /[`'";:ㅤ⁣]/g;
+      const forbiddenRegex = /[`'";:ㅤ⁣]/g;
 const yookassaRules = { maxFileSize: 5 * 1024 * 1024 };
 let isNicknameTaken = false;
 
@@ -696,6 +696,25 @@ function blockForbiddenChars(input) {
     }
   });
 }
+const emailInput = document.getElementById("email");
+emailInput.addEventListener("input", () => {
+  hideError('emailError');
+  calculateCost(); // чтобы кнопка не активировалась без валидного email
+});
+
+emailInput.addEventListener("blur", () => {
+  const email = emailInput.value.trim();
+  if (!email) {
+    showError('emailError', 'Email обязателен');
+    return;
+  }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    showError('emailError', 'Некорректный email');
+  } else {
+    hideError('emailError');
+  }
+});
 
 const nicknameInput = document.getElementById("nickname");
 blockForbiddenChars(nicknameInput);
@@ -872,7 +891,7 @@ function calculateCost() {
 
   if (!nickname || isNicknameTaken) {
     document.getElementById('calculator').style.display = 'none';
-    document.getElementById('payBtn').disabled = true;
+    document.getElementById('buyButton').disabled = true;
     return;
   }
 
@@ -886,6 +905,9 @@ function calculateCost() {
   }
     const total = (passwordCost + skinCost + invisibleCost) * multiplier;
 
+  document.getElementById('multiplierText').textContent = multiplier === 2 ? '2x (для клана)' : '1x (для себя)';
+  document.getElementById('passwordCost').textContent = `Пароль: ${password ? passwordCost * multiplier : 0} ₽`;
+  document.getElementById('skinCost').textContent = skinText;
   
   // === Невидимый ник — строка цены ===
   let invisibleText = document.getElementById('invisibleCost');
@@ -897,11 +919,16 @@ function calculateCost() {
   }
 
   const calculator = document.getElementById('calculator');
-  const buyButton = document.getElementById('payBtn');
+  const buyButton = document.getElementById('buyButton');
+  const email = emailInput.value.trim();
+  const emailValid = email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     if (total > 0 && (password || file || invisibleNickCheckbox.checked)) {
+    calculator.style.display = 'block';
+    document.getElementById('totalAmount').textContent = `Итого: ${total} ₽`;
     buyButton.textContent = `КУПИТЬ ЗА ${total} РУБЛЕЙ`;
     buyButton.disabled = false;
   } else {
+    calculator.style.display = 'none';
     buyButton.disabled = true;
   }
 }
@@ -923,6 +950,16 @@ document.getElementById("paymentForm").addEventListener("submit", async (e) => {
   const password = passwordInput.value.trim();
   const file = fileInput.files[0];
   const serviceType = document.querySelector('input[name="serviceType"]:checked')?.value || '';
+  const email = emailInput.value.trim();
+  
+  if (!email) {
+    showError('formError', 'Введите email для получения чека');
+    return;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showError('formError', 'Некорректный email');
+    return;
+  }
 
   if (!nickname) {
     showError('formError', 'Введите ник/клан.');
@@ -942,6 +979,7 @@ document.getElementById("paymentForm").addEventListener("submit", async (e) => {
   formData.append("name", nickname);
   formData.append("amount", amount);
   formData.append("serviceType", serviceType);
+ formData.append("email", email);
   if (password) formData.append("password", password);
   if (invisibleNickCheckbox.checked) formData.append("invisible", "1");
 
