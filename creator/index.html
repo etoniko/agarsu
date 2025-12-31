@@ -888,9 +888,6 @@ function calculateCost() {
   }
     const total = (passwordCost + skinCost + invisibleCost) * multiplier;
 
-  document.getElementById('multiplierText').textContent = multiplier === 2 ? '2x (для клана)' : '1x (для себя)';
-  document.getElementById('passwordCost').textContent = `Пароль: ${password ? passwordCost * multiplier : 0} ₽`;
-  document.getElementById('skinCost').textContent = skinText;
   
   // === Невидимый ник — строка цены ===
   let invisibleText = document.getElementById('invisibleCost');
