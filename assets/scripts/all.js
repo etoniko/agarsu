@@ -181,6 +181,9 @@ document.querySelector('#chatX_window .emoji-list').addEventListener('click', (e
   chatBox.value += emojiCode;
 });
 
+
+
+
 // Находим контейнер для наложений
 const overlaysContainer = document.querySelector("#overlays");
 
@@ -261,8 +264,3 @@ if (!overlaysContainer) {
 
   console.log('❄️ Эффект снега запущен! Чтобы удалить, выполните: document.querySelector(".snow-container").remove()');
 }
-
-
-
-
-
