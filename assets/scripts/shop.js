@@ -17,7 +17,7 @@ function showWarning(id, show) {
 
 function updateCharCount() {
   const input = document.getElementById("nickname");
-  const max = document.getElementById('clan').checked ? 6 : 15;
+  const max = document.getElementById('clan').checked ? 6 : 16;
   const length = input.value.length;
   document.getElementById("charCount").textContent = `${length}/${max}`;
 }
@@ -30,7 +30,7 @@ function updateNicknameDisplay() {
     input.maxLength = 6;
   } else {
     input.placeholder = 'ник';
-    input.maxLength = 15;
+    input.maxLength = 16;
   }
   updateCharCount();
 }
@@ -50,6 +50,25 @@ function blockForbiddenChars(input) {
     }
   });
 }
+/*const emailInput = document.getElementById("email");
+emailInput.addEventListener("input", () => {
+  hideError('emailError');
+  calculateCost(); // чтобы кнопка не активировалась без валидного email
+});
+
+emailInput.addEventListener("blur", () => {
+  const email = emailInput.value.trim();
+  if (!email) {
+    showError('emailError', 'Email обязателен');
+    return;
+  }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    showError('emailError', 'Некорректный email');
+  } else {
+    hideError('emailError');
+  }
+});*/
 
 const nicknameInput = document.getElementById("nickname");
 blockForbiddenChars(nicknameInput);
@@ -69,7 +88,7 @@ nicknameInput.addEventListener("blur", async () => {
     }
     nicknameInput.value = `[${value}]`;
   } else {
-    const maxPersonalLength = 15;
+    const maxPersonalLength = 16;
     if (/[\[\]]/.test(value)) {
       value = value.replace(/[\[\]]/g, '');
       showError('nicknameError', 'Скобки [] запрещены для личного ника');
@@ -231,7 +250,7 @@ function calculateCost() {
   }
 
   let passwordCost = password ? 100 : 0;
-  let invisibleCost = invisibleNickCheckbox.checked ? 100 : 0;
+  let invisibleCost = invisibleNickCheckbox.checked ? 500 : 0;
   let skinCost = 0;
   let skinText = 'Скин: 0 ₽';
   if (file) {
@@ -243,9 +262,20 @@ function calculateCost() {
   document.getElementById('multiplierText').textContent = multiplier === 2 ? '2x (для клана)' : '1x (для себя)';
   document.getElementById('passwordCost').textContent = `Пароль: ${password ? passwordCost * multiplier : 0} ₽`;
   document.getElementById('skinCost').textContent = skinText;
+  
+  // === Невидимый ник — строка цены ===
+  let invisibleText = document.getElementById('invisibleCost');
+  if (invisibleNickCheckbox.checked) {
+    invisibleText.textContent = `Невидимый ник: ${invisibleCost * multiplier} ₽`;
+    invisibleText.style.display = 'block';
+  } else {
+    invisibleText.style.display = 'none';
+  }
 
   const calculator = document.getElementById('calculator');
   const buyButton = document.getElementById('buyButton');
+  //const email = emailInput.value.trim();
+  //const emailValid = email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     if (total > 0 && (password || file || invisibleNickCheckbox.checked)) {
     calculator.style.display = 'block';
     document.getElementById('totalAmount').textContent = `Итого: ${total} ₽`;
@@ -274,6 +304,16 @@ document.getElementById("paymentForm").addEventListener("submit", async (e) => {
   const password = passwordInput.value.trim();
   const file = fileInput.files[0];
   const serviceType = document.querySelector('input[name="serviceType"]:checked')?.value || '';
+  /*const email = emailInput.value.trim();
+  
+  if (!email) {
+    showError('formError', 'Введите email для получения чека');
+    return;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showError('formError', 'Некорректный email');
+    return;
+  }*/
 
   if (!nickname) {
     showError('formError', 'Введите ник/клан.');
@@ -293,7 +333,9 @@ document.getElementById("paymentForm").addEventListener("submit", async (e) => {
   formData.append("name", nickname);
   formData.append("amount", amount);
   formData.append("serviceType", serviceType);
+ // formData.append("email", email);
   if (password) formData.append("password", password);
+  if (invisibleNickCheckbox.checked) formData.append("invisible", "1");
 
   const headers = {};
   if (localStorage.accountToken) {
@@ -315,9 +357,6 @@ document.getElementById("paymentForm").addEventListener("submit", async (e) => {
       }, "image/png");
     }
   } else {
-	  if (invisibleNickCheckbox.checked) {
-      formData.append("invisible", "1");
-    }
     await sendForm(formData, headers);
   }
 });
