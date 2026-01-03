@@ -3325,7 +3325,7 @@ fetch("https://api.agar.su/invisible.txt")
   .then(r => r.text())
   .then(text => {
     text.split('\n').forEach(line => {
-      line = line.trim();
+      line = line.trim().toLowerCase();
       if (line) invisible.add(line);
     });
   });
