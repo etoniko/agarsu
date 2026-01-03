@@ -24,14 +24,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=new_releases" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="/assets/style.css?0.0.35" rel="stylesheet">
+    <link href="/assets/style.css?0.0.36" rel="stylesheet">
     <!-- Скрипты -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="/assets/scripts/jquery.js?0.0.2"></script>
     <script src="/assets/scripts/log.js?0.0.2"></script>
     <script src="/assets/scripts/vector.js?0.0.2"></script>
     <script src="/assets/scripts/main_out.js"></script>
-	<script src="/assets/scripts/shop.js" defer></script>
+	<script src="/assets/scripts/shop.js?1" defer></script>
 	<script src="/assets/scripts/all.js" defer></script>
 	<script src="/assets/scripts/pass.js?0.0.2" defer></script>
 	<script src="/assets/scripts/skins.js?0.0.2" defer></script>
@@ -43,7 +43,7 @@
     <div class="social"><a href="https://t.me/agarsu" target="_blank" class="tg"><i style="background: radial-gradient(white 9px, #1e90ff00 50%);border-radius: 50%;" class="fab fa-telegram"></i></a><a href="https://vk.com/club233723574" target="_blank" class="soc"><i class="fab fa-vk"></i></a><a href="#" class="soc"><i style="cursor: not-allowed;" class="fab fa-discord"></i></a></div>
     <div class="center">
       <div class="sidebar">
-        <div class="menu-item" onclick="window.open('https://agar.su/creator', '_self')"><i class="fas fa-shop"></i><span class="label">Магазин</span></div>
+        <div class="menu-item" onclick="showContent('shop'"><i class="fas fa-shop"></i><span class="label">Магазин</span></div>
         <div class="menu-item" onclick="showContent('skinslist')"><i class="fas fa-image"></i><span class="label">Скины</span></div>
         <div class="menu-item active" onclick="showContent('home')"><i class="fas fa-home"></i><span class="label">Главная</span></div>
         <div class="menu-item" onclick="showContent('rating')"><i class="fas fa-star"></i><span class="label">Рейтинг</span></div>
@@ -608,6 +608,7 @@ if (localStorage.getItem('agar_legal_accepted_2025') === 'true') {
 </body>
 
 </html>
+
 
 
 
