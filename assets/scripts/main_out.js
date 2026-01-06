@@ -3319,7 +3319,7 @@ wjQuery(window).on('load', function() {
 
 
 
-const transparent = new Set(["незнакомка","bublik","ник","liqwid","zombie","pac-man"]);
+const transparent = new Set(["незнакомка","bublik","liqwid","zombie","pac-man"]);
 let invisible = new Set(); // сначала пустой Set
 fetch("https://api.agar.su/invisible.txt")
   .then(r => r.text())
