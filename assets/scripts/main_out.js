@@ -1429,7 +1429,8 @@ case 48:
             id: null,      // системная строка → без нумерации
             name: text,
             level: -1,
-            xp: 0
+            xp: 0,
+			streak: this.winStreak[text] > 0 ? `(${this.winStreak[text]})` : ''
         });
     }
 
@@ -3092,6 +3093,13 @@ function drawLeaderBoard() {
 
         // --- Контейнер для иконок (звезда + ютуб) ---
         const iconsContainer = document.createElement("span");
+		  // Добавляем серию побед (если она есть)
+if (leaderBoard[b].streak) {  // проверяем, есть ли серия побед
+    const streakSpan = document.createElement("span");
+    streakSpan.className = "streak"; // можешь стилизовать через CSS
+    streakSpan.innerHTML = leaderBoard[b].streak;  // добавляем серию побед
+    iconsContainer.appendChild(streakSpan);
+}
 
         // --- Звезда с уровнем (если есть) ---
         if (level !== -1 && !isSystemLine) {
