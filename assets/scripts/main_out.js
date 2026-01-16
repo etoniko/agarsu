@@ -1939,8 +1939,7 @@ if (privateMatch) {
 
     let targetDiv = targetDialogId ? dialogs[targetDialogId]?.div : document.getElementById('chatX_feed');
     if (!targetDiv) targetDiv = document.getElementById('chatX_feed');
-
-	if (!isEnteringGameMessage) {
+if (!isEnteringGameMessage) {
     // --- Аватарка ---
     const avatarContainer = document.createElement('div');
     avatarContainer.className = 'avatarXcontainer';
@@ -1953,8 +1952,7 @@ if (privateMatch) {
     avatar.onerror = () => avatar.src = 'https://api.agar.su/skins/4.png';
     avatarContainer.appendChild(avatar);
     msgDiv.appendChild(avatarContainer);
-		}
-
+}
     // --- Имя и уровень ---
     const nameContainer = document.createElement('div');
     nameContainer.className = 'chatX_name_container';
@@ -2038,15 +2036,11 @@ if (messageContent.startsWith('PvPInvite;') && messageContent.endsWith(';accept'
 // сначала цензурим, как у вас
 const safeHtml = replaceEmojis(highlightMentions(censorMessage(messageContent)));
 	
-const textDiv = document.createElement('div');
-textDiv.className = 'chatX_text';
-
 if (isEnteringGameMessage) {
-    textDiv.textContent = "вошёл(а) в игру"; // Только текст
+    textDiv.textContent = "вошёл(а) в игру"; // Простой текст
 } else {
     textDiv.innerHTML = safeHtml;
 }
-
 
 
 
@@ -2075,23 +2069,10 @@ if (shouldBlurAndRecord(lastMessage.pId, messageContent)) {
 msgDiv.appendChild(textDiv);
 
     // --- Время ---
-if (isEnteringGameMessage) {
-    msgDiv.className = 'chatenter'; // Класс для простого сообщения
-    const textDiv = document.createElement('div');
-    textDiv.className = 'chatX_text';
-    textDiv.textContent = "вошёл(а) в игру"; // Только текст
-    msgDiv.appendChild(textDiv);
-
-    // Добавляем время
     const timeDiv = document.createElement('div');
     timeDiv.className = 'chatX_time';
     timeDiv.textContent = lastMessage.time || '';
     msgDiv.appendChild(timeDiv);
-} else {
-    // Для обычных сообщений
-    msgDiv.className = 'chatX_msg';
-    // Добавляем аватарку, имя и т.д.
-}
 
     // --- Контекстное меню ---
     msgDiv.addEventListener('contextmenu', (e) => {
