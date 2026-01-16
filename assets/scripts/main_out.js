@@ -1269,7 +1269,7 @@ let pingstamp = 0;
     pingstamp = Date.now();           
 	wsSend(new Uint8Array([2])); // ping        
     }, 3000);
-	setTimeout(() => { sendChat("вошёл(а) в игру") }, 1000);
+	setTimeout(() => { sendChat("вошёл в игру :105:"); }, 1000);
     }
 
         function onWsClose(evt) {
@@ -1899,20 +1899,13 @@ function drawChatBoard() {
 
     // --- Игнорируем игрока ---
     if (ignoredPlayers.has(lastMessage.pId)) return;
-    const isEnteringGameMessage = lastMessage.message && lastMessage.message.trim().toLowerCase() === "вошёл(а) в игру";
+
     const msgDiv = document.createElement('div');
     const lowerName = lastMessage.name.toLowerCase();
-	
-if (isEnteringGameMessage) {
-    msgDiv.className = 'chatenter'; // Класс для простого сообщения
-} else {
-    // Остальной код как был
+
     if (admins.includes(lowerName)) msgDiv.className = 'chatX_msg admins';
     else if (moders.includes(lowerName)) msgDiv.className = 'chatX_msg ' + lowerName;
     else msgDiv.className = 'chatX_msg';
-}
-
-	
 
     const normalizedName = normalizeNick(lastMessage.name || '');
     let messageRaw = (lastMessage.message || '').trim();
@@ -1939,7 +1932,7 @@ if (privateMatch) {
 
     let targetDiv = targetDialogId ? dialogs[targetDialogId]?.div : document.getElementById('chatX_feed');
     if (!targetDiv) targetDiv = document.getElementById('chatX_feed');
-if (!isEnteringGameMessage) {
+
     // --- Аватарка ---
     const avatarContainer = document.createElement('div');
     avatarContainer.className = 'avatarXcontainer';
@@ -1952,7 +1945,7 @@ if (!isEnteringGameMessage) {
     avatar.onerror = () => avatar.src = 'https://api.agar.su/skins/4.png';
     avatarContainer.appendChild(avatar);
     msgDiv.appendChild(avatarContainer);
-}
+
     // --- Имя и уровень ---
     const nameContainer = document.createElement('div');
     nameContainer.className = 'chatX_name_container';
@@ -2035,13 +2028,7 @@ if (messageContent.startsWith('PvPInvite;') && messageContent.endsWith(';accept'
 
 // сначала цензурим, как у вас
 const safeHtml = replaceEmojis(highlightMentions(censorMessage(messageContent)));
-	
-if (isEnteringGameMessage) {
-    textDiv.textContent = "вошёл(а) в игру"; // Простой текст
-} else {
-    textDiv.innerHTML = safeHtml;
-}
-
+textDiv.innerHTML = safeHtml;
 
 
 if (shouldBlurAndRecord(lastMessage.pId, messageContent)) {
