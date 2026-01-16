@@ -166,7 +166,13 @@ i:hover{cursor:pointer;}
   vertical-align: middle;
   margin: 0 2px;
 }
-
+.chatenter {
+    font-size: 12px;
+    color: #888;
+    text-align: center;
+    width: 100%;
+    padding: 2px;
+}
 #gradient-settings input[type="color"] {
   border: none;
   width: 40px;
