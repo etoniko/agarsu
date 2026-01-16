@@ -1269,7 +1269,7 @@ let pingstamp = 0;
     pingstamp = Date.now();           
 	wsSend(new Uint8Array([2])); // ping        
     }, 3000);
-	setTimeout(() => { sendChat("вошёл в игру :105:"); }, 1000);
+	setTimeout(() => { sendChat("вошёл(а) в игру") }, 1000);
     }
 
         function onWsClose(evt) {
@@ -1899,13 +1899,20 @@ function drawChatBoard() {
 
     // --- Игнорируем игрока ---
     if (ignoredPlayers.has(lastMessage.pId)) return;
-
+    const isEnteringGameMessage = lastMessage.message && lastMessage.message.trim().toLowerCase() === "вошёл(а) в игру";
     const msgDiv = document.createElement('div');
     const lowerName = lastMessage.name.toLowerCase();
-
+	
+if (isEnteringGameMessage) {
+    msgDiv.className = 'chatenter'; // Класс для простого сообщения
+} else {
+    // Остальной код как был
     if (admins.includes(lowerName)) msgDiv.className = 'chatX_msg admins';
     else if (moders.includes(lowerName)) msgDiv.className = 'chatX_msg ' + lowerName;
     else msgDiv.className = 'chatX_msg';
+}
+
+	
 
     const normalizedName = normalizeNick(lastMessage.name || '');
     let messageRaw = (lastMessage.message || '').trim();
@@ -2028,7 +2035,13 @@ if (messageContent.startsWith('PvPInvite;') && messageContent.endsWith(';accept'
 
 // сначала цензурим, как у вас
 const safeHtml = replaceEmojis(highlightMentions(censorMessage(messageContent)));
-textDiv.innerHTML = safeHtml;
+	
+if (isEnteringGameMessage) {
+    textDiv.textContent = "вошёл(а) в игру"; // Простой текст
+} else {
+    textDiv.innerHTML = safeHtml;
+}
+
 
 
 if (shouldBlurAndRecord(lastMessage.pId, messageContent)) {
