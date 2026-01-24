@@ -636,7 +636,7 @@ case 48:
         });
     }
 
-    drawCustomLeaderBoard();
+    drawLeaderBoard();
     break;
 
             case 49:
