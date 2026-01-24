@@ -1991,7 +1991,7 @@ function drawLeaderBoard() {
         renderFavicon();
 
         // Causes stuttering..
-        //setInterval(renderFavicon, 1E3);
+        setInterval(renderFavicon, 1E3);
 
         setInterval(drawChatBoard, 1E3);
     });
