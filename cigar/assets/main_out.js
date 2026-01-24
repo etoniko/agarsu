@@ -1244,80 +1244,90 @@ function drawGameScene() {
 function drawLeaderBoard() {
     lbCanvas = null;
     var drawTeam = null != teamScores;
-    if (drawTeam || 0 != leaderBoard.length)
-        if (drawTeam || showName) {
-            lbCanvas = document.createElement("canvas");
-            var ctx = lbCanvas.getContext("2d"),
-                boardLength = 60;
+    if (!(drawTeam || leaderBoard.length !== 0)) return;
+    if (!(drawTeam || showName)) return;
 
-            // ──────────────────────────────── НАХОДИМ СЕБЯ ────────────────────────────────
-            var myPos = -1;
-            var myName = "";
-            if (playerCells.length > 0) {
-                myName = playerCells[0].name || "";
-                for (var i = 0; i < leaderBoard.length; i++) {
-                    var entry = leaderBoard[i];
-                    if (entry.name === myName || (entry.id && playerCells[0].id === entry.id)) {
-                        myPos = i + 1;  // позиция с 1
-                        break;
-                    }
-                }
-            }
+    lbCanvas = document.createElement("canvas");
+    var ctx = lbCanvas.getContext("2d"),
+        boardLength = 60;
 
-            // ──────────────────────────────── ТОП-10 + Я (если ниже) ────────────────────────────────
-            var visibleEntries = [];
-            for (var i = 0; i < Math.min(10, leaderBoard.length); i++) {
-                visibleEntries.push(leaderBoard[i]);
-            }
-            if (myPos > 10 && myPos !== -1) {
-                visibleEntries.push({
-                    name: myName || "You",
-                    id: playerCells[0] ? playerCells[0].id : null,
-                    level: leaderBoard[myPos - 1] ? leaderBoard[myPos - 1].level : -1,
-                    xp: leaderBoard[myPos - 1] ? leaderBoard[myPos - 1].xp : 0
-                });
-            }
-            boardLength += 24 * visibleEntries.length;
+    // ──────────────────────────────── НАХОДИМ СЕБЯ (ТОЛЬКО ПО ID) ────────────────────────────────
+    var myPos = null;
+    var myCell = playerCells[0] || null;
 
-            var scaleFactor = Math.min(0.22 * canvasHeight, Math.min(200, .3 * canvasWidth)) * 0.005;
-            lbCanvas.width = 200 * scaleFactor;
-            lbCanvas.height = boardLength * scaleFactor;
-            ctx.scale(scaleFactor, scaleFactor);
-
-            ctx.globalAlpha = .4;
-            ctx.fillStyle = "#000000";
-            ctx.fillRect(0, 0, 200, boardLength);
-            ctx.globalAlpha = 1;
-            ctx.fillStyle = "#FFFFFF";
-
-            var title = "Leaderboard";
-            ctx.font = "30px Ubuntu";
-            ctx.fillText(title, 100 - ctx.measureText(title).width * 0.5, 40);
-
-            ctx.font = "20px Ubuntu";
-            for (var b = 0, l = visibleEntries.length; b < l; ++b) {
-                var entry = visibleEntries[b];
-                var c = entry.name || "An unnamed cell";
-                if (!showName) c = "An unnamed cell";
-
-                // ──────────────────────────────── ВЫДЕЛЯЕМ СЕБЯ ────────────────────────────────
-                var isMe = (myPos === b + 1) || (entry.name === myName);
-                if (isMe && myName) c = myName;
-
-                ctx.fillStyle = isMe ? "#FFAAAA" : "#FFFFFF";
-                if (!noRanking) c = (b + 1) + ". " + c;
-
-                // Если это "я" ниже топ-10, показываем реальную позицию
-                if (isMe && myPos > 10) {
-                    c = myPos + ". " + c.replace(/^\d+\.\s*/, "");
-                }
-
-                var textWidth = ctx.measureText(c).width;
-                var startX = (textWidth > 200) ? 2 : 100 - textWidth * 0.5;
-                ctx.fillText(c, startX, 70 + 24 * b);
+    if (myCell) {
+        for (var i = 0; i < leaderBoard.length; i++) {
+            if (leaderBoard[i].id === myCell.id) {
+                myPos = i + 1; // позиция с 1
+                break;
             }
         }
+    }
+
+    // ──────────────────────────────── ТОП-10 + Я (если ниже) ────────────────────────────────
+    var visibleEntries = leaderBoard.slice(0, 10);
+
+    if (myPos && myPos > 10) {
+        var myEntry = leaderBoard[myPos - 1];
+        visibleEntries.push({
+            name: myCell?.name || "You",
+            id: myCell?.id ?? null,
+            level: myEntry?.level ?? -1,
+            xp: myEntry?.xp ?? 0
+        });
+    }
+
+    boardLength += 24 * visibleEntries.length;
+
+    var scaleFactor = Math.min(
+        0.22 * canvasHeight,
+        Math.min(200, 0.3 * canvasWidth)
+    ) * 0.005;
+
+    lbCanvas.width = 200 * scaleFactor;
+    lbCanvas.height = boardLength * scaleFactor;
+    ctx.scale(scaleFactor, scaleFactor);
+
+    ctx.globalAlpha = 0.4;
+    ctx.fillStyle = "#000000";
+    ctx.fillRect(0, 0, 200, boardLength);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = "#FFFFFF";
+
+    ctx.font = "30px Ubuntu";
+    ctx.textAlign = "center";
+    ctx.fillText("Leaderboard", 100, 40);
+
+    ctx.font = "20px Ubuntu";
+    ctx.textAlign = "left";
+
+    for (var b = 0; b < visibleEntries.length; b++) {
+        var entry = visibleEntries[b];
+        var name = entry.name || "An unnamed cell";
+        if (!showName) name = "An unnamed cell";
+
+        // ──────────────────────────────── ВЫДЕЛЯЕМ СЕБЯ (ТОЛЬКО ПО ID) ────────────────────────────────
+        var isMe = myCell && entry.id === myCell.id;
+
+        if (isMe && myCell?.name) {
+            name = myCell.name;
+        }
+
+        ctx.fillStyle = isMe ? "#FFAAAA" : "#FFFFFF";
+
+        var text = (!noRanking ? (b + 1) + ". " : "") + name;
+
+        // если я ниже топ-10 — показываем реальную позицию
+        if (isMe && myPos > 10 && b === visibleEntries.length - 1) {
+            text = myPos + ". " + name;
+        }
+
+        var w = ctx.measureText(text).width;
+        var x = (w > 190) ? 5 : 100 - w / 2;
+        ctx.fillText(text, x, 70 + 24 * b);
+    }
 }
+
 
     function Cell(uid, ux, uy, usize, ucolor, uname, a) {
         this.id = uid;
