@@ -459,7 +459,8 @@ function handleWheel(event) {
     function wsSend(a) {
         ws.send(a.buffer)
     }
-
+let ping = 0;    
+let pingstamp = 0;
     function onWsOpen() {
         var msg;
         delay = 500;
@@ -474,6 +475,12 @@ function handleWheel(event) {
         wsSend(msg);
         sendNickName();
         log.info("Connection successful!")
+				     setInterval(() => {    
+if (!document.hidden) {        
+    pingstamp = Date.now();           
+	wsSend(new Uint8Array([2])); // ping        
+}      
+    }, 3000);
     }
 
     function onWsClose() {
@@ -1126,6 +1133,7 @@ function drawGameScene() {
     if (chatCanvas != null) ctx.drawImage(chatCanvas, 0, canvasHeight - chatCanvas.height - 50);
 
     userScore = Math.max(userScore, calcUserScore());
+	currentPing = ping;
 
     // ────────────────────────────────────────────────
     // Отрисовка Score + FPS
@@ -1136,6 +1144,10 @@ function drawGameScene() {
     if (window.currentFPS > 0) {
         if (displayText) displayText += '  |  ';
         displayText += 'FPS: ' + window.currentFPS;
+    }
+	if (window.currentPing > 0) {
+        if (displayText) displayText += '  |  ';
+		displayText += 'Ping: ' + currentPing;
     }
 
     if (displayText) {
