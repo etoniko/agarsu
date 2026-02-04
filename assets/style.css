@@ -444,7 +444,7 @@ input{font-size:16px;}
 .btnn{margin-top:8px;padding:8px 12px;border-radius:8px;border:none;background:#016bef;color:white;font-weight:700;cursor:pointer;}
 .btnn:hover {transform: scale(1.05);text-shadow: #ffffffb0 1px 0 10px;}
 
-#shop .avatar-section{display: flex;flex-direction: column;align-items: center;width: 240px;padding: 10px;background: #1b263b;border-radius: 20px;}
+#shop .avatar-section{display: flex;flex-direction: column;align-items: center;width: 240px;height:100%;padding: 10px;background: #1b263b;border-radius: 20px;}
 #shop .input-group{position:relative;margin-bottom:20px;}
 #shop #nicknameWrapper{position:relative}
 #shop input[type="text"],#shop input[type="password"],#shop input[type="email"]{width: 100%;padding:12px;border:1px solid #ced4da;border-radius: 25px;font-size:16px;box-sizing:border-box;transition:border-color .3s,box-shadow .3s;height:35px;}
