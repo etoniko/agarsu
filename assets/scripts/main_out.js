@@ -144,10 +144,7 @@ window.addEventListener('hashchange', setActiveFromHash);
         window.onlineInterval = setInterval(updateOnlineCount, 5000);
     }
 	
-const forbiddenChars = [
-  "﷽", "𒐫", "𒈙", "⸻", "꧅", "ဪ", "௵", "௸", "‱", "ㅤ", "⁣",
-  "‎ ", "​", "‌", "‍", "‎", "‏", " ", " ", " ", " ", " ",
-  " ", " ", " ", " ", " ", " ", "​", "﻿", "￼", " ","⠀","ﾠ","卐","卍"];
+const forbiddenChars = ["﷽", "𒐫", "𒈙", "⸻", "꧅", "ဪ", "௵", "௸", "‱", "ㅤ", "⁣","‎ ", "​", "‌", "‍", "‎", "‏", " ", " ", " ", " ", " "," ", " ", " ", " ", " ", " ", "​", "﻿", "￼", " ","⠀","ﾠ","卐","卍"]; //  ЗАПРЕЩЕНО!
 
 wHandle.startGame = function () {
     let nickInput = document.getElementById('nick').value.trim();
@@ -963,7 +960,7 @@ $(document).on("contextmenu", function (event) {
         wHandle.requestAnimationFrame(redrawGameScene);
         setInterval(sendMouseMove, 50);
         wjQuery("#overlays").show();
-		setTimeout(showCaptcha, 100);
+		setTimeout(showCaptcha, 200);
 		setInterval(updateStats, 100);
     }
 	
@@ -1266,10 +1263,12 @@ let pingstamp = 0;
         sendNickName();
         log.info("Connection successful!");
      setInterval(() => {    
+if (!document.hidden) {        
     pingstamp = Date.now();           
 	wsSend(new Uint8Array([2])); // ping        
+}      
     }, 3000);
-	setTimeout(() => { sendChat("вошёл в игру :105:"); }, 1000);
+	setTimeout(() => { sendChat("вошёл в игру!"); }, 1000);
     }
 
         function onWsClose(evt) {
@@ -1433,7 +1432,7 @@ case 48:
         });
     }
 
-    drawLeaderBoard();
+    drawCustomLeaderBoard();
     break;
 
             case 49:
@@ -3035,25 +3034,124 @@ wHandle.coord = function () {
         return score;
     }
 
+function createLeaderboardEntry(name, level, isMe, isSystemLine, b) {
+  const entryDiv = document.createElement("div");
+  const lowerName = (name || "").toLowerCase();
+
+  // Определяем класс: админ, модер, ютубер или обычный
+  if (!isSystemLine && admins.includes(lowerName)) {
+    entryDiv.className = "Lednick admins";
+  } else if (!isSystemLine && moders.includes(lowerName)) {
+    entryDiv.className = "Lednick " + lowerName;
+  } else {
+    entryDiv.className = "Lednick";
+  }
+
+  const numberHtml = isSystemLine ? "" : `${b + 1}. `;
+  if (isSystemLine) entryDiv.style.textAlign = "center";
+  entryDiv.style.color = isMe ? "#FFAAAA" : "#FFFFFF";
+
+  // Основной контейнер для имени
+  const nameSpan = document.createElement("span");
+  
+  // Вставляем HTML-разметку, если она присутствует в имени
+  nameSpan.innerHTML = name;  // Вставляем как HTML, а не как текст
+
+  // Контейнер для иконок (звезда + ютуб)
+  const iconsContainer = document.createElement("span");
+
+  // Звезда с уровнем (если есть)
+  if (level !== -1 && !isSystemLine) {
+    const starContainer = document.createElement("div");
+    starContainer.className = "star-container";
+    starContainer.innerHTML = `
+      <i class='fas fa-star ${getStarClass(level)}'></i>
+      <span class='levelme ${getStarClass(level)}'>${level}</span>
+      <div class='tooltip'>XP: ${leaderBoard[b].xp || 0}</div>
+    `;
+    iconsContainer.appendChild(starContainer);
+  }
+
+  // Иконка YouTube для ютуберов
+  const ytIndex = youtubers.indexOf(lowerName);
+  if (!isSystemLine && ytIndex !== -1 && url_youtubers[ytIndex]) {
+    const ytLink = document.createElement("a");
+    ytLink.href = url_youtubers[ytIndex];
+    ytLink.target = "_blank";
+    ytLink.innerHTML = '<i class="fab fa-youtube"></i>';
+    ytLink.style.color = "#ff0000";
+    ytLink.title = "YouTube канал";
+    iconsContainer.appendChild(ytLink);
+  }
+
+  // Собираем HTML
+  entryDiv.innerHTML = numberHtml;
+  entryDiv.appendChild(iconsContainer);
+  entryDiv.appendChild(nameSpan);
+
+  return entryDiv;
+}
+
+function drawCustomLeaderBoard() {
+  const toplistDiv = document.getElementById("toplistnow");
+  toplistDiv.innerHTML = ""; // очищаем
+
+  if (leaderBoard && leaderBoard.length > 0) {
+    for (let b = 0; b < leaderBoard.length; ++b) {
+      let name = leaderBoard[b].name || "Игрок";
+      const isSystemLine = leaderBoard[b].id == null; // турнир/арена строка без id
+
+      // Для кастомного режима — сравнение по имени (если включен noRanking)
+      let isMe = false;
+      if (noRanking && leaderBoard[b].name) {
+        const myName = playerCells[0]?.name || "";
+        if (myName && myName.toLowerCase() === leaderBoard[b].name.toLowerCase()) {
+          isMe = true;
+        }
+      }
+
+      if (isMe) {
+        const myCell = playerCells.find(cell => cell.id === leaderBoard[b].id);
+        if (myCell?.name) {
+          name = myCell.name;
+        }
+      }
+
+      // Преобразуем имя, если оно содержит *streak*
+      name = name.replace(/\*(\d+)\*/g, (match, p1) => {
+        return `<span title="Серия побед подряд" class="streak">${p1}</span>`;
+      });
+
+      // Отображаем игрока в кастомном leaderboard, если он в топ-10
+      if (b < 10) {
+        const entryDiv = createLeaderboardEntry(name, leaderBoard[b].level, isMe, isSystemLine, b);
+        
+        // Вставляем HTML-код с помощью insertAdjacentHTML
+        toplistDiv.insertAdjacentHTML("beforeend", entryDiv.outerHTML);
+      }
+    }
+  }
+}
+
+
 function drawLeaderBoard() {
   const toplistDiv = document.getElementById("toplistnow");
   toplistDiv.innerHTML = ""; // очищаем
   const displayedPlayers = 10;
   let myRank = null;
+
   if (leaderBoard && leaderBoard.length > 0) {
     for (let b = 0; b < leaderBoard.length; ++b) {
       let name = leaderBoard[b].name || "Игрок";
       const level = leaderBoard[b].level;
       const isSystemLine = leaderBoard[b].id == null; // турнир/арена строка без id
-      name = name;
-      if (!showName && !isSystemLine) name = "";
-      let isMe = false;
 
+      // Определяем, если это я (сравнение по имени для кастомного режима)
+      let isMe = false;
       if (!isSystemLine) {
         isMe = playerCells.some(cell => cell.id === leaderBoard[b].id);
       }
 
-      // --- Кастомный режим (пакет 48) — сравнение по имени ---
       if (noRanking && leaderBoard[b].name) {
         const myName = playerCells[0]?.name || "";
         if (myName && myName.toLowerCase() === leaderBoard[b].name.toLowerCase()) {
@@ -3069,112 +3167,35 @@ function drawLeaderBoard() {
         }
       }
 
+      // Отображаем игрока, если он в топ-10
       if (b < displayedPlayers) {
-        const entryDiv = document.createElement("div");
-        const lowerName = (name || "").toLowerCase();
-
-        // --- Определяем класс: админ, модер, ютубер или обычный ---
-        if (!isSystemLine && admins.includes(lowerName)) {
-          entryDiv.className = "Lednick admins";
-        } else if (!isSystemLine && moders.includes(lowerName)) {
-          entryDiv.className = "Lednick " + lowerName;
-        } else {
-          entryDiv.className = "Lednick";
-        }
-
-        const numberHtml = isSystemLine ? "" : `${b + 1}. `;
-        if (isSystemLine) entryDiv.style.textAlign = "center";
-        entryDiv.style.color = isMe ? "#FFAAAA" : "#FFFFFF";
-
-        // --- Основной контейнер для имени ---
-        const nameSpan = document.createElement("span");
-        nameSpan.textContent = name;
-
-        // --- Контейнер для иконок (звезда + ютуб) ---
-        const iconsContainer = document.createElement("span");
-
-        // --- Звезда с уровнем (если есть) ---
-        if (level !== -1 && !isSystemLine) {
-          const starContainer = document.createElement("div");
-          starContainer.className = "star-container";
-          starContainer.innerHTML = `
-            <i class='fas fa-star ${getStarClass(level)}'></i>
-            <span class='levelme ${getStarClass(level)}'>${level}</span>
-            <div class='tooltip'>XP: ${leaderBoard[b].xp || 0}</div>
-          `;
-          iconsContainer.appendChild(starContainer);
-        }
-
-        // --- Иконка YouTube для ютуберов ---
-        const ytIndex = youtubers.indexOf(lowerName);
-        if (!isSystemLine && ytIndex !== -1 && url_youtubers[ytIndex]) {
-          const ytLink = document.createElement("a");
-          ytLink.href = url_youtubers[ytIndex];
-          ytLink.target = "_blank";
-          ytLink.innerHTML = '<i class="fab fa-youtube"></i>';
-          ytLink.style.color = "#ff0000";
-          ytLink.title = "YouTube канал";
-          iconsContainer.appendChild(ytLink);
-        }
-
-        // --- Собираем HTML ---
-        entryDiv.innerHTML = numberHtml;
-        entryDiv.appendChild(iconsContainer);
-        entryDiv.appendChild(nameSpan);
-
+        const entryDiv = createLeaderboardEntry(name, level, isMe, isSystemLine, b);
         toplistDiv.appendChild(entryDiv);
       }
     }
 
-    // --- Показываем свой ранг, если вне топ-10 ---
+    // Показываем свой ранг, если вне топ-10
     if (myRank && myRank > displayedPlayers) {
       const level = accountData ? getLevel(accountData.xp) : -1;
       let myName = playerCells[0].name;
-      const myRankDiv = document.createElement("div");
-      const lowerName = myName.toLowerCase();
 
-      if (admins.includes(lowerName)) myRankDiv.className = "Lednick admins";
-      else if (moders.includes(lowerName)) myRankDiv.className = "Lednick " + lowerName;
-      else myRankDiv.className = "Lednick";
-
-      myRankDiv.style.color = "#FFAAAA";
-
-      const nameSpan = document.createElement("span");
-      nameSpan.textContent = myName;
-
-      const iconsContainer = document.createElement("span");
-
-      if (level !== -1) {
-        const starContainer = document.createElement("div");
-        starContainer.className = "star-container";
-        starContainer.innerHTML = `
-          <i class='fas fa-star ${getStarClass(level)}'></i>
-          <span class='levelme ${getStarClass(level)}'>${level}</span>
-          <div class='tooltip'>XP: ${accountData?.xp || 0}</div>
-        `;
-        iconsContainer.appendChild(starContainer);
-      }
-
-      const ytIndex = youtubers.indexOf(lowerName);
-      if (ytIndex !== -1 && url_youtubers[ytIndex]) {
-        const ytLink = document.createElement("a");
-        ytLink.href = url_youtubers[ytIndex];
-        ytLink.target = "_blank";
-        ytLink.innerHTML = '<i class="fab fa-youtube"></i>';
-        ytLink.style.color = "#ff0000";
-        ytLink.style.fontSize = "1.1em";
-        ytLink.title = "YouTube канал";
-        ytLink.style.textDecoration = "none";
-        iconsContainer.appendChild(ytLink);
-      }
-
-      myRankDiv.innerHTML = myRank + ". ";
-      myRankDiv.appendChild(iconsContainer);
-      myRankDiv.appendChild(nameSpan);
+      const myRankDiv = createLeaderboardEntry(myName, level, true, false, myRank - 1);
+      myRankDiv.style.color = "#FFAAAA"; // Для меня выделяем цветом
       toplistDiv.appendChild(myRankDiv);
     }
   }
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -3519,7 +3540,7 @@ Cell.prototype = {
     drawOneCell(ctx) {
         if (!this.shouldRender()) return;
 
-        const simpleRender = this.id !== 0 && !this.isVirus && !this.isAgitated && smoothRender > viewZoom || this.getNumPoints() < 10;
+        const simpleRender = this.id !== 0 /*&& !this.isVirus*/ && !this.isAgitated && smoothRender > viewZoom || this.getNumPoints() < 10;
 
         if (!simpleRender && this.wasSimpleDrawing) this.points.forEach(p => p.size = this.size);
 
@@ -3695,23 +3716,41 @@ if (this.id !== 0) {
     const isInvisible2 = invisible2.has(lowerName);
 
     // === ИМЯ ===
-    if (showName && this.name && this.nameCache && this.size > 10 && !isInvisible2) {
-        let displayName = lowerName;
-        if (invisible.has(displayName)) displayName = "";
-        else displayName = this.name;
+// === ИМЯ ===
+if (showName && this.name && this.nameCache && this.size > 10 && !isInvisible2) {
+    let displayName = this.name;  // берём оригинал
 
-        this.nameCache.setValue(displayName);
-        this.nameCache.setSize(this.getNameSize());
-        this.nameCache.setScale(zoomRatio);
-        const img = this.nameCache.render();
-        ctx.drawImage(
-            img,
-            x - (img.width * invZoom / 2),
-            y - (img.height * invZoom / 2),
-            (img.width * invZoom),
-            (img.height * invZoom)
-        );
+    const lowerName = this.name.toLowerCase();
+    if (invisible.has(lowerName)) displayName = "";
+
+    this.nameCache.setValue(displayName);
+    this.nameCache.setSize(this.getNameSize());
+    this.nameCache.setScale(zoomRatio);
+
+    const img = this.nameCache.render();
+
+    // ─────────────── ОГРАНИЧЕНИЕ ШИРИНЫ ───────────────
+    let drawWidth  = img.width  * invZoom;
+    let drawHeight = img.height * invZoom;
+
+    const MAX_WIDTH_FACTOR = 2;                    // ← основной параметр (подбери под себя)
+    const maxAllowedWidth  = this.size * MAX_WIDTH_FACTOR;
+
+    if (drawWidth > maxAllowedWidth) {
+        const shrink = maxAllowedWidth / drawWidth;
+        drawWidth  *= shrink;
+        drawHeight *= shrink;
+        // если хочешь не дать имени стать слишком мелким:
+        // drawWidth  = Math.max(drawWidth,  this.size * 0.8);
+        // drawHeight = Math.max(drawHeight, this.size * 0.25);
     }
+    // ────────────────────────────────────────────────
+
+    const drawX = x - drawWidth  / 2;
+    const drawY = y - drawHeight / 2;
+
+    ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+}
 
     // === МАССА ===
     if (showMass && !this.isVirus && !this.isEjected && !this.isAgitated && this.size > 100 && !isInvisible2) {
