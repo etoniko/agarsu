@@ -3259,7 +3259,7 @@ function drawLeaderBoard() {
     splitIcon.src = "assets/photo/split.png";
     ejectIcon.src = "assets/photo/eject.png";
     wHandle.connect = wsConnect;
-	wHandle.setNick = function (arg) {setserver(SELECTED_SERVER); hideOverlays(); userNickName = arg; sendNickName(); wjQuery("#statics").hide(); maxScore = 0;};
+	wHandle.setNick = function (arg) {setserver(SELECTED_SERVER); hideOverlays(); userNickName = null; sendNickName(); wjQuery("#statics").hide(); maxScore = 0;};
     wHandle.spectate = function () { setserver(SELECTED_SERVER);  userNickName = null; hideOverlays(); wjQuery("#statics").hide();};
 	
 	// === Настройки по умолчанию ===
