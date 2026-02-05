@@ -1173,6 +1173,28 @@ function isMouseOverElement(element) {
     }
 
     let currentWebSocketUrl = null;
+	let wsInactivityTimeout = null;
+
+// Время, через которое нужно отключить WS, если вкладка свернута (10 минут)
+const MAX_INACTIVE_TIME = 10 * 60 * 1000; // 600_000 мс
+
+// Слушаем событие смены видимости вкладки
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        // Вкладка свернута — запускаем таймер отключения
+        wsInactivityTimeout = setTimeout(() => {
+            console.log("Вкладка была свернута > 10 минут. Закрываем WS.");
+            if (ws) ws.close();
+        }, MAX_INACTIVE_TIME);
+    } else {
+        // Вкладка снова активна — отменяем таймер
+        if (wsInactivityTimeout) {
+            clearTimeout(wsInactivityTimeout);
+            wsInactivityTimeout = null;
+            console.log("Вкладка активна. Таймер отключения WS сброшен.");
+        }
+    }
+});
 
     function showConnecting(token) {
     chekstats();
