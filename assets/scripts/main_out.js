@@ -3299,6 +3299,7 @@ let showSkin = true,
     showGlow = true,
 	confirmCloseTab = false;
 	let showAdultContent = false; // +18: убирает антимат и блюр
+	let fixedCell = false; 
 
 // === Функции для чекбоксов ===
 wHandle.setSkins = function(arg){ showSkin = arg; };
@@ -3311,6 +3312,7 @@ wHandle.setNoBorder = function(arg){ closebord = arg; };
 wHandle.setChatHide = function(arg){ hideChat = arg; };
 wHandle.setGlow = function(arg){ showGlow = arg; };
 wHandle.setAdultContent = function(arg) {showAdultContent = arg;};
+wHandle.setFixedCell = function(arg){fixedCell = arg;};
 wHandle.setConfirmCloseTab = function(arg){confirmCloseTab = arg;};
 
 
@@ -3343,6 +3345,7 @@ wjQuery(window).on('load', function() {
                 case 9: $(this).prop("checked", showGlow); break;
                 case 10: $(this).prop("checked", showAdultContent); break;
                 case 11: $(this).prop("checked", confirmCloseTab); break; // новый чекбокс
+			    case 12: $(this).prop("checked", fixedCell); break; 
             }
         }
     });
@@ -3401,6 +3404,9 @@ Cell.prototype = {
     isEjected: false,
     isAgitated: false,
     wasSimpleDrawing: true,
+	fixedName: null,
+    fixedColor: null,
+
 
     destroy() {
         const tmpIndex = nodelist.indexOf(this);
@@ -3414,22 +3420,34 @@ Cell.prototype = {
         }
 
         this.destroyed = true;
+		this.fixedName = null;
+        this.fixedColor = null;
     },
 
     getNameSize() {
         return Math.max(~~(0.3 * this.size), 24);
     },
 
-    setName(name) {
-        this.name = name;
-        const size = this.getNameSize();
-        if (!this.nameCache) {
-            this.nameCache = new UText(size, "#FFFFFF", true, "#000000");
-        } else {
-            this.nameCache.setSize(size);
+setName(name) {
+    if (fixedCell) {
+        if (this.fixedName === null) {
+            this.fixedName = name;   // фиксируем один раз
         }
-        this.nameCache.setValue(name);
-    },
+        name = this.fixedName;
+    } else {
+        this.fixedName = null;       // режим выключен — сброс
+    }
+
+    this.name = name;
+
+    const size = this.getNameSize();
+    if (!this.nameCache) {
+        this.nameCache = new UText(size, "#FFFFFF", true, "#000000");
+    } else {
+        this.nameCache.setSize(size);
+    }
+    this.nameCache.setValue(name);
+},
 
     setSize(size) {
         this.nSize = size;
@@ -3542,9 +3560,17 @@ Cell.prototype = {
     },
 
     // === НОВОЕ: возвращает цвет, с учётом глобальной опции showColor === false
-    getEffectiveColor() {
-        return showColor ? (this.color || "#FFFFFF") : "#AAAAAA";
-    },
+getEffectiveColor() {
+    if (fixedCell) {
+        if (this.fixedColor === null) {
+            this.fixedColor = this.color || "#FFFFFF";
+        }
+        return showColor ? this.fixedColor : "#AAAAAA";
+    }
+
+    this.fixedColor = null;
+    return showColor ? (this.color || "#FFFFFF") : "#AAAAAA";
+},
 
     // getStrokeColor теперь использует getEffectiveColor (чтобы обводка не показывала "старый" цвет)
     getStrokeColor() {
