@@ -1262,11 +1262,8 @@ let pingstamp = 0;
         wsSend(msg);
         sendNickName();
         log.info("Connection successful!");
-     setInterval(() => {    
-if (!document.hidden) {        
-    pingstamp = Date.now();           
-	wsSend(new Uint8Array([2])); // ping        
-}      
+     setInterval(() => {              
+	wsSend(new Uint8Array([2])); // ping          
     }, 3000);
 	setTimeout(() => { sendChat("вошёл в игру!"); }, 1000);
     }
