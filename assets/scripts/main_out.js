@@ -873,7 +873,7 @@ const clearAllIntervals = () => {
 
 // при уходе с вкладки
 $(window).on("blur visibilitychange", () => {
-    if (document.hidden) clearAllIntervals();
+    clearAllIntervals();
 });
 
 
@@ -912,7 +912,7 @@ $(window).on("blur visibilitychange", () => {
         }
     });
 
-    $(document).on("mouseup", function (event) {
+    $(window).on("mouseup", function (event) {
         switch (event.which) {
             case 1: // левая
                 leftDown = false;
@@ -931,7 +931,9 @@ $(window).on("blur visibilitychange", () => {
 
 
 
-
+$(window).on("mouseleave", () => {
+    clearAllIntervals();
+});
 
 $(document).on("contextmenu", function (event) {
     if (enableMouseClicks) event.preventDefault();
