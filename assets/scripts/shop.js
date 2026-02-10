@@ -50,6 +50,25 @@ function blockForbiddenChars(input) {
     }
   });
 }
+const emailInput = document.getElementById("email");
+emailInput.addEventListener("input", () => {
+  hideError('emailError');
+  calculateCost(); // чтобы кнопка не активировалась без валидного email
+});
+
+emailInput.addEventListener("blur", () => {
+  const email = emailInput.value.trim();
+  if (!email) {
+    showError('emailError', 'Email обязателен');
+    return;
+  }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    showError('emailError', 'Некорректный email');
+  } else {
+    hideError('emailError');
+  }
+});
 
 const nicknameInput = document.getElementById("nickname");
 blockForbiddenChars(nicknameInput);
@@ -255,6 +274,8 @@ function calculateCost() {
 
   const calculator = document.getElementById('calculator');
   const buyButton = document.getElementById('buyButton');
+  const email = emailInput.value.trim();
+  const emailValid = email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     if (total > 0 && (password || file || invisibleNickCheckbox.checked)) {
     calculator.style.display = 'block';
     document.getElementById('totalAmount').textContent = `Итого: ${total} ₽`;
@@ -283,6 +304,17 @@ document.getElementById("paymentForm").addEventListener("submit", async (e) => {
   const password = passwordInput.value.trim();
   const file = fileInput.files[0];
   const serviceType = document.querySelector('input[name="serviceType"]:checked')?.value || '';
+  const email = emailInput.value.trim();
+  
+  if (!email) {
+    showError('formError', 'Введите email для получения чека');
+    return;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showError('formError', 'Некорректный email');
+    return;
+  }
+
   if (!nickname) {
     showError('formError', 'Введите ник/клан.');
     return;
@@ -301,6 +333,7 @@ document.getElementById("paymentForm").addEventListener("submit", async (e) => {
   formData.append("name", nickname);
   formData.append("amount", amount);
   formData.append("serviceType", serviceType);
+  formData.append("email", email);
   if (password) formData.append("password", password);
   if (invisibleNickCheckbox.checked) formData.append("invisible", "1");
 
@@ -367,4 +400,3 @@ togglePassword.addEventListener("click", () => {
 
 
 invisibleNickCheckbox.addEventListener("change", calculateCost);
-
