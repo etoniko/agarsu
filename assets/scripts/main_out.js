@@ -21,8 +21,9 @@
 
                                 // Обновляем каждый player в stats
                                 stats.forEach(player => {
-                                    const skinId = skinsMap.get(player.nick.toLowerCase()) || 'PPFtwqH'; // Используем nick напрямую для skinId
-                                    player.skin = skinId; // Установка skin для игрока
+const normalizedNick = normalizeNick(player.nick);           // ← правильно!
+            const skinId = skinsMap.get(normalizedNick) || 'PPFtwqH';   // теперь ищет по нормализованному нику
+            player.skin = skinId;
                                 });
 
                                 displayStats(stats);
