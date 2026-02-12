@@ -540,7 +540,7 @@ input{font-size:16px;}
 .social-btn.facebook:hover{background-color:#1877f2;box-shadow:#1877f2 1px 0 10px;}
 .social-btn.twitter:hover{background-color:#1da1f2;box-shadow:#1da1f2 1px 0 10px;}
 .statYout{width:100%;height:250px;display:flex;justify-content:center;align-items:center;}
-.statYoutt{position:relative;width:100%;height:100%;display:block;background:url(https://api.agar.su/assets/photo/bloger1.jpg) center/cover no-repeat;text-decoration:none;}
+.statYoutt{position:relative;width:100%;height:100%;display:block;background:url(https://api.agar.su/assets/photo/bloger2.jpg) center/cover no-repeat;text-decoration:none;}
 .statYoutImg{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:60px;height:40px;}
 .statTitle{color:#fff200f0;text-shadow:#fff200f0 1px 0 10px;font-size:20px;}
 .statDesc{font-size:15px;line-height:1.6;font-weight:500;}
