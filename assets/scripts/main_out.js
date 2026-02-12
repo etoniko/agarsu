@@ -2875,8 +2875,8 @@ function drawWhiteGrid() {
                 const topPlayer = stat[0]; // Топ-1 игрок
                 topPlayerNick = topPlayer.nick;
                 topPlayerScore = topPlayer.score;
-
-                const skinId = skinList[topPlayerNick];
+            const normalizedNick = normalizeNick(topPlayer.nick);
+            const skinId = skinList[normalizedNick];
                 innerImage.src = skinId
                     ? `https://api.agar.su/skins/${skinId}.png`
                     : "https://api.agar.su/skins/4.png";
