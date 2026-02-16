@@ -2237,7 +2237,7 @@ function updateNodes(reader) {
             if (type === 1) {
                 posX = leftPos + (rightPos * 2) * normalizeFractlPart(nodeid);
                 posY = topPos + (bottomPos * 2) * normalizeFractlPart(nodeid * nodeid);
-                size = foodMinSize + nodeid % ((foodMaxSize - foodMinSize) + 1);
+                //size = foodMinSize + nodeid % ((foodMaxSize - foodMinSize) + 1);
             }
             else {
                 if (type === 0) playerId = reader.uint32();
@@ -3614,7 +3614,7 @@ getEffectiveColor() {
 
         ctx.beginPath();
         if (simpleRender) {
-            ctx.arc(this.x, this.y, this.size, 0, 2 * Math.PI);
+            ctx.arc(this.x, this.y, this.size + 20, 0, 2 * Math.PI);
         } else {
             this.movePoints();
             ctx.moveTo(this.points[0].x, this.points[0].y);
