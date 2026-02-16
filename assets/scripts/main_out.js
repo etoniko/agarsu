@@ -1627,7 +1627,7 @@ case 48:
 
 let badWordsSet; // Используем Set вместо массива
 
-fetch('/word.txt')
+fetch('/word.txt?1')
     .then(response => response.text())
     .then(text => {
         const words = text.split('\n').map(word => word.trim().toLowerCase());
