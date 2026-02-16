@@ -3614,7 +3614,7 @@ getEffectiveColor() {
 
         ctx.beginPath();
         if (simpleRender) {
-            ctx.arc(this.x, this.y, this.size + 20, 0, 2 * Math.PI);
+            ctx.arc(this.x, this.y, this.size, 0, 2 * Math.PI);
         } else {
             this.movePoints();
             ctx.moveTo(this.points[0].x, this.points[0].y);
