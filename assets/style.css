@@ -317,7 +317,7 @@ input{font-size:16px;}
 
 .score-info{position:absolute;font-size:12px;display:flex;transform:translate(-50%);top:10px;gap:5px;}
 .scorr{padding:5px 10px 5px 10px;border-radius:20px 20px 20px 20px;border:solid #ffffff26 1px;background:rgba(0, 0, 0, .3);}
-.cell-length{background:#1a73e8;padding:0px 4px 0px 4px;height:11px;border-radius:10px 10px 10px 10px;font-size:8px;margin-left:-13px;}
+.cell-length{background:#1a73e8;padding: 0px 4px 0px 4px;height: 11px;border-radius:10px 10px 10px 10px;font-size: 9px;margin-left:-13px;}
 .server-containers{border-radius:25px;flex-direction:column;align-items:center;justify-content:center;position:fixed;width:350px;z-index:1000;transition:height 0.3s ease, transform 0.3s ease;height:0px;	color:black;	align-items:center;}
 .server-containers.visible{height:200px;transform:translateX(0);}
 .avatar-container{transition:opacity 0.3s ease;}
