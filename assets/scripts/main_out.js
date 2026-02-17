@@ -2795,61 +2795,47 @@ function drawGradientGrid() {
   ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 }
 
-    // Старая версия сетки
-function drawBlackGrid() {
-    ctx.fillStyle = "#101010";
+function drawClassicGrid(bgColor, lineColor) {
+    ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
     ctx.save();
     ctx.scale(viewZoom, viewZoom);
-    const a = canvasWidth / viewZoom;
-    const b = canvasHeight / viewZoom;
 
-    // Устанавливаем цвет линий в белый
-    ctx.strokeStyle = "white";
-    ctx.globalAlpha = 0.1; // Увеличил alpha чтобы лучше было видно
+    const vw = canvasWidth  / viewZoom;
+    const vh = canvasHeight / viewZoom;
 
-    ctx.beginPath();
-    for (let c = -.5 + (-nodeX + a / 2) % 50; c < a; c += 50) {
-        ctx.moveTo(c, 0);
-        ctx.lineTo(c, b);
-    }
-    ctx.stroke();
+    ctx.strokeStyle = lineColor;
+    ctx.globalAlpha  = 0.12;         // чуть ярче — лучше видно
+    ctx.lineWidth    = 1 / viewZoom; // сохраняем визуальную толщину ~1px
 
     ctx.beginPath();
-    for (let c = -.5 + (-nodeY + b / 2) % 50; c < b; c += 50) {
-        ctx.moveTo(0, c);
-        ctx.lineTo(a, c);
+
+    // вертикальные
+    let x = -0.5 + (-nodeX + vw / 2) % 50;
+    for (; x < vw; x += 50) {
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, vh);
     }
+
+    // горизонтальные
+    let y = -0.5 + (-nodeY + vh / 2) % 50;
+    for (; y < vh; y += 50) {
+        ctx.moveTo(0, y);
+        ctx.lineTo(vw, y);
+    }
+
     ctx.stroke();
     ctx.restore();
 }
 
+// тогда вместо двух функций:
+function drawBlackGrid() {
+    drawClassicGrid("#101010", "white");
+}
+
 function drawWhiteGrid() {
-    ctx.fillStyle = "#F2FBFF";
-    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-    ctx.save();
-    ctx.scale(viewZoom, viewZoom);
-    const a = canvasWidth / viewZoom;
-    const b = canvasHeight / viewZoom;
-
-    // Устанавливаем цвет линий в белый
-    ctx.strokeStyle = "#111111";
-    ctx.globalAlpha = 0.1; // Увеличил alpha чтобы лучше было видно
-
-    ctx.beginPath();
-    for (let c = -.5 + (-nodeX + a / 2) % 50; c < a; c += 50) {
-        ctx.moveTo(c, 0);
-        ctx.lineTo(c, b);
-    }
-    ctx.stroke();
-
-    ctx.beginPath();
-    for (let c = -.5 + (-nodeY + b / 2) % 50; c < b; c += 50) {
-        ctx.moveTo(0, c);
-        ctx.lineTo(a, c);
-    }
-    ctx.stroke();
-    ctx.restore();
+    drawClassicGrid("#F2FBFF", "#111111");
 }
 
 
