@@ -3600,6 +3600,8 @@ getEffectiveColor() {
         ctx.save();
         this.drawTime = timestamp;
         this.updatePos();
+		let renderSize = this.size;
+if (renderSize === 0) renderSize = 20;
 
         ctx.lineWidth = closebord ? 0 : 10;
         ctx.lineCap = "round";
@@ -3614,7 +3616,7 @@ getEffectiveColor() {
 
         ctx.beginPath();
         if (simpleRender) {
-            ctx.arc(this.x, this.y, this.size, 0, 2 * Math.PI);
+            ctx.arc(this.x, this.y, renderSize, 0, 2 * Math.PI);
         } else {
             this.movePoints();
             ctx.moveTo(this.points[0].x, this.points[0].y);
