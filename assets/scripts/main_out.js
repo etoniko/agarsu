@@ -2806,7 +2806,7 @@ function drawClassicGrid(bgColor, lineColor) {
     const vh = canvasHeight / viewZoom;
 
     ctx.strokeStyle = lineColor;
-    ctx.globalAlpha  = 0.12;         // чуть ярче — лучше видно
+    ctx.globalAlpha  = 0.1;         // чуть ярче — лучше видно
     ctx.lineWidth    = 1 / viewZoom; // сохраняем визуальную толщину ~1px
 
     ctx.beginPath();
