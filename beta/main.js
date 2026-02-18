@@ -1558,7 +1558,8 @@ drawBackground() {
                 view,
                 width: innerWidth,
                 height: innerHeight,
-                antialias: false,
+                antialias: true,
+				resolution: window.devicePixelRatio || 1,
                 powerPreference: 'high-performance'
             })
             this.stage = new PIXI.Container()
