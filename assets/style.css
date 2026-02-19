@@ -47,6 +47,88 @@
         bottom: 0;
     }
 }
+.rating-home {
+    width: 300px;
+    border-radius: 25px;
+    color: white;
+    position: absolute;
+    right: 8%;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+}
+
+/* Верхняя синяя часть */
+.rating-home .rating-header {
+    background: #016bef;
+    font-size: 24px;
+    text-align: center;
+    padding: 15px 20px;
+    font-weight: bold;
+}
+
+/* Нижняя тёмная часть */
+.rating-home .rating-content {
+    background: #0e172c;
+    padding: 10px 20px 20px 20px;
+}
+
+/* Заголовки секций */
+.rating-home .section-title {
+    font-size: 16px;
+    width: 110px;
+    text-align: center;
+    background-color: #1b263b;
+    padding: 6px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+    margin: 5px 0;
+}
+
+/* Строка рейтинга */
+.rating-home .rating-row {
+    display: grid;
+    grid-template-columns: 1fr 3fr 1fr 1fr;
+    align-items: center;
+    justify-items: center;
+    margin-bottom: 5px;
+}
+
+/* Цвета мест */
+.rating-home .gold {
+    color: gold;
+}
+
+.rating-home .silver {
+    color: #a8a7a4;
+}
+
+.rating-home .bronze {
+    color: #cb7821;
+}
+
+/* Аватар */
+.rating-home .avatar {
+    background-size: cover;
+    width: 32px;
+    height: 32px;
+    border: solid 2px;
+    border-radius: 50%;
+    margin-bottom: 2px;
+}
+
+/* Маленькие ПК */
+@media (max-width: 1700px) {
+    .rating-home {
+        right: 4%;
+    }
+}
+
+/* Мобильные */
+@media (max-width: 768px) {
+    .rating-home {
+        display: none;
+    }
+}
 .cosmos{background:url(/assets/photo/cosmos.png) !important; font-weight:lighter;}
 .rizwer{background: linear-gradient(90deg,rgba(2, 0, 36, 1) 0%, rgba(9, 9, 121, 1) 35%, rgba(0, 212, 255, 1) 100%) !important;}
 #captcha-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background-color:rgba(0, 0, 0, 0.5);display:flex;justify-content:center;align-items:center;z-index:9999;}
