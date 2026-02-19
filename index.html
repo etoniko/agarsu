@@ -100,21 +100,43 @@
 		<script>
 async function loadTop() {
     try {
-        const response = await fetch('https://ffa.agar.su:6001/checkStats');
-        const data = await response.json();
+        const [statsRes, skinRes] = await Promise.all([
+            fetch('https://ffa.agar.su:6001/checkStats'),
+            fetch('https://api.agar.su/skinlist.txt')
+        ]);
+
+        const stats = await statsRes.json();
+        const skinText = await skinRes.text();
+
+        // === создаём словарь скинов ===
+        const skinMap = {};
+
+        skinText.split('\n').forEach(line => {
+            const parts = line.trim().split(':');
+            if (parts.length === 2) {
+                const nick = parts[0].trim();
+                const code = parts[1].trim();
+                skinMap[nick] = code;
+            }
+        });
 
         const container = document.getElementById('topswindow');
         container.innerHTML = '';
 
         const isClan = nick => /^\[[^\]]+\]/.test(nick.trim());
 
-        const players = data.filter(p => !isClan(p.nick)).slice(0, 3);
-        const clans   = data.filter(p => isClan(p.nick)).slice(0, 3);
+        const players = stats.filter(p => !isClan(p.nick)).slice(0, 3);
+        const clans   = stats.filter(p => isClan(p.nick)).slice(0, 3);
 
         function createRow(entry, index) {
             const medal =
                 index === 0 ? 'gold' :
                 index === 1 ? 'silver' : 'bronze';
+
+            const skinCode = skinMap[entry.nick];
+            const skinUrl = skinCode
+                ? `https://api.agar.su/skins/${skinCode}.png`
+                : `https://api.agar.su/skins/0002.png`;
 
             const row = document.createElement('div');
             row.className = 'rating-row ' + medal;
@@ -125,7 +147,7 @@ async function loadTop() {
                 <div>${entry.nick}</div>
                 <div>${entry.score}</div>
                 <div class="avatar"
-                     style="background-image: url('https://api.agar.su/skins/${entry.skin || '0002'}.png');">
+                     style="background-image: url('${skinUrl}');">
                 </div>
             `;
 
@@ -158,7 +180,6 @@ async function loadTop() {
 }
 
 loadTop();
-setInterval(loadTop, 10000); // автообновление
 </script>
 </div>
 	  <div class="center">
@@ -566,6 +587,7 @@ setInterval(loadTop, 10000); // автообновление
   </div>
 </body>
 </html>
+
 
 
 
