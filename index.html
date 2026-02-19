@@ -131,15 +131,14 @@ function normalizeNick(nick) {
         return n.toLowerCase();
     }
 }
-        skinText.split('\n').forEach(line => {
-            const parts = line.trim().split(':');
-            if (parts.length === 2) {
-                const nick = parts[0].trim();
-                const code = parts[1].trim();
-                skinMap[nick] = code;
-            }
-        });
-
+skinText.split('\n').forEach(line => {
+    const parts = line.trim().split(':');
+    if (parts.length === 2) {
+        const nick = normalizeNick(parts[0]);
+        const code = parts[1].trim();
+        skinMap[nick] = code;
+    }
+});
         const container = document.getElementById('topswindow');
         container.innerHTML = '';
 
@@ -608,6 +607,7 @@ loadTop();
   </div>
 </body>
 </html>
+
 
 
 
