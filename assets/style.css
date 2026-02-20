@@ -60,9 +60,9 @@
 /* Верхняя синяя часть */
 .rating-home .rating-header {
     background: #016bef;
-    font-size: 24px;
+    font-size: 22px;
     text-align: center;
-    padding: 15px 20px;
+    padding: 10px 20px;
     font-weight: bold;
 }
 
