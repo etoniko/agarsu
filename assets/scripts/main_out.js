@@ -1286,6 +1286,7 @@ let pingstamp = 0;
         msg.setUint32(1, 0, true);
         wsSend(msg);
         sendNickName();
+		sendHideLevelFlag();
         log.info("Connection successful!");
      setInterval(() => {
         pingstamp = Date.now();        
@@ -2403,6 +2404,15 @@ const getColorId = (hex) => {
             wsSend(msg)
         }
     }
+	function sendHideLevelFlag() {
+    if (!wsIsOpen()) return;
+
+    const buf = new ArrayBuffer(2);
+    const dv = new DataView(buf);
+    dv.setUint8(0, 200);           // свободный opcode, например 200
+    dv.setUint8(1, hideMyLevel ? 1 : 0);
+    wsSend(buf);
+}
 
 
 
@@ -3284,9 +3294,10 @@ let showSkin = true,
     closebord = false,
     enableMouseClicks = false,
     showGlow = true,
-	confirmCloseTab = false;
-	let showAdultContent = false; // +18: убирает антимат и блюр
-	let fixedCell = false; 
+	confirmCloseTab = false,
+    showAdultContent = false,
+    fixedCell = false,
+	hideMyLevel = false;
 
 // === Функции для чекбоксов ===
 wHandle.setSkins = function(arg){ showSkin = arg; };
@@ -3301,6 +3312,7 @@ wHandle.setGlow = function(arg){ showGlow = arg; };
 wHandle.setAdultContent = function(arg) {showAdultContent = arg;};
 wHandle.setFixedCell = function(arg){fixedCell = arg;};
 wHandle.setConfirmCloseTab = function(arg){confirmCloseTab = arg;};
+wHandle.setHideMyLevel = function(arg) { hideMyLevel = arg; };
 
 
 // === Обработчик закрытия вкладки ===
@@ -3339,14 +3351,26 @@ wjQuery(window).on('load', function() {
 
     wjQuery(".save").trigger("change");
 
-    wjQuery(".save").on("change", function(){
-        const id = $(this).data("box-id");
-        const value = $(this).prop("checked");
-        setCookie("checkbox-" + id, value, 365);
+wjQuery(".save").on("change", function(){
+    const id = $(this).data("box-id");
+    const value = $(this).prop("checked");
+    setCookie("checkbox-" + id, value, 365);
 
-        if (id == 10) wHandle.setAdultContent(value);
-        if (id == 11) wHandle.setConfirmCloseTab(value); // применяем настройку
-    });
+    // существующие
+    if (id == 10) wHandle.setAdultContent(value);
+    if (id == 11) wHandle.setConfirmCloseTab(value);
+    if (id == 12) wHandle.setFixedCell(value);
+
+    // новая
+    if (id == 13) {
+        wHandle.setHideMyLevel(value);
+        
+        // сразу отправляем серверу, если уже подключены
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            sendHideLevelFlag();
+        }
+    }
+});
 });
 
 
