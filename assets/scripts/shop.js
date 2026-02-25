@@ -249,12 +249,12 @@ function calculateCost() {
     return;
   }
 
-  let passwordCost = password ? 50 : 0;
-  let invisibleCost = invisibleNickCheckbox.checked ? 250 : 0;
+  let passwordCost = password ? 100 : 0;
+  let invisibleCost = invisibleNickCheckbox.checked ? 500 : 0;
   let skinCost = 0;
   let skinText = 'Скин: 0 ₽';
   if (file) {
-    skinCost = file.type === 'image/gif' ? 5000 : 50;
+    skinCost = file.type === 'image/gif' ? 10000 : 100;
     skinText = `Скин: ${skinCost * multiplier} ₽ (${file.type === 'image/gif' ? 'GIF' : 'PNG/JPG'})`;
   }
     const total = (passwordCost + skinCost + invisibleCost) * multiplier;
@@ -400,5 +400,3 @@ togglePassword.addEventListener("click", () => {
 
 
 invisibleNickCheckbox.addEventListener("change", calculateCost);
-
-
