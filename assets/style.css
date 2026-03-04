@@ -314,7 +314,7 @@ i:hover{cursor:pointer;}
 .sidebar .menu-item{width:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;color:white;cursor:pointer;transition:background-color 0.3s;padding:5px;}
 .main-content{width:100%;background-color:#0e172c;border-radius:25px 25px 0px 0px;border:#ffffff14 solid 1px;height:100%;	padding:20px 5px 0px 5px;}
 .center{z-index:3;padding:5px;flex-direction:column-reverse;display:flex;align-items:center;justify-content:center;height:530px;width:100%;}	
-.overlays{z-index:1;position:absolute;left:0;right:0;top:0;bottom:0;background-color:rgba(0, 0, 0, 0.6);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);	display:flex; gap:50px; align-items:center;} 
+.overlays{z-index:1;position:absolute;left:0;right:0;top:0;bottom:0;background-color:rgba(0, 0, 0, 0.6);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);	display:flex;align-items:center;} 
 .sidebar .menu-item i{font-size:18px;padding:5px;} 
 .sidebar .menu-item .label{font-size:11px;} 
 .sidebar .menu-item.active{background-color:#171717;border-bottom:solid;} 
@@ -343,7 +343,7 @@ body{font-family:'Roboto', sans-serif;display:flex;height:100%;width:100%;color:
 .sidebar .menu-item{width:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;color:white;font-size:18px;cursor:pointer;transition:background-color 0.3s;gap:5px;padding:10px;}
 .main-content{height:430px;width:820px;padding:20px;background-color:#0e172c;display:flex;flex-direction:column;align-items:center;overflow:hidden;position:relative;height:100%;border-radius:0px 25px 25px 0px;border:#ffffff14 solid 1px;border-left:none;} 
 .center{display:flex;align-items:center;justify-content:center;height:430px;width:820px;}	
-.overlays{z-index:1;position:absolute;left:0;right:0;top:0;bottom:0;background-color:rgba(0, 0, 0, 0.5);	display:flex;align-items:center;justify-content:center;} 
+.overlays{z-index:1;position:absolute;left:0;right:0;top:0;bottom:0;background-color:rgba(0, 0, 0, 0.5);	display:flex;gap:50px;align-items:center;justify-content:center;} 
 .sidebar .menu-item i{font-size:20px;} 
 .sidebar .menu-item .label{font-size:16px;} 
 .sidebar .menu-item.active{background-color:#171717;border-right:solid;}
