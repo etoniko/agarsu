@@ -25,7 +25,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=new_releases" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="/assets/style.css?0.0.45" rel="stylesheet">
+    <link href="/assets/style.css?0.0.46" rel="stylesheet">
     <!-- Скрипты -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="/assets/scripts/jquery.js?0.0.2"></script>
@@ -38,170 +38,22 @@
 	<script src="/assets/scripts/skins.js?0.0.2" defer></script>
 	<script src="/assets/scripts/rating.js?0.0.4" defer></script>
 	<meta name="selfwork.ru" content="YCO1OBkuI4MJNlnWL2VsXbRyuXLFJQCJS68rj8Jq2fYQSR4QLT" />
+		<!-- Yandex.RTB -->
+<script>window.yaContextCb=window.yaContextCb||[]</script>
+<script src="https://yandex.ru/ads/system/context.js" async></script>
+<script>
+window.yaContextCb.push(() => {
+    Ya.Context.AdvManager.render({
+        "blockId": "R-A-15699059-13",
+        "renderTo": "yandex_rtb_R-A-15699059-13"
+    })
+});
+</script>
 </head>
 <body>
   <div id="overlays" class="overlays">
     <div class="social"><a href="https://t.me/agarsu" target="_blank" class="tg"><i style="background: radial-gradient(white 9px, #1e90ff00 50%);border-radius: 50%;" class="fab fa-telegram"></i></a><a href="https://vk.com/club233723574" target="_blank" class="soc"><i class="fab fa-vk"></i></a><a href="#" class="soc"><i style="cursor: not-allowed;" class="fab fa-discord"></i></a></div>
-    <div class="rating-home" id="ratinghome">
-
-    <div class="rating-header">
-        Рейтинг FFA
-    </div>
-
-    <div class="rating-content" id="topswindow">
-
-        <div class="section-title">Top players</div>
-
-        <div class="rating-row gold" title="19:34 19.02">
-            <div>1</div>
-            <div>-</div>
-            <div>-</div>
-            <div class="avatar" style="background-image: url('https://api.agar.su/skins/PPFtwqH.png');"></div>
-        </div>
-
-        <div class="rating-row silver" title="0:53 25.01">
-            <div>2</div>
-            <div>-</div>
-            <div>-</div>
-            <div class="avatar" style="background-image: url('https://api.agar.su/skins/PPFtwqH.png');"></div>
-        </div>
-
-        <div class="rating-row bronze" title="14:33 16.12">
-            <div>3</div>
-            <div>-</div>
-            <div>-</div>
-            <div class="avatar" style="background-image: url('https://api.agar.su/skins/PPFtwqH.png');"></div>
-        </div>
-
-        <div class="section-title">Top Clans</div>
-
-        <div class="rating-row gold" title="0:19 08.02">
-            <div>1</div>
-            <div>-</div>
-            <div>-</div>
-            <div class="avatar" style="background-image: url('https://api.agar.su/skins/PPFtwqH.png');"></div>
-        </div>
-
-        <div class="rating-row silver" title="0:19 08.02">
-            <div>2</div>
-            <div>-</div>
-            <div>-</div>
-            <div class="avatar" style="background-image: url('https://api.agar.su/skins/PPFtwqH.png');"></div>
-        </div>
-
-        <div class="rating-row bronze" title="0:19 08.02">
-            <div>3</div>
-            <div>-</div>
-            <div>-</div>
-            <div class="avatar" style="background-image: url('https://api.agar.su/skins/PPFtwqH.png');"></div>
-        </div>
-
-    </div>
-		<script>
-async function loadTop() {
-    try {
-        const [statsRes, skinRes] = await Promise.all([
-            fetch('https://ffa.agar.su:6001/checkStats'),
-            fetch('https://api.agar.su/skinlist.txt')
-        ]);
-
-        const stats = await statsRes.json();
-        const skinText = await skinRes.text();
-
-        // === создаём словарь скинов ===
-        const skinMap = {};
-function normalizeNick(nick) {
-    if (!nick) return '';
-
-    let n = nick.trim();
-
-    // Проверяем, начинается ли ник с открывающейся скобки
-    if (n.startsWith('[')) {
-        const endIndex = n.indexOf(']');
-        if (endIndex === -1) return ''; // закрывающей скобки нет
-
-        const innerNick = n.substring(1, endIndex).trim();
-        if (!innerNick || innerNick !== n.substring(1, endIndex)) return ''; // проверка пробелов внутри
-
-        // Возвращаем ник вместе со скобками, игнорируя всё после закрывающейся скобки
-        return `[${innerNick}]`.toLowerCase();
-    } else {
-        // Ник без скобок: нельзя содержать пробелы в начале/конце
-        if (!n || n.trim() !== n) return '';
-        return n.toLowerCase();
-    }
-}
-skinText.split('\n').forEach(line => {
-    const parts = line.trim().split(':');
-    if (parts.length === 2) {
-        const nick = normalizeNick(parts[0]);
-        const code = parts[1].trim();
-        skinMap[nick] = code;
-    }
-});
-        const container = document.getElementById('topswindow');
-        container.innerHTML = '';
-
-        const isClan = nick => /^\[[^\]]+\]/.test(nick.trim());
-
-        const players = stats.filter(p => !isClan(p.nick)).slice(0, 3);
-        const clans   = stats.filter(p => isClan(p.nick)).slice(0, 3);
-
-        function createRow(entry, index) {
-            const medal =
-                index === 0 ? 'gold' :
-                index === 1 ? 'silver' : 'bronze';
-
-            const normalizedNick = normalizeNick(entry.nick);
-const skinCode = skinMap[normalizedNick];
-            const skinUrl = skinCode
-                ? `https://api.agar.su/skins/${skinCode}.png`
-                : `https://api.agar.su/skins/4.png`;
-
-            const row = document.createElement('div');
-            row.className = 'rating-row ' + medal;
-            row.setAttribute('title', entry.time);
-
-            row.innerHTML = `
-                <div>${index + 1}</div>
-                <div>${entry.nick}</div>
-                <div>${entry.score}</div>
-                <div class="avatar"
-                     style="background-image: url('${skinUrl}');">
-                </div>
-            `;
-
-            return row;
-        }
-
-        // === TOP PLAYERS ===
-        const playersTitle = document.createElement('div');
-        playersTitle.className = 'section-title';
-        playersTitle.innerText = 'Top players';
-        container.appendChild(playersTitle);
-
-        players.forEach((p, i) => {
-            container.appendChild(createRow(p, i));
-        });
-
-        // === TOP CLANS ===
-        const clansTitle = document.createElement('div');
-        clansTitle.className = 'section-title';
-        clansTitle.innerText = 'Top Clans';
-        container.appendChild(clansTitle);
-
-        clans.forEach((c, i) => {
-            container.appendChild(createRow(c, i));
-        });
-
-    } catch (e) {
-        console.error("Ошибка загрузки:", e);
-    }
-}
-
-loadTop();
-</script>
-</div>
+    <div class="add-yandex" id="ratinghome"><div id="yandex_rtb_R-A-15699059-13"></div></div>
 	  <div class="center">
       <div class="sidebar">
         <div class="menu-item" onclick="showContent('shop')"><i class="fas fa-shop"></i><span class="label">Магазин</span></div>
@@ -467,7 +319,166 @@ loadTop();
         </div>
       </div>
     </div>
+	  <div class="rating-home" id="ratinghome">
 
+    <div class="rating-header">
+        Рейтинг FFA
+    </div>
+
+    <div class="rating-content" id="topswindow">
+
+        <div class="section-title">Top players</div>
+
+        <div class="rating-row gold" title="19:34 19.02">
+            <div>1</div>
+            <div>-</div>
+            <div>-</div>
+            <div class="avatar" style="background-image: url('https://api.agar.su/skins/PPFtwqH.png');"></div>
+        </div>
+
+        <div class="rating-row silver" title="0:53 25.01">
+            <div>2</div>
+            <div>-</div>
+            <div>-</div>
+            <div class="avatar" style="background-image: url('https://api.agar.su/skins/PPFtwqH.png');"></div>
+        </div>
+
+        <div class="rating-row bronze" title="14:33 16.12">
+            <div>3</div>
+            <div>-</div>
+            <div>-</div>
+            <div class="avatar" style="background-image: url('https://api.agar.su/skins/PPFtwqH.png');"></div>
+        </div>
+
+        <div class="section-title">Top Clans</div>
+
+        <div class="rating-row gold" title="0:19 08.02">
+            <div>1</div>
+            <div>-</div>
+            <div>-</div>
+            <div class="avatar" style="background-image: url('https://api.agar.su/skins/PPFtwqH.png');"></div>
+        </div>
+
+        <div class="rating-row silver" title="0:19 08.02">
+            <div>2</div>
+            <div>-</div>
+            <div>-</div>
+            <div class="avatar" style="background-image: url('https://api.agar.su/skins/PPFtwqH.png');"></div>
+        </div>
+
+        <div class="rating-row bronze" title="0:19 08.02">
+            <div>3</div>
+            <div>-</div>
+            <div>-</div>
+            <div class="avatar" style="background-image: url('https://api.agar.su/skins/PPFtwqH.png');"></div>
+        </div>
+
+    </div>
+		<script>
+async function loadTop() {
+    try {
+        const [statsRes, skinRes] = await Promise.all([
+            fetch('https://ffa.agar.su:6001/checkStats'),
+            fetch('https://api.agar.su/skinlist.txt')
+        ]);
+
+        const stats = await statsRes.json();
+        const skinText = await skinRes.text();
+
+        // === создаём словарь скинов ===
+        const skinMap = {};
+function normalizeNick(nick) {
+    if (!nick) return '';
+
+    let n = nick.trim();
+
+    // Проверяем, начинается ли ник с открывающейся скобки
+    if (n.startsWith('[')) {
+        const endIndex = n.indexOf(']');
+        if (endIndex === -1) return ''; // закрывающей скобки нет
+
+        const innerNick = n.substring(1, endIndex).trim();
+        if (!innerNick || innerNick !== n.substring(1, endIndex)) return ''; // проверка пробелов внутри
+
+        // Возвращаем ник вместе со скобками, игнорируя всё после закрывающейся скобки
+        return `[${innerNick}]`.toLowerCase();
+    } else {
+        // Ник без скобок: нельзя содержать пробелы в начале/конце
+        if (!n || n.trim() !== n) return '';
+        return n.toLowerCase();
+    }
+}
+skinText.split('\n').forEach(line => {
+    const parts = line.trim().split(':');
+    if (parts.length === 2) {
+        const nick = normalizeNick(parts[0]);
+        const code = parts[1].trim();
+        skinMap[nick] = code;
+    }
+});
+        const container = document.getElementById('topswindow');
+        container.innerHTML = '';
+
+        const isClan = nick => /^\[[^\]]+\]/.test(nick.trim());
+
+        const players = stats.filter(p => !isClan(p.nick)).slice(0, 3);
+        const clans   = stats.filter(p => isClan(p.nick)).slice(0, 3);
+
+        function createRow(entry, index) {
+            const medal =
+                index === 0 ? 'gold' :
+                index === 1 ? 'silver' : 'bronze';
+
+            const normalizedNick = normalizeNick(entry.nick);
+const skinCode = skinMap[normalizedNick];
+            const skinUrl = skinCode
+                ? `https://api.agar.su/skins/${skinCode}.png`
+                : `https://api.agar.su/skins/4.png`;
+
+            const row = document.createElement('div');
+            row.className = 'rating-row ' + medal;
+            row.setAttribute('title', entry.time);
+
+            row.innerHTML = `
+                <div>${index + 1}</div>
+                <div>${entry.nick}</div>
+                <div>${entry.score}</div>
+                <div class="avatar"
+                     style="background-image: url('${skinUrl}');">
+                </div>
+            `;
+
+            return row;
+        }
+
+        // === TOP PLAYERS ===
+        const playersTitle = document.createElement('div');
+        playersTitle.className = 'section-title';
+        playersTitle.innerText = 'Top players';
+        container.appendChild(playersTitle);
+
+        players.forEach((p, i) => {
+            container.appendChild(createRow(p, i));
+        });
+
+        // === TOP CLANS ===
+        const clansTitle = document.createElement('div');
+        clansTitle.className = 'section-title';
+        clansTitle.innerText = 'Top Clans';
+        container.appendChild(clansTitle);
+
+        clans.forEach((c, i) => {
+            container.appendChild(createRow(c, i));
+        });
+
+    } catch (e) {
+        console.error("Ошибка загрузки:", e);
+    }
+}
+
+loadTop();
+</script>
+</div>
 	  <footer class="footer">© 2026 agar.su — Все права защищены ·<a href="privacy.html">Политика конфиденциальности</a> ·<a href="rules.html">Правила сайта</a> ·<a href="offer.html">Публичная оферта</a></footer>
 
 
@@ -607,6 +618,7 @@ loadTop();
   </div>
 </body>
 </html>
+
 
 
 
