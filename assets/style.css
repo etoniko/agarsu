@@ -48,12 +48,18 @@
         bottom: 0;
     }
 }
+
+.add-yandex {
+    width: 240px;
+    background: white;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+    height: 400px;
+}
 .rating-home {
     width: 300px;
     border-radius: 25px;
     color: white;
-    position: absolute;
-    right: 8%;
     overflow: hidden;
     font-family: Arial, sans-serif;
 }
@@ -126,9 +132,8 @@
 
 /* Мобильные */
 @media (max-width: 768px) {
-    .rating-home {
-        display: none;
-    }
+    .rating-home{display: none;}
+	.add-yandex{display: none;}
 }
 .cosmos{background:url(/assets/photo/cosmos.png) !important; font-weight:lighter;}
 .rizwer{background: linear-gradient(90deg,rgba(2, 0, 36, 1) 0%, rgba(9, 9, 121, 1) 35%, rgba(0, 212, 255, 1) 100%) !important;}
