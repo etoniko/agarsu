@@ -1,5 +1,5 @@
 (function (global) {
-    const servers = { "ffa.agar.su:6001": { name: "FFA - Moscow" },"ffa.agar.su:6002": { name: "MegaSplit" },"ffa.agar.su:6003": { name: "Experemental" },"ffa.agar.su:6004": { name: "pvp1: 1x1 ffa 1k" },"ffa.agar.su:6005": { name: "pvp2: 2x2 ms 1k" },"ffa.agar.su:6006": { name: "Tournament" } };
+    const servers = { "fsb-lybanka.ru:6001": { name: "FFA - Moscow" },"ffa.agar.su:6002": { name: "MegaSplit" },"ffa.agar.su:6003": { name: "Experemental" },"ffa.agar.su:6004": { name: "pvp1: 1x1 ffa 1k" },"ffa.agar.su:6005": { name: "pvp2: 2x2 ms 1k" },"ffa.agar.su:6006": { name: "Tournament" } };
     Array.prototype.remove = function (a) {
         const i = this.indexOf(a);
         return i !== -1 && this.splice(i, 1);
@@ -740,7 +740,8 @@ class SkinManager {
                 width: 0,
                 height: 0
             }
-            this.foodSize = 10;   // дефолтный размер еды
+            this.foodMinSize = 0
+            this.foodMaxSize = 0
             this.ownerPlayerId = 0
 			this.ping = 0
             this.pingstamp = 0
@@ -784,7 +785,8 @@ connect(addr, passedToken) {
                 width: 0,
                 height: 0
             }
-            this.foodSize = 10;
+            this.foodMinSize = 0
+            this.foodMaxSize = 0
             this.ownerPlayerId = 0
 			this.ping = 0
             this.pingstamp = 0
@@ -992,37 +994,33 @@ spawn() {
         }
 
         onBorder(reader) {
-    this.border.left   = reader.getFloat64();
-    this.border.top    = reader.getFloat64();
-    this.border.right  = reader.getFloat64();
-    this.border.bottom = reader.getFloat64();
+  this.border.left = reader.getFloat64()
+  this.border.top = reader.getFloat64()
+  this.border.right = reader.getFloat64()
+  this.border.bottom = reader.getFloat64()
+  this.foodMinSize = Math.sqrt(reader.getUint16() * 100);
+  this.foodMaxSize = Math.sqrt(reader.getUint16() * 100);
+  this.ownerPlayerId = reader.getUint32()
+  this.border.width = this.border.right - this.border.left
+  this.border.height = this.border.bottom - this.border.top
+  this.border.centerX = (this.border.left + this.border.right) / 2
+  this.border.centerY = (this.border.top + this.border.bottom) / 2
+  this.core.app.drawBackground()
+  this.core.app.drawGrid()
+  this.core.app.drawSectors()
 
-    // === НОВАЯ ЛОГИКА ===
-    // Сервер теперь отправляет только один размер еды (радиус)
-    const foodRadius = reader.getUint16();   // новый формат — один uint16
+  // >>> ДОБАВЬ ЭТО:
+  // Если мы не владеем клетками (спектатор/до спавна) — ставим камеру в центр.
+  if (this.core.app.ownedCells.length === 0) {
+    const cam = this.core.app.camera;
+    cam.x = cam.target.x = this.border.centerX;
+    cam.y = cam.target.y = this.border.centerY;
 
-    // Ограничиваем размер еды (чтобы не была огромной)
-    this.foodSize = Math.max(5, Math.min(foodRadius, 14)); // 5–14 пикселей — комфортный размер
-
-    this.ownerPlayerId = reader.getUint32();
-
-    this.border.width  = this.border.right - this.border.left;
-    this.border.height = this.border.bottom - this.border.top;
-    this.border.centerX = (this.border.left + this.border.right) / 2;
-    this.border.centerY = (this.border.top + this.border.bottom) / 2;
-
-    this.core.app.drawBackground();
-    this.core.app.drawGrid();
-    this.core.app.drawSectors();
-
-    // Камера для спектатора
-    if (this.core.app.ownedCells.length === 0) {
-        const cam = this.core.app.camera;
-        cam.x = cam.target.x = this.border.centerX;
-        cam.y = cam.target.y = this.border.centerY;
-        const targetZoom = this.core.app.viewRange() * 0.2;
-        cam.s = cam.target.s = this.core.app.viewZoom = targetZoom;
-    }
+    // Чуть отдалим зум для спектатора: соответствуем логике updateCamera()
+    // viewRange()*0.2 — твоя формула для spectate
+    const targetZoom = this.core.app.viewRange() * 0.2;
+    cam.s = cam.target.s = this.core.app.viewZoom = targetZoom;
+  }
 }
 
 
@@ -1100,23 +1098,17 @@ spawn() {
   let size  = 0;      // это радиус!
   let playerId = 0;
 
-if (type === 1) {
-    // === ЕДА (type 1) ===
+  if (type === 1) {
+    // еда
     posX = CORE.net.border.left + (CORE.net.border.right * 2) * normalizeFractlPart(id);
-    posY = CORE.net.border.top + (CORE.net.border.bottom * 2) * normalizeFractlPart(id * id);
-
-    // Фиксированный маленький размер еды — это то, что нужно
-    size = 10;                    // ← попробуй сначала 9
-    // size = 7;   // если всё ещё большая — уменьши до 7
-    // size = 11;  // если слишком маленькая — увеличь до 11
-}
-else {
-    // Игрок, вирус, ejected mass и т.д.
+    posY = CORE.net.border.top  + (CORE.net.border.bottom * 2) * normalizeFractlPart(id * id);
+    size = CORE.net.foodMinSize + id % ((CORE.net.foodMaxSize - CORE.net.foodMinSize) + 1);
+  } else {
     if (type === 0) playerId = reader.uint32();
     posX = reader.int32();
     posY = reader.int32();
-    size = reader.uint16();   // радиус
-}
+    size = reader.uint16(); // ← радиус
+  }
 
   const r = reader.uint8();
   const g = reader.uint8();
@@ -1549,8 +1541,7 @@ drawBackground() {
                 view,
                 width: innerWidth,
                 height: innerHeight,
-                antialias: true,
-				resolution: window.devicePixelRatio || 1,
+                antialias: false,
                 powerPreference: 'high-performance'
             })
             this.stage = new PIXI.Container()
