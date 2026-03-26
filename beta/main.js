@@ -1101,19 +1101,21 @@ spawn() {
   let playerId = 0;
 
 if (type === 1) {
-    // === ЕДА ===
+    // === ЕДА (type 1) ===
     posX = CORE.net.border.left + (CORE.net.border.right * 2) * normalizeFractlPart(id);
     posY = CORE.net.border.top + (CORE.net.border.bottom * 2) * normalizeFractlPart(id * id);
 
-    // Теперь используем один размер от сервера
-    size = CORE.net.foodSize || 10;   // fallback на 10, если что-то сломалось
+    // Фиксированный маленький размер еды — это то, что нужно
+    size = 10;                    // ← попробуй сначала 9
+    // size = 7;   // если всё ещё большая — уменьши до 7
+    // size = 11;  // если слишком маленькая — увеличь до 11
 }
 else {
-    // Игрок/вирус/евт. и т.д.
+    // Игрок, вирус, ejected mass и т.д.
     if (type === 0) playerId = reader.uint32();
     posX = reader.int32();
     posY = reader.int32();
-    size = reader.uint16(); // радиус
+    size = reader.uint16();   // радиус
 }
 
   const r = reader.uint8();
