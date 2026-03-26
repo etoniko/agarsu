@@ -740,8 +740,7 @@ class SkinManager {
                 width: 0,
                 height: 0
             }
-            this.foodMinSize = 0
-            this.foodMaxSize = 0
+            this.foodSize = 10;   // дефолтный размер еды
             this.ownerPlayerId = 0
 			this.ping = 0
             this.pingstamp = 0
@@ -785,8 +784,7 @@ connect(addr, passedToken) {
                 width: 0,
                 height: 0
             }
-            this.foodMinSize = 0
-            this.foodMaxSize = 0
+            this.foodSize = 10;
             this.ownerPlayerId = 0
 			this.ping = 0
             this.pingstamp = 0
@@ -994,43 +992,37 @@ spawn() {
         }
 
         onBorder(reader) {
-  this.border.left = reader.getFloat64()
-  this.border.top = reader.getFloat64()
-  this.border.right = reader.getFloat64()
-  this.border.bottom = reader.getFloat64()
-  // Размеры еды: сервер отправляет радиус напрямую (как и для клеток игроков)
-  // Убираем умножение на 100 и sqrt, так как это радиус, а не масса
-  const rawMinSize = reader.getUint16();
-  const rawMaxSize = reader.getUint16();
-  // Ограничение: еда обычно должна быть маленькой (5-15 пикселей в радиусе)
-  const MAX_FOOD_RADIUS = 15;
-  this.foodMinSize = Math.min(rawMinSize, MAX_FOOD_RADIUS);
-  this.foodMaxSize = Math.min(rawMaxSize, MAX_FOOD_RADIUS);
-  // Убеждаемся, что min <= max
-  if (this.foodMinSize > this.foodMaxSize) {
-    this.foodMaxSize = this.foodMinSize;
-  }
-  this.ownerPlayerId = reader.getUint32()
-  this.border.width = this.border.right - this.border.left
-  this.border.height = this.border.bottom - this.border.top
-  this.border.centerX = (this.border.left + this.border.right) / 2
-  this.border.centerY = (this.border.top + this.border.bottom) / 2
-  this.core.app.drawBackground()
-  this.core.app.drawGrid()
-  this.core.app.drawSectors()
+    this.border.left   = reader.getFloat64();
+    this.border.top    = reader.getFloat64();
+    this.border.right  = reader.getFloat64();
+    this.border.bottom = reader.getFloat64();
 
-  // >>> ДОБАВЬ ЭТО:
-  // Если мы не владеем клетками (спектатор/до спавна) — ставим камеру в центр.
-  if (this.core.app.ownedCells.length === 0) {
-    const cam = this.core.app.camera;
-    cam.x = cam.target.x = this.border.centerX;
-    cam.y = cam.target.y = this.border.centerY;
+    // === НОВАЯ ЛОГИКА ===
+    // Сервер теперь отправляет только один размер еды (радиус)
+    const foodRadius = reader.getUint16();   // новый формат — один uint16
 
-    // Чуть отдалим зум для спектатора: соответствуем логике updateCamera()
-    // viewRange()*0.2 — твоя формула для spectate
-    const targetZoom = this.core.app.viewRange() * 0.2;
-    cam.s = cam.target.s = this.core.app.viewZoom = targetZoom;
-  }
+    // Ограничиваем размер еды (чтобы не была огромной)
+    this.foodSize = Math.max(5, Math.min(foodRadius, 14)); // 5–14 пикселей — комфортный размер
+
+    this.ownerPlayerId = reader.getUint32();
+
+    this.border.width  = this.border.right - this.border.left;
+    this.border.height = this.border.bottom - this.border.top;
+    this.border.centerX = (this.border.left + this.border.right) / 2;
+    this.border.centerY = (this.border.top + this.border.bottom) / 2;
+
+    this.core.app.drawBackground();
+    this.core.app.drawGrid();
+    this.core.app.drawSectors();
+
+    // Камера для спектатора
+    if (this.core.app.ownedCells.length === 0) {
+        const cam = this.core.app.camera;
+        cam.x = cam.target.x = this.border.centerX;
+        cam.y = cam.target.y = this.border.centerY;
+        const targetZoom = this.core.app.viewRange() * 0.2;
+        cam.s = cam.target.s = this.core.app.viewZoom = targetZoom;
+    }
 }
 
 
@@ -1108,24 +1100,21 @@ spawn() {
   let size  = 0;      // это радиус!
   let playerId = 0;
 
-  if (type === 1) {
-    // еда
+if (type === 1) {
+    // === ЕДА ===
     posX = CORE.net.border.left + (CORE.net.border.right * 2) * normalizeFractlPart(id);
-    posY = CORE.net.border.top  + (CORE.net.border.bottom * 2) * normalizeFractlPart(id * id);
-    // Исправление: правильная формула для размера еды с защитой от деления на ноль
-    const sizeRange = Math.max(1, CORE.net.foodMaxSize - CORE.net.foodMinSize);
-    size = CORE.net.foodMinSize + (id % sizeRange);
-    // Ограничение максимального размера еды (обычно еда должна быть маленькой)
-    const MAX_FOOD_SIZE = 15; // максимальный радиус еды
-    if (size > MAX_FOOD_SIZE) {
-      size = MAX_FOOD_SIZE;
-    }
-  } else {
+    posY = CORE.net.border.top + (CORE.net.border.bottom * 2) * normalizeFractlPart(id * id);
+
+    // Теперь используем один размер от сервера
+    size = CORE.net.foodSize || 10;   // fallback на 10, если что-то сломалось
+}
+else {
+    // Игрок/вирус/евт. и т.д.
     if (type === 0) playerId = reader.uint32();
     posX = reader.int32();
     posY = reader.int32();
-    size = reader.uint16(); // ← радиус
-  }
+    size = reader.uint16(); // радиус
+}
 
   const r = reader.uint8();
   const g = reader.uint8();
