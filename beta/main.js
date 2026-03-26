@@ -1102,7 +1102,7 @@ spawn() {
     // еда
     posX = CORE.net.border.left + (CORE.net.border.right * 2) * normalizeFractlPart(id);
     posY = CORE.net.border.top  + (CORE.net.border.bottom * 2) * normalizeFractlPart(id * id);
-    size = CORE.net.foodMinSize + id % ((CORE.net.foodMaxSize - CORE.net.foodMinSize) + 1);
+    size = 10;
   } else {
     if (type === 0) playerId = reader.uint32();
     posX = reader.int32();
