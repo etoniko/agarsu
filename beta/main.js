@@ -998,8 +998,8 @@ spawn() {
   this.border.top = reader.getFloat64()
   this.border.right = reader.getFloat64()
   this.border.bottom = reader.getFloat64()
-  this.foodMinSize = 10;
-  this.foodMaxSize = 10;
+  this.foodMinSize = Math.sqrt(reader.getUint16() * 100);
+  this.foodMaxSize = Math.sqrt(reader.getUint16() * 100);
   this.ownerPlayerId = reader.getUint32()
   this.border.width = this.border.right - this.border.left
   this.border.height = this.border.bottom - this.border.top
@@ -1102,7 +1102,7 @@ spawn() {
     // еда
     posX = CORE.net.border.left + (CORE.net.border.right * 2) * normalizeFractlPart(id);
     posY = CORE.net.border.top  + (CORE.net.border.bottom * 2) * normalizeFractlPart(id * id);
-    size = 10;
+    size = CORE.net.foodMinSize + id % ((CORE.net.foodMaxSize - CORE.net.foodMinSize) + 1);
   } else {
     if (type === 0) playerId = reader.uint32();
     posX = reader.int32();
