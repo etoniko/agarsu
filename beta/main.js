@@ -1,5 +1,5 @@
 (function (global) {
-    const servers = { "fsb-lybanka.ru:6001": { name: "FFA - Moscow" },"ffa.agar.su:6002": { name: "MegaSplit" },"ffa.agar.su:6003": { name: "Experemental" },"ffa.agar.su:6004": { name: "pvp1: 1x1 ffa 1k" },"ffa.agar.su:6005": { name: "pvp2: 2x2 ms 1k" },"ffa.agar.su:6006": { name: "Tournament" } };
+    const servers = { "ffa.agar.su:6001": { name: "FFA - Moscow" },"ffa.agar.su:6002": { name: "MegaSplit" },"ffa.agar.su:6003": { name: "Experemental" },"ffa.agar.su:6004": { name: "pvp1: 1x1 ffa 1k" },"ffa.agar.su:6005": { name: "pvp2: 2x2 ms 1k" },"ffa.agar.su:6006": { name: "Tournament" } };
     Array.prototype.remove = function (a) {
         const i = this.indexOf(a);
         return i !== -1 && this.splice(i, 1);
