@@ -377,7 +377,7 @@ window.yaContextCb.push(() => {
 async function loadTop() {
     try {
         const [statsRes, skinRes] = await Promise.all([
-            fetch('https://ffa.agar.su:6001/checkStats'),
+            fetch('https://beget.agar.su:6001/checkStats'),
             fetch('https://api.agar.su/skinlist.txt')
         ]);
 
