@@ -3,26 +3,48 @@
 <head>
   <meta charset="UTF-8">
   <title>Telegram Auth</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+
+    body {
+      display: flex;
+      justify-content: center; /* центр по горизонтали */
+      align-items: center;     /* центр по вертикали */
+      background-color: #f0f0f0;
+    }
+
+    .widget-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column; /* если будет текст или что-то сверху/снизу */
+      min-height: 100px;      /* минимальная высота, чтобы виджет центрировался */
+    }
+  </style>
 </head>
 
-<body style="text-align:center;">
-<script async src="https://telegram.org/js/telegram-widget.js"
-        data-telegram-login="agarsu_auth_bot"
-        data-size="large"
-        data-onauth="onTelegramAuth(user)"
-        data-request-access="write"></script>
-<script>
-function onTelegramAuth(user) {
-  if (window.opener) {
-    window.opener.postMessage({
-      type: "telegram-auth",
-      user: user
-    }, "https://agar.su");
-  }
+<body>
+  <div class="widget-container">
+    <script async src="https://telegram.org/js/telegram-widget.js"
+            data-telegram-login="agarsu_auth_bot"
+            data-size="large"
+            data-onauth="onTelegramAuth(user)"
+            data-request-access="write"></script>
+  </div>
 
-  window.close();
-}
-</script>
-
+  <script>
+    function onTelegramAuth(user) {
+      if (window.opener) {
+        window.opener.postMessage({
+          type: "telegram-auth",
+          user: user
+        }, "https://agar.su");
+      }
+      window.close();
+    }
+  </script>
 </body>
 </html>
