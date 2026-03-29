@@ -254,7 +254,7 @@ function calculateCost() {
   let skinCost = 0;
   let skinText = 'Скин: 0 ₽';
   if (file) {
-    skinCost = file.type === 'image/gif' ? 10000 : 100;
+    skinCost = file.type === 'image/gif' ? 4500 : 100;
     skinText = `Скин: ${skinCost * multiplier} ₽ (${file.type === 'image/gif' ? 'GIF' : 'PNG/JPG'})`;
   }
     const total = (passwordCost + skinCost + invisibleCost) * multiplier;
