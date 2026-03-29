@@ -310,7 +310,17 @@ window.yaContextCb.push(() => {
        data-auto_prompt="false"
        data-callback="onGoogleAuth"></div>
   <div class="g_id_signin"></div>
-<button id="telegrum" onclick="window.open('https://agar.su/telegram/', '_blank');">Войти через Telegram</button>
+<span onclick="openTelegramAuth()">Войти через Telegram</span>
+
+<script>
+function openTelegramAuth() {
+  window.open(
+    "https://agar.su/telegram/",
+    "tgAuth",
+    "width=500,height=600"
+  );
+}
+</script>
 </div>
 
           </div>
