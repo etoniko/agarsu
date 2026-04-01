@@ -19,6 +19,17 @@
     text-align: center;
 	font-family: sans-serif;
 }
+input[type="password"]::-ms-reveal,
+input[type="password"]::-webkit-credentials-auto-fill-button,
+input[type="password"]::-webkit-textfield-decoration-container {
+  display: none !important;
+}
+
+/* Для Safari */
+input[type="password"]::-webkit-credentials-auto-fill-button {
+  visibility: hidden;
+  pointer-events: none;
+}
 .streak{
 	position: relative;
     display: inline-block;
