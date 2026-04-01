@@ -25,7 +25,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=new_releases" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="/assets/style.css?0.0.54" rel="stylesheet">
+    <link href="/assets/style.css?0.0.55" rel="stylesheet">
     <!-- Скрипты -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="/assets/scripts/jquery.js?0.0.2"></script>
@@ -130,8 +130,7 @@ window.yaContextCb.push(() => {
       <div id="totalAmount">Итого: 100 ₽</div>
     </div>
   </div>
-	<div id="optionsModal" class="modal-overlay" style="display: none;">
-  <div class="modal-content">
+<div class="modal-content" id="optionsModal" style="display: flex;">
     <div class="modal-header">
       <span>Дополнения для лички</span>
       <div class="modal-close">×</div>
@@ -140,7 +139,6 @@ window.yaContextCb.push(() => {
 <label style="display: flex;gap: 4px;"><input type="checkbox" id="invisibleNick"> Невидимый ник</label>
     </div>
   </div>
-</div>
 </div>
         </div>
 
