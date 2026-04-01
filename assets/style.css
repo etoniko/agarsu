@@ -1011,3 +1011,15 @@ input{font-size:16px;}
             padding: 16px;
         }
     }
+.badge-text {
+    position: absolute;
+    top: -4px;
+    right: 0px;
+    color: gold;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 12px;
+    letter-spacing: 0.5px;
+    background: linear-gradient(135deg, #ff0000, #ff6b6b);
+}
