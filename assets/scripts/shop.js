@@ -277,7 +277,7 @@ function calculateCost() {
     // === Поворотный скин — строка цены ===
   let rotationText = document.getElementById('rotationCost');
   if (rotationNickCheckbox.checked) {
-    rotationText.textContent = `Невидимый ник: ${rotationCost * multiplier} ₽`;
+    rotationText.textContent = `Поворотный скин: ${rotationCost * multiplier} ₽`;
     rotationText.style.display = 'block';
   } else {
     rotationText.style.display = 'none';
