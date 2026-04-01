@@ -618,7 +618,7 @@ input{font-size:16px;}
 .top-playerwraper{display:grid;grid-template-columns:1fr 3fr 1fr 1fr;align-items:center;justify-items:center;}
 .top-playerwraper:hover{background-color:#68686882;}
 .skinswraper{background-size:cover;width:32px;height:32px;border:solid 2px;border-radius:50%;margin-bottom:2px;}
-#shareText{font-size:18px;color:#c3c0c0;text-align:center;margin-bottom:10px;}
+#shareText{font-size:18px;color:#c3c0c0;text-align:center;/* margin-bottom:10px; */}
 #buttons{display:flex;gap:10px;}
 .social-btn{width:45px;height:45px;border-radius:50%;border:none;cursor:pointer;background-size:60% 60%;background-repeat:no-repeat;background-position:center;transition:transform 0.2s, background-color 0.2s;font-size:30px;}
 .social-btn:hover{transform:scale(1.2);}
@@ -628,10 +628,48 @@ input{font-size:16px;}
 .social-btn.facebook:hover{background-color:#1877f2;box-shadow:#1877f2 1px 0 10px;}
 .social-btn.twitter:hover{background-color:#1da1f2;box-shadow:#1da1f2 1px 0 10px;}
 .statYout{width:100%;height:250px;display:flex;justify-content:center;align-items:center;}
-.statYoutt{position:relative;width:100%;height:100%;display:block;background:url(https://api.agar.su/assets/photo/bloger2.jpg) center/cover no-repeat;text-decoration:none;}
-.statYoutImg{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:60px;height:40px;}
+.statYoutt{position:relative;width:100%;height:100%;display:block;background:url(https://api.agar.su/assets/photo/bloger3.jpg) center/cover no-repeat;text-decoration:none;}
+.statYoutImg{/* position:absolute; *//* top:50%; *//* left:50%; *//* transform:translate(-50%,-50%); */width: 40px;height: 30px;}
 .statTitle{color:#fff200f0;text-shadow:#fff200f0 1px 0 10px;font-size:20px;}
-.statDesc{font-size:15px;line-height:1.6;font-weight:500;}
+.card-description {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+.step {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+}
+.step-number {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    background: #016bef;
+    color: white;
+    font-weight: 700;
+    font-size: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+}
+.step p {
+    margin: 0;
+    font-size: 15px;
+    color: #b3c0e0;
+    background: #ffffff1c;
+    padding: 5;
+    border-radius: 5px;
+}
+.telegram-link {
+    color: #60a5fa;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s ease;
+}
 .statLink{text-decoration:none;color:#016bef;}
 .share-label{color:#01f103f0;text-shadow:#01f103f0 1px 0 10px;}
 .closeStats{cursor:pointer;}
