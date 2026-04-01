@@ -163,6 +163,7 @@ nicknameInput.addEventListener("input", () => {
 
 const passwordInput = document.getElementById("password");
 const invisibleNickCheckbox = document.getElementById("invisibleNick");
+const rotationNickCheckbox = document.getElementById("rotationNick");
 passwordInput.addEventListener("input", () => {
   if (passwordInput.value.length > 5) {
     passwordInput.value = passwordInput.value.substring(0, 5);
@@ -251,13 +252,14 @@ function calculateCost() {
 
   let passwordCost = password ? 100 : 0;
   let invisibleCost = invisibleNickCheckbox.checked ? 500 : 0;
+  let rotationCost = rotationNickCheckbox.checked ? 500 : 0;
   let skinCost = 0;
   let skinText = 'Скин: 0 ₽';
   if (file) {
     skinCost = file.type === 'image/gif' ? 4500 : 100;
     skinText = `Скин: ${skinCost * multiplier} ₽ (${file.type === 'image/gif' ? 'GIF' : 'PNG/JPG'})`;
   }
-    const total = (passwordCost + skinCost + invisibleCost) * multiplier;
+    const total = (passwordCost + skinCost + invisibleCost + rotationCost) * multiplier;
 
   document.getElementById('multiplierText').textContent = multiplier === 2 ? '2x (для клана)' : '1x (для себя)';
   document.getElementById('passwordCost').textContent = `Пароль: ${password ? passwordCost * multiplier : 0} ₽`;
@@ -272,11 +274,20 @@ function calculateCost() {
     invisibleText.style.display = 'none';
   }
 
+    // === Поворотный скин — строка цены ===
+  let rotationText = document.getElementById('rotationCost');
+  if (rotationNickCheckbox.checked) {
+    rotationText.textContent = `Невидимый ник: ${rotationCost * multiplier} ₽`;
+    rotationText.style.display = 'block';
+  } else {
+    rotationText.style.display = 'none';
+  }
+
   const calculator = document.getElementById('calculator');
   const buyButton = document.getElementById('buyButton');
   //const email = emailInput.value.trim();
   //const emailValid = email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    if (total > 0 && (password || file || invisibleNickCheckbox.checked)) {
+    if (total > 0 && (password || file || invisibleNickCheckbox.checked || rotationNickCheckbox.checked)) {
     calculator.style.display = 'block';
     document.getElementById('totalAmount').textContent = `Итого: ${total} ₽`;
     buyButton.textContent = `КУПИТЬ ЗА ${total} РУБЛЕЙ`;
@@ -319,7 +330,7 @@ document.getElementById("paymentForm").addEventListener("submit", async (e) => {
     showError('formError', 'Введите ник/клан.');
     return;
   }
-    if (!password && !file && !invisibleNickCheckbox.checked) {
+    if (!password && !file && !invisibleNickCheckbox.checked && !rotationNickCheckbox.checked) {
     showError('formError', 'Выберите хотя бы пароль или скин для оплаты');
     return;
   }
@@ -336,6 +347,7 @@ document.getElementById("paymentForm").addEventListener("submit", async (e) => {
   //formData.append("email", email);
   if (password) formData.append("password", password);
   if (invisibleNickCheckbox.checked) formData.append("invisible", "1");
+  if (rotationNickCheckbox.checked) formData.append("rotation", "1");
 
   const headers = {};
   if (localStorage.accountToken) {
@@ -400,3 +412,4 @@ togglePassword.addEventListener("click", () => {
 
 
 invisibleNickCheckbox.addEventListener("change", calculateCost);
+rotationNickCheckbox.addEventListener("change", calculateCost);
