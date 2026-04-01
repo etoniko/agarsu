@@ -25,7 +25,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=new_releases" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="/assets/style.css?0.0.55" rel="stylesheet">
+    <link href="/assets/style.css?0.0.56" rel="stylesheet">
     <!-- Скрипты -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="/assets/scripts/jquery.js?0.0.2"></script>
@@ -128,14 +128,45 @@ window.yaContextCb.push(() => {
   </div>
 <div class="modal-content" id="optionsModal" style="display: none;">
     <div class="modal-header">
-      <span>Дополнения для лички</span>
-      <div class="modal-close">×</div>
+        <span>Дополнения для лички</span>
+        <div class="modal-close">×</div>
     </div>
     <div class="modal-body">
-<label style="display: flex;gap: 4px;"><input type="checkbox" id="invisibleNick"> Невидимый ник</label>
-		<label style="display: flex;gap: 4px;"><input type="checkbox" id="rotationNick"> Поворотный скин</label>
+        <div class="products-grid">
+            <!-- Карточка 1 -->
+            <div class="product-card">
+                <div class="product-card-inner">
+                    <div class="product-icon">👁️</div>
+
+                    <div class="product-details">
+                        <h3 class="product-title">Невидимый ник</h3>
+                        <p class="product-description">Скрывает ваш никнейм в игре</p>
+						<div class="product-price">500 ₽</div>   
+                    </div>
+<label class="checkbox-label">
+                        <input type="checkbox" id="invisibleNick" class="product-checkbox">
+                        <span class="checkbox-custom"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="product-card">
+                <div class="product-card-inner">
+                    <div class="product-icon">🔄</div>
+                    <div class="product-details">
+                        <h3 class="product-title">Поворотный скин</h3>
+                        <p class="product-description">Скин следует за курсором</p>
+                        <div class="product-price">500 ₽</div>
+                    </div>
+                    <label class="checkbox-label">
+                        <input type="checkbox" class="product-checkbox" id="rotationNick">
+                        <span class="checkbox-custom"></span>
+                    </label>
+                </div>
+            </div>  
+        </div>
     </div>
-  </div>
+</div>
 </div>
         </div>
 
