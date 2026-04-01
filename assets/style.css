@@ -533,17 +533,17 @@ input{font-size:16px;}
 .btnn{margin-top:8px;padding:8px 12px;border-radius:8px;border:none;background:#016bef;color:white;font-weight:700;cursor:pointer;}
 .btnn:hover {transform: scale(1.05);text-shadow: #ffffffb0 1px 0 10px;}
 
-#shop .avatar-section{display: flex;flex-direction: column;align-items: center;width: 240px;height:100%;padding: 10px;background: #1b263b;border-radius: 20px;}
+#shop .avatar-section{display: flex;align-items: center;width: 240px;height:100%;padding: 10px;background: #1b263b;border-radius: 20px;position: relative;justify-content: center;flex-direction: column;}
 #shop .input-group{position:relative;margin-bottom:20px;}
 #shop #nicknameWrapper{position:relative}
 #shop input[type="text"],#shop input[type="password"],#shop input[type="email"]{width: 100%;padding:12px;border:1px solid #ced4da;border-radius: 25px;font-size:16px;box-sizing:border-box;transition:border-color .3s,box-shadow .3s;height:35px;}
 #shop input[type="text"]:focus,#shop input[type="password"]:focus{border-color:#0078f9;outline:none}
-#shop #charCount{position:absolute;right:12px;top:30%;transform:translateY(-50%);color:#6c757d;font-size:14px;z-index:0;pointer-events:none}
-#shop .radio-group{display:flex;justify-content:space-around;gap: 10px;padding: 10px;}
+#shop #charCount{position:absolute;right:12px;top:30%;/* transform:translateY(-50%); */color:#6c757d;font-size:14px;z-index:0;pointer-events:none}
+#shop .radio-group{display:flex;gap: 10px;padding: 10px;justify-content: center;}
 #shop .radio-group label{display:flex;align-items:center;cursor:pointer;font-weight:bold;color:#495057}
-#shop .radio-group input[type="radio"]{margin-right:8px;width:auto}
+#shop .radio-group input[type="radio"]{margin-right:8px;width:auto;display: none;}
 #shop .radio-group input[type="radio"]:checked+span{color:#007bff}
-#shop #previewContainer{position:relative;width:120px;height:120px;border-radius:50%;border:2px solid #dee2e6;display:flex;align-items:center;justify-content:center;background: #ffffff29;overflow:hidden;cursor:pointer;transition:border-color .3s}
+#shop #previewContainer{width:120px;height:120px;border-radius:50%;border:2px solid #dee2e6;display:flex;align-items:center;justify-content:center;background: #ffffff29;overflow:hidden;cursor:pointer;transition:border-color .3s}
 #shop #previewContainer:hover{border-color:#80bdff}
 #shop #previewContainer::after{content:'+';font-size:40px;color:#adb5bd;pointer-events:none}
 #shop #previewContainer.has-image::after{display:none}
@@ -551,14 +551,16 @@ input{font-size:16px;}
 #shop #previewGif{max-height:100%;display:none}
 #shop #fileInput{display:none}
 #shop .warning{background: #ff001738;color: #d7d7d7;padding:10px;border-radius:5px;margin-bottom:15px;font-size:14px;display:none;border: #ffffff14 solid 1px;margin-top: 5px;}
-#shop .error{color: #d7d7d7;background: #ff001738;padding:8px 12px;border-radius:5px;border: #ffffff14 solid 1px;margin-top:5px;font-size:14px;display:none}
+#shop .error{color: #d7d7d7;background: #ff001738;padding:8px 12px;border-radius:5px;border: #ffffff14 solid 1px;margin-top:5px;font-size:14px;display:none;}
+#shop .options{position: absolute;right: 10px;font-size: 12px;background: #04d3043d;padding: 5px;border-radius: 20px;color: #0fbb0f;cursor: pointer;top: 10;}
+
 #shop #calculator{background: #d4eddae0;padding:15px;border-radius:10px;border-left:4px solid #28a745;}
 #shop #calculator h3{margin:0 0 10px;color:#155724}
 #shop #calculator p{margin:5px 0;text-align: justify;color: #4f4e4e;}
 #shop #totalAmount{font-size:18px;color:#155724;text-align:center;padding:10px;background:white;border-radius:8px;margin-top:10px}
-#shop button{padding:10px;background:#dc3545;color:white;border:none;border-radius:8px;font-size: 16px;font-weight:bold;cursor:pointer;transition:background-color .2s;margin-bottom: 10px;}
+#shop button{padding:10px;background:#dc3545;color:white;border:none;border-radius:8px;font-size: 16px;font-weight:bold;cursor:pointer;transition:background-color .2s;/* margin-bottom: 10px; */}
 #shop button:hover:not(:disabled){background:#c82333}
-#shop button:disabled{opacity:.6;cursor:not-allowed;background:#6c757d;margin-bottom: 10px;}
+#shop button:disabled{opacity:.6;cursor:not-allowed;background:#6c757d;/* margin-bottom: 10px; */}
 #shop .password-wrapper{position:relative}
 #shop .password-wrapper input{width:100%;padding-right:40px;box-sizing:border-box}
 #shop .eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;color:#6c757d;font-size:18px}
