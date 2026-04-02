@@ -1,7 +1,7 @@
 :root{--vs-primary:29 92 255;-webkit-touch-callout:none;-webkit-user-select:none;-khtml-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;}
 .admins{background:#ff00008f !important;}
 .banshee {
-    background: linear-gradient(rgb(0 0 0 / 33%), rgb(0 0 0 / 50%)), url(/assets/photo/modersfon.png) !important;
+    background: linear-gradient(rgb(0 0 0 / 33%), rgb(0 0 0 / 50%)), url(https://api.agar.su/assets/photo/8869.png) !important;
     background-size: cover !important;
     color: #ffffff !important;
     font-weight: lighter;
