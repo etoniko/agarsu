@@ -311,8 +311,8 @@ calculateCost();
 document.getElementById("paymentForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const rawNickname = nicknameInput.value.trim();
-  const nickname = rawNickname;
-  const password = passwordInput.value.trim();
+  const nickname = rawNickname.toLowerCase();
+  const password = passwordInput.value.trim().toLowerCase();
   const file = fileInput.files[0];
   const serviceType = document.querySelector('input[name="serviceType"]:checked')?.value || '';
   /*const email = emailInput.value.trim();
