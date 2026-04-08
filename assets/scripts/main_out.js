@@ -53,7 +53,7 @@ stats.forEach((player, index) => {
                         }
 	
     // По умолчанию выбранный сервер
-    let SELECTED_SERVER = wHandle.CONNECTION_URL || "ffa.agar.su:6001";
+    let SELECTED_SERVER = wHandle.CONNECTION_URL || "beget.agar.su:6001";
 
     // --- Подсветка активного сервера из hash ---
     function setActiveFromHash() {
@@ -102,17 +102,17 @@ window.addEventListener('hashchange', setActiveFromHash);
         };
     })(wjQuery);
 
-    // Функция обновления онлайн
-    async function updateOnlineCount() {
+// Функция обновления онлайн
+async function updateOnlineCount() {
     const servers = [
-        {id: 'ffa', url: 'https://ffa.agar.su:6001/process', max: 200},
-		{id: 'ffasolo', url: 'https://ffa.agar.su:6008/process', max: 120},
+        {id: 'ffa', url: 'https://beget.agar.su:6001/process', max: 200},
         {id: 'ms', url: 'https://ffa.agar.su:6002/process', max: 120},
-        {id: 'exp', url: 'https://ffa.agar.su:6003/process', max: 120},
-		{id: 'pvp1', url: 'https://ffa.agar.su:6004/process', max: 50},
-		{id: 'pvp2', url: 'https://ffa.agar.su:6005/process', max: 50},
-		{id: 'tournament', url: 'https://ffa.agar.su:6006/process', max: 120}
+        {id: 'pvp1', url: 'https://ffa.agar.su:6004/process', max: 50},
+        {id: 'pvp2', url: 'https://ffa.agar.su:6005/process', max: 50},
+        {id: 'tournament', url: 'https://ffa.agar.su:6006/process', max: 120}
     ];
+    
+    let totalOnline = 0; // Общая сумма онлайн всех серверов
 
     for (const server of servers) {
         try {
@@ -122,18 +122,27 @@ window.addEventListener('hashchange', setActiveFromHash);
 
             const playing = data.playing ?? 0;
             const noPlaying = data.no_playing ?? 0;
+            const serverTotal = playing + noPlaying; // Общий онлайн конкретного сервера
+            
+            totalOnline += serverTotal; // Добавляем к общей сумме
 
             const li = document.getElementById(server.id);
             if (li) {
                 const spans = li.querySelectorAll('.online-count');
                 if (spans.length >= 2) {
-                    spans[0].textContent = noPlaying;             // ❗ Только неиграющие
+                    spans[0].textContent = noPlaying;             // Только неиграющие
                     spans[1].textContent = `${playing}/${server.max}`; // Играющих / максимум
                 }
             }
         } catch (e) {
             console.error(`Ошибка обновления сервера ${server.id}:`, e);
         }
+    }
+    
+    // Обновляем общий онлайн в элементе с id="online"
+    const onlineElement = document.getElementById('online');
+    if (onlineElement) {
+        onlineElement.textContent = `Онлайн: ${totalOnline - 14}`;
     }
 }
 
@@ -191,7 +200,7 @@ wHandle.startGame = function () {
     };
 
 const SERVERS = {
-        "ffa":   "ffa.agar.su:6001",
+        "ffa":   "beget.agar.su:6001",
 		"ffasolo":    "ffa.agar.su:6008",
         "ms":    "ffa.agar.su:6002",
         "exp":   "ffa.agar.su:6003",
@@ -963,7 +972,7 @@ $(document).on("contextmenu", function (event) {
         wHandle.requestAnimationFrame(redrawGameScene);
         setInterval(sendMouseMove, 50);
         wjQuery("#overlays").show();
-		setTimeout(showCaptcha, 200);
+		//setTimeout(showCaptcha, 200);
 		setInterval(updateStats, 100);
     }
 	
@@ -1627,7 +1636,7 @@ case 48:
 
 let badWordsSet; // Используем Set вместо массива
 
-fetch('/word.txt?1')
+fetch('/word.txt')
     .then(response => response.text())
     .then(text => {
         const words = text.split('\n').map(word => word.trim().toLowerCase());
@@ -1663,7 +1672,7 @@ function censorMessage(message) {
 
 
 const admins = ["нико","^iStack","banshee"];
-const moders = ["cosmos","rizwer"];
+const moders = ["cosmos","rizwer","bambule"];
 const youtubers = ["salruz", "morcov","sealand"];
 const url_youtubers = ["https://youtube.com/@SalRuzO", "https://www.youtube.com/@MORCCVA","https://www.youtube.com/@sealandv"];
 
@@ -1845,13 +1854,25 @@ function openPvPModal(targetId, targetName) {
                      <p>Выберите сервер:</p>`;
 
     // Список серверов
-    const servers = ["ffa.agar.su:6004","ffa.agar.su:6005","ffa.agar.su:6006"];
-    servers.forEach(s => {
+       const servers = [
+        { name: "FFA 1vs1", address: "ffa.agar.su:6004" },
+        { name: "MS 2vs2", address: "ffa.agar.su:6005" },
+        { name: "Tournament", address: "ffa.agar.su:6006" }
+    ];
+    servers.forEach(server => {
         const btn = document.createElement('button');
-        btn.textContent = s;
+        btn.textContent = server.name; // Отображаем название вместо IP:порт
         btn.style.margin = '5px';
+        btn.style.padding = '8px 16px';
+        btn.style.cursor = 'pointer';
+        btn.style.background = '#2c2c2c';
+        btn.style.border = 'none';
+        btn.style.borderRadius = '4px';
+        btn.style.color = '#fff';
+        btn.onmouseover = () => btn.style.background = '#3c3c3c';
+        btn.onmouseout = () => btn.style.background = '#2c2c2c';
         btn.onclick = () => {
-            sendPvPInvite(targetId, s);
+            sendPvPInvite(targetId, server.address);
             modal.remove();
         };
         box.appendChild(btn);
@@ -1861,6 +1882,12 @@ function openPvPModal(targetId, targetName) {
     const cancelBtn = document.createElement('button');
     cancelBtn.textContent = 'Отмена';
     cancelBtn.style.marginTop = '10px';
+    cancelBtn.style.padding = '8px 16px';
+    cancelBtn.style.cursor = 'pointer';
+    cancelBtn.style.background = '#6c6c6c';
+    cancelBtn.style.border = 'none';
+    cancelBtn.style.borderRadius = '4px';
+    cancelBtn.style.color = '#fff';
     cancelBtn.onclick = () => modal.remove();
     box.appendChild(cancelBtn);
 
@@ -1918,6 +1945,24 @@ function drawChatBoard() {
     if (hideChat) return;
     const lastMessage = chatBoard[chatBoard.length - 1];
     if (!lastMessage) return;
+	
+if (lastMessage.message && lastMessage.message.toLowerCase().includes("вошёл в игру")) {
+    const simpleDiv = document.createElement('div');
+    simpleDiv.className = 'chatexit';
+
+    const nameSpan = document.createElement('span');
+    nameSpan.style.color = lastMessage.color || '#b8c0cc';
+    nameSpan.textContent = lastMessage.name;
+
+    simpleDiv.appendChild(nameSpan);
+    simpleDiv.append(`: ${lastMessage.message}`);
+
+    document.getElementById('chatX_feed').appendChild(simpleDiv);
+
+    console.log(simpleDiv);
+
+    return;
+}
 
     // --- Игнорируем игрока ---
     if (ignoredPlayers.has(lastMessage.pId)) return;
@@ -3271,8 +3316,25 @@ function drawLeaderBoard() {
     splitIcon.src = "assets/photo/split.png";
     ejectIcon.src = "assets/photo/eject.png";
     wHandle.connect = wsConnect;
-	wHandle.setNick = function (arg) {setserver(SELECTED_SERVER); hideOverlays(); userNickName = arg; sendNickName(); wjQuery("#statics").hide(); maxScore = 0;};
-    wHandle.spectate = function () { setserver(SELECTED_SERVER);  userNickName = null; hideOverlays(); wjQuery("#statics").hide();};
+	let captchaShown = false;
+
+wHandle.setNick = function (arg) {
+    setserver(SELECTED_SERVER); 
+    hideOverlays(); 
+    userNickName = arg; 
+    sendNickName(); 
+    wjQuery("#statics").hide(); 
+    maxScore = 0; 
+    
+    if (!captchaShown) {
+        showCaptcha();
+        captchaShown = true;
+    }
+};
+    wHandle.spectate = function () { setserver(SELECTED_SERVER);  userNickName = null; hideOverlays(); wjQuery("#statics").hide();    if (!captchaShown) {
+        showCaptcha();
+        captchaShown = true;
+    }};
 	
 	// === Настройки по умолчанию ===
 let showSkin = true,
@@ -3352,7 +3414,7 @@ wjQuery(window).on('load', function() {
 
 
 
-const transparent = new Set(["незнакомка","bublik","liqwid","zombie","pac-man"]);
+const transparent = new Set(["liqwid"]);
 let invisible = new Set(); // сначала пустой Set
 fetch("https://api.agar.su/invisible.txt")
   .then(r => r.text())
@@ -3363,7 +3425,15 @@ fetch("https://api.agar.su/invisible.txt")
     });
   });
 const invisible2 = new Set(["ghost", "невидимка", "shadow", "invis", "cat2","zombie"]); // невидимая масса
-const rotation = new Set(["pac-man","zombie"]); //поворот скина
+const rotation = new Set(); //поворот скина
+fetch("https://api.agar.su/rotation.txt")
+  .then(r => r.text())
+  .then(text => {
+    text.split('\n').forEach(line => {
+      line = line.trim().toLowerCase();
+      if (line) rotation.add(line);
+    });
+  });
 let oldX = -1, oldY = -1, z = 1;
 const skins = {};
 
@@ -4257,6 +4327,16 @@ async function handleLogin(tokenOrUser, provider) {
 wHandle.onTelegramAuth = function(user) {
     handleLogin(user, 'telegram');
 };
+// --------------------- Telegram Popup Listener ---------------------
+window.addEventListener("message", function(event) {
+    if (event.origin !== "https://agar.su") return;
+
+    if (event.data.type === "telegram-auth") {
+        const user = event.data.user;
+
+        handleLogin(user, 'telegram');
+    }
+});
 
 // Google callback
 wHandle.onGoogleAuth = function(response) {
