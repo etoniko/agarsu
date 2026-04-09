@@ -1030,13 +1030,46 @@ input{font-size:16px;}
     opacity: 0.7;
 }
 
-/* Контейнер с реакциями */
+.chatX_msg:hover {
+    background: rgb(91 91 91 / 69%);
+}
+
+/* Кнопка реакций - ПО УМОЛЧАНИЮ СКРЫТА */
+.reaction-trigger {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    font-size: 15px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 10;
+}
+
+/* ПОКАЗЫВАЕМ ТОЛЬКО ПРИ НАВЕДЕНИИ НА СООБЩЕНИЕ */
+.chatX_msg:hover .reaction-trigger {
+    opacity: 1;
+    visibility: visible;
+}
+
+.reaction-trigger:hover {
+    background: rgba(0, 120, 255, 0.7);
+    transform: translateY(-50%) scale(1.1);
+}
+
+/* Панель с реакциями под сообщением */
 .message-reactions {
     display: flex;
-    gap: 5px;
-    margin-top: 4px;
-    margin-left: 35px;
-    flex-wrap: wrap;
+    gap: 6px;
+    /* margin-top: 6px; */
+    /* flex-wrap: wrap; */
+    padding-left: 48px; /* Отступ под аватар */
 }
 
 /* Отдельная реакция */
@@ -1044,22 +1077,23 @@ input{font-size:16px;}
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 30px;
     padding: 2px 8px;
     font-size: 12px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
 }
 
 .reaction:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.15);
     transform: scale(1.05);
 }
 
 .reaction.active {
-    background: rgba(0, 120, 255, 0.3);
-    border: 1px solid #0078ff;
+    background: rgba(0, 120, 255, 0.25);
+    border-color: rgba(0, 120, 255, 0.5);
 }
 
 .reaction-emoji {
@@ -1067,32 +1101,34 @@ input{font-size:16px;}
 }
 
 .reaction-count {
-    color: #b8c0cc;
+    color: #aaa;
     font-size: 11px;
+    font-weight: 500;
 }
 
-/* Панель выбора реакций */
+/* Плавающая панель выбора эмодзи */
 .reaction-picker {
     position: fixed;
-    background: #2c2c2c;
-    border-radius: 30px;
-    padding: 8px 12px;
+    background: #1e1e1e;
+    border-radius: 40px;
+    padding: 8px 16px;
     display: flex;
-    gap: 8px;
-    z-index: 10000;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    border: 1px solid #4a4a4a;
+    gap: 12px;
+    z-index: 10001;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    border: 1px solid #444;
+    backdrop-filter: blur(8px);
 }
 
 .reaction-option {
-    font-size: 20px;
+    font-size: 22px;
     cursor: pointer;
     padding: 4px 8px;
-    border-radius: 20px;
-    transition: all 0.2s;
+    border-radius: 30px;
+    transition: all 0.2s ease;
 }
 
 .reaction-option:hover {
-    background: rgba(255,255,255,0.2);
+    background: #3a3a3a;
     transform: scale(1.2);
 }
