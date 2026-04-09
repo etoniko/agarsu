@@ -1300,7 +1300,7 @@ let pingstamp = 0;
         pingstamp = Date.now();        
 wsSend(new Uint8Array([2])); // ping
     }, 3000);
-	setTimeout(() => { sendChat("вошёл в игру!"); }, 1000);
+	setTimeout(() => { sendChat("вoшёл в игру!"); }, 1000);
     }
 
         function onWsClose(evt) {
@@ -1946,16 +1946,16 @@ function drawChatBoard() {
     const lastMessage = chatBoard[chatBoard.length - 1];
     if (!lastMessage) return;
 	
-if (lastMessage.message && lastMessage.message.toLowerCase().includes("вошёл в игру")) {
+if (lastMessage.message && lastMessage.message.toLowerCase().includes("вoшёл в игру")) {
     const simpleDiv = document.createElement('div');
     simpleDiv.className = 'chatexit';
 
     const nameSpan = document.createElement('span');
     nameSpan.style.color = lastMessage.color || '#b8c0cc';
-    nameSpan.textContent = lastMessage.name;
+    nameSpan.textContent = `${lastMessage.name}:`;
 
     simpleDiv.appendChild(nameSpan);
-    simpleDiv.append(`: ${lastMessage.message}`);
+    simpleDiv.append(` ${lastMessage.message}`);
 
     document.getElementById('chatX_feed').appendChild(simpleDiv);
 
