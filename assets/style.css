@@ -552,7 +552,7 @@ input{font-size:16px;}
 #shop #fileInput{display:none}
 #shop .warning{background: #ff001738;color: #d7d7d7;padding:10px;border-radius:5px;margin-bottom:15px;font-size:14px;display:none;border: #ffffff14 solid 1px;margin-top: 5px;}
 #shop .error{color: #d7d7d7;background: #ff001738;padding:8px 12px;border-radius:5px;border: #ffffff14 solid 1px;margin-top:5px;font-size:14px;display:none;}
-#shop .options{position: absolute;right: 10px;font-size: 12px;background: #04d3043d;padding: 5px;border-radius: 20px;color: #4de300;cursor: pointer;top: 10;}
+#shop .options{position: absolute;right: 10px;font-size: 12px;background: #04d3043d;padding: 5px;border-radius: 20px;color: #4de300;cursor: pointer;top: 10px;}
 #shop .options:hover{background: #16dc164a;color: #0fdc0f;}
 
 #shop #calculator{background: #d4eddae0;padding:15px;border-radius:10px;border-left:4px solid #28a745;}
