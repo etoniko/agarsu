@@ -1149,6 +1149,15 @@ if (name && name !== cell.name) {
   cell.hasChanged = true;      // ← важная строка
   cell.name = name;            // перерисует текст/скин
 }
+	   // ========== УСТАНОВКА СТИКЕРА ==========
+            if (stickerData !== null) {
+                cell.currentSticker = stickerData;
+                cell.stickerActive = true;
+            } else {
+                cell.stickerActive = false;
+                cell.currentSticker = null;
+            }
+            // =======================================
   } else {
     // новая клетка
     this.addCell(id, posX, posY, size, name, color);
@@ -1158,6 +1167,15 @@ if (name && name !== cell.name) {
     if (cell) {
       cell.color = color;
       cell.name  = name;
+		 // ========== УСТАНОВКА СТИКЕРА ДЛЯ НОВОЙ КЛЕТКИ ==========
+                if (stickerData !== null) {
+                    cell.currentSticker = stickerData;
+                    cell.stickerActive = true;
+                } else {
+                    cell.stickerActive = false;
+                    cell.currentSticker = null;
+                }
+                // =======================================================
     }
 
     if (playerId === CORE.net.ownerPlayerId) {
