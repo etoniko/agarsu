@@ -2309,6 +2309,14 @@ function updateNodes(reader) {
             let flagAgitated = !!(spiked & 0x10);
 
             const name = reader.utf8();
+            
+            let stickerData = null;
+if (reader.canRead) {
+    const marker = reader.uint8();
+    if (marker === 0xFF) {
+        stickerData = reader.uint8();
+    }
+}
 
             let node = nodes[nodeid];
             if (node) {
