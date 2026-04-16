@@ -6,6 +6,13 @@
     color: #ffffff !important;
     font-weight: lighter;
 }
+.☼К☼ {
+    background: linear-gradient(rgb(0 0 0 / 33%), rgb(0 0 0 / 50%)), url(https://api.agar.su/assets/photo/778.jpg) !important;
+    color: #ffffff !important;
+    font-weight: lighter;
+    background-size: cover  !important;
+}
+	
 .ffatt{background-image: url(./photo/ffatt.png);}
 .footer {
     position: absolute;
