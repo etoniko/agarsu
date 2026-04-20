@@ -1215,3 +1215,23 @@ input{font-size:16px;}
         color: #ff3366;
     }
 }
+
+.avatarXcontainer.admin::after {
+    content: "hdr_auto";
+    font-family: 'Material Icons';
+    font-size: 19px;
+    color: #ff0000;
+    display: block;
+    background: radial-gradient(#ffe100 4px, #1e90ff00 50%);
+}
+
+.avatarXcontainer.moderator::after {
+    content: "M";
+    font-family: 'roboto';
+    font-size: 12px;
+    display: block;
+color: #54ff00;
+    background: #009aff;
+padding: 1px 3px 1px 3px;
+border-radius: 100%
+}
