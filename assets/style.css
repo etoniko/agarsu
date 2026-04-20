@@ -6,6 +6,11 @@
     color: #ffffff !important;
     font-weight: lighter;
 }
+.moders{
+background: #80808057 !important;
+border-radius: 20px;
+padding: 5px;
+}
 .mod {
     background: linear-gradient(rgb(0 0 0 / 33%), rgb(0 0 0 / 50%)), url(https://api.agar.su/assets/photo/778.jpg?3) !important;
     background-size: cover !important;
