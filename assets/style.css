@@ -32,13 +32,13 @@
     border-radius: 10px;
     padding: 5px;
 }
-.chatX_msg[class*="☼K☼"]{
+.chatX_msg[class*="☼k☼"]{
     background: linear-gradient(rgb(0 0 0 / 33%), rgb(0 0 0 / 50%)), url(https://api.agar.su/assets/photo/778.jpg?3) !important;
     background-size: cover !important;
     background-position: center 45% !important;
 	border: solid 1px #ffffff3d;
 }
-.Lednick[class*="☼K☼"]{
+.Lednick[class*="☼k☼"]{
     background: linear-gradient(rgb(0 0 0 / 33%), rgb(0 0 0 / 50%)), url(https://api.agar.su/assets/photo/778.jpg?3) !important;
     background-size: cover !important;
     background-position: center 45% !important;
