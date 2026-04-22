@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    
+    <!-- SEO метатеги -->
+    <title>Agar.su Калькулятор уровней | Опыт → Уровень | Точный расчет LVL</title>
+    <meta name="description" content="Калькулятор уровней для Agar.su. Мгновенный расчет: из опыта (XP) в уровень (LVL) и обратно по точной формуле игры. Бесплатно, удобно, красиво.">
+    <meta name="keywords" content="agar.su, калькулятор уровней, опыт, уровень, xp to level, agar su lvl, агар су, расчет опыта">
+    <meta name="author" content="Agar.su Tools">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#0a4c8a">
+    
+    <!-- Open Graph для соцсетей -->
+    <meta property="og:title" content="Agar.su Калькулятор уровней | Опыт → Уровень">
+    <meta property="og:description" content="Мгновенный перевод опыта (XP) в уровень (LVL) для Agar.su. Точная формула: XP = 100 × (LVL² / 2).">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Agar.su Tools">
+    <meta property="og:locale" content="ru_RU">
+    
+    <!-- Favicon (корень сайта) -->
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <link rel="shortcut icon" href="/icon.svg" type="image/x-icon">
+    <link rel="apple-touch-icon" href="/icon.svg">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none; /* легкая атмосфера, но не ломает ввод */
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(145deg, #0b2b5c 0%, #0a1e3a 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', 'Poppins', 'Inter', system-ui, -apple-system, 'Roboto', sans-serif;
+            padding: 20px;
+        }
+
+        /* главная карточка */
+        .card {
+            background: rgba(255, 255, 255, 0.97);
+            backdrop-filter: blur(2px);
+            border-radius: 64px 48px 64px 48px;
+            box-shadow: 0 30px 45px -20px rgba(0, 0, 0, 0.5), 0 8px 20px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255,255,255,0.6);
+            max-width: 550px;
+            width: 100%;
+            padding: 2rem 2rem 2.5rem;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+
+        /* шапка с капелькой agar стиля */
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2.4rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #0a4c8a, #0b2b5c);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            letter-spacing: -0.5px;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header h1::before {
+            content: "●";
+            font-size: 2rem;
+            color: #1e88e5;
+            text-shadow: 0 0 3px #64b5f6;
+            background: none;
+            -webkit-background-clip: unset;
+            background-clip: unset;
+        }
+
+        .header h1::after {
+            content: "●";
+            font-size: 2rem;
+            color: #1e88e5;
+            text-shadow: 0 0 3px #64b5f6;
+        }
+
+        .sub {
+            color: #2c6e9e;
+            font-weight: 500;
+            margin-top: 8px;
+            font-size: 0.9rem;
+            background: #eef4ff;
+            display: inline-block;
+            padding: 5px 18px;
+            border-radius: 40px;
+            backdrop-filter: blur(2px);
+        }
+
+        /* переключатель режимов */
+        .mode-switch {
+            display: flex;
+            gap: 12px;
+            background: #e9f0fc;
+            padding: 6px;
+            border-radius: 60px;
+            margin-bottom: 30px;
+            border: 1px solid #cbdff2;
+        }
+
+        .mode-btn {
+            flex: 1;
+            text-align: center;
+            padding: 12px 0;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: 0.2s;
+            background: transparent;
+            color: #1e4663;
+            border: none;
+            font-family: inherit;
+        }
+
+        .mode-btn.active {
+            background: white;
+            color: #0a4c8a;
+            box-shadow: 0 4px 10px rgba(0, 60, 120, 0.15);
+            border: 1px solid #b9d4ff;
+        }
+
+        /* поля ввода */
+        .input-group {
+            margin-bottom: 28px;
+            position: relative;
+        }
+
+        .input-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #0a3a62;
+            font-size: 0.9rem;
+            letter-spacing: 0.3px;
+            padding-left: 8px;
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            background: #f2f8ff;
+            border-radius: 60px;
+            border: 1.5px solid #cde2fc;
+            transition: 0.2s;
+            padding: 4px 12px 4px 20px;
+            background: white;
+        }
+
+        .input-wrapper:focus-within {
+            border-color: #1e88e5;
+            box-shadow: 0 0 0 4px rgba(30, 136, 229, 0.2);
+        }
+
+        .input-wrapper input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            padding: 16px 8px 16px 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #0a2e4a;
+            outline: none;
+            width: 100%;
+            font-family: monospace;
+        }
+
+        .input-wrapper input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        .input-wrapper input[type="number"]::-webkit-inner-spin-button,
+        .input-wrapper input[type="number"]::-webkit-outer-spin-button {
+            opacity: 0.5;
+        }
+
+        .suffix {
+            font-weight: 700;
+            color: #4a7c9e;
+            font-size: 1.2rem;
+            background: #eef3fc;
+            padding: 6px 14px;
+            border-radius: 40px;
+        }
+
+        /* результат */
+        .result {
+            background: linear-gradient(120deg, #eef5ff, #ffffff);
+            border-radius: 48px;
+            padding: 18px 22px;
+            margin: 25px 0 20px;
+            text-align: center;
+            border: 1px solid rgba(30, 136, 229, 0.3);
+            box-shadow: inset 0 1px 2px #ffffff80, 0 6px 12px -8px rgba(0,0,0,0.2);
+        }
+
+        .result-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+            color: #3b7aa5;
+        }
+
+        .result-value {
+            font-size: 3.6rem;
+            font-weight: 800;
+            line-height: 1.2;
+            color: #0c4e8c;
+            word-break: break-word;
+        }
+
+        .result-value span {
+            font-size: 1.6rem;
+            font-weight: 500;
+            color: #2c6e9e;
+        }
+
+        /* доп. инфо */
+        .info-panel {
+            background: #eaf2fd;
+            border-radius: 32px;
+            padding: 15px 18px;
+            margin-top: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 0.85rem;
+            border: 1px solid #cae0f5;
+        }
+
+        .info-item {
+            background: white;
+            border-radius: 40px;
+            padding: 6px 18px;
+            font-weight: 500;
+            color: #12507e;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        }
+
+        .info-item strong {
+            color: #003366;
+        }
+
+        button.reset-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            background: #ffffffcc;
+            border-radius: 40px;
+            padding: 5px 18px;
+            font-weight: 600;
+            color: #1e5b9e;
+            transition: 0.1s;
+            border: 1px solid #b9d4ff;
+        }
+
+        button.reset-btn:hover {
+            background: white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+
+        /* маленькие адаптивы */
+        @media (max-width: 480px) {
+            .card {
+                padding: 1.5rem;
+            }
+            .result-value {
+                font-size: 2.8rem;
+            }
+            .input-wrapper input {
+                font-size: 1.2rem;
+                padding: 12px 4px 12px 0;
+            }
+            .suffix {
+                font-size: 1rem;
+            }
+        }
+
+        /* кнопка "как в agar.su" */
+        .footer-note {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.7rem;
+            color: #608bb0;
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="header">
+        <h1>AGAR.SU</h1>
+        <div class="sub">Калькулятор уровней • Опыт ↔ LVL</div>
+    </div>
+
+    <div class="mode-switch" id="modeSwitch">
+        <button class="mode-btn active" data-mode="xpToLevel">📈 Опыт → Уровень</button>
+        <button class="mode-btn" data-mode="levelToXp">🏆 Уровень → Опыт</button>
+    </div>
+
+    <!-- динамическая форма -->
+    <div id="inputArea">
+        <!-- будет подставлено через js, но на всякий случай базовая разметка -->
+    </div>
+
+    <div class="result" id="resultBlock">
+        <div class="result-label" id="resultLabel">Текущий уровень</div>
+        <div class="result-value" id="resultValue">—</div>
+    </div>
+
+    <div class="info-panel">
+        <div class="info-item">📐 Формула: <strong>XP = 100 × (LVL² / 2)</strong></div>
+        <div class="info-item">🔄 <strong>LVL = √(XP × 2 / 100)</strong></div>
+        <button class="reset-btn" id="resetBtn">⟳ Сбросить</button>
+    </div>
+    <div class="footer-note">
+        ⚡ Точная механика agar.su — округление вниз (пол/уровень)
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ----- математические функции (как в запросе)
+        const getXpFromLevel = (level) => {
+            if (level < 0) return 0;
+            return Math.floor(100 * (Math.pow(level, 2) / 2));
+        };
+
+        const getLevelFromXp = (xp) => {
+            if (xp < 0) return 0;
+            // формула: ~~((xp / 100 * 2) ** 0.5)
+            return Math.floor(Math.sqrt((xp / 100) * 2));
+        };
+
+        // DOM элементы
+        const modeSwitch = document.getElementById('modeSwitch');
+        const inputArea = document.getElementById('inputArea');
+        const resultLabelEl = document.getElementById('resultLabel');
+        const resultValueEl = document.getElementById('resultValue');
+        const resetBtn = document.getElementById('resetBtn');
+
+        let currentMode = 'xpToLevel'; // 'xpToLevel' или 'levelToXp'
+        let inputValue = 1000;   // значение по умолчанию (1000 опыта для первого запуска)
+
+        // ----- Вспомогательные рендеры
+        function updateResult() {
+            if (currentMode === 'xpToLevel') {
+                const xp = Math.max(0, Math.floor(Number(inputValue)));
+                const level = getLevelFromXp(xp);
+                resultLabelEl.innerText = '🏅 ПОЛУЧЕННЫЙ УРОВЕНЬ';
+                resultValueEl.innerHTML = `${level} <span style="font-size:1.5rem;"> lvl</span>`;
+                // дополнительно показываем сколько опыта до следующего уровня
+                const nextLevelXp = getXpFromLevel(level + 1);
+                const currentLevelXp = getXpFromLevel(level);
+                const needed = nextLevelXp - xp;
+                const have = xp - currentLevelXp;
+                if (level >= 0 && needed > 0) {
+                    // добавим мини-прогресс в панель? но информативно обновим тултип? сделаем подсказку внизу
+                    document.querySelector('.info-panel .info-item:first-child').innerHTML = `📐 Формула: <strong>XP = 100 × (LVL² / 2)</strong><br><span style="font-size:0.7rem;">📊 до ${level+1} lvl: ${needed} XP (${have} / ${nextLevelXp - currentLevelXp})</span>`;
+                } else {
+                    document.querySelector('.info-panel .info-item:first-child').innerHTML = `📐 Формула: <strong>XP = 100 × (LVL² / 2)</strong>`;
+                }
+            } 
+            else { // levelToXp
+                let level = Math.max(0, Math.floor(Number(inputValue)));
+                const xp = getXpFromLevel(level);
+                resultLabelEl.innerText = '✨ ТРЕБУЕТСЯ ОПЫТА';
+                resultValueEl.innerHTML = `${xp.toLocaleString()} <span style="font-size:1.5rem;"> XP</span>`;
+                // доп. информация о следующем уровне
+                const nextXp = getXpFromLevel(level + 1);
+                document.querySelector('.info-panel .info-item:first-child').innerHTML = `📐 Формула: <strong>XP = 100 × (LVL² / 2)</strong><br><span style="font-size:0.7rem;">⭐ след. lvl ${level+1} → ${nextXp.toLocaleString()} XP</span>`;
+            }
+        }
+
+        // создать поле ввода в зависимости от режима
+        function renderInputField() {
+            const mode = currentMode;
+            let html = '';
+            if (mode === 'xpToLevel') {
+                html = `
+                    <div class="input-group">
+                        <label>🍀 Введите количество ОПЫТА (XP)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="mainInput" value="${inputValue}" step="1" min="0" placeholder="например, 1000">
+                            <div class="suffix">⚡ XP</div>
+                        </div>
+                        <div style="font-size:12px; margin-top:8px; margin-left:12px; color:#4080b0;">★ от 0 до 10 млн XP</div>
+                    </div>
+                `;
+            } else {
+                html = `
+                    <div class="input-group">
+                        <label>🎯 Введите УРОВЕНЬ (LVL)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="mainInput" value="${inputValue}" step="1" min="0" placeholder="например, 15">
+                            <div class="suffix">🔷 уровень</div>
+                        </div>
+                        <div style="font-size:12px; margin-top:8px; margin-left:12px; color:#4080b0;">★ максимальный уровень ~ 4472 (20M XP)</div>
+                    </div>
+                `;
+            }
+            inputArea.innerHTML = html;
+            
+            // навесить обработчик на новое поле
+            const inputEl = document.getElementById('mainInput');
+            if (inputEl) {
+                inputEl.addEventListener('input', function(e) {
+                    let raw = e.target.value;
+                    if (raw === '') raw = '0';
+                    let num = parseInt(raw, 10);
+                    if (isNaN(num)) num = 0;
+                    if (num < 0) num = 0;
+                    // ограничение на очень большие числа (чтоб не тормозило)
+                    if (currentMode === 'xpToLevel' && num > 50000000) num = 50000000;
+                    if (currentMode === 'levelToXp' && num > 10000) num = 10000;
+                    inputValue = num;
+                    e.target.value = num;
+                    updateResult();
+                });
+                // синхронизируем отображение
+                inputEl.value = inputValue;
+            }
+        }
+
+        // переключение режимов + сброс значения на "нейтральное"
+        function setMode(mode) {
+            currentMode = mode;
+            // при смене режима — меняем значение на логичный дефолт для удобства
+            if (mode === 'xpToLevel') {
+                if (typeof inputValue !== 'number' || inputValue < 0) inputValue = 1000;
+                // если предыдущее значение было уровнем, преобразуем в эквивалент опыта для показа
+                // но лучше оставить как 1000 (классика) или вычислить примерное
+                // однако для юзерфрендли сделаем: если предыдущий режим был levelToXp и там был уровень l, то покажем XP того уровня?
+                // но для чистоты оставим, что при первом переключении с уровня на опыт — покажем XP соответствующее последнему введённому уровню? 
+                // Но ради логики: при переходе из level -> xp, мы возьмём inputValue как уровень, и переведём в XP для поля XP? 
+                // правильнее: при смене режима преобразовывать inputValue согласно формуле, чтобы не терять смысл
+                const previousValue = inputValue;
+                // если раньше был уровень, конвертируем в XP
+                if (window._prevModeWasLevel === true || currentMode === 'xpToLevel' && window._lastMode === 'levelToXp') {
+                    // считаем, что previousValue — это уровень, конвертируем в XP
+                    let newXp = getXpFromLevel(Math.floor(previousValue));
+                    inputValue = Math.min(newXp, 50000000);
+                } else {
+                    // если всё же изначально или так, оставляем, но если значение слишком маленькое оставим 1000
+                    if (inputValue === undefined || inputValue === 0 && previousValue === 0) inputValue = 1000;
+                    else if (inputValue > 50000000) inputValue = 50000000;
+                }
+            } 
+            else { // mode === 'levelToXp'
+                const previousVal = inputValue;
+                if (window._prevModeWasXp === true || (window._lastMode === 'xpToLevel')) {
+                    // предыдущее значение было опытом, конвертируем в уровень
+                    let newLevel = getLevelFromXp(Math.floor(previousVal));
+                    inputValue = newLevel;
+                } else {
+                    if (inputValue === undefined || inputValue === 0 && previousVal === 0) inputValue = 15;
+                    else if (inputValue > 10000) inputValue = 10000;
+                }
+            }
+            // обновить флаги
+            window._lastMode = currentMode;
+            window._prevModeWasLevel = (currentMode === 'xpToLevel' ? false : true);
+            window._prevModeWasXp = (currentMode === 'levelToXp' ? false : true);
+            
+            renderInputField();
+            updateResult();
+            updateActiveButton();
+        }
+
+        function updateActiveButton() {
+            const btns = document.querySelectorAll('.mode-btn');
+            btns.forEach(btn => {
+                const modeVal = btn.getAttribute('data-mode');
+                if ((modeVal === 'xpToLevel' && currentMode === 'xpToLevel') ||
+                    (modeVal === 'levelToXp' && currentMode === 'levelToXp')) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        // сброс до дефолтных значений (1000 XP / либо 4 уровень)
+        function resetToDefault() {
+            if (currentMode === 'xpToLevel') {
+                inputValue = 1000;
+                const inputField = document.getElementById('mainInput');
+                if (inputField) inputField.value = 1000;
+                updateResult();
+            } else {
+                // уровень соответствующий 1000 XP - это 4 lvl
+                inputValue = 4;
+                const inputField = document.getElementById('mainInput');
+                if (inputField) inputField.value = 4;
+                updateResult();
+            }
+        }
+
+        // инициализация обработчиков кнопок
+        function initEventListeners() {
+            const btns = document.querySelectorAll('.mode-btn');
+            btns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const mode = btn.getAttribute('data-mode');
+                    if (mode === currentMode) return;
+                    setMode(mode);
+                });
+            });
+            resetBtn.addEventListener('click', () => {
+                resetToDefault();
+            });
+        }
+
+        // запуск
+        function init() {
+            // начальный режим xpToLevel, значение 1000 XP
+            currentMode = 'xpToLevel';
+            inputValue = 1000;
+            window._lastMode = 'xpToLevel';
+            window._prevModeWasXp = true;
+            window._prevModeWasLevel = false;
+            renderInputField();
+            updateResult();
+            initEventListeners();
+            updateActiveButton();
+        }
+
+        init();
+    })();
+</script>
+</body>
+</html>
