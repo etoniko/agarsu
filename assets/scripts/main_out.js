@@ -106,6 +106,7 @@ window.addEventListener('hashchange', setActiveFromHash);
 async function updateOnlineCount() {
     const servers = [
         {id: 'ffa', url: 'https://beget.agar.su:6001/process', max: 200},
+		{id: 'ffakiev', url: 'https://ffa.agar.su:6001/process', max: 100},
         {id: 'ms', url: 'https://ffa.agar.su:6002/process', max: 120},
         {id: 'pvp1', url: 'https://ffa.agar.su:6004/process', max: 50},
         {id: 'pvp2', url: 'https://ffa.agar.su:6005/process', max: 50},
@@ -142,7 +143,7 @@ async function updateOnlineCount() {
     // Обновляем общий онлайн в элементе с id="online"
     const onlineElement = document.getElementById('online');
     if (onlineElement) {
-        onlineElement.textContent = `Онлайн: ${totalOnline - 14}`;
+        onlineElement.textContent = `Онлайн: ${totalOnline - 19}`;
     }
 }
 
@@ -201,6 +202,7 @@ wHandle.startGame = function () {
 
 const SERVERS = {
         "ffa":   "beget.agar.su:6001",
+		"ffakiev":   "ffa.agar.su:6001",
 		"ffasolo":    "ffa.agar.su:6008",
         "ms":    "ffa.agar.su:6002",
         "exp":   "ffa.agar.su:6003",
@@ -446,477 +448,671 @@ const cellColors = [
             "#663300", "#996600", "#CC3300", "#993300", "#990000", "#800000", "#993333"
         ];
 		
-    function gameLoop() {
-        ma = true;
-        document.getElementById("canvas").focus();
-        var isTyping = false;
-        var txt;
-        mainCanvas = nCanvas = document.getElementById("canvas");
-        ctx = mainCanvas.getContext("2d");
+   function gameLoop() {
+let stickerCooldown = false;
+let stickerCooldownTimer = null;
+    ma = true;
+    document.getElementById("canvas").focus();
+    var isTyping = false;
+    var txt;
+    mainCanvas = nCanvas = document.getElementById("canvas");
+    ctx = mainCanvas.getContext("2d");
 
-        mainCanvas.onmousemove = function (event) {
-            const dpr = window.devicePixelRatio;
-            rawMouseX = event.clientX * dpr;
-            rawMouseY = event.clientY * dpr;
-            mouseCoordinateChange()
-        };
+    mainCanvas.onmousemove = function (event) {
+        const dpr = window.devicePixelRatio;
+        rawMouseX = event.clientX * dpr;
+        rawMouseY = event.clientY * dpr;
+        mouseCoordinateChange()
+    };
 
-        const updateMouseAim = () => {
-            let x = X < rightPos ? X : rightPos;
-            let y = Y < bottomPos ? Y : bottomPos;
-            x = -rightPos > x ? -rightPos : x;
-            y = -bottomPos > y ? -bottomPos : y;
+    const updateMouseAim = () => {
+        let x = X < rightPos ? X : rightPos;
+        let y = Y < bottomPos ? Y : bottomPos;
+        x = -rightPos > x ? -rightPos : x;
+        y = -bottomPos > y ? -bottomPos : y;
 
-            // change cords
-            posX = x;
-            posY = y;
-        };
+        posX = x;
+        posY = y;
+    };
 
-        mainCanvas.addEventListener("mousedown", () => {
-            // Owned player count 0 -> is spectate or dead
-            if (!playerCells.length) { // Update spectate position
-                updateMouseAim();
-                sendUint8(1);
-            }
-        });
-
-
-        if (touchable) {
-            mainCanvas.addEventListener('touchstart', onTouchStart, false);
-            mainCanvas.addEventListener('touchmove', onTouchMove, false);
-            mainCanvas.addEventListener('touchend', onTouchEnd, false);
+    mainCanvas.addEventListener("mousedown", () => {
+        if (!playerCells.length) {
+            updateMouseAim();
+            sendUint8(1);
         }
+    });
 
-        mainCanvas.onmouseup = function () {
-        };
-        if (/firefox/i.test(navigator.userAgent)) {
-            document.addEventListener("DOMMouseScroll", handleWheel, false);
-        } else {
-            document.body.onmousewheel = handleWheel;
-        }
-
-        mainCanvas.onfocus = function () {
-            isTyping = false;
-        };
-
-        document.querySelectorAll('.noPress').forEach(elem => {
-    elem.onblur = () => { isTyping = false; };
-    elem.onfocus = () => { isTyping = true; };
-});
-
-        var spacePressed = false,
-            cPressed = false,
-            qPressed = false,
-            ePressed = false,
-            rPressed = false,
-            tPressed = false,
-            pPressed = false,
-            wPressed = false,
-            wInterval; // Variable to hold the interval for 'W' key press
-			freeze = false;
-			
-        wHandle.onkeydown = function (event) {
-            switch (event.keyCode) {
-				 case 70: // F
-  if (!isTyping && playerCells.length > 0) {  // freeze работает только если есть игроки
-    freeze = !freeze;
-    if (freeze) {
-      // Зафиксировать текущие координаты шара
-      posX = X;
-      posY = Y;
-
-      document.querySelector("#freeze").style.display = "flex";
-    } else {
-      document.querySelector("#freeze").style.display = "none";
+    if (touchable) {
+        mainCanvas.addEventListener('touchstart', onTouchStart, false);
+        mainCanvas.addEventListener('touchmove', onTouchMove, false);
+        mainCanvas.addEventListener('touchend', onTouchEnd, false);
     }
-  }
-  break;
-case 13: // Enter
-    if (isTyping || hideChat) {
+
+    mainCanvas.onmouseup = function () {
+    };
+    if (/firefox/i.test(navigator.userAgent)) {
+        document.addEventListener("DOMMouseScroll", handleWheel, false);
+    } else {
+        document.body.onmousewheel = handleWheel;
+    }
+
+    mainCanvas.onfocus = function () {
         isTyping = false;
+    };
 
-        const chatInput = document.getElementById("chat_textbox");
-        const lsInput = document.getElementById("ls");
+    document.querySelectorAll('.noPress').forEach(elem => {
+        elem.onblur = () => { isTyping = false; };
+        elem.onfocus = () => { isTyping = true; };
+    });
 
-        // Берем текст из обоих полей
-        const lsText = lsInput ? lsInput.value.trim() : "";
-        const chatText = chatInput ? chatInput.value.trim() : "";
-
-        // Объединяем, если есть текст
-        let combinedText = "";
-        if (lsText && chatText) {
-            combinedText = lsText + " " + chatText;
-        } else if (lsText) {
-            combinedText = lsText;
-        } else if (chatText) {
-            combinedText = chatText;
+    var spacePressed = false,
+        cPressed = false,
+        qPressed = false,
+        ePressed = false,
+        rPressed = false,
+        tPressed = false,
+        pPressed = false,
+        wPressed = false,
+        wInterval;
+    freeze = false;
+    
+    // ========== СИСТЕМА СТИКЕРОВ (упрощённая) ==========
+    let currentSticker = null;
+    
+    function sendSticker(stickerId, action) {
+        if (wsIsOpen()) {
+            const msg = prepareData(6);
+            msg.setUint8(0, 200);
+            msg.setUint8(1, stickerId);
+            msg.setUint8(2, action ? 1 : 0);
+            wsSend(msg);
         }
-
-        if (combinedText.length > 0) sendChat(combinedText);
-
-        // очищаем поля
-        if (chatInput) chatInput.value = "";
-        if (lsInput) lsInput.value = "";
-        if (chatInput) chatInput.blur();
-        if (lsInput) lsInput.blur();
-    } else {
-        document.getElementById("chat_textbox").focus();
-        isTyping = true;
     }
-    break;
+    
+    function showStickerOverCell(stickerId) {
+        const cell = playerCells[0];
+        if (!cell) return;
+        cell.currentSticker = stickerId;
+        cell.stickerActive = true;
+    }
+    
+    function hideSticker() {
+        const cell = playerCells[0];
+        if (cell) {
+            cell.currentSticker = null;
+            cell.stickerActive = false;
+        }
+    }
+    // ========== КОНЕЦ СИСТЕМЫ СТИКЕРОВ ==========
 
-
-                case 32: // space
-                    if (!spacePressed && !isTyping) {
-                        sendMouseMove();
-                        sendUint8(17);
-                        spacePressed = true;
+    wHandle.onkeydown = function (event) {
+        switch (event.keyCode) {
+            case 70:
+                if (!isTyping && playerCells.length > 0) {
+                    freeze = !freeze;
+                    if (freeze) {
+                        posX = X;
+                        posY = Y;
+                        document.querySelector("#freeze").style.display = "flex";
+                    } else {
+                        document.querySelector("#freeze").style.display = "none";
                     }
-                    break;
-                case 67: // coord
-                    if (!cPressed && !isTyping) {
-    coord(); // coords
- cPressed = true;                   
-}
-                    break;
-                case 87: // W
-                    if (!wPressed && !isTyping) {
+                }
+                break;
+            case 13:
+                if (isTyping || hideChat) {
+                    isTyping = false;
+                    const chatInput = document.getElementById("chat_textbox");
+                    const lsInput = document.getElementById("ls");
+                    let lsText = lsInput ? lsInput.value.trim() : "";
+                    let chatText = chatInput ? chatInput.value.trim() : "";
+                    let combinedText = "";
+                    if (lsText && chatText) {
+                        combinedText = lsText + " " + chatText;
+                    } else if (lsText) {
+                        combinedText = lsText;
+                    } else if (chatText) {
+                        combinedText = chatText;
+                    }
+                    if (combinedText.length > 0) sendChat(combinedText);
+                    if (chatInput) chatInput.value = "";
+                    if (lsInput) lsInput.value = "";
+                    if (chatInput) chatInput.blur();
+                    if (lsInput) lsInput.blur();
+                } else {
+                    document.getElementById("chat_textbox").focus();
+                    isTyping = true;
+                }
+                break;
+            case 32:
+                if (!spacePressed && !isTyping) {
+                    sendMouseMove();
+                    sendUint8(17);
+                    spacePressed = true;
+                }
+                break;
+            case 67:
+                if (!cPressed && !isTyping) {
+                    coord();
+                    cPressed = true;
+                }
+                break;
+            case 87:
+                if (!wPressed && !isTyping) {
+                    sendMouseMove();
+                    sendUint8(21);
+                    wPressed = true;
+                    wInterval = setInterval(function () {
                         sendMouseMove();
                         sendUint8(21);
-                        wPressed = true;
+                    }, 100);
+                }
+                break;
+            case 81:
+                if (!qPressed && !isTyping) {
+                    sendUint8(18);
+                    qPressed = true;
+                }
+                break;
+            case 69:
+                if (!ePressed && !isTyping) {
+                    sendMouseMove();
+                    sendUint8(22);
+                    ePressed = true;
+                }
+                break;
+            case 82:
+                if (!rPressed && !isTyping) {
+                    sendMouseMove();
+                    sendUint8(23);
+                    rPressed = true;
+                }
+                break;
+            case 84:
+                if (!tPressed && !isTyping) {
+                    sendMouseMove();
+                    sendUint8(24);
+                    tPressed = true;
+                }
+                break;
+            case 80:
+                if (!pPressed && !isTyping) {
+                    sendMouseMove();
+                    sendUint8(25);
+                    pPressed = true;
+                }
+                break;
+           // ========== СТИКЕРЫ С ЗАДЕРЖКОЙ 1500мс ==========
+case 49: // 1
+if (!showStickers) break;
+    if (!isTyping && !stickerCooldown && currentSticker !== 1) {
+        if (currentSticker !== null) {
+            sendSticker(currentSticker, false);
+            hideSticker();
+        }
+        currentSticker = 1;
+        sendSticker(1, true);
+        showStickerOverCell(1);
+        
+        // Активируем задержку
+        stickerCooldown = true;
+        if (stickerCooldownTimer) clearTimeout(stickerCooldownTimer);
+        stickerCooldownTimer = setTimeout(() => {
+            stickerCooldown = false;
+        }, 500);
+    }
+    break;
+case 50: // 2
+if (!showStickers) break;
+    if (!isTyping && !stickerCooldown && currentSticker !== 2) {
+        if (currentSticker !== null) {
+            sendSticker(currentSticker, false);
+            hideSticker();
+        }
+        currentSticker = 2;
+        sendSticker(2, true);
+        showStickerOverCell(2);
+        
+        stickerCooldown = true;
+        if (stickerCooldownTimer) clearTimeout(stickerCooldownTimer);
+        stickerCooldownTimer = setTimeout(() => {
+            stickerCooldown = false;
+        }, 500);
+    }
+    break;
+case 51: // 3
+if (!showStickers) break;
+    if (!isTyping && !stickerCooldown && currentSticker !== 3) {
+        if (currentSticker !== null) {
+            sendSticker(currentSticker, false);
+            hideSticker();
+        }
+        currentSticker = 3;
+        sendSticker(3, true);
+        showStickerOverCell(3);
+        
+        stickerCooldown = true;
+        if (stickerCooldownTimer) clearTimeout(stickerCooldownTimer);
+        stickerCooldownTimer = setTimeout(() => {
+            stickerCooldown = false;
+        }, 500);
+    }
+    break;
+case 52: // 4
+if (!showStickers) break;
+    if (!isTyping && !stickerCooldown && currentSticker !== 4) {
+        if (currentSticker !== null) {
+            sendSticker(currentSticker, false);
+            hideSticker();
+        }
+        currentSticker = 4;
+        sendSticker(4, true);
+        showStickerOverCell(4);
+        
+        stickerCooldown = true;
+        if (stickerCooldownTimer) clearTimeout(stickerCooldownTimer);
+        stickerCooldownTimer = setTimeout(() => {
+            stickerCooldown = false;
+        }, 500);
+    }
+    break;
+case 53: // 5
+if (!showStickers) break;
+    if (!isTyping && !stickerCooldown && currentSticker !== 5) {
+        if (currentSticker !== null) {
+            sendSticker(currentSticker, false);
+            hideSticker();
+        }
+        currentSticker = 5;
+        sendSticker(5, true);
+        showStickerOverCell(5);
+        
+        stickerCooldown = true;
+        if (stickerCooldownTimer) clearTimeout(stickerCooldownTimer);
+        stickerCooldownTimer = setTimeout(() => {
+            stickerCooldown = false;
+        }, 500);
+    }
+    break;
+case 54: // 6
+if (!showStickers) break;
+    if (!isTyping && !stickerCooldown && currentSticker !== 6) {
+        if (currentSticker !== null) {
+            sendSticker(currentSticker, false);
+            hideSticker();
+        }
+        currentSticker = 6;
+        sendSticker(6, true);
+        showStickerOverCell(6);
+        
+        stickerCooldown = true;
+        if (stickerCooldownTimer) clearTimeout(stickerCooldownTimer);
+        stickerCooldownTimer = setTimeout(() => {
+            stickerCooldown = false;
+        }, 500);
+    }
+    break;
+case 55: // 7
+if (!showStickers) break;
+    if (!isTyping && !stickerCooldown && currentSticker !== 7) {
+        if (currentSticker !== null) {
+            sendSticker(currentSticker, false);
+            hideSticker();
+        }
+        currentSticker = 7;
+        sendSticker(7, true);
+        showStickerOverCell(7);
+        
+        stickerCooldown = true;
+        if (stickerCooldownTimer) clearTimeout(stickerCooldownTimer);
+        stickerCooldownTimer = setTimeout(() => {
+            stickerCooldown = false;
+        }, 500);
+    }
+    break;
+case 56: // 8
+if (!showStickers) break;
+    if (!isTyping && !stickerCooldown && currentSticker !== 8) {
+        if (currentSticker !== null) {
+            sendSticker(currentSticker, false);
+            hideSticker();
+        }
+        currentSticker = 8;
+        sendSticker(8, true);
+        showStickerOverCell(8);
+        
+        stickerCooldown = true;
+        if (stickerCooldownTimer) clearTimeout(stickerCooldownTimer);
+        stickerCooldownTimer = setTimeout(() => {
+            stickerCooldown = false;
+        }, 500);
+    }
+    break;
+case 57: // 9
+if (!showStickers) break;
+    if (!isTyping && !stickerCooldown && currentSticker !== 9) {
+        if (currentSticker !== null) {
+            sendSticker(currentSticker, false);
+            hideSticker();
+        }
+        currentSticker = 9;
+        sendSticker(9, true);
+        showStickerOverCell(9);
+        
+        stickerCooldown = true;
+        if (stickerCooldownTimer) clearTimeout(stickerCooldownTimer);
+        stickerCooldownTimer = setTimeout(() => {
+            stickerCooldown = false;
+        }, 500);
+    }
+    break;
+        }
+    };
 
-                        // Start the interval when 'W' is pressed
-                        wInterval = setInterval(function () {
-                            sendMouseMove();
-                            sendUint8(21);
-                        }, 100);
-                    }
-                    break;
-                case 81: // Q
-                    if (!qPressed && !isTyping) {
-                        sendUint8(18);
-                        qPressed = true;
-                    }
-                    break;
-                case 69: // E
-                    if (!ePressed && !isTyping) {
-                        sendMouseMove();
-                        sendUint8(22);
-                        ePressed = true; // Added missing ePressed flag
-                    }
-                    break;
-                case 82: // R
-                    if (!rPressed && !isTyping) {
-                        sendMouseMove();
-                        sendUint8(23);
-                        rPressed = true; // Added missing rPressed flag
-                    }
-                    break;
-                case 84: // T
-                    if (!tPressed && !isTyping) {
-                        sendMouseMove();
-                        sendUint8(24);
-                        tPressed = true;
-                    }
-                    break;
-                case 80: // P
-                    if (!pPressed && !isTyping) {
-                        sendMouseMove();
-                        sendUint8(25);
-                        pPressed = true;
-                    }
-                    break;
-            }
-        };
+    wHandle.onkeyup = function (event) {
+        switch (event.keyCode) {
+            case 32:
+                spacePressed = false;
+                break;
+            case 67:
+                cPressed = false;
+                break;
+            case 87:
+                wPressed = false;
+                clearInterval(wInterval);
+                break;
+            case 81:
+                if (qPressed) {
+                    sendUint8(19);
+                    qPressed = false;
+                }
+                break;
+            case 69:
+                ePressed = false;
+                break;
+            case 82:
+                rPressed = false;
+                break;
+            case 84:
+                tPressed = false;
+                break;
+            case 80:
+                pPressed = false;
+                break;
+            // ========== ОТЖАТИЕ СТИКЕРОВ ==========
+            case 49:
+                if (currentSticker === 1) {
+                    currentSticker = null;
+                    sendSticker(1, false);
+                    hideSticker();
+                }
+                break;
+            case 50:
+                if (currentSticker === 2) {
+                    currentSticker = null;
+                    sendSticker(2, false);
+                    hideSticker();
+                }
+                break;
+            case 51:
+                if (currentSticker === 3) {
+                    currentSticker = null;
+                    sendSticker(3, false);
+                    hideSticker();
+                }
+                break;
+            case 52:
+                if (currentSticker === 4) {
+                    currentSticker = null;
+                    sendSticker(4, false);
+                    hideSticker();
+                }
+                break;
+            case 53:
+                if (currentSticker === 5) {
+                    currentSticker = null;
+                    sendSticker(5, false);
+                    hideSticker();
+                }
+                break;
+            case 54:
+                if (currentSticker === 6) {
+                    currentSticker = null;
+                    sendSticker(6, false);
+                    hideSticker();
+                }
+                break;
+            case 55:
+                if (currentSticker === 7) {
+                    currentSticker = null;
+                    sendSticker(7, false);
+                    hideSticker();
+                }
+                break;
+            case 56:
+                if (currentSticker === 8) {
+                    currentSticker = null;
+                    sendSticker(8, false);
+                    hideSticker();
+                }
+                break;
+            case 57:
+                if (currentSticker === 9) {
+                    currentSticker = null;
+                    sendSticker(9, false);
+                    hideSticker();
+                }
+                break;
+        }
+    };
 
-        wHandle.onkeyup = function (event) {
-            switch (event.keyCode) {
-                case 32: // space
-                    spacePressed = false;
-                    break;
-                case 67: // coords
-                    cPressed = false;
-                    break;
-                case 87: // W
-                    wPressed = false;
+    const colorSelected = document.getElementById("selectedColor");
+    const colorList = document.getElementById("colorList");
+    const skinss = document.getElementById("skinss");
 
-                    // Clear the interval when 'W' is released
-                    clearInterval(wInterval);
-                    break;
-                case 81: // Q
-                    if (qPressed) {
-                        sendUint8(19);
-                        qPressed = false;
-                    }
-                    break;
-                case 69: // E
-                    ePressed = false;
-                    break;
-                case 82: // R
-                    rPressed = false;
-                    break;
-                case 84: // T
-                    tPressed = false;
-                    break;
-                case 80: // P
-                    pPressed = false;
-                    break;
-            }
-        };
+    const colorSaved = localStorage.getItem("selectedColor");
+    if (colorSaved) {
+        colorSelected.style.background = colorSaved;
+        skinss.style.borderColor = colorSaved;
+        skinss.style.backgroundColor = colorSaved;
+        skinss.style.boxShadow = `0 0 10px ${colorSaved}`;
+    }
 
+    colorSelected.onclick = () => {
+        colorList.style.display =
+            colorList.style.display === "none" || colorList.style.display === ""
+                ? "flex"
+                : "none";
+    };
 
-const colorSelected = document.getElementById("selectedColor");
-const colorList = document.getElementById("colorList");
-const skinss = document.getElementById("skinss");
+    colorList.onclick = evt => {
+        const hex = evt.target._cellColorHex;
+        if (!hex) return;
+        colorSelected.style.background = hex;
+        localStorage.setItem("selectedColor", hex);
+        skinss.style.borderColor = hex;
+        skinss.style.backgroundColor = hex;
+        skinss.style.boxShadow = `0 0 10px ${hex}`;
+        colorList.style.display = "none";
+    };
 
-
-// восстановление сохранённого цвета
-const colorSaved = localStorage.getItem("selectedColor");
-if (colorSaved) {
-  colorSelected.style.background = colorSaved;
-  skinss.style.borderColor = colorSaved;
-  skinss.style.backgroundColor = colorSaved;
-  skinss.style.boxShadow = `0 0 10px ${colorSaved}`;
-}
-
-// открыть/закрыть панель
-colorSelected.onclick = () => {
-  colorList.style.display =
-    colorList.style.display === "none" || colorList.style.display === ""
-      ? "flex"
-      : "none";
-};
-
-// выбор цвета
-colorList.onclick = evt => {
-  const hex = evt.target._cellColorHex;
-  if (!hex) return;
-
-  colorSelected.style.background = hex;
-  localStorage.setItem("selectedColor", hex);
-
-  skinss.style.borderColor = hex;
-  skinss.style.backgroundColor = hex;
-  skinss.style.boxShadow = `0 0 10px ${hex}`;
-
-  colorList.style.display = "none";
-};
-
-// генерация элементов
-cellColors.forEach((hex) => {
-  const d = document.createElement("div");
-  d.className = "item";
-  d.style.background = hex;
-  d._cellColorHex = hex;
-  colorList.appendChild(d);
-});
-
-
-
-
-
-
-
-
-
-// Убираем display: none из CSS, оставляем только стили позиционирования
-const adminPanel = document.querySelector('.admin-panel');
-adminPanel.style.display = ''; // по умолчанию скрыта (будет переключаться ниже)
-
-// Функция обновления списка игроков (остаётся без изменений)
-const updatePlayerList = (players) => {
-    const playerList = document.getElementById("playerList");
-    playerList.innerHTML = "";
-
-    const header = document.createElement("div");
-    header.className = "infoApanel";
-    ["IP", "ID", "Имя", "Клеток", "X", "Y", "Масса", "Kick", "Ban", "Kill", "Mute"].forEach(text => {
-        const div = document.createElement("div");
-        div.textContent = text;
-        header.appendChild(div);
+    cellColors.forEach((hex) => {
+        const d = document.createElement("div");
+        d.className = "item";
+        d.style.background = hex;
+        d._cellColorHex = hex;
+        colorList.appendChild(d);
     });
-    playerList.appendChild(header);
 
-    players.forEach(player => {
-        const row = document.createElement("div");
-        row.className = "infoAplayer";
+    const adminPanel = document.querySelector('.admin-panel');
+    adminPanel.style.display = '';
 
-        const fields = [
-            player.ip,
-            player.id,
-            player.name,
-            player.cellCount,
-            Math.round(player.x || 0),
-            Math.round(player.y || 0),
-            player.mass
-        ];
-
-        fields.forEach((value, i) => {
-            const cell = document.createElement("div");
-            cell.className = "player-cell";
-            cell.textContent = value;
-
-            if (i === 2) { // Имя — смена ника
-                cell.className += " name-cell";
-                cell.title = "Клик — изменить ник";
-                cell.onclick = () => {
-                    if (player.kick || player.ban) {
-                        alert("Нельзя менять ник кикнутому/забаненному игроку");
-                        return;
-                    }
-                    const newName = prompt("Новое имя:", player.name.trim());
-                    if (newName && newName.trim() && newName.trim() !== player.name) {
-                        sendChat(`/name ${player.id} ${newName.trim()}`);
-                        cell.textContent = newName.trim();
-                    }
-                };
-            }
-
-            if (i === 6) { // Масса
-                cell.className += " mass-cell";
-                if (!player.kick) {
-                    cell.title = "Клик — изменить массу";
+    const updatePlayerList = (players) => {
+        const playerList = document.getElementById("playerList");
+        playerList.innerHTML = "";
+        const header = document.createElement("div");
+        header.className = "infoApanel";
+        ["IP", "ID", "Имя", "Клеток", "X", "Y", "Масса", "Kick", "Ban", "Kill", "Mute"].forEach(text => {
+            const div = document.createElement("div");
+            div.textContent = text;
+            header.appendChild(div);
+        });
+        playerList.appendChild(header);
+        players.forEach(player => {
+            const row = document.createElement("div");
+            row.className = "infoAplayer";
+            const fields = [
+                player.ip,
+                player.id,
+                player.name,
+                player.cellCount,
+                Math.round(player.x || 0),
+                Math.round(player.y || 0),
+                player.mass
+            ];
+            fields.forEach((value, i) => {
+                const cell = document.createElement("div");
+                cell.className = "player-cell";
+                cell.textContent = value;
+                if (i === 2) {
+                    cell.className += " name-cell";
+                    cell.title = "Клик — изменить ник";
                     cell.onclick = () => {
-                        const mass = prompt("Новая масса (положительное число):", player.mass);
-                        if (mass && !isNaN(mass) && +mass > 0) {
-                            sendChat(`/mass ${player.id} ${mass}`);
-                            cell.textContent = mass;
+                        if (player.kick || player.ban) {
+                            alert("Нельзя менять ник кикнутому/забаненному игроку");
+                            return;
+                        }
+                        const newName = prompt("Новое имя:", player.name.trim());
+                        if (newName && newName.trim() && newName.trim() !== player.name) {
+                            sendChat(`/name ${player.id} ${newName.trim()}`);
+                            cell.textContent = newName.trim();
                         }
                     };
-                } else {
-                    cell.style.cursor = "default";
-                    cell.title = "Кикнут — нельзя менять";
                 }
-            }
-
-            row.appendChild(cell);
+                if (i === 6) {
+                    cell.className += " mass-cell";
+                    if (!player.kick) {
+                        cell.title = "Клик — изменить массу";
+                        cell.onclick = () => {
+                            const mass = prompt("Новая масса (положительное число):", player.mass);
+                            if (mass && !isNaN(mass) && +mass > 0) {
+                                sendChat(`/mass ${player.id} ${mass}`);
+                                cell.textContent = mass;
+                            }
+                        };
+                    } else {
+                        cell.style.cursor = "default";
+                        cell.title = "Кикнут — нельзя менять";
+                    }
+                }
+                row.appendChild(cell);
+            });
+            const actions = [
+                { prop: "kick", cmd: `/kick ${player.id}`, text: "Кик" },
+                { prop: "ban",  cmd: `/ban ${player.ip}`,  text: "Бан"  },
+                { prop: "kill", cmd: `/kill ${player.id}`, text: "Убить" },
+                { prop: "mute", cmd: `/mute ${player.id}`, text: "Mute" },
+                { prop: "unmute", cmd: `/unmute ${player.id}`, text: "unMute" }
+            ];
+            actions.forEach(action => {
+                const cell = document.createElement("div");
+                cell.className = "player-cell";
+                if (player[action.prop]) {
+                    cell.textContent = "—";
+                    cell.className += " inactive";
+                } else {
+                    const btn = document.createElement("button");
+                    btn.textContent = action.text;
+                    btn.onclick = () => sendChat(action.cmd);
+                    cell.appendChild(btn);
+                }
+                row.appendChild(cell);
+            });
+            playerList.appendChild(row);
         });
+    };
 
-        // Кнопки Kick / Ban / Kill
-        const actions = [
-            { prop: "kick", cmd: `/kick ${player.id}`, text: "Кик" },
-            { prop: "ban",  cmd: `/ban ${player.ip}`,  text: "Бан"  },
-            { prop: "kill", cmd: `/kill ${player.id}`, text: "Убить" },
-			{ prop: "mute", cmd: `/mute ${player.id}`, text: "Mute" },
-			{ prop: "unmute", cmd: `/unmute ${player.id}`, text: "unMute" }
-        ];
+    const openAdminPanel = () => {
+        if (adminPanel.style.display === 'block') {
+            adminPanel.style.display = '';
+            delete window._updatePlayerList;
+        } else {
+            adminPanel.style.display = 'block';
+            const msg = prepareData(1);
+            msg.setUint8(0, 169);
+            wsSend(msg);
+            window._updatePlayerList = updatePlayerList;
+        }
+    };
 
-        actions.forEach(action => {
-            const cell = document.createElement("div");
-            cell.className = "player-cell";
-            if (player[action.prop]) {
-                cell.textContent = "—";
-                cell.className += " inactive";
-            } else {
-                const btn = document.createElement("button");
-                btn.textContent = action.text;
-                btn.onclick = () => sendChat(action.cmd);
-                cell.appendChild(btn);
-            }
-            row.appendChild(cell);
-        });
+    wHandle.openAdminPanel = openAdminPanel;
 
-        playerList.appendChild(row);
-    });
-};
-
-// Переключение панели (вкл/выкл по одному вызову)
-const openAdminPanel = () => {
-    if (adminPanel.style.display === 'block') {
-        // Была открыта → закрываем
-        adminPanel.style.display = '';
-        delete window._updatePlayerList;
-    } else {
-        // Была закрыта → открываем и запрашиваем данные
-        adminPanel.style.display = 'block';
-        const msg = prepareData(1);
-        msg.setUint8(0, 169);
-        wsSend(msg);
-        window._updatePlayerList = updatePlayerList;
-    }
-};
-
-// Делаем функцию глобальной (например, чтобы вызвать по горячей клавише или кнопке)
-wHandle.openAdminPanel = openAdminPanel;
-
-
-
-
-
-
-
-        wHandle.onblur = function () {
-            sendUint8(19);
-            clearInterval(wInterval); // Ensure the interval is cleared on blur
-            wPressed = spacePressed = cPressed = pPressed = qPressed = ePressed = rPressed = tPressed = pPressed = false;
-        };
-document.addEventListener("contextmenu", () => {
-    if (wPressed) {
-        wPressed = false;
+    wHandle.onblur = function () {
+        sendUint8(19);
         clearInterval(wInterval);
-    }
-});
+        wPressed = spacePressed = cPressed = pPressed = qPressed = ePressed = rPressed = tPressed = pPressed = false;
+    };
+    
+    document.addEventListener("contextmenu", () => {
+        if (wPressed) {
+            wPressed = false;
+            clearInterval(wInterval);
+        }
+    });
 
+    let leftInterval = null;
+    let rightTimeout = null;
+    let rightInterval = null;
 
+    const clearAllIntervals = () => {
+        leftDown = false;
+        rightDown = false;
+        if (leftInterval) {
+            clearInterval(leftInterval);
+            leftInterval = null;
+        }
+        if (rightTimeout) {
+            clearTimeout(rightTimeout);
+            rightTimeout = null;
+        }
+        if (rightInterval) {
+            clearInterval(rightInterval);
+            rightInterval = null;
+        }
+    };
 
-let leftInterval = null;  // Declare leftInterval
-let rightTimeout = null;  // Declare rightTimeout
-let rightInterval = null; // Declare rightInterval
+    $(window).on("blur visibilitychange", () => {
+        clearAllIntervals();
+    });
 
-const clearAllIntervals = () => {
-    leftDown = false;
-    rightDown = false;
-
-    if (leftInterval) {
-        clearInterval(leftInterval);
-        leftInterval = null;
-    }
-    if (rightTimeout) {
-        clearTimeout(rightTimeout);
-        rightTimeout = null;
-    }
-    if (rightInterval) {
-        clearInterval(rightInterval);
-        rightInterval = null;
-    }
-};
-
-// при уходе с вкладки
-$(window).on("blur visibilitychange", () => {
-    clearAllIntervals();
-});
-
-
-    const handleLeft = () => sendUint8(21);  // левая кнопка
-    const handleRight = () => sendUint8(17); // правая кнопка
+    const handleLeft = () => sendUint8(21);
+    const handleRight = () => sendUint8(17);
 
     $(document).on("mousedown", function (event) {
         if (!enableMouseClicks || isTyping) return;
-
         const overlay = $('.overlays');
         if (overlay.is(':visible')) return;
-
         switch (event.which) {
-            case 1: // левая
+            case 1:
                 if (!leftDown) {
                     leftDown = true;
-                    handleLeft(); // сразу одно действие
+                    handleLeft();
                     leftInterval = setInterval(() => {
                         if (leftDown) handleLeft();
-                    }, 100); // повтор каждые 100мс
+                    }, 100);
                 }
                 break;
-            case 3: // правая
+            case 3:
                 if (!rightDown) {
                     rightDown = true;
-                    handleRight(); // сразу одно действие
+                    handleRight();
                     rightTimeout = setTimeout(() => {
                         if (rightDown) {
                             rightInterval = setInterval(() => {
                                 if (rightDown) handleRight();
-                            }, 50); // повтор каждые 50мс
+                            }, 50);
                         }
-                    }, 130); // задержка перед повтором
+                    }, 130);
                 }
                 break;
         }
@@ -924,12 +1120,12 @@ $(window).on("blur visibilitychange", () => {
 
     $(window).on("mouseup", function (event) {
         switch (event.which) {
-            case 1: // левая
+            case 1:
                 leftDown = false;
                 clearInterval(leftInterval);
                 leftInterval = null;
                 break;
-            case 3: // правая
+            case 3:
                 rightDown = false;
                 clearTimeout(rightTimeout);
                 rightTimeout = null;
@@ -939,42 +1135,35 @@ $(window).on("blur visibilitychange", () => {
         }
     });
 
+    $(window).on("mouseleave", () => {
+        clearAllIntervals();
+    });
 
+    $(document).on("contextmenu", function (event) {
+        if (enableMouseClicks) event.preventDefault();
+    });
 
-$(window).on("mouseleave", () => {
-    clearAllIntervals();
-});
-
-$(document).on("contextmenu", function (event) {
-    if (enableMouseClicks) event.preventDefault();
-});
-
-
-
-        $(document).ready(function () {
-            // Handle keydown event
-            $(document).keydown(function (event) {
-                if (event.keyCode === 27) { // Check if the Escape key is pressed
-                    wjQuery("#statics").hide();
-                    const overlay = $('#overlays');
-                    if (overlay.is(':visible')) {
-                        overlay.hide(); // Hide the overlay if currently visible
-                    } else {
-                        overlay.show(); // Show the overlay if currently hidden
-                    }
+    $(document).ready(function () {
+        $(document).keydown(function (event) {
+            if (event.keyCode === 27) {
+                wjQuery("#statics").hide();
+                const overlay = $('#overlays');
+                if (overlay.is(':visible')) {
+                    overlay.hide();
+                } else {
+                    overlay.show();
                 }
-            });
+            }
         });
+    });
 
-
-        wHandle.onresize = canvasResize;
-        canvasResize();
-        wHandle.requestAnimationFrame(redrawGameScene);
-        setInterval(sendMouseMove, 50);
-        wjQuery("#overlays").show();
-		//setTimeout(showCaptcha, 200);
-		setInterval(updateStats, 100);
-    }
+    wHandle.onresize = canvasResize;
+    canvasResize();
+    wHandle.requestAnimationFrame(redrawGameScene);
+    setInterval(sendMouseMove, 50);
+    wjQuery("#overlays").show();
+    setInterval(updateStats, 100);
+}
 	
 
 const dpr = window.devicePixelRatio;
@@ -1183,28 +1372,6 @@ function isMouseOverElement(element) {
     }
 
     let currentWebSocketUrl = null;
-	let wsInactivityTimeout = null;
-
-// Время, через которое нужно отключить WS, если вкладка свернута (10 минут)
-const MAX_INACTIVE_TIME = 10 * 60 * 1000; // 600_000 мс
-
-// Слушаем событие смены видимости вкладки
-document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-        // Вкладка свернута — запускаем таймер отключения
-        wsInactivityTimeout = setTimeout(() => {
-            console.log("Вкладка была свернута > 10 минут. Закрываем WS.");
-            if (ws) ws.close();
-        }, MAX_INACTIVE_TIME);
-    } else {
-        // Вкладка снова активна — отменяем таймер
-        if (wsInactivityTimeout) {
-            clearTimeout(wsInactivityTimeout);
-            wsInactivityTimeout = null;
-            console.log("Вкладка активна. Таймер отключения WS сброшен.");
-        }
-    }
-});
 
     function showConnecting(token) {
     chekstats();
@@ -1247,7 +1414,7 @@ document.addEventListener('visibilitychange', () => {
         nodelist = [];
         Cells = [];
         leaderBoard = [];
-        log.info("Connecting to " + wsUrl + "..");
+        //log.info("Connecting to " + wsUrl + "..");
 
         // Передаем токен при подключении xxxevexxx
         const params = `?token=${encodeURIComponent(token)}&accountToken=${encodeURIComponent(localStorage.accountToken)}`;
@@ -1295,12 +1462,12 @@ let pingstamp = 0;
         msg.setUint32(1, 0, true);
         wsSend(msg);
         sendNickName();
-        log.info("Connection successful!");
+        //log.info("Connection successful!");
      setInterval(() => {
         pingstamp = Date.now();        
 wsSend(new Uint8Array([2])); // ping
     }, 3000);
-	setTimeout(() => { sendChat("вoшёл в игру!"); }, 1000);
+	 sendChat("вoшёл в игру!");
     }
 
         function onWsClose(evt) {
@@ -1533,6 +1700,28 @@ case 48:
                 const xp = msg.getUint32(offset, true);
                 onUpdateXp(xp);
                 break;
+case 200: // Стикер от другого игрока
+if (!showStickers) break;
+    const stickerPlayerId = msg.getUint32(offset, true);
+    offset += 4;
+    const stickerId = msg.getUint8(offset++);
+    const stickerAction = msg.getUint8(offset++); // 1 = показать, 0 = скрыть
+    
+    // Находим клетку игрока
+    for (let i = 0; i < nodelist.length; i++) {
+        const node = nodelist[i];
+        if (node.id === stickerPlayerId && node.name) {
+            if (stickerAction === 1) {
+                node.currentSticker = stickerId;
+                node.stickerActive = true;
+            } else {
+                node.stickerActive = false;
+                node.currentSticker = null;
+            }
+            break;
+        }
+    }
+    break;
 			case 169:
                 const players = [];
 
@@ -1573,7 +1762,7 @@ case 48:
     }
 
 
-        function addChat(view, offset) {
+function addChat(view, offset) {
         function getString() {
             var text = '',
                 char;
@@ -1670,9 +1859,11 @@ function censorMessage(message) {
     return censoredMessage;
 }
 
-
+let currentUserRole = 'user';
 const admins = ["нико","^iStack","banshee"];
-const moders = ["cosmos","rizwer","bambule"];
+const moderator = ["rizwer","pulik","могучий жидяра","salruz","morcov"];
+const moders = ["cosmos","rizwer","bambule","☼k☼","pulik","могучий жидяра","salruz","morcov"];
+const mod = ["☼k☼"];
 const youtubers = ["salruz", "morcov","sealand"];
 const url_youtubers = ["https://youtube.com/@SalRuzO", "https://www.youtube.com/@MORCCVA","https://www.youtube.com/@sealandv"];
 
@@ -1946,6 +2137,44 @@ function drawChatBoard() {
     const lastMessage = chatBoard[chatBoard.length - 1];
     if (!lastMessage) return;
 	
+// ПРОВЕРКА НА КОМАНДУ УДАЛЕНИЯ
+if (lastMessage.message && lastMessage.message.startsWith('!delet')) {
+    const match = lastMessage.message.match(/!delet\s+(\d+)/);
+    if (match) {
+        const targetId = match[1];
+        const senderName = lastMessage.name.toLowerCase();
+        const senderOriginal = lastMessage.name;
+        
+        const isAdmin = admins.includes(senderName);
+        const isModer = moders.includes(senderName);
+        
+        if (isAdmin || isModer) {
+            // НАХОДИМ ВСЕ СООБЩЕНИЯ С ТАКИМ DATA-ID
+            const targetMessages = document.querySelectorAll(`[data-id="${targetId}"]`);
+            
+            if (targetMessages.length > 0) {
+                const role = isAdmin ? 'админом' : 'модератором';
+                
+                // ДЛЯ КАЖДОГО СООБЩЕНИЯ
+                targetMessages.forEach(targetMsg => {
+                    const notify = document.createElement('div');
+                    notify.style.background = '#80808057';
+                    notify.style.color = '#ff9999';
+                    notify.style.fontSize = '12px';
+                    notify.style.padding = '4px 8px';
+                    notify.innerHTML = `[ Сообщение было удалено ${role}: ${senderOriginal} ]`;
+                    
+                    targetMsg.parentNode.insertBefore(notify, targetMsg);
+                    targetMsg.remove();
+                });
+                
+                console.log(`[УДАЛЕНИЕ] Удалено ${targetMessages.length} сообщений с ID ${targetId}`);
+            }
+        }
+    }
+    return;
+}
+	
 if (lastMessage.message && lastMessage.message.toLowerCase().includes("вoшёл в игру")) {
     const simpleDiv = document.createElement('div');
     simpleDiv.className = 'chatexit';
@@ -1968,6 +2197,7 @@ if (lastMessage.message && lastMessage.message.toLowerCase().includes("вoшёл
     if (ignoredPlayers.has(lastMessage.pId)) return;
 
     const msgDiv = document.createElement('div');
+	msgDiv.setAttribute('data-id', lastMessage.pId);
     const lowerName = lastMessage.name.toLowerCase();
 
     if (admins.includes(lowerName)) msgDiv.className = 'chatX_msg admins';
@@ -2003,7 +2233,15 @@ if (privateMatch) {
     // --- Аватарка ---
     const avatarContainer = document.createElement('div');
     avatarContainer.className = 'avatarXcontainer';
-    if (passUsers.includes(normalizedName)) avatarContainer.style.setProperty('--after-display', 'block');
+    // Добавляем класс для роли
+if (admins.includes(lowerName)) {
+    avatarContainer.classList.add('admin');
+} else if (moderator.includes(lowerName)) {
+    avatarContainer.classList.add('moderator');
+} else if (passUsers.includes(normalizedName)) {
+    // Только для обычных игроков из pass.txt
+    avatarContainer.style.setProperty('--after-display', 'block');
+}
 
     const avatar = document.createElement('img');
     avatar.className = 'chatX_avatar';
@@ -2048,6 +2286,19 @@ if (ytIndex !== -1 && url_youtubers[ytIndex]) {
     ytLink.style.color = '#ff0000';
     ytLink.title = 'YouTube канал';
     nameContainer.appendChild(ytLink);
+}
+
+// --- MOD иконка ---
+if (mod.includes(lowerName)) {
+    const modIcon = document.createElement('div');
+    modIcon.title = 'Данный игрок является спонсором Agar.su';
+    modIcon.style.width = '19px';
+    modIcon.style.height = '19px';
+    modIcon.style.backgroundImage = 'url(https://api.agar.su/assets/photo/mod.png)';
+    modIcon.style.backgroundSize = 'cover';
+    modIcon.style.display = 'inline-block';
+
+    nameContainer.appendChild(modIcon);
 }
 
     const nameDiv = document.createElement('div');
@@ -2175,6 +2426,59 @@ pmBtn.onclick = () => {
             });
             menu.remove();
         };
+if (currentUserRole === 'admin' || currentUserRole === 'moderator') {
+    const muteBtn = document.createElement('div');
+    muteBtn.textContent = 'Мут';
+    muteBtn.style.cursor = 'pointer';
+    muteBtn.style.color = '#ff6b6b';
+    muteBtn.onclick = () => {
+        sendChat(`/mute ${lastMessage.pId}`);
+        menu.remove();
+    };
+    
+    const unmuteBtn = document.createElement('div');
+    unmuteBtn.textContent = 'Убрать мут';
+    unmuteBtn.style.cursor = 'pointer';
+    unmuteBtn.style.color = '#6bff6b';
+    unmuteBtn.onclick = () => {
+        sendChat(`/unmute ${lastMessage.pId}`);
+        menu.remove();
+    };
+	
+	    const deleteBtn = document.createElement('div');
+    deleteBtn.textContent = 'Удалить сообщения';
+    deleteBtn.style.cursor = 'pointer';
+    deleteBtn.style.color = '#ff6b6b';
+    deleteBtn.onclick = () => {
+        sendChat(`!delet ${lastMessage.pId}`);
+        menu.remove();
+    };
+	
+		    const chatlock = document.createElement('div');
+    chatlock.textContent = 'Ограничение чата XP 1000';
+    chatlock.style.cursor = 'pointer';
+    chatlock.style.color = '#ff6b6b';
+    chatlock.onclick = () => {
+        sendChat(`/chatlock 1000`);
+        menu.remove();
+    };
+	
+			    const chatlockoff = document.createElement('div');
+    chatlockoff.textContent = 'Снять ограничение чата XP';
+    chatlockoff.style.cursor = 'pointer';
+    chatlockoff.style.color = '#6bff6b';
+    chatlockoff.onclick = () => {
+        sendChat(`/chatlock off`);
+        menu.remove();
+    };
+    
+    menu.appendChild(muteBtn);
+    menu.appendChild(unmuteBtn);
+	menu.appendChild(deleteBtn);
+	menu.appendChild(chatlock);
+	menu.appendChild(chatlockoff);
+}
+
 		const pvpBtn = document.createElement('div');
 pvpBtn.textContent = 'Позвать на PvP';
 pvpBtn.style.cursor = 'pointer';
@@ -2230,12 +2534,6 @@ menu.appendChild(pvpBtn);
         }
     }
 }
-
-
-
-
-
-
 
 
 
@@ -2308,40 +2606,51 @@ function updateNodes(reader) {
             let flagEjected = !!(spiked & 0x20);
             let flagAgitated = !!(spiked & 0x10);
 
-            const name = reader.utf8();
-            
-            let stickerData = null;
+const name = reader.utf8();
+
+// ========== ЧТЕНИЕ СТИКЕРА ==========
+let stickerData = null;
 if (reader.canRead) {
     const marker = reader.uint8();
     if (marker === 0xFF) {
         stickerData = reader.uint8();
     }
 }
+// ===================================
 
-            let node = nodes[nodeid];
-            if (node) {
-                node = nodes[nodeid];
-                node.updatePos();
-                node.ox = node.x;
-                node.oy = node.y;
-                node.oSize = node.size;
-                node.color = color;
-            } else {
-                node = new Cell(nodeid, posX, posY, size, color, name);
-                nodelist.push(node);
-                nodes[nodeid] = node;
-                node.ka = posX;
-                node.la = posY;
-if (playerId === ownerPlayerId) {
-      document.getElementById("overlays").style.display = "none";
-      playerCells.push(node);
-      if (1 == playerCells.length) {
-       nodeX = node.x;
-       nodeY = node.y;
-         }
-
+let node = nodes[nodeid];
+if (node) {
+    node = nodes[nodeid];
+    node.updatePos();
+    node.ox = node.x;
+    node.oy = node.y;
+    node.oSize = node.size;
+    node.color = color;
+} else {
+    node = new Cell(nodeid, posX, posY, size, color, name);
+    nodelist.push(node);
+    nodes[nodeid] = node;
+    node.ka = posX;
+    node.la = posY;
+    if (playerId === ownerPlayerId) {
+        document.getElementById("overlays").style.display = "none";
+        playerCells.push(node);
+        if (1 == playerCells.length) {
+            nodeX = node.x;
+            nodeY = node.y;
+        }
     }
-            }
+}
+
+// ========== УСТАНОВКА СТИКЕРА ==========
+if (stickerData) {
+    node.currentSticker = stickerData;
+    node.stickerActive = true;
+}else if (node) {
+     node.stickerActive = false;
+     node.currentSticker = null;
+}
+// =======================================
 
             node.isVirus = flagVirus;
             node.isEjected = flagEjected;
@@ -2355,30 +2664,37 @@ if (playerId === ownerPlayerId) {
             if (name) node.setName(name);
 			
 			// ←←← ВОТ СЮДА! СРАЗУ ПОСЛЕ node.setName(name) ←←←
-            if (name && playerId === ownerPlayerId) {
-                const lowerName = name.toLowerCase().trim();
+if (name && playerId === ownerPlayerId) {
+    const lowerName = name.toLowerCase().trim();
 
-                const isAdmin = admins.some(admin => lowerName.includes(admin.toLowerCase()));
-                const isModer = moders.some(moder => lowerName.includes(moder.toLowerCase()));
+    const isAdmin = admins.some(admin => lowerName.includes(admin.toLowerCase()));
+    const isModer = moderator.some(moder => lowerName.includes(moder.toLowerCase()));
 
-                const panel = document.querySelector('.adminpanel');
-                if (!panel) return; // защита
+    // СОХРАНЯЕМ РОЛЬ ГЛОБАЛЬНО
+    if (isAdmin) {
+        currentUserRole = 'admin';
+    } else if (isModer) {
+        currentUserRole = 'moderator';
+    } else {
+        currentUserRole = 'user';
+    }
 
-                // Сначала всегда скрываем
-                panel.style.display = 'none';
+    const panel = document.querySelector('.adminpanel');
+    if (!panel) return;
 
-                if (isAdmin) {
-                    panel.style.display = 'flex';
-                    panel.style.background = 'rgb(146, 15, 15)';
-                    panel.textContent = 'ADMINKA';
-                }
-                else if (isModer) {
-                    panel.style.display = 'flex';
-                    panel.style.background = 'rgb(2, 89, 255)';
-                    panel.textContent = 'MODERKA';
-                }
-                // если обычный игрок — остаётся скрытой
-            }
+    panel.style.display = 'none';
+
+    if (isAdmin) {
+        panel.style.display = 'flex';
+        panel.style.background = 'rgb(146, 15, 15)';
+        panel.textContent = 'ADMINKA';
+    }
+    else if (isModer) {
+        panel.style.display = 'flex';
+        panel.style.background = 'rgb(2, 89, 255)';
+        panel.textContent = 'MODERKA';
+    }
+}
 
 
         }
@@ -2641,8 +2957,7 @@ function redrawGameScene(now) {
     lastTime = now;
     fps = Math.round(1000 / delta);
 
-    // Обновляем HTML только раз в 500 мс (раз в полсекунды)
-    if (now - fpsUpdateTime >= 500) {
+    if (now - fpsUpdateTime >= 1000) {
         document.getElementById('fps').textContent = fps;
         fpsUpdateTime = now;
     }
@@ -2765,21 +3080,10 @@ function setCookie(name, value, days) {
   document.cookie = name + "=" + (value || "") + expires + "; path=/";
 }
 
-// ==================== DEFAULT THEME ====================
-function getDefaultTheme() {
-  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    return 'black';
-  } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
-    return 'white';
-  } else {
-    return 'gradient';
-  }
-}
-
 // ==================== GRID DRAW ====================
 function drawGrid() {
   const savedTheme = getCookie('grid_theme');
-  let themeToDraw = savedTheme || getDefaultTheme();
+  let themeToDraw = savedTheme || 'gradient'; // по умолчанию градиент, без привязки к системе
 
   switch (themeToDraw) {
     case 'gradient': drawGradientGrid(); break;
@@ -2810,10 +3114,10 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  // загрузка сохранённых значений
+  // загрузка сохранённой темы (если нет сохранённой - градиент по умолчанию)
   let savedTheme = getCookie('grid_theme');
   if (!savedTheme) {
-    savedTheme = getDefaultTheme();
+    savedTheme = 'gradient';
     setCookie('grid_theme', savedTheme, 30);
   }
   selectElement.value = savedTheme;
@@ -2821,8 +3125,9 @@ document.addEventListener('DOMContentLoaded', function() {
   // загружаем цвета
   centerColor.value = getCookie('gradient_center') || "#132745";
   edgeColor.value = getCookie('gradient_edge') || "#000000";
+  
+  drawGrid();
 });
-
 // ==================== GRADIENT ====================
 function drawGradientGrid() {
   const centerColor = getCookie('gradient_center') || "#132745";
@@ -3105,7 +3410,7 @@ function createLeaderboardEntry(name, level, isMe, isSystemLine, b) {
     entryDiv.className = "Lednick admins";
   } else if (!isSystemLine && moders.includes(lowerName)) {
     entryDiv.className = "Lednick " + lowerName;
-  } else {
+    } else {
     entryDiv.className = "Lednick";
   }
 
@@ -3145,7 +3450,20 @@ function createLeaderboardEntry(name, level, isMe, isSystemLine, b) {
     ytLink.title = "YouTube канал";
     iconsContainer.appendChild(ytLink);
   }
+  
+  // Иконка MOD
+if (!isSystemLine && mod.includes(lowerName)) {
+  const modIcon = document.createElement("div");
+  modIcon.title = "Данный игрок является спонсором Agar.su";
+  modIcon.style.width = "19px";
+  modIcon.style.height = "19px";
+  modIcon.style.backgroundImage = "url(https://api.agar.su/assets/photo/mod.png)";
+  modIcon.style.backgroundSize = "cover";
+  modIcon.style.display = "inline-block";
 
+  iconsContainer.appendChild(modIcon);
+}
+  
   // Собираем HTML
   entryDiv.innerHTML = numberHtml;
   entryDiv.appendChild(iconsContainer);
@@ -3344,7 +3662,7 @@ wHandle.setNick = function (arg) {
         captchaShown = true;
     }};
 	
-	// === Настройки по умолчанию ===
+// === Настройки по умолчанию ===
 let showSkin = true,
     showName = true,
     showColor = true,
@@ -3354,9 +3672,10 @@ let showSkin = true,
     closebord = false,
     enableMouseClicks = false,
     showGlow = true,
-	confirmCloseTab = false;
-	let showAdultContent = false; // +18: убирает антимат и блюр
-	let fixedCell = false; 
+    confirmCloseTab = false,
+    showAdultContent = false,
+    fixedCell = false,
+    showStickers = true;
 
 // === Функции для чекбоксов ===
 wHandle.setSkins = function(arg){ showSkin = arg; };
@@ -3371,7 +3690,7 @@ wHandle.setGlow = function(arg){ showGlow = arg; };
 wHandle.setAdultContent = function(arg) {showAdultContent = arg;};
 wHandle.setFixedCell = function(arg){fixedCell = arg;};
 wHandle.setConfirmCloseTab = function(arg){confirmCloseTab = arg;};
-
+wHandle.setShowStickers = function(arg){ showStickers = arg; };
 
 // === Обработчик закрытия вкладки ===
 window.addEventListener("beforeunload", function (e) {
@@ -3401,8 +3720,9 @@ wjQuery(window).on('load', function() {
                 case 8: $(this).prop("checked", hideChat); break;
                 case 9: $(this).prop("checked", showGlow); break;
                 case 10: $(this).prop("checked", showAdultContent); break;
-                case 11: $(this).prop("checked", confirmCloseTab); break; // новый чекбокс
-			    case 12: $(this).prop("checked", fixedCell); break; 
+                case 11: $(this).prop("checked", confirmCloseTab); break; 
+			    case 12: $(this).prop("checked", fixedCell); break;
+                case 13: $(this).prop("checked", showStickers); break;			
             }
         }
     });
@@ -3415,14 +3735,15 @@ wjQuery(window).on('load', function() {
         setCookie("checkbox-" + id, value, 365);
 
         if (id == 10) wHandle.setAdultContent(value);
-        if (id == 11) wHandle.setConfirmCloseTab(value); // применяем настройку
+        if (id == 11) wHandle.setConfirmCloseTab(value);
+		if (id == 13) wHandle.setShowStickers(value);
     });
 });
 
 
 
 
-const transparent = new Set(["liqwid"]);
+const transparent = new Set(["liqwid","⟨本⟩ Itana."]);
 let invisible = new Set(); // сначала пустой Set
 fetch("https://api.agar.su/invisible.txt")
   .then(r => r.text())
@@ -3671,7 +3992,7 @@ if (renderSize === 0) renderSize = 20;
         ctx.lineCap = "round";
         ctx.lineJoin = this.isVirus ? "miter" : "round";
 
-        const isTransp = transparent.has(this.name?.toLowerCase());
+        const isTransp = transparent.has(this.name);
         // используем единый "эффективный" цвет для fill и (при необходимости) stroke
         const cellColor = this.getEffectiveColor();
 
@@ -3690,6 +4011,7 @@ if (renderSize === 0) renderSize = 20;
 
         if (!closebord) ctx.stroke();
         ctx.fill();
+
 
 
 // === СКИН ===
@@ -3785,6 +4107,7 @@ if (rotation.has(skinName)) {
     }
 }
 
+
 // === ЭФФЕКТ ПОВЕРХ СКИНА ===
 const mass = Math.floor(this.size * this.size * 0.01);
 if (typeof this.glowActive === 'undefined') this.glowActive = false;
@@ -3814,6 +4137,38 @@ if (this.glowActive && showGlow) {
             edrawSize
         );
 
+        ctx.restore();
+    }
+}
+
+// === СТИКЕР (ОТДЕЛЬНО ОТ СКИНА) ===
+if (showStickers && this.stickerActive && this.currentSticker) {
+    let stickerUrl = `https://agar.su/sticker/${this.currentSticker}.png`;
+    
+    // Кешируем стикеры
+    if (!skins[stickerUrl]) {
+        skins[stickerUrl] = new Image();
+        skins[stickerUrl].src = stickerUrl;
+    }
+    
+    const stickerImg = skins[stickerUrl];
+    
+    if (stickerImg.complete && stickerImg.width > 0) {
+        ctx.save();
+        ctx.clip();
+ 
+        
+        const fw = stickerImg.width, fh = stickerImg.height;
+        // ✅ ВСЕГДА используем this.size, НЕ используем bigPointSize
+        const sz = this.size;
+        
+        // Стикер всегда рисуется без поворота поверх всего
+        ctx.drawImage(
+            stickerImg,
+            0, 0, fw, fh,
+            this.x - sz, this.y - sz, sz * 2, sz * 2
+        );
+        
         ctx.restore();
     }
 }
