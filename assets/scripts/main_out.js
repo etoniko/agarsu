@@ -4043,7 +4043,7 @@ if (showSkin) {
             }
 
             const fw = skinImg.width, fh = skinImg.height;
-            const frame = (fw > fh) ? Math.floor(Date.now() / 100 % Math.floor(fw / fh)) : 0;
+            const frame = (fw > fh) ? Math.floor(Date.now() / 200 % Math.floor(fw / fh)) : 0;
             const sz = simpleRender ? this.size * this.skinZoom : (bigPointSize * this.skinZoom);
 
 if (rotation.has(skinName)) {
