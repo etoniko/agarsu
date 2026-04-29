@@ -105,7 +105,7 @@ window.addEventListener('hashchange', setActiveFromHash);
 // Функция обновления онлайн
 async function updateOnlineCount() {
     const servers = [
-        {id: 'ffa', url: 'https://beget.agar.su:6001/process', max: 200},
+        {id: 'ffa', url: 'https://beget.agar.su:6001/process', max: 500},
 		{id: 'ffakiev', url: 'https://ffa.agar.su:6001/process', max: 100},
         {id: 'ms', url: 'https://ffa.agar.su:6002/process', max: 120},
         {id: 'pvp1', url: 'https://ffa.agar.su:6004/process', max: 50},
