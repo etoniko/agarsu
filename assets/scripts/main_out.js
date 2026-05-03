@@ -155,22 +155,45 @@ async function updateOnlineCount() {
         window.onlineInterval = setInterval(updateOnlineCount, 5000);
     }
 	
-const forbiddenChars = ["﷽", "𒐫", "𒈙", "⸻", "꧅", "ဪ", "௵", "௸", "‱", "ㅤ", "⁣","‎ ", "​", "‌", "‍", "‎", "‏", " ", " ", " ", " ", " "," ", " ", " ", " ", " ", " ", "​", "﻿", "￼", " ","⠀","ﾠ","卐","卍"]; //  ЗАПРЕЩЕНО!
+const forbiddenChars = ["﷽", "𒐫", "𒈙", "⸻", "꧅", "ဪ", "௵", "௸", "‱", "ㅤ", "⁣","‎ ", "​", "‌", "‍", "‎", "‏", " ", " ", " ", " ", " "," ", " ", " ", " ", " ", " ", "​", "﻿", "￼", " ","⠀","ﾠ","卐","卍"];
+
+// Настройки
+const FORBIDDEN_WORDS = ["никопиздабол"];
+const REDIRECT_URL = "https://xn--b1aew.xn--p1ai/"; // ИЗМЕНИТЕ НА НУЖНЫЙ URL
+const NICK_MAX_LEN = 16;
+const PASS_MAX_LEN = 8;
+
+function containsForbiddenWords(text) {
+    if (!text) return false;
+    const lowerText = text.toLowerCase();
+    return FORBIDDEN_WORDS.some(word => lowerText.includes(word.toLowerCase()));
+}
+
+function redirectUser() {
+    console.log("Обнаружены запрещённые слова! Перенаправление...");
+    window.location.href = REDIRECT_URL;
+}
 
 wHandle.startGame = function () {
-    let nickInput = document.getElementById('nick').value.trim();
+    let rawNick = document.getElementById('nick').value.trim();
     let passInput = document.getElementById('pass').value;
 
+    // Проверка на запрещённые слова ДО любой обработки
+    if (containsForbiddenWords(rawNick)) {
+        redirectUser();
+        return;
+    }
+
     // Удаляем запрещённые символы
-    const forbiddenRegex = new RegExp(forbiddenChars.join('|'), 'g');
-    nickInput = nickInput.replace(forbiddenRegex, '');
-	nickInput =  censorMessage(nickInput);
+    let forbiddenRegex = new RegExp(forbiddenChars.join('|'), 'g');
+    let cleanNick = rawNick.replace(forbiddenRegex, '');
+    cleanNick = censorMessage(cleanNick);
 
     // Ограничиваем длину
-    if (nickInput.length > 16) nickInput = nickInput.substring(0, 16);
-    if (passInput.length > 8) passInput = passInput.substring(0, 8);
+    if (cleanNick.length > NICK_MAX_LEN) cleanNick = cleanNick.substring(0, NICK_MAX_LEN);
+    if (passInput.length > PASS_MAX_LEN) passInput = passInput.substring(0, PASS_MAX_LEN);
 
-    setNick(nickInput + "#" + passInput);
+    setNick(cleanNick + "#" + passInput);
 };
 
 
