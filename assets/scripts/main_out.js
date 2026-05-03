@@ -155,77 +155,16 @@ async function updateOnlineCount() {
         window.onlineInterval = setInterval(updateOnlineCount, 5000);
     }
 	
-const forbiddenChars = ["﷽", "𒐫", "𒈙", "⸻", "꧅", "ဪ", "௵", "௸", "‱", "ㅤ", "⁣","‎ ", "​", "‌", "‍", "‎", "‏", " ", " ", " ", " ", " "," ", " ", " ", " ", " ", " ", "​", "﻿", "￼", " ","⠀","ﾠ","卐","卍"];
-
-const forbiddenWords = ["пиздаболнико", "никопиздабол"];
-const REDIRECT_URL = "https://агарио.рф/?смотрирекламу"; 
-const STORAGE_KEY = "is_banned_user"; 
-
-// Функция проверки наличия запрещённых слов
-function hasForbiddenWords(text) {
-    if (!text) return false;
-    const lowerText = text.toLowerCase();
-    return forbiddenWords.some(word => lowerText.includes(word.toLowerCase()));
-}
-
-// Функция сохранения флага бан-пользователя в localStorage
-function banUserInLocalStorage(badNickname) {
-    const banData = {
-        isBanned: true,
-        badNickname: badNickname,
-        redirectUrl: REDIRECT_URL,
-        bannedAt: Date.now(),
-        bannedAtReadable: new Date().toISOString(),
-        userAgent: navigator.userAgent
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(banData));
-    console.log("Игрок забанен и сохранён в localStorage:", banData);
-}
-
-// Функция проверки - забанен ли игрок в localStorage
-function isUserBanned() {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-        try {
-            const data = JSON.parse(stored);
-            return data.isBanned === true;
-        } catch(e) {
-            return false;
-        }
-    }
-    return false;
-}
-
-// Функция перенаправления
-function redirectToBlocked() {
-    window.location.href = REDIRECT_URL;
-}
+const forbiddenChars = ["﷽", "𒐫", "𒈙", "⸻", "꧅", "ဪ", "௵", "௸", "‱", "ㅤ", "⁣","‎ ", "​", "‌", "‍", "‎", "‏", " ", " ", " ", " ", " "," ", " ", " ", " ", " ", " ", "​", "﻿", "￼", " ","⠀","ﾠ","卐","卍"]; //  ЗАПРЕЩЕНО!
 
 wHandle.startGame = function () {
-    // СНАЧАЛА ПРОВЕРЯЕМ - НЕ ЗАБАНЕН ЛИ ИГРОК УЖЕ?
-    if (isUserBanned()) {
-        console.log("Игрок уже в бане! Перенаправление...");
-        redirectToBlocked();
-        return; // Выходим, даже не смотрим на ник
-    }
-
     let nickInput = document.getElementById('nick').value.trim();
     let passInput = document.getElementById('pass').value;
 
-    // Проверка на запрещённые слова в нике
-    if (hasForbiddenWords(nickInput)) {
-        // Бан пользователя в localStorage
-        banUserInLocalStorage(nickInput);
-        // Перенаправление
-        redirectToBlocked();
-        return;
-    }
-
-    // Если дошли сюда - игрок не забанен и ник хороший
     // Удаляем запрещённые символы
     const forbiddenRegex = new RegExp(forbiddenChars.join('|'), 'g');
     nickInput = nickInput.replace(forbiddenRegex, '');
-    nickInput = censorMessage(nickInput);
+	nickInput =  censorMessage(nickInput);
 
     // Ограничиваем длину
     if (nickInput.length > 16) nickInput = nickInput.substring(0, 16);
