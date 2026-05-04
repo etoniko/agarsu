@@ -2109,7 +2109,7 @@ if (lastMessage.message && lastMessage.message.toLowerCase().includes("вoшёл
 
     document.getElementById('chatX_feed').appendChild(simpleDiv);
 
-    console.log(simpleDiv);
+    //console.log(simpleDiv);
 
     return;
 }
@@ -3003,6 +3003,8 @@ function setCookie(name, value, days) {
 
 // ==================== GRID DRAW ====================
 function drawGrid() {
+	  // Проверяем наличие контекста
+  if (!ctx) return;
   const savedTheme = getCookie('grid_theme');
   let themeToDraw = savedTheme || 'gradient'; // по умолчанию градиент, без привязки к системе
 
@@ -3051,6 +3053,11 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 // ==================== GRADIENT ====================
 function drawGradientGrid() {
+	  // Проверяем, что контекст существует
+  if (!ctx) {
+    console.warn('Canvas context not ready yet');
+    return;
+  }
   const centerColor = getCookie('gradient_center') || "#132745";
   const edgeColor = getCookie('gradient_edge') || "#000000";
 
@@ -3075,6 +3082,7 @@ function drawGradientGrid() {
 }
 
 function drawClassicGrid(bgColor, lineColor) {
+	if (!ctx) return;
     ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
