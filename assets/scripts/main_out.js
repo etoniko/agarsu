@@ -108,6 +108,7 @@ async function updateOnlineCount() {
         {id: 'ffa', url: 'https://beget.agar.su:6001/process', max: 500},
 		{id: 'agario', url: 'https://ffa.agar.su:6001/process', max: 100},
         {id: 'ms', url: 'https://ffa.agar.su:6002/process', max: 120},
+		{id: 'exp', url: 'https://ffa.agar.su:6003/process', max: 120},
         {id: 'pvp1', url: 'https://ffa.agar.su:6004/process', max: 50},
         {id: 'pvp2', url: 'https://ffa.agar.su:6005/process', max: 50},
         {id: 'tournament', url: 'https://ffa.agar.su:6006/process', max: 120}
