@@ -338,77 +338,6 @@ setInterval(fetchSkinList, 300000);
         leftVector = new Vector2(0, 0);
 
     var useHttps = "https:" === wHandle.location.protocol;
-
-    wHandle.onCaptchaSuccess = function (token) {
-        showConnecting(token);
-    };
-
-    let captchaId = null;
-
-    const renderCaptcha = () => {
-        if (captchaId !== null) { // Сбрасываем капчу если она уже создана
-            document.getElementById('captcha-overlay').style.display = '';
-            turnstile.reset(captchaId);
-            return;
-        }
-
-        const overlay = document.createElement("div");
-        overlay.id = "captcha-overlay";
-
-        const container = document.createElement("div");
-        container.id = "captcha-container";
-
-        overlay.appendChild(container);
-
-        document.body.prepend(overlay);
-
-        captchaId = turnstile.render(container, {
-            sitekey: "0x4AAAAAAA0keHJ56_KNR0MU",
-            callback: onCaptchaSuccess
-        });
-
-    };
-
-    const showCaptcha = () => {
-// Если у игрока ≥ 1000 XP — капча НЕ нужна вообщ
-    if (accountData && accountData.xp >= 125000) {
-        showConnecting("");
-        return; // сразу соединяемся без капчи
-    }
-        // Перенаправляем на рендер если библиотека уже загружена
-        if (window.turnstile) return renderCaptcha();
-
-        // Загружаем библиотеку
-        const node = document.createElement('script');
-        node.setAttribute('src', 'https://challenges.cloudflare.com/turnstile/v0/api.js');
-        node.setAttribute('async', 'async');
-        node.setAttribute('defer', 'defer');
-        node.onload = () => {
-            renderCaptcha();
-        };
-        node.onerror = () => {
-            alert("Не удалось загрузить библиотеку Captcha. Попробуйте обновить браузер");
-        };
-
-        document.head.appendChild(node);
-    };
-
-	function disableCaptcha() {
-    // Убираем оверлей
-    const captchaOverlay = document.getElementById('captcha-overlay');
-    if (captchaOverlay) captchaOverlay.remove();
-
-    // Убираем сам скрипт Turnstile
-    const scripts = document.querySelectorAll('script[src*="challenges.cloudflare.com/turnstile"]');
-    scripts.forEach(s => s.remove());
-
-    // Чистим глобальные ссылки
-    if (window.turnstile) delete window.turnstile;
-    captchaId = null;
-    console.log("Captcha полностью отключена до перезагрузки страницы или соединение нового сервера");
-}
-
-    // Обновляем setserver функцию для вызова showConnecting() вручную
 wHandle.setserver = function(arg) {
     if (!SERVERS || Object.keys(SERVERS).length === 0) {
         console.warn("Серверы ещё не загружены. Подождите...");
@@ -428,7 +357,7 @@ wHandle.setserver = function(arg) {
             history.replaceState(null, "", " ");
         }
 
-        showCaptcha();
+        showConnecting();
         updateOnlineCount();
     }
 };
@@ -1371,9 +1300,9 @@ function isMouseOverElement(element) {
        wjQuery("#overlays").show();
     }
 
-    let currentWebSocketUrl = null;
+let currentWebSocketUrl = null;
 
-    function showConnecting(token) {
+function showConnecting() { // Убираем параметр token
     chekstats();
     const wsUrl = (useHttps ? "wss://" : "ws://") + CONNECTION_URL;
 
@@ -1384,46 +1313,38 @@ function isMouseOverElement(element) {
 
     if (ma) {
         currentWebSocketUrl = wsUrl;
-        wsConnect(wsUrl, token);
-
-        // Как только пошли на соединение — сразу вырубаем капчу
-        disableCaptcha();
+        wsConnect(wsUrl); // Убираем token
     }
 }
 
-
-    function wsConnect(undefined, token) {
-        if (ws) {
-            ws.onopen = null;
-            ws.onmessage = null;
-            ws.onclose = null;
-            try {
-                ws.close()
-            } catch (b) {
-            }
-            ws = null
+function wsConnect(undefined) { // Убираем параметр token
+    if (ws) {
+        ws.onopen = null;
+        ws.onmessage = null;
+        ws.onclose = null;
+        try {
+            ws.close()
+        } catch (b) {
         }
-        var c = CONNECTION_URL;
-        wsUrl = (useHttps ? "wss://" : "ws://") + c;
-
-        // var c = "ws://localhost:3000/";
-        // wsUrl = c;
-
-        playerCells = [];
-        nodes = {};
-        nodelist = [];
-        Cells = [];
-        leaderBoard = [];
-        //log.info("Connecting to " + wsUrl + "..");
-
-        // Передаем токен при подключении xxxevexxx
-        const params = `?token=${encodeURIComponent(token)}&accountToken=${encodeURIComponent(localStorage.accountToken)}`;
-        ws = new WebSocket(wsUrl + params, "eSejeKSVdysQvZs0ES1H");
-        ws.binaryType = "arraybuffer";
-        ws.onopen = onWsOpen;
-        ws.onmessage = onWsMessage;
-        ws.onclose = onWsClose;
+        ws = null
     }
+    var c = CONNECTION_URL;
+    wsUrl = (useHttps ? "wss://" : "ws://") + c;
+
+    playerCells = [];
+    nodes = {};
+    nodelist = [];
+    Cells = [];
+    leaderBoard = [];
+
+    // Оставляем только accountToken
+    const params = `?accountToken=${encodeURIComponent(localStorage.accountToken)}`;
+    ws = new WebSocket(wsUrl + params, "eSejeKSVdysQvZs0ES1H");
+    ws.binaryType = "arraybuffer";
+    ws.onopen = onWsOpen;
+    ws.onmessage = onWsMessage;
+    ws.onclose = onWsClose;
+}
 
     function prepareData(a) {
         return new DataView(new ArrayBuffer(a))
@@ -3642,7 +3563,7 @@ function drawLeaderBoard() {
     splitIcon.src = "assets/photo/split.png";
     ejectIcon.src = "assets/photo/eject.png";
     wHandle.connect = wsConnect;
-	let captchaShown = false;
+	let showConnect = false;
 
 wHandle.setNick = function (arg) {
     setserver(SELECTED_SERVER); 
@@ -3652,14 +3573,14 @@ wHandle.setNick = function (arg) {
     wjQuery("#statics").hide(); 
     maxScore = 0; 
     
-    if (!captchaShown) {
-        showCaptcha();
-        captchaShown = true;
+    if (!showConnect) {
+        showConnecting();
+        showConnect = true;
     }
 };
-    wHandle.spectate = function () { setserver(SELECTED_SERVER);  userNickName = null; hideOverlays(); wjQuery("#statics").hide();    if (!captchaShown) {
-        showCaptcha();
-        captchaShown = true;
+    wHandle.spectate = function () { setserver(SELECTED_SERVER);  userNickName = null; hideOverlays(); wjQuery("#statics").hide();    if (!showConnect) {
+        showConnecting();
+        showConnect = true;
     }};
 	
 // === Настройки по умолчанию ===
