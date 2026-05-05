@@ -53,7 +53,7 @@ stats.forEach((player, index) => {
                         }
 	
     // По умолчанию выбранный сервер
-    let SELECTED_SERVER = wHandle.CONNECTION_URL || "beget.agar.su:6001";
+    let SELECTED_SERVER = wHandle.CONNECTION_URL || "ffa.agar.su:6001";
 
     // --- Подсветка активного сервера из hash ---
     function setActiveFromHash() {
@@ -105,8 +105,7 @@ window.addEventListener('hashchange', setActiveFromHash);
 // Функция обновления онлайн
 async function updateOnlineCount() {
     const servers = [
-        {id: 'ffa', url: 'https://beget.agar.su:6001/process', max: 500},
-		{id: 'agario', url: 'https://ffa.agar.su:6001/process', max: 100},
+		{id: 'ffa', url: 'https://ffa.agar.su:6001/process', max: 100},
         {id: 'ms', url: 'https://ffa.agar.su:6002/process', max: 120},
 		{id: 'exp', url: 'https://ffa.agar.su:6003/process', max: 120},
         {id: 'pvp1', url: 'https://ffa.agar.su:6004/process', max: 50},
@@ -202,8 +201,7 @@ wHandle.startGame = function () {
     };
 
 const SERVERS = {
-        "ffa":   "beget.agar.su:6001",
-		"agario":   "ffa.agar.su:6001",
+		"ffa":   "ffa.agar.su:6001",
 		"ffasolo":    "ffa.agar.su:6008",
         "ms":    "ffa.agar.su:6002",
         "exp":   "ffa.agar.su:6003",
