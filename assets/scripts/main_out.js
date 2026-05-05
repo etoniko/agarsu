@@ -202,7 +202,6 @@ wHandle.startGame = function () {
     };
 
 const SERVERS = {
-        "ffa":   "beget.agar.su:6001",
 		"agario":   "ffa.agar.su:6001",
 		"ffasolo":    "ffa.agar.su:6008",
         "ms":    "ffa.agar.su:6002",
