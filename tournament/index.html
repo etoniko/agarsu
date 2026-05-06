@@ -1117,6 +1117,9 @@ body.panel-open .wrapper {
                     case 'auth_response':
                         if (msg.success) {
                             isAdmin = true;
+                                    // СОХРАНЯЕМ В localStorage
+        localStorage.setItem('tournament_admin', 'true');
+        localStorage.setItem('tournament_admin_time', Date.now().toString());
                             document.getElementById('adminToolsSection').style.display = 'block';
                             document.getElementById('adminInfoSection').style.display = 'block';
                             document.getElementById('adminStatusText').innerHTML = '<span class="admin-indicator active"></span> Администратор';
@@ -1174,6 +1177,15 @@ body.panel-open .wrapper {
     async function init() {
         await loadSkinDatabase();
         connectWebSocket();
+        // Проверяем сохранённого админа (не дольше 24 часов)
+const savedAdmin = localStorage.getItem('tournament_admin');
+const savedTime = localStorage.getItem('tournament_admin_time');
+if (savedAdmin === 'true' && savedTime && (Date.now() - parseInt(savedTime) < 24 * 60 * 60 * 1000)) {
+    // Автоматически пытаемся войти с сохранённым паролем
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'auth_admin', password: 'a12tt' }));
+    }
+}
         
         const toggleBtn = document.getElementById('togglePanelBtn');
         const adminPanel = document.getElementById('adminPanel');
