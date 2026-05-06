@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="https://agar.su/icon.svg" type="image/x-icon">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<link rel="icon" href="/icon.svg" type="image/x-icon">
+<title>Tournament Manager</title>
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+    background: #0b1120;
+    color: #e2e8f0;
+}
+
+/* Админ панель — всегда видна справа */
+.admin-panel {
+    position: fixed;
+    right: 0;
+    top: 0;
+    width: 280px;
+    height: 100vh;
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b2e 100%);
+    border-left: 3px solid #facc15;
+    box-shadow: -5px 0 20px rgba(0,0,0,0.5);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    overflow-y: auto;
+}
+
+.admin-panel.open {
+    transform: translateX(0);
+}
+
+.admin-panel-header {
+    padding: 20px;
+    background: rgba(250,204,21,0.1);
+    border-bottom: 1px solid #facc15;
+    text-align: center;
+}
+
+.admin-panel-header h3 {
+    margin: 0;
+    color: #facc15;
+    font-size: 1.3rem;
+}
+
+.admin-panel-header p {
+    margin: 5px 0 0;
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+.admin-section {
+    padding: 15px;
+    border-bottom: 1px solid #334155;
+}
+
+.admin-section-title {
+    font-size: 12px;
+    font-weight: bold;
+    color: #facc15;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.admin-buttons-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.admin-btn {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #e2e8f0;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.admin-btn:hover {
+    background: #334155;
+    transform: translateY(-1px);
+}
+
+.admin-btn.active {
+    background: #facc15;
+    color: #0f172a;
+    border-color: #facc15;
+}
+
+.admin-btn.danger {
+    background: #dc2626;
+    border-color: #ef4444;
+}
+
+.admin-btn.danger:hover {
+    background: #b91c1c;
+}
+
+.admin-btn.warning {
+    background: #f59e0b;
+    border-color: #fbbf24;
+}
+
+.admin-btn.success {
+    background: #10b981;
+    border-color: #34d399;
+}
+
+.toggle-panel-btn {
+    position: fixed;
+    right: 20px;
+    top: 20px;
+    background: #facc15;
+    color: #0f172a;
+    border: none;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 101;
+    font-size: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    transition: all 0.2s;
+}
+
+.toggle-panel-btn:hover {
+    transform: scale(1.05);
+    background: #ffd700;
+}
+
+.tournament-header {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    border-bottom: 3px solid #facc15;
+    padding: 18px 24px;
+    text-align: center;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    margin-right: 0;
+    transition: margin-right 0.3s ease;
+}
+
+body.panel-open .tournament-header {
+    margin-right: 280px;
+}
+
+body.panel-open .wrapper {
+    margin-right: 280px;
+}
+
+.tournament-header h1 {
+    margin: 0;
+    font-size: 2rem;
+    letter-spacing: 2px;
+    background: linear-gradient(135deg, #facc15, #ffb347);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.tournament-header .sub {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    margin-top: 6px;
+    font-weight: 500;
+}
+
+.tournament-info {
+    background: rgba(0,0,0,0.3);
+    padding: 8px 16px;
+    border-radius: 20px;
+    display: inline-block;
+    margin-top: 10px;
+}
+
+.wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 30px;
+    overflow-x: auto;
+    transition: margin-right 0.3s ease;
+}
+
+.container {
+    display: grid;
+    gap: 12px;
+}
+
+.nav-buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.nav-button {
+    background-color: white;
+    color: #016bef;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 0;
+    transition: 0.2s;
+}
+
+.play-button { background-color: #016bef; color: white; }
+.play-button:hover { background-color: white; color: #016bef; }
+.admin-button { background-color: #facc15; color: #0f172a; }
+.admin-button.active { background-color: #10b981; color: white; box-shadow: 0 0 8px #10b981; }
+.history-button { background-color: #8b5cf6; color: white; }
+.history-button:hover { background-color: #7c3aed; }
+
+.column {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    gap: 28px;
+}
+
+.match {
+    background: #1e293b;
+    border-radius: 12px;
+    padding: 10px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    border: 1px solid #334155;
+    position: relative;
+}
+
+.match-solo .team-block {
+    border-left-color: #10b981;
+}
+
+.team-block {
+    background: #0f172a;
+    border-radius: 10px;
+    padding: 6px 8px;
+    border-left: 4px solid #3b82f6;
+    transition: 0.1s;
+    cursor: pointer;
+}
+
+.team-block.winner {
+    border-left-color: #facc15;
+    background: #1e2a3e;
+    box-shadow: 0 0 8px rgba(250,204,21,0.3);
+}
+
+.team-block.select-mode {
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.team-block.select-mode:hover {
+    transform: scale(1.02);
+    background: #2a3a4e;
+    border-left-color: #facc15;
+}
+
+.team-block.edit-mode {
+    cursor: pointer;
+}
+
+.team-block.edit-mode:hover {
+    background: #2a3a4e;
+    border-left-color: #facc15;
+}
+
+.team-title {
+    font-size: 9px;
+    font-weight: 600;
+    color: #94a3b8;
+    padding-left: 4px;
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+}
+
+.team-players {
+    display: flex;
+    flex-direction: row;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.player {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #1e2a3e;
+    padding: 4px 8px;
+    border-radius: 24px;
+    font-size: clamp(9px, 1.5vw, 12px);
+    flex: 1;
+    min-width: 70px;
+}
+
+.player-skin {
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
+    border-radius: 50%;
+    background: #2d3a4e;
+    object-fit: cover;
+    border: 1px solid #facc15;
+    box-shadow: 0 1px 2px black;
+}
+
+.player-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+.center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
+    border-radius: 20px;
+    padding: 8px;
+}
+
+.final {
+    background: linear-gradient(95deg, #facc15, #eab308);
+    padding: 10px 14px;
+    border-radius: 40px;
+    font-size: 1.2rem;
+    font-weight: 800;
+    text-align: center;
+    color: #0f172a;
+    box-shadow: 0 4px 12px rgba(250,204,21,0.3);
+    letter-spacing: 1px;
+}
+
+.match.final-highlight {
+    border: 2px solid #facc15;
+    background: #2a2f3f;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: #1e293b;
+    border-radius: 20px;
+    padding: 24px;
+    width: 90%;
+    max-width: 500px;
+    border: 2px solid #facc15;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.modal-content h3 {
+    margin: 0 0 20px 0;
+    color: #facc15;
+}
+
+.modal-content input, .modal-content select {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+    background: #0f172a;
+    border: 1px solid #334155;
+    color: white;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.modal-content button {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 10px;
+    margin-right: 10px;
+}
+
+.modal-content button.cancel {
+    background: #ef4444;
+}
+
+.history-list {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.history-item {
+    background: #0f172a;
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.2s;
+    border-left: 3px solid #facc15;
+}
+
+.history-item:hover {
+    background: #1e293b;
+    transform: translateX(5px);
+}
+
+.history-item .name {
+    font-weight: bold;
+    color: #facc15;
+    font-size: 14px;
+}
+
+.history-item .date {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 4px;
+}
+
+.status-badge {
+    position: fixed;
+    bottom: 12px;
+    right: 12px;
+    background: #0f172a;
+    padding: 6px 12px;
+    border-radius: 40px;
+    font-size: 11px;
+    border-left: 3px solid #facc15;
+    z-index: 50;
+    font-family: monospace;
+}
+
+.current-mode-badge {
+    position: fixed;
+    bottom: 12px;
+    left: 12px;
+    background: #0f172a;
+    padding: 6px 12px;
+    border-radius: 40px;
+    font-size: 11px;
+    border-left: 3px solid #10b981;
+    z-index: 50;
+    font-family: monospace;
+}
+
+.format-badge {
+    background: #8b5cf6;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 11px;
+    margin-left: 8px;
+}
+
+.admin-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ef4444;
+    margin-right: 8px;
+}
+
+.admin-indicator.active {
+    background: #10b981;
+    box-shadow: 0 0 5px #10b981;
+}
+
+@media (max-width: 1000px) {
+    .wrapper { padding: 16px; }
+    .container { gap: 6px; min-width: 900px; }
+    .team-players { flex-direction: column; gap: 4px; }
+    .player { width: 100%; }
+    .admin-panel { width: 260px; }
+    body.panel-open .tournament-header,
+    body.panel-open .wrapper {
+        margin-right: 260px;
+    }
+}
+</style>
+</head>
+<body>
+
+<!-- Кнопка открытия админ панели -->
+<button class="toggle-panel-btn" id="togglePanelBtn">
+    <i class="fas fa-user-shield"></i>
+</button>
+
+<!-- Админ панель -->
+<div class="admin-panel" id="adminPanel">
+    <div class="admin-panel-header">
+        <h3><i class="fas fa-crown"></i> Админ панель</h3>
+        <p id="adminStatusText">Не авторизован</p>
+    </div>
+    
+    <div class="admin-section" id="adminToolsSection" style="display: none;">
+        <div class="admin-section-title">
+            <i class="fas fa-tools"></i> Инструменты
+        </div>
+        <div class="admin-buttons-grid">
+            <button class="admin-btn" id="modeEditBtn">
+                <i class="fas fa-edit"></i> Редакт.
+            </button>
+            <button class="admin-btn" id="modeSelectBtn">
+                <i class="fas fa-trophy"></i> Выбор побед.
+            </button>
+            <button class="admin-btn warning" id="archiveBtn">
+                <i class="fas fa-archive"></i> Архив
+            </button>
+            <button class="admin-btn danger" id="resetBtn">
+                <i class="fas fa-undo"></i> Сброс
+            </button>
+            <button class="admin-btn success" id="newTournamentBtn">
+                <i class="fas fa-plus"></i> Новый
+            </button>
+        </div>
+    </div>
+    
+    <div class="admin-section" id="adminInfoSection" style="display: none;">
+        <div class="admin-section-title">
+            <i class="fas fa-info-circle"></i> Информация
+        </div>
+        <div style="font-size: 12px; color: #94a3b8;">
+            <div><strong>Режим:</strong> <span id="currentModeDisplay">Просмотр</span></div>
+            <div><strong>Формат:</strong> <span id="formatDisplay">-</span></div>
+            <div><strong>Участников:</strong> <span id="teamsCountDisplay">-</span></div>
+        </div>
+    </div>
+    
+    <div class="admin-section">
+        <div class="admin-section-title">
+            <i class="fas fa-plug"></i> Соединение
+        </div>
+        <div style="font-size: 12px;">
+            <div id="wsStatusText">🔌 Подключение...</div>
+            <div id="adminBadge" style="margin-top: 8px;"></div>
+        </div>
+    </div>
+</div>
+
+<div class="tournament-header">
+    <h1>⚔️ MAY Tournament LIVE ⚔️</h1>
+    <div class="sub">
+        <div class="tournament-info" id="tournamentInfo"></div>
+    </div>
+    <div class="nav-buttons">
+        <button onclick="window.location.href='https://agar.su/#tournament'" class="nav-button play-button">
+            <i class="fas fa-eye"></i> Наблюдение
+        </button>
+        <button id="historyBtn" class="nav-button history-button">
+            <i class="fas fa-history"></i> История
+        </button>
+    </div>
+</div>
+
+<div class="wrapper">
+    <div class="container" id="tournament-container">
+        <div style="text-align: center; padding: 40px; color: #94a3b8;">⚡ Загрузка...</div>
+    </div>
+</div>
+
+<div class="current-mode-badge" id="currentModeBadge">
+    <i class="fas fa-eye"></i> Режим: просмотр
+</div>
+
+<div class="status-badge" id="wsStatus">
+    🔌 WSS: подключаемся...
+</div>
+
+<!-- Модальные окна -->
+<div id="loginModal" class="modal">
+    <div class="modal-content">
+        <h3><i class="fas fa-lock"></i> Вход администратора</h3>
+        <input type="password" id="adminPassword" placeholder="Пароль администратора">
+        <button id="doLoginBtn">Войти</button>
+        <button id="cancelLoginBtn" class="cancel">Отмена</button>
+    </div>
+</div>
+
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <h3 id="modalTitle">✏️ Редактирование</h3>
+        <div id="editFields"></div>
+        <button id="saveEditBtn">💾 Сохранить</button>
+        <button id="cancelEditBtn" class="cancel">❌ Отмена</button>
+    </div>
+</div>
+
+<div id="historyModal" class="modal">
+    <div class="modal-content">
+        <h3><i class="fas fa-history"></i> История турниров</h3>
+        <div id="historyList" class="history-list">
+            <div style="text-align:center; padding:20px;">Загрузка истории...</div>
+        </div>
+        <button id="closeHistoryBtn" class="cancel">Закрыть</button>
+    </div>
+</div>
+
+<div id="newTournamentModal" class="modal">
+    <div class="modal-content">
+        <h3><i class="fas fa-plus-circle"></i> Создать новый турнир</h3>
+        <label>Название:</label>
+        <input type="text" id="newTournamentName" placeholder="Название турнира">
+        <label>Формат:</label>
+        <select id="newTournamentFormat">
+            <option value="2x2">2x2 (Командный)</option>
+            <option value="1x1">1x1 (Соло)</option>
+        </select>
+        <label>Количество (8, 16, 32):</label>
+        <select id="newTournamentTeams">
+            <option value="8">8</option>
+            <option value="16" selected>16</option>
+            <option value="32">32</option>
+        </select>
+        <button id="createNewTournamentBtn">Создать</button>
+        <button id="cancelNewTournamentBtn" class="cancel">Отмена</button>
+    </div>
+</div>
+
+<script>
+    const WS_URL = "wss://api.agar.su:6001";
+    
+    let ws = null;
+    let isAdmin = false;
+    let editingMode = false;
+    let selectMode = false;
+    let currentTournament = null;
+    let historyIndex = [];
+    let skinDatabase = new Map();
+    let isViewingHistory = false;
+    let originalTournament = null;
+    let pendingWinCallback = null;
+    
+    async function loadSkinDatabase() {
+        try {
+            const response = await fetch('https://api.agar.su/skinlist.txt');
+            if (!response.ok) throw new Error();
+            const text = await response.text();
+            const lines = text.split(/\r?\n/);
+            for (const line of lines) {
+                if (line.trim() === '') continue;
+                const lastColon = line.lastIndexOf(':');
+                if (lastColon === -1) continue;
+                let nick = line.substring(0, lastColon).trim().toLowerCase();
+                let id = line.substring(lastColon + 1).trim();
+                if (nick && id && !skinDatabase.has(nick)) skinDatabase.set(nick, id);
+            }
+            console.log("✅ База скинов загружена");
+        } catch(e) { console.warn("Ошибка загрузки скинов:", e); }
+    }
+    
+    function getSkinUrl(nickname) {
+        if (!nickname) return null;
+        const skinId = skinDatabase.get(nickname.toLowerCase());
+        return skinId ? `https://api.agar.su/skins/${skinId}.png` : null;
+    }
+    
+    function createPlayerElement(nickname) {
+        const playerDiv = document.createElement('div');
+        playerDiv.className = 'player';
+        const img = document.createElement('img');
+        img.className = 'player-skin';
+        img.alt = 'skin';
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'player-name';
+        
+        if (nickname === "???" || nickname === "Победитель" || nickname === "Финалист" || !nickname) {
+            nameSpan.textContent = nickname || "???";
+            img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="%23334155"%3E%3Ccircle cx="12" cy="12" r="10" fill="%234b5563"/%3E%3Ctext x="12" y="16" font-size="10" text-anchor="middle" fill="%23cbd5e1"%3E?%3C/text%3E%3C/svg%3E';
+        } else {
+            nameSpan.textContent = nickname;
+            const skinUrl = getSkinUrl(nickname);
+            img.src = skinUrl || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="%23334155"%3E%3Crect width="24" height="24" rx="6" fill="%234b5563"/%3E%3C/svg%3E';
+            if (skinUrl) img.onerror = () => img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="%23334155"%3E%3Crect width="24" height="24" rx="6" fill="%234b5563"/%3E%3C/svg%3E';
+        }
+        playerDiv.appendChild(img);
+        playerDiv.appendChild(nameSpan);
+        return playerDiv;
+    }
+    
+    function createTeamBlock(team, label, teamId = null, isWinner = false, onWinClick = null, isSolo = false) {
+        const teamDiv = document.createElement('div');
+        teamDiv.className = 'team-block';
+        if (isWinner) teamDiv.classList.add('winner');
+        if (selectMode && onWinClick && !isViewingHistory && team && team.players && team.players[0] !== "???") {
+            teamDiv.classList.add('select-mode');
+        }
+        if (editingMode && isAdmin && !isViewingHistory && teamId !== null) {
+            teamDiv.classList.add('edit-mode');
+        }
+        
+        const titleSpan = document.createElement('div');
+        titleSpan.className = 'team-title';
+        titleSpan.textContent = label;
+        const playersDiv = document.createElement('div');
+        playersDiv.className = 'team-players';
+        
+        if (isSolo) {
+            const playerName = (team && team.players && team.players[0]) || "???";
+            playersDiv.appendChild(createPlayerElement(playerName));
+        } else {
+            if (team && team.players) {
+                for (let i = 0; i < Math.min(team.players.length, 2); i++) {
+                    playersDiv.appendChild(createPlayerElement(team.players[i] || "???"));
+                }
+                while (playersDiv.children.length < 2) {
+                    playersDiv.appendChild(createPlayerElement("???"));
+                }
+            } else {
+                playersDiv.appendChild(createPlayerElement("???"));
+                playersDiv.appendChild(createPlayerElement("???"));
+            }
+        }
+        
+        teamDiv.appendChild(titleSpan);
+        teamDiv.appendChild(playersDiv);
+        
+        if (selectMode && onWinClick && !isViewingHistory && team && team.players && team.players[0] !== "???") {
+            teamDiv.addEventListener('click', (e) => { 
+                e.stopPropagation(); 
+                onWinClick(); 
+            });
+        }
+        
+        if (editingMode && isAdmin && !isViewingHistory && teamId !== null) {
+            teamDiv.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openTeamEditModal(teamId, team.players, isSolo);
+            });
+        }
+        
+        return teamDiv;
+    }
+    
+    function createMatch(team1, team2, team1Label, team2Label, team1Id, team2Id, isWinner1, isWinner2, onWinCallback, isSolo) {
+        const matchDiv = document.createElement('div');
+        matchDiv.className = 'match';
+        if (isSolo) matchDiv.classList.add('match-solo');
+        
+        const team1Block = createTeamBlock(team1, team1Label, team1Id, isWinner1, () => onWinCallback && onWinCallback(0), isSolo);
+        const team2Block = createTeamBlock(team2, team2Label, team2Id, isWinner2, () => onWinCallback && onWinCallback(1), isSolo);
+        matchDiv.appendChild(team1Block);
+        matchDiv.appendChild(team2Block);
+        return matchDiv;
+    }
+    
+    function createEmptyMatch(label, isSolo) {
+        const emptyTeam = { players: ["???", isSolo ? null : "???"].filter(p => p) };
+        const matchDiv = document.createElement('div');
+        matchDiv.className = 'match';
+        if (isSolo) matchDiv.classList.add('match-solo');
+        matchDiv.appendChild(createTeamBlock(emptyTeam, label, null, false, null, isSolo));
+        matchDiv.appendChild(createTeamBlock(emptyTeam, label, null, false, null, isSolo));
+        return matchDiv;
+    }
+    
+    function getTeamById(id) {
+        if (!currentTournament || id === null || id === undefined) {
+            const isSolo = currentTournament?.format === '1x1';
+            return { players: ["???", isSolo ? null : "???"].filter(p => p) };
+        }
+        return currentTournament.teams[id] || { players: ["???", currentTournament?.format === '1x1' ? null : "???"].filter(p => p) };
+    }
+    
+    function updateWinner(side, roundIndex, matchIndex, winnerTeamId) {
+        if (!isAdmin || isViewingHistory) return;
+        if (side === 'left') currentTournament.winners.left[roundIndex][matchIndex] = winnerTeamId;
+        else if (side === 'right') currentTournament.winners.right[roundIndex][matchIndex] = winnerTeamId;
+        else if (side === 'final') currentTournament.winners.final = winnerTeamId;
+        
+        currentTournament.lastModified = new Date().toISOString();
+        buildTournament();
+        sendTournamentUpdate();
+    }
+    
+    function updateTeamData(teamId, players) {
+        if (!isAdmin || !currentTournament || isViewingHistory) return;
+        if (currentTournament.teams[teamId]) {
+            currentTournament.teams[teamId].players = [...players];
+            buildTournament();
+            sendTournamentUpdate();
+        }
+    }
+    
+    function sendTournamentUpdate() {
+        if (ws && ws.readyState === WebSocket.OPEN && isAdmin && !isViewingHistory) {
+            ws.send(JSON.stringify({
+                type: 'tournament_update',
+                data: currentTournament
+            }));
+        }
+    }
+    
+    function buildTournament() {
+        if (!currentTournament || !currentTournament.winners) {
+            document.getElementById('tournament-container').innerHTML = '<div style="text-align: center; padding: 40px;">Нет данных о турнире</div>';
+            return;
+        }
+        
+        const container = document.getElementById('tournament-container');
+        if (!container) return;
+        container.innerHTML = '';
+        
+        const isSolo = currentTournament.format === '1x1';
+        const totalRounds = currentTournament.winners.left.length;
+        const totalColumns = 1 + (totalRounds * 2);
+        container.style.display = 'grid';
+        container.style.gridTemplateColumns = `repeat(${totalColumns}, minmax(130px, 1fr))`;
+        container.style.gap = '12px';
+        
+        const teamsPerSide = currentTournament.totalTeams / 2;
+        const leftTeams = currentTournament.teams.slice(0, teamsPerSide);
+        const rightTeams = currentTournament.teams.slice(teamsPerSide);
+        const columns = [];
+        
+        for (let round = 0; round < totalRounds; round++) {
+            const col = document.createElement('div');
+            col.className = 'column';
+            const matchesCount = currentTournament.winners.left[round].length;
+            
+            for (let matchIdx = 0; matchIdx < matchesCount; matchIdx++) {
+                if (round === 0) {
+                    const idx1 = matchIdx * 2, idx2 = matchIdx * 2 + 1;
+                    if (idx2 < leftTeams.length) {
+                        const team1 = leftTeams[idx1], team2 = leftTeams[idx2];
+                        const winner = currentTournament.winners.left[round][matchIdx];
+                        col.appendChild(createMatch(team1, team2, `${isSolo ? 'Участник' : 'Команда'} ${idx1+1}`, `${isSolo ? 'Участник' : 'Команда'} ${idx2+1}`, idx1, idx2, winner === idx1, winner === idx2, (teamIdx) => {
+                            const wid = teamIdx === 0 ? idx1 : idx2;
+                            updateWinner('left', round, matchIdx, wid);
+                        }, isSolo));
+                    } else {
+                        col.appendChild(createEmptyMatch(`Раунд ${round+1}`, isSolo));
+                    }
+                } else {
+                    const prev = currentTournament.winners.left[round - 1];
+                    const w1 = prev[matchIdx*2], w2 = prev[matchIdx*2+1];
+                    const team1 = getTeamById(w1), team2 = getTeamById(w2);
+                    const curWinner = currentTournament.winners.left[round][matchIdx];
+                    
+                    if (w1 !== null && w2 !== null) {
+                        col.appendChild(createMatch(team1, team2, `Победитель`, `Победитель`, w1, w2, curWinner === w1, curWinner === w2, (teamIdx) => updateWinner('left', round, matchIdx, teamIdx===0 ? w1 : w2), isSolo));
+                    } else {
+                        col.appendChild(createEmptyMatch(`Раунд ${round+1}`, isSolo));
+                    }
+                }
+            }
+            columns.push(col);
+        }
+        
+        const finalCol = document.createElement('div');
+        finalCol.className = 'center';
+        const leftFinalist = currentTournament.winners.left[totalRounds-1]?.[0] ?? null;
+        const rightFinalist = currentTournament.winners.right[totalRounds-1]?.[0] ?? null;
+        
+        if (leftFinalist !== null && rightFinalist !== null) {
+            const team1 = getTeamById(leftFinalist), team2 = getTeamById(rightFinalist);
+            const finalMatch = createMatch(team1, team2, `Левый финалист`, `Правый финалист`, leftFinalist, rightFinalist, currentTournament.winners.final === leftFinalist, currentTournament.winners.final === rightFinalist, (teamIdx) => updateWinner('final', null, null, teamIdx===0 ? leftFinalist : rightFinalist), isSolo);
+            finalMatch.classList.add('final-highlight');
+            finalCol.appendChild(finalMatch);
+        } else {
+            const emptyMatch = createEmptyMatch("ФИНАЛ", isSolo);
+            emptyMatch.classList.add('final-highlight');
+            finalCol.appendChild(emptyMatch);
+        }
+        
+        const finalBadge = document.createElement('div');
+        finalBadge.className = 'final';
+        if (currentTournament.winners.final !== null && currentTournament.teams[currentTournament.winners.final]) {
+            const winnerTeam = currentTournament.teams[currentTournament.winners.final];
+            if (isSolo) {
+                finalBadge.textContent = `🏆 Победитель: ${winnerTeam.players[0]} 🏆`;
+            } else {
+                finalBadge.textContent = `🏆 Победители: ${winnerTeam.players.join(' & ')} 🏆`;
+            }
+        } else {
+            finalBadge.textContent = '🏆 Ожидаем финал 🏆';
+        }
+        finalCol.appendChild(finalBadge);
+        columns.push(finalCol);
+        
+        for (let round = totalRounds-1; round >= 0; round--) {
+            const col = document.createElement('div');
+            col.className = 'column';
+            const matchesCount = currentTournament.winners.right[round].length;
+            
+            for (let matchIdx = matchesCount-1; matchIdx >= 0; matchIdx--) {
+                const origIdx = matchIdx;
+                if (round === 0) {
+                    const idx1 = origIdx*2, idx2 = origIdx*2+1;
+                    if (idx2 < rightTeams.length) {
+                        const team1 = rightTeams[idx1], team2 = rightTeams[idx2];
+                        const winner = currentTournament.winners.right[round][origIdx];
+                        col.appendChild(createMatch(team1, team2, `${isSolo ? 'Участник' : 'Команда'} ${teamsPerSide+idx1+1}`, `${isSolo ? 'Участник' : 'Команда'} ${teamsPerSide+idx2+1}`, teamsPerSide+idx1, teamsPerSide+idx2, winner === teamsPerSide+idx1, winner === teamsPerSide+idx2, (teamIdx) => updateWinner('right', round, origIdx, teamIdx===0 ? teamsPerSide+idx1 : teamsPerSide+idx2), isSolo));
+                    } else {
+                        col.appendChild(createEmptyMatch(`Раунд ${round+1}`, isSolo));
+                    }
+                } else {
+                    const prev = currentTournament.winners.right[round - 1];
+                    const w1 = prev[origIdx*2], w2 = prev[origIdx*2+1];
+                    const team1 = getTeamById(w1), team2 = getTeamById(w2);
+                    const curWinner = currentTournament.winners.right[round][origIdx];
+                    
+                    if (w1 !== null && w2 !== null) {
+                        col.appendChild(createMatch(team1, team2, `Победитель`, `Победитель`, w1, w2, curWinner === w1, curWinner === w2, (teamIdx) => updateWinner('right', round, origIdx, teamIdx===0 ? w1 : w2), isSolo));
+                    } else {
+                        col.appendChild(createEmptyMatch(`Раунд ${round+1}`, isSolo));
+                    }
+                }
+            }
+            columns.push(col);
+        }
+        
+        columns.forEach(col => container.appendChild(col));
+        
+        const dateStr = new Date(currentTournament.date).toLocaleDateString('ru-RU');
+        const timeStr = new Date(currentTournament.date).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+        const formatLabel = currentTournament.format === '1x1' ? '🎮 1x1 (Соло)' : '👥 2x2 (Командный)';
+        document.getElementById('tournamentInfo').innerHTML = `
+            <i class="fas fa-calendar-alt"></i> ${currentTournament.name} • 
+            ${currentTournament.totalTeams} ${isSolo ? 'участников' : 'команд'} • 
+            <span class="format-badge">${formatLabel}</span> •
+            ${dateStr} ${timeStr}
+            ${isViewingHistory ? '<span style="color:#facc15; margin-left:10px;">📜 ПРОСМОТР ИСТОРИИ</span>' : ''}
+        `;
+        
+        updateAdminUI();
+    }
+    
+    function updateAdminUI() {
+        if (!currentTournament) return;
+        const isSolo = currentTournament.format === '1x1';
+        document.getElementById('formatDisplay').innerHTML = isSolo ? '1x1 (Соло)' : '2x2 (Командный)';
+        document.getElementById('teamsCountDisplay').innerHTML = currentTournament.totalTeams;
+        
+        let modeText = 'Просмотр';
+        if (selectMode) modeText = '🎯 Выбор победителя';
+        if (editingMode) modeText = '✏️ Редактирование';
+        document.getElementById('currentModeDisplay').innerHTML = modeText;
+        document.getElementById('currentModeBadge').innerHTML = `<i class="fas ${selectMode ? 'fa-trophy' : (editingMode ? 'fa-edit' : 'fa-eye')}"></i> Режим: ${selectMode ? 'выбор побед.' : (editingMode ? 'редакт.' : 'просмотр')}`;
+        
+        document.getElementById('modeEditBtn').classList.toggle('active', editingMode);
+        document.getElementById('modeSelectBtn').classList.toggle('active', selectMode);
+    }
+    
+    function openTeamEditModal(teamId, players, isSolo) {
+        const modal = document.getElementById('editModal');
+        document.getElementById('modalTitle').textContent = `✏️ Редактирование ${isSolo ? 'участника' : 'команды'} ${teamId + 1}`;
+        
+        if (isSolo) {
+            document.getElementById('editFields').innerHTML = `
+                <label>Игрок:</label>
+                <input type="text" id="player1Input" value="${escapeHtml(players[0] || '')}" placeholder="Никнейм">
+            `;
+        } else {
+            document.getElementById('editFields').innerHTML = `
+                <label>Игрок 1:</label>
+                <input type="text" id="player1Input" value="${escapeHtml(players[0] || '')}" placeholder="Никнейм">
+                <label>Игрок 2:</label>
+                <input type="text" id="player2Input" value="${escapeHtml(players[1] || '')}" placeholder="Никнейм">
+            `;
+        }
+        modal.style.display = 'flex';
+        
+        const saveHandler = () => {
+            const newPlayers = isSolo 
+                ? [document.getElementById('player1Input').value.trim() || players[0] || '???']
+                : [
+                    document.getElementById('player1Input').value.trim() || players[0] || '???',
+                    document.getElementById('player2Input').value.trim() || players[1] || '???'
+                  ];
+            updateTeamData(teamId, newPlayers);
+            modal.style.display = 'none';
+            cleanup();
+        };
+        const cancelHandler = () => { modal.style.display = 'none'; cleanup(); };
+        const cleanup = () => {
+            document.getElementById('saveEditBtn').removeEventListener('click', saveHandler);
+            document.getElementById('cancelEditBtn').removeEventListener('click', cancelHandler);
+        };
+        document.getElementById('saveEditBtn').addEventListener('click', saveHandler);
+        document.getElementById('cancelEditBtn').addEventListener('click', cancelHandler);
+    }
+    
+    function escapeHtml(str) { 
+        if (!str) return '';
+        return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); 
+    }
+    
+    function showHistory() {
+        if (!historyIndex || historyIndex.length === 0) {
+            document.getElementById('historyList').innerHTML = '<div style="text-align:center; padding:20px;">📭 Нет архивированных турниров</div>';
+        } else {
+            document.getElementById('historyList').innerHTML = historyIndex.map(h => `
+                <div class="history-item" onclick="window.loadHistoryTournament('${h.file}')">
+                    <div class="name">📋 ${escapeHtml(h.name)} ${h.format === '1x1' ? '🎮' : '👥'}</div>
+                    <div class="date">📅 ${new Date(h.date).toLocaleString('ru-RU')} | ${h.totalTeams} ${h.format === '1x1' ? 'участников' : 'команд'}</div>
+                    ${h.hasWinner ? '<div class="winner">🏆 Есть победитель</div>' : '<div class="winner">⏳ Не завершен</div>'}
+                </div>
+            `).join('');
+        }
+        document.getElementById('historyModal').style.display = 'flex';
+    }
+    
+    window.loadHistoryTournament = function(filename) {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            if (!isViewingHistory) {
+                originalTournament = JSON.parse(JSON.stringify(currentTournament));
+                isViewingHistory = true;
+                document.getElementById('viewModeBadge').style.display = 'flex';
+            }
+            ws.send(JSON.stringify({ type: 'load_history', filename: filename }));
+            document.getElementById('historyModal').style.display = 'none';
+        } else {
+            alert("Нет соединения с сервером");
+        }
+    };
+    
+    function displayHistoryTournament(tournament) {
+        currentTournament = tournament;
+        buildTournament();
+    }
+    
+    function exitHistoryMode() {
+        if (isViewingHistory && originalTournament) {
+            currentTournament = originalTournament;
+            originalTournament = null;
+            isViewingHistory = false;
+            buildTournament();
+            alert("Возврат к текущему турниру");
+        }
+    }
+    
+    function archiveCurrentTournament() {
+        if (!isAdmin || isViewingHistory) return;
+        const name = prompt("Введите название для архива:");
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'archive_current', name: name || null }));
+        }
+    }
+    
+    function resetTournament() {
+        if (!isAdmin || isViewingHistory) return;
+        if (confirm("⚠️ Сбросить все результаты турнира?")) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'reset_tournament', confirm: true }));
+            }
+        }
+    }
+    
+    function createNewTournament() {
+        if (!isAdmin) return;
+        document.getElementById('newTournamentModal').style.display = 'flex';
+    }
+    
+    function connectWebSocket() {
+        ws = new WebSocket(WS_URL);
+        
+        ws.onopen = () => {
+            document.getElementById('wsStatus').innerHTML = "✅ WSS: онлайн";
+            document.getElementById('wsStatusText').innerHTML = "✅ Соединение установлено";
+        };
+        
+        ws.onmessage = (event) => {
+            try {
+                const msg = JSON.parse(event.data);
+                console.log("Получено:", msg.type);
+                
+                switch(msg.type) {
+                    case 'init':
+                        currentTournament = msg.data.tournament;
+                        historyIndex = msg.data.historyIndex;
+                        buildTournament();
+                        break;
+                    case 'tournament_update':
+                        if (!isAdmin || isViewingHistory) {
+                            currentTournament = msg.data;
+                            buildTournament();
+                        }
+                        break;
+                    case 'auth_response':
+                        if (msg.success) {
+                            isAdmin = true;
+                            document.getElementById('adminToolsSection').style.display = 'block';
+                            document.getElementById('adminInfoSection').style.display = 'block';
+                            document.getElementById('adminStatusText').innerHTML = '<span class="admin-indicator active"></span> Администратор';
+                            document.getElementById('adminBadge').innerHTML = '<span style="color:#10b981;">✅ Авторизован</span>';
+                            alert("✅ Вы вошли как администратор!");
+                            buildTournament();
+                        } else {
+                            alert("❌ " + msg.message);
+                        }
+                        document.getElementById('loginModal').style.display = 'none';
+                        break;
+                    case 'history_data':
+                        displayHistoryTournament(msg.data);
+                        break;
+                    case 'archive_response':
+                        if (msg.success) {
+                            alert("✅ " + msg.message);
+                            if (ws && ws.readyState === WebSocket.OPEN) {
+                                ws.send(JSON.stringify({ type: 'request_sync' }));
+                            }
+                        }
+                        break;
+                    case 'create_response':
+                        if (msg.success) {
+                            alert("✅ " + msg.message);
+                        }
+                        break;
+                    case 'reset_response':
+                        if (msg.success) {
+                            alert("✅ Турнир сброшен");
+                        }
+                        break;
+                    case 'error':
+                        alert("❌ Ошибка: " + msg.message);
+                        break;
+                    case 'welcome':
+                        console.log("Welcome:", msg.message);
+                        break;
+                }
+            } catch(e) { console.error("Ошибка:", e); }
+        };
+        
+        ws.onclose = () => {
+            document.getElementById('wsStatus').innerHTML = "⚠️ WSS: разорвано";
+            document.getElementById('wsStatusText').innerHTML = "⚠️ Соединение потеряно";
+            setTimeout(() => connectWebSocket(), 3000);
+        };
+        
+        ws.onerror = () => {
+            document.getElementById('wsStatus').innerHTML = "❌ WSS: ошибка";
+            document.getElementById('wsStatusText').innerHTML = "❌ Ошибка соединения";
+        };
+    }
+    
+    async function init() {
+        await loadSkinDatabase();
+        connectWebSocket();
+        
+        const toggleBtn = document.getElementById('togglePanelBtn');
+        const adminPanel = document.getElementById('adminPanel');
+        
+        toggleBtn.addEventListener('click', () => {
+            adminPanel.classList.toggle('open');
+            document.body.classList.toggle('panel-open');
+        });
+        
+        document.getElementById('historyBtn').addEventListener('click', showHistory);
+        document.getElementById('closeHistoryBtn').addEventListener('click', () => {
+            document.getElementById('historyModal').style.display = 'none';
+            if (isViewingHistory) exitHistoryMode();
+        });
+        
+        // Кнопки админки
+        document.getElementById('modeEditBtn').addEventListener('click', () => {
+            if (!isAdmin) { alert("Нет прав"); return; }
+            editingMode = !editingMode;
+            selectMode = false;
+            buildTournament();
+        });
+        
+        document.getElementById('modeSelectBtn').addEventListener('click', () => {
+            if (!isAdmin) { alert("Нет прав"); return; }
+            selectMode = !selectMode;
+            editingMode = false;
+            buildTournament();
+        });
+        
+        document.getElementById('archiveBtn').addEventListener('click', archiveCurrentTournament);
+        document.getElementById('resetBtn').addEventListener('click', resetTournament);
+        document.getElementById('newTournamentBtn').addEventListener('click', createNewTournament);
+        
+        // Логин
+        document.getElementById('doLoginBtn').addEventListener('click', () => {
+            const password = document.getElementById('adminPassword').value;
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'auth_admin', password: password }));
+            } else {
+                alert("Нет соединения");
+            }
+        });
+        
+        document.getElementById('cancelLoginBtn').addEventListener('click', () => {
+            document.getElementById('loginModal').style.display = 'none';
+        });
+        
+        // Создание турнира
+        document.getElementById('createNewTournamentBtn').addEventListener('click', () => {
+            const name = document.getElementById('newTournamentName').value;
+            const teams = parseInt(document.getElementById('newTournamentTeams').value);
+            const format = document.getElementById('newTournamentFormat').value;
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'create_new_tournament', name: name, totalTeams: teams, format: format }));
+                document.getElementById('newTournamentModal').style.display = 'none';
+                document.getElementById('newTournamentName').value = '';
+            }
+        });
+        
+        document.getElementById('cancelNewTournamentBtn').addEventListener('click', () => {
+            document.getElementById('newTournamentModal').style.display = 'none';
+        });
+        
+        // Админ-кнопка для входа
+        const adminBtn = document.createElement('button');
+        adminBtn.className = 'nav-button admin-button';
+        adminBtn.innerHTML = '<i class="fas fa-user-shield"></i> Админ панель';
+        adminBtn.addEventListener('click', () => {
+            if (isAdmin) {
+                adminPanel.classList.toggle('open');
+                document.body.classList.toggle('panel-open');
+            } else {
+                document.getElementById('loginModal').style.display = 'flex';
+            }
+        });
+        document.querySelector('.nav-buttons').appendChild(adminBtn);
+        
+        // Убираем старую кнопку админа если была
+        const oldAdminBtn = document.getElementById('adminBtn');
+        if (oldAdminBtn) oldAdminBtn.remove();
+        
+        setInterval(() => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'ping' }));
+            }
+        }, 30000);
+    }
+    
+    init();
+</script>
+</body>
+</html>
