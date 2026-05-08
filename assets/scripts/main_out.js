@@ -51,9 +51,8 @@ stats.forEach((player, index) => {
     container.appendChild(playerDiv);
 });
                         }
-	
     // По умолчанию выбранный сервер
-    let SELECTED_SERVER = wHandle.CONNECTION_URL || "ffa.agar.su:6001";
+    let SELECTED_SERVER = wHandle.CONNECTION_URL || "3gekgx8r82.cdn.twcstorage.ru";
 
     // --- Подсветка активного сервера из hash ---
     function setActiveFromHash() {
@@ -105,7 +104,7 @@ window.addEventListener('hashchange', setActiveFromHash);
 // Функция обновления онлайн
 async function updateOnlineCount() {
     const servers = [
-		{id: 'ffa', url: 'https://ffa.agar.su:6001/process', max: 100},
+		{id: 'ffa', url: 'https://3gekgx8r82.cdn.twcstorage.ru/process', max: 500},
         {id: 'ms', url: 'https://ffa.agar.su:6002/process', max: 120},
 		{id: 'exp', url: 'https://ffa.agar.su:6003/process', max: 120},
         {id: 'pvp1', url: 'https://ffa.agar.su:6004/process', max: 50},
@@ -201,7 +200,7 @@ wHandle.startGame = function () {
     };
 
 const SERVERS = {
-		"ffa":   "ffa.agar.su:6001",
+		"ffa":   "3gekgx8r82.cdn.twcstorage.ru",
 		"ffasolo":    "ffa.agar.su:6008",
         "ms":    "ffa.agar.su:6002",
         "exp":   "ffa.agar.su:6003",
