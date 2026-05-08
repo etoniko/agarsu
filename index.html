@@ -32,7 +32,7 @@
     <script src="/assets/scripts/jquery.js?0.0.2"></script>
     <script src="/assets/scripts/log.js?0.0.2"></script>
     <script src="/assets/scripts/vector.js?0.0.2"></script>
-    <script src="/assets/scripts/main_out.js?7.3.0"></script>
+    <script src="/assets/scripts/main_out.js?7.3.1"></script>
 	<script src="/assets/scripts/shop.js?10" defer></script>
 	<script src="/assets/scripts/all.js?0.0.1" defer></script>
 	<script src="/assets/scripts/pass.js?0.0.2" defer></script>
@@ -301,7 +301,7 @@ _tmr.push({id: "3761618", type: "pageView", start: (new Date()).getTime()});
           </div>
 		  <div class="servers">
 <ul class="gamemode">
-    <li data-ip="ffa.agar.su:6001" id="ffa"><span class="fi fi-ru"></span>FFA - 𝙈𝙤𝙨𝙘𝙤𝙬<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/500</span></li>
+    <li data-ip="3gekgx8r82.cdn.twcstorage.ru" id="ffa"><span class="fi fi-ru"></span>FFA - 𝙈𝙤𝙨𝙘𝙤𝙬<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/500</span></li>
 	<!-- <li data-ip="ffa.agar.su:6001" id="agario"><span class="fi fi" style="background-image: url(https://агарио.рф/ico.png);height: 18px;"></span>агарио.рф<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/100</span></li>  -->
 	<!-- <li data-ip="ffa.agar.su:6008" id="ffasolo"><span class="fi fi-ru"></span>FFA - 𝐒𝐨𝐥𝐨<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/120</span></li> -->
     <li data-ip="ffa.agar.su:6002" id="ms"><span class="fi fi-ru"></span>MegaSplit<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/120</span></li>
@@ -425,7 +425,7 @@ function openTelegramAuth() {
 async function loadTop() {
     try {
         const [statsRes, skinRes] = await Promise.all([
-            fetch('https://ffa.agar.su:6001/checkStats'),
+            fetch('https://3gekgx8r82.cdn.twcstorage.ru/checkStats'),
             fetch('https://api.agar.su/skinlist.txt')
         ]);
 
