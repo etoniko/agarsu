@@ -369,7 +369,7 @@ function openTelegramAuth() {
 	  <div class="rating-home" id="ratinghome">
 
     <div class="rating-header">
-        Рейтинг FFA#2
+        Рейтинг FFA#1
     </div>
 
     <div class="rating-content" id="topswindow">
@@ -425,7 +425,7 @@ function openTelegramAuth() {
 async function loadTop() {
     try {
         const [statsRes, skinRes] = await Promise.all([
-            fetch('https://3gekgx8r82.cdn.twcstorage.ru/checkStats'),
+            fetch('https://ffa.agar.su:6001/checkStats'),
             fetch('https://api.agar.su/skinlist.txt')
         ]);
 
