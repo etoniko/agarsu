@@ -111,6 +111,7 @@ async function updateOnlineCount() {
 		{id: 'exp', url: 'https://ffa.agar.su:6003/process', max: 120},
         {id: 'pvp1', url: 'https://ffa.agar.su:6004/process', max: 50},
         {id: 'pvp2', url: 'https://ffa.agar.su:6005/process', max: 50},
+		{id: 'pvp3', url: 'https://ffa.agar.su:6008/process', max: 50},
         {id: 'tournament', url: 'https://ffa.agar.su:6006/process', max: 120}
     ];
     
@@ -208,6 +209,7 @@ const SERVERS = {
         "exp":   "ffa.agar.su:6003",
 		"pvp1":  "ffa.agar.su:6004",
 		"pvp2":  "ffa.agar.su:6005",
+	    "pvp3":  "ffa.agar.su:6008",
 		"tournament":  "ffa.agar.su:6006"
     };
 	
