@@ -259,23 +259,11 @@ function initServers() {
     const activeLi = document.getElementById(serverKey);
     if (activeLi) activeLi.classList.add('active');
     
-    // НОВЫЙ КОД: установка зума из URL (например ?zoom=0.5)
-    const zoomParam = urlParams.get('zoom');
-    if (zoomParam && !isNaN(parseFloat(zoomParam))) {
-        zoom = parseFloat(zoomParam);
-    } else if (urlParams.has('spect') || hash.includes('?spect')) {
-        zoom = 0.5;  // дефолтный зум для наблюдения
-    } else {
-        zoom = 1;  // дефолтный зум для игры
-    }
-    
-    // НОВЫЙ КОД: автоматический запуск нужного режима
+    // НОВЫЙ КОД: автоматический запуск нужного режима через wHandle.onload
     if (urlParams.has('spect') || hash.includes('?spect')) {
-        setTimeout(() => {
-            if (typeof wHandle.spectate === 'function') {
-                wHandle.spectate();
-            }
-        }, 200);
+        // Не трогаем zoom здесь, он установится в gameLoop
+        // Просто запоминаем что нужно запустить spectate
+        window._autoSpectate = true;
     }
 }
 
@@ -399,6 +387,21 @@ const cellColors = [
         ];
 		
    function gameLoop() {
+	       // Установка зума для режима наблюдения
+    const urlParams = new URLSearchParams(window.location.search);
+    const hash = window.location.hash;
+    
+    if ((urlParams.has('spect') || hash.includes('?spect')) && typeof zoom !== 'undefined') {
+        zoom = 0.5;
+    }
+    
+    // Автоматический запуск наблюдения
+    if (window._autoSpectate && typeof wHandle.spectate === 'function') {
+        delete window._autoSpectate; // чтобы не запускалось дважды
+        setTimeout(() => {
+            wHandle.spectate();
+        }, 100);
+    }
 	   
 let stickerCooldown = false;
 let stickerCooldownTimer = null;
