@@ -259,33 +259,16 @@ function initServers() {
     const activeLi = document.getElementById(serverKey);
     if (activeLi) activeLi.classList.add('active');
     
-    // НОВЫЙ КОД: установка зума (безопасно)
-    if (typeof zoom !== 'undefined') {
-        if (urlParams.has('spect') || hash.includes('?spect')) {
-            zoom = 0.5;
-        } else {
-            zoom = 1;
-        }
-    }
+    // НОВЫЙ КОД: установка зума 0.5
+    zoom = 0.3;
     
     // НОВЫЙ КОД: автоматический запуск нужного режима
     if (urlParams.has('spect') || hash.includes('?spect')) {
-        // Откладываем запуск до полной загрузки страницы
-        if (document.readyState === 'loading') {
-            window.addEventListener('DOMContentLoaded', function() {
-                setTimeout(() => {
-                    if (typeof wHandle.spectate === 'function') {
-                        wHandle.spectate();
-                    }
-                }, 500);
-            });
-        } else {
-            setTimeout(() => {
-                if (typeof wHandle.spectate === 'function') {
-                    wHandle.spectate();
-                }
-            }, 500);
-        }
+        setTimeout(() => {
+            if (typeof wHandle.spectate === 'function') {
+                wHandle.spectate();
+            }
+        }, 200);
     }
 }
 
