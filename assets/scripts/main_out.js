@@ -53,7 +53,7 @@ stats.forEach((player, index) => {
                         }
 	
     // По умолчанию выбранный сервер
-    let SELECTED_SERVER = wHandle.CONNECTION_URL || "ffa.agar.su:6007";
+    let SELECTED_SERVER = wHandle.CONNECTION_URL || "ffa.agar.su:6008";
 
     // --- Подсветка активного сервера из hash ---
     function setActiveFromHash() {
@@ -104,8 +104,8 @@ window.addEventListener('hashchange', setActiveFromHash);
 
 // Функция обновления онлайн
 async function updateOnlineCount() {
-    const servers = [
-		{id: 'ffa', url: 'https://ffa.agar.su:6007/process', max: 100},
+     const servers = [
+		{id: 'ffa', url: 'https://ffa.agar.su:6007/process', max: 500},
 		{id: 'agario', url: 'https://ffa.agar.su:6001/process', max: 100},
         {id: 'ms', url: 'https://ffa.agar.su:6002/process', max: 120},
 		{id: 'exp', url: 'https://ffa.agar.su:6003/process', max: 120},
@@ -157,7 +157,7 @@ async function updateOnlineCount() {
         window.onlineInterval = setInterval(updateOnlineCount, 5000);
     }
 	
-const forbiddenChars = ["﷽", "𒐫", "𒈙", "⸻", "꧅", "ဪ", "௵", "௸", "‱", "ㅤ", "⁣","‎ ", "​", "‌", "‍", "‎", "‏", " ", " ", " ", " ", " "," ", " ", " ", " ", " ", " ", "​", "﻿", "￼", " ","⠀","ﾠ","卐","卍"]; //  ЗАПРЕЩЕНО!
+const forbiddenChars = ["﷽", "𒐫", "𒈙", "⸻", "꧅", "ဪ", "௵", "௸", "‱", "ㅤ", "⁣","‎ ", "​", "‌", "‍", "‎", "‏", " ", " ", " ", " ", " "," ", " ", " ", " ", " ", " ", "​", "﻿", "", " ","⠀","ﾠ","卐","卍"]; //  ЗАПРЕЩЕНО!
 
 wHandle.startGame = function () {
     let nickInput = document.getElementById('nick').value.trim();
@@ -1107,6 +1107,9 @@ let ejectPressed = false;
 
 let pinchZoomStartDistance = 0;
 let isPinching = false;
+// Добавьте эти переменные в начало файла (после остальных var)
+let ejectInterval = null;
+let ejectPressedByTouch = false;
 
 function onTouchStart(e) {
     for (var i = 0; i < e.changedTouches.length; i++) {
@@ -1114,30 +1117,42 @@ function onTouchStart(e) {
 
         var size = ~~(canvasWidth / 7);
 
-        // Проверяем, касается ли нажатие кнопки "split"
+        // Проверяем кнопку "split"
         if (
             touch.clientX * dpr > canvasWidth - size &&
             touch.clientY * dpr > canvasHeight - size
         ) {
             sendMouseMove();
-            sendUint8(17); // split
-            splitPressed = true;
+            sendUint8(17);
             continue;
         }
 
-        // Проверяем, касается ли нажатие кнопки "eject"
+        // ПРОВЕРЯЕМ КНОПКУ "EJECT" - ЗАПУСКАЕМ ИНТЕРВАЛ СРАЗУ
         if (
             touch.clientX * dpr > canvasWidth - size &&
             touch.clientY * dpr > canvasHeight - 2 * size - 10 &&
             touch.clientY * dpr < canvasHeight - size - 10
         ) {
-            sendMouseMove();
-            sendUint8(21); // eject
-            ejectPressed = true;
+            ejectPressedByTouch = true;
+            
+            // Уже стреляем? Нет - запускаем интервал
+            if (!ejectInterval) {
+                // Первый выстрел сразу
+                sendMouseMove();
+                sendUint8(21);
+                
+                // Запускаем интервал для непрерывной стрельбы
+                ejectInterval = setInterval(() => {
+                    if (ejectPressedByTouch && wsIsOpen()) {
+                        sendMouseMove();
+                        sendUint8(21);
+                    }
+                }, 80); // скорость стрельбы (чем меньше, тем быстрее)
+            }
             continue;
         }
 
-        // Если это не кнопка, обрабатываем как джойстик
+        // Джойстик
         if (leftTouchID < 0) {
             leftTouchID = touch.identifier;
             leftTouchStartPos.reset(touch.clientX * dpr, touch.clientY * dpr);
@@ -1151,7 +1166,7 @@ function onTouchStart(e) {
 function onTouchMove(e) {
     e.preventDefault();
 
-    // === Пинч-зум (двумя пальцами) ===
+    // Пинч-зум
     if (e.touches.length === 2) {
         const dx = e.touches[0].clientX - e.touches[1].clientX;
         const dy = e.touches[0].clientY - e.touches[1].clientY;
@@ -1162,28 +1177,22 @@ function onTouchMove(e) {
             isPinching = true;
         } else {
             const delta = currentDistance - pinchZoomStartDistance;
-            const zoomFactor = 1 + delta / 300; // Настройка чувствительности
+            const zoomFactor = 1 + delta / 300;
             zoom *= zoomFactor;
-
-            // Ограничения
             if (zoom < 0.3) zoom = 0.3;
             if (zoom > 4 / viewZoom) zoom = 4 / viewZoom;
-
             pinchZoomStartDistance = currentDistance;
         }
-
-        return; // Не продолжаем обработку джойстика, если пинч
+        return;
     }
 
-    // === Обычное касание (джойстик) ===
+    // Джойстик
     for (var i = 0; i < e.changedTouches.length; i++) {
         var touch = e.changedTouches[i];
-
         if (leftTouchID === touch.identifier) {
             leftTouchPos.reset(touch.clientX * dpr, touch.clientY * dpr);
             leftVector.copyFrom(leftTouchPos);
             leftVector.minusEq(leftTouchStartPos);
-
             const distance = Math.sqrt(leftVector.x ** 2 + leftVector.y ** 2);
             if (distance > joystickRadius) {
                 const scale = joystickRadius / distance;
@@ -1192,7 +1201,6 @@ function onTouchMove(e) {
                 leftTouchPos.x = leftTouchStartPos.x + leftVector.x;
                 leftTouchPos.y = leftTouchStartPos.y + leftVector.y;
             }
-
             rawMouseX = leftVector.x * 3 + canvasWidth / 2;
             rawMouseY = leftVector.y * 3 + canvasHeight / 2;
             mouseCoordinateChange();
@@ -1203,7 +1211,6 @@ function onTouchMove(e) {
 }
 
 function onTouchEnd(e) {
-    // Сброс пинча, если пальцев меньше двух
     if (e.touches.length < 2) {
         isPinching = false;
     }
@@ -1215,7 +1222,33 @@ function onTouchEnd(e) {
             leftTouchID = -1;
             leftVector.reset(0, 0);
         }
+        
+        // ПРОВЕРЯЕМ ОТПУСКАНИЕ КНОПКИ EJECT - ОСТАНАВЛИВАЕМ СТРЕЛЬБУ
+        var size = ~~(canvasWidth / 7);
+        if (
+            touch.clientX * dpr > canvasWidth - size &&
+            touch.clientY * dpr > canvasHeight - 2 * size - 10 &&
+            touch.clientY * dpr < canvasHeight - size - 10
+        ) {
+            ejectPressedByTouch = false;
+            
+            // Останавливаем интервал
+            if (ejectInterval) {
+                clearInterval(ejectInterval);
+                ejectInterval = null;
+            }
+        }
     }
+    
+    // Если все пальцы убрали - тоже останавливаем
+    if (e.touches.length === 0) {
+        ejectPressedByTouch = false;
+        if (ejectInterval) {
+            clearInterval(ejectInterval);
+            ejectInterval = null;
+        }
+    }
+    
     touches = e.touches;
 }
 
@@ -1969,7 +2002,8 @@ function openPvPModal(targetId, targetName) {
 
     // Список серверов
        const servers = [
-        { name: "FFA 1vs1", address: "ffa.agar.su:6004" },
+        { name: "FFA 1vs1 #1", address: "ffa.agar.su:6004" },
+		{ name: "FFA 1vs1 #2", address: "ffa.agar.su:6008" },
         { name: "MS 2vs2", address: "ffa.agar.su:6005" },
         { name: "Tournament", address: "ffa.agar.su:6006" }
     ];
