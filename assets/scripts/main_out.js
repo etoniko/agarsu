@@ -392,6 +392,14 @@ const cellColors = [
         ];
 		
    function gameLoop() {
+	       // Установка зума для режима наблюдения
+    const urlParams = new URLSearchParams(window.location.search);
+    const hash = window.location.hash;
+    
+    if ((urlParams.has('spect') || hash.includes('?spect')) && typeof zoom !== 'undefined') {
+        zoom = 0.3;
+    }
+	   
 let stickerCooldown = false;
 let stickerCooldownTimer = null;
     ma = true;
