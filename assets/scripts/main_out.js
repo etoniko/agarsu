@@ -1445,6 +1445,7 @@ wsSend(new Uint8Array([2])); // ping
         function onWsClose(evt) {
     const serverCloseDiv = document.getElementById("serverclose-overlay");
     if (serverCloseDiv) serverCloseDiv.style.display = "block";
+			setTimeout(() => showConnecting(), 3000);
         }
 
 
