@@ -239,25 +239,37 @@ titleEl.textContent = `Статистика ${li.id}`;
 
 function initServers() {
     let serverKey = "ffa";
-    const hash = wHandle.location.hash.slice(1); // убираем #
+    const hash = wHandle.location.hash.slice(1);
     
-    if (hash && SERVERS[hash]) {
-        // hash совпадает с ключом
-        serverKey = hash;
+    // НОВЫЙ КОД: проверяем режим
+    const hashWithoutParams = hash.split('?')[0];
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    if (hash && SERVERS[hashWithoutParams]) {
+        serverKey = hashWithoutParams;
     } else {
-        // иначе берём первый доступный сервер
         const keys = Object.keys(SERVERS);
         if (keys.length) serverKey = keys[0];
     }
 
-    // Устанавливаем URL сервера
     CONNECTION_URL = SERVERS[serverKey];
-    SELECTED_SERVER = CONNECTION_URL; // <--- синхронизируем выбор
+    SELECTED_SERVER = CONNECTION_URL;
 
-    // Подсветим li
     document.querySelectorAll('.gamemode li').forEach(li => li.classList.remove('active'));
     const activeLi = document.getElementById(serverKey);
     if (activeLi) activeLi.classList.add('active');
+    
+    // НОВЫЙ КОД: установка зума 0.5
+    zoom = 0.6;
+    
+    // НОВЫЙ КОД: автоматический запуск нужного режима
+    if (urlParams.has('spect') || hash.includes('?spect')) {
+        setTimeout(() => {
+            if (typeof wHandle.spectate === 'function') {
+                wHandle.spectate();
+            }
+        }, 200);
+    }
 }
 
 
