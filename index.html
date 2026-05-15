@@ -426,7 +426,7 @@ function openTelegramAuth() {
 async function loadTop() {
     try {
         const [statsRes, skinRes] = await Promise.all([
-            fetch('https://ffa.agar.su:6001/checkStats'),
+            fetch('https://ffa.agar.su:6007/checkStats'),
             fetch('https://api.agar.su/skinlist.txt')
         ]);
 
