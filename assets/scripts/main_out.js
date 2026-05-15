@@ -115,7 +115,7 @@ async function updateOnlineCount() {
         {id: 'tournament', url: 'https://ffa.agar.su:6006/process', max: 120}
     ];
     
-    let totalOnline = 0; // Общая сумма онлайн всех серверов
+    let totalOnline = 0;
 
     for (const server of servers) {
         try {
@@ -125,24 +125,25 @@ async function updateOnlineCount() {
 
             const playing = data.playing ?? 0;
             const noPlaying = data.no_playing ?? 0;
-            const serverTotal = playing + noPlaying; // Общий онлайн конкретного сервера
+            const serverTotal = playing + noPlaying;
             
-            totalOnline += serverTotal; // Добавляем к общей сумме
+            totalOnline += serverTotal;
 
             const li = document.getElementById(server.id);
             if (li) {
                 const spans = li.querySelectorAll('.online-count');
                 if (spans.length >= 2) {
-                    spans[0].textContent = noPlaying;             // Только неиграющие
-                    spans[1].textContent = `${playing}/${server.max}`; // Играющих / максимум
+                    spans[0].textContent = noPlaying;
+                    spans[1].textContent = `${playing}/${server.max}`;
                 }
             }
         } catch (e) {
-            console.error(`Ошибка обновления сервера ${server.id}:`, e);
+            // Сервер вырубился - просто пропускаем, не выводим ошибку
+            console.log(`Сервер ${server.id} недоступен`);
+            continue;
         }
     }
     
-    // Обновляем общий онлайн в элементе с id="online"
     const onlineElement = document.getElementById('online');
     if (onlineElement) {
         onlineElement.textContent = `Онлайн: ${totalOnline - 39}`;
