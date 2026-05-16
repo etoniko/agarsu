@@ -68,7 +68,6 @@ stats.forEach((player, index) => {
             if (!SELECTED_SERVER) {
                 SELECTED_SERVER = activeLi.dataset.ip;
             }
-			wHandle.chekstats(); 
         }
     }
 
@@ -222,7 +221,6 @@ document.querySelectorAll('.gamemode li').forEach(li => {
         // Обновляем hash без дергания страницы
         history.replaceState(null, '', '#' + li.id);
 titleEl.textContent = `Статистика ${li.id}`;
-		wHandle.chekstats(); 
         // ✅ Если сервер уже был активным — сразу стартуем игру
         if(isAlreadyActive) {
             wHandle.startGame();
@@ -253,7 +251,7 @@ function initServers() {
     document.querySelectorAll('.gamemode li').forEach(li => li.classList.remove('active'));
     const activeLi = document.getElementById(serverKey);
     if (activeLi) activeLi.classList.add('active');
-    
+    chekstats();
     // НОВЫЙ КОД: автоматический запуск нужного режима через wHandle.onload
     if (urlParams.has('spect') || hash.includes('?spect')) {
         // Не трогаем zoom здесь, он установится в gameLoop
