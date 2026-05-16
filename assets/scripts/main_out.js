@@ -68,7 +68,7 @@ stats.forEach((player, index) => {
             if (!SELECTED_SERVER) {
                 SELECTED_SERVER = activeLi.dataset.ip;
             }
-			chekstats();
+			wHandle.chekstats(); 
         }
     }
 
@@ -222,7 +222,7 @@ document.querySelectorAll('.gamemode li').forEach(li => {
         // Обновляем hash без дергания страницы
         history.replaceState(null, '', '#' + li.id);
 titleEl.textContent = `Статистика ${li.id}`;
-		chekstats();
+		wHandle.chekstats(); 
         // ✅ Если сервер уже был активным — сразу стартуем игру
         if(isAlreadyActive) {
             wHandle.startGame();
@@ -2673,7 +2673,6 @@ if (name && playerId === ownerPlayerId) {
         if (ua && playerCells.length === 0) {
     wjQuery("#statics").css("display", "flex");
     updateShareText();    // текст шаринга
-	chekstats();
         }
     }
 
