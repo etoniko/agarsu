@@ -3469,12 +3469,11 @@ function createLeaderboardEntry(name, level, isMe, isSystemLine, b) {
   if (!isSystemLine && isWinner) {
     const winnerIcon = document.createElement("div");
     winnerIcon.title = "🏆 ПОБЕДИТЕЛЬ ТУРНИРА 🏆";
-    winnerIcon.style.width = "20px";
-    winnerIcon.style.height = "20px";
+    winnerIcon.style.width = "18px";
+    winnerIcon.style.height = "18px";
     winnerIcon.style.backgroundImage = "url(https://cdn-icons-png.flaticon.com/512/2583/2583496.png)";
     winnerIcon.style.backgroundSize = "cover";
     winnerIcon.style.display = "inline-block";
-    winnerIcon.style.marginRight = "5px";
     iconsContainer.appendChild(winnerIcon);
   }
   
