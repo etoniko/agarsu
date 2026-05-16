@@ -67,7 +67,9 @@ stats.forEach((player, index) => {
             // Если сервер ещё не выбран руками — ставим его
             if (!SELECTED_SERVER) {
                 SELECTED_SERVER = activeLi.dataset.ip;
+				CONNECTION_URL = activeLi.dataset.ip;
             }
+			wHandle.chekstats();
         }
     }
 
@@ -218,6 +220,7 @@ document.querySelectorAll('.gamemode li').forEach(li => {
 
         // Запоминаем выбранный сервер
         SELECTED_SERVER = li.dataset.ip;
+		CONNECTION_URL = li.dataset.ip; 
         // Обновляем hash без дергания страницы
         history.replaceState(null, '', '#' + li.id);
 titleEl.textContent = `Статистика ${li.id}`;
