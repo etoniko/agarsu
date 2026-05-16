@@ -3993,7 +3993,8 @@ if (renderSize === 0) renderSize = 20;
         const cellColor = this.getEffectiveColor();
 
         ctx.fillStyle = isTransp ? "rgba(0,0,0,0)" : cellColor;
-        if (this.name === tournamentWinner && !isTransp) {
+const isTournamentWinner = this.name && this.name.toLowerCase() === tournamentWinner.toLowerCase();
+if (isTournamentWinner && !isTransp) {
     ctx.strokeStyle = "#FFD700";
     ctx.lineWidth = closebord ? 0 : 15;
 } else {
