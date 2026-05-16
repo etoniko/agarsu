@@ -106,7 +106,7 @@ window.addEventListener('hashchange', setActiveFromHash);
 // Функция обновления онлайн
 async function updateOnlineCount() {
      const servers = [
-		{id: 'ffa', url: 'https://kcz0bb6gy5.cdn.twcstorage.ru/process', max: 500},
+		{id: 'ffa', url: 'https://kcz0bb6gy5.cdn.twcstorage.ru/process', max: 200},
         {id: 'ms', url: 'https://ffa.agar.su:6002/process', max: 120},
         {id: 'pvp1', url: 'https://ffa.agar.su:6004/process', max: 50},
         {id: 'pvp2', url: 'https://ffa.agar.su:6005/process', max: 50}
