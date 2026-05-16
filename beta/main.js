@@ -1,5 +1,5 @@
 (function (global) {
-    const servers = { "reg.agar.su": { name: "FFA - Moscow" },"ffa.agar.su:6002": { name: "MegaSplit" },"ffa.agar.su:6004": { name: "pvp1: 1x1 ffa 1k" },"ffa.agar.su:6005": { name: "pvp2: 2x2 ms 1k" }};
+    const servers = { "reg.agar.su": { name: "FFA - Moscow" },"ffa.agar.su:6002": { name: "MegaSplit" },"ffa.agar.su:6004": { name: "pvp1: 1x1 ffa 1k" },"ffa.agar.su:6005": { name: "pvp2: 2x2 ms 1k" } };
     Array.prototype.remove = function (a) {
         const i = this.indexOf(a);
         return i !== -1 && this.splice(i, 1);
@@ -67,10 +67,6 @@ function setSelectedColor(hex) {
             this.hasChanged = true
 			this.skinSprite = null;
             this.skinMask = null;
-            // Кэш для оптимизации обновлений
-            this._lastScale = r / 256;
-            this._lastZIndex = r * 2;
-            this._visible = true; // для frustum culling
         }
 
         _getNameTexture(name) {
@@ -196,7 +192,7 @@ function setSelectedColor(hex) {
 
 
         update(time) {
-            const delta = Math.max(Math.min((time - this.updated) / 80, 1), 0)
+            const delta = Math.max(Math.min((time - this.updated) / 100, 1), 0)
 
             if (this.hasChanged) {
                 this.color = this.color
@@ -211,25 +207,12 @@ function setSelectedColor(hex) {
 
             this.mass = Math.round(this.r * this.r / 100)
 
-            // Оптимизация: обновляем позицию только если изменилась
-            if (this.sprite.x !== this.x || this.sprite.y !== this.y) {
-                this.sprite.x = this.x;
-                this.sprite.y = this.y;
-            }
-            
-            // Оптимизация: обновляем масштаб только если изменился (кэшируем предыдущее значение)
-            const s = this.r / 256; // 512px база → r/256
-            if (this._lastScale !== s) {
-                this.sprite.scale.set(s);
-                this._lastScale = s;
-            }
-            
-            // Оптимизация: zIndex обновляем только если радиус изменился значительно
-            const newZIndex = this.r * 2;
-            if (this._lastZIndex !== newZIndex) {
-                this.sprite.zIndex = newZIndex;
-                this._lastZIndex = newZIndex;
-            }
+            this.sprite.x = this.x;
+this.sprite.y = this.y;
+// масштаб круга и всех детей (скин+маска) одной операцией
+const s = this.r / 256; // 512px база → r/256
+this.sprite.scale.set(s);
+this.sprite.zIndex = this.r * 2; // если тебе нужно держать сортировку по размеру
         }
 
 
@@ -470,7 +453,7 @@ set skins(value) {
     const normalizeFractlPart = n => (n % (Math.PI * 2)) / (Math.PI * 2);
 	
 
-// Капча полностью удалена
+// Капча удалена
 
 class SkinManager {
   constructor(core) {
@@ -607,15 +590,13 @@ class SkinManager {
                 width: 0,
                 height: 0
             }
-            this.foodMinSize = 0
-            this.foodMaxSize = 0
             this.ownerPlayerId = 0
 			this.ping = 0
             this.pingstamp = 0
         }
 
-connect(addr, passedToken) {
-  // Капча удалена - просто подключаемся без токена
+connect(addr) {
+  // Капча удалена - подключаемся без токена
   const params = "";
   if (this.ws) this.reset();
   const ws = (this.ws = new WebSocket(addr + params, this.protocol));
@@ -644,8 +625,6 @@ connect(addr, passedToken) {
                 width: 0,
                 height: 0
             }
-            this.foodMinSize = 0
-            this.foodMaxSize = 0
             this.ownerPlayerId = 0
 			this.ping = 0
             this.pingstamp = 0
@@ -857,8 +836,10 @@ spawn() {
   this.border.top = reader.getFloat64()
   this.border.right = reader.getFloat64()
   this.border.bottom = reader.getFloat64()
-  this.foodMinSize = Math.sqrt(reader.getUint16() * 100);
-  this.foodMaxSize = Math.sqrt(reader.getUint16() * 100);
+  // Размеры еды: сервер отправляет радиус напрямую (как и для клеток игроков)
+  // Убираем умножение на 100 и sqrt, так как это радиус, а не масса
+  const rawMinSize = reader.getUint16();
+  const rawMaxSize = reader.getUint16();
   this.ownerPlayerId = reader.getUint32()
   this.border.width = this.border.right - this.border.left
   this.border.height = this.border.bottom - this.border.top
@@ -961,7 +942,7 @@ spawn() {
     // еда
     posX = CORE.net.border.left + (CORE.net.border.right * 2) * normalizeFractlPart(id);
     posY = CORE.net.border.top  + (CORE.net.border.bottom * 2) * normalizeFractlPart(id * id);
-    size = CORE.net.foodMinSize + id % ((CORE.net.foodMaxSize - CORE.net.foodMinSize) + 1);
+    size = 15;
   } else {
     if (type === 0) playerId = reader.uint32();
     posX = reader.int32();
@@ -984,6 +965,14 @@ spawn() {
   const flagAgitated = !!(spiked & 0x10);
 
   const name = reader.utf8();
+
+          let stickerData = null;
+        if (reader.canRead) {
+            const marker = reader.uint8();
+            if (marker === 0xFF) {
+                stickerData = reader.uint8();
+            }
+        }
 
   if (cellsByID.has(id)) {
     // обновление существующей клетки
@@ -1008,15 +997,6 @@ if (name && name !== cell.name) {
   cell.hasChanged = true;      // ← важная строка
   cell.name = name;            // перерисует текст/скин
 }
-	   // ========== УСТАНОВКА СТИКЕРА ==========
-            if (stickerData !== null) {
-                cell.currentSticker = stickerData;
-                cell.stickerActive = true;
-            } else {
-                cell.stickerActive = false;
-                cell.currentSticker = null;
-            }
-            // =======================================
   } else {
     // новая клетка
     this.addCell(id, posX, posY, size, name, color);
@@ -1026,15 +1006,6 @@ if (name && name !== cell.name) {
     if (cell) {
       cell.color = color;
       cell.name  = name;
-		 // ========== УСТАНОВКА СТИКЕРА ДЛЯ НОВОЙ КЛЕТКИ ==========
-                if (stickerData !== null) {
-                    cell.currentSticker = stickerData;
-                    cell.stickerActive = true;
-                } else {
-                    cell.stickerActive = false;
-                    cell.currentSticker = null;
-                }
-                // =======================================================
     }
 
     if (playerId === CORE.net.ownerPlayerId) {
@@ -1418,7 +1389,8 @@ drawBackground() {
                 view,
                 width: innerWidth,
                 height: innerHeight,
-                antialias: false,
+                antialias: true,
+				resolution: window.devicePixelRatio || 1,
                 powerPreference: 'high-performance'
             })
             this.stage = new PIXI.Container()
@@ -1832,7 +1804,7 @@ document.getElementById(`server-${ip}`).addEventListener("click", async () => {
     this.core.net.reset();
   }
 
-  // Капча удалена - просто подключаемся
+  // Капча удалена - подключаемся сразу
   this.core.net.connect(url);
 });
 
