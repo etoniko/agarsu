@@ -53,7 +53,7 @@ stats.forEach((player, index) => {
                         }
 	
     // По умолчанию выбранный сервер
-    let SELECTED_SERVER = wHandle.CONNECTION_URL || "reg.agar.su";
+    let SELECTED_SERVER = wHandle.CONNECTION_URL || "kcz0bb6gy5.cdn.twcstorage.ru";
 
     // --- Подсветка активного сервера из hash ---
     function setActiveFromHash() {
@@ -106,7 +106,7 @@ window.addEventListener('hashchange', setActiveFromHash);
 // Функция обновления онлайн
 async function updateOnlineCount() {
      const servers = [
-		{id: 'ffa', url: 'https://reg.agar.su/process', max: 500},
+		{id: 'ffa', url: 'https://kcz0bb6gy5.cdn.twcstorage.ru/process', max: 500},
         {id: 'ms', url: 'https://ffa.agar.su:6002/process', max: 120},
         {id: 'pvp1', url: 'https://ffa.agar.su:6004/process', max: 50},
         {id: 'pvp2', url: 'https://ffa.agar.su:6005/process', max: 50}
@@ -201,7 +201,7 @@ wHandle.startGame = function () {
     };
 
 const SERVERS = {
-		"ffa":   "reg.agar.su",
+		"ffa":   "kcz0bb6gy5.cdn.twcstorage.ru",
         "ms":    "ffa.agar.su:6002",
 		"pvp1":  "ffa.agar.su:6004",
 		"pvp2":  "ffa.agar.su:6005"
@@ -4466,7 +4466,7 @@ function refreshTopFromStats(stats) {
 // Загружаем топ при открытии оверлея
 $(document).ready(function() {
     function loadTopData() {
-        fetch(`https://${CONNECTION_URL || 'reg.agar.su'}/checkStats`)
+        fetch(`https://${CONNECTION_URL || 'kcz0bb6gy5.cdn.twcstorage.ru'}/checkStats`)
             .then(res => res.ok ? res.json() : Promise.reject())
             .then(stats => refreshTopFromStats(stats))
             .catch(e => console.error('Top load error:', e));
