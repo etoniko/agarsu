@@ -68,6 +68,7 @@ stats.forEach((player, index) => {
             if (!SELECTED_SERVER) {
                 SELECTED_SERVER = activeLi.dataset.ip;
             }
+			chekstats();
         }
     }
 
@@ -1354,7 +1355,6 @@ function isMouseOverElement(element) {
 let currentWebSocketUrl = null;
 
 function showConnecting() { // Убираем параметр token
-    chekstats();
     const wsUrl = (useHttps ? "wss://" : "ws://") + CONNECTION_URL;
 
     if (ws && ws.readyState === WebSocket.OPEN && currentWebSocketUrl === wsUrl) {
