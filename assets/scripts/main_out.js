@@ -4400,6 +4400,67 @@ if (showName && this.name && this.nameCache && this.size > 10 && !isInvisible2) 
         }
     };
 
+
+	// ДОБАВИТЬ В КОНЕЦ КОДА 2 (после всех существующих функций)
+
+// Функция для отображения ТОПа из уже загруженной статистики
+function refreshTopFromStats(stats) {
+    const container = document.getElementById('topswindow');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    const isClan = nick => /^\[[^\]]+\]/.test(nick.trim());
+    const players = stats.filter(p => !isClan(p.nick)).slice(0, 3);
+    const clans = stats.filter(p => isClan(p.nick)).slice(0, 3);
+    
+    function createRow(entry, index) {
+        const medal = index === 0 ? 'gold' : index === 1 ? 'silver' : 'bronze';
+        const normalizedNick = normalizeNick(entry.nick);
+        const skinCode = skinList?.[normalizedNick];
+        const skinUrl = skinCode ? `https://api.agar.su/skins/${skinCode}.png` : 'https://api.agar.su/skins/4.png';
+        
+        const row = document.createElement('div');
+        row.className = 'rating-row ' + medal;
+        row.setAttribute('title', entry.time);
+        row.innerHTML = `<div>${index + 1}</div><div>${entry.nick}</div><div>${entry.score}</div><div class="avatar" style="background-image: url('${skinUrl}');"></div>`;
+        return row;
+    }
+    
+    const playersTitle = document.createElement('div');
+    playersTitle.className = 'section-title';
+    playersTitle.innerText = 'Top players';
+    container.appendChild(playersTitle);
+    players.forEach((p, i) => container.appendChild(createRow(p, i)));
+    
+    const clansTitle = document.createElement('div');
+    clansTitle.className = 'section-title';
+    clansTitle.innerText = 'Top Clans';
+    container.appendChild(clansTitle);
+    clans.forEach((c, i) => container.appendChild(createRow(c, i)));
+}
+
+// Загружаем топ при открытии оверлея
+$(document).ready(function() {
+    function loadTopData() {
+        fetch(`https://${CONNECTION_URL || 'reg.agar.su'}/checkStats`)
+            .then(res => res.ok ? res.json() : Promise.reject())
+            .then(stats => refreshTopFromStats(stats))
+            .catch(e => console.error('Top load error:', e));
+    }
+    
+    if ($("#overlays").is(":visible")) {
+        loadTopData();
+        setInterval(loadTopData, 30000);
+    }
+    
+    // Отслеживаем открытие оверлея
+    const observer = new MutationObserver(() => {
+        if ($("#overlays").is(":visible")) loadTopData();
+    });
+    observer.observe($("#overlays")[0], { attributes: true, attributeFilter: ['style'] });
+});
+	
 // === ПАРСИНГ НИКА ===
 function parseFullNick(full) {
   const str = String(full || '').trim();
