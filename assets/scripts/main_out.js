@@ -53,7 +53,7 @@ stats.forEach((player, index) => {
                         }
 	
     // По умолчанию выбранный сервер
-    let SELECTED_SERVER = wHandle.CONNECTION_URL || "ffa.agar.su:6008";
+    let SELECTED_SERVER = wHandle.CONNECTION_URL || "reg.agar.su";
 
     // --- Подсветка активного сервера из hash ---
     function setActiveFromHash() {
@@ -105,14 +105,10 @@ window.addEventListener('hashchange', setActiveFromHash);
 // Функция обновления онлайн
 async function updateOnlineCount() {
      const servers = [
-		{id: 'ffa', url: 'https://ffa.agar.su:6007/process', max: 500},
-		{id: 'agario', url: 'https://ffa.agar.su:6001/process', max: 100},
+		{id: 'ffa', url: 'https://reg.agar.su/process', max: 500},
         {id: 'ms', url: 'https://ffa.agar.su:6002/process', max: 120},
-		{id: 'exp', url: 'https://ffa.agar.su:6003/process', max: 120},
         {id: 'pvp1', url: 'https://ffa.agar.su:6004/process', max: 50},
-        {id: 'pvp2', url: 'https://ffa.agar.su:6005/process', max: 50},
-		{id: 'pvp3', url: 'https://ffa.agar.su:6008/process', max: 50},
-        {id: 'tournament', url: 'https://ffa.agar.su:6006/process', max: 120}
+        {id: 'pvp2', url: 'https://ffa.agar.su:6005/process', max: 50}
     ];
     
     let totalOnline = 0;
@@ -204,14 +200,10 @@ wHandle.startGame = function () {
     };
 
 const SERVERS = {
-		"ffa":   "ffa.agar.su:6007",
-		"agario":"ffa.agar.su:6001",
+		"ffa":   "reg.agar.su",
         "ms":    "ffa.agar.su:6002",
-        "exp":   "ffa.agar.su:6003",
 		"pvp1":  "ffa.agar.su:6004",
-		"pvp2":  "ffa.agar.su:6005",
-	    "pvp3":  "ffa.agar.su:6008",
-		"tournament":  "ffa.agar.su:6006"
+		"pvp2":  "ffa.agar.su:6005"
     };
 	
 wjQuery(document).ready(() => {
@@ -2020,10 +2012,8 @@ function openPvPModal(targetId, targetName) {
 
     // Список серверов
        const servers = [
-        { name: "FFA 1vs1 #1", address: "ffa.agar.su:6004" },
-		{ name: "FFA 1vs1 #2", address: "ffa.agar.su:6008" },
-        { name: "MS 2vs2", address: "ffa.agar.su:6005" },
-        { name: "Tournament", address: "ffa.agar.su:6006" }
+        { name: "FFA 1vs1", address: "ffa.agar.su:6004" },
+        { name: "MS 2vs2", address: "ffa.agar.su:6005" }
     ];
     servers.forEach(server => {
         const btn = document.createElement('button');
