@@ -3375,7 +3375,7 @@ wHandle.coord = function () {
 
 const tournament = ["𝓙𝓲𝓷𝔁","༼ᵍᵃⁿᵍ༽༼٥९९٥༽ぶ","Vaas","liquid","☼K☼","v_potoke","⧼♢ᛃ╰🎀ᵁ℘ܔ🎀╯ᛃ♢⧼","lampy","༄ۣۜL͛ᴇɢɪᴏɴ","【≽ܫ≼】█▬█ █ ▀█▀","Курага","Jeff","Morcov","SalRuz","lnvalid","Muslim95","Power girl","pac man","pulik","1224"];
 
-// Победитель турнира
+// Победитель турнира (для сравнения используем toLowerCase)
 const tournamentWinner = "Vaas";
 
 function createLeaderboardEntry(name, level, isMe, isSystemLine, b) {
@@ -3384,8 +3384,11 @@ function createLeaderboardEntry(name, level, isMe, isSystemLine, b) {
   
   // Очищаем имя от HTML тегов для сравнения с турнирным списком
   const cleanName = name.replace(/<[^>]*>/g, '');
-  const isTournamentPlayer = tournament.includes(cleanName);
-  const isWinner = (cleanName === tournamentWinner);
+  const cleanNameLower = cleanName.toLowerCase();
+  
+  // Сравниваем в нижнем регистре
+  const isTournamentPlayer = tournament.some(tourneyName => tourneyName.toLowerCase() === cleanNameLower);
+  const isWinner = (tournamentWinner.toLowerCase() === cleanNameLower);
 
   // Определяем класс: админ, модер, ютубер или обычный
   if (!isSystemLine && admins.includes(lowerName)) {
@@ -3418,9 +3421,9 @@ function createLeaderboardEntry(name, level, isMe, isSystemLine, b) {
   if (!isSystemLine && isTournamentPlayer) {
     nameSpan.title = isWinner ? "🏆 ПОБЕДИТЕЛЬ ТУРНИРА 🏆" : "Участник турнира";
     nameSpan.style.cursor = "pointer";
-    nameSpan.onclick = (function() {
+    nameSpan.onclick = function() {
       window.open("https://agar.su/tournament", "_blank");
-    });
+    };
   }
 
   // Контейнер для иконок (звезда + ютуб + спонсор + победитель)
@@ -3462,13 +3465,13 @@ function createLeaderboardEntry(name, level, isMe, isSystemLine, b) {
     iconsContainer.appendChild(modIcon);
   }
   
-  // Иконка ПОБЕДИТЕЛЯ для Vaas
+  // Иконка ПОБЕДИТЕЛЯ для Vaas (сравниваем без учёта регистра)
   if (!isSystemLine && isWinner) {
     const winnerIcon = document.createElement("div");
     winnerIcon.title = "🏆 ПОБЕДИТЕЛЬ ТУРНИРА 🏆";
     winnerIcon.style.width = "20px";
     winnerIcon.style.height = "20px";
-    winnerIcon.style.backgroundImage = "url(./assets/photo/trophy.png)";
+    winnerIcon.style.backgroundImage = "url(https://cdn-icons-png.flaticon.com/512/2583/2583496.png)";
     winnerIcon.style.backgroundSize = "cover";
     winnerIcon.style.display = "inline-block";
     winnerIcon.style.marginRight = "5px";
