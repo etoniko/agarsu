@@ -221,6 +221,7 @@ document.querySelectorAll('.gamemode li').forEach(li => {
         // Обновляем hash без дергания страницы
         history.replaceState(null, '', '#' + li.id);
 titleEl.textContent = `Статистика ${li.id}`;
+		chekstats();
         // ✅ Если сервер уже был активным — сразу стартуем игру
         if(isAlreadyActive) {
             wHandle.startGame();
