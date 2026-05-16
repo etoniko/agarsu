@@ -68,6 +68,7 @@ stats.forEach((player, index) => {
             if (!SELECTED_SERVER) {
                 SELECTED_SERVER = activeLi.dataset.ip;
             }
+			chekstats();
         }
     }
 
@@ -251,7 +252,7 @@ function initServers() {
     document.querySelectorAll('.gamemode li').forEach(li => li.classList.remove('active'));
     const activeLi = document.getElementById(serverKey);
     if (activeLi) activeLi.classList.add('active');
-    wHandle.chekstats();
+    
     // НОВЫЙ КОД: автоматический запуск нужного режима через wHandle.onload
     if (urlParams.has('spect') || hash.includes('?spect')) {
         // Не трогаем zoom здесь, он установится в gameLoop
@@ -2671,6 +2672,7 @@ if (name && playerId === ownerPlayerId) {
         if (ua && playerCells.length === 0) {
     wjQuery("#statics").css("display", "flex");
     updateShareText();    // текст шаринга
+	chekstats();
         }
     }
 
