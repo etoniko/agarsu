@@ -32,7 +32,7 @@
     <script src="/assets/scripts/jquery.js?0.0.2"></script>
     <script src="/assets/scripts/log.js?0.0.2"></script>
     <script src="/assets/scripts/vector.js?0.0.2"></script>
-    <script src="/assets/scripts/main_out.js?13"></script>
+    <script src="/assets/scripts/main_out.js?14"></script>
 	<script src="/assets/scripts/shop.js?10" defer></script>
 	<script src="/assets/scripts/all.js?0.0.1" defer></script>
 	<script src="/assets/scripts/pass.js?0.0.2" defer></script>
@@ -417,110 +417,6 @@ function openTelegramAuth() {
         </div>
 
     </div>
-		<script>
-async function loadTop() {
-    try {
-        const [statsRes, skinRes] = await Promise.all([
-            fetch('https://ffa.agar.su:6007/checkStats'),
-            fetch('https://api.agar.su/skinlist.txt')
-        ]);
-
-        const stats = await statsRes.json();
-        const skinText = await skinRes.text();
-
-        // === создаём словарь скинов ===
-        const skinMap = {};
-function normalizeNick(nick) {
-    if (!nick) return '';
-
-    let n = nick.trim();
-
-    // Проверяем, начинается ли ник с открывающейся скобки
-    if (n.startsWith('[')) {
-        const endIndex = n.indexOf(']');
-        if (endIndex === -1) return ''; // закрывающей скобки нет
-
-        const innerNick = n.substring(1, endIndex).trim();
-        if (!innerNick || innerNick !== n.substring(1, endIndex)) return ''; // проверка пробелов внутри
-
-        // Возвращаем ник вместе со скобками, игнорируя всё после закрывающейся скобки
-        return `[${innerNick}]`.toLowerCase();
-    } else {
-        // Ник без скобок: нельзя содержать пробелы в начале/конце
-        if (!n || n.trim() !== n) return '';
-        return n.toLowerCase();
-    }
-}
-skinText.split('\n').forEach(line => {
-    const parts = line.trim().split(':');
-    if (parts.length === 2) {
-        const nick = normalizeNick(parts[0]);
-        const code = parts[1].trim();
-        skinMap[nick] = code;
-    }
-});
-        const container = document.getElementById('topswindow');
-        container.innerHTML = '';
-
-        const isClan = nick => /^\[[^\]]+\]/.test(nick.trim());
-
-        const players = stats.filter(p => !isClan(p.nick)).slice(0, 3);
-        const clans   = stats.filter(p => isClan(p.nick)).slice(0, 3);
-
-        function createRow(entry, index) {
-            const medal =
-                index === 0 ? 'gold' :
-                index === 1 ? 'silver' : 'bronze';
-
-            const normalizedNick = normalizeNick(entry.nick);
-const skinCode = skinMap[normalizedNick];
-            const skinUrl = skinCode
-                ? `https://api.agar.su/skins/${skinCode}.png`
-                : `https://api.agar.su/skins/4.png`;
-
-            const row = document.createElement('div');
-            row.className = 'rating-row ' + medal;
-            row.setAttribute('title', entry.time);
-
-            row.innerHTML = `
-                <div>${index + 1}</div>
-                <div>${entry.nick}</div>
-                <div>${entry.score}</div>
-                <div class="avatar"
-                     style="background-image: url('${skinUrl}');">
-                </div>
-            `;
-
-            return row;
-        }
-
-        // === TOP PLAYERS ===
-        const playersTitle = document.createElement('div');
-        playersTitle.className = 'section-title';
-        playersTitle.innerText = 'Top players';
-        container.appendChild(playersTitle);
-
-        players.forEach((p, i) => {
-            container.appendChild(createRow(p, i));
-        });
-
-        // === TOP CLANS ===
-        const clansTitle = document.createElement('div');
-        clansTitle.className = 'section-title';
-        clansTitle.innerText = 'Top Clans';
-        container.appendChild(clansTitle);
-
-        clans.forEach((c, i) => {
-            container.appendChild(createRow(c, i));
-        });
-
-    } catch (e) {
-        console.error("Ошибка загрузки:", e);
-    }
-}
-
-loadTop();
-</script>
 </div>
 	  <footer class="footer"><a href="privacy.html">Политика конфиденциальности</a> ·<a href="rules.html">Правила сайта</a>· <a href="offer.html">Публичная оферта</a></footer>
 
