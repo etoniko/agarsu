@@ -2017,7 +2017,7 @@ function openPvPModal(targetId, targetName) {
     ];
     servers.forEach(server => {
         const btn = document.createElement('button');
-        btn.textContent = server.name; // Отображаем название вместо IP:порт
+        btn.textContent = server.name;
         btn.style.margin = '5px';
         btn.style.padding = '8px 16px';
         btn.style.cursor = 'pointer';
@@ -3373,30 +3373,57 @@ wHandle.coord = function () {
         return score;
     }
 
+const tournament = ["𝓙𝓲𝓷𝔁","༼ᵍᵃⁿᵍ༽༼٥९९٥༽ぶ","Vaas","liquid","☼K☼","v_potoke","⧼♢ᛃ╰🎀ᵁ℘ܔ🎀╯ᛃ♢⧼","lampy","༄ۣۜL͛ᴇɢɪᴏɴ","【≽ܫ≼】█▬█ █ ▀█▀","Курага","Jeff","Morcov","SalRuz","lnvalid","Muslim95","Power girl","pac man","pulik","1224"];
+
+// Победитель турнира
+const tournamentWinner = "Vaas";
+
 function createLeaderboardEntry(name, level, isMe, isSystemLine, b) {
   const entryDiv = document.createElement("div");
   const lowerName = (name || "").toLowerCase();
+  
+  // Очищаем имя от HTML тегов для сравнения с турнирным списком
+  const cleanName = name.replace(/<[^>]*>/g, '');
+  const isTournamentPlayer = tournament.includes(cleanName);
+  const isWinner = (cleanName === tournamentWinner);
 
   // Определяем класс: админ, модер, ютубер или обычный
   if (!isSystemLine && admins.includes(lowerName)) {
     entryDiv.className = "Lednick admins";
   } else if (!isSystemLine && moders.includes(lowerName)) {
     entryDiv.className = "Lednick " + lowerName;
-    } else {
+  } else {
     entryDiv.className = "Lednick";
   }
 
   const numberHtml = isSystemLine ? "" : `${b + 1}. `;
   if (isSystemLine) entryDiv.style.textAlign = "center";
-  entryDiv.style.color = isMe ? "#FFAAAA" : "#FFFFFF";
+  
+  // Устанавливаем цвет: для меня розовый, для турнирных игроков золотой, иначе белый
+  if (isMe) {
+    entryDiv.style.color = "#FFAAAA";
+  } else if (!isSystemLine && isTournamentPlayer) {
+    entryDiv.style.color = "#FFD700"; // Золотой цвет для турнирных игроков
+  } else {
+    entryDiv.style.color = "#FFFFFF";
+  }
 
   // Основной контейнер для имени
   const nameSpan = document.createElement("span");
   
   // Вставляем HTML-разметку, если она присутствует в имени
-  nameSpan.innerHTML = name;  // Вставляем как HTML, а не как текст
+  nameSpan.innerHTML = name;
+  
+  // Добавляем тултип и клик для турнирных игроков
+  if (!isSystemLine && isTournamentPlayer) {
+    nameSpan.title = isWinner ? "🏆 ПОБЕДИТЕЛЬ ТУРНИРА 🏆" : "Участник турнира";
+    nameSpan.style.cursor = "pointer";
+    nameSpan.onclick = (function() {
+      window.open("https://agar.su/tournament", "_blank");
+    });
+  }
 
-  // Контейнер для иконок (звезда + ютуб)
+  // Контейнер для иконок (звезда + ютуб + спонсор + победитель)
   const iconsContainer = document.createElement("span");
 
   // Звезда с уровнем (если есть)
@@ -3423,18 +3450,30 @@ function createLeaderboardEntry(name, level, isMe, isSystemLine, b) {
     iconsContainer.appendChild(ytLink);
   }
   
-  // Иконка MOD
-if (!isSystemLine && mod.includes(lowerName)) {
-  const modIcon = document.createElement("div");
-  modIcon.title = "Данный игрок является спонсором Agar.su";
-  modIcon.style.width = "19px";
-  modIcon.style.height = "19px";
-  modIcon.style.backgroundImage = "url(https://api.agar.su/assets/photo/mod.png)";
-  modIcon.style.backgroundSize = "cover";
-  modIcon.style.display = "inline-block";
-
-  iconsContainer.appendChild(modIcon);
-}
+  // Иконка MOD (спонсор)
+  if (!isSystemLine && mod.includes(lowerName)) {
+    const modIcon = document.createElement("div");
+    modIcon.title = "Данный игрок является спонсором Agar.su";
+    modIcon.style.width = "19px";
+    modIcon.style.height = "19px";
+    modIcon.style.backgroundImage = "url(https://api.agar.su/assets/photo/mod.png)";
+    modIcon.style.backgroundSize = "cover";
+    modIcon.style.display = "inline-block";
+    iconsContainer.appendChild(modIcon);
+  }
+  
+  // Иконка ПОБЕДИТЕЛЯ для Vaas
+  if (!isSystemLine && isWinner) {
+    const winnerIcon = document.createElement("div");
+    winnerIcon.title = "🏆 ПОБЕДИТЕЛЬ ТУРНИРА 🏆";
+    winnerIcon.style.width = "20px";
+    winnerIcon.style.height = "20px";
+    winnerIcon.style.backgroundImage = "url(./assets/photo/trophy.png)";
+    winnerIcon.style.backgroundSize = "cover";
+    winnerIcon.style.display = "inline-block";
+    winnerIcon.style.marginRight = "5px";
+    iconsContainer.appendChild(winnerIcon);
+  }
   
   // Собираем HTML
   entryDiv.innerHTML = numberHtml;
@@ -3484,7 +3523,6 @@ function drawCustomLeaderBoard() {
     }
   }
 }
-
 
 function drawLeaderBoard() {
   const toplistDiv = document.getElementById("toplistnow");
@@ -3537,22 +3575,6 @@ function drawLeaderBoard() {
     }
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     function Cell(uid, ux, uy, usize, ucolor, uname) {
