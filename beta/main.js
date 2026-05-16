@@ -1,5 +1,5 @@
 (function (global) {
-    const servers = { "ffa.agar.su:6007": { name: "FFA - Moscow" },"ffa.agar.su:6001": { name: "агарио.рф" },"ffa.agar.su:6002": { name: "MegaSplit" },"ffa.agar.su:6003": { name: "Experemental" },"ffa.agar.su:6004": { name: "pvp1: 1x1 ffa 1k" },"ffa.agar.su:6005": { name: "pvp2: 2x2 ms 1k" },"ffa.agar.su:6006": { name: "Tournament" } };
+    const servers = { "reg.agar.su": { name: "FFA - Moscow" },"ffa.agar.su:6002": { name: "MegaSplit" },"ffa.agar.su:6004": { name: "pvp1: 1x1 ffa 1k" },"ffa.agar.su:6005": { name: "pvp2: 2x2 ms 1k" }};
     Array.prototype.remove = function (a) {
         const i = this.indexOf(a);
         return i !== -1 && this.splice(i, 1);
@@ -470,139 +470,7 @@ set skins(value) {
     const normalizeFractlPart = n => (n % (Math.PI * 2)) / (Math.PI * 2);
 	
 
-// Капча, которая каждый раз грузит скрипт заново и полностью вычищает его после успеха.
-class Captcha {
-  constructor({ sitekey, theme = "dark" }) {
-    this.sitekey = sitekey;
-    this.theme = theme;
-    this._widgetId = null;
-    this._resolver = null;
-    this.token = null;
-  }
-
-  // Показать капчу, дождаться токена. После успеха — ПОЛНЫЙ teardown.
-  async getToken() {
-    await this._loadScriptFresh();  // всегда новая загрузка
-    this._ensureHost();
-    return new Promise((resolve) => {
-      this._resolver = resolve;
-      this._render();
-    });
-  }
-
-  // ---------- private ----------
-
-  _loadScriptFresh() {
-    // На всякий случай уберём следы прошлых загрузок перед новой
-    this._hardKillTurnstile();
-
-    return new Promise((resolve, reject) => {
-      const s = document.createElement("script");
-      // explicit — сами вызываем render(); добавим cache-buster, чтобы не держались соединения CDNs
-      const cb = Date.now().toString(36);
-      s.src = `https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&_=${cb}`;
-      s.async = true; s.defer = true;
-      s.onload = resolve;
-      s.onerror = () => reject(new Error("Не удалось загрузить Turnstile"));
-      document.head.appendChild(s);
-    });
-  }
-
-  _ensureHost() {
-    const ui = document.getElementById("user-interface");
-    if (!ui) { console.error("Нет #user-interface"); return; }
-    if (getComputedStyle(ui).position === "static") ui.style.position = "relative";
-
-    let wrap = document.getElementById("captcha-wrapper");
-    if (!wrap) {
-      wrap = document.createElement("div");
-      wrap.id = "captcha-wrapper";
-      wrap.style.cssText = `
-        position:absolute; inset:0; display:grid;
-        align-items:center; justify-content:center;
-        background:rgba(0,0,0,.6); z-index:99999;`;
-      ui.appendChild(wrap);
-
-      const container = document.createElement("div");
-      container.id = "captcha-container";
-      container.style.cssText = "background:#111;padding:24px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.5);";
-      wrap.appendChild(container);
-    } else {
-      wrap.style.display = "grid";
-    }
-  }
-
-  _render() {
-    const container = document.getElementById("captcha-container");
-    if (!container) return;
-
-    // Перестраховка — если был предыдущий widgetId
-    if (this._widgetId && window.turnstile) {
-      try { window.turnstile.remove(this._widgetId); } catch(_) {}
-      this._widgetId = null;
-    }
-
-    this._widgetId = window.turnstile.render(container, {
-      sitekey: this.sitekey,
-      theme: this.theme,
-      callback: (token) => this._onSuccess(token),
-      "error-callback": () => this._onError("captcha-error"),
-      "timeout-callback": () => this._onError("captcha-timeout"),
-    });
-  }
-
-  _onSuccess(token) {
-    this.token = token;
-
-    // Сначала убираем визуальный слой капчи, потом вычищаем всё, что связано с challenges.cloudflare.com
-    const wrap = document.getElementById("captcha-wrapper");
-    if (wrap && wrap.parentNode) wrap.parentNode.removeChild(wrap);
-
-    this._hardKillTurnstile(); // ← Полный teardown
-
-    if (this._resolver) {
-      const resolve = this._resolver;
-      this._resolver = null;
-      resolve(token);
-    }
-  }
-
-  _onError(reason) {
-    console.warn("Turnstile issue:", reason);
-    // В случае ошибки пробуем пересоздать с жёстким teardown
-    this._hardKillTurnstile();
-    this._loadScriptFresh().then(() => this._ensureHost()).then(() => this._render());
-  }
-
-  _hardKillTurnstile() {
-    // 1) Удаляем виджет (iframe)
-    if (this._widgetId && window.turnstile) {
-      try { window.turnstile.remove(this._widgetId); } catch(_) {}
-      this._widgetId = null;
-    }
-
-    // 2) Удаляем iframe'ы, связанные с challenges.cloudflare.com (перестраховка)
-    document.querySelectorAll('iframe[src*="challenges.cloudflare.com"]').forEach(n => {
-      if (n.parentNode) n.parentNode.removeChild(n);
-    });
-
-    // 3) Удаляем скрипты Turnstile
-    document.querySelectorAll('script[src*="challenges.cloudflare.com/turnstile"]').forEach(s => {
-      if (s.parentNode) s.parentNode.removeChild(s);
-    });
-
-    // 4) Чистим глобальный объект (скрипт при следующем вызове загрузится заново)
-    if (window.turnstile) {
-      try { delete window.turnstile; } catch(_) { window.turnstile = undefined; }
-    }
-
-    // 5) Чистим возможные дополнительные `<link>` или `<img>` на этот домен (редко, но на всякий случай)
-    document.querySelectorAll('link[href*="challenges.cloudflare.com"]').forEach(n => n.parentNode && n.parentNode.removeChild(n));
-    document.querySelectorAll('img[src*="challenges.cloudflare.com"]').forEach(n => n.parentNode && n.parentNode.removeChild(n));
-  }
-}
-
-
+// Капча полностью удалена
 
 class SkinManager {
   constructor(core) {
@@ -719,7 +587,6 @@ class SkinManager {
 
         constructor(core) {
             this.core = core;
-			this.captcha = core.captcha;
 
             this.protocol = "eSejeKSVdysQvZs0ES1H";
 
@@ -748,16 +615,8 @@ class SkinManager {
         }
 
 connect(addr, passedToken) {
-  const token = passedToken || (this.captcha && this.captcha.token) || "";
-  if (!token) {
-    // нет токена — попросим капчу с полным teardown после
-    if (this.captcha?.getToken) {
-      this.captcha.getToken().then(t => this.connect(addr, t));
-    }
-    return;
-  }
-
-  const params = `?token=${encodeURIComponent(token)}`;
+  // Капча удалена - просто подключаемся без токена
+  const params = "";
   if (this.ws) this.reset();
   const ws = (this.ws = new WebSocket(addr + params, this.protocol));
   ws.binaryType = "arraybuffer";
@@ -1973,9 +1832,8 @@ document.getElementById(`server-${ip}`).addEventListener("click", async () => {
     this.core.net.reset();
   }
 
-  // КАПЧА -> КОННЕКТ (гарантированно покажется)
-  const token = await this.core.captcha.getToken();
-  this.core.net.connect(url, token);
+  // Капча удалена - просто подключаемся
+  this.core.net.connect(url);
 });
 
 
@@ -2087,7 +1945,6 @@ async init() {
   this.app = new Application(this);
   this.store = new Storage();
   this.settings = new Settings(this);
-  this.captcha = new Captcha({ sitekey: "0x4AAAAAAA0keHJ56_KNR0MU", theme: "dark" });
   this.net = new Network(this);
   this.ui = new UserInterface(this);
   this.app.servers = servers;
@@ -2100,9 +1957,8 @@ async init() {
   this.defaultServerUrl = url;
   console.log("Prepared to connect to", url);
 
-  // капча -> токен -> коннект
-  const token = await this.captcha.getToken();
-  this.net.connect(url, token);
+  // Капча удалена - подключаемся сразу
+  this.net.connect(url);
 }
 
 
