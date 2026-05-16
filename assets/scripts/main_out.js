@@ -142,7 +142,7 @@ async function updateOnlineCount() {
     
     const onlineElement = document.getElementById('online');
     if (onlineElement) {
-        onlineElement.textContent = `Онлайн: ${totalOnline - 39}`;
+        onlineElement.textContent = `Онлайн: ${totalOnline - 25}`;
     }
 }
 
