@@ -1,4 +1,4 @@
-const forbiddenRegex = /[`'";:ㅤ⁣]/g;
+const allowedPattern = /^[a-zA-Zа-яА-Я0-9\s]+$/;
 const yookassaRules = { maxFileSize: 5 * 1024 * 1024 };
 let isNicknameTaken = false;
 
@@ -36,9 +36,10 @@ function updateNicknameDisplay() {
 }
 function blockForbiddenChars(input) {
   input.addEventListener("input", () => {
-    if (forbiddenRegex.test(input.value)) {
-      input.value = input.value.replace(forbiddenRegex, "");
-      showError(input.id + 'Error', 'Запрещённые символы удалены');
+    // НОВАЯ ПРОВЕРКА - только разрешённые символы
+    if (input.value && !allowedPattern.test(input.value)) {
+      input.value = input.value.replace(/[^a-zA-Zа-яА-Я0-9\s]/g, "");
+      showError(input.id + 'Error', 'Символы запрещены');
     }
     if (input.id === 'nickname') {
       const isClan = document.getElementById('clan').checked;
@@ -77,6 +78,13 @@ blockForbiddenChars(document.getElementById("password"));
 nicknameInput.addEventListener("blur", async () => {
   const isClan = document.getElementById('clan').checked;
   let value = nicknameInput.value.trim();
+  
+  // НОВАЯ ПРОВЕРКА разрешённых символов
+  if (value && !allowedPattern.test(value)) {
+    value = value.replace(/[^a-zA-Zа-яА-Я0-9\s]/g, "");
+    showError('nicknameError', 'Только буквы (лат/кир), цифры и пробел');
+  }
+  
   if (isClan) {
     const maxTextLength = 4;
     value = value.replace(/[\[\]]/g, '');
