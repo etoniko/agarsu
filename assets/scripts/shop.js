@@ -1,4 +1,4 @@
-const forbiddenRegex = /[`'";:ㅤ⁣]/g;
+const allowedPattern = /^[a-zA-Zа-яА-Я0-9\s\[\]]+$/;
 const yookassaRules = { maxFileSize: 5 * 1024 * 1024 };
 let isNicknameTaken = false;
 
@@ -36,12 +36,21 @@ function updateNicknameDisplay() {
 }
 function blockForbiddenChars(input) {
   input.addEventListener("input", () => {
-    if (forbiddenRegex.test(input.value)) {
-      input.value = input.value.replace(forbiddenRegex, "");
-      showError(input.id + 'Error', 'Запрещённые символы удалены');
+    const isClan = document.getElementById('clan').checked;
+    let value = input.value;
+    
+    // Временно разрешаем скобки при вводе (потом их обработает blur)
+    const tempPattern = /^[a-zA-Zа-яА-Я0-9\s\[\]]+$/;
+    
+    if (value && !tempPattern.test(value)) {
+      const cleaned = value.replace(/[^a-zA-Zа-яА-Я0-9\s\[\]]/g, "");
+      if (cleaned !== value) {
+        input.value = cleaned;
+        showError(input.id + 'Error', 'Разрешены только буквы, цифры, пробел и скобки [] для клана');
+      }
     }
+    
     if (input.id === 'nickname') {
-      const isClan = document.getElementById('clan').checked;
       if (!isClan && /[\[\]]/.test(input.value)) {
         input.value = input.value.replace(/[\[\]]/g, "");
         showError('nicknameError', 'Скобки [] запрещены для личного ника');
@@ -77,31 +86,41 @@ blockForbiddenChars(document.getElementById("password"));
 nicknameInput.addEventListener("blur", async () => {
   const isClan = document.getElementById('clan').checked;
   let value = nicknameInput.value.trim();
+  
+  // Для клана отдельная проверка
   if (isClan) {
-    const maxTextLength = 4;
-    value = value.replace(/[\[\]]/g, '');
-    if (value.length > maxTextLength) {
-      value = value.substring(0, maxTextLength);
+    // Удаляем только левые скобки внутри текста, но сохраняем обрамляющие
+    let innerText = value.replace(/^\[|\]$/g, ''); // Убираем внешние скобки
+    innerText = innerText.replace(/[\[\]]/g, ''); // Убираем внутренние скобки
+    
+    if (innerText.length > 4) {
+      innerText = innerText.substring(0, 4);
       setTimeout(() => {
-        showError('nicknameError', 'Текст обрезан до допустимой длины, для клана должны быть квадратные скобки [ ]');
+        showError('nicknameError', 'Текст обрезан до 4 символов');
       }, 100);
     }
-    nicknameInput.value = `[${value}]`;
+    nicknameInput.value = `[${innerText}]`;
   } else {
-    const maxPersonalLength = 16;
+    // Для личного ника - проверка без скобок
+    if (value && !allowedPattern.test(value)) {
+      value = value.replace(/[^a-zA-Zа-яА-Я0-9\s]/g, "");
+      showError('nicknameError', 'Только буквы (лат/кир), цифры и пробел');
+    }
+    
     if (/[\[\]]/.test(value)) {
       value = value.replace(/[\[\]]/g, '');
       showError('nicknameError', 'Скобки [] запрещены для личного ника');
-    } else if (value.length > maxPersonalLength) {
-      value = value.substring(0, maxPersonalLength);
+    }
+    
+    if (value.length > 16) {
+      value = value.substring(0, 16);
       setTimeout(() => {
-        showError('nicknameError', `Личный ник обрезан до ${maxPersonalLength} символов`);
+        showError('nicknameError', `Личный ник обрезан до 16 символов`);
       }, 100);
-    } else {
-      hideError('nicknameError');
     }
     nicknameInput.value = value;
   }
+  
   updateCharCount();
 
   // === ПРОВЕРКА НИКА С УЧЁТОМ АВТОРИЗАЦИИ ===
