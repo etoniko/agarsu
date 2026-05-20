@@ -2953,174 +2953,6 @@ let fpsFrameSum = 0;
 let fpsFrameCount = 0;
 const FPS_UI_INTERVAL_MS = 400;
 
-// ============ RENDER PROFILER (F3 или ?profile=1) ============
-const RenderProfile = (function () {
-    let on = /(?:^|[?&])profile=1(?:&|$)/.test(location.search) || localStorage.renderProfile === "1";
-    let panel = null;
-    let uiTimer = 0;
-    const SMOOTH = 0.9;
-    const avg = {};
-    let frame = null;
-
-    let wsFrameMs = 0;
-    let wsFrameCount = 0;
-    let frameMsInstant = 0;
-    let fpsMin = 999;
-    let fpsMinReset = 0;
-
-    function resetFrame() {
-        wsFrameMs = 0;
-        wsFrameCount = 0;
-        frame = {
-            t: {},
-            c: {
-                nodes: 0, drawn: 0, skip: 0,
-                simple: 0, complex: 0,
-                skins: 0, names: 0, mass: 0, stickers: 0, glow: 0,
-                nameDirty: 0, movePoints: 0,
-                foodBatch: 0, wsPending: 0, frameSpike: 0
-            },
-            stack: []
-        };
-    }
-
-    function addWs(ms) {
-        if (!on) return;
-        wsFrameMs += ms;
-        wsFrameCount++;
-    }
-
-    function noteFrame(deltaMs) {
-        if (!on) return;
-        frameMsInstant = deltaMs;
-        if (deltaMs > 0 && deltaMs < 500) {
-            const instantFps = Math.round(1000 / deltaMs);
-            if (instantFps < fpsMin) fpsMin = instantFps;
-        }
-    }
-
-    function start(label) {
-        if (!on) return;
-        frame.stack.push([label, performance.now()]);
-    }
-
-    function end(label) {
-        if (!on || !frame.stack.length) return;
-        const entry = frame.stack.pop();
-        const key = label || entry[0];
-        const dt = performance.now() - entry[1];
-        frame.t[key] = (frame.t[key] || 0) + dt;
-    }
-
-    function bump(key, n) {
-        if (!on) return;
-        frame.c[key] = (frame.c[key] || 0) + (n == null ? 1 : n);
-    }
-
-    function smooth(key, val) {
-        avg[key] = avg[key] == null ? val : avg[key] * SMOOTH + val * (1 - SMOOTH);
-    }
-
-    function commitFrame(totalMs, fpsVal, frameMs) {
-        if (!on) return;
-        for (const k in frame.t) smooth("t:" + k, frame.t[k]);
-        for (const k in frame.c) smooth("c:" + k, frame.c[k]);
-        const wsDrainMs = frame.t.wsDrain || 0;
-        const otherTotal = Math.max(0, frameMs - totalMs);
-        const gapMs = Math.max(0, otherTotal - wsDrainMs);
-
-        smooth("draw", totalMs);
-        smooth("frame", frameMs);
-        smooth("other", otherTotal);
-        smooth("gap", gapMs);
-        smooth("wsDrain", wsDrainMs);
-        smooth("ws", wsFrameMs);
-        smooth("wsN", wsFrameCount);
-        smooth("fps", fpsVal);
-        if (frame.c.wsPending) smooth("wsPending", frame.c.wsPending);
-        if (frameMs > 20) bump("frameSpike");
-        const now = performance.now();
-        if (now - fpsMinReset >= 1000) {
-            smooth("fpsMin", fpsMin < 999 ? fpsMin : fpsVal);
-            fpsMin = 999;
-            fpsMinReset = now;
-        }
-    }
-
-    function ensurePanel() {
-        if (panel) return panel;
-        panel = document.createElement("div");
-        panel.id = "render-profile";
-        panel.style.cssText = "position:fixed;left:8px;bottom:8px;z-index:99999;font:11px/1.35 monospace;color:#7fff7f;background:rgba(0,0,0,.85);padding:8px 10px;border-radius:6px;max-width:340px;pointer-events:none;white-space:pre;display:none";
-        document.body.appendChild(panel);
-        return panel;
-    }
-
-    function updateUI() {
-        if (!on) {
-            if (panel) panel.style.display = "none";
-            return;
-        }
-        const p = ensurePanel();
-        p.style.display = "block";
-        const t = (k) => (avg["t:" + k] || 0).toFixed(1);
-        const c = (k) => Math.round(avg["c:" + k] || 0);
-        const hot = [];
-        const times = [
-            ["cells", "клетки"], ["sort", "сорт"], ["qtree", "qtree"],
-            ["grid", "сетка"], ["center", "центр"], ["camera", "камера"],
-            ["minimap", "миникарта"], ["wsDrain", "ws"], ["ui", "UI"]
-        ];
-        times.sort((a, b) => (avg["t:" + b[0]] || 0) - (avg["t:" + a[0]] || 0));
-        for (let i = 0; i < 3 && i < times.length; i++) {
-            const v = avg["t:" + times[i][0]] || 0;
-            if (v > 0.5) hot.push(times[i][1] + " " + v.toFixed(1) + "ms");
-        }
-        p.textContent = [
-            "PROFILE  FPS " + fpsShown + " (min " + (fpsMin < 999 ? fpsMin : Math.round(avg.fpsMin || fpsShown)) + ")  frame " + (avg.frame || frameMsInstant).toFixed(1) + "ms",
-            "  draw " + (avg.draw || 0).toFixed(1) + "  ws " + (avg.wsDrain || avg.ws || 0).toFixed(1) + "  gap " + (avg.gap || 0).toFixed(1) + "  parse " + (avg.ws || 0).toFixed(1) + "ms x" + Math.round(avg.wsN || 0),
-            "cells " + c("drawn") + "/" + c("nodes") + "  skip " + c("skip"),
-            "  simple " + c("simple") + "  complex " + c("complex") + "  movePts " + c("movePoints"),
-            "  skin " + c("skins") + "  name " + c("names") + "  mass " + c("mass"),
-            "  sticker " + c("stickers") + "  glow " + c("glow") + "  textDirty " + c("nameDirty"),
-            "  foodBatch " + c("foodBatch") + "  wsQ " + Math.round(avg.wsPending || 0),
-            "  spikes " + c("frameSpike"),
-            "camera " + t("camera") + "  qtree " + t("qtree") + "  sort " + t("sort"),
-            "grid " + t("grid") + "  center " + t("center") + "  cells " + t("cells"),
-            "minimap " + t("minimap") + "  ui " + t("ui"),
-            hot.length ? "TOP: " + hot.join(" | ") : "",
-            "F3 — вкл/выкл"
-        ].filter(Boolean).join("\n");
-    }
-
-    wHandle.addEventListener("keydown", function (e) {
-        if (e.key === "F3") {
-            on = !on;
-            localStorage.renderProfile = on ? "1" : "0";
-            if (!on && panel) panel.style.display = "none";
-            e.preventDefault();
-        }
-    });
-
-    return {
-        enabled: function () { return on; },
-        resetFrame: resetFrame,
-        start: start,
-        end: end,
-        bump: bump,
-        addWs: addWs,
-        noteFrame: noteFrame,
-        commitFrame: commitFrame,
-        maybeUpdateUI: function (now) {
-            if (!on) return;
-            if (now - uiTimer >= 400) {
-                uiTimer = now;
-                updateUI();
-            }
-        }
-    };
-})();
-
 function redrawGameScene(now) {
     const delta = now - lastTime;
     lastTime = now;
@@ -3144,20 +2976,7 @@ function redrawGameScene(now) {
         fpsUpdateTime = now;
     }
 
-    if (RenderProfile.enabled()) RenderProfile.resetFrame();
-
-    const frameStart = RenderProfile.enabled() ? performance.now() : 0;
-
     drawGameScene();
-
-    if (RenderProfile.enabled()) {
-        const fpsForProfile = fpsFrameCount > 0
-            ? Math.round(1000 / (fpsFrameSum / fpsFrameCount))
-            : fpsShown;
-        RenderProfile.noteFrame(delta);
-        RenderProfile.commitFrame(performance.now() - frameStart, fpsShown, delta);
-        RenderProfile.maybeUpdateUI(now);
-    }
 
     wHandle.requestAnimationFrame(redrawGameScene);
 }
@@ -3179,10 +2998,7 @@ function drawBatchedFood(ctx) {
         const cell = nodelist[i];
         if (!cell.isFood) continue;
 
-        if (!cell.shouldRender()) {
-            RenderProfile.bump("skip");
-            continue;
-        }
+        if (!cell.shouldRender()) continue;
 
         cell.updatePos();
 
@@ -3197,8 +3013,6 @@ function drawBatchedFood(ctx) {
     }
 
     if (!batched) return;
-
-    RenderProfile.bump("foodBatch", batched);
 
     for (const [color, list] of buckets) {
         ctx.fillStyle = color;
@@ -3233,7 +3047,6 @@ function drawGameScene() {
 
     const playerCount = playerCells.length;
 
-    RenderProfile.start("camera");
     // Обновление позиции игрока и масштаба
     if (playerCount > 0) {
         calcViewZoom();
@@ -3258,51 +3071,32 @@ function drawGameScene() {
         nodeY = (29 * nodeY + posY) / 30;
         viewZoom = (9 * viewZoom + posSize * viewRange()) / 10;
     }
-    RenderProfile.end("camera");
 
-    RenderProfile.bump("nodes", nodelist.length);
-
-    RenderProfile.start("qtree");
     buildQTree();
-    RenderProfile.end("qtree");
 
     mouseCoordinateChange();
 
-    RenderProfile.start("grid");
     drawGrid();
-    RenderProfile.end("grid");
-
-    RenderProfile.start("center");
     drawCenterBackground();
-    RenderProfile.end("center");
-
-    RenderProfile.start("minimap");
     updateMiniMapPosition();
-    RenderProfile.end("minimap");
 
-    RenderProfile.start("sort");
     nodelist.sort((a, b) => a.size - b.size || a.id - b.id);
-    RenderProfile.end("sort");
 
     ctx.save();
     ctx.translate(canvasWidth / 2, canvasHeight / 2);
     ctx.scale(viewZoom, viewZoom);
     ctx.translate(-nodeX, -nodeY);
 
-    RenderProfile.start("cells");
     drawBatchedFood(ctx);
     for (let i = 0; i < nodelist.length; i++) {
         if (nodelist[i].isFood) continue;
         nodelist[i].drawOneCell(ctx);
     }
-    RenderProfile.end("cells");
 
     ctx.restore();
 
-    RenderProfile.start("ui");
     drawSplitIcon(ctx);
     drawTouch(ctx);
-    RenderProfile.end("ui");
 
     statsTick++;
     if (statsTick % 6 === 0) updateStats();
@@ -4293,14 +4087,9 @@ getEffectiveColor() {
     },
 
     drawOneCell(ctx) {
-        if (!this.shouldRender()) {
-            RenderProfile.bump("skip");
-            return;
-        }
-        RenderProfile.bump("drawn");
+        if (!this.shouldRender()) return;
 
         const simpleRender = this.id !== 0 /*&& !this.isVirus*/ && !this.isAgitated && smoothRender > viewZoom || this.getNumPoints() < 10;
-        RenderProfile.bump(simpleRender ? "simple" : "complex");
 
         if (!simpleRender && this.wasSimpleDrawing) this.points.forEach(p => p.size = this.size);
 
@@ -4329,7 +4118,6 @@ if (renderSize === 0) renderSize = 20;
         if (simpleRender) {
             ctx.arc(this.x, this.y, renderSize, 0, 2 * Math.PI);
         } else {
-            RenderProfile.bump("movePoints");
             this.movePoints();
             ctx.moveTo(this.points[0].x, this.points[0].y);
             this.points.forEach(p => ctx.lineTo(p.x, p.y));
@@ -4352,7 +4140,6 @@ if (showSkin) {
         }
         const skinImg = skins[skinId];
         if (skinImg.complete && skinImg.width > 0) {
-            RenderProfile.bump("skins");
             ctx.save();
             ctx.clip();
 
@@ -4451,7 +4238,6 @@ if (this.glowActive && showGlow) {
 
     const effectImg = skins[effectId];
     if (effectImg.complete && effectImg.width > 0) {
-        RenderProfile.bump("glow");
         ctx.save();
         ctx.clip();
 
@@ -4483,7 +4269,6 @@ if (showStickers && this.stickerActive && this.currentSticker) {
     const stickerImg = skins[stickerUrl];
     
     if (stickerImg.complete && stickerImg.width > 0) {
-        RenderProfile.bump("stickers");
         ctx.save();
         ctx.clip();
 
@@ -4526,7 +4311,6 @@ if (showName && this.name && this.nameCache && this.size > 10 && !isInvisible2) 
     this.nameCache.setSize(this.getNameSize());
     this.nameCache.setScale(zoomRatio);
 
-    RenderProfile.bump("names");
     const img = this.nameCache.render();
 
     // ─────────────── ОГРАНИЧЕНИЕ ШИРИНЫ ───────────────
@@ -4557,7 +4341,6 @@ if (showName && this.name && this.nameCache && this.size > 10 && !isInvisible2) 
         const mass = Math.floor(this.size * this.size * 0.01);
         this.sizeCache.setValue(mass);
         this.sizeCache.setScale(zoomRatio);
-        RenderProfile.bump("mass");
         const img = this.sizeCache.render();
         ctx.drawImage(
             img,
@@ -4616,7 +4399,6 @@ if (showName && this.name && this.nameCache && this.size > 10 && !isInvisible2) 
                 this._ctx = this._canvas.getContext("2d");
             }
             if (this._dirty) {
-                RenderProfile.bump("nameDirty");
                 this._dirty = false;
                 var canvas = this._canvas,
                     ctx = this._ctx,
