@@ -109,7 +109,8 @@ async function updateOnlineCount() {
 		{id: 'ffa', url: 'https://reg.agar.su/process', max: 500},
         {id: 'ms', url: 'https://ffa.agar.su:6002/process', max: 120},
         {id: 'pvp1', url: 'https://ffa.agar.su:6004/process', max: 50},
-        {id: 'pvp2', url: 'https://ffa.agar.su:6005/process', max: 50}
+        {id: 'pvp2', url: 'https://ffa.agar.su:6005/process', max: 50},
+		{id: 'tournament', url: 'https://ffa.agar.su:6006/process', max: 50}
     ];
     
     let totalOnline = 0;
@@ -204,7 +205,8 @@ const SERVERS = {
 		"ffa":   "reg.agar.su",
         "ms":    "ffa.agar.su:6002",
 		"pvp1":  "ffa.agar.su:6004",
-		"pvp2":  "ffa.agar.su:6005"
+		"pvp2":  "ffa.agar.su:6005",
+	    "tournament":  "ffa.agar.su:6006"
     };
 	
 wjQuery(document).ready(() => {
@@ -2013,7 +2015,8 @@ function openPvPModal(targetId, targetName) {
     // Список серверов
        const servers = [
         { name: "FFA 1vs1", address: "ffa.agar.su:6004" },
-        { name: "MS 2vs2", address: "ffa.agar.su:6005" }
+        { name: "MS 2vs2", address: "ffa.agar.su:6005" },
+		{ name: "Tournament", address: "ffa.agar.su:6006" }
     ];
     servers.forEach(server => {
         const btn = document.createElement('button');
