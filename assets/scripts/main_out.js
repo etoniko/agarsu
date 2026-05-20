@@ -1481,20 +1481,7 @@ wsSend(new Uint8Array([2])); // ping
 
 
     function onWsMessage(msg) {
-        wsInbox.push(msg.data);
-    }
-
-    function drainWsInbox(budgetMs) {
-        const t0 = performance.now();
-        let count = 0;
-        while (wsInbox.length && performance.now() - t0 < budgetMs) {
-            const t1 = performance.now();
-            handleWsMessage(new DataView(wsInbox.shift()));
-            const dt = performance.now() - t1;
-            RenderProfile.addWs(dt);
-            count++;
-        }
-        return { ms: performance.now() - t0, count, pending: wsInbox.length };
+        handleWsMessage(new DataView(msg.data));
     }
 
     class BinaryReader {
@@ -1621,7 +1608,6 @@ if (pingElement) {
             case 20:
                 // Clear nodes
                 playerCells = [];
-                wsInbox.length = 0;
                 lastLeaderBoardKey = "";
                 lastCustomLeaderBoardKey = "";
                 break;
@@ -1832,7 +1818,7 @@ function addChat(view, offset) {
             "message": getString(),
             "time": formatTime(new Date()) // Форматируем текущее время
         });
-        scheduleChatRedraw();
+        drawChatBoard();
     }
 
     function formatTime(date) {
@@ -2148,17 +2134,6 @@ function showPvPConfirm(playerId, playerName, server) {
 }
 
 
-
-let chatRedrawQueued = false;
-
-function scheduleChatRedraw() {
-    if (chatRedrawQueued) return;
-    chatRedrawQueued = true;
-    requestAnimationFrame(function () {
-        chatRedrawQueued = false;
-        drawChatBoard();
-    });
-}
 
 // ==========================
 // Основная функция отрисовки сообщений
@@ -2639,7 +2614,6 @@ if (node) {
     node.oy = node.y;
     node.oSize = node.size;
     node.color = color;
-    if (document.hidden) snapCellToNetwork(node);
 } else {
     node = new Cell(nodeid, posX, posY, size, color, name);
     nodelist.push(node);
@@ -2675,7 +2649,6 @@ if (stickerData) {
             node.setSize(size);
             node.updateTime = timestamp;
             node.flag = spiked;
-            if (document.hidden) snapCellToNetwork(node);
 
             if (name) node.setName(name);
 			
@@ -2972,69 +2945,6 @@ window.addEventListener('load', () => {
 
 
 let lastTime = performance.now();
-let pageWasHidden = document.hidden;
-
-function snapCellToNetwork(cell) {
-    if (!cell || cell.id === 0) return;
-    const t = Date.now();
-    cell.x = cell.nx;
-    cell.y = cell.ny;
-    cell.size = cell.nSize;
-    cell.ox = cell.nx;
-    cell.oy = cell.ny;
-    cell.oSize = cell.nSize;
-    cell.updateTime = t;
-}
-
-function snapGameViewAfterHiddenTab() {
-    timestamp = Date.now();
-    for (let i = 0; i < nodelist.length; i++) {
-        snapCellToNetwork(nodelist[i]);
-    }
-    const pc = playerCells.length;
-    if (pc > 0) {
-        let sumX = 0, sumY = 0, sizeSum = 0;
-        for (let i = 0; i < pc; i++) {
-            const cell = playerCells[i];
-            snapCellToNetwork(cell);
-            sumX += cell.x;
-            sumY += cell.y;
-            sizeSum += cell.size;
-        }
-        nodeX = sumX / pc;
-        nodeY = sumY / pc;
-        posX = nodeX;
-        posY = nodeY;
-        viewZoom = Math.pow(Math.min(64 / sizeSum, 1), 0.4) * viewRange();
-        posSize = viewZoom;
-    }
-}
-
-function fastDrainWsOnTabResume() {
-    const t0 = performance.now();
-    const budgetMs = 120;
-    while (wsInbox.length && performance.now() - t0 < budgetMs) {
-        handleWsMessage(new DataView(wsInbox.shift()));
-    }
-}
-
-function onGameTabVisible() {
-    lastTime = performance.now();
-    fastDrainWsOnTabResume();
-    snapGameViewAfterHiddenTab();
-}
-
-document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-        pageWasHidden = true;
-        return;
-    }
-    if (pageWasHidden) {
-        pageWasHidden = false;
-        onGameTabVisible();
-    }
-});
-
 let fps = 0;
 let fpsShown = 0;
 let fpsUpdateTime = 0;
@@ -3042,9 +2952,6 @@ let fpsDomUpdateTime = 0;
 let fpsFrameSum = 0;
 let fpsFrameCount = 0;
 const FPS_UI_INTERVAL_MS = 400;
-
-const wsInbox = [];
-const WS_BUDGET_MS = 6;
 
 // ============ RENDER PROFILER (F3 или ?profile=1) ============
 const RenderProfile = (function () {
@@ -3215,12 +3122,8 @@ const RenderProfile = (function () {
 })();
 
 function redrawGameScene(now) {
-    let delta = now - lastTime;
+    const delta = now - lastTime;
     lastTime = now;
-    if (delta > 500) {
-        lastTime = now;
-        delta = 16;
-    }
 
     if (delta > 0 && delta < 1000) {
         fpsFrameSum += delta;
@@ -3242,11 +3145,6 @@ function redrawGameScene(now) {
     }
 
     if (RenderProfile.enabled()) RenderProfile.resetFrame();
-
-    RenderProfile.start("wsDrain");
-    const wsDrain = drainWsInbox(WS_BUDGET_MS);
-    RenderProfile.end("wsDrain");
-    if (RenderProfile.enabled()) RenderProfile.bump("wsPending", wsDrain.pending);
 
     const frameStart = RenderProfile.enabled() ? performance.now() : 0;
 
@@ -3338,41 +3236,27 @@ function drawGameScene() {
     RenderProfile.start("camera");
     // Обновление позиции игрока и масштаба
     if (playerCount > 0) {
-        let sumX = 0, sumY = 0, sizeSum = 0;
-        const instantView = document.hidden;
+        calcViewZoom();
+        let sumX = 0, sumY = 0;
         for (let i = 0; i < playerCount; i++) {
             const cell = playerCells[i];
             cell.updatePos();
             sumX += cell.x;
             sumY += cell.y;
-            sizeSum += cell.size;
         }
         const avgX = sumX / playerCount;
         const avgY = sumY / playerCount;
 
         posX = avgX;
         posY = avgY;
-
-        if (instantView) {
-            viewZoom = Math.pow(Math.min(64 / sizeSum, 1), 0.4) * viewRange();
-            nodeX = avgX;
-            nodeY = avgY;
-        } else {
-            calcViewZoom();
-            nodeX = (nodeX + avgX) / 2;
-            nodeY = (nodeY + avgY) / 2;
-        }
         posSize = viewZoom;
+
+        nodeX = (nodeX + avgX) / 2;
+        nodeY = (nodeY + avgY) / 2;
     } else {
-        if (document.hidden) {
-            nodeX = posX;
-            nodeY = posY;
-            viewZoom = posSize * viewRange();
-        } else {
-            nodeX = (29 * nodeX + posX) / 30;
-            nodeY = (29 * nodeY + posY) / 30;
-            viewZoom = (9 * viewZoom + posSize * viewRange()) / 10;
-        }
+        nodeX = (29 * nodeX + posX) / 30;
+        nodeY = (29 * nodeY + posY) / 30;
+        viewZoom = (9 * viewZoom + posSize * viewRange()) / 10;
     }
     RenderProfile.end("camera");
 
@@ -4363,15 +4247,6 @@ setName(name) {
 
     updatePos() {
         if (this.id === 0) return 1;
-        if (document.hidden) {
-            this.x = this.nx;
-            this.y = this.ny;
-            this.size = this.nSize;
-            this.ox = this.nx;
-            this.oy = this.ny;
-            this.oSize = this.nSize;
-            return 1;
-        }
         let a = (timestamp - this.updateTime) / 120;
         a = Math.max(0, Math.min(1, a));
         const b = a;
