@@ -3490,7 +3490,7 @@ wHandle.coord = function () {
         return score;
     }
 
-const tournament = ["𝓙𝓲𝓷𝔁","༼ᵍᵃⁿᵍ༽༼٥९९٥༽ぶ","Vaas","liquid","☼K☼","v_potoke","⧼♢ᛃ╰🎀ᵁ℘ܔ🎀╯ᛃ♢⧼","lampy","༄ۣۜL͛ᴇɢɪᴏɴ","【≽ܫ≼】█▬█ █ ▀█▀","Курага","Jeff","Morcov","SalRuz","lnvalid","Muslim95","Power girl","pac man","pulik"];
+const tournament = ["Vaas"];
 
 // Победитель турнира (для сравнения используем toLowerCase)
 const tournamentWinner = "Vaas";
