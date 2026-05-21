@@ -224,10 +224,7 @@ wHandle.startGame = function () {
     wHandle.chekstats = async function () {
         try {
             // Получаем текущий домен из CONNECTION_URL (или другого источника)
-            const domain = CONNECTION_URL || window.location.hostname; // Используем текущий домен если CONNECTION_URL не задан
-
-            // Формируем URL для запроса статистики
-            const statsUrl = `https://${domain}/checkStats`;
+            const statsUrl = getGameServerApiBase(CONNECTION_URL) + "/checkStats";
 
             // Выполняем запрос
             const response = await fetch(statsUrl, { method: 'GET' });
@@ -245,13 +242,30 @@ wHandle.startGame = function () {
         }
     };
 
-const SERVERS = {
-		"ffa":   "reg.agar.su",
-        "ms":    "ffa.agar.su:6002",
-		"pvp1":  "ffa.agar.su:6004",
-		"pvp2":  "ffa.agar.su:6005",
-	    "tournament":  "ffa.agar.su:6006"
+// host — для wss, api — HTTPS того же игрового сервера (клиент может быть на GitHub)
+const GAME_SERVERS = {
+        "ffa":        { host: "reg.agar.su",           api: "https://reg.agar.su" },
+        "ms":         { host: "ffa.agar.su:6002",      api: "https://ffa.agar.su:6002" },
+        "pvp1":       { host: "ffa.agar.su:6004",      api: "https://ffa.agar.su:6004" },
+        "pvp2":       { host: "ffa.agar.su:6005",      api: "https://ffa.agar.su:6005" },
+        "tournament": { host: "ffa.agar.su:6006",      api: "https://ffa.agar.su:6006" }
     };
+const SERVERS = Object.fromEntries(
+    Object.entries(GAME_SERVERS).map(([id, s]) => [id, s.host])
+);
+
+function getGameServerApiBase(hostOrUrl) {
+    if (!hostOrUrl) return GAME_SERVERS.ffa.api;
+    const entry = Object.values(GAME_SERVERS).find(s => s.host === hostOrUrl || s.api === hostOrUrl);
+    if (entry) return entry.api;
+    if (/^https?:\/\//i.test(hostOrUrl)) return hostOrUrl.replace(/\/$/, "");
+    return "https://" + String(hostOrUrl).replace(/^wss?:\/\//i, "");
+}
+
+function getGameServerWssUrl(host) {
+    const h = host || GAME_SERVERS.ffa.host;
+    return "wss://" + String(h).replace(/^wss?:\/\//i, "");
+}
 	
 wjQuery(document).ready(() => {
 document.querySelectorAll('.gamemode li').forEach(li => {
@@ -1422,16 +1436,16 @@ async function solveConnectChallenge(challenge) {
     }
 }
 
-async function fetchConnectToken(host) {
-    const httpBase = (useHttps ? "https://" : "http://") + host;
-    const res = await fetch(httpBase + "/challenge", { cache: "no-store" });
-    if (!res.ok) throw new Error("challenge request failed");
+async function fetchConnectToken(gameHost) {
+    const apiBase = getGameServerApiBase(gameHost);
+    const res = await fetch(apiBase + "/challenge", { cache: "no-store" });
+    if (!res.ok) throw new Error("challenge request failed: " + apiBase);
     const challenge = await res.json();
     return solveConnectChallenge(challenge);
 }
 
 function showConnecting() {
-    const wsUrl = (useHttps ? "wss://" : "ws://") + CONNECTION_URL;
+    const wsUrl = getGameServerWssUrl(CONNECTION_URL);
 
     if (ws && ws.readyState === WebSocket.OPEN && currentWebSocketUrl === wsUrl) {
         return;
@@ -1456,7 +1470,7 @@ async function wsConnect(wsUrlArg) {
     }
 
     const c = CONNECTION_URL;
-    wsUrl = wsUrlArg || ((useHttps ? "wss://" : "ws://") + c);
+    wsUrl = wsUrlArg || getGameServerWssUrl(c);
 
     playerCells = [];
     nodes = {};
@@ -4567,7 +4581,7 @@ function refreshTopFromStats(stats) {
 // Загружаем топ при открытии оверлея
 $(document).ready(function() {
     function loadTopData() {
-        fetch(`https://${CONNECTION_URL || 'reg.agar.su'}/checkStats`)
+        fetch(getGameServerApiBase(CONNECTION_URL) + "/checkStats")
             .then(res => res.ok ? res.json() : Promise.reject())
             .then(stats => refreshTopFromStats(stats))
             .catch(e => console.error('Top load error:', e));
