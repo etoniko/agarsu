@@ -516,8 +516,8 @@ input{font-size:16px;}
 #accountID{position:absolute;right:20px;top:20px;background-color:#1b263b;padding:9.5px 15px;border-radius:20px;}
 .line{width:100%;height:2px;background-color:#ffffff;margin:10px 0px 10px 0px;}
 #l1eaderboard{max-width:150px;position:absolute;padding:10px 10px 10px 10px;border-radius:20px 20px 20px 20px;border:solid #ffffff26 1px;background:rgba(0, 0, 0, .3);}
-.star-container{font-size:20px;position:relative;display:inline-block;white-space:nowrap} 
-.star-container .level-skin{width:20px;height:20px;border-radius:50%;object-fit:cover;vertical-align:middle;display:inline-block;}
+.star-container{font-size:20px;position:relative;display:inline-block;white-space:nowrap}
+.account-level-avatar{width:20px;height:20px;border-radius:50%;object-fit:cover;vertical-align:middle;display:inline-block;}
 .levelme{pointer-events: none;position:absolute;top:50%;left:50%;transform:translate(-50%, -50%);font-size:8px;color:#585858;font-family:'Ubuntu';}
 .levelme.red{color: gold;}
 .star-container .tooltip {
