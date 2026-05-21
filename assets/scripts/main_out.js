@@ -154,33 +154,38 @@ async function updateOnlineCount() {
     let rows = [];
     try {
         const res = await fetch(ONLINE_HUB_URL, { cache: "no-store" });
+        if (!res.ok) return;
         const data = await res.json();
         rows = Array.isArray(data.servers) ? data.servers : [];
-        
-        // ОТЛАДКА
-        console.log('🔍 Получены серверы:', rows.map(r => ({ id: r.id, playing: r.playing })));
-        
-    } catch (e) {
-        console.error('Ошибка загрузки онлайн:', e);
+    } catch (_) {
         return;
     }
 
+    let totalOnline = 0;
+
     for (const row of rows) {
-        const li = document.getElementById(row.id);
-        
-        // ОТЛАДКА
-        if (!li) {
-            console.warn(`❌ Элемент с id="${row.id}" не найден в DOM`);
-            continue;
+        const id = row.id;
+        if (!id) continue;
+
+        const playing = row.playing ?? 0;       // в игре (есть клетки)
+        const observers = row.no_playing ?? 0;  // наблюдатели / в меню на сервере
+        const max = row.max ?? 0;               // лимит с gameserver.ini (onlineHubMax)
+
+        totalOnline += playing + observers;
+
+        const li = document.getElementById(id);
+        if (li) {
+            const spans = li.querySelectorAll(".online-count");
+            if (spans.length >= 2) {
+                spans[0].textContent = observers;
+                spans[1].textContent = max > 0 ? `${playing}/${max}` : String(playing);
+            }
         }
-        
-        console.log(`✅ Обновляем ${row.id}: playing=${row.playing}, no_playing=${row.no_playing}`);
-        
-        const spans = li.querySelectorAll(".online-count");
-        if (spans.length >= 2) {
-            spans[0].textContent = row.no_playing ?? 0;
-            spans[1].textContent = `${row.playing}/${row.max ?? 0}`;
-        }
+    }
+
+    const onlineElement = document.getElementById("online");
+    if (onlineElement) {
+        onlineElement.textContent = `Онлайн: ${totalOnline}`;
     }
 }
 
