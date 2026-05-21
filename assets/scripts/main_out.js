@@ -147,48 +147,45 @@ window.addEventListener('hashchange', setActiveFromHash);
         };
     })(wjQuery);
 
-// Функция обновления онлайн
+const ONLINE_HUB_URL = "https://api.agar.su:6008/online";
+
+// Онлайн: клиент ← api.agar.su:6008 ← игровые серверы (POST /report)
 async function updateOnlineCount() {
-     const servers = [
-		{id: 'ffa', url: 'https://reg.agar.su/process', max: 500},
-        {id: 'ms', url: 'https://ffa.agar.su:6002/process', max: 120},
-        {id: 'pvp1', url: 'https://ffa.agar.su:6004/process', max: 50},
-        {id: 'pvp2', url: 'https://ffa.agar.su:6005/process', max: 50},
-		{id: 'tournament', url: 'https://ffa.agar.su:6006/process', max: 50}
-    ];
-    
+    let rows = [];
+    try {
+        const res = await fetch(ONLINE_HUB_URL, { cache: "no-store" });
+        if (!res.ok) return;
+        const data = await res.json();
+        rows = Array.isArray(data.servers) ? data.servers : [];
+    } catch (_) {
+        return;
+    }
+
     let totalOnline = 0;
 
-    for (const server of servers) {
-        try {
-            const response = await fetch(server.url);
-            if (!response.ok) continue;
-            const data = await response.json();
+    for (const row of rows) {
+        const id = row.id;
+        if (!id) continue;
 
-            const playing = data.playing ?? 0;
-            const noPlaying = data.no_playing ?? 0;
-            const serverTotal = playing + noPlaying;
-            
-            totalOnline += serverTotal;
+        const playing = row.playing ?? 0;       // в игре (есть клетки)
+        const observers = row.no_playing ?? 0;  // наблюдатели / в меню на сервере
+        const max = row.max ?? 0;               // лимит с gameserver.ini (onlineHubMax)
 
-            const li = document.getElementById(server.id);
-            if (li) {
-                const spans = li.querySelectorAll('.online-count');
-                if (spans.length >= 2) {
-                    spans[0].textContent = noPlaying;
-                    spans[1].textContent = `${playing}/${server.max}`;
-                }
+        totalOnline += playing + observers;
+
+        const li = document.getElementById(id);
+        if (li) {
+            const spans = li.querySelectorAll(".online-count");
+            if (spans.length >= 2) {
+                spans[0].textContent = observers;
+                spans[1].textContent = max > 0 ? `${playing}/${max}` : String(playing);
             }
-        } catch (e) {
-            // Сервер вырубился - просто пропускаем, не выводим ошибку
-            console.log(`Сервер ${server.id} недоступен`);
-            continue;
         }
     }
-    
-    const onlineElement = document.getElementById('online');
+
+    const onlineElement = document.getElementById("online");
     if (onlineElement) {
-        onlineElement.textContent = `Онлайн: ${totalOnline - 25}`;
+        onlineElement.textContent = `Онлайн: ${totalOnline}`;
     }
 }
 
