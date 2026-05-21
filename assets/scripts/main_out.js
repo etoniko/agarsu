@@ -7,43 +7,6 @@
     if (level >= 150) return "white";                  // белая
     return "";
 }
-
-function getSkinUrlByNick(nick) {
-    const skinId = skinList[normalizeNick(nick || '')];
-    return skinId
-        ? `https://api.agar.su/skins/${skinId}.png`
-        : 'https://api.agar.su/skins/4.png';
-}
-
-function appendLevelIndicator(parent, level, xp, nick) {
-    const levelContainer = document.createElement('div');
-    levelContainer.className = 'star-container';
-
-    if (level >= 200) {
-        const skinImg = document.createElement('img');
-        skinImg.className = 'level-skin ' + getStarClass(level);
-        skinImg.src = getSkinUrlByNick(nick);
-        skinImg.title = `XP: ${xp || 0}`;
-        skinImg.onerror = () => { skinImg.src = 'https://api.agar.su/skins/4.png'; };
-        levelContainer.appendChild(skinImg);
-    } else {
-        const starIcon = document.createElement('i');
-        starIcon.className = 'fas fa-star ' + getStarClass(level);
-        levelContainer.appendChild(starIcon);
-
-        const levelSpan = document.createElement('span');
-        levelSpan.className = 'levelme ' + getStarClass(level);
-        levelSpan.textContent = level;
-        levelContainer.appendChild(levelSpan);
-
-        const tooltip = document.createElement('div');
-        tooltip.className = 'tooltip';
-        tooltip.textContent = `XP: ${xp || 0}`;
-        levelContainer.appendChild(tooltip);
-    }
-
-    parent.appendChild(levelContainer);
-}
 	
 	
 	                        // Функция для получения данных статистики
@@ -1149,6 +1112,7 @@ if (!showStickers) break;
     wHandle.requestAnimationFrame(redrawGameScene);
     setInterval(sendMouseMove, 50);
     wjQuery("#overlays").show();
+    setInterval(updateStats, 100);
 }
 	
 
@@ -1608,8 +1572,6 @@ if (pingElement) {
             case 20:
                 // Clear nodes
                 playerCells = [];
-                lastLeaderBoardKey = "";
-                lastCustomLeaderBoardKey = "";
                 break;
 case 48:
     // Update leaderboard (custom text)
@@ -2262,7 +2224,24 @@ if (admins.includes(lowerName)) {
     nameContainer.className = 'chatX_name_container';
 
     if (typeof lastMessage.playerLevel === 'number' && lastMessage.playerLevel > 0) {
-        appendLevelIndicator(nameContainer, lastMessage.playerLevel, lastMessage.playerXp, lastMessage.name);
+        const levelContainer = document.createElement('div');
+        levelContainer.className = 'star-container';
+
+        const starIcon = document.createElement('i');
+        starIcon.className = 'fas fa-star ' + getStarClass(lastMessage.playerLevel);
+
+        const levelSpan = document.createElement('span');
+        levelSpan.className = 'levelme ' + getStarClass(lastMessage.playerLevel);
+        levelSpan.textContent = lastMessage.playerLevel;
+
+        const tooltip = document.createElement('div');
+        tooltip.className = 'tooltip';
+        tooltip.textContent = `XP: ${lastMessage.playerXp}`;
+
+        levelContainer.appendChild(starIcon);
+        levelContainer.appendChild(levelSpan);
+        levelContainer.appendChild(tooltip);
+        nameContainer.appendChild(levelContainer);
     }
 
 	// --- YouTube иконка для ютуберов ---
@@ -2570,7 +2549,8 @@ function updateNodes(reader) {
                 posX = leftPos + (rightPos * 2) * normalizeFractlPart(nodeid);
                 posY = topPos + (bottomPos * 2) * normalizeFractlPart(nodeid * nodeid);
                 //size = foodMinSize + nodeid % ((foodMaxSize - foodMinSize) + 1);
-            } else {
+            }
+            else {
                 if (type === 0) playerId = reader.uint32();
                 posX = reader.int32();
                 posY = reader.int32();
@@ -2640,7 +2620,6 @@ if (stickerData) {
 }
 // =======================================
 
-            node.isFood = type === 1;
             node.isVirus = flagVirus;
             node.isEjected = flagEjected;
             node.isAgitated = flagAgitated;
@@ -2829,18 +2808,10 @@ const getColorId = (hex) => {
 
 let maxScore = 0;
 
-let lastStatsScore = -1;
-let lastStatsCells = -1;
-let statsTick = 0;
-
 // ===== ОБНОВЛЕНИЕ СТАТИСТИКИ =====
 function updateStats() {
     const currentScore = Math.floor(calcUserScore() / 100);
     const cellCount = playerCells.length;
-
-    if (currentScore === lastStatsScore && cellCount === lastStatsCells) return;
-    lastStatsScore = currentScore;
-    lastStatsCells = cellCount;
 
     // Обновляем максимум
     if (currentScore > maxScore) {
@@ -2946,33 +2917,15 @@ window.addEventListener('load', () => {
 
 let lastTime = performance.now();
 let fps = 0;
-let fpsShown = 0;
-let fpsUpdateTime = 0;
-let fpsDomUpdateTime = 0;
-let fpsFrameSum = 0;
-let fpsFrameCount = 0;
-const FPS_UI_INTERVAL_MS = 400;
+let fpsUpdateTime = 0; // время последнего обновления HTML
 
 function redrawGameScene(now) {
-    const delta = now - lastTime;
+    const delta = now - lastTime; // время кадра
     lastTime = now;
-
-    if (delta > 0 && delta < 1000) {
-        fpsFrameSum += delta;
-        fpsFrameCount++;
-        fps = Math.round(1000 / delta);
-        fpsShown = Math.round(1000 / (fpsFrameSum / fpsFrameCount));
-    }
-
-    if (now - fpsDomUpdateTime >= FPS_UI_INTERVAL_MS) {
-        fpsDomUpdateTime = now;
-        const fpsEl = document.getElementById("fps");
-        if (fpsEl) fpsEl.textContent = fpsShown;
-    }
+    fps = Math.round(1000 / delta);
 
     if (now - fpsUpdateTime >= 1000) {
-        fpsFrameSum = 0;
-        fpsFrameCount = 0;
+        document.getElementById('fps').textContent = fps;
         fpsUpdateTime = now;
     }
 
@@ -2984,69 +2937,12 @@ function redrawGameScene(now) {
 
 
 
-function getFoodDrawRadius(cell) {
-    let r = cell.size;
-    if (r === 0) r = 20;
-    return r;
-}
-
-function drawBatchedFood(ctx) {
-    const buckets = new Map();
-    let batched = 0;
-
-    for (let i = 0; i < nodelist.length; i++) {
-        const cell = nodelist[i];
-        if (!cell.isFood) continue;
-
-        if (!cell.shouldRender()) continue;
-
-        cell.updatePos();
-
-        const color = showColor ? (cell.color || "#FFFFFF") : "#AAAAAA";
-        let list = buckets.get(color);
-        if (!list) {
-            list = [];
-            buckets.set(color, list);
-        }
-        list.push(cell);
-        batched++;
-    }
-
-    if (!batched) return;
-
-    for (const [color, list] of buckets) {
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        for (let j = 0; j < list.length; j++) {
-            const cell = list[j];
-            const rad = getFoodDrawRadius(cell);
-            ctx.moveTo(cell.x + rad, cell.y);
-            ctx.arc(cell.x, cell.y, rad, 0, 2 * Math.PI);
-        }
-        ctx.fill();
-    }
-}
-
-function leaderBoardKey(lb) {
-    if (!lb || !lb.length) return "";
-    let s = "";
-    const n = Math.min(lb.length, 12);
-    for (let i = 0; i < n; i++) {
-        const e = lb[i];
-        s += (e.id == null ? "s" : e.id) + ":" + (e.name || "") + ":" + (e.level ?? "") + ";";
-    }
-    return s;
-}
-
-let lastLeaderBoardKey = "";
-let lastCustomLeaderBoardKey = "";
-
 function drawGameScene() {
     const oldtime = Date.now();
     timestamp = oldtime;
 
     const playerCount = playerCells.length;
-
+	
     // Обновление позиции игрока и масштаба
     if (playerCount > 0) {
         calcViewZoom();
@@ -3073,12 +2969,11 @@ function drawGameScene() {
     }
 
     buildQTree();
-
     mouseCoordinateChange();
-
     drawGrid();
     drawCenterBackground();
     updateMiniMapPosition();
+
 
     nodelist.sort((a, b) => a.size - b.size || a.id - b.id);
 
@@ -3087,19 +2982,14 @@ function drawGameScene() {
     ctx.scale(viewZoom, viewZoom);
     ctx.translate(-nodeX, -nodeY);
 
-    drawBatchedFood(ctx);
-    for (let i = 0; i < nodelist.length; i++) {
-        if (nodelist[i].isFood) continue;
-        nodelist[i].drawOneCell(ctx);
-    }
+    for (let i = 0; i < nodelist.length; i++) nodelist[i].drawOneCell(ctx);
+
 
     ctx.restore();
 
+
     drawSplitIcon(ctx);
     drawTouch(ctx);
-
-    statsTick++;
-    if (statsTick % 6 === 0) updateStats();
 }
 
 
@@ -3389,50 +3279,46 @@ function drawWhiteGrid() {
 
 let lastCell = '';
 let lastHighlightedSpan = null;
-let minimapFrame = 0;
-let minimapCached = null;
-const MINIMAP_UPDATE_EVERY = 2;
 
 function updateMiniMapPosition() {
-    minimapFrame++;
-    if (minimapFrame % MINIMAP_UPDATE_EVERY !== 0) return;
+    const playerDot = document.getElementById('mapposition');
+    const mapContainer = document.querySelector('.map-container');
+    const cells = mapContainer.querySelectorAll('div > span');
 
-    if (!minimapCached) {
-        const playerDot = document.getElementById("mapposition");
-        const mapContainer = document.querySelector(".map-container");
-        if (!playerDot || !mapContainer) return;
-        minimapCached = {
-            dot: playerDot,
-            map: mapContainer,
-            spans: Array.from(mapContainer.querySelectorAll("div > span")),
-            dotRadius: playerDot.offsetWidth / 2,
-            w: mapContainer.offsetWidth,
-            h: mapContainer.offsetHeight
-        };
-    }
-
-    const { dot, spans, dotRadius } = minimapCached;
-    const miniMapWidth = minimapCached.w;
-    const miniMapHeight = minimapCached.h;
+    if (!playerDot || !mapContainer) return;
 
     const totalMapWidth = rightPos - leftPos;
     const totalMapHeight = bottomPos - topPos;
-    if (totalMapWidth <= 0 || totalMapHeight <= 0) return;
 
-    const miniX = Math.round(((nodeX - leftPos) / totalMapWidth) * miniMapWidth);
-    const miniY = Math.round(((nodeY - topPos) / totalMapHeight) * miniMapHeight);
+    const miniMapWidth = mapContainer.offsetWidth;
+    const miniMapHeight = mapContainer.offsetHeight;
 
-    dot.style.left = (miniX - dotRadius) + "px";
-    dot.style.top = (miniY - dotRadius) + "px";
+    let relativeX = (nodeX - leftPos) / totalMapWidth;
+    let relativeY = (nodeY - topPos) / totalMapHeight;
 
-    const colIndex = Math.min(4, Math.max(0, Math.floor(miniX / (miniMapWidth / 5))));
-    const rowIndex = Math.min(4, Math.max(0, Math.floor(miniY / (miniMapHeight / 5))));
-    const currentCell = "ABCDE"[rowIndex] + (colIndex + 1);
+    let miniX = Math.round(relativeX * miniMapWidth);
+    let miniY = Math.round(relativeY * miniMapHeight);
+
+    const dotRadius = playerDot.offsetWidth / 2;
+    playerDot.style.left = (miniX - dotRadius) + 'px';
+    playerDot.style.top = (miniY - dotRadius) + 'px';
+
+    const cols = 5;
+    const rows = 5;
+    const cellWidth = miniMapWidth / cols;
+    const cellHeight = miniMapHeight / rows;
+
+    const colIndex = Math.floor(miniX / cellWidth);
+    const rowIndex = Math.floor(miniY / cellHeight);
+    const rowLetters = ['A','B','C','D','E'];
+    const currentCell = rowLetters[rowIndex] + (colIndex + 1);
 
     if (lastCell !== currentCell) {
-        if (lastHighlightedSpan) lastHighlightedSpan.style.color = "";
-        lastHighlightedSpan = spans.find(span => span.textContent === currentCell) || null;
-        if (lastHighlightedSpan) lastHighlightedSpan.style.color = "gold";
+        // Убираем подсветку с предыдущей клетки
+        if (lastHighlightedSpan) lastHighlightedSpan.style.color = '';
+        // Находим новый span
+        lastHighlightedSpan = Array.from(cells).find(span => span.textContent === currentCell);
+        if (lastHighlightedSpan) lastHighlightedSpan.style.color = 'gold';
         lastCell = currentCell;
     }
 }
@@ -3490,7 +3376,7 @@ wHandle.coord = function () {
         return score;
     }
 
-const tournament = ["Vaas"];
+const tournament = ["𝓙𝓲𝓷𝔁","༼ᵍᵃⁿᵍ༽༼٥९९٥༽ぶ","Vaas","liquid","☼K☼","v_potoke","⧼♢ᛃ╰🎀ᵁ℘ܔ🎀╯ᛃ♢⧼","lampy","༄ۣۜL͛ᴇɢɪᴏɴ","【≽ܫ≼】█▬█ █ ▀█▀","Курага","Jeff","Morcov","SalRuz","lnvalid","Muslim95","Power girl","pac man","pulik"];
 
 // Победитель турнира (для сравнения используем toLowerCase)
 const tournamentWinner = "Vaas";
@@ -3546,9 +3432,16 @@ function createLeaderboardEntry(name, level, isMe, isSystemLine, b) {
   // Контейнер для иконок (звезда + ютуб + спонсор + победитель)
   const iconsContainer = document.createElement("span");
 
-  // Звезда или скин (200+) с уровнем (если есть)
+  // Звезда с уровнем (если есть)
   if (level !== -1 && !isSystemLine) {
-    appendLevelIndicator(iconsContainer, level, leaderBoard[b].xp || 0, cleanName);
+    const starContainer = document.createElement("div");
+    starContainer.className = "star-container";
+    starContainer.innerHTML = `
+      <i class='fas fa-star ${getStarClass(level)}'></i>
+      <span class='levelme ${getStarClass(level)}'>${level}</span>
+      <div class='tooltip'>XP: ${leaderBoard[b].xp || 0}</div>
+    `;
+    iconsContainer.appendChild(starContainer);
   }
 
   // Иконка YouTube для ютуберов
@@ -3596,10 +3489,6 @@ function createLeaderboardEntry(name, level, isMe, isSystemLine, b) {
 }
 
 function drawCustomLeaderBoard() {
-  const key = leaderBoardKey(leaderBoard);
-  if (key === lastCustomLeaderBoardKey) return;
-  lastCustomLeaderBoardKey = key;
-
   const toplistDiv = document.getElementById("toplistnow");
   toplistDiv.innerHTML = ""; // очищаем
 
@@ -3641,10 +3530,6 @@ function drawCustomLeaderBoard() {
 }
 
 function drawLeaderBoard() {
-  const key = leaderBoardKey(leaderBoard);
-  if (key === lastLeaderBoardKey) return;
-  lastLeaderBoardKey = key;
-
   const toplistDiv = document.getElementById("toplistnow");
   toplistDiv.innerHTML = ""; // очищаем
   const displayedPlayers = 10;
@@ -3903,7 +3788,6 @@ Cell.prototype = {
     isVirus: false,
     isEjected: false,
     isAgitated: false,
-    isFood: false,
     wasSimpleDrawing: true,
 	fixedName: null,
     fixedColor: null,
@@ -4271,7 +4155,8 @@ if (showStickers && this.stickerActive && this.currentSticker) {
     if (stickerImg.complete && stickerImg.width > 0) {
         ctx.save();
         ctx.clip();
-
+ 
+        
         const fw = stickerImg.width, fh = stickerImg.height;
         // ✅ ВСЕГДА используем this.size, НЕ используем bigPointSize
         const sz = this.size;
