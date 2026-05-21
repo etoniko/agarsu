@@ -1399,34 +1399,64 @@ function isMouseOverElement(element) {
     }
 
 let currentWebSocketUrl = null;
+let connectInProgress = false;
 
-function showConnecting() { // Убираем параметр token
+async function sha256HexConnect(text) {
+    const data = new TextEncoder().encode(String(text));
+    const buf = await crypto.subtle.digest("SHA-256", data);
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function solveConnectChallenge(challenge) {
+    const need = "0".repeat(challenge.difficulty);
+    let nonce = 0;
+    while (true) {
+        const hash = await sha256HexConnect(challenge.prefix + nonce);
+        if (hash.startsWith(need)) {
+            return `${challenge.challengeId}:${nonce}`;
+        }
+        nonce++;
+        if (nonce % 4000 === 0) {
+            await new Promise(r => setTimeout(r, 0));
+        }
+    }
+}
+
+async function fetchConnectToken(host) {
+    const httpBase = (useHttps ? "https://" : "http://") + host;
+    const res = await fetch(httpBase + "/challenge", { cache: "no-store" });
+    if (!res.ok) throw new Error("challenge request failed");
+    const challenge = await res.json();
+    return solveConnectChallenge(challenge);
+}
+
+function showConnecting() {
     const wsUrl = (useHttps ? "wss://" : "ws://") + CONNECTION_URL;
 
     if (ws && ws.readyState === WebSocket.OPEN && currentWebSocketUrl === wsUrl) {
-        console.log("Соединение уже активно для этого URL, пропускаем повторное подключение.");
         return;
     }
 
     if (ma) {
         currentWebSocketUrl = wsUrl;
-        wsConnect(wsUrl); // Убираем token
+        wsConnect(wsUrl);
     }
 }
 
-function wsConnect(undefined) { // Убираем параметр token
+async function wsConnect(wsUrlArg) {
+    if (connectInProgress) return;
+    connectInProgress = true;
+
     if (ws) {
         ws.onopen = null;
         ws.onmessage = null;
         ws.onclose = null;
-        try {
-            ws.close()
-        } catch (b) {
-        }
-        ws = null
+        try { ws.close(); } catch (b) {}
+        ws = null;
     }
-    var c = CONNECTION_URL;
-    wsUrl = (useHttps ? "wss://" : "ws://") + c;
+
+    const c = CONNECTION_URL;
+    wsUrl = wsUrlArg || ((useHttps ? "wss://" : "ws://") + c);
 
     playerCells = [];
     nodes = {};
@@ -1434,13 +1464,28 @@ function wsConnect(undefined) { // Убираем параметр token
     Cells = [];
     leaderBoard = [];
 
-    // Оставляем только accountToken
-    const params = `?accountToken=${encodeURIComponent(localStorage.accountToken)}`;
-    ws = new WebSocket(wsUrl + params, "eSejeKSVdysQvZs0ES1H");
+    let connectToken = "";
+    try {
+        connectToken = await fetchConnectToken(c);
+    } catch (err) {
+        console.error("Connect token error:", err);
+        connectInProgress = false;
+        setTimeout(() => showConnecting(), 3000);
+        return;
+    }
+
+    const qs = new URLSearchParams();
+    if (localStorage.accountToken) {
+        qs.set("accountToken", localStorage.accountToken);
+    }
+    qs.set("connectToken", connectToken);
+
+    ws = new WebSocket(wsUrl + "?" + qs.toString(), "eSejeKSVdysQvZs0ES1H");
     ws.binaryType = "arraybuffer";
     ws.onopen = onWsOpen;
     ws.onmessage = onWsMessage;
     ws.onclose = onWsClose;
+    connectInProgress = false;
 }
 
     function prepareData(a) {
@@ -1456,32 +1501,46 @@ let ping = 0;
 let pingstamp = 0;
 
 
+    let wsPingInterval = null;
+    let gameHandshakeDone = false;
+
     function onWsOpen() {
     const serverCloseDiv = document.getElementById("serverclose-overlay");
     if (serverCloseDiv) serverCloseDiv.style.display = "none";
+        gameHandshakeDone = false;
         var msg;
 
         sendAccountToken();
 
         msg = prepareData(5);
         msg.setUint8(0, 254);
-        msg.setUint32(1, 5, true); // Protocol 5
+        msg.setUint32(1, 5, true);
         wsSend(msg);
 
         msg = prepareData(5);
         msg.setUint8(0, 255);
         msg.setUint32(1, 0, true);
         wsSend(msg);
+    }
+
+    function onGameHandshakeReady() {
+        if (gameHandshakeDone) return;
+        gameHandshakeDone = true;
         sendNickName();
-        //log.info("Connection successful!");
-     setInterval(() => {
-        pingstamp = Date.now();        
-wsSend(new Uint8Array([2])); // ping
-    }, 3000);
-	 sendChat("вoшёл в игру!");
+        if (wsPingInterval) clearInterval(wsPingInterval);
+        wsPingInterval = setInterval(() => {
+            pingstamp = Date.now();
+            wsSend(new Uint8Array([2]));
+        }, 3000);
+        sendChat("вoшёл в игру!");
     }
 
         function onWsClose(evt) {
+    gameHandshakeDone = false;
+    if (wsPingInterval) {
+        clearInterval(wsPingInterval);
+        wsPingInterval = null;
+    }
     const serverCloseDiv = document.getElementById("serverclose-overlay");
     if (serverCloseDiv) serverCloseDiv.style.display = "block";
 			setTimeout(() => showConnecting(), 3000);
@@ -1710,6 +1769,7 @@ case 48:
                     nodeY = posY;
                     viewZoom = posSize;
                 }
+                onGameHandshakeReady();
                 break;
             case 99:
                 // Add chat message
