@@ -4728,7 +4728,6 @@ $(document).ready(function() {
     
     if ($("#overlays").is(":visible")) {
         loadTopData();
-        setInterval(loadTopData, 30000);
     }
     
     // Отслеживаем открытие оверлея
