@@ -1620,7 +1620,6 @@ async function wsConnect(wsUrlArg) {
         console.error("Connect token error:", err);
         connectInProgress = false;
         setConnectVerifyStage(0, "Ошибка подключения, повтор…");
-        setTimeout(() => showConnecting(), 2000);
         return;
     }
 
