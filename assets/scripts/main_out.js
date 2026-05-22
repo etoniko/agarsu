@@ -1695,7 +1695,7 @@ let pingstamp = 0;
     }
     const serverCloseDiv = document.getElementById("serverclose-overlay");
     if (serverCloseDiv) serverCloseDiv.style.display = "block";
-			setTimeout(() => showConnecting(), 3000);
+			
         }
 
 
