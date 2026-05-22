@@ -1,5 +1,5 @@
 const allowedPattern = /^[a-zA-Zа-яА-Я0-9\s\[\]]+$/;
-const yookassaRules = { maxFileSize: 5 * 1024 * 1024 };
+const paymentRules = { maxFileSize: 5 * 1024 * 1024 };
 let isNicknameTaken = false;
 
 function showError(elementId, message) {
@@ -202,7 +202,7 @@ const gifPreview = document.getElementById("previewGif");
 fileInput.addEventListener("change", (e) => {
   const file = e.target.files[0];
   if (!file) return;
-  if (file.size > yookassaRules.maxFileSize) {
+  if (file.size > paymentRules.maxFileSize) {
     fileInput.value = '';
     showError('fileError', 'Файл слишком большой (макс. 5MB)');
     return;
@@ -408,7 +408,21 @@ async function sendForm(formData, headers = {}) {
       setTimeout(() => hideError('formError'), 8000);
     }
 
-    if (data?.confirmation?.confirmation_url) {
+    if (data?.confirmation?.type === "form_post" && data.confirmation.action && data.confirmation.fields) {
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = data.confirmation.action;
+      form.acceptCharset = "UTF-8";
+      Object.entries(data.confirmation.fields).forEach(([name, value]) => {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = name;
+        input.value = value;
+        form.appendChild(input);
+      });
+      document.body.appendChild(form);
+      form.submit();
+    } else if (data?.confirmation?.confirmation_url) {
       window.location.href = data.confirmation.confirmation_url;
     } else if (data?.error) {
       showError('formError', `Ошибка: ${data.error.description || data.error}`);
