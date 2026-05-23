@@ -1417,8 +1417,6 @@ function showConnectVerifyOverlay(text) {
     const overlay = document.getElementById("connect-verify-overlay");
     const textEl = document.getElementById("connect-verify-text");
     const progress = document.getElementById("connect-verify-progress");
-    const serverCloseDiv = document.getElementById("serverclose-overlay");
-    if (serverCloseDiv) serverCloseDiv.style.display = "none";
     if (!overlay) return;
     overlay.style.display = "flex";
     if (textEl && text) textEl.textContent = text;
@@ -1654,8 +1652,6 @@ let pingstamp = 0;
     let gameHandshakeDone = false;
 
     function onWsOpen() {
-    const serverCloseDiv = document.getElementById("serverclose-overlay");
-    if (serverCloseDiv) serverCloseDiv.style.display = "none";
         setConnectVerifyStage(90, "Синхронизация с сервером…");
         gameHandshakeDone = false;
         var msg;
@@ -1693,8 +1689,6 @@ let pingstamp = 0;
         clearInterval(wsPingInterval);
         wsPingInterval = null;
     }
-    const serverCloseDiv = document.getElementById("serverclose-overlay");
-    if (serverCloseDiv) serverCloseDiv.style.display = "block";
 			
         }
 
