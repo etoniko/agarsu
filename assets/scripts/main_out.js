@@ -1438,6 +1438,35 @@ function setConnectVerifyStage(pct, text) {
     if (textEl && text) textEl.textContent = text;
 }
 
+function formatBanDuration(sec) {
+    if (!sec) return "навсегда";
+    if (sec < 60) return sec + " сек";
+    if (sec < 3600) {
+        const m = Math.ceil(sec / 60);
+        return m + " мин";
+    }
+    const h = Math.floor(sec / 3600);
+    const m = Math.ceil((sec % 3600) / 60);
+    return h + " ч" + (m ? " " + m + " мин" : "");
+}
+
+function showBanBanner(remainingSec, reason) {
+    hideConnectVerifyOverlay();
+    const banner = document.getElementById("ban-banner");
+    const msgEl = document.getElementById("ban-banner-message");
+    if (!banner || !msgEl) return;
+    const timeText = formatBanDuration(remainingSec);
+    let text = "Вы забанены (" + timeText + ")";
+    if (reason) text += ". Причина: " + reason;
+    msgEl.textContent = text;
+    banner.style.display = "block";
+}
+
+function hideBanBanner() {
+    const banner = document.getElementById("ban-banner");
+    if (banner) banner.style.display = "none";
+}
+
 function hideConnectVerifyOverlay() {
     const overlay = document.getElementById("connect-verify-overlay");
     const progress = document.getElementById("connect-verify-progress");
@@ -1592,6 +1621,7 @@ function showConnecting() {
 async function wsConnect(wsUrlArg) {
     if (connectInProgress) return;
     connectInProgress = true;
+    hideBanBanner();
     showConnectVerifyOverlay("Подключение к серверу…");
 
     if (ws) {
@@ -1774,6 +1804,26 @@ let pingstamp = 0;
 
         const messageType = msg.getUint8(offset++);
         switch (messageType) {
+            case 91:
+                hideConnectVerifyOverlay();
+                const banRemaining = msg.getUint32(offset, true);
+                offset += 4;
+                const banReason = getString();
+                showBanBanner(banRemaining, banReason);
+                connectInProgress = false;
+                gameHandshakeDone = false;
+                if (wsPingInterval) {
+                    clearInterval(wsPingInterval);
+                    wsPingInterval = null;
+                }
+                if (ws) {
+                    ws.onopen = null;
+                    ws.onmessage = null;
+                    ws.onclose = null;
+                    try { ws.close(); } catch (b) {}
+                    ws = null;
+                }
+                break;
                  case 2:
         ping = Date.now() - pingstamp;
 
