@@ -179,8 +179,7 @@
 .rizwer{background: linear-gradient(90deg,rgba(2, 0, 36, 1) 0%, rgba(9, 9, 121, 1) 35%, rgba(0, 212, 255, 1) 100%) !important;}
 #captcha-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background-color:rgba(0, 0, 0, 0.5);display:flex;justify-content:center;align-items:center;z-index:9999;}
 #captcha-container{z-index:10;}
-.ban-banner{display:none;position:fixed;top:0;left:0;width:100%;z-index:100001;box-sizing:border-box;padding:14px 20px;background:linear-gradient(180deg,#8b0000 0%,#c41e1e 100%);border-bottom:3px solid #ff4444;box-shadow:0 4px 24px rgba(180,0,0,0.55);}
-.ban-banner-inner{display:flex;align-items:flex-start;gap:14px;max-width:720px;margin:0 auto;}
+.ban-banner {display: none;position: fixed;top: 50%;left: 50%;transform: translate(-50%, -50%);width: auto;box-sizing: border-box;padding: 14px 20px;background: red;border-radius: 12px;color: white;}.ban-banner-inner{display:flex;align-items:flex-start;gap:14px;max-width:720px;margin:0 auto;}
 .ban-banner-icon{font-size:2em;color:#fff;flex-shrink:0;margin-top:2px;}
 .ban-banner-title{font-size:17px;font-weight:700;color:#fff;margin-bottom:4px;}
 #ban-banner-message{font-size:14px;color:#ffe0e0;line-height:1.45;}
