@@ -4,6 +4,7 @@ function showContent(id) {
 
                     document.querySelector(`.menu-item[onclick="showContent('${id}')"]`).classList.add('active');
                     document.getElementById(id).classList.add('active');
+                    if (typeof updateShopAuthNotice === 'function') updateShopAuthNotice();
                 }
 
 function updateAccountMenuLabel() {
@@ -186,31 +187,4 @@ document.querySelector('#chatX_window .emoji-list').addEventListener('click', (e
 
   // Вставляем эмодзи в конец текста
   chatBox.value += emojiCode;
-});
-
-// Открытие модального окна
-document.querySelector('.options').addEventListener('click', function() {
-  document.getElementById('optionsModal').style.display = 'flex';
-});
-
-// Закрытие по крестику
-document.querySelector('.modal-close').addEventListener('click', function() {
-  document.getElementById('optionsModal').style.display = 'none';
-});
-
-// Закрытие при клике на overlay
-document.getElementById('optionsModal').addEventListener('click', function(e) {
-  if (e.target === this) {
-    this.style.display = 'none';
-  }
-});
-
-// Закрытие по Escape
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') {
-    const modal = document.getElementById('optionsModal');
-    if (modal.style.display === 'flex') {
-      modal.style.display = 'none';
-    }
-  }
 });
