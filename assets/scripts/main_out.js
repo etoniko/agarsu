@@ -2561,7 +2561,7 @@ if (mod.includes(lowerName)) {
     modIcon.title = 'Данный игрок является спонсором Agar.su';
     modIcon.style.width = '19px';
     modIcon.style.height = '19px';
-    modIcon.style.backgroundImage = 'url(https://api.agar.su/assets/photo/mod.png)';
+    modIcon.style.backgroundImage = 'url(./assets/photo/mod.png)';
     modIcon.style.backgroundSize = 'cover';
     modIcon.style.display = 'inline-block';
 
@@ -3754,7 +3754,7 @@ function createLeaderboardEntry(name, packetXp, accountAvatar, isMe, isSystemLin
     modIcon.title = "Данный игрок является спонсором Agar.su";
     modIcon.style.width = "19px";
     modIcon.style.height = "19px";
-    modIcon.style.backgroundImage = "url(https://api.agar.su/assets/photo/mod.png)";
+    modIcon.style.backgroundImage = "url(./assets/photo/mod.png)";
     modIcon.style.backgroundSize = "cover";
     modIcon.style.display = "inline-block";
     iconsContainer.appendChild(modIcon);
@@ -4411,7 +4411,7 @@ if (this.glowActive && showGlow) {
     const effectId = "glow"; 
     if (!skins[effectId]) {
         skins[effectId] = new Image();
-        skins[effectId].src = `https://api.agar.su/assets/photo/limited.png`; // теперь обычный PNG
+        skins[effectId].src = `./assets/photo/limited.png`; // теперь обычный PNG
     }
 
     const effectImg = skins[effectId];
