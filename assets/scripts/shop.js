@@ -1,5 +1,5 @@
 const allowedPattern = /^[a-zA-Zа-яА-Я0-9\s\[\]]+$/;
-const yookassaRules = { maxFileSize: 5 * 1024 * 1024 };
+const paymentRules = { maxFileSize: 5 * 1024 * 1024 };
 let isNicknameTaken = false;
 
 function showError(elementId, message) {
@@ -202,7 +202,7 @@ const gifPreview = document.getElementById("previewGif");
 fileInput.addEventListener("change", (e) => {
   const file = e.target.files[0];
   if (!file) return;
-  if (file.size > yookassaRules.maxFileSize) {
+  if (file.size > paymentRules.maxFileSize) {
     fileInput.value = '';
     showError('fileError', 'Файл слишком большой (макс. 5MB)');
     return;
@@ -410,6 +410,8 @@ async function sendForm(formData, headers = {}) {
 
     if (data?.confirmation?.confirmation_url) {
       window.location.href = data.confirmation.confirmation_url;
+    } else if (data?.redirect) {
+      window.location.href = data.redirect;
     } else if (data?.error) {
       showError('formError', `Ошибка: ${data.error.description || data.error}`);
     } else {
