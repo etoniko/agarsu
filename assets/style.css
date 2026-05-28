@@ -577,7 +577,7 @@ input{font-size:16px;}
 .btnn{margin-top:8px;padding:8px 12px;border-radius:8px;border:none;background:#016bef;color:white;font-weight:700;cursor:pointer;}
 .btnn:hover {transform: scale(1.05);text-shadow: #ffffffb0 1px 0 10px;}
 
-#shop .avatar-section{display: flex;align-items: center;width: 240px;height:100%;padding: 10px;background: #1b263b;border-radius: 20px;position: relative;justify-content: center;flex-direction: column;}
+#shop .avatar-section{display:flex;align-items:center;width:300px;height:100%;padding:14px;background:linear-gradient(180deg,#1b263b,#121b2e);border-radius:20px;position:relative;justify-content:flex-start;flex-direction:column;border:1px solid #ffffff1a;box-shadow:0 10px 28px #00000052;gap:10px;}
 #shop .input-group{position:relative;margin-bottom:20px;}
 #shop #nicknameWrapper{position:relative}
 #shop input[type="text"],#shop input[type="password"],#shop input[type="email"]{width: 100%;padding:12px;border:1px solid #ced4da;border-radius: 25px;font-size:16px;box-sizing:border-box;transition:border-color .3s,box-shadow .3s;height:35px;}
@@ -595,20 +595,35 @@ input{font-size:16px;}
 #shop #previewGif{max-height:100%;display:none}
 #shop #fileInput{display:none}
 #shop .warning{background: #ff001738;color: #d7d7d7;padding:10px;border-radius:5px;margin-bottom:15px;font-size:14px;display:none;border: #ffffff14 solid 1px;margin-top: 5px;}
-#shop .error{color: #d7d7d7;background: #ff001738;padding:8px 12px;border-radius:5px;border: #ffffff14 solid 1px;margin-top:5px;font-size:14px;display:none;}
+#shop .error{color:#ffe6e6;background:#ff001738;padding:9px 12px;border-radius:10px;border:#ffffff14 solid 1px;margin-top:5px;font-size:13px;display:none;}
 #shop .options{position: absolute;right: 10px;font-size: 12px;background: #04d3043d;padding: 5px;border-radius: 20px;color: #4de300;cursor: pointer;top: 10px;}
 #shop .options:hover{background: #16dc164a;color: #0fdc0f;}
 
-#shop #calculator{background: #d4eddae0;padding:15px;border-radius:10px;border-left:4px solid #28a745;}
-#shop #calculator h3{margin:0 0 10px;color:#155724}
-#shop #calculator p{margin:5px 0;text-align: justify;color: #4f4e4e;}
-#shop #totalAmount{font-size:18px;color:#155724;text-align:center;padding:10px;background:white;border-radius:8px;margin-top:10px}
-#shop button{padding:10px;background:#dc3545;color:white;border:none;border-radius:8px;font-size: 16px;font-weight:bold;cursor:pointer;transition:background-color .2s;/* margin-bottom: 10px; */}
-#shop button:hover:not(:disabled){background:#c82333}
-#shop button:disabled{opacity:.6;cursor:not-allowed;background:#6c757d;/* margin-bottom: 10px; */}
+#shop #calculator{background:#f3f6fce6;padding:15px;border-radius:14px;border:1px solid #d9e2f2;box-shadow:inset 0 1px 0 #ffffffb0;}
+#shop #calculator h3{margin:0 0 10px;color:#1a325e}
+#shop #calculator p{margin:6px 0;text-align:left;color:#2f3f5a;}
+#shop #totalAmount{font-size:20px;color:#163d1c;text-align:center;padding:12px;background:#ffffff;border-radius:10px;margin-top:12px;font-weight:700;}
+#shop button{padding:12px;background:linear-gradient(135deg,#016bef,#0b85ff);color:white;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;transition:transform .2s, filter .2s;}
+#shop button:hover:not(:disabled){filter:brightness(1.06);transform:translateY(-1px);}
+#shop button:disabled{opacity:.65;cursor:not-allowed;background:#6c757d;}
 #shop .password-wrapper{position:relative}
 #shop .password-wrapper input{width:100%;padding-right:40px;box-sizing:border-box}
 #shop .eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;color:#6c757d;font-size:18px}
+#shop .shop-auth-notice{display:none;width:100%;border-radius:12px;padding:10px 12px;font-size:12px;line-height:1.4;text-align:left;border:1px solid #ffffff14;}
+#shop .shop-auth-notice--guest{display:block;background:#fff3cd24;color:#ffe08a;border-color:#6f5a2f;}
+#shop .shop-auth-notice--auth{display:block;background:#0d6efd24;color:#a5c8ff;border-color:#2c5ca7;}
+#shop .shop-help{margin-top:auto;width:100%;background:#0f1a2f;border:1px solid #ffffff17;border-radius:12px;padding:10px 12px;text-align:left;font-size:12px;line-height:1.4;}
+#shop .shop-help-title{font-size:12px;font-weight:700;color:#9ec4ff;margin-bottom:6px;}
+#shop .shop-help-line{color:#cbdaf7;}
+#shop .shop-help-line a{color:#9ec4ff;text-decoration:none;}
+#shop .shop-help-line a:hover{text-decoration:underline;}
+#shop .shop-toast-container{position:absolute;right:14px;top:14px;display:flex;flex-direction:column;gap:8px;z-index:20;pointer-events:none;max-width:280px;}
+#shop .shop-toast{padding:10px 12px;border-radius:10px;font-size:12px;line-height:1.35;box-shadow:0 10px 28px #0000004d;border:1px solid #ffffff22;opacity:0;transform:translateY(-8px);transition:opacity .2s,transform .2s;}
+#shop .shop-toast.show{opacity:1;transform:translateY(0);}
+#shop .shop-toast-info{background:#1d4ed8;color:#eef4ff;}
+#shop .shop-toast-success{background:#166534;color:#eafff0;}
+#shop .shop-toast-warning{background:#9a3412;color:#fff0e8;}
+#shop .shop-toast-error{background:#991b1b;color:#ffecec;}
 
 
 #onchat{position:absolute;left:10px;bottom:10px;border:solid #ffffff26 1px;border-radius:25px;background:rgba(0, 0, 0, .3);width:40px;height:40px;padding:5px;display:none;align-items:center;justify-content:center;cursor:pointer;}
