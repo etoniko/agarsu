@@ -1,18 +1,51 @@
 const allowedPattern = /^[a-zA-Zа-яА-Я0-9\s\[\]]+$/;
 const paymentRules = { maxFileSize: 5 * 1024 * 1024 };
 let isNicknameTaken = false;
+const SHOP_TOAST_TIMEOUT = 4500;
 
 function showError(elementId, message) {
   const errorEl = document.getElementById(elementId);
+  if (!errorEl) return;
   errorEl.textContent = message;
   errorEl.style.display = 'block';
+  showToast(message, 'error');
   setTimeout(() => hideError(elementId), 5000);
 }
 function hideError(elementId) {
-  document.getElementById(elementId).style.display = 'none';
+  const el = document.getElementById(elementId);
+  if (el) el.style.display = 'none';
 }
 function showWarning(id, show) {
   document.getElementById(id).style.display = show ? 'block' : 'none';
+}
+
+function showToast(message, type = 'info') {
+  const container = document.getElementById('shopToastContainer');
+  if (!container || !message) return;
+
+  const toast = document.createElement('div');
+  toast.className = `shop-toast shop-toast-${type}`;
+  toast.textContent = message;
+  container.appendChild(toast);
+
+  requestAnimationFrame(() => toast.classList.add('show'));
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 260);
+  }, SHOP_TOAST_TIMEOUT);
+}
+
+function updateShopAuthNotice() {
+  const notice = document.getElementById('shopAuthNotice');
+  if (!notice) return;
+
+  if (localStorage.accountToken) {
+    notice.className = 'shop-auth-notice shop-auth-notice--auth';
+    notice.textContent = 'Вы авторизованы: покупка будет привязана к вашему аккаунту.';
+  } else {
+    notice.className = 'shop-auth-notice shop-auth-notice--guest';
+    notice.textContent = 'Вы не авторизированы, покупки будут не привязаные.';
+  }
 }
 
 function updateCharCount() {
@@ -326,6 +359,7 @@ document.querySelectorAll('input[name="serviceType"]').forEach(radio => {
 
 updateNicknameDisplay();
 calculateCost();
+updateShopAuthNotice();
 
 document.getElementById("paymentForm").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -409,8 +443,10 @@ async function sendForm(formData, headers = {}) {
     }
 
     if (data?.confirmation?.confirmation_url) {
+      showToast('Переходим к оплате...', 'success');
       window.location.href = data.confirmation.confirmation_url;
     } else if (data?.redirect) {
+      showToast('Переходим к оплате...', 'success');
       window.location.href = data.redirect;
     } else if (data?.error) {
       showError('formError', `Ошибка: ${data.error.description || data.error}`);
@@ -419,6 +455,7 @@ async function sendForm(formData, headers = {}) {
     }
   } catch (err) {
     console.error(err);
+    showToast('Ошибка соединения с сервером оплаты.', 'warning');
     showError('formError', "Ошибка соединения. Попробуйте позже.");
   }
 }
@@ -434,3 +471,7 @@ togglePassword.addEventListener("click", () => {
 
 invisibleNickCheckbox.addEventListener("change", calculateCost);
 rotationNickCheckbox.addEventListener("change", calculateCost);
+
+window.addEventListener('storage', (event) => {
+  if (event.key === 'accountToken') updateShopAuthNotice();
+});
