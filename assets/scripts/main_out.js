@@ -630,7 +630,7 @@ let stickerCooldownTimer = null;
                 if (!rPressed && !isTyping) {
                     sendMouseMove();
                     sendUint8(23);
-                    fixDead(true);
+                    fixDead();
                     rPressed = true;
                 }
                 break;
@@ -2978,34 +2978,15 @@ if (name && playerId === ownerPlayerId) {
         }
     }
 
-    // Очистка зависших клеток (как fixDead / fixDeadHalf в Petri Dish)
-    function fixDead(manual) {
+    // Очистка зависших клеток по R (как fixDead в Petri Dish)
+    function fixDead() {
         const now = Date.now();
         for (let i = nodelist.length - 1; i >= 0; i--) {
             const node = nodelist[i];
             if (!node || node.destroyed) continue;
-            const lag = now - node.updateTime;
-            const isNamed = !!(node.name && node.name.length);
-            const limit = manual ? 3000 : (isNamed ? 5000 : 3000);
-            if (lag > limit) node.destroy();
+            if (now - node.updateTime > 3000) node.destroy();
         }
     }
-
-    function fixDeadHalf() {
-        const now = Date.now();
-        for (let i = nodelist.length - 1; i >= 0; i--) {
-            const node = nodelist[i];
-            if (!node || node.destroyed) continue;
-            const lag = now - node.updateTime;
-            if (lag > 5000) node.destroy();
-        }
-    }
-
-    function autocleanStaleCells() {
-        if (!wjQuery("#overlays").is(":visible")) fixDeadHalf();
-    }
-
-    setInterval(autocleanStaleCells, 5000);
 
 function sendMouseMove() {
     if (wsIsOpen()) {
@@ -4014,8 +3995,7 @@ wHandle.setAdultContent = function(arg) {showAdultContent = arg;};
 wHandle.setFixedCell = function(arg){fixedCell = arg;};
 wHandle.setConfirmCloseTab = function(arg){confirmCloseTab = arg;};
 wHandle.setShowStickers = function(arg){ showStickers = arg; };
-wHandle.fixDead = function (manual) { fixDead(!!manual); };
-wHandle.fixDeadHalf = fixDeadHalf;
+wHandle.fixDead = fixDead;
 
 // === Обработчик закрытия вкладки ===
 window.addEventListener("beforeunload", function (e) {
