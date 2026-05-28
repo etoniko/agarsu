@@ -5,6 +5,46 @@ const SHOP_TOAST_TIMEOUT = 4500;
 const errorCooldownMs = 1400;
 const errorCache = new Map();
 
+function showShopFloatAlert(el, duration = 5000) {
+  if (!el) return;
+  clearTimeout(el._hideTimer);
+  el.classList.remove('is-hiding');
+  el.hidden = false;
+  el.style.display = 'block';
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => el.classList.add('is-visible'));
+  });
+  el._hideTimer = setTimeout(() => dismissShopFloatAlert(el), duration);
+}
+
+function dismissShopFloatAlert(el) {
+  if (!el || !el.classList.contains('is-visible')) {
+    if (el) {
+      el.classList.remove('is-visible', 'is-hiding');
+      el.style.display = 'none';
+      el.hidden = true;
+    }
+    return;
+  }
+  el.classList.remove('is-visible');
+  el.classList.add('is-hiding');
+  const onEnd = (e) => {
+    if (e.propertyName !== 'opacity') return;
+    el.classList.remove('is-hiding');
+    el.style.display = 'none';
+    el.hidden = true;
+    el.removeEventListener('transitionend', onEnd);
+  };
+  el.addEventListener('transitionend', onEnd);
+  clearTimeout(el._dismissFallback);
+  el._dismissFallback = setTimeout(() => {
+    if (!el.classList.contains('is-hiding')) return;
+    el.classList.remove('is-hiding', 'is-visible');
+    el.style.display = 'none';
+    el.hidden = true;
+  }, 450);
+}
+
 function showError(elementId, message, withToast = false) {
   const errorEl = document.getElementById(elementId);
   if (!errorEl) return;
@@ -15,13 +55,11 @@ function showError(elementId, message, withToast = false) {
   errorCache.set(cacheKey, now);
 
   errorEl.textContent = message;
-  errorEl.style.display = 'block';
+  showShopFloatAlert(errorEl, 5000);
   if (withToast) showToast(message, 'error');
-  setTimeout(() => hideError(elementId), 5000);
 }
 function hideError(elementId) {
-  const el = document.getElementById(elementId);
-  if (el) el.style.display = 'none';
+  dismissShopFloatAlert(document.getElementById(elementId));
 }
 function showWarning(id, show) {
   document.getElementById(id).style.display = show ? 'block' : 'none';
@@ -45,17 +83,18 @@ function showToast(message, type = 'info') {
 
 function updateShopAuthNotice() {
   const notice = document.getElementById('shopAuthNotice');
-  if (!notice) return;
+  const shop = document.getElementById('shop');
+  if (!notice || !shop) return;
 
-  if (localStorage.accountToken) {
-    notice.className = 'shop-auth-notice';
+  const onShop = shop.classList.contains('active');
+  if (!onShop || localStorage.accountToken) {
+    dismissShopFloatAlert(notice);
     notice.textContent = '';
-    notice.style.display = 'none';
-  } else {
-    notice.className = 'shop-auth-notice shop-auth-notice--guest';
-    notice.textContent = 'Вы не авторизированы, покупки будут не привязаные.';
-    notice.style.display = '';
+    return;
   }
+
+  notice.innerHTML = 'Вы не авторизованы.<br>Покупки не будут привязаны к аккаунту.';
+  showShopFloatAlert(notice, 6000);
 }
 
 function updateCharCount() {
@@ -72,7 +111,7 @@ function updateNicknameDisplay() {
     input.placeholder = '[клан]';
     input.maxLength = 6;
   } else {
-    input.placeholder = 'ник';
+    input.placeholder = 'Ваш ник';
     input.maxLength = 16;
   }
   updateCharCount();
@@ -300,62 +339,72 @@ function getMultiplier() {
   return document.getElementById('clan').checked ? 2 : 1;
 }
 
+function setPriceRow(rowId, label, amount) {
+  const row = document.getElementById(rowId);
+  if (!row) return;
+  const labelEl = row.querySelector('span');
+  const amountEl = row.querySelector('strong');
+  if (labelEl && label) labelEl.textContent = label;
+  if (amountEl) amountEl.textContent = amount;
+}
+
+function setReceiptVisible(show) {
+  const calculator = document.getElementById('calculator');
+  if (calculator) calculator.hidden = !show;
+}
+
 function calculateCost() {
   const nickname = nicknameInput.value.trim();
   const password = passwordInput.value.trim();
   const file = fileInput.files[0];
   const multiplier = getMultiplier();
+  const buyButton = document.getElementById('buyButton');
+  const totalEl = document.getElementById('totalAmount');
+  const hasOrderItem = !!(password || file || invisibleNickCheckbox.checked || rotationNickCheckbox.checked);
 
-  if (!nickname || isNicknameTaken) {
-    document.getElementById('calculator').style.display = 'none';
-    document.getElementById('buyButton').disabled = true;
+  if (!nickname || isNicknameTaken || !hasOrderItem) {
+    setReceiptVisible(false);
+    buyButton.disabled = true;
     return;
   }
 
-  let passwordCost = password ? 100 : 0;
-  let invisibleCost = invisibleNickCheckbox.checked ? 500 : 0;
-  let rotationCost = rotationNickCheckbox.checked ? 500 : 0;
+  const passwordCost = password ? 100 : 0;
+  const invisibleCost = invisibleNickCheckbox.checked ? 500 : 0;
+  const rotationCost = rotationNickCheckbox.checked ? 500 : 0;
   let skinCost = 0;
-  let skinText = 'Скин: 0 ₽';
+  let skinLabel = 'Скин';
   if (file) {
     skinCost = file.type === 'image/gif' ? 4500 : 100;
-    skinText = `Скин: ${skinCost * multiplier} ₽ (${file.type === 'image/gif' ? 'GIF' : 'PNG/JPG'})`;
+    skinLabel = file.type === 'image/gif' ? 'Скин GIF' : 'Скин PNG';
   }
-    const total = (passwordCost + skinCost + invisibleCost + rotationCost) * multiplier;
+  const total = (passwordCost + skinCost + invisibleCost + rotationCost) * multiplier;
 
-  document.getElementById('multiplierText').textContent = multiplier === 2 ? '2x (для клана)' : '1x (для себя)';
-  document.getElementById('passwordCost').textContent = `Пароль: ${password ? passwordCost * multiplier : 0} ₽`;
-  document.getElementById('skinCost').textContent = skinText;
-  
-  // === Невидимый ник — строка цены ===
-  let invisibleText = document.getElementById('invisibleCost');
+  setReceiptVisible(true);
+  document.getElementById('multiplierText').textContent = multiplier === 2 ? '2x' : '1x';
+  setPriceRow('passwordCost', 'Пароль', password ? `${passwordCost * multiplier} ₽` : '0 ₽');
+  setPriceRow('skinCost', skinLabel, file ? `${skinCost * multiplier} ₽` : '0 ₽');
+
+  const invisibleRow = document.getElementById('invisibleCost');
   if (invisibleNickCheckbox.checked) {
-    invisibleText.textContent = `Невидимый ник: ${invisibleCost * multiplier} ₽`;
-    invisibleText.style.display = 'block';
+    setPriceRow('invisibleCost', 'Невидимый ник', `${invisibleCost * multiplier} ₽`);
+    invisibleRow.style.display = 'flex';
   } else {
-    invisibleText.style.display = 'none';
+    invisibleRow.style.display = 'none';
   }
 
-    // === Поворотный скин — строка цены ===
-  let rotationText = document.getElementById('rotationCost');
+  const rotationRow = document.getElementById('rotationCost');
   if (rotationNickCheckbox.checked) {
-    rotationText.textContent = `Поворотный скин: ${rotationCost * multiplier} ₽`;
-    rotationText.style.display = 'block';
+    setPriceRow('rotationCost', 'Поворот скина', `${rotationCost * multiplier} ₽`);
+    rotationRow.style.display = 'flex';
   } else {
-    rotationText.style.display = 'none';
+    rotationRow.style.display = 'none';
   }
 
-  const calculator = document.getElementById('calculator');
-  const buyButton = document.getElementById('buyButton');
-  //const email = emailInput.value.trim();
-  //const emailValid = email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    if (total > 0 && (password || file || invisibleNickCheckbox.checked || rotationNickCheckbox.checked)) {
-    calculator.style.display = 'block';
-    document.getElementById('totalAmount').textContent = `Итого: ${total} ₽`;
-    buyButton.textContent = `КУПИТЬ ЗА ${total} РУБЛЕЙ`;
+  if (total > 0) {
+    totalEl.textContent = `${total} ₽`;
     buyButton.disabled = false;
   } else {
-    calculator.style.display = 'none';
+    setReceiptVisible(false);
     buyButton.disabled = true;
   }
 }
@@ -470,11 +519,12 @@ async function sendForm(formData, headers = {}) {
 }
 
 const togglePassword = document.getElementById("togglePassword");
-togglePassword.addEventListener("click", () => {
+const togglePasswordIcon = togglePassword?.querySelector("i");
+togglePassword?.addEventListener("click", () => {
   const type = passwordInput.type === "password" ? "text" : "password";
   passwordInput.type = type;
-  togglePassword.classList.toggle("fa-eye");
-  togglePassword.classList.toggle("fa-eye-slash");
+  togglePasswordIcon?.classList.toggle("fa-eye");
+  togglePasswordIcon?.classList.toggle("fa-eye-slash");
 });
 
 
