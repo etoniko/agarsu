@@ -5010,6 +5010,9 @@ accountData = null;
   if (authlog) authlog.style.display = "flex";
 
   showAuthButtons();
+  if (typeof window.updateAccountMenuLabel === "function") {
+    window.updateAccountMenuLabel();
+  }
 };
 
 
@@ -5062,6 +5065,9 @@ wHandle.onGoogleAuth = function(response) {
 // --------------------- Account ---------------------
 wHandle.onAccountLoggedIn = token => {
     setAccountToken(token);
+    if (typeof window.updateAccountMenuLabel === "function") {
+        window.updateAccountMenuLabel();
+    }
     loadAccountUserData();
 	loadMyNicknames();
     sendAccountToken();
@@ -5099,6 +5105,9 @@ const setAccountData = data => {
     accountData = data;
     displayAccountData();
 	loadMyNicknames();
+    if (typeof window.updateAccountMenuLabel === "function") {
+        window.updateAccountMenuLabel();
+    }
     document.querySelectorAll(".menu-item")[2].click();
     logoutButton.style.display = "";
     authlog.style.display = "none";
@@ -5116,6 +5125,9 @@ const loadAccountUserData = async () => {
 };
 
 if (localStorage.accountToken) loadAccountUserData();
+if (typeof window.updateAccountMenuLabel === "function") {
+    window.updateAccountMenuLabel();
+}
 
 const displayAccountData = () => {
     if (!accountData) return;
