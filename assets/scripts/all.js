@@ -6,6 +6,12 @@ function showContent(id) {
                     document.getElementById(id).classList.add('active');
                 }
 
+function updateAccountMenuLabel() {
+  const label = document.getElementById('accountMenuLabel');
+  if (!label) return;
+  label.textContent = localStorage.accountToken ? 'ЛК' : 'Войти';
+}
+
 function showLogoutNotification() {
     const notif = document.getElementById('logout-notification');
     if (!notif) return;
@@ -75,6 +81,7 @@ document.addEventListener('touchend', stopResize);
 
 
 document.addEventListener('DOMContentLoaded', () => {
+  updateAccountMenuLabel();
   // Кнопка чата
   document.getElementById('onchat').addEventListener('click', () => {
     document.getElementById('chatX_window').style.display = 'flex';
