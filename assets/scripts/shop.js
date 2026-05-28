@@ -48,11 +48,13 @@ function updateShopAuthNotice() {
   if (!notice) return;
 
   if (localStorage.accountToken) {
-    notice.className = 'shop-auth-notice shop-auth-notice--auth';
-    notice.textContent = 'Вы авторизованы: покупка будет привязана к вашему аккаунту.';
+    notice.className = 'shop-auth-notice';
+    notice.textContent = '';
+    notice.style.display = 'none';
   } else {
     notice.className = 'shop-auth-notice shop-auth-notice--guest';
     notice.textContent = 'Вы не авторизированы, покупки будут не привязаные.';
+    notice.style.display = '';
   }
 }
 
