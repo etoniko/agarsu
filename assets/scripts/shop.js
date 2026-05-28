@@ -2,13 +2,21 @@ const allowedPattern = /^[a-zA-Zа-яА-Я0-9\s\[\]]+$/;
 const paymentRules = { maxFileSize: 5 * 1024 * 1024 };
 let isNicknameTaken = false;
 const SHOP_TOAST_TIMEOUT = 4500;
+const errorCooldownMs = 1400;
+const errorCache = new Map();
 
-function showError(elementId, message) {
+function showError(elementId, message, withToast = false) {
   const errorEl = document.getElementById(elementId);
   if (!errorEl) return;
+  const cacheKey = `${elementId}:${message}`;
+  const now = Date.now();
+  const lastShownAt = errorCache.get(cacheKey) || 0;
+  if (now - lastShownAt < errorCooldownMs) return;
+  errorCache.set(cacheKey, now);
+
   errorEl.textContent = message;
   errorEl.style.display = 'block';
-  showToast(message, 'error');
+  if (withToast) showToast(message, 'error');
   setTimeout(() => hideError(elementId), 5000);
 }
 function hideError(elementId) {
@@ -438,7 +446,7 @@ async function sendForm(formData, headers = {}) {
     const data = await res.json();
 
     if (data.warning) {
-      showError('formError', data.warning);
+      showError('formError', data.warning, false);
       setTimeout(() => hideError('formError'), 8000);
     }
 
@@ -449,14 +457,13 @@ async function sendForm(formData, headers = {}) {
       showToast('Переходим к оплате...', 'success');
       window.location.href = data.redirect;
     } else if (data?.error) {
-      showError('formError', `Ошибка: ${data.error.description || data.error}`);
+      showError('formError', `Ошибка: ${data.error.description || data.error}`, true);
     } else {
-      showError('formError', "Неизвестная ошибка платежа.");
+      showError('formError', "Неизвестная ошибка платежа.", true);
     }
   } catch (err) {
     console.error(err);
-    showToast('Ошибка соединения с сервером оплаты.', 'warning');
-    showError('formError', "Ошибка соединения. Попробуйте позже.");
+    showError('formError', "Ошибка соединения. Попробуйте позже.", true);
   }
 }
 
