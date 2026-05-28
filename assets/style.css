@@ -639,6 +639,138 @@ input{font-size:16px;}
   #shop .shop-auth-notice{margin-top:24px;}
 }
 
+/* Shop compact redesign: fits 730x430 */
+#shop .top-info{margin-bottom:8px;}
+#shop .shop-container{
+  display:grid !important;
+  grid-template-columns: 1.35fr 1fr;
+  gap:12px;
+  align-items:start;
+  width:100%;
+  max-width:700px;
+  height:300px;
+  overflow:hidden !important;
+  margin:0 auto;
+}
+#shop .avatar-section{
+  max-width:none;
+  width:100%;
+  min-height:300px;
+  border:1px solid #ffffff14;
+  background:linear-gradient(180deg,#17233b,#111b30);
+  justify-content:flex-start;
+  padding:10px 12px;
+}
+#shop .options{
+  position:static;
+  align-self:flex-end;
+  margin-bottom:4px;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  background:#223252;
+  color:#cfe3ff;
+}
+#shop .shop-auth-notice{
+  margin-top:0;
+  margin-bottom:6px;
+}
+#shop #previewContainer{
+  width:92px;
+  height:92px;
+  margin-bottom:4px;
+}
+#shop #paymentForm{
+  width:100%;
+}
+#shop .radio-group{
+  padding:2px 0 6px;
+}
+#shop .radio-group label{
+  font-size:14px;
+}
+#shop .input-group{
+  margin-bottom:8px;
+}
+#shop input[type="text"],#shop input[type="password"],#shop input[type="email"]{
+  height:34px;
+  font-size:15px;
+}
+#shop #buyButton{
+  width:100%;
+  margin-top:2px;
+}
+#shop .oplata{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  min-height:300px;
+}
+#shop #calculator{
+  display:block;
+  min-height:195px;
+}
+#shop #calculator h3{
+  font-size:24px;
+  margin-bottom:8px;
+}
+#shop #calculator p{
+  font-size:13px;
+  margin:4px 0;
+}
+#shop #totalAmount{
+  font-size:24px;
+}
+#shop .shop-help{
+  margin-top:0;
+  background:#131f35;
+}
+
+@media (max-width:599px){
+  #shop .shop-container{
+    display:flex !important;
+    flex-direction:column;
+    max-width:100%;
+    height:300px;
+    gap:8px;
+    overflow:hidden !important;
+  }
+  #shop .avatar-section,
+  #shop .oplata{
+    min-height:unset;
+  }
+  #shop .avatar-section{
+    padding:8px 10px;
+  }
+  #shop #previewContainer{
+    width:78px;
+    height:78px;
+  }
+  #shop .radio-group label{
+    font-size:13px;
+  }
+  #shop #calculator{
+    min-height:130px;
+    padding:8px;
+  }
+  #shop #calculator h3{
+    font-size:18px;
+    margin-bottom:6px;
+  }
+  #shop #calculator p{
+    font-size:12px;
+  }
+  #shop #totalAmount{
+    font-size:18px;
+    padding:7px;
+    margin-top:7px;
+  }
+  #shop .shop-help{
+    font-size:11px;
+    padding:7px 9px;
+  }
+}
+
 
 #onchat{position:absolute;left:10px;bottom:10px;border:solid #ffffff26 1px;border-radius:25px;background:rgba(0, 0, 0, .3);width:40px;height:40px;padding:5px;display:none;align-items:center;justify-content:center;cursor:pointer;}
 .chatX_container{display: flex;overflow-y: auto;flex-direction: column-reverse;height: 100%;}
