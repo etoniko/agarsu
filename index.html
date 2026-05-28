@@ -85,16 +85,17 @@ _tmr.push({id: "3761618", type: "pageView", start: (new Date()).getTime()});
         <div class="menu-item" onclick="showContent('skinslist')"><i class="fas fa-image"></i><span class="label">Скины</span></div>
         <div class="menu-item active" onclick="showContent('home')"><i class="fas fa-home"></i><span class="label">Главная</span></div>
         <div class="menu-item" onclick="showContent('rating')"><i class="fas fa-star"></i><span class="label">Рейтинг</span></div>
-        <div class="menu-item" onclick="showContent('store')"><i class="fas fa-user"></i><span class="label">Войти</span></div>
+        <div class="menu-item" onclick="showContent('store')"><i class="fas fa-user"></i><span class="label" id="accountMenuLabel">Войти</span></div>
       </div>
       <div class="main-content">
 
 
 <div id="shop" class="content">
-	<div class="top-info"><div><span>Создание лички</span></div></div>
+	<div class="top-info"><div><span>Магазин лички</span></div></div>
 <div class="shop-container">
   <div class="avatar-section">
 <div class="options">опции</div>
+    <div id="shopAuthNotice" class="shop-auth-notice" role="status"></div>
     <label id="previewContainer" for="fileInput">
       <canvas id="previewCanvas" width="512" height="512"></canvas>
       <img id="previewGif" alt="GIF preview">
@@ -134,6 +135,11 @@ _tmr.push({id: "3761618", type: "pageView", start: (new Date()).getTime()});
       <div id="formError" class="error"></div>
       <button type="submit" id="buyButton" disabled="">КУПИТЬ ЗА 100 РУБЛЕЙ</button>
     </form>
+    <div class="shop-help">
+      <div class="shop-help-title">Поддержка платежей</div>
+      <div class="shop-help-line">Telegram: <a href="https://t.me/agarsu_support" target="_blank">@agarsu_support</a></div>
+      <div class="shop-help-line">Email: <a href="mailto:support@agar.su">support@agar.su</a></div>
+    </div>
   </div>
 
   <div class="oplata">
@@ -189,6 +195,7 @@ _tmr.push({id: "3761618", type: "pageView", start: (new Date()).getTime()});
     </div>
 </div>
 </div>
+<div id="shopToastContainer" class="shop-toast-container" aria-live="polite"></div>
         </div>
 
 		  
