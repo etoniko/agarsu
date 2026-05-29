@@ -1,16 +1,23 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
+<html lang="en"><head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Редактор Анимации | agar.su</title>
-  <link rel="apple-touch-icon" href="https://cdn.jsdelivr.net/gh/etoniko/agarsu/icon.svg/icon.svg">
-  <link rel="icon" href="https://cdn.jsdelivr.net/gh/etoniko/agarsu/icon.svg" type="image/svg+xml">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-  <meta property="og:title" content="Agar.su - Редактор Анимации">
-  <meta property="og:description" content="GIF ↔ PNG спрайт, круговая обрезка для скинов">
-  <meta property="og:url" content="https://agar.su">
-  <meta property="og:type" content="website">
+  <title>Редактор Скинов | agar.su</title>
+   <!-- Favicon и иконки для Apple устройств -->
+    <link rel="apple-touch-icon" href="https://cdn.jsdelivr.net/gh/etoniko/agarsu/icon.svg/icon.svg">
+    <link rel="icon" href="https://cdn.jsdelivr.net/gh/etoniko/agarsu/icon.svg" type="image/svg+xml">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;display=swap" rel="stylesheet">
+      <!-- Open Graph для социальных сетей -->
+    <meta property="og:title" content="Agar.su - Редактор Скинов!">
+    <meta property="og:description" content="Редактируй себе красивый скин, отличайся от других!">
+    <meta property="og:image" content="assets/photo/editphoto.png">
+    <meta property="og:url" content="https://agar.su">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Agar.su - Редактор Скинов!">
+    <meta name="twitter:description" content="Редактируй себе красивый скин, отличайся от других!">
+    <meta name="twitter:image" content="assets/photo/editphoto.png">
 
   <style>
     :root {
@@ -31,12 +38,13 @@
     body {
       background-color: var(--bg);
       color: var(--text);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-      overflow-x: hidden;
-      overflow-y: auto;
+	  display: flex;
+    align-items: center;
+    justify-content: center;
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%; 
     }
 
     header {
@@ -45,128 +53,78 @@
       text-align: center;
       font-weight: 600;
       font-size: 16px;
-      width: 100%;
     }
 
     main {
       display: flex;
       justify-content: center;
-      align-items: flex-start;
-      padding: 32px 16px 48px;
-      gap: 48px;
+	      align-items: center;
+      padding: 40px 0px;
+      gap: 60px;
       flex-wrap: wrap;
-      max-width: 1100px;
-      width: 100%;
     }
+.circle-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px; /* расстояние между кругом и кнопкой */
+}
+ .circle-box {
+  width: 360px;
+  height: 360px;
+  border: 3px dashed #ffffff14;
+  border-radius: 50%;
+  background-color: #141f2c;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: var(--muted);
+  cursor: pointer;
+  transition: 0.2s;
+  text-align: center;
+}
 
-    .circle-wrapper {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 14px;
-      flex-shrink: 0;
-    }
+.circle-box:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
 
-    .circle-box {
-      width: 360px;
-      height: 360px;
-      border: 3px dashed #ffffff14;
-      border-radius: 50%;
-      background-color: #141f2c;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      color: var(--muted);
-      cursor: pointer;
-      transition: 0.2s;
-      text-align: center;
-      position: relative;
-      overflow: hidden;
-    }
+.circle-box p {
+  margin: 4px 0;
+  font-size: 16px;
+}
 
-    .circle-box:hover,
-    .circle-box.dragover {
-      border-color: var(--accent);
-      color: var(--text);
-    }
+.circle-box .icon {
+  font-size: 36px;
+  margin-bottom: 10px;
+}
 
-    .circle-box p {
-      margin: 4px 0;
-      font-size: 15px;
-      pointer-events: none;
-    }
+.download-btn {
+  background: rgba(255,255,255,0.02);
+  border: #ffffff14 solid 1px;
+  color: white;
+  padding: 10px 28px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: 0.2s;
+}
 
-    .circle-box .icon {
-      font-size: 36px;
-      margin-bottom: 10px;
-      pointer-events: none;
-    }
-
-    .circle-box canvas {
-      border-radius: 50%;
-      max-width: 100%;
-      max-height: 100%;
-      display: block;
-    }
-
-    .preview-meta {
-      font-size: 12px;
-      color: var(--muted);
-      text-align: center;
-      min-height: 18px;
-    }
-
-    .btn-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      justify-content: center;
-    }
-
-    .download-btn {
-      background: rgba(255, 255, 255, 0.02);
-      border: #ffffff14 solid 1px;
-      color: white;
-      padding: 10px 18px;
-      border-radius: 8px;
-      font-size: 13px;
-      cursor: pointer;
-      transition: 0.2s;
-    }
-
-    .download-btn:hover:not(:disabled) {
-      background-color: var(--accent);
-    }
-
-    .download-btn:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
-
-    .download-btn.primary {
-      background: var(--accent);
-      border-color: var(--accent);
-    }
+.download-btn:hover {
+  background-color: var(--accent);
+  color: white;
+}
 
     .controls {
       background-color: var(--panel);
       padding: 24px;
       border-radius: 12px;
-      width: 380px;
-      max-width: 100%;
+      width: 350px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
-      border: #ffffff14 solid 1px;
-    }
-
-    .section-title {
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--muted);
-      margin-top: 4px;
+      gap: 18px;
+	  border: #ffffff14 solid 1px;
     }
 
     .control-row {
@@ -177,110 +135,36 @@
 
     .control-row label {
       flex: 1;
-      font-size: 14px;
+      font-size: 16px;
       color: #bbbbbb;
-      min-width: 90px;
     }
 
-    .control-row input[type="range"],
-    .control-row input[type="number"] {
+    .control-row input[type=range] {
       flex: 2;
       accent-color: var(--accent);
     }
 
-    .control-row input[type="number"] {
-      background: #0d1520;
-      border: 1px solid #ffffff22;
-      color: var(--text);
-      border-radius: 6px;
-      padding: 6px 8px;
-      width: 72px;
-      flex: 0 0 72px;
-    }
-
-    .control-row button.icon-btn {
+    .control-row button {
       padding: 3px 8px;
-      font-size: 14px;
+      font-size: 17px;
       background: transparent;
       border: 1px solid #333;
       color: white;
       border-radius: 6px;
       cursor: pointer;
-      flex-shrink: 0;
     }
 
-    .control-row button.icon-btn:hover {
+    .control-row button:hover {
       color: var(--accent);
       border-color: var(--accent);
-    }
-
-    .play-row {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
-
-    .play-row button {
-      flex: 1;
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid #ffffff22;
-      background: #0d1520;
-      color: var(--text);
-      cursor: pointer;
-      font-size: 14px;
-    }
-
-    .play-row button:hover {
-      border-color: var(--accent);
-    }
-
-    #bgType {
-      appearance: none;
-      background-color: var(--panel);
-      color: var(--text);
-      border: 1px solid #ffffff22;
-      padding: 6px 10px;
-      border-radius: 8px;
-      font-size: 14px;
-      cursor: pointer;
-      flex: 1;
-    }
-
-    #bgColorPicker {
-      -webkit-appearance: none;
-      border: none;
-      width: 36px;
-      height: 36px;
-      border-radius: 8px;
-      cursor: pointer;
-      padding: 0;
-      background: none;
-    }
-
-    #bgColorPicker::-webkit-color-swatch {
-      border: 2px solid #ffffff22;
-      border-radius: 8px;
-    }
-
-    .hint {
-      font-size: 12px;
-      color: var(--muted);
-      line-height: 1.45;
-    }
-
-    .status {
-      font-size: 12px;
-      color: #7eb8ff;
-      min-height: 16px;
     }
 
     @media (max-width: 768px) {
       main {
         flex-direction: column;
         align-items: center;
-        gap: 28px;
-        padding-top: 16px;
+        gap: 40px;
+	   padding: 10px 0px;
       }
 
       .circle-box {
@@ -289,756 +173,416 @@
       }
 
       .controls {
-        max-height: none;
-        width: 100%;
+    height: 200px;
+    overflow: auto;
       }
+	  
+	    #bgType {
+    font-size: 16px;
+    padding: 12px 16px;
+  }
     }
+	/* Красивый стиль для select */
+#bgType {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-color: var(--panel);
+    color: var(--text);
+    border: 1px solid #ffffff22;
+    padding: 3px 8px;
+    border-radius: 8px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+}
+
+#bgType:hover {
+  border-color: var(--accent);
+  background-color: #1c2535;
+}
+
+#bgType:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+
+/* Стрелка для select */
+#bgType::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--text);
+  border-bottom: 2px solid var(--text);
+  transform: translateY(-50%) rotate(45deg);
+  pointer-events: none;
+}
+
+	/* Красивый стиль для color picker */
+#bgColorPicker {
+    -webkit-appearance: none;
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    padding: 0;
+    background: none;
+    vertical-align: middle;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    margin-left: 10px;
+}
+
+/* Для WebKit-браузеров (Chrome, Safari) */
+#bgColorPicker::-webkit-color-swatch-wrapper {
+  padding: 0;
+  border-radius: 8px;
+}
+
+#bgColorPicker::-webkit-color-swatch {
+  border: 2px solid #ffffff22;
+  border-radius: 8px;
+}
+
+/* При наведении */
+#bgColorPicker:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 6px var(--accent);
+  border-radius: 8px;
+}
+
+/* Для Firefox */
+#bgColorPicker::-moz-color-swatch {
+  border: 2px solid #ffffff22;
+  border-radius: 8px;
+}
+
   </style>
 </head>
 <body>
-  <header>Редактор анимации — GIF ↔ PNG спрайт · круг</header>
-
-  <main>
+<main>
     <div class="circle-wrapper">
-      <div class="circle-box" id="dropZone">
-        <div class="placeholder" id="placeholder">
-          <div class="icon">↥</div>
-          <p>Перетащите GIF или PNG-спрайт</p>
-          <p>Нажмите для выбора файла</p>
+        <div class="circle-box">
+            <div class="icon">↥</div>
+            <p>Drag the image here</p>
+            <p>Click to select file</p>
         </div>
-      </div>
-      <div class="preview-meta" id="previewMeta"></div>
-      <div class="play-row" style="width: 360px; max-width: 100%;">
-        <button type="button" id="playBtn">▶ Пуск</button>
-        <button type="button" id="stepBack">◀</button>
-        <button type="button" id="stepFwd">▶</button>
-      </div>
-      <div class="btn-row">
-        <button class="download-btn primary" id="dlGif" disabled>Скачать GIF</button>
-        <button class="download-btn" id="dlPng" disabled>Скачать PNG-спрайт</button>
-        <button class="download-btn" id="dlFrame" disabled>Текущий кадр PNG</button>
-      </div>
+        <button class="download-btn">Download Image</button>
     </div>
 
-    <div class="controls" id="controls">
-      <p class="hint">Загрузите анимированный GIF или горизонтальный PNG-спрайт (кадры в ряд). Каждый кадр обрежется в круг с вашими настройками.</p>
-      <p class="status" id="status"></p>
+    <div class="controls">
+        <div class="control-row">
+            <label aria-labelledby="Hue">Hue</label><input type="range" min="0" max="360" value="0" id="hue"><button>Reset</button>
+        </div>
+        <div class="control-row">
+            <label aria-labelledby="Zoom">Zoom</label><input type="range" min="1" max="5" value="1" step="0.1" id="zoom"><button>Reset</button>
+        </div>
+        <div class="control-row">
+            <label aria-labelledby="Blur">Blur</label><input type="range" min="0" max="10" value="0" id="blur"><button>Reset</button>
+        </div>
+        <div class="control-row">
+            <label aria-labelledby="Sepia">Sepia</label><input type="range" min="0" max="100" value="0" id="sepia"><button>Reset</button>
+        </div>
+        <div class="control-row">
+            <label aria-labelledby="Saturate">Saturate</label><input type="range" min="0" max="200" value="100" id="saturate"><button>Reset</button>
+        </div>
+        <div class="control-row">
+            <label aria-labelledby="Rotation">Rotation</label><input type="range" min="0" max="360" value="0" id="rotation"><button>Reset</button>
+        </div>
+        <div class="control-row">
+            <label aria-labelledby="Contrast">Contrast</label><input type="range" min="0" max="200" value="100" id="contrast"><button>Reset</button>
+        </div>
+        <div class="control-row">
+            <label aria-labelledby="Brightness">Brightness</label><input type="range" min="0" max="200" value="100" id="brightness"><button>Reset</button>
+        </div>
+<div class="control-row">
+    <label>Background</label>
+    <select id="bgType">
+        <option value="transparent">Transparent</option>
+        <option value="color">Custom Color</option>
+    </select>
+    <input type="color" id="bgColorPicker" value="#ffffff" style="display:none; margin-left: 10px;">
+</div>
 
-      <div class="section-title">Спрайт / кадры</div>
-      <div class="control-row">
-        <label for="frameCount">Кадров</label>
-        <input type="number" id="frameCount" min="1" max="256" value="16">
-        <button type="button" class="icon-btn" id="autoFrames" title="Авто по ширине">Авто</button>
-      </div>
-      <div class="control-row">
-        <label for="layout">Раскладка</label>
-        <select id="layout">
-          <option value="horizontal">Горизонтально (в ряд)</option>
-          <option value="vertical">Вертикально (столбец)</option>
-          <option value="grid">Сетка</option>
-        </select>
-      </div>
-      <div class="control-row" id="gridColsRow" style="display: none;">
-        <label for="gridCols">Колонок</label>
-        <input type="number" id="gridCols" min="1" max="32" value="4">
-      </div>
-      <div class="control-row">
-        <label for="fps">FPS</label>
-        <input type="range" id="fps" min="1" max="60" value="12">
-        <span id="fpsVal" style="width: 28px; font-size: 13px; color: #bbb;">12</span>
-      </div>
-      <div class="control-row">
-        <label for="exportSize">Размер кадра</label>
-        <select id="exportSize">
-          <option value="256">256×256</option>
-          <option value="512" selected>512×512</option>
-          <option value="128">128×128</option>
-        </select>
-      </div>
 
-      <div class="section-title">Позиция и фильтры</div>
-      <div class="control-row">
-        <label>Hue</label>
-        <input type="range" min="0" max="360" value="0" id="hue">
-        <button type="button" class="icon-btn reset-btn">↺</button>
-      </div>
-      <div class="control-row">
-        <label>Zoom</label>
-        <input type="range" min="1" max="10" value="1" step="0.05" id="zoom">
-        <button type="button" class="icon-btn reset-btn">↺</button>
-      </div>
-      <div class="control-row">
-        <label>Blur</label>
-        <input type="range" min="0" max="10" value="0" id="blur">
-        <button type="button" class="icon-btn reset-btn">↺</button>
-      </div>
-      <div class="control-row">
-        <label>Saturate</label>
-        <input type="range" min="0" max="200" value="100" id="saturate">
-        <button type="button" class="icon-btn reset-btn">↺</button>
-      </div>
-      <div class="control-row">
-        <label>Rotation</label>
-        <input type="range" min="0" max="360" value="0" id="rotation">
-        <button type="button" class="icon-btn reset-btn">↺</button>
-      </div>
-      <div class="control-row">
-        <label>Contrast</label>
-        <input type="range" min="0" max="200" value="100" id="contrast">
-        <button type="button" class="icon-btn reset-btn">↺</button>
-      </div>
-      <div class="control-row">
-        <label>Brightness</label>
-        <input type="range" min="0" max="200" value="100" id="brightness">
-        <button type="button" class="icon-btn reset-btn">↺</button>
-      </div>
-      <div class="control-row">
-        <label>Фон</label>
-        <select id="bgType">
-          <option value="transparent">Прозрачный</option>
-          <option value="color">Цвет</option>
-        </select>
-        <input type="color" id="bgColorPicker" value="#000000" style="display: none;">
-      </div>
+
     </div>
-  </main>
+</main>
 
-  <script type="module">
-    import { parseGIF, decompressFrames } from 'https://cdn.jsdelivr.net/npm/gifuct-js@2.1.2/dist/index.js';
-    import { GIFEncoder, quantize, applyPalette } from 'https://cdn.jsdelivr.net/npm/gifenc@1.0.3/+esm';
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const circleBox = document.querySelector('.circle-box');
+    const downloadBtn = document.querySelector('.download-btn');
+    const controls = document.querySelector('.controls');
+	const bgTypeSelect = document.getElementById("bgType");
+const bgColorPicker = document.getElementById("bgColorPicker");
 
-    const canvasSize = () => parseInt(document.getElementById('exportSize').value, 10);
+bgTypeSelect.addEventListener("change", () => {
+    if (bgTypeSelect.value === "color") {
+        bgColorPicker.style.display = "inline-block";
+    } else {
+        bgColorPicker.style.display = "none";
+    }
+});
 
-    const dropZone = document.getElementById('dropZone');
-    const placeholder = document.getElementById('placeholder');
-    const previewMeta = document.getElementById('previewMeta');
-    const statusEl = document.getElementById('status');
-    const frameCountInput = document.getElementById('frameCount');
-    const layoutSelect = document.getElementById('layout');
-    const gridColsRow = document.getElementById('gridColsRow');
-    const gridColsInput = document.getElementById('gridCols');
-    const fpsInput = document.getElementById('fps');
-    const fpsVal = document.getElementById('fpsVal');
-    const bgTypeSelect = document.getElementById('bgType');
-    const bgColorPicker = document.getElementById('bgColorPicker');
-
-    const dlGif = document.getElementById('dlGif');
-    const dlPng = document.getElementById('dlPng');
-    const dlFrame = document.getElementById('dlFrame');
-    const playBtn = document.getElementById('playBtn');
-    const stepBack = document.getElementById('stepBack');
-    const stepFwd = document.getElementById('stepFwd');
-
-    let sourceFrames = [];
-    let rawSheetImage = null;
-    let sourceLabel = '';
-    let sourceKind = '';
-    let previewCanvas = null;
-    let currentFrame = 0;
-    let playing = false;
-    let playTimer = null;
-    let offsetX = 0;
-    let offsetY = 0;
-    let minZoom = 1;
+    let img = null;
+    const canvasSize = 512;
+    let canvas = null;
+    let offsetX = 0, offsetY = 0;
     let isDragging = false;
-    let startX = 0;
-    let startY = 0;
+    let startX, startY;
     let dragMoved = false;
-    let loaded = false;
+    let imgLoaded = false;
 
-    const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+    let minZoom = 1;
 
-    const setStatus = (msg) => { statusEl.textContent = msg || ''; };
+    const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
-    const getFilterString = () => {
-      const hue = document.getElementById('hue').value;
-      const blur = document.getElementById('blur').value;
-      const saturate = document.getElementById('saturate').value;
-      const contrast = document.getElementById('contrast').value;
-      const brightness = document.getElementById('brightness').value;
-      return `hue-rotate(${hue}deg) blur(${blur}px) saturate(${saturate}%) contrast(${contrast}%) brightness(${brightness}%)`;
+    const handleImageUpload = (file) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            img = new Image();
+            img.onload = () => {
+                // Рассчитываем минимальный зум, чтобы покрыть весь круг
+                const scaleX = canvasSize / img.width;
+                const scaleY = canvasSize / img.height;
+                minZoom = Math.max(scaleX, scaleY);
+
+                const zoomInput = document.getElementById('zoom');
+circleBox.addEventListener('wheel', (e) => {
+    if (!imgLoaded) return;
+    e.preventDefault(); // чтобы страница не скроллилась
+
+    const zoomInput = document.getElementById('zoom');
+    let zoom = parseFloat(zoomInput.value);
+
+    // Изменяем зум на шаг, например 0.05, с направлением по колесику
+    const delta = -e.deltaY * 0.001; // обычно deltaY положительный при прокрутке вниз (уменьшить), отрицательный вверх (увеличить)
+    zoom = clamp(zoom + delta, minZoom, 10); // ограничиваем сверху 10x (можно поменять)
+
+    zoomInput.value = zoom;
+    limitOffset(zoom);
+    applyFilters();
+});
+                zoomInput.min = minZoom;
+                zoomInput.value = minZoom;
+
+                offsetX = 0;
+                offsetY = 0;
+
+                canvas = document.createElement('canvas');
+                canvas.width = canvasSize;
+                canvas.height = canvasSize;
+                circleBox.innerHTML = '';
+                circleBox.appendChild(canvas);
+                canvas.style.borderRadius = "50%";
+                canvas.style.maxWidth = "100%";
+                canvas.style.maxHeight = "100%";
+
+                imgLoaded = true;
+                applyFilters();
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
     };
-
-    const getTransform = () => ({
-      zoom: parseFloat(document.getElementById('zoom').value),
-      rotation: parseFloat(document.getElementById('rotation').value),
-      offsetX,
-      offsetY,
-      bgType: bgTypeSelect.value,
-      bgColor: bgColorPicker.value,
-      filter: getFilterString()
-    });
 
     const limitOffset = (zoom) => {
-      if (!sourceFrames.length) return;
-      const f = sourceFrames[0];
-      const size = canvasSize();
-      const imgW = f.width * zoom;
-      const imgH = f.height * zoom;
-      const maxOffsetX = Math.max(0, (imgW - size) / 2);
-      const maxOffsetY = Math.max(0, (imgH - size) / 2);
-      offsetX = clamp(offsetX, -maxOffsetX, maxOffsetX);
-      offsetY = clamp(offsetY, -maxOffsetY, maxOffsetY);
+        if (!img) return;
+        const imgW = img.width * zoom;
+        const imgH = img.height * zoom;
+        const maxOffsetX = (imgW - canvasSize) / 2;
+        const maxOffsetY = (imgH - canvasSize) / 2;
+
+        offsetX = clamp(offsetX, -maxOffsetX, maxOffsetX);
+        offsetY = clamp(offsetY, -maxOffsetY, maxOffsetY);
     };
-
-    const updateMinZoom = () => {
-      if (!sourceFrames.length) return;
-      const f = sourceFrames[0];
-      const size = canvasSize();
-      minZoom = Math.max(size / f.width, size / f.height);
-      const zoomInput = document.getElementById('zoom');
-      zoomInput.min = minZoom;
-      if (parseFloat(zoomInput.value) < minZoom) zoomInput.value = minZoom;
-    };
-
-    function ensurePreviewCanvas() {
-      const size = canvasSize();
-      if (!previewCanvas) {
-        previewCanvas = document.createElement('canvas');
-        previewCanvas.width = size;
-        previewCanvas.height = size;
-        placeholder.style.display = 'none';
-        dropZone.appendChild(previewCanvas);
-        previewCanvas.style.borderRadius = '50%';
-      } else if (previewCanvas.width !== size) {
-        previewCanvas.width = size;
-        previewCanvas.height = size;
-      }
-      previewCanvas.style.filter = getFilterString();
-    }
-
-    function drawCircularFrame(sourceCanvas, destCtx, t) {
-      const size = canvasSize();
-      destCtx.clearRect(0, 0, size, size);
-
-      if (t.bgType === 'color') {
-        destCtx.fillStyle = t.bgColor;
-        destCtx.fillRect(0, 0, size, size);
-      }
-
-      destCtx.save();
-      destCtx.translate(size / 2, size / 2);
-      destCtx.rotate((t.rotation * Math.PI) / 180);
-      destCtx.translate(-size / 2, -size / 2);
-
-      destCtx.beginPath();
-      destCtx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
-      destCtx.closePath();
-      destCtx.clip();
-
-      const drawW = sourceCanvas.width * t.zoom;
-      const drawH = sourceCanvas.height * t.zoom;
-      const drawX = (size - drawW) / 2 + t.offsetX;
-      const drawY = (size - drawH) / 2 + t.offsetY;
-      destCtx.drawImage(sourceCanvas, drawX, drawY, drawW, drawH);
-      destCtx.restore();
-    }
-
-    function renderProcessedFrame(index, forExport = false) {
-      const size = canvasSize();
-      const out = document.createElement('canvas');
-      out.width = size;
-      out.height = size;
-      const ctx = out.getContext('2d');
-      const t = getTransform();
-
-      if (forExport) {
-        const tmp = document.createElement('canvas');
-        tmp.width = size;
-        tmp.height = size;
-        const tctx = tmp.getContext('2d');
-        tctx.filter = t.filter;
-        drawCircularFrame(sourceFrames[index], tctx, t);
-        ctx.drawImage(tmp, 0, 0);
-      } else {
-        drawCircularFrame(sourceFrames[index], ctx, t);
-      }
-
-      return out;
-    }
-
-    function refreshPreview() {
-      if (!sourceFrames.length) return;
-      ensurePreviewCanvas();
-      const ctx = previewCanvas.getContext('2d');
-      previewCanvas.style.filter = getFilterString();
-      drawCircularFrame(sourceFrames[currentFrame], ctx, getTransform());
-      previewMeta.textContent = `Кадр ${currentFrame + 1} / ${sourceFrames.length} · ${sourceLabel}`;
-      dlGif.disabled = false;
-      dlPng.disabled = false;
-      dlFrame.disabled = false;
-    }
-
-    function stopPlay() {
-      playing = false;
-      playBtn.textContent = '▶ Пуск';
-      if (playTimer) {
-        clearInterval(playTimer);
-        playTimer = null;
-      }
-    }
-
-    function startPlay() {
-      if (!sourceFrames.length) return;
-      stopPlay();
-      playing = true;
-      playBtn.textContent = '⏸ Пауза';
-      const delay = 1000 / parseInt(fpsInput.value, 10);
-      playTimer = setInterval(() => {
-        currentFrame = (currentFrame + 1) % sourceFrames.length;
-        refreshPreview();
-      }, delay);
-    }
-
-    function togglePlay() {
-      if (playing) stopPlay();
-      else startPlay();
-    }
-
-    function canvasFromImageData(frame) {
-      const c = document.createElement('canvas');
-      c.width = frame.dims.width;
-      c.height = frame.dims.height;
-      const ctx = c.getContext('2d');
-      const imageData = new ImageData(
-        new Uint8ClampedArray(frame.patch),
-        frame.dims.width,
-        frame.dims.height
-      );
-      ctx.putImageData(imageData, 0, 0);
-      return c;
-    }
-
-    function compositeGifFrames(frames) {
-      const gifW = frames[0].dims.width;
-      const gifH = frames[0].dims.height;
-      const full = document.createElement('canvas');
-      full.width = gifW;
-      full.height = gifH;
-      const fctx = full.getContext('2d');
-      const result = [];
-
-      for (const frame of frames) {
-        const frameCanvas = canvasFromImageData(frame);
-        fctx.drawImage(
-          frameCanvas,
-          frame.dims.left,
-          frame.dims.top
-        );
-        const copy = document.createElement('canvas');
-        copy.width = gifW;
-        copy.height = gifH;
-        copy.getContext('2d').drawImage(full, 0, 0);
-        result.push(copy);
-
-        if (frame.disposalType === 2) {
-          fctx.clearRect(
-            frame.dims.left,
-            frame.dims.top,
-            frame.dims.width,
-            frame.dims.height
-          );
-        }
-      }
-      return result;
-    }
-
-    function sliceSpriteSheet(img, count, layout, gridCols) {
-      const frames = [];
-      let fw, fh;
-
-      if (layout === 'horizontal') {
-        fw = Math.floor(img.width / count);
-        fh = img.height;
-      } else if (layout === 'vertical') {
-        fw = img.width;
-        fh = Math.floor(img.height / count);
-      } else {
-        const cols = gridCols;
-        const rows = Math.ceil(count / cols);
-        fw = Math.floor(img.width / cols);
-        fh = Math.floor(img.height / rows);
-      }
-
-      for (let i = 0; i < count; i++) {
-        let sx, sy;
-        if (layout === 'horizontal') {
-          sx = i * fw;
-          sy = 0;
-        } else if (layout === 'vertical') {
-          sx = 0;
-          sy = i * fh;
-        } else {
-          const col = i % gridCols;
-          const row = Math.floor(i / gridCols);
-          sx = col * fw;
-          sy = row * fh;
-        }
-        const c = document.createElement('canvas');
-        c.width = fw;
-        c.height = fh;
-        c.getContext('2d').drawImage(img, sx, sy, fw, fh, 0, 0, fw, fh);
-        frames.push(c);
-      }
-      return frames;
-    }
-
-    function guessFrameCount(img, layout, gridCols) {
-      if (layout === 'horizontal') {
-        if (img.height > 0 && img.width % img.height === 0) {
-          return img.width / img.height;
-        }
-        return Math.max(1, Math.round(img.width / img.height));
-      }
-      if (layout === 'vertical') {
-        if (img.width > 0 && img.height % img.width === 0) {
-          return img.height / img.width;
-        }
-        return Math.max(1, Math.round(img.height / img.width));
-      }
-      const cols = gridCols;
-      const fw = Math.floor(img.width / cols);
-      const fh = fw;
-      const rows = Math.floor(img.height / fh);
-      return cols * rows;
-    }
-
-    async function loadGif(file) {
-      setStatus('Разбор GIF…');
-      const buffer = await file.arrayBuffer();
-      const gif = parseGIF(buffer);
-      const frames = decompressFrames(gif, true);
-      rawSheetImage = null;
-      sourceKind = 'gif';
-      sourceFrames = compositeGifFrames(frames);
-      frameCountInput.value = sourceFrames.length;
-
-      const delays = frames.map((f) => (f.delay || 10) / 100);
-      const avgDelay = delays.reduce((a, b) => a + b, 0) / delays.length;
-      if (avgDelay > 0) {
-        const fps = clamp(Math.round(100 / avgDelay), 1, 60);
-        fpsInput.value = fps;
-        fpsVal.textContent = fps;
-      }
-
-      sourceLabel = `GIF · ${file.name}`;
-      finishLoad();
-    }
-
-    async function loadPngSheet(file) {
-      setStatus('Загрузка спрайта…');
-      const url = URL.createObjectURL(file);
-      const img = new Image();
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
-        img.src = url;
-      });
-
-      const layout = layoutSelect.value;
-      const gridCols = parseInt(gridColsInput.value, 10) || 4;
-      let count = parseInt(frameCountInput.value, 10) || 1;
-
-      if (document.getElementById('autoFrames').dataset.lastAuto === '1') {
-        count = guessFrameCount(img, layout, gridCols);
-        frameCountInput.value = count;
-      }
-
-      rawSheetImage = img;
-      sourceKind = 'sheet';
-      sourceFrames = sliceSpriteSheet(img, count, layout, gridCols);
-      URL.revokeObjectURL(url);
-      sourceLabel = `PNG спрайт · ${file.name}`;
-      finishLoad();
-    }
-
-    function finishLoad() {
-      currentFrame = 0;
-      loaded = true;
-      offsetX = 0;
-      offsetY = 0;
-      updateMinZoom();
-      limitOffset(parseFloat(document.getElementById('zoom').value));
-      refreshPreview();
-      setStatus(`Готово: ${sourceFrames.length} кадров`);
-    }
-
-    async function handleFile(file) {
-      if (!file) return;
-      stopPlay();
-      sourceFrames = [];
-      loaded = false;
-
-      if (file.type === 'image/gif' || file.name.toLowerCase().endsWith('.gif')) {
-        await loadGif(file);
-      } else if (file.type.startsWith('image/')) {
-        await loadPngSheet(file);
-      } else {
-        alert('Поддерживаются GIF и изображения (PNG, WebP, JPEG).');
-      }
-    }
-
-    function buildAllProcessedCanvases() {
-      const list = [];
-      for (let i = 0; i < sourceFrames.length; i++) {
-        list.push(renderProcessedFrame(i, true));
-      }
-      return list;
-    }
-
-    function downloadBlob(blob, name) {
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = name;
-      a.click();
-      URL.revokeObjectURL(a.href);
-    }
-
-    async function exportGif() {
-      if (!sourceFrames.length) return;
-      stopPlay();
-      setStatus('Создание GIF…');
-      const frames = buildAllProcessedCanvases();
-      const size = canvasSize();
-      const delay = Math.round(1000 / parseInt(fpsInput.value, 10));
-      const enc = GIFEncoder();
-      const useTransparency = bgTypeSelect.value === 'transparent';
-
-      for (const frame of frames) {
-        const ctx = frame.getContext('2d');
-        const { data } = ctx.getImageData(0, 0, size, size);
-        const palette = quantize(data, 256, { format: 'rgba4444' });
-        const index = applyPalette(data, palette);
-        const opts = { delay };
-        if (useTransparency) {
-          opts.transparent = true;
-          opts.transparentIndex = palette.findIndex((c) => c[3] === 0);
-          if (opts.transparentIndex < 0) opts.transparentIndex = 0;
-        }
-        enc.writeFrame(index, size, size, palette, opts);
-      }
-
-      enc.finish();
-      const bytes = enc.bytes();
-      downloadBlob(new Blob([bytes], { type: 'image/gif' }), `skin_anim_${Date.now()}.gif`);
-      setStatus('GIF сохранён');
-    }
-
-    function exportSpriteSheet() {
-      if (!sourceFrames.length) return;
-      stopPlay();
-      setStatus('Создание PNG-спрайта…');
-      const frames = buildAllProcessedCanvases();
-      const size = canvasSize();
-      const n = frames.length;
-      const layout = layoutSelect.value;
-      const gridCols = parseInt(gridColsInput.value, 10) || 4;
-
-      let sheetW, sheetH;
-      if (layout === 'horizontal') {
-        sheetW = size * n;
-        sheetH = size;
-      } else if (layout === 'vertical') {
-        sheetW = size;
-        sheetH = size * n;
-      } else {
-        const cols = gridCols;
-        const rows = Math.ceil(n / cols);
-        sheetW = size * cols;
-        sheetH = size * rows;
-      }
-
-      const sheet = document.createElement('canvas');
-      sheet.width = sheetW;
-      sheet.height = sheetH;
-      const ctx = sheet.getContext('2d');
-
-      frames.forEach((frame, i) => {
-        let x, y;
-        if (layout === 'horizontal') {
-          x = i * size;
-          y = 0;
-        } else if (layout === 'vertical') {
-          x = 0;
-          y = i * size;
-        } else {
-          x = (i % gridCols) * size;
-          y = Math.floor(i / gridCols) * size;
-        }
-        ctx.drawImage(frame, x, y);
-      });
-
-      sheet.toBlob((blob) => {
-        downloadBlob(blob, `skin_sprites_${Date.now()}.png`);
-        setStatus('PNG-спрайт сохранён');
-      }, 'image/png');
-    }
-
-    function exportCurrentFrame() {
-      if (!sourceFrames.length) return;
-      const frame = renderProcessedFrame(currentFrame, true);
-      frame.toBlob((blob) => {
-        downloadBlob(blob, `skin_frame_${currentFrame + 1}.png`);
-      }, 'image/png');
-    }
-
-    // Events
-    bgTypeSelect.addEventListener('change', () => {
-      bgColorPicker.style.display = bgTypeSelect.value === 'color' ? 'inline-block' : 'none';
-      refreshPreview();
-    });
-
-    fpsInput.addEventListener('input', () => {
-      fpsVal.textContent = fpsInput.value;
-      if (playing) {
-        stopPlay();
-        startPlay();
-      }
-    });
-
-    document.getElementById('controls').addEventListener('input', (e) => {
-      if (e.target.id === 'zoom') limitOffset(parseFloat(e.target.value));
-      if (loaded) refreshPreview();
-    });
-
-    document.getElementById('controls').addEventListener('click', (e) => {
-      if (e.target.classList.contains('reset-btn')) {
-        const input = e.target.parentNode.querySelector('input[type="range"]');
-        if (!input) return;
-        if (input.id === 'zoom') input.value = minZoom;
-        else input.value = input.defaultValue;
-        if (input.id === 'zoom') limitOffset(minZoom);
-        refreshPreview();
-      }
-    });
-
-    function resliceSheet() {
-      if (!rawSheetImage) return;
-      const layout = layoutSelect.value;
-      const gridCols = parseInt(gridColsInput.value, 10) || 4;
-      let count = parseInt(frameCountInput.value, 10) || 1;
-      if (document.getElementById('autoFrames').dataset.lastAuto === '1') {
-        count = guessFrameCount(rawSheetImage, layout, gridCols);
-        frameCountInput.value = count;
-      }
-      sourceFrames = sliceSpriteSheet(rawSheetImage, count, layout, gridCols);
-      currentFrame = Math.min(currentFrame, sourceFrames.length - 1);
-      updateMinZoom();
-      refreshPreview();
-      setStatus(`Кадров: ${sourceFrames.length}`);
-    }
-
-    document.getElementById('autoFrames').addEventListener('click', () => {
-      document.getElementById('autoFrames').dataset.lastAuto = '1';
-      if (rawSheetImage) resliceSheet();
-      else setStatus('Сначала загрузите PNG-спрайт');
-    });
-
-    frameCountInput.addEventListener('change', () => {
-      document.getElementById('autoFrames').dataset.lastAuto = '0';
-      if (rawSheetImage) resliceSheet();
-    });
-
-    layoutSelect.addEventListener('change', () => {
-      gridColsRow.style.display = layoutSelect.value === 'grid' ? 'flex' : 'none';
-      if (rawSheetImage) resliceSheet();
-    });
-
-    gridColsInput.addEventListener('change', () => {
-      if (rawSheetImage) resliceSheet();
-    });
-
-    document.getElementById('exportSize').addEventListener('change', () => {
-      updateMinZoom();
-      limitOffset(parseFloat(document.getElementById('zoom').value));
-      refreshPreview();
-    });
-
-    const pickFile = () => {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = 'image/gif,image/png,image/webp,image/jpeg';
-      input.onchange = (e) => handleFile(e.target.files[0]);
-      input.click();
-    };
-
-    dropZone.addEventListener('click', (e) => {
-      if (!loaded && !dragMoved) pickFile();
-      else if (e.target === dropZone || e.target === previewCanvas) {
-        /* drag on preview */
-      }
-    });
-
-    dropZone.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      dropZone.classList.add('dragover');
-    });
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-    dropZone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      dropZone.classList.remove('dragover');
-      handleFile(e.dataTransfer.files[0]);
-    });
 
     const startDrag = (e) => {
-      if (!loaded) return;
-      isDragging = true;
-      dragMoved = false;
-      startX = e.clientX ?? e.touches?.[0]?.clientX;
-      startY = e.clientY ?? e.touches?.[0]?.clientY;
+        if (!img) return;
+        isDragging = true;
+        dragMoved = false;
+        startX = e.clientX || e.touches?.[0]?.clientX;
+        startY = e.clientY || e.touches?.[0]?.clientY;
     };
     const onDrag = (e) => {
-      if (!isDragging) return;
-      const x = e.clientX ?? e.touches?.[0]?.clientX;
-      const y = e.clientY ?? e.touches?.[0]?.clientY;
-      if (Math.abs(x - startX) > 2 || Math.abs(y - startY) > 2) dragMoved = true;
-      offsetX += x - startX;
-      offsetY += y - startY;
-      startX = x;
-      startY = y;
-      limitOffset(parseFloat(document.getElementById('zoom').value));
-      refreshPreview();
+        if (!isDragging) return;
+        const x = e.clientX || e.touches?.[0]?.clientX;
+        const y = e.clientY || e.touches?.[0]?.clientY;
+
+        if (Math.abs(x - startX) > 2 || Math.abs(y - startY) > 2) {
+            dragMoved = true;
+        }
+
+        offsetX += (x - startX);
+        offsetY += (y - startY);
+        startX = x;
+        startY = y;
+        const zoom = parseFloat(document.getElementById('zoom').value);
+        limitOffset(zoom);
+        applyFilters();
     };
     const stopDrag = () => { isDragging = false; };
 
-    dropZone.addEventListener('mousedown', startDrag);
-    dropZone.addEventListener('touchstart', startDrag, { passive: true });
+    circleBox.addEventListener('mousedown', startDrag);
+    circleBox.addEventListener('touchstart', startDrag);
     window.addEventListener('mousemove', onDrag);
-    window.addEventListener('touchmove', onDrag, { passive: true });
+    window.addEventListener('touchmove', onDrag);
     window.addEventListener('mouseup', stopDrag);
     window.addEventListener('touchend', stopDrag);
 
-    dropZone.addEventListener('wheel', (e) => {
-      if (!loaded) return;
-      e.preventDefault();
-      const zoomInput = document.getElementById('zoom');
-      let zoom = parseFloat(zoomInput.value) + -e.deltaY * 0.001;
-      zoom = clamp(zoom, minZoom, 10);
-      zoomInput.value = zoom;
-      limitOffset(zoom);
-      refreshPreview();
-    }, { passive: false });
-
-    playBtn.addEventListener('click', togglePlay);
-    stepBack.addEventListener('click', () => {
-      stopPlay();
-      currentFrame = (currentFrame - 1 + sourceFrames.length) % sourceFrames.length;
-      refreshPreview();
-    });
-    stepFwd.addEventListener('click', () => {
-      stopPlay();
-      currentFrame = (currentFrame + 1) % sourceFrames.length;
-      refreshPreview();
+    circleBox.addEventListener('click', () => {
+        if (imgLoaded || dragMoved) return;
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = e => {
+            const file = e.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleImageUpload(file);
+            }
+        };
+        input.click();
     });
 
-    dlGif.addEventListener('click', exportGif);
-    dlPng.addEventListener('click', exportSpriteSheet);
-    dlFrame.addEventListener('click', exportCurrentFrame);
+    const applyFilters = () => {
+        if (!img || !canvas) return;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvasSize, canvasSize);
 
-    // Double-click to replace file
-    dropZone.addEventListener('dblclick', () => {
-      pickFile();
+        const hue = document.getElementById('hue').value;
+        const zoom = parseFloat(document.getElementById('zoom').value);
+        const blur = document.getElementById('blur').value;
+        const sepia = document.getElementById('sepia').value;
+        const saturate = document.getElementById('saturate').value;
+        const rotation = document.getElementById('rotation').value;
+        const contrast = document.getElementById('contrast').value;
+        const brightness = document.getElementById('brightness').value;
+
+        ctx.save();
+        ctx.translate(canvasSize / 2, canvasSize / 2);
+        ctx.rotate(rotation * Math.PI / 180);
+        ctx.translate(-canvasSize / 2, -canvasSize / 2);
+
+        ctx.beginPath();
+        ctx.arc(canvasSize / 2, canvasSize / 2, canvasSize / 2, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+
+        const drawWidth = img.width * zoom;
+        const drawHeight = img.height * zoom;
+        const drawX = (canvasSize - drawWidth) / 2 + offsetX;
+        const drawY = (canvasSize - drawHeight) / 2 + offsetY;
+		const bgType = document.getElementById('bgType').value;
+const bgColor = document.getElementById('bgColorPicker').value;
+
+if (bgType === "color") {
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, canvasSize, canvasSize);
+}
+
+        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+
+        ctx.restore();
+
+        canvas.style.filter =
+            `hue-rotate(${hue}deg) blur(${blur}px) sepia(${sepia}%) saturate(${saturate}%) contrast(${contrast}%) brightness(${brightness}%)`;
+    };
+
+    controls.addEventListener('input', (e) => {
+        if (e.target.id === 'zoom') {
+            const zoom = parseFloat(e.target.value);
+            limitOffset(zoom);
+        }
+        applyFilters();
     });
-  </script>
-</body>
-</html>
+    controls.addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON') {
+            const input = e.target.parentNode.querySelector('input[type="range"]');
+            if (!input) return;
+            if (input.id === 'zoom') input.value = minZoom;
+            else input.value = input.defaultValue;
+            applyFilters();
+        }
+    });
+
+    circleBox.addEventListener('dragover', e => { e.preventDefault(); circleBox.classList.add('dragover'); });
+    circleBox.addEventListener('dragleave', () => circleBox.classList.remove('dragover'));
+    circleBox.addEventListener('drop', (e) => {
+        e.preventDefault();
+        circleBox.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) handleImageUpload(file);
+        else alert('Please upload an image file.');
+    });
+
+    downloadBtn.addEventListener('click', () => {
+        if (!img || !canvas) return alert('Please upload an image first.');
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = canvasSize;
+        tempCanvas.height = canvasSize;
+        const ctx = tempCanvas.getContext('2d');
+
+        const hue = document.getElementById('hue').value;
+        const zoom = parseFloat(document.getElementById('zoom').value);
+        const blur = document.getElementById('blur').value;
+        const sepia = document.getElementById('sepia').value;
+        const saturate = document.getElementById('saturate').value;
+        const rotation = document.getElementById('rotation').value;
+        const contrast = document.getElementById('contrast').value;
+        const brightness = document.getElementById('brightness').value;
+		const bgType = document.getElementById('bgType').value;
+const bgColor = document.getElementById('bgColorPicker').value;
+
+if (bgType === "color") {
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, canvasSize, canvasSize);
+}
+
+        ctx.filter =
+            `hue-rotate(${hue}deg) blur(${blur}px) sepia(${sepia}%) saturate(${saturate}%) contrast(${contrast}%) brightness(${brightness}%)`;
+
+		if (bgType === "color") {
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, canvasSize, canvasSize);
+}
+
+        ctx.save();
+        ctx.translate(canvasSize / 2, canvasSize / 2);
+        ctx.rotate(rotation * Math.PI / 180);
+        ctx.translate(-canvasSize / 2, -canvasSize / 2);
+
+        ctx.beginPath();
+        ctx.arc(canvasSize / 2, canvasSize / 2, canvasSize / 2, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+
+        const drawWidth = img.width * zoom;
+        const drawHeight = img.height * zoom;
+        const drawX = (canvasSize - drawWidth) / 2 + offsetX;
+        const drawY = (canvasSize - drawHeight) / 2 + offsetY;
+
+        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+        ctx.restore();
+
+        const a = document.createElement('a');
+        a.href = tempCanvas.toDataURL('image/png');
+        a.download = Math.floor(Math.random() * 1e8) + '.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    });
+});
+</script>
+
+
+
+</body></html>
+
+
