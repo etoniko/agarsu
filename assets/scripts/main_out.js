@@ -5457,15 +5457,12 @@ wHandle.onGoogleAuth = function(response) {
     handleLogin(response.credential, 'google');
 };
 
-// VK ID: access_token после exchangeCode на фронте (как в кабинете VK)
-wHandle.onVkAuth = function(tokenData) {
-    if (!tokenData || !tokenData.access_token) {
-        return alert("VK: не удалось получить токен");
+// VK ID: Auth Code → обмен на api.agar.su (OAuth 2.1 + PKCE, см. id.vk.com/docs)
+wHandle.onVkAuth = function(payload) {
+    if (!payload || !payload.code || !payload.device_id) {
+        return alert("VK: не получен код авторизации");
     }
-    handleLogin({
-        access_token: tokenData.access_token,
-        user_id: tokenData.user_id
-    }, "vk");
+    handleLogin(payload, "vk");
 };
 
 // --------------------- Account ---------------------
