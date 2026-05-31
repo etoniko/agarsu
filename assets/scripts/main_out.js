@@ -5417,6 +5417,9 @@ async function handleLogin(tokenOrUser, provider) {
     } else if (provider === 'google') {
         url = 'auth/google';
         options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ credential: tokenOrUser }) };
+    } else if (provider === 'vk') {
+        url = 'auth/vk';
+        options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(tokenOrUser) };
     }
     const res = await fetch("https://api.agar.su/api/" + url, options);
     const data = await res.json();
@@ -5442,6 +5445,19 @@ window.addEventListener("message", function(event) {
 // Google callback
 wHandle.onGoogleAuth = function(response) {
     handleLogin(response.credential, 'google');
+};
+
+// VK ID callback (OneTap)
+wHandle.onVkAuth = function(payload) {
+    const codeVerifier = sessionStorage.getItem('vk_code_verifier');
+    const state = sessionStorage.getItem('vk_state');
+    if (!codeVerifier || !state) return alert('VK: сессия авторизации истекла, обновите страницу');
+    handleLogin({
+        code: payload.code,
+        device_id: payload.device_id,
+        code_verifier: codeVerifier,
+        state
+    }, 'vk');
 };
 
 // --------------------- Account ---------------------
@@ -5470,17 +5486,15 @@ wHandle.logoutAccount = async () => {
 let accountData;
 
 const hideAuthButtons = () => {
-    const tgBtn = document.getElementById("telegramLoginButton");
-    const googleBtn = document.getElementById("googleLoginButton");
-    if (tgBtn) tgBtn.style.display = "none";
-    if (googleBtn) googleBtn.style.display = "none";
+    document.querySelectorAll("#authlog .auth-provider-vpn, #authlog .auth-divider, #vkAuthContainer").forEach(el => {
+        el.style.display = "none";
+    });
 };
 
 const showAuthButtons = () => {
-    const tgBtn = document.getElementById("telegramLoginButton");
-    const googleBtn = document.getElementById("googleLoginButton");
-    if (tgBtn) tgBtn.style.display = "";
-    if (googleBtn) googleBtn.style.display = "";
+    document.querySelectorAll("#authlog .auth-provider, #authlog .auth-divider").forEach(el => {
+        el.style.display = el.classList.contains("auth-divider") ? "flex" : "flex";
+    });
 };
 
 const setAccountData = data => {
