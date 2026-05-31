@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Agar.su — the best alternative agar.io . Play online right now: consume cells, compete with other players and become the leader among all agar and agario clones.">
     <meta name="keywords" content="agario, агарио, blob, шарики, cell, клетки, io game, онлайн игры, online games, petri dish" />
     <meta name="author" content="Agarsu Team">
@@ -26,7 +26,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=new_releases" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="/assets/style.css?0.1.95" rel="stylesheet">
+    <link href="/assets/style.css?0.1.97" rel="stylesheet">
     <!-- Скрипты -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="/assets/scripts/jquery.js?0.0.2"></script>
@@ -36,7 +36,7 @@
 	<script src="/assets/scripts/shop.js?26" defer></script>
 	<script src="/assets/scripts/all.js?0.0.2" defer></script>
 	<script src="/assets/scripts/pass.js?0.0.2" defer></script>
-	<script src="/assets/scripts/skins.js?0.0.2" defer></script>
+	<script src="/assets/scripts/skins.js?1.0.1" defer></script>
 	<script src="/assets/scripts/rating.js?0.0.4" defer></script>
 		<!-- Yandex.RTB -->
 <script>window.yaContextCb=window.yaContextCb||[]</script>
@@ -330,55 +330,40 @@ _tmr.push({id: "3761618", type: "pageView", start: (new Date()).getTime()});
             </div>
           </div>
         </div>
-        <div id="skinslist" class="content">
-          <div style="display: flex;flex-direction: column;justify-content: space-around;" class="top-info">
-            <div class="gall"><span>Скины</span></div>
-            <ul class="gallery">
-              <li style="background-image: url('https://i.imgur.com/tq33YWv.png');" onclick="selectSkin('Муха');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/dzQIxk0.png');" onclick="selectSkin('Паук');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/fpDpEl9.png');" onclick="selectSkin('Кактус');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/69ChrNV.png');" onclick="selectSkin('Зая');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/qRq5CIg.png');" onclick="selectSkin('Оса');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/TPgKn6V.png');" onclick="selectSkin('Ящерица');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/QPCVdvQ.png');" onclick="selectSkin('Лиса');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/YbmC0tv.png');" onclick="selectSkin('Волк');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/hmVJPmb.png');" onclick="selectSkin('Мамонт');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/RKtDpin.png');" onclick="selectSkin('Динозавр');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/3hxdGAq.png');" onclick="selectSkin('Мороженое');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/zdcHEFS.png');" onclick="selectSkin('Ракета');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/roUvNMV.png');" onclick="selectSkin('Могучая');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/57BzylL.png');" onclick="selectSkin('Фаун');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/rPlbHK7.png');" onclick="selectSkin('Бабушка');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/ruAUEpb.png');" onclick="selectSkin('Гора');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/ipqCMMf.png');" onclick="selectSkin('Космонавт');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/wRiL4Jx.png');" onclick="selectSkin('Первобытный');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/GTxoIhj.png');" onclick="selectSkin('Влюблённый');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/EcW6zbE.png');" onclick="selectSkin('Влюблённая');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/UINxrlJ.png');" onclick="selectSkin('Самба');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/lxAXnAi.png');" onclick="selectSkin('Снеговик');showContent('home')"></li>
-              <li style="background-image: url('https://i.imgur.com/7GWqCnY.png');" onclick="selectSkin('Панда');showContent('home')"></li>
-              <li>
-                <a style="display: block;width: 100%;height: 100%;background-image: url('/assets/photo/skinstg.png');background-size: cover;" onclick="showContent('shop');"></a>
-              </li>
-            </ul>
+        <div id="skinslist" class="content skins-gallery-content">
+          <div class="skins-gallery-wrap">
+            <div class="skins-gallery-header">
+              <span class="skins-gallery-title">Галерея скинов</span>
+              <button type="button" class="skins-gallery-shop-btn" onclick="showContent('shop')">Создать скин</button>
+            </div>
+            <p class="skins-gallery-note">Листайте страницы внизу · без пароля</p>
+            <div id="skinsGalleryGrid" class="skins-gallery-grid"></div>
+            <div id="skinsGalleryPagination" class="skins-gallery-pagination"></div>
+            <p id="skinsGalleryStatus" class="skins-gallery-status"></p>
           </div>
         </div>
         <!-- Home Content -->
         <div id="home" class="content active">
-          <div class="top-info">
-            <div><span id="online">Онлайн: </span>
-              <div onclick="showContent('settings')" class="setting menu-item"><i class="fas fa-gear"></i></div>
+          <div class="home-header-bar">
+            <div class="home-header-left">
+              <div class="progress-container">
+                <div class="progress-bar">
+                  <div class="level-circle" id="levelCircle">0</div>
+                  <div class="progress-fill"></div>
+                  <div class="progress-text" id="progressText">0% (0/0)</div>
+                </div>
+              </div>
+            </div>
+            <div class="home-header-center">
+              <span id="online" class="home-header-chip">Онлайн: </span>
+            </div>
+            <div class="home-header-right">
+              <span id="accountID" class="home-header-chip">ID: 0000</span>
+              <div onclick="showContent('settings')" class="setting menu-item home-header-chip"><i class="fas fa-gear"></i></div>
             </div>
           </div>
           <div>
             <div class="line"></div></div>
-          <div class="progress-container">
-            <div class="progress-bar">
-              <div class="level-circle" id="levelCircle">0</div>
-              <div class="progress-fill"></div>
-              <div class="progress-text" id="progressText">0% (0/0)</div>
-            </div>
-          </div><span id="accountID">ID: 0000</span>
           <div class="avatar-containers">
             <div class="avatar-container">
               <div class="previous-skin" id="prevSkin" onclick="showPrevious()"></div>
