@@ -204,6 +204,14 @@
 @keyframes connect-packet-out{0%{left:0;opacity:0}10%{opacity:1}90%{opacity:1}100%{left:calc(100% - 8px);opacity:0}}
 @keyframes connect-packet-in{0%{left:calc(100% - 8px);opacity:0}10%{opacity:1}90%{opacity:1}100%{left:0;opacity:0}}
 .connect-verify-data-stream{font-family:Consolas,Monaco,monospace;font-size:10px;color:#5ecfff;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center;padding:0 4px;}
+.reconnect-panel{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background-color:rgba(0,0,0,0.55);justify-content:center;align-items:center;z-index:10001;}
+.reconnect-panel-inner{display:flex;flex-direction:column;align-items:center;gap:16px;max-width:360px;padding:28px 32px;border-radius:20px;border:1px solid #ffffff14;background:#0e172c;color:#e5edff;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.45);}
+.reconnect-panel-icon{font-size:2.4em;color:#02d4ff;}
+.reconnect-panel-title{font-size:18px;font-weight:700;color:#fff;}
+#reconnect-panel-message{font-size:14px;color:#9eb4d8;line-height:1.45;}
+.reconnect-panel-btn{cursor:pointer;border:none;border-radius:10px;padding:12px 28px;font-size:15px;font-weight:700;color:#fff;background:linear-gradient(90deg,#02d4ff,#09f);transition:opacity 0.2s,transform 0.15s;}
+.reconnect-panel-btn:hover{opacity:0.92;transform:scale(1.02);}
+.reconnect-panel-btn:active{transform:scale(0.98);}
 .nr{width:150px!important}
 #canvas{touch-action:none;}
 body{font-family:Arial,sans-serif;padding:0;margin:0;overflow:hidden;background-color:#070c16;}
