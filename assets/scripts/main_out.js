@@ -436,6 +436,177 @@ const cellColors = [
             "#996633", "#CC9900", "#FF9900", "#CC6600", "#FF3300", "#FF0000", "#CC0000", "#990033",
             "#663300", "#996600", "#CC3300", "#993300", "#990000", "#800000", "#993333"
         ];
+
+// ==================== KEYBINDS ====================
+const KEYBIND_DEFAULTS = {
+    split: 32,
+    eject: 87,
+    freeze: 70,
+    chat: 13,
+    coord: 67,
+    macroQ: 81,
+    macroE: 69,
+    macroR: 82,
+    macroT: 84,
+    macroP: 80,
+    menu: 27,
+    sticker1: 49, sticker2: 50, sticker3: 51, sticker4: 52, sticker5: 53,
+    sticker6: 54, sticker7: 55, sticker8: 56, sticker9: 57
+};
+
+const KEYBIND_LABELS = {
+    split: "Split",
+    eject: "Eject (масса W)",
+    freeze: "Заморозка",
+    chat: "Чат",
+    coord: "Координаты (C)",
+    macroQ: "Q",
+    macroE: "E",
+    macroR: "R",
+    macroT: "T",
+    macroP: "P",
+    menu: "Меню / пауза UI",
+    sticker1: "Стикер 1", sticker2: "Стикер 2", sticker3: "Стикер 3",
+    sticker4: "Стикер 4", sticker5: "Стикер 5", sticker6: "Стикер 6",
+    sticker7: "Стикер 7", sticker8: "Стикер 8", sticker9: "Стикер 9"
+};
+
+let keyBinds = Object.assign({}, KEYBIND_DEFAULTS);
+let keybindCaptureAction = null;
+let ejectKeyInterval = null;
+
+function loadKeybinds() {
+    try {
+        const raw = localStorage.getItem("keybinds_v1");
+        if (!raw) return;
+        const saved = JSON.parse(raw);
+        Object.keys(KEYBIND_DEFAULTS).forEach(action => {
+            if (typeof saved[action] === "number") keyBinds[action] = saved[action];
+        });
+    } catch (e) {}
+}
+
+function saveKeybinds() {
+    try {
+        localStorage.setItem("keybinds_v1", JSON.stringify(keyBinds));
+    } catch (e) {}
+}
+
+function getBind(action) {
+    const code = keyBinds[action];
+    return typeof code === "number" ? code : KEYBIND_DEFAULTS[action];
+}
+
+function keyCodeToLabel(code) {
+    const named = {
+        8: "Backspace", 9: "Tab", 13: "Enter", 16: "Shift", 17: "Ctrl", 18: "Alt",
+        20: "CapsLock", 27: "Esc", 32: "Space", 37: "←", 38: "↑", 39: "→", 40: "↓"
+    };
+    if (named[code]) return named[code];
+    if (code >= 65 && code <= 90) return String.fromCharCode(code);
+    if (code >= 48 && code <= 57) return String.fromCharCode(code);
+    if (code >= 96 && code <= 105) return "Numpad " + (code - 96);
+    return "Код " + code;
+}
+
+function assignKeybind(action, code) {
+    const other = Object.keys(keyBinds).find(a => a !== action && keyBinds[a] === code);
+    if (other) keyBinds[other] = keyBinds[action];
+    keyBinds[action] = code;
+    saveKeybinds();
+    cancelKeybindCapture();
+}
+
+function resetKeybinds() {
+    keyBinds = Object.assign({}, KEYBIND_DEFAULTS);
+    saveKeybinds();
+    mouseSplitButton = 3;
+    mouseEjectButton = 1;
+    saveMouseButtonSettings();
+    const splitSel = document.getElementById("mouse-split-btn");
+    const ejectSel = document.getElementById("mouse-eject-btn");
+    if (splitSel) splitSel.value = "3";
+    if (ejectSel) ejectSel.value = "1";
+    renderKeybindUI();
+}
+
+wHandle.resetKeybinds = resetKeybinds;
+
+function renderKeybindUI() {
+    const list = document.getElementById("keybind-list");
+    if (!list) return;
+    list.querySelectorAll(".keybind-key").forEach(btn => {
+        const action = btn.dataset.action;
+        if (action) btn.textContent = keyCodeToLabel(getBind(action));
+    });
+}
+
+let keybindUiInitialized = false;
+
+function initKeybindSettings() {
+    if (keybindUiInitialized) return;
+    keybindUiInitialized = true;
+    loadKeybinds();
+
+    const list = document.getElementById("keybind-list");
+    if (!list) return;
+
+    Object.keys(KEYBIND_DEFAULTS).forEach(action => {
+        const row = document.createElement("div");
+        row.className = "keybind-row";
+        const label = document.createElement("span");
+        label.textContent = KEYBIND_LABELS[action] || action;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "keybind-key";
+        btn.dataset.action = action;
+        btn.textContent = keyCodeToLabel(getBind(action));
+        btn.addEventListener("click", () => {
+            keybindCaptureAction = action;
+            btn.textContent = "…нажмите клавишу";
+            btn.classList.add("listening");
+        });
+        row.appendChild(label);
+        row.appendChild(btn);
+        list.appendChild(row);
+    });
+
+    const resetBtn = document.getElementById("keybind-reset");
+    if (resetBtn) resetBtn.addEventListener("click", resetKeybinds);
+
+    initMouseButtonSettings();
+}
+
+loadKeybinds();
+
+function initSettingsNav() {
+    const layout = document.querySelector(".settings-layout");
+    if (!layout) return;
+    const navItems = layout.querySelectorAll(".settings-nav-item");
+    const panels = layout.querySelectorAll(".settings-panel");
+    if (!navItems.length || !panels.length) return;
+
+    function showSettingsPanel(panelId) {
+        panels.forEach(p => p.classList.toggle("active", p.dataset.panel === panelId));
+        navItems.forEach(btn => btn.classList.toggle("active", btn.dataset.panel === panelId));
+        try {
+            localStorage.setItem("settings_active_panel", panelId);
+        } catch (e) {}
+    }
+
+    navItems.forEach(btn => {
+        btn.addEventListener("click", () => showSettingsPanel(btn.dataset.panel));
+    });
+
+    let initial = "graphics";
+    try {
+        const saved = localStorage.getItem("settings_active_panel");
+        if (saved && layout.querySelector(`.settings-panel[data-panel="${saved}"]`)) {
+            initial = saved;
+        }
+    } catch (e) {}
+    showSettingsPanel(initial);
+}
 		
    function gameLoop() {
 	       // Установка зума для режима наблюдения
@@ -515,15 +686,7 @@ let stickerCooldownTimer = null;
         elem.onfocus = () => { isTyping = true; };
     });
 
-    var spacePressed = false,
-        cPressed = false,
-        qPressed = false,
-        ePressed = false,
-        rPressed = false,
-        tPressed = false,
-        pPressed = false,
-        wPressed = false,
-        wInterval;
+    const keyPressed = {};
     freeze = false;
     
     // ========== СИСТЕМА СТИКЕРОВ (упрощённая) ==========
@@ -555,367 +718,181 @@ let stickerCooldownTimer = null;
     }
     // ========== КОНЕЦ СИСТЕМЫ СТИКЕРОВ ==========
 
+    function pressStickerKey(stickerId) {
+        if (!showStickers || isTyping || stickerCooldown || currentSticker === stickerId) return;
+        if (currentSticker !== null) {
+            sendSticker(currentSticker, false);
+            hideSticker();
+        }
+        currentSticker = stickerId;
+        sendSticker(stickerId, true);
+        showStickerOverCell(stickerId);
+        stickerCooldown = true;
+        if (stickerCooldownTimer) clearTimeout(stickerCooldownTimer);
+        stickerCooldownTimer = setTimeout(() => { stickerCooldown = false; }, 500);
+    }
+
+    function releaseStickerKey(stickerId) {
+        if (currentSticker === stickerId) {
+            currentSticker = null;
+            sendSticker(stickerId, false);
+            hideSticker();
+        }
+    }
+
     wHandle.onkeydown = function (event) {
-        switch (event.keyCode) {
-            case 70:
-                if (!isTyping && playerCells.length > 0) {
-                    freeze = !freeze;
-                    if (freeze) {
-                        posX = X;
-                        posY = Y;
-                        document.querySelector("#freeze").style.display = "flex";
-                    } else {
-                        document.querySelector("#freeze").style.display = "none";
-                    }
-                }
-                break;
-            case 13:
-                if (isTyping || hideChat) {
-                    isTyping = false;
-                    const chatInput = document.getElementById("chat_textbox");
-                    const lsInput = document.getElementById("ls");
-                    let lsText = lsInput ? lsInput.value.trim() : "";
-                    let chatText = chatInput ? chatInput.value.trim() : "";
-                    let combinedText = "";
-                    if (lsText && chatText) {
-                        combinedText = lsText + " " + chatText;
-                    } else if (lsText) {
-                        combinedText = lsText;
-                    } else if (chatText) {
-                        combinedText = chatText;
-                    }
-                    if (combinedText.length > 0) sendChat(combinedText);
-                    if (chatInput) chatInput.value = "";
-                    if (lsInput) lsInput.value = "";
-                    if (chatInput) chatInput.blur();
-                    if (lsInput) lsInput.blur();
+        if (keybindCaptureAction) {
+            event.preventDefault();
+            const code = event.keyCode;
+            if (code === 27) {
+                cancelKeybindCapture();
+                return;
+            }
+            assignKeybind(keybindCaptureAction, code);
+            return;
+        }
+
+        const code = event.keyCode;
+
+        if (code === getBind("chat")) {
+            if (isTyping || hideChat) {
+                isTyping = false;
+                const chatInput = document.getElementById("chat_textbox");
+                const lsInput = document.getElementById("ls");
+                let lsText = lsInput ? lsInput.value.trim() : "";
+                let chatText = chatInput ? chatInput.value.trim() : "";
+                let combinedText = "";
+                if (lsText && chatText) combinedText = lsText + " " + chatText;
+                else if (lsText) combinedText = lsText;
+                else if (chatText) combinedText = chatText;
+                if (combinedText.length > 0) sendChat(combinedText);
+                if (chatInput) chatInput.value = "";
+                if (lsInput) lsInput.value = "";
+                if (chatInput) chatInput.blur();
+                if (lsInput) lsInput.blur();
+            } else {
+                document.getElementById("chat_textbox").focus();
+                isTyping = true;
+            }
+            return;
+        }
+
+        if (isTyping) return;
+
+        if (code === getBind("freeze")) {
+            if (!keyPressed.freeze && playerCells.length > 0) {
+                freeze = !freeze;
+                if (freeze) {
+                    posX = X;
+                    posY = Y;
+                    document.querySelector("#freeze").style.display = "flex";
                 } else {
-                    document.getElementById("chat_textbox").focus();
-                    isTyping = true;
+                    document.querySelector("#freeze").style.display = "none";
                 }
-                break;
-            case 32:
-                if (!spacePressed && !isTyping) {
-                    sendMouseMove();
-                    sendUint8(17);
-                    spacePressed = true;
-                }
-                break;
-            case 67:
-                if (!cPressed && !isTyping) {
-                    coord();
-                    cPressed = true;
-                }
-                break;
-            case 87:
-                if (!wPressed && !isTyping) {
+                keyPressed.freeze = true;
+            }
+            return;
+        }
+        if (code === getBind("split")) {
+            if (!keyPressed.split) {
+                sendMouseMove();
+                sendUint8(17);
+                keyPressed.split = true;
+            }
+            return;
+        }
+        if (code === getBind("coord")) {
+            if (!keyPressed.coord) {
+                coord();
+                keyPressed.coord = true;
+            }
+            return;
+        }
+        if (code === getBind("eject")) {
+            if (!keyPressed.eject) {
+                sendMouseMove();
+                sendUint8(21);
+                keyPressed.eject = true;
+                ejectKeyInterval = setInterval(function () {
                     sendMouseMove();
                     sendUint8(21);
-                    wPressed = true;
-                    wInterval = setInterval(function () {
-                        sendMouseMove();
-                        sendUint8(21);
-                    }, 100);
-                }
-                break;
-            case 81:
-                if (!qPressed && !isTyping) {
-                    sendUint8(18);
-                    qPressed = true;
-                }
-                break;
-            case 69:
-                if (!ePressed && !isTyping) {
-                    sendMouseMove();
-                    sendUint8(22);
-                    ePressed = true;
-                }
-                break;
-            case 82:
-                if (!rPressed && !isTyping) {
-                    sendMouseMove();
-                    sendUint8(23);
-                    fixDead();
-                    rPressed = true;
-                }
-                break;
-            case 84:
-                if (!tPressed && !isTyping) {
-                    sendMouseMove();
-                    sendUint8(24);
-                    tPressed = true;
-                }
-                break;
-            case 80:
-                if (!pPressed && !isTyping) {
-                    sendMouseMove();
-                    sendUint8(25);
-                    pPressed = true;
-                }
-                break;
-           // ========== СТИКЕРЫ С ЗАДЕРЖКОЙ 1500мс ==========
-case 49: // 1
-if (!showStickers) break;
-    if (!isTyping && !stickerCooldown && currentSticker !== 1) {
-        if (currentSticker !== null) {
-            sendSticker(currentSticker, false);
-            hideSticker();
+                }, 100);
+            }
+            return;
         }
-        currentSticker = 1;
-        sendSticker(1, true);
-        showStickerOverCell(1);
-        
-        // Активируем задержку
-        stickerCooldown = true;
-        if (stickerCooldownTimer) clearTimeout(stickerCooldownTimer);
-        stickerCooldownTimer = setTimeout(() => {
-            stickerCooldown = false;
-        }, 500);
-    }
-    break;
-case 50: // 2
-if (!showStickers) break;
-    if (!isTyping && !stickerCooldown && currentSticker !== 2) {
-        if (currentSticker !== null) {
-            sendSticker(currentSticker, false);
-            hideSticker();
+        if (code === getBind("macroQ")) {
+            if (!keyPressed.macroQ) {
+                sendUint8(18);
+                keyPressed.macroQ = true;
+            }
+            return;
         }
-        currentSticker = 2;
-        sendSticker(2, true);
-        showStickerOverCell(2);
-        
-        stickerCooldown = true;
-        if (stickerCooldownTimer) clearTimeout(stickerCooldownTimer);
-        stickerCooldownTimer = setTimeout(() => {
-            stickerCooldown = false;
-        }, 500);
-    }
-    break;
-case 51: // 3
-if (!showStickers) break;
-    if (!isTyping && !stickerCooldown && currentSticker !== 3) {
-        if (currentSticker !== null) {
-            sendSticker(currentSticker, false);
-            hideSticker();
+        if (code === getBind("macroE")) {
+            if (!keyPressed.macroE) {
+                sendMouseMove();
+                sendUint8(22);
+                keyPressed.macroE = true;
+            }
+            return;
         }
-        currentSticker = 3;
-        sendSticker(3, true);
-        showStickerOverCell(3);
-        
-        stickerCooldown = true;
-        if (stickerCooldownTimer) clearTimeout(stickerCooldownTimer);
-        stickerCooldownTimer = setTimeout(() => {
-            stickerCooldown = false;
-        }, 500);
-    }
-    break;
-case 52: // 4
-if (!showStickers) break;
-    if (!isTyping && !stickerCooldown && currentSticker !== 4) {
-        if (currentSticker !== null) {
-            sendSticker(currentSticker, false);
-            hideSticker();
+        if (code === getBind("macroR")) {
+            if (!keyPressed.macroR) {
+                sendMouseMove();
+                sendUint8(23);
+                fixDead();
+                keyPressed.macroR = true;
+            }
+            return;
         }
-        currentSticker = 4;
-        sendSticker(4, true);
-        showStickerOverCell(4);
-        
-        stickerCooldown = true;
-        if (stickerCooldownTimer) clearTimeout(stickerCooldownTimer);
-        stickerCooldownTimer = setTimeout(() => {
-            stickerCooldown = false;
-        }, 500);
-    }
-    break;
-case 53: // 5
-if (!showStickers) break;
-    if (!isTyping && !stickerCooldown && currentSticker !== 5) {
-        if (currentSticker !== null) {
-            sendSticker(currentSticker, false);
-            hideSticker();
+        if (code === getBind("macroT")) {
+            if (!keyPressed.macroT) {
+                sendMouseMove();
+                sendUint8(24);
+                keyPressed.macroT = true;
+            }
+            return;
         }
-        currentSticker = 5;
-        sendSticker(5, true);
-        showStickerOverCell(5);
-        
-        stickerCooldown = true;
-        if (stickerCooldownTimer) clearTimeout(stickerCooldownTimer);
-        stickerCooldownTimer = setTimeout(() => {
-            stickerCooldown = false;
-        }, 500);
-    }
-    break;
-case 54: // 6
-if (!showStickers) break;
-    if (!isTyping && !stickerCooldown && currentSticker !== 6) {
-        if (currentSticker !== null) {
-            sendSticker(currentSticker, false);
-            hideSticker();
+        if (code === getBind("macroP")) {
+            if (!keyPressed.macroP) {
+                sendMouseMove();
+                sendUint8(25);
+                keyPressed.macroP = true;
+            }
+            return;
         }
-        currentSticker = 6;
-        sendSticker(6, true);
-        showStickerOverCell(6);
-        
-        stickerCooldown = true;
-        if (stickerCooldownTimer) clearTimeout(stickerCooldownTimer);
-        stickerCooldownTimer = setTimeout(() => {
-            stickerCooldown = false;
-        }, 500);
-    }
-    break;
-case 55: // 7
-if (!showStickers) break;
-    if (!isTyping && !stickerCooldown && currentSticker !== 7) {
-        if (currentSticker !== null) {
-            sendSticker(currentSticker, false);
-            hideSticker();
-        }
-        currentSticker = 7;
-        sendSticker(7, true);
-        showStickerOverCell(7);
-        
-        stickerCooldown = true;
-        if (stickerCooldownTimer) clearTimeout(stickerCooldownTimer);
-        stickerCooldownTimer = setTimeout(() => {
-            stickerCooldown = false;
-        }, 500);
-    }
-    break;
-case 56: // 8
-if (!showStickers) break;
-    if (!isTyping && !stickerCooldown && currentSticker !== 8) {
-        if (currentSticker !== null) {
-            sendSticker(currentSticker, false);
-            hideSticker();
-        }
-        currentSticker = 8;
-        sendSticker(8, true);
-        showStickerOverCell(8);
-        
-        stickerCooldown = true;
-        if (stickerCooldownTimer) clearTimeout(stickerCooldownTimer);
-        stickerCooldownTimer = setTimeout(() => {
-            stickerCooldown = false;
-        }, 500);
-    }
-    break;
-case 57: // 9
-if (!showStickers) break;
-    if (!isTyping && !stickerCooldown && currentSticker !== 9) {
-        if (currentSticker !== null) {
-            sendSticker(currentSticker, false);
-            hideSticker();
-        }
-        currentSticker = 9;
-        sendSticker(9, true);
-        showStickerOverCell(9);
-        
-        stickerCooldown = true;
-        if (stickerCooldownTimer) clearTimeout(stickerCooldownTimer);
-        stickerCooldownTimer = setTimeout(() => {
-            stickerCooldown = false;
-        }, 500);
-    }
-    break;
+        for (let s = 1; s <= 9; s++) {
+            if (code === getBind("sticker" + s)) {
+                pressStickerKey(s);
+                return;
+            }
         }
     };
 
     wHandle.onkeyup = function (event) {
-        switch (event.keyCode) {
-            case 32:
-                spacePressed = false;
-                break;
-            case 67:
-                cPressed = false;
-                break;
-            case 87:
-                wPressed = false;
-                clearInterval(wInterval);
-                break;
-            case 81:
-                if (qPressed) {
-                    sendUint8(19);
-                    qPressed = false;
-                }
-                break;
-            case 69:
-                ePressed = false;
-                break;
-            case 82:
-                rPressed = false;
-                break;
-            case 84:
-                tPressed = false;
-                break;
-            case 80:
-                pPressed = false;
-                break;
-            // ========== ОТЖАТИЕ СТИКЕРОВ ==========
-            case 49:
-                if (currentSticker === 1) {
-                    currentSticker = null;
-                    sendSticker(1, false);
-                    hideSticker();
-                }
-                break;
-            case 50:
-                if (currentSticker === 2) {
-                    currentSticker = null;
-                    sendSticker(2, false);
-                    hideSticker();
-                }
-                break;
-            case 51:
-                if (currentSticker === 3) {
-                    currentSticker = null;
-                    sendSticker(3, false);
-                    hideSticker();
-                }
-                break;
-            case 52:
-                if (currentSticker === 4) {
-                    currentSticker = null;
-                    sendSticker(4, false);
-                    hideSticker();
-                }
-                break;
-            case 53:
-                if (currentSticker === 5) {
-                    currentSticker = null;
-                    sendSticker(5, false);
-                    hideSticker();
-                }
-                break;
-            case 54:
-                if (currentSticker === 6) {
-                    currentSticker = null;
-                    sendSticker(6, false);
-                    hideSticker();
-                }
-                break;
-            case 55:
-                if (currentSticker === 7) {
-                    currentSticker = null;
-                    sendSticker(7, false);
-                    hideSticker();
-                }
-                break;
-            case 56:
-                if (currentSticker === 8) {
-                    currentSticker = null;
-                    sendSticker(8, false);
-                    hideSticker();
-                }
-                break;
-            case 57:
-                if (currentSticker === 9) {
-                    currentSticker = null;
-                    sendSticker(9, false);
-                    hideSticker();
-                }
-                break;
+        const code = event.keyCode;
+        if (code === getBind("freeze")) keyPressed.freeze = false;
+        if (code === getBind("split")) keyPressed.split = false;
+        if (code === getBind("coord")) keyPressed.coord = false;
+        if (code === getBind("eject")) {
+            keyPressed.eject = false;
+            clearInterval(ejectKeyInterval);
+            ejectKeyInterval = null;
+        }
+        if (code === getBind("macroQ")) {
+            if (keyPressed.macroQ) {
+                sendUint8(19);
+                keyPressed.macroQ = false;
+            }
+        }
+        if (code === getBind("macroE")) keyPressed.macroE = false;
+        if (code === getBind("macroR")) keyPressed.macroR = false;
+        if (code === getBind("macroT")) keyPressed.macroT = false;
+        if (code === getBind("macroP")) keyPressed.macroP = false;
+        for (let s = 1; s <= 9; s++) {
+            if (code === getBind("sticker" + s)) releaseStickerKey(s);
         }
     };
+
 
     const colorSelected = document.getElementById("selectedColor");
     const colorList = document.getElementById("colorList");
@@ -1060,94 +1037,87 @@ if (!showStickers) break;
 
     wHandle.onblur = function () {
         sendUint8(19);
-        clearInterval(wInterval);
-        wPressed = spacePressed = cPressed = pPressed = qPressed = ePressed = rPressed = tPressed = pPressed = false;
+        clearInterval(ejectKeyInterval);
+        ejectKeyInterval = null;
+        Object.keys(keyPressed).forEach(k => { keyPressed[k] = false; });
     };
     
     document.addEventListener("contextmenu", () => {
-        if (wPressed) {
-            wPressed = false;
-            clearInterval(wInterval);
+        if (keyPressed.eject) {
+            keyPressed.eject = false;
+            clearInterval(ejectKeyInterval);
+            ejectKeyInterval = null;
         }
     });
 
-    let leftInterval = null;
-    let rightTimeout = null;
-    let rightInterval = null;
+    const mouseHoldState = {};
 
-    const clearAllIntervals = () => {
-        leftDown = false;
-        rightDown = false;
-        if (leftInterval) {
-            clearInterval(leftInterval);
-            leftInterval = null;
-        }
-        if (rightTimeout) {
-            clearTimeout(rightTimeout);
-            rightTimeout = null;
-        }
-        if (rightInterval) {
-            clearInterval(rightInterval);
-            rightInterval = null;
-        }
+    const doSplitAction = () => {
+        sendMouseMove();
+        sendUint8(17);
+    };
+    const doEjectAction = () => {
+        sendMouseMove();
+        sendUint8(21);
+    };
+
+    const getMouseAction = (which) => {
+        if (which === mouseSplitButton) return "split";
+        if (which === mouseEjectButton) return "eject";
+        return null;
+    };
+
+    const clearMouseButton = (which) => {
+        const st = mouseHoldState[which];
+        if (!st) return;
+        st.down = false;
+        if (st.interval) clearInterval(st.interval);
+        if (st.timeout) clearTimeout(st.timeout);
+        delete mouseHoldState[which];
+    };
+
+    const clearAllMouseHolds = () => {
+        Object.keys(mouseHoldState).forEach(k => clearMouseButton(+k));
     };
 
     $(window).on("blur visibilitychange", () => {
-        clearAllIntervals();
+        clearAllMouseHolds();
     });
-
-    const handleLeft = () => sendUint8(21);
-    const handleRight = () => sendUint8(17);
 
     $(document).on("mousedown", function (event) {
         if (!enableMouseClicks || isTyping) return;
         const overlay = $('.overlays');
         if (overlay.is(':visible')) return;
-        switch (event.which) {
-            case 1:
-                if (!leftDown) {
-                    leftDown = true;
-                    handleLeft();
-                    leftInterval = setInterval(() => {
-                        if (leftDown) handleLeft();
-                    }, 100);
+
+        const which = event.which;
+        const action = getMouseAction(which);
+        if (!action || mouseHoldState[which]?.down) return;
+
+        mouseHoldState[which] = { down: true, interval: null, timeout: null };
+
+        if (action === "split") {
+            doSplitAction();
+            mouseHoldState[which].timeout = setTimeout(() => {
+                if (mouseHoldState[which]?.down) {
+                    mouseHoldState[which].interval = setInterval(() => {
+                        if (mouseHoldState[which]?.down) doSplitAction();
+                    }, 50);
                 }
-                break;
-            case 3:
-                if (!rightDown) {
-                    rightDown = true;
-                    handleRight();
-                    rightTimeout = setTimeout(() => {
-                        if (rightDown) {
-                            rightInterval = setInterval(() => {
-                                if (rightDown) handleRight();
-                            }, 50);
-                        }
-                    }, 130);
-                }
-                break;
+            }, 130);
+        } else {
+            doEjectAction();
+            mouseHoldState[which].interval = setInterval(() => {
+                if (mouseHoldState[which]?.down) doEjectAction();
+            }, 100);
         }
     });
 
     $(window).on("mouseup", function (event) {
-        switch (event.which) {
-            case 1:
-                leftDown = false;
-                clearInterval(leftInterval);
-                leftInterval = null;
-                break;
-            case 3:
-                rightDown = false;
-                clearTimeout(rightTimeout);
-                rightTimeout = null;
-                clearInterval(rightInterval);
-                rightInterval = null;
-                break;
-        }
+        clearMouseButton(event.which);
     });
 
     $(window).on("mouseleave", () => {
-        clearAllIntervals();
+        clearAllMouseHolds();
     });
 
     $(document).on("contextmenu", function (event) {
@@ -1156,7 +1126,7 @@ if (!showStickers) break;
 
     $(document).ready(function () {
         $(document).keydown(function (event) {
-            if (event.keyCode === 27) {
+            if (event.keyCode === getBind("menu")) {
                 wjQuery("#statics").hide();
                 const overlay = $('#overlays');
                 if (overlay.is(':visible')) {
@@ -2935,7 +2905,7 @@ function updateNodes(reader) {
 
             let spiked = reader.uint8();
             let flagVirus = !!(spiked & 0x01);
-            let flagEjected = !!(spiked & 0x20);
+            let flagEjected = !!(spiked & 0x20) || !!(spiked & 0x40);
             let flagAgitated = !!(spiked & 0x10);
 
 const name = reader.utf8();
@@ -2987,6 +2957,7 @@ if (stickerData) {
             node.isVirus = flagVirus;
             node.isEjected = flagEjected;
             node.isAgitated = flagAgitated;
+            if (type === 1) node.isFood = true;
             node.nx = posX;
             node.ny = posY;
             node.setSize(size);
@@ -3356,6 +3327,8 @@ function drawGameScene() {
     ctx.scale(viewZoom, viewZoom);
     ctx.translate(-nodeX, -nodeY);
 
+    drawCustomMapBackground(ctx);
+
     for (let i = 0; i < nodelist.length; i++) nodelist[i].drawOneCell(ctx);
 
 
@@ -3421,6 +3394,190 @@ function setCookie(name, value, days) {
   document.cookie = name + "=" + (value || "") + expires + "; path=/";
 }
 
+// ==================== CUSTOM MAP / VIRUS BACKGROUNDS ====================
+let customMapBgEnabled = false;
+let customVirusBgEnabled = false;
+let customMapBgMode = "stretch";
+let customMapBgTileSize = 512;
+let mapBgImage = null;
+let virusBgImage = null;
+const CUSTOM_BG_STORAGE_MAX = 900000;
+
+function loadBgImageFromDataUrl(dataUrl, onReady) {
+    if (!dataUrl) {
+        onReady(null);
+        return;
+    }
+    const img = new Image();
+    img.onload = () => onReady(img);
+    img.onerror = () => onReady(null);
+    img.src = dataUrl;
+}
+
+function saveBgImageToStorage(key, dataUrl) {
+    if (!dataUrl) {
+        localStorage.removeItem(key);
+        return true;
+    }
+    if (dataUrl.length > CUSTOM_BG_STORAGE_MAX) return false;
+    try {
+        localStorage.setItem(key, dataUrl);
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+function drawCustomMapBackground(ctx) {
+    if (!customMapBgEnabled || !mapBgImage || !mapBgImage.complete || !mapBgImage.width) return;
+    const left = leftPos;
+    const top = topPos;
+    const right = rightPos;
+    const bottom = bottomPos;
+    const mapW = right - left;
+    const mapH = bottom - top;
+    if (mapW <= 0 || mapH <= 0) return;
+
+    const halfW = canvasWidth / (2 * viewZoom);
+    const halfH = canvasHeight / (2 * viewZoom);
+    const visLeft = Math.max(left, nodeX - halfW);
+    const visRight = Math.min(right, nodeX + halfW);
+    const visTop = Math.max(top, nodeY - halfH);
+    const visBottom = Math.min(bottom, nodeY + halfH);
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(left, top, mapW, mapH);
+    ctx.clip();
+
+    if (customMapBgMode === "repeat") {
+        const tile = Math.max(32, customMapBgTileSize | 0);
+        const startX = left + Math.floor((visLeft - left) / tile) * tile;
+        const startY = top + Math.floor((visTop - top) / tile) * tile;
+        for (let x = startX; x < visRight; x += tile) {
+            for (let y = startY; y < visBottom; y += tile) {
+                ctx.drawImage(mapBgImage, x, y, Math.min(tile, right - x), Math.min(tile, bottom - y));
+            }
+        }
+    } else {
+        ctx.drawImage(mapBgImage, left, top, mapW, mapH);
+    }
+    ctx.restore();
+}
+
+// Картинка внутри формы вируса вместо заливки цветом (одна на клетку, без плитки)
+function drawVirusFillBackground(ctx, cell, renderSize, simpleRender, bigPointSize) {
+    if (!customVirusBgEnabled || !virusBgImage || !virusBgImage.complete || !virusBgImage.width) return false;
+    const half = (simpleRender ? renderSize : bigPointSize) * 1.15;
+
+    ctx.save();
+    ctx.clip();
+    ctx.drawImage(virusBgImage, cell.x - half, cell.y - half, half * 2, half * 2);
+    ctx.restore();
+    return true;
+}
+
+function updateBgPreview(previewId, dataUrl) {
+    const el = document.getElementById(previewId);
+    if (!el) return;
+    if (dataUrl) {
+        el.style.backgroundImage = `url("${dataUrl}")`;
+        el.classList.add("has-image");
+    } else {
+        el.style.backgroundImage = "";
+        el.classList.remove("has-image");
+    }
+}
+
+function syncBgTileRows() {
+    const mapRow = document.getElementById("map-bg-tile-row");
+    if (mapRow) mapRow.style.display = customMapBgMode === "repeat" ? "flex" : "none";
+}
+
+let customBgSettingsInitialized = false;
+
+function initCustomBgSettings() {
+    if (customBgSettingsInitialized) return;
+    customBgSettingsInitialized = true;
+
+    customMapBgMode = getCookie("custom_map_bg_mode") || "stretch";
+    customMapBgTileSize = parseInt(getCookie("custom_map_bg_tile"), 10) || 512;
+
+    const mapMode = document.getElementById("map-bg-mode");
+    const mapTile = document.getElementById("map-bg-tile");
+    if (mapMode) mapMode.value = customMapBgMode;
+    if (mapTile) mapTile.value = customMapBgTileSize;
+    syncBgTileRows();
+
+    const enabledMap = getCookie("checkbox-15");
+    if (enabledMap !== undefined && enabledMap !== null) customMapBgEnabled = enabledMap === "true";
+    const enabledVirus = getCookie("checkbox-16");
+    if (enabledVirus !== undefined && enabledVirus !== null) customVirusBgEnabled = enabledVirus === "true";
+
+    loadBgImageFromDataUrl(localStorage.getItem("custom_map_bg_image"), img => {
+        mapBgImage = img;
+        updateBgPreview("map-bg-preview", img ? localStorage.getItem("custom_map_bg_image") : null);
+    });
+    loadBgImageFromDataUrl(localStorage.getItem("custom_virus_bg_image"), img => {
+        virusBgImage = img;
+        updateBgPreview("virus-bg-preview", img ? localStorage.getItem("custom_virus_bg_image") : null);
+    });
+
+    function bindBgFile(fileId, storageKey, previewId, setImage) {
+        const input = document.getElementById(fileId);
+        if (!input) return;
+        input.addEventListener("change", function() {
+            const file = input.files && input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const dataUrl = e.target.result;
+                loadBgImageFromDataUrl(dataUrl, img => {
+                    setImage(img);
+                    if (img && saveBgImageToStorage(storageKey, dataUrl)) {
+                        updateBgPreview(previewId, dataUrl);
+                    } else if (img) {
+                        updateBgPreview(previewId, dataUrl);
+                        alert("Картинка загружена, но слишком большая для сохранения. После перезагрузки выберите файл снова.");
+                    }
+                });
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    bindBgFile("map-bg-file", "custom_map_bg_image", "map-bg-preview", img => { mapBgImage = img; });
+    bindBgFile("virus-bg-file", "custom_virus_bg_image", "virus-bg-preview", img => { virusBgImage = img; });
+
+    const mapClear = document.getElementById("map-bg-clear");
+    const virusClear = document.getElementById("virus-bg-clear");
+    if (mapClear) mapClear.addEventListener("click", () => {
+        mapBgImage = null;
+        saveBgImageToStorage("custom_map_bg_image", null);
+        updateBgPreview("map-bg-preview", null);
+        const fi = document.getElementById("map-bg-file");
+        if (fi) fi.value = "";
+    });
+    if (virusClear) virusClear.addEventListener("click", () => {
+        virusBgImage = null;
+        saveBgImageToStorage("custom_virus_bg_image", null);
+        updateBgPreview("virus-bg-preview", null);
+        const fi = document.getElementById("virus-bg-file");
+        if (fi) fi.value = "";
+    });
+
+    if (mapMode) mapMode.addEventListener("change", function() {
+        customMapBgMode = this.value;
+        setCookie("custom_map_bg_mode", customMapBgMode, 365);
+        syncBgTileRows();
+    });
+    if (mapTile) mapTile.addEventListener("change", function() {
+        customMapBgTileSize = Math.max(64, parseInt(this.value, 10) || 512);
+        this.value = customMapBgTileSize;
+        setCookie("custom_map_bg_tile", customMapBgTileSize, 365);
+    });
+}
+
 // ==================== GRID DRAW ====================
 function drawGrid() {
 	  // Проверяем наличие контекста
@@ -3468,6 +3625,28 @@ document.addEventListener('DOMContentLoaded', function() {
   // загружаем цвета
   centerColor.value = getCookie('gradient_center') || "#132745";
   edgeColor.value = getCookie('gradient_edge') || "#000000";
+
+  loadClientColorSettings();
+  const clientColorInputs = [
+    ["client-color-virus", "client_color_virus", () => clientColorVirus, v => { clientColorVirus = v; }],
+    ["client-color-food", "client_color_food", () => clientColorFood, v => { clientColorFood = v; }],
+    ["client-color-enemy", "client_color_enemy", () => clientColorEnemy, v => { clientColorEnemy = v; }],
+    ["client-color-own", "client_color_own", () => clientColorOwn, v => { clientColorOwn = v; }],
+    ["client-color-eject", "client_color_eject", () => clientColorEject, v => { clientColorEject = v; }]
+  ];
+  clientColorInputs.forEach(([id, cookieKey, getter, setter]) => {
+    const input = document.getElementById(id);
+    if (!input) return;
+    input.value = getCookie(cookieKey) || getter();
+    input.addEventListener("input", function() {
+      setter(input.value);
+      saveClientColorSetting(cookieKey, input.value);
+    });
+  });
+
+  initCustomBgSettings();
+  initKeybindSettings();
+  initSettingsNav();
   
   drawGrid();
 });
@@ -4039,17 +4218,124 @@ let showSkin = true,
     smoothRender = 0.4,
     closebord = false,
     enableMouseClicks = false,
+    mouseSplitButton = 3,
+    mouseEjectButton = 1,
     showGlow = true,
     confirmCloseTab = false,
     showAdultContent = false,
     fixedCell = false,
-    showStickers = true;
+    showStickers = true,
+    customClientColors = false,
+    clientColorVirus = "#33ff33",
+    clientColorFood = "#ffe066",
+    clientColorEnemy = "#ff4444",
+    clientColorOwn = "#4488ff",
+    clientColorEject = "#ff66cc";
+
+function isEjectedMass(cell) {
+    if (!cell || cell.isVirus || cell.isFood) return false;
+    if (playerCells.indexOf(cell) !== -1) return false;
+    const flags = cell.flag | 0;
+    if (flags & 0x20 || flags & 0x40 || cell.isEjected) return true;
+    const sz = cell.nSize || cell.size || 0;
+    if (sz <= 0 || !(foodMaxSize > 0)) return false;
+    return sz > foodMaxSize && sz <= Math.max(55, foodMaxSize + 20);
+}
+
+function getClientCellColor(cell) {
+    if (!customClientColors) return null;
+    if (cell.isVirus) return clientColorVirus;
+    if (cell.isFood) return clientColorFood;
+    if (playerCells.indexOf(cell) !== -1) return clientColorOwn;
+    if (isEjectedMass(cell)) return clientColorEject;
+    if (!cell.isVirus && !cell.isFood && playerCells.indexOf(cell) === -1) {
+        return clientColorEnemy;
+    }
+    return null;
+}
+
+function loadClientColorSettings() {
+    const enabled = getCookie("checkbox-14");
+    if (enabled !== undefined && enabled !== null) {
+        customClientColors = enabled === "true";
+    }
+    clientColorVirus = getCookie("client_color_virus") || clientColorVirus;
+    clientColorFood = getCookie("client_color_food") || clientColorFood;
+    clientColorEnemy = getCookie("client_color_enemy") || clientColorEnemy;
+    clientColorOwn = getCookie("client_color_own") || clientColorOwn;
+    clientColorEject = getCookie("client_color_eject") || clientColorEject;
+}
+
+function saveClientColorSetting(key, value) {
+    setCookie(key, value, 365);
+}
 
 // === Функции для чекбоксов ===
 wHandle.setSkins = function(arg){ showSkin = arg; };
 wHandle.setNames = function(arg){ showName = arg; };
 wHandle.setColors = function(arg){ showColor = arg; };
-wHandle.setMouseClicks = function(arg){ enableMouseClicks = arg; };
+wHandle.setMouseClicks = function(arg){
+    enableMouseClicks = arg;
+    syncMouseBindSettingsVisibility();
+};
+
+function syncMouseBindSettingsVisibility() {
+    const block = document.getElementById("mouse-bind-settings");
+    if (block) block.classList.toggle("visible", !!enableMouseClicks);
+}
+
+function cancelKeybindCapture() {
+    keybindCaptureAction = null;
+    document.querySelectorAll(".keybind-key.listening").forEach(el => el.classList.remove("listening"));
+    renderKeybindUI();
+}
+
+function normalizeMouseButton(btn) {
+    return btn === 3 ? 3 : 1;
+}
+
+function loadMouseButtonSettings() {
+    const split = parseInt(getCookie("mouse_split_btn"), 10);
+    const eject = parseInt(getCookie("mouse_eject_btn"), 10);
+    mouseSplitButton = normalizeMouseButton(split);
+    mouseEjectButton = normalizeMouseButton(eject);
+    if (mouseSplitButton === mouseEjectButton) mouseEjectButton = mouseSplitButton === 1 ? 3 : 1;
+
+    const splitSel = document.getElementById("mouse-split-btn");
+    const ejectSel = document.getElementById("mouse-eject-btn");
+    if (splitSel) splitSel.value = String(mouseSplitButton);
+    if (ejectSel) ejectSel.value = String(mouseEjectButton);
+    syncMouseBindSettingsVisibility();
+}
+
+function saveMouseButtonSettings() {
+    setCookie("mouse_split_btn", mouseSplitButton, 365);
+    setCookie("mouse_eject_btn", mouseEjectButton, 365);
+}
+
+function initMouseButtonSettings() {
+    loadMouseButtonSettings();
+    const splitSel = document.getElementById("mouse-split-btn");
+    const ejectSel = document.getElementById("mouse-eject-btn");
+    if (!splitSel || !ejectSel) return;
+
+    splitSel.addEventListener("change", function() {
+        mouseSplitButton = normalizeMouseButton(parseInt(this.value, 10));
+        if (mouseSplitButton === mouseEjectButton) {
+            mouseEjectButton = mouseSplitButton === 1 ? 3 : 1;
+            ejectSel.value = String(mouseEjectButton);
+        }
+        saveMouseButtonSettings();
+    });
+    ejectSel.addEventListener("change", function() {
+        mouseEjectButton = normalizeMouseButton(parseInt(this.value, 10));
+        if (mouseSplitButton === mouseEjectButton) {
+            mouseSplitButton = mouseEjectButton === 1 ? 3 : 1;
+            splitSel.value = String(mouseSplitButton);
+        }
+        saveMouseButtonSettings();
+    });
+}
 wHandle.setShowMass = function(arg){ showMass = arg; };
 wHandle.setSmooth = function(arg){ smoothRender = arg ? 2 : 0.4; };
 wHandle.setNoBorder = function(arg){ closebord = arg; };
@@ -4059,6 +4345,9 @@ wHandle.setAdultContent = function(arg) {showAdultContent = arg;};
 wHandle.setFixedCell = function(arg){fixedCell = arg;};
 wHandle.setConfirmCloseTab = function(arg){confirmCloseTab = arg;};
 wHandle.setShowStickers = function(arg){ showStickers = arg; };
+wHandle.setCustomClientColors = function(arg){ customClientColors = arg; };
+wHandle.setCustomMapBg = function(arg){ customMapBgEnabled = arg; };
+wHandle.setCustomVirusBg = function(arg){ customVirusBgEnabled = arg; };
 wHandle.fixDead = fixDead;
 
 // === Обработчик закрытия вкладки ===
@@ -4091,11 +4380,18 @@ wjQuery(window).on('load', function() {
                 case 10: $(this).prop("checked", showAdultContent); break;
                 case 11: $(this).prop("checked", confirmCloseTab); break; 
 			    case 12: $(this).prop("checked", fixedCell); break;
-                case 13: $(this).prop("checked", showStickers); break;			
+                case 13: $(this).prop("checked", showStickers); break;
+                case 14: $(this).prop("checked", customClientColors); break;
+                case 15: $(this).prop("checked", customMapBgEnabled); break;
+                case 16: $(this).prop("checked", customVirusBgEnabled); break;
             }
         }
     });
 
+    loadClientColorSettings();
+    loadMouseButtonSettings();
+    loadKeybinds();
+    renderKeybindUI();
     wjQuery(".save").trigger("change");
 
     wjQuery(".save").on("change", function(){
@@ -4106,6 +4402,9 @@ wjQuery(window).on('load', function() {
         if (id == 10) wHandle.setAdultContent(value);
         if (id == 11) wHandle.setConfirmCloseTab(value);
 		if (id == 13) wHandle.setShowStickers(value);
+        if (id == 14) wHandle.setCustomClientColors(value);
+        if (id == 15) wHandle.setCustomMapBg(value);
+        if (id == 16) wHandle.setCustomVirusBg(value);
     });
 });
 
@@ -4158,6 +4457,7 @@ Cell.prototype = {
     isVirus: false,
     isEjected: false,
     isAgitated: false,
+    isFood: false,
     wasSimpleDrawing: true,
 	fixedName: null,
     fixedColor: null,
@@ -4316,15 +4616,20 @@ setName(name) {
 
     // === НОВОЕ: возвращает цвет, с учётом глобальной опции showColor === false
 getEffectiveColor() {
+    const clientColor = getClientCellColor(this);
+    if (clientColor) return clientColor;
+
+    if (!showColor) return "#AAAAAA";
+
     if (fixedCell) {
         if (this.fixedColor === null) {
             this.fixedColor = this.color || "#FFFFFF";
         }
-        return showColor ? this.fixedColor : "#AAAAAA";
+        return this.fixedColor;
     }
 
     this.fixedColor = null;
-    return showColor ? (this.color || "#FFFFFF") : "#AAAAAA";
+    return this.color || "#FFFFFF";
 },
 
     // getStrokeColor теперь использует getEffectiveColor (чтобы обводка не показывала "старый" цвет)
@@ -4378,13 +4683,14 @@ if (renderSize === 0) renderSize = 20;
         }
         ctx.closePath();
 
+        const useVirusImageFill = this.isVirus && !isTransp && drawVirusFillBackground(ctx, this, renderSize, simpleRender, bigPointSize);
         if (!closebord) ctx.stroke();
-        ctx.fill();
+        if (!useVirusImageFill) ctx.fill();
 
 
 
 // === СКИН ===
-if (showSkin) {
+if (showSkin && !this.isVirus) {
     const skinName = normalizeNick(this.name);
     const skinId = skinList[skinName];
     if (skinId) {
