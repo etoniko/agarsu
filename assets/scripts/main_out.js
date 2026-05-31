@@ -5421,9 +5421,19 @@ async function handleLogin(tokenOrUser, provider) {
         url = 'auth/vk';
         options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(tokenOrUser) };
     }
-    const res = await fetch("https://api.agar.su/api/" + url, options);
-    const data = await res.json();
-    if (data.error) return alert(data.error);
+    let res;
+    try {
+        res = await fetch("https://api.agar.su/api/" + url, options);
+    } catch (e) {
+        return alert("Ошибка сети при авторизации");
+    }
+    let data;
+    try {
+        data = await res.json();
+    } catch (e) {
+        return alert("Ошибка ответа сервера авторизации");
+    }
+    if (data.error || !data.token) return alert(data.error || "Ошибка авторизации");
     wHandle.onAccountLoggedIn(data.token);
 }
 
@@ -5447,17 +5457,15 @@ wHandle.onGoogleAuth = function(response) {
     handleLogin(response.credential, 'google');
 };
 
-// VK ID callback (OneTap)
-wHandle.onVkAuth = function(payload) {
-    const codeVerifier = sessionStorage.getItem('vk_code_verifier');
-    const state = sessionStorage.getItem('vk_state');
-    if (!codeVerifier || !state) return alert('VK: сессия авторизации истекла, обновите страницу');
+// VK ID: access_token после exchangeCode на фронте (как в кабинете VK)
+wHandle.onVkAuth = function(tokenData) {
+    if (!tokenData || !tokenData.access_token) {
+        return alert("VK: не удалось получить токен");
+    }
     handleLogin({
-        code: payload.code,
-        device_id: payload.device_id,
-        code_verifier: codeVerifier,
-        state
-    }, 'vk');
+        access_token: tokenData.access_token,
+        user_id: tokenData.user_id
+    }, "vk");
 };
 
 // --------------------- Account ---------------------
