@@ -1,12 +1,24 @@
 (function () {
-  const PKCE_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-";
+  function vkidOnError(error) {
+    console.error("VK ID error:", error);
+    const msg =
+      error?.error_description ||
+      error?.error ||
+      error?.text ||
+      (typeof error === "string" ? error : "Ошибка входа VK");
+    alert("VK: " + msg);
+  }
 
-  function randomString(len) {
-    const bytes = new Uint8Array(len);
-    crypto.getRandomValues(bytes);
-    let out = "";
-    for (let i = 0; i < len; i++) out += PKCE_CHARS[bytes[i] % PKCE_CHARS.length];
-    return out;
+  function vkidOnSuccess(tokenData) {
+    if (typeof wHandle.onVkAuth === "function") {
+      wHandle.onVkAuth(tokenData);
+    } else {
+      alert("VK: страница ещё не готова, обновите и попробуйте снова");
+    }
+  }
+
+  function exchangeAndLogin(VKID, code, deviceId) {
+    return VKID.Auth.exchangeCode(code, deviceId).then(vkidOnSuccess).catch(vkidOnError);
   }
 
   function initVkAuth() {
@@ -16,20 +28,25 @@
     const container = document.getElementById("VkIdSdkOneTap");
     if (!container) return;
 
-    const codeVerifier = randomString(64);
-    const state = randomString(32);
-    sessionStorage.setItem("vk_code_verifier", codeVerifier);
-    sessionStorage.setItem("vk_state", state);
-
+    // Redirect URL = https://agar.su (как в кабинете VK ID, не api.agar.su)
     VKID.Config.init({
       app: 54069355,
       redirectUrl: "https://agar.su",
-      state,
-      codeVerifier,
       responseMode: VKID.ConfigResponseMode.Callback,
       source: VKID.ConfigSource.LOWCODE,
       scope: "",
     });
+
+    // Если VK вернул code в URL (redirect после popup)
+    const urlParams = new URLSearchParams(window.location.search);
+    const codeFromUrl = urlParams.get("code");
+    const deviceFromUrl = urlParams.get("device_id");
+    if (codeFromUrl && deviceFromUrl) {
+      exchangeAndLogin(VKID, codeFromUrl, deviceFromUrl).finally(() => {
+        window.history.replaceState({}, "", window.location.pathname + window.location.hash);
+      });
+      return;
+    }
 
     const oneTap = new VKID.OneTap();
     oneTap
@@ -42,13 +59,9 @@
         scheme: VKID.Scheme.LIGHT,
         lang: VKID.Languages.RUS,
       })
-      .on(VKID.WidgetEvents.ERROR, (err) => {
-        console.error("VK ID widget error:", err);
-      })
-      .on(VKID.OneTapInternalEvents.LOGIN_SUCCESS, (payload) => {
-        if (typeof wHandle.onVkAuth === "function") {
-          wHandle.onVkAuth(payload);
-        }
+      .on(VKID.WidgetEvents.ERROR, vkidOnError)
+      .on(VKID.OneTapInternalEvents.LOGIN_SUCCESS, function (payload) {
+        exchangeAndLogin(VKID, payload.code, payload.device_id);
       });
   }
 
