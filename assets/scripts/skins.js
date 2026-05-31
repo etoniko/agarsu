@@ -1,8 +1,196 @@
 // Переменные для отслеживания действий
-let lastActionTime = 0; // Время последнего действия
-const actionInterval = 500; // Интервал между действиями (в мс)
-let actionTimeout; // Таймер для обработки ввода
-let currentIndex = 0; // Индекс текущего игрока
+let lastActionTime = 0;
+const actionInterval = 500;
+let actionTimeout;
+let currentIndex = 0;
+
+// --- Галерея скинов (без пароля, новые сверху) ---
+const SKINS_PER_PAGE_MOBILE = 8;  /* 2×4 */
+const SKINS_PER_PAGE_DESKTOP = 15; /* 5×3 */
+let skinsGalleryItems = [];
+let skinsGalleryPage = 1;
+let skinsGalleryPerPage = SKINS_PER_PAGE_DESKTOP;
+let skinsGalleryLoading = false;
+let skinsGalleryLoaded = false;
+let skinsGalleryResizeBound = false;
+
+function getSkinsGalleryPerPage() {
+    return window.matchMedia('(max-width: 599px)').matches
+        ? SKINS_PER_PAGE_MOBILE
+        : SKINS_PER_PAGE_DESKTOP;
+}
+
+function bindSkinsGalleryResize() {
+    if (skinsGalleryResizeBound) return;
+    skinsGalleryResizeBound = true;
+    let lastPerPage = getSkinsGalleryPerPage();
+    window.addEventListener('resize', () => {
+        const next = getSkinsGalleryPerPage();
+        if (next === lastPerPage || !skinsGalleryLoaded) return;
+        lastPerPage = next;
+        skinsGalleryPerPage = next;
+        const totalPages = Math.max(1, Math.ceil(skinsGalleryItems.length / skinsGalleryPerPage));
+        if (skinsGalleryPage > totalPages) skinsGalleryPage = totalPages;
+        renderSkinsGalleryPage(skinsGalleryPage);
+    });
+}
+
+async function loadSkinsGalleryData() {
+    const [skinRes, passRes] = await Promise.all([
+        fetch('https://api.agar.su/skinlist.txt'),
+        fetch('https://api.agar.su/pass.txt').catch(() => null)
+    ]);
+    if (!skinRes.ok) throw new Error('skinlist');
+    const skinText = await skinRes.text();
+    const passSet = new Set();
+
+    if (passRes && passRes.ok) {
+        const passText = await passRes.text();
+        passText.split('\n').forEach((line) => {
+            const key = normalizeNick(line.trim());
+            if (key) passSet.add(key);
+        });
+    }
+    if (typeof passUsers !== 'undefined' && Array.isArray(passUsers)) {
+        passUsers.forEach((n) => {
+            if (n) passSet.add(n);
+        });
+    }
+
+    const lines = skinText.trim().split('\n');
+    const all = [];
+    lines.forEach((line) => {
+        const idx = line.indexOf(':');
+        if (idx < 0) return;
+        const nick = line.slice(0, idx).trim();
+        const code = line.slice(idx + 1).trim();
+        if (!nick || !code) return;
+        all.push({ nick, code });
+    });
+
+    skinsGalleryItems = all.reverse().filter((s) => !passSet.has(normalizeNick(s.nick)));
+    skinsGalleryLoaded = true;
+}
+
+function setSkinsGalleryStatus(text, isError) {
+    const el = document.getElementById('skinsGalleryStatus');
+    if (!el) return;
+    el.textContent = text || '';
+    el.classList.toggle('is-error', !!isError);
+}
+
+function renderSkinsGalleryPagination(totalPages, pagination) {
+    pagination.innerHTML = '';
+    if (totalPages <= 1) return;
+
+    const addBtn = (label, p, extraClass) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = label;
+        btn.className = extraClass || 'page-num';
+        if (p === skinsGalleryPage) btn.classList.add('active');
+        if (p != null) {
+            btn.addEventListener('click', () => renderSkinsGalleryPage(p));
+        } else {
+            btn.disabled = true;
+        }
+        pagination.appendChild(btn);
+    };
+
+    if (skinsGalleryPage > 1) {
+        addBtn('‹', skinsGalleryPage - 1, 'page-nav');
+    }
+
+    const windowSize = 5;
+    let start = Math.max(1, skinsGalleryPage - Math.floor(windowSize / 2));
+    let end = Math.min(totalPages, start + windowSize - 1);
+    start = Math.max(1, end - windowSize + 1);
+
+    for (let i = start; i <= end; i++) {
+        addBtn(String(i), i, 'page-num');
+    }
+
+    if (skinsGalleryPage < totalPages) {
+        addBtn('›', skinsGalleryPage + 1, 'page-nav');
+    }
+}
+
+function renderSkinsGalleryPage(page) {
+    const grid = document.getElementById('skinsGalleryGrid');
+    const pagination = document.getElementById('skinsGalleryPagination');
+    if (!grid || !pagination) return;
+
+    skinsGalleryPerPage = getSkinsGalleryPerPage();
+    bindSkinsGalleryResize();
+    grid.setAttribute('data-per-page', String(skinsGalleryPerPage));
+
+    grid.innerHTML = '';
+    const totalPages = Math.max(1, Math.ceil(skinsGalleryItems.length / skinsGalleryPerPage));
+    skinsGalleryPage = Math.min(Math.max(1, page), totalPages);
+
+    const start = (skinsGalleryPage - 1) * skinsGalleryPerPage;
+    const pageSkins = skinsGalleryItems.slice(start, start + skinsGalleryPerPage);
+
+    pageSkins.forEach((skin) => {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'skins-gallery-card';
+        card.innerHTML = `
+            <img src="https://api.agar.su/skins/${skin.code}.png" alt="" loading="lazy">
+            <h4>${escapeHtml(skin.nick)}</h4>
+        `;
+        card.addEventListener('click', async () => {
+            await selectSkin(skin.nick);
+            showContent('home');
+        });
+        grid.appendChild(card);
+    });
+
+    renderSkinsGalleryPagination(totalPages, pagination);
+
+    if (!skinsGalleryItems.length) {
+        setSkinsGalleryStatus('Нет скинов без пароля', false);
+    } else if (totalPages <= 1) {
+        setSkinsGalleryStatus(`${skinsGalleryItems.length} скинов`, false);
+    } else {
+        setSkinsGalleryStatus(
+            `${skinsGalleryItems.length} · ${skinsGalleryPage} / ${totalPages}`,
+            false
+        );
+    }
+}
+
+function escapeHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+async function initSkinsGallery() {
+    const grid = document.getElementById('skinsGalleryGrid');
+    if (!grid || skinsGalleryLoading) return;
+
+    if (skinsGalleryLoaded && skinsGalleryItems.length) {
+        renderSkinsGalleryPage(skinsGalleryPage);
+        return;
+    }
+
+    skinsGalleryLoading = true;
+    setSkinsGalleryStatus('Загрузка…');
+    grid.innerHTML = '';
+
+    try {
+        await loadSkinsGalleryData();
+        renderSkinsGalleryPage(1);
+    } catch (e) {
+        console.error('Галерея скинов:', e);
+        setSkinsGalleryStatus('Не удалось загрузить галерею. Попробуйте позже.', true);
+    } finally {
+        skinsGalleryLoading = false;
+    }
+}
 
 // Функция загрузки списка скинов
 async function loadSkinsList() {
@@ -10,157 +198,135 @@ async function loadSkinsList() {
     const data = await response.text();
     const skinsMap = new Map();
 
-    data.split('\n').forEach(line => {
+    data.split('\n').forEach((line) => {
         const [nick, id] = line.split(':');
         if (nick && id) skinsMap.set(normalizeNick(nick), id.trim());
     });
     return skinsMap;
 }
 
-// Функция нормализации ника для поиска
 function normalizeNick(nick) {
     if (!nick) return '';
 
     let n = nick.trim();
 
-    // Проверяем, начинается ли ник с открывающейся скобки
     if (n.startsWith('[')) {
         const endIndex = n.indexOf(']');
-        if (endIndex === -1) return ''; // закрывающей скобки нет
+        if (endIndex === -1) return '';
 
         const innerNick = n.substring(1, endIndex).trim();
-        if (!innerNick || innerNick !== n.substring(1, endIndex)) return ''; // проверка пробелов внутри
+        if (!innerNick || innerNick !== n.substring(1, endIndex)) return '';
 
-        // Возвращаем ник вместе со скобками, игнорируя всё после закрывающейся скобки
         return `[${innerNick}]`.toLowerCase();
+    }
+    if (!n || n.trim() !== n) return '';
+    return n.toLowerCase();
+}
+
+async function selectSkin(nick) {
+    const skinsMap = await loadSkinsList();
+    const normalizedNick = normalizeNick(nick);
+
+    if (skinsMap.has(normalizedNick)) {
+        const id = skinsMap.get(normalizedNick);
+        savePlayerData(nick, id);
+        currentIndex = getCurrentPlayerIndex(nick);
+        updateAvatarDisplay();
     } else {
-        // Ник без скобок: нельзя содержать пробелы в начале/конце
-        if (!n || n.trim() !== n) return '';
-        return n.toLowerCase();
+        const skinss = document.querySelector('#skinss');
+        if (skinss) skinss.style.backgroundImage = '';
     }
 }
 
+function getCurrentPlayerIndex(nick) {
+    const players = JSON.parse(localStorage.getItem('players') || '[]');
+    return players.findIndex((player) => normalizeNick(player.nick) === normalizeNick(nick));
+}
 
-                        // Функция выбора скина и сохранения данных игрока в localStorage
-                        async function selectSkin(nick) {
-                            const skinsMap = await loadSkinsList();
-                            const normalizedNick = normalizeNick(nick);
+function savePlayerData(nick, id) {
+    const players = JSON.parse(localStorage.getItem('players') || '[]');
+    const playerData = { nick, id };
 
-                            // Проверка, если скин найден
-                            if (skinsMap.has(normalizedNick)) {
-                                const id = skinsMap.get(normalizedNick);
+    const index = players.findIndex((player) => normalizeNick(player.nick) === normalizeNick(nick));
+    if (index !== -1) players.splice(index, 1);
 
-                                // Сохранение данных игрока в localStorage
-                                savePlayerData(nick, id);
-                                currentIndex = getCurrentPlayerIndex(nick); // Обновление индекса
-                                updateAvatarDisplay(); // Обновление аватара
-                            } else {
-                                document.querySelector("#skinss").style.backgroundImage = ""; // Очистка фона
-                            }
-                        }
+    players.unshift(playerData);
 
-                        // Функция получения текущего индекса игрока из localStorage
-                        function getCurrentPlayerIndex(nick) {
-                            const players = JSON.parse(localStorage.getItem('players') || '[]');
-                            return players.findIndex(player => normalizeNick(player.nick) === normalizeNick(nick));
-                        }
+    if (players.length > 3) players.pop();
 
-                        // Функция сохранения данных игрока в localStorage
-                        function savePlayerData(nick, id) {
-                            const players = JSON.parse(localStorage.getItem('players') || '[]');
-                            const playerData = { nick, id }; // Сохраняем ник и скин
+    localStorage.setItem('players', JSON.stringify(players));
+}
 
-                            // Удаление дубликатов
-                            const index = players.findIndex(player => normalizeNick(player.nick) === normalizeNick(nick));
-                            if (index !== -1) players.splice(index, 1);
+function updateAvatarDisplay() {
+    const players = JSON.parse(localStorage.getItem('players') || '[]');
+    const mainSkin = document.querySelector('#skinss');
+    const previousSkin = document.querySelector('#prevSkin');
+    const nextSkin = document.querySelector('#nextSkin');
+    if (!mainSkin) return;
 
-                            // Добавление нового игрока в начало
-                            players.unshift(playerData);
+    mainSkin.style.backgroundImage = '';
+    if (previousSkin) previousSkin.style.backgroundImage = '';
+    if (nextSkin) nextSkin.style.backgroundImage = '';
 
-                            // Ограничение хранения последних 3 игроков
-                            if (players.length > 3) players.pop();
+    if (players.length > 0) {
+        const currentPlayer = players[currentIndex];
+        mainSkin.style.backgroundImage = `url(https://api.agar.su/skins/${currentPlayer.id}.png)`;
+        const nickInput = document.getElementById('nick');
+        if (nickInput) nickInput.value = currentPlayer.nick;
 
-                            localStorage.setItem('players', JSON.stringify(players)); // Сохранение в localStorage
-                        }
+        const prevIndex = (currentIndex - 1 + players.length) % players.length;
+        if (previousSkin && players[prevIndex]) {
+            previousSkin.style.backgroundImage = `url(https://api.agar.su/skins/${players[prevIndex].id}.png)`;
+        }
 
-                        // Функция обновления отображения аватаров
-                        function updateAvatarDisplay() {
-                            const players = JSON.parse(localStorage.getItem('players') || '[]');
-                            const mainSkin = document.querySelector("#skinss");
-                            const previousSkin = document.querySelector("#prevSkin");
-                            const nextSkin = document.querySelector("#nextSkin");
+        const nextIndex = (currentIndex + 1) % players.length;
+        if (nextSkin && players[nextIndex]) {
+            nextSkin.style.backgroundImage = `url(https://api.agar.su/skins/${players[nextIndex].id}.png)`;
+        }
+    }
+}
 
-                            // Очистка фонов
-                            mainSkin.style.backgroundImage = "";
-                            previousSkin.style.backgroundImage = "";
-                            nextSkin.style.backgroundImage = "";
+function showNext() {
+    const players = JSON.parse(localStorage.getItem('players') || '[]');
+    if (players.length > 0) {
+        currentIndex = (currentIndex + 1) % players.length;
+        changeSkin();
+    }
+}
 
-                            if (players.length > 0) {
-                                const currentPlayer = players[currentIndex];
-                                mainSkin.style.backgroundImage = `url(https://api.agar.su/skins/${currentPlayer.id}.png)`; // Выставляем скин
-                                document.getElementById("nick").value = currentPlayer.nick;
+function showPrevious() {
+    const players = JSON.parse(localStorage.getItem('players') || '[]');
+    if (players.length > 0) {
+        currentIndex = (currentIndex - 1 + players.length) % players.length;
+        changeSkin();
+    }
+}
 
-                                // Установка предыдущего скина
-                                const prevIndex = (currentIndex - 1 + players.length) % players.length;
-                                if (players[prevIndex]) {
-                                    previousSkin.style.backgroundImage = `url(https://api.agar.su/skins/${players[prevIndex].id}.png)`;
-                                }
+function changeSkin() {
+    const mainSkin = document.querySelector('#skinss');
+    if (!mainSkin) return;
+    mainSkin.classList.add('scale-down');
+    setTimeout(() => {
+        updateAvatarDisplay();
+        mainSkin.classList.remove('scale-down');
+    }, 50);
+}
 
-                                // Установка следующего скина
-                                const nextIndex = (currentIndex + 1) % players.length;
-                                if (players[nextIndex]) {
-                                    nextSkin.style.backgroundImage = `url(https://api.agar.su/skins/${players[nextIndex].id}.png)`;
-                                }
-                            }
-                        }
+document.addEventListener('DOMContentLoaded', () => {
+    const nickInput = document.getElementById('nick');
+    if (nickInput) {
+        nickInput.addEventListener('input', function () {
+            const nickname = this.value;
+            clearTimeout(actionTimeout);
+            actionTimeout = setTimeout(async () => {
+                await selectSkin(nickname);
+            }, actionInterval);
+        });
+    }
 
-                        // Показ следующего игрока
-                        function showNext() {
-                            const players = JSON.parse(localStorage.getItem('players') || '[]');
-                            if (players.length > 0) {
-                                currentIndex = (currentIndex + 1) % players.length;
-                                changeSkin();
-                            }
-                        }
-
-                        // Показ предыдущего игрока
-                        function showPrevious() {
-                            const players = JSON.parse(localStorage.getItem('players') || '[]');
-                            if (players.length > 0) {
-                                currentIndex = (currentIndex - 1 + players.length) % players.length;
-                                changeSkin();
-                            }
-                        }
-
-                        // Анимация смены скина
-                        function changeSkin() {
-                            const mainSkin = document.querySelector("#skinss");
-                            mainSkin.classList.add("scale-down");
-                            setTimeout(() => {
-                                updateAvatarDisplay();
-                                mainSkin.classList.remove("scale-down");
-                            }, 50);
-                        }
-
-                        // Обработчик ввода ника
-                        document.getElementById('nick').addEventListener('input', function () {
-                            const nickname = this.value;
-                            clearTimeout(actionTimeout);
-                            actionTimeout = setTimeout(async () => {
-                                await selectSkin(nickname);
-                            }, actionInterval);
-                        });
-
-                        // Загрузка сохранённых данных при загрузке страницы
-                        window.addEventListener("load", function () {
-                            const players = JSON.parse(localStorage.getItem('players') || '[]');
-
-                            if (players.length > 0) {
-                                currentIndex = 0;
-                                updateAvatarDisplay();
-                            }
-                        });
-
-
-
-
+    const players = JSON.parse(localStorage.getItem('players') || '[]');
+    if (players.length > 0) {
+        currentIndex = 0;
+        updateAvatarDisplay();
+    }
+});
