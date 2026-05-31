@@ -1812,7 +1812,19 @@ input{font-size:16px;}
 @keyframes blink{0%, 50%, 100%{opacity:1;} 25%, 75%{opacity:0;}}
 #recInfo{display:flex;flex-direction:column;align-items:center;color:white;text-shadow:0 0 5px black;font-size:14px;}
 #recTimer{font-weight:bold;font-size:16px;}
-#authlog{width:100%;display:flex;align-items:center;flex-direction:column;height:300px;justify-content:center;gap:10px;}
+#authlog{width:100%;display:flex;align-items:center;flex-direction:column;min-height:300px;justify-content:center;gap:14px;padding:16px 0;}
+.auth-provider{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;max-width:360px;}
+.auth-provider-vk{margin-bottom:4px;}
+.auth-provider-label{margin:0;font-size:14px;color:#b3c0e0;font-weight:500;}
+.auth-vpn-hint{margin:0;font-size:12px;color:#8899bb;display:flex;align-items:center;gap:5px;}
+.auth-vpn-hint i{font-size:11px;opacity:0.85;}
+.auth-divider{display:flex;align-items:center;width:100%;max-width:280px;color:#5a6a8a;font-size:12px;gap:10px;}
+.auth-divider::before,.auth-divider::after{content:"";flex:1;height:1px;background:#ffffff1a;}
+.auth-divider span{flex-shrink:0;}
+.auth-telegram-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 20px;border:none;border-radius:8px;background:#2ca5e2;color:#fff;font-size:14px;font-weight:500;cursor:pointer;transition:background 0.2s,transform 0.15s;min-width:220px;}
+.auth-telegram-btn:hover{background:#1e90d0;transform:scale(1.02);}
+.auth-telegram-btn i{font-size:18px;}
+#VkIdSdkOneTap{display:flex;justify-content:center;width:100%;}
 .headerstats{width:100%;display:flex;align-items:center;justify-content:center;margin-bottom:10px;position:relative;}
 .headerstats h1{margin:0;text-align:center;flex:1;}
 #closeStats{position:absolute;top:-10;right:0;font-size:24px;font-weight:bold;color:#fff;cursor:pointer;transition:color 0.2s, transform 0.2s;}
