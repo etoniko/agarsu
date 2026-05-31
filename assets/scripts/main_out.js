@@ -457,6 +457,11 @@ const cellColors = [
 let stickerCooldown = false;
 let stickerCooldownTimer = null;
     ma = true;
+    const reconnectBtn = document.getElementById("reconnect-panel-btn");
+    if (reconnectBtn && !reconnectBtn.dataset.bound) {
+        reconnectBtn.dataset.bound = "1";
+        reconnectBtn.addEventListener("click", reconnectToServer);
+    }
     document.getElementById("canvas").focus();
     var isTyping = false;
     var txt;
@@ -1413,6 +1418,58 @@ function isMouseOverElement(element) {
 let currentWebSocketUrl = null;
 let connectInProgress = false;
 let connectVerifyProgressTimer = null;
+const HIDDEN_TAB_DISCONNECT_MS = 60000;
+let hiddenTabDisconnectTimer = null;
+let wsClosedByHiddenTab = false;
+
+function isWsConnected() {
+    return ws && ws.readyState === WebSocket.OPEN;
+}
+
+function clearHiddenTabDisconnectTimer() {
+    if (hiddenTabDisconnectTimer) {
+        clearTimeout(hiddenTabDisconnectTimer);
+        hiddenTabDisconnectTimer = null;
+    }
+}
+
+function scheduleHiddenTabDisconnect() {
+    clearHiddenTabDisconnectTimer();
+    if (!document.hidden) return;
+    hiddenTabDisconnectTimer = setTimeout(() => {
+        hiddenTabDisconnectTimer = null;
+        if (!document.hidden || !isWsConnected()) return;
+        wsClosedByHiddenTab = true;
+        try { ws.close(); } catch (e) {}
+    }, HIDDEN_TAB_DISCONNECT_MS);
+}
+
+function showReconnectPanel(message) {
+    const panel = document.getElementById("reconnect-panel");
+    const msgEl = document.getElementById("reconnect-panel-message");
+    if (msgEl && message) msgEl.textContent = message;
+    if (panel) panel.style.display = "flex";
+}
+
+function hideReconnectPanel() {
+    const panel = document.getElementById("reconnect-panel");
+    if (panel) panel.style.display = "none";
+}
+
+function reconnectToServer() {
+    hideReconnectPanel();
+    wsClosedByHiddenTab = false;
+    if (!ma) return;
+    showConnecting();
+}
+
+document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+        scheduleHiddenTabDisconnect();
+    } else {
+        clearHiddenTabDisconnectTimer();
+    }
+});
 
 function showConnectVerifyOverlay(text) {
     const overlay = document.getElementById("connect-verify-overlay");
@@ -1704,6 +1761,7 @@ let pingstamp = 0;
         if (gameHandshakeDone) return;
         gameHandshakeDone = true;
         hideConnectVerifyOverlay();
+        hideReconnectPanel();
         sendNickName();
         if (wsPingInterval) clearInterval(wsPingInterval);
         wsPingInterval = setInterval(() => {
@@ -1720,7 +1778,13 @@ let pingstamp = 0;
         clearInterval(wsPingInterval);
         wsPingInterval = null;
     }
-			
+    if (connectInProgress) return;
+    if (!ma) return;
+    const msg = wsClosedByHiddenTab
+        ? "Вкладка была неактивна более 60 секунд. Нажмите, чтобы переподключиться."
+        : "Соединение с сервером потеряно. Нажмите, чтобы переподключиться.";
+    wsClosedByHiddenTab = false;
+    showReconnectPanel(msg);
         }
 
 
