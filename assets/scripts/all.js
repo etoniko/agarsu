@@ -5,6 +5,7 @@ function showContent(id) {
                     document.querySelector(`.menu-item[onclick="showContent('${id}')"]`).classList.add('active');
                     document.getElementById(id).classList.add('active');
                     if (typeof updateShopAuthNotice === 'function') updateShopAuthNotice();
+                    if (id === 'skinslist' && typeof initSkinsGallery === 'function') initSkinsGallery();
                 }
 
 function updateAccountMenuLabel() {
