@@ -97,7 +97,7 @@ stats.forEach((player, index) => {
                         }
 	
     // По умолчанию выбранный сервер
-    let SELECTED_SERVER = wHandle.CONNECTION_URL || "reg.agar.su";
+    let SELECTED_SERVER = wHandle.CONNECTION_URL || "ffa.agar.su";
 
     // --- Подсветка активного сервера из hash ---
     function setActiveFromHash() {
@@ -241,7 +241,7 @@ wHandle.startGame = function () {
 
 // host — для wss, api — HTTPS того же игрового сервера (клиент может быть на GitHub)
 const GAME_SERVERS = {
-        "ffa":        { host: "reg.agar.su",           api: "https://reg.agar.su" },
+        "ffa":        { host: "ffa.agar.su",           api: "https://ffa.agar.su" },
         "ms":         { host: "ffa.agar.su:6002",      api: "https://ffa.agar.su:6002" },
         "pvp1":       { host: "ffa.agar.su:6004",      api: "https://ffa.agar.su:6004" },
         "pvp2":       { host: "ffa.agar.su:6005",      api: "https://ffa.agar.su:6005" },
