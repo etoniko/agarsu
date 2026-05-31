@@ -1,4 +1,14 @@
 (function () {
+  const PKCE_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-";
+
+  function randomString(len) {
+    const bytes = new Uint8Array(len);
+    crypto.getRandomValues(bytes);
+    let out = "";
+    for (let i = 0; i < len; i++) out += PKCE_CHARS[bytes[i] % PKCE_CHARS.length];
+    return out;
+  }
+
   function vkidOnError(error) {
     console.error("VK ID error:", error);
     const msg =
@@ -9,16 +19,19 @@
     alert("VK: " + msg);
   }
 
-  function vkidOnSuccess(tokenData) {
-    if (typeof wHandle.onVkAuth === "function") {
-      wHandle.onVkAuth(tokenData);
-    } else {
-      alert("VK: страница ещё не готова, обновите и попробуйте снова");
+  // Auth Code → на бэкенд api.agar.su (обмен code→token по документации VK ID Web)
+  function sendCodeToServer(code, deviceId) {
+    const codeVerifier = sessionStorage.getItem("vk_code_verifier");
+    const state = sessionStorage.getItem("vk_state");
+    if (!codeVerifier || !state) {
+      alert("VK: сессия истекла, обновите страницу");
+      return;
     }
-  }
-
-  function exchangeAndLogin(VKID, code, deviceId) {
-    return VKID.Auth.exchangeCode(code, deviceId).then(vkidOnSuccess).catch(vkidOnError);
+    if (typeof window.onVkAuth !== "function") {
+      alert("VK: страница ещё не готова, обновите и попробуйте снова");
+      return;
+    }
+    window.onVkAuth({ code, device_id: deviceId, code_verifier: codeVerifier, state });
   }
 
   function initVkAuth() {
@@ -28,23 +41,30 @@
     const container = document.getElementById("VkIdSdkOneTap");
     if (!container) return;
 
-    // Redirect URL = https://agar.su (как в кабинете VK ID, не api.agar.su)
+    // PKCE: code_verifier генерируем сами → обмен на бэкенде (id.vk.ru/oauth2/auth)
+    const codeVerifier = randomString(64);
+    const state = randomString(32);
+    sessionStorage.setItem("vk_code_verifier", codeVerifier);
+    sessionStorage.setItem("vk_state", state);
+
+    // Как в кабинете VK ID (Low-code One Tap) + codeVerifier для backend exchange
     VKID.Config.init({
       app: 54069355,
       redirectUrl: "https://agar.su",
+      state,
+      codeVerifier,
       responseMode: VKID.ConfigResponseMode.Callback,
       source: VKID.ConfigSource.LOWCODE,
       scope: "",
     });
 
-    // Если VK вернул code в URL (redirect после popup)
+    // Redirect fallback: ?code= &device_id= в URL
     const urlParams = new URLSearchParams(window.location.search);
     const codeFromUrl = urlParams.get("code");
     const deviceFromUrl = urlParams.get("device_id");
     if (codeFromUrl && deviceFromUrl) {
-      exchangeAndLogin(VKID, codeFromUrl, deviceFromUrl).finally(() => {
-        window.history.replaceState({}, "", window.location.pathname + window.location.hash);
-      });
+      sendCodeToServer(codeFromUrl, deviceFromUrl);
+      window.history.replaceState({}, "", window.location.pathname + window.location.hash);
       return;
     }
 
@@ -61,7 +81,7 @@
       })
       .on(VKID.WidgetEvents.ERROR, vkidOnError)
       .on(VKID.OneTapInternalEvents.LOGIN_SUCCESS, function (payload) {
-        exchangeAndLogin(VKID, payload.code, payload.device_id);
+        sendCodeToServer(payload.code, payload.device_id);
       });
   }
 
