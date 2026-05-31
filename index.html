@@ -421,13 +421,28 @@ _tmr.push({id: "3761618", type: "pageView", start: (new Date()).getTime()});
   <div class="list-wrap" id="clanWrap" style="display:none;"><ul id="myClanList" class="list"></ul></div>
 </div>
 <div id="authlog">
-  <!-- Google -->
-  <div id="g_id_onload"
-       data-client_id="157257230972-4vh698jtf46c76sc7607oe1k9tr782je.apps.googleusercontent.com"
-       data-auto_prompt="false"
-       data-callback="onGoogleAuth"></div>
-  <div class="g_id_signin"></div>
-<span onclick="openTelegramAuth()">Войти через Telegram</span>
+  <div id="vkAuthContainer" class="auth-provider auth-provider-vk">
+    <div id="VkIdSdkOneTap"></div>
+  </div>
+
+  <div class="auth-divider"><span>или</span></div>
+
+  <div class="auth-provider auth-provider-vpn">
+    <div id="g_id_onload"
+         data-client_id="157257230972-4vh698jtf46c76sc7607oe1k9tr782je.apps.googleusercontent.com"
+         data-auto_prompt="false"
+         data-callback="onGoogleAuth"></div>
+    <div class="g_id_signin" id="googleLoginButton"></div>
+    <p class="auth-vpn-hint"><i class="fas fa-globe"></i> Google — требуется VPN</p>
+  </div>
+
+  <div class="auth-provider auth-provider-vpn">
+    <button type="button" class="auth-telegram-btn" id="telegramLoginButton" onclick="openTelegramAuth()">
+      <i class="fab fa-telegram"></i> Войти через Telegram
+    </button>
+    <p class="auth-vpn-hint"><i class="fas fa-globe"></i> Telegram — требуется VPN</p>
+  </div>
+</div>
 
 <script>
 function openTelegramAuth() {
@@ -438,7 +453,8 @@ function openTelegramAuth() {
   );
 }
 </script>
-</div>
+<script src="https://unpkg.com/@vkid/sdk@2/dist-sdk/umd/index.js"></script>
+<script src="/assets/scripts/vk-auth.js?2"></script>
 
           </div>
         </div>
