@@ -147,7 +147,7 @@ window.addEventListener('hashchange', setActiveFromHash);
         };
     })(wjQuery);
 
-const ONLINE_HUB_URL = "https://api.agar.su:6008/online";
+const ONLINE_HUB_URL = "https://api.agar.su:6008/online?1";
 
 // Онлайн: клиент ← api.agar.su:6008 ← игровые серверы (POST /report)
 async function updateOnlineCount() {
