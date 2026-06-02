@@ -241,23 +241,12 @@ wHandle.startGame = function () {
 
 // host — для wss, api — HTTPS того же игрового сервера (клиент может быть на GitHub)
 const GAME_SERVERS = {
+        "ffa":        { host: "ffa.agar.su",           api: "https://ffa.agar.su" },
         "ms":         { host: "ffa.agar.su:6002",      api: "https://ffa.agar.su:6002" },
         "pvp1":       { host: "ffa.agar.su:6004",      api: "https://ffa.agar.su:6004" },
         "pvp2":       { host: "ffa.agar.su:6005",      api: "https://ffa.agar.su:6005" },
-        "tournament": { host: "ffa.agar.su:6006",      api: "https://ffa.agar.su:6006" },
-        "ffa":    { host: "ffa.agar.su:6007",      api: "https://ffa.agar.su:6007", noPow: true }
+        "tournament": { host: "ffa.agar.su:6006",      api: "https://ffa.agar.su:6006" }
     };
-
-/** Серверы без /challenge (старый WS, только accountToken в query). */
-function gameServerNeedsConnectPow(hostOrUrl) {
-    const h = String(hostOrUrl || "")
-        .replace(/^wss?:\/\//i, "")
-        .replace(/\/$/, "")
-        .toLowerCase();
-    const entry = Object.values(GAME_SERVERS).find(s => s.host.toLowerCase() === h);
-    if (entry && entry.noPow) return false;
-    return h !== "ffa.agar.su:6007";
-}
 const SERVERS = Object.fromEntries(
     Object.entries(GAME_SERVERS).map(([id, s]) => [id, s.host])
 );
@@ -1661,15 +1650,7 @@ async function wsConnect(wsUrlArg) {
     if (connectInProgress) return;
     connectInProgress = true;
     hideBanBanner();
-
-    const c = CONNECTION_URL;
-    const needsPow = gameServerNeedsConnectPow(c);
-
-    if (needsPow) {
-        showConnectVerifyOverlay("Подключение к серверу…");
-    } else {
-        hideConnectVerifyOverlay();
-    }
+    showConnectVerifyOverlay("Подключение к серверу…");
 
     if (ws) {
         ws.onopen = null;
@@ -1679,6 +1660,7 @@ async function wsConnect(wsUrlArg) {
         ws = null;
     }
 
+    const c = CONNECTION_URL;
     wsUrl = wsUrlArg || getGameServerWssUrl(c);
 
     playerCells = [];
@@ -1688,27 +1670,22 @@ async function wsConnect(wsUrlArg) {
     leaderBoard = [];
 
     let connectToken = "";
-    if (needsPow) {
-        try {
-            connectToken = await fetchConnectToken(c);
-        } catch (err) {
-            console.error("Connect token error:", err);
-            connectInProgress = false;
-            setConnectVerifyStage(0, "Ошибка подключения, повтор…");
-            return;
-        }
+    try {
+        connectToken = await fetchConnectToken(c);
+    } catch (err) {
+        console.error("Connect token error:", err);
+        connectInProgress = false;
+        setConnectVerifyStage(0, "Ошибка подключения, повтор…");
+        return;
     }
 
     const qs = new URLSearchParams();
     if (localStorage.accountToken) {
         qs.set("accountToken", localStorage.accountToken);
     }
-    if (needsPow && connectToken) {
-        qs.set("connectToken", connectToken);
-    }
+    qs.set("connectToken", connectToken);
 
-    const wsTarget = qs.toString() ? wsUrl + "?" + qs.toString() : wsUrl;
-    ws = new WebSocket(wsTarget, "eSejeKSVdysQvZs0ES1H");
+    ws = new WebSocket(wsUrl + "?" + qs.toString(), "eSejeKSVdysQvZs0ES1H");
     ws.binaryType = "arraybuffer";
     ws.onopen = onWsOpen;
     ws.onmessage = onWsMessage;
