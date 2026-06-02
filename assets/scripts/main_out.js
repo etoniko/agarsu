@@ -4,13 +4,53 @@
     if (level >= 1 && level < 50) return "";           // обычная
     if (level >= 50 && level < 100) return "azure";    // голубая
     if (level >= 100 && level < 150) return "red";     // красная
-    if (level >= 150 && level < 200) return "white";   // белая
-    if (level >= 200) return "black";                  // чёрная
+    if (level >= 150) return "white";                  // белая
     return "";
 }
 
+const MAX_LEVEL_XP = 2000000;
 const getXp = level => ~~(100 * (level ** 2 / 2));
 const getLevel = xp => ~~((xp / 100 * 2) ** 0.5);
+const packetXpToRealXp = packetXp => packetXp > 0 ? packetXp - 1 : 0;
+
+function createLevelIndicator(packetXp, accountAvatar) {
+    const level = packetXp ? getLevel(packetXp) : -1;
+    if (level <= 0) return null;
+
+    const realXp = packetXpToRealXp(packetXp);
+    const container = document.createElement("div");
+    container.className = "star-container";
+
+    if (realXp >= MAX_LEVEL_XP && accountAvatar) {
+        const img = document.createElement("img");
+        img.className = "account-level-avatar";
+        img.src = accountAvatar;
+        img.alt = "";
+        img.onerror = () => { container.style.display = "none"; };
+        const tooltip = document.createElement("div");
+        tooltip.className = "tooltip";
+        tooltip.textContent = `XP: ${realXp}`;
+        container.appendChild(img);
+        container.appendChild(tooltip);
+    } else {
+        const starIcon = document.createElement("i");
+        starIcon.className = "fas fa-star " + getStarClass(level);
+
+        const levelSpan = document.createElement("span");
+        levelSpan.className = "levelme " + getStarClass(level);
+        levelSpan.textContent = level;
+
+        const tooltip = document.createElement("div");
+        tooltip.className = "tooltip";
+        tooltip.textContent = `XP: ${realXp}`;
+
+        container.appendChild(starIcon);
+        container.appendChild(levelSpan);
+        container.appendChild(tooltip);
+    }
+
+    return container;
+}
 	
 	
 	                        // Функция для получения данных статистики
@@ -1346,7 +1386,6 @@ function isMouseOverElement(element) {
     }
 
 let currentWebSocketUrl = null;
-let connectVerifyProgressTimer = null;
 const HIDDEN_TAB_DISCONNECT_MS = 600000;
 let hiddenTabDisconnectTimer = null;
 let wsClosedByHiddenTab = false;
@@ -1400,31 +1439,6 @@ document.addEventListener("visibilitychange", () => {
     }
 });
 
-function showConnectVerifyOverlay(text) {
-    const overlay = document.getElementById("connect-verify-overlay");
-    const textEl = document.getElementById("connect-verify-text");
-    const progress = document.getElementById("connect-verify-progress");
-    if (!overlay) return;
-    overlay.style.display = "flex";
-    if (textEl && text) textEl.textContent = text;
-    if (progress) progress.style.width = "8%";
-    if (connectVerifyProgressTimer) clearInterval(connectVerifyProgressTimer);
-    let pct = 8;
-    connectVerifyProgressTimer = setInterval(() => {
-        if (pct < 88) {
-            pct += 2 + Math.random() * 4;
-            if (progress) progress.style.width = Math.min(88, pct) + "%";
-        }
-    }, 120);
-}
-
-function setConnectVerifyStage(pct, text) {
-    const progress = document.getElementById("connect-verify-progress");
-    const textEl = document.getElementById("connect-verify-text");
-    if (progress) progress.style.width = pct + "%";
-    if (textEl && text) textEl.textContent = text;
-}
-
 function formatBanDuration(sec) {
     if (!sec) return "навсегда";
     if (sec < 60) return sec + " сек";
@@ -1438,7 +1452,6 @@ function formatBanDuration(sec) {
 }
 
 function showBanBanner(remainingSec, reason) {
-    hideConnectVerifyOverlay();
     const banner = document.getElementById("ban-banner");
     const msgEl = document.getElementById("ban-banner-message");
     if (!banner || !msgEl) return;
@@ -1452,20 +1465,6 @@ function showBanBanner(remainingSec, reason) {
 function hideBanBanner() {
     const banner = document.getElementById("ban-banner");
     if (banner) banner.style.display = "none";
-}
-
-function hideConnectVerifyOverlay() {
-    const overlay = document.getElementById("connect-verify-overlay");
-    const progress = document.getElementById("connect-verify-progress");
-    if (connectVerifyProgressTimer) {
-        clearInterval(connectVerifyProgressTimer);
-        connectVerifyProgressTimer = null;
-    }
-    if (progress) progress.style.width = "100%";
-    setTimeout(() => {
-        if (overlay) overlay.style.display = "none";
-        if (progress) progress.style.width = "0%";
-    }, 250);
 }
 
 function showConnecting() {
@@ -1505,9 +1504,8 @@ function wsConnect(wsUrlArg) {
     if (localStorage.accountToken) {
         qs.set("accountToken", localStorage.accountToken);
     }
-    const qsStr = qs.toString();
-
-    ws = new WebSocket(wsUrl + (qsStr ? "?" + qsStr : ""), "eSejeKSVdysQvZs0ES1H");
+    const query = qs.toString();
+    ws = new WebSocket(wsUrl + (query ? "?" + query : ""), "eSejeKSVdysQvZs0ES1H");
     ws.binaryType = "arraybuffer";
     ws.onopen = onWsOpen;
     ws.onmessage = onWsMessage;
@@ -1528,12 +1526,10 @@ let pingstamp = 0;
 
 
     let wsPingInterval = null;
+    let gameHandshakeDone = false;
 
     function onWsOpen() {
-        const serverCloseDiv = document.getElementById("serverclose-overlay");
-        if (serverCloseDiv) serverCloseDiv.style.display = "none";
-        hideConnectVerifyOverlay();
-        hideReconnectPanel();
+        gameHandshakeDone = false;
         var msg;
 
         sendAccountToken();
@@ -1547,7 +1543,12 @@ let pingstamp = 0;
         msg.setUint8(0, 255);
         msg.setUint32(1, 0, true);
         wsSend(msg);
+    }
 
+    function onGameHandshakeReady() {
+        if (gameHandshakeDone) return;
+        gameHandshakeDone = true;
+        hideReconnectPanel();
         sendNickName();
         if (wsPingInterval) clearInterval(wsPingInterval);
         wsPingInterval = setInterval(() => {
@@ -1558,7 +1559,7 @@ let pingstamp = 0;
     }
 
         function onWsClose(evt) {
-    hideConnectVerifyOverlay();
+    gameHandshakeDone = false;
     if (wsPingInterval) {
         clearInterval(wsPingInterval);
         wsPingInterval = null;
@@ -1654,11 +1655,11 @@ let pingstamp = 0;
         const messageType = msg.getUint8(offset++);
         switch (messageType) {
             case 91:
-                hideConnectVerifyOverlay();
                 const banRemaining = msg.getUint32(offset, true);
                 offset += 4;
                 const banReason = getString();
                 showBanBanner(banRemaining, banReason);
+                gameHandshakeDone = false;
                 if (wsPingInterval) {
                     clearInterval(wsPingInterval);
                     wsPingInterval = null;
@@ -1764,13 +1765,21 @@ case 48:
 
                     const playerXp = msg.getUint32(offset, true);
                     offset += 4;
-                    const level = playerXp ? getLevel(playerXp) : -1;
+
+                    const avatarLen = msg.getUint16(offset, true);
+                    offset += 2;
+                    let accountAvatar = "";
+                    for (let a = 0; a < avatarLen; a++) {
+                        accountAvatar += String.fromCharCode(msg.getUint16(offset, true));
+                        offset += 2;
+                    }
 
                     leaderBoard.push({
                         id: nodeId,
                         name: playerName,
-                        level,
-                        xp: playerXp
+                        level: playerXp ? getLevel(playerXp) : -1,
+                        xp: playerXp,
+                        accountAvatar
                     });
                 }
                 drawLeaderBoard();
@@ -1804,6 +1813,7 @@ case 48:
                     nodeY = posY;
                     viewZoom = posSize;
                 }
+                onGameHandshakeReady();
                 break;
             case 99:
                 // Add chat message
@@ -1913,6 +1923,14 @@ function addChat(view, offset) {
         const playerXp = view.getUint32(offset, true);
         offset += 4;
 
+        const avatarLen = view.getUint16(offset, true);
+        offset += 2;
+        let accountAvatar = "";
+        for (let a = 0; a < avatarLen; a++) {
+            accountAvatar += String.fromCharCode(view.getUint16(offset, true));
+            offset += 2;
+        }
+
         const pId = view.getUint16(offset, true);  // Считываем pID
         offset += 2;
 		
@@ -1921,6 +1939,7 @@ function addChat(view, offset) {
             "pId": pId,  // Добавляем playerPId
 			"playerXp": playerXp,
 			"playerLevel": playerXp ? getLevel(playerXp) : -1,
+            "accountAvatar": accountAvatar,
             "name": getString(),
             "color": color,
             "message": getString(),
@@ -2369,26 +2388,8 @@ if (admins.includes(lowerName)) {
     const nameContainer = document.createElement('div');
     nameContainer.className = 'chatX_name_container';
 
-    if (typeof lastMessage.playerLevel === 'number' && lastMessage.playerLevel > 0) {
-        const levelContainer = document.createElement('div');
-        levelContainer.className = 'star-container';
-
-        const starIcon = document.createElement('i');
-        starIcon.className = 'fas fa-star ' + getStarClass(lastMessage.playerLevel);
-
-        const levelSpan = document.createElement('span');
-        levelSpan.className = 'levelme ' + getStarClass(lastMessage.playerLevel);
-        levelSpan.textContent = lastMessage.playerLevel;
-
-        const tooltip = document.createElement('div');
-        tooltip.className = 'tooltip';
-        tooltip.textContent = `XP: ${lastMessage.playerXp}`;
-
-        levelContainer.appendChild(starIcon);
-        levelContainer.appendChild(levelSpan);
-        levelContainer.appendChild(tooltip);
-        nameContainer.appendChild(levelContainer);
-    }
+    const levelIndicator = createLevelIndicator(lastMessage.playerXp, lastMessage.accountAvatar);
+    if (levelIndicator) nameContainer.appendChild(levelIndicator);
 
 	// --- YouTube иконка для ютуберов ---
 const ytIndex = youtubers.indexOf(lowerName);
@@ -3746,7 +3747,7 @@ const tournament = ["𝓙𝓲𝓷𝔁","༼ᵍᵃⁿᵍ༽༼٥९९٥༽ぶ","
 // Победитель турнира (для сравнения используем toLowerCase)
 const tournamentWinner = "Vaas";
 
-function createLeaderboardEntry(name, level, isMe, isSystemLine, b) {
+function createLeaderboardEntry(name, packetXp, accountAvatar, isMe, isSystemLine, b) {
   const entryDiv = document.createElement("div");
   const lowerName = (name || "").toLowerCase();
   
@@ -3797,15 +3798,9 @@ function createLeaderboardEntry(name, level, isMe, isSystemLine, b) {
   // Контейнер для иконок (звезда + ютуб + спонсор + победитель)
   const iconsContainer = document.createElement("span");
 
-  if (level !== -1 && !isSystemLine) {
-    const starContainer = document.createElement("div");
-    starContainer.className = "star-container";
-    starContainer.innerHTML = `
-      <i class='fas fa-star ${getStarClass(level)}'></i>
-      <span class='levelme ${getStarClass(level)}'>${level}</span>
-      <div class='tooltip'>XP: ${leaderBoard[b].xp || 0}</div>
-    `;
-    iconsContainer.appendChild(starContainer);
+  if (!isSystemLine) {
+    const levelIndicator = createLevelIndicator(packetXp, accountAvatar);
+    if (levelIndicator) iconsContainer.appendChild(levelIndicator);
   }
 
   // Иконка YouTube для ютуберов
@@ -3884,7 +3879,7 @@ function drawCustomLeaderBoard() {
 
       // Отображаем игрока в кастомном leaderboard, если он в топ-10
       if (b < 10) {
-        const entryDiv = createLeaderboardEntry(name, leaderBoard[b].level, isMe, isSystemLine, b);
+        const entryDiv = createLeaderboardEntry(name, leaderBoard[b].xp, leaderBoard[b].accountAvatar, isMe, isSystemLine, b);
         
         // Вставляем HTML-код с помощью insertAdjacentHTML
         toplistDiv.insertAdjacentHTML("beforeend", entryDiv.outerHTML);
@@ -3902,7 +3897,6 @@ function drawLeaderBoard() {
   if (leaderBoard && leaderBoard.length > 0) {
     for (let b = 0; b < leaderBoard.length; ++b) {
       let name = leaderBoard[b].name || "Игрок";
-      const level = leaderBoard[b].level;
       const isSystemLine = leaderBoard[b].id == null; // турнир/арена строка без id
 
       // Определяем, если это я (сравнение по имени для кастомного режима)
@@ -3928,17 +3922,20 @@ function drawLeaderBoard() {
 
       // Отображаем игрока, если он в топ-10
       if (b < displayedPlayers) {
-        const entryDiv = createLeaderboardEntry(name, level, isMe, isSystemLine, b);
+        const entryDiv = createLeaderboardEntry(name, leaderBoard[b].xp, leaderBoard[b].accountAvatar, isMe, isSystemLine, b);
         toplistDiv.appendChild(entryDiv);
       }
     }
 
     // Показываем свой ранг, если вне топ-10
     if (myRank && myRank > displayedPlayers) {
-      const level = accountData ? getLevel(accountData.xp) : -1;
+      const myPacketXp = accountData ? accountData.xp + 1 : 0;
+      const myAvatar = accountData && accountData.xp >= MAX_LEVEL_XP
+        ? (accountData.account_avatar || accountData.accountAvatar || "")
+        : "";
       let myName = playerCells[0].name;
 
-      const myRankDiv = createLeaderboardEntry(myName, level, true, false, myRank - 1);
+      const myRankDiv = createLeaderboardEntry(myName, myPacketXp, myAvatar, true, false, myRank - 1);
       myRankDiv.style.color = "#FFAAAA"; // Для меня выделяем цветом
       toplistDiv.appendChild(myRankDiv);
     }
