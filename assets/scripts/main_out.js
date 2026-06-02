@@ -1388,7 +1388,7 @@ function isMouseOverElement(element) {
 let currentWebSocketUrl = null;
 let connectInProgress = false;
 let connectVerifyProgressTimer = null;
-const HIDDEN_TAB_DISCONNECT_MS = 60000;
+const HIDDEN_TAB_DISCONNECT_MS = 600000;
 let hiddenTabDisconnectTimer = null;
 let wsClosedByHiddenTab = false;
 
