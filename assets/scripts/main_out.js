@@ -11,6 +11,18 @@
 
 const getXp = level => ~~(100 * (level ** 2 / 2));
 const getLevel = xp => ~~((xp / 100 * 2) ** 0.5);
+const packetXpToRealXp = packetXp => (packetXp > 0 ? packetXp - 1 : 0);
+function levelFromPacketXp(packetXp) {
+    if (!packetXp) return -1;
+    const level = getLevel(packetXp);
+    return level > 0 ? level : (packetXpToRealXp(packetXp) > 0 ? 1 : -1);
+}
+function skipAccountAvatar(msg, offset) {
+    const avatarLen = msg.getUint16(offset, true);
+    offset += 2;
+    for (let a = 0; a < avatarLen; a++) offset += 2;
+    return offset;
+}
 	
 	
 	                        // Функция для получения данных статистики
@@ -1912,7 +1924,8 @@ case 48:
 
                     const playerXp = msg.getUint32(offset, true);
                     offset += 4;
-                    const level = playerXp ? getLevel(playerXp) : -1;
+                    offset = skipAccountAvatar(msg, offset);
+                    const level = levelFromPacketXp(playerXp);
 
                     leaderBoard.push({
                         id: nodeId,
@@ -2061,6 +2074,7 @@ function addChat(view, offset) {
 		
         const playerXp = view.getUint32(offset, true);
         offset += 4;
+        offset = skipAccountAvatar(view, offset);
 
         const pId = view.getUint16(offset, true);  // Считываем pID
         offset += 2;
@@ -2069,7 +2083,7 @@ function addChat(view, offset) {
         chatBoard.push({
             "pId": pId,  // Добавляем playerPId
 			"playerXp": playerXp,
-			"playerLevel": playerXp ? getLevel(playerXp) : -1,
+			"playerLevel": levelFromPacketXp(playerXp),
             "name": getString(),
             "color": color,
             "message": getString(),
@@ -2531,7 +2545,7 @@ if (admins.includes(lowerName)) {
 
         const tooltip = document.createElement('div');
         tooltip.className = 'tooltip';
-        tooltip.textContent = `XP: ${lastMessage.playerXp}`;
+        tooltip.textContent = `XP: ${packetXpToRealXp(lastMessage.playerXp)}`;
 
         levelContainer.appendChild(starIcon);
         levelContainer.appendChild(levelSpan);
@@ -3952,7 +3966,7 @@ function createLeaderboardEntry(name, level, isMe, isSystemLine, b) {
     starContainer.innerHTML = `
       <i class='fas fa-star ${getStarClass(level)}'></i>
       <span class='levelme ${getStarClass(level)}'>${level}</span>
-      <div class='tooltip'>XP: ${leaderBoard[b].xp || 0}</div>
+      <div class='tooltip'>XP: ${packetXpToRealXp(leaderBoard[b].xp || 0)}</div>
     `;
     iconsContainer.appendChild(starContainer);
   }
