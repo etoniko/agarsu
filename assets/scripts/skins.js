@@ -4,7 +4,13 @@ const actionInterval = 500;
 let actionTimeout;
 let currentIndex = 0;
 
-// --- Галерея скинов (без пароля, новые сверху) ---
+const MANUAL_SKINS_NICKS = [
+    "Ленин",
+    "Сталин",
+    "Гагарин",
+    "Жуков"
+];
+
 const SKINS_PER_PAGE_MOBILE = 8;  /* 2×4 */
 const SKINS_PER_PAGE_DESKTOP = 15; /* 5×3 */
 let skinsGalleryItems = [];
@@ -36,39 +42,33 @@ function bindSkinsGalleryResize() {
 }
 
 async function loadSkinsGalleryData() {
-    const [skinRes, passRes] = await Promise.all([
-        fetch('https://api.agar.su/skinlist.txt'),
-        fetch('https://api.agar.su/pass.txt').catch(() => null)
-    ]);
+    // Загружаем skinlist.txt для получения ID по никам
+    const skinRes = await fetch('https://api.agar.su/skinlist.txt');
     if (!skinRes.ok) throw new Error('skinlist');
     const skinText = await skinRes.text();
-    const passSet = new Set();
-
-    if (passRes && passRes.ok) {
-        const passText = await passRes.text();
-        passText.split('\n').forEach((line) => {
-            const key = normalizeNick(line.trim());
-            if (key) passSet.add(key);
-        });
-    }
-    if (typeof passUsers !== 'undefined' && Array.isArray(passUsers)) {
-        passUsers.forEach((n) => {
-            if (n) passSet.add(n);
-        });
-    }
-
-    const lines = skinText.trim().split('\n');
-    const all = [];
-    lines.forEach((line) => {
+    
+    // Создаём мапу ник -> код
+    const skinMap = new Map();
+    skinText.split('\n').forEach((line) => {
         const idx = line.indexOf(':');
         if (idx < 0) return;
         const nick = line.slice(0, idx).trim();
         const code = line.slice(idx + 1).trim();
-        if (!nick || !code) return;
-        all.push({ nick, code });
+        if (nick && code) {
+            skinMap.set(nick.toLowerCase(), code);
+        }
     });
-
-    skinsGalleryItems = all.reverse().filter((s) => !passSet.has(normalizeNick(s.nick)));
+    
+    // Собираем галерею только из ручного списка ников
+    const items = [];
+    for (const nick of MANUAL_SKINS_NICKS) {
+        const code = skinMap.get(nick.toLowerCase());
+        if (code) {
+            items.push({ nick: nick, code: code });
+        }
+    }
+    
+    skinsGalleryItems = items;
     skinsGalleryLoaded = true;
 }
 
@@ -149,7 +149,7 @@ function renderSkinsGalleryPage(page) {
     renderSkinsGalleryPagination(totalPages, pagination);
 
     if (!skinsGalleryItems.length) {
-        setSkinsGalleryStatus('Нет скинов без пароля', false);
+        setSkinsGalleryStatus('Нет скинов. Добавьте ники в MANUAL_SKINS_NICKS', false);
     } else if (totalPages <= 1) {
         setSkinsGalleryStatus(`${skinsGalleryItems.length} скинов`, false);
     } else {
