@@ -4234,7 +4234,7 @@ fetch("https://api.agar.su/invisible.txt")
       if (line) invisible.add(line);
     });
   });
-const invisible2 = new Set(["ghost", "невидимка", "shadow", "invis", "cat2","zombie"]); // невидимая масса
+const invisible2 = new Set(["нико"]); // невидимая масса
 const rotation = new Set(); //поворот скина
 fetch("https://api.agar.su/rotation.txt")
   .then(r => r.text())
