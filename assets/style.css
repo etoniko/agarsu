@@ -302,6 +302,115 @@ i:hover{cursor:pointer;}
     }
     #myNicknamesBlock .icon-btn:hover { background:#141b2e; }
     #myNicknamesBlock .icon-btn i { font-size:16px; pointer-events:none; }
+    #myNicknamesBlock .list li.nick-card {
+      align-items:flex-start;
+      flex-wrap:wrap;
+      gap:10px;
+      white-space:normal;
+    }
+    #myNicknamesBlock .nick-card-body {
+      flex:1;
+      min-width:140px;
+    }
+    #myNicknamesBlock .nick-perks {
+      display:flex;
+      flex-wrap:wrap;
+      gap:5px;
+      margin-top:8px;
+    }
+    #myNicknamesBlock .nick-perk {
+      position:relative;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:22px;
+      padding:0 10px;
+      border-radius:999px;
+      font-size:10px;
+      font-weight:500;
+      letter-spacing:0.02em;
+      line-height:1;
+      border:1px solid rgba(255,255,255,0.1);
+      color:rgba(219,229,255,0.5);
+      background:transparent;
+      user-select:none;
+      transition:border-color .22s ease, color .22s ease, background .22s ease;
+    }
+    #myNicknamesBlock .nick-perk--on {
+      gap:5px;
+      border-color:rgba(129,199,132,0.45);
+      color:#a5d6a7;
+      background:rgba(76,175,80,0.25);
+    }
+    #myNicknamesBlock .nick-perk--on::before {
+      content:"";
+      width:4px;
+      height:4px;
+      border-radius:50%;
+      background:#81c784;
+      flex-shrink:0;
+      opacity:0.95;
+    }
+    #myNicknamesBlock .nick-perk--action {
+      cursor:pointer;
+      min-width:7.25rem;
+    }
+    #myNicknamesBlock .nick-perk--action:not(.nick-perk--on):hover,
+    #myNicknamesBlock .nick-perk--action:not(.nick-perk--on):focus-visible {
+      border-color:rgba(126,184,255,0.45);
+      color:rgba(219,229,255,0.95);
+      background:rgba(1,107,239,0.12);
+      outline:none;
+    }
+    #myNicknamesBlock .nick-perk--action.nick-perk--on:hover,
+    #myNicknamesBlock .nick-perk--action.nick-perk--on:focus-visible {
+      border-color:rgba(129,199,132,0.55);
+      color:#c8e6c9;
+      background:rgba(76,175,80,0.35);
+      outline:none;
+    }
+    #myNicknamesBlock .nick-perk-face {
+      display:block;
+      white-space:nowrap;
+      transition:opacity .2s ease, transform .2s ease;
+    }
+    #myNicknamesBlock .nick-perk--action .nick-perk-face--default {
+      opacity:1;
+      transform:translateY(0);
+    }
+    #myNicknamesBlock .nick-perk--action .nick-perk-face--hover {
+      position:absolute;
+      left:0;
+      right:0;
+      text-align:center;
+      opacity:0;
+      transform:translateY(3px);
+      pointer-events:none;
+    }
+    #myNicknamesBlock .nick-perk--action:hover .nick-perk-face--default,
+    #myNicknamesBlock .nick-perk--action:focus-visible .nick-perk-face--default {
+      opacity:0;
+      transform:translateY(-3px);
+    }
+    #myNicknamesBlock .nick-perk--action:hover .nick-perk-face--hover,
+    #myNicknamesBlock .nick-perk--action:focus-visible .nick-perk-face--hover {
+      opacity:1;
+      transform:translateY(0);
+    }
+    #myNicknamesBlock .nick-perk--action.nick-perk--on::before {
+      opacity:0;
+      width:0;
+      margin:0;
+      transition:opacity .15s ease;
+    }
+    #myNicknamesBlock .nick-perk--action.nick-perk--on:hover::before,
+    #myNicknamesBlock .nick-perk--action.nick-perk--on:focus-visible::before {
+      opacity:0;
+    }
+    @media (max-width:599px){
+      #myNicknamesBlock .nick-card-body{min-width:100px;}
+      #myNicknamesBlock .nick-perk{font-size:9px;padding:0 8px;min-height:20px;}
+    }
 .chatX_msg.blurred { filter: blur(2px); cursor: pointer; transition: filter .15s; }
 .cchatX_msg.blurred.revealed { filter: none; }
 #gradient-settings label {
