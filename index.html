@@ -26,14 +26,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=new_releases" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="/assets/style.css?0.1.98" rel="stylesheet">
+    <link href="/assets/style.css?0.1.99" rel="stylesheet">
     <!-- Скрипты -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="/assets/scripts/jquery.js?0.0.2"></script>
     <script src="/assets/scripts/log.js?0.0.2"></script>
     <script src="/assets/scripts/vector.js?0.0.2"></script>
     <script src="/assets/scripts/main_out.js?8.7.3"></script>
-	<script src="/assets/scripts/shop.js?26" defer></script>
+	<script src="/assets/scripts/shop.js?27" defer></script>
 	<script src="/assets/scripts/all.js?0.0.2" defer></script>
 	<script src="/assets/scripts/pass.js?0.0.2" defer></script>
 	<script src="/assets/scripts/skins.js?1.0.2" defer></script>
@@ -416,9 +416,16 @@ _tmr.push({id: "3761618", type: "pageView", start: (new Date()).getTime()});
             font-size: 11px; padding: 2px 8px; border-radius: 10px;
             background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.45);
           }
-          #store .nick-perk--on { background: rgba(76,175,80,0.25); color: #a5d6a7; cursor: default; }
-          #store .nick-perk--buy { cursor: pointer; border: 1px dashed rgba(255,255,255,0.25); }
-          #store .nick-perk--buy:hover { background: rgba(30,144,255,0.25); color: #fff; }
+          #store .nick-perk--on { background: rgba(76,175,80,0.25); color: #a5d6a7; }
+          #store .nick-shop-actions {
+            display: flex; flex-wrap: wrap; gap: 6px; width: 100%; margin-top: 4px;
+          }
+          #store .nick-shop-btn {
+            font-size: 11px; padding: 4px 10px; border-radius: 8px; cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.2); background: rgba(30,144,255,0.2);
+            color: #fff;
+          }
+          #store .nick-shop-btn:hover { background: rgba(30,144,255,0.45); }
         </style>
         <div id="store" class="content">
           <div class="top-info">
