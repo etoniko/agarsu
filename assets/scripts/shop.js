@@ -1,4 +1,56 @@
-const allowedPattern = /^[a-zA-Zа-яА-Я0-9\s\[\]]+$/;
+// allowtxt.txt — два файла (содержимое может отличаться):
+// 1) GitHub Pages / статистика — allowtxt.txt рядом с shop.js
+// 2) Сайт магазина на сервере — /allowtxt.txt из корня папки сервера
+const ALLOWTXT_STATS = 'allowtxt.txt';
+const ALLOWTXT_SERVER = '/allowtxt.txt';
+
+function resolveAllowTxtUrl() {
+  const host = location.hostname;
+  if (host.includes('github.io')) return ALLOWTXT_STATS;
+  return ALLOWTXT_SERVER;
+}
+
+const ALLOWED_CHARS = new Set();
+let allowTxtReady = null;
+
+function loadAllowTxt(url) {
+  if (!allowTxtReady) {
+    allowTxtReady = fetch(url || resolveAllowTxtUrl())
+      .then((r) => {
+        if (!r.ok) throw new Error('allowtxt.txt');
+        return r.text();
+      })
+      .then((text) => {
+        for (const line of text.split(/\r?\n/)) {
+          if (line.length > 0) ALLOWED_CHARS.add(line);
+        }
+      });
+  }
+  return allowTxtReady;
+}
+
+function isNicknameCharAllowed(char, allowBrackets) {
+  if (!allowBrackets && (char === '[' || char === ']')) return false;
+  return ALLOWED_CHARS.has(char);
+}
+
+function isAllowedNickname(value, allowBrackets) {
+  if (!value) return true;
+  for (const char of value) {
+    if (!isNicknameCharAllowed(char, allowBrackets)) return false;
+  }
+  return true;
+}
+
+function stripInvalidNicknameChars(value, allowBrackets) {
+  return [...value]
+    .filter((char) => isNicknameCharAllowed(char, allowBrackets))
+    .join('');
+}
+
+const allowedPattern = { test: (v) => isAllowedNickname(v, false) };
+const allowedWithBracketsPattern = { test: (v) => isAllowedNickname(v, true) };
+
 const paymentRules = { maxFileSize: 5 * 1024 * 1024 };
 let isNicknameTaken = false;
 const SHOP_TOAST_TIMEOUT = 4500;
@@ -122,13 +174,11 @@ function blockForbiddenChars(input) {
     let value = input.value;
     
     // Временно разрешаем скобки при вводе (потом их обработает blur)
-    const tempPattern = /^[a-zA-Zа-яА-Я0-9\s\[\]]+$/;
-    
-    if (value && !tempPattern.test(value)) {
-      const cleaned = value.replace(/[^a-zA-Zа-яА-Я0-9\s\[\]]/g, "");
+    if (value && !allowedWithBracketsPattern.test(value)) {
+      const cleaned = stripInvalidNicknameChars(value, true);
       if (cleaned !== value) {
         input.value = cleaned;
-        showError(input.id + 'Error', 'Разрешены только буквы, цифры, пробел и скобки [] для клана');
+        showError(input.id + 'Error', 'Недопустимые символы в нике');
       }
     }
     
@@ -162,8 +212,14 @@ emailInput.addEventListener("blur", () => {
 });*/
 
 const nicknameInput = document.getElementById("nickname");
-blockForbiddenChars(nicknameInput);
-blockForbiddenChars(document.getElementById("password"));
+const passwordInput = document.getElementById("password");
+
+loadAllowTxt().then(() => {
+  blockForbiddenChars(nicknameInput);
+  blockForbiddenChars(passwordInput);
+}).catch(() => {
+  showToast('Не удалось загрузить allowtxt.txt', 'error');
+});
 
 nicknameInput.addEventListener("blur", async () => {
   const isClan = document.getElementById('clan').checked;
@@ -185,8 +241,8 @@ nicknameInput.addEventListener("blur", async () => {
   } else {
     // Для личного ника - проверка без скобок
     if (value && !allowedPattern.test(value)) {
-      value = value.replace(/[^a-zA-Zа-яА-Я0-9\s]/g, "");
-      showError('nicknameError', 'Только буквы (лат/кир), цифры и пробел');
+      value = stripInvalidNicknameChars(value);
+      showError('nicknameError', 'Недопустимые символы в нике');
     }
     
     if (/[\[\]]/.test(value)) {
@@ -262,7 +318,6 @@ nicknameInput.addEventListener("input", () => {
   calculateCost();
 });
 
-const passwordInput = document.getElementById("password");
 const invisibleNickCheckbox = document.getElementById("invisibleNick");
 const rotationNickCheckbox = document.getElementById("rotationNick");
 passwordInput.addEventListener("input", () => {
