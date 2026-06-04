@@ -5055,26 +5055,38 @@ function getNickPerks(nickname, password, lists) {
   };
 }
 
-function makePerkBadge(label, active, btnLabel, onBuy) {
+function makePerkBadge(label, active, hoverText, onBuy) {
   const span = document.createElement('span');
   span.className = 'nick-perk' + (active ? ' nick-perk--on' : '');
-  span.title = active ? 'Куплено' : 'Не куплено';
+  if (hoverText && onBuy) span.classList.add('nick-perk--action');
 
-  const text = document.createElement('span');
-  text.className = 'nick-perk-label';
-  text.textContent = label;
-  span.appendChild(text);
+  const def = document.createElement('span');
+  def.className = 'nick-perk-face nick-perk-face--default';
+  def.textContent = label;
+  span.appendChild(def);
 
-  if (btnLabel && onBuy) {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'nick-shop-btn';
-    btn.textContent = btnLabel;
-    btn.onclick = (e) => {
+  if (hoverText && onBuy) {
+    const hover = document.createElement('span');
+    hover.className = 'nick-perk-face nick-perk-face--hover';
+    hover.textContent = hoverText;
+    hover.setAttribute('aria-hidden', 'true');
+    span.appendChild(hover);
+    span.setAttribute('role', 'button');
+    span.setAttribute('tabindex', '0');
+    span.setAttribute('aria-label', hoverText);
+    const go = (e) => {
       e.stopPropagation();
       onBuy();
     };
-    span.appendChild(btn);
+    span.onclick = go;
+    span.onkeydown = (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        go(e);
+      }
+    };
+  } else if (active) {
+    span.title = 'Куплено';
   }
   return span;
 }
@@ -5183,25 +5195,25 @@ function renderCard(list, fullNick, perks) {
     makePerkBadge(
       'Пароль',
       p.hasSkinPass,
-      p.hasSkinPass ? 'Сменить пароль' : 'Купить Пароль',
+      p.hasSkinPass ? 'Сменить пароль' : 'Купить пароль',
       shop({ focusPassword: true })
     ),
     makePerkBadge(
       'Скин',
       p.hasSkin,
-      p.hasSkin ? 'Обновить скин' : 'Купить скин',
+      p.hasSkin ? 'Сменить скин' : 'Купить скин',
       shop({ focusSkin: true })
     ),
     makePerkBadge(
       'Невидимый ник',
       p.invisible,
-      p.invisible ? null : 'Купить',
+      p.invisible ? null : 'Купить невидимость',
       p.invisible ? null : shop({ invisible: true })
     ),
     makePerkBadge(
-      'Поворот скина',
+      'Поворот',
       p.rotation,
-      p.rotation ? null : 'Купить',
+      p.rotation ? null : 'Купить поворот',
       p.rotation ? null : shop({ rotation: true })
     )
   );
