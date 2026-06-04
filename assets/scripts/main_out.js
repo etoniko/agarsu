@@ -419,6 +419,7 @@ wHandle.setserver = function(arg) {
             history.replaceState(null, "", " ");
         }
 
+        showConnecting();
         updateOnlineCount();
     }
 };
