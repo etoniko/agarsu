@@ -5162,10 +5162,10 @@ function renderCard(list, fullNick, perks) {
   const perksRow = document.createElement('div');
   perksRow.className = 'nick-perks';
   perksRow.append(
-    makePerkBadge('Skin pass', p.hasSkinPass),
+    makePerkBadge('pass', p.hasSkinPass),
     makePerkBadge('Скин', p.hasSkin),
     makePerkBadge('Невидимый ник', p.invisible),
-    makePerkBadge('Поворот', p.rotation)
+    makePerkBadge('Поворот скина', p.rotation)
   );
 
   const actions = document.createElement('div');
@@ -5186,7 +5186,7 @@ function renderCard(list, fullNick, perks) {
   if (p.hasSkin) addBtn('Обновить скин', { focusSkin: true });
   else addBtn('Купить скин', { focusSkin: true });
   if (p.hasSkinPass) addBtn('Сменить пароль', { focusPassword: true });
-  else addBtn('Skin pass', { focusPassword: true });
+  else addBtn('pass', { focusPassword: true });
   if (!p.invisible) addBtn('Невидимый ник', { invisible: true });
   if (!p.rotation) addBtn('Поворот скина', { rotation: true });
 
