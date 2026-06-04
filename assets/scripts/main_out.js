@@ -4,54 +4,13 @@
     if (level >= 1 && level < 50) return "";           // обычная
     if (level >= 50 && level < 100) return "azure";    // голубая
     if (level >= 100 && level < 150) return "red";     // красная
-    if (level >= 150 && level < 200) return "white";   // белая
-	if (level >= 200) return "black";                  // черная
+		if (level >= 150 && level < 200) return "red";     // белая
+    if (level >= 200) return "black";                  // черный
     return "";
 }
 
-const MAX_LEVEL_XP = 2000000;
 const getXp = level => ~~(100 * (level ** 2 / 2));
 const getLevel = xp => ~~((xp / 100 * 2) ** 0.5);
-const packetXpToRealXp = packetXp => packetXp > 0 ? packetXp - 1 : 0;
-
-function createLevelIndicator(packetXp, accountAvatar) {
-    const level = packetXp ? getLevel(packetXp) : -1;
-    if (level <= 0) return null;
-
-    const realXp = packetXpToRealXp(packetXp);
-    const container = document.createElement("div");
-    container.className = "star-container";
-
-    if (realXp >= MAX_LEVEL_XP && accountAvatar) {
-        const img = document.createElement("img");
-        img.className = "account-level-avatar";
-        img.src = accountAvatar;
-        img.alt = "";
-        img.onerror = () => { container.style.display = "none"; };
-        const tooltip = document.createElement("div");
-        tooltip.className = "tooltip";
-        tooltip.textContent = `XP: ${realXp}`;
-        container.appendChild(img);
-        container.appendChild(tooltip);
-    } else {
-        const starIcon = document.createElement("i");
-        starIcon.className = "fas fa-star " + getStarClass(level);
-
-        const levelSpan = document.createElement("span");
-        levelSpan.className = "levelme " + getStarClass(level);
-        levelSpan.textContent = level;
-
-        const tooltip = document.createElement("div");
-        tooltip.className = "tooltip";
-        tooltip.textContent = `XP: ${realXp}`;
-
-        container.appendChild(starIcon);
-        container.appendChild(levelSpan);
-        container.appendChild(tooltip);
-    }
-
-    return container;
-}
 	
 	
 	                        // Функция для получения данных статистики
@@ -2371,8 +2330,26 @@ if (admins.includes(lowerName)) {
     const nameContainer = document.createElement('div');
     nameContainer.className = 'chatX_name_container';
 
-    const levelIndicator = createLevelIndicator(lastMessage.playerXp, "");
-    if (levelIndicator) nameContainer.appendChild(levelIndicator);
+    if (typeof lastMessage.playerLevel === 'number' && lastMessage.playerLevel > 0) {
+        const levelContainer = document.createElement('div');
+        levelContainer.className = 'star-container';
+
+        const starIcon = document.createElement('i');
+        starIcon.className = 'fas fa-star ' + getStarClass(lastMessage.playerLevel);
+
+        const levelSpan = document.createElement('span');
+        levelSpan.className = 'levelme ' + getStarClass(lastMessage.playerLevel);
+        levelSpan.textContent = lastMessage.playerLevel;
+
+        const tooltip = document.createElement('div');
+        tooltip.className = 'tooltip';
+        tooltip.textContent = `XP: ${lastMessage.playerXp}`;
+
+        levelContainer.appendChild(starIcon);
+        levelContainer.appendChild(levelSpan);
+        levelContainer.appendChild(tooltip);
+        nameContainer.appendChild(levelContainer);
+    }
 
 	// --- YouTube иконка для ютуберов ---
 const ytIndex = youtubers.indexOf(lowerName);
@@ -3730,7 +3707,7 @@ const tournament = ["𝓙𝓲𝓷𝔁","༼ᵍᵃⁿᵍ༽༼٥९९٥༽ぶ","
 // Победитель турнира (для сравнения используем toLowerCase)
 const tournamentWinner = "Vaas";
 
-function createLeaderboardEntry(name, packetXp, accountAvatar, isMe, isSystemLine, b) {
+function createLeaderboardEntry(name, level, isMe, isSystemLine, b) {
   const entryDiv = document.createElement("div");
   const lowerName = (name || "").toLowerCase();
   
@@ -3781,9 +3758,15 @@ function createLeaderboardEntry(name, packetXp, accountAvatar, isMe, isSystemLin
   // Контейнер для иконок (звезда + ютуб + спонсор + победитель)
   const iconsContainer = document.createElement("span");
 
-  if (!isSystemLine) {
-    const levelIndicator = createLevelIndicator(packetXp, accountAvatar);
-    if (levelIndicator) iconsContainer.appendChild(levelIndicator);
+  if (level !== -1 && !isSystemLine) {
+    const starContainer = document.createElement("div");
+    starContainer.className = "star-container";
+    starContainer.innerHTML = `
+      <i class='fas fa-star ${getStarClass(level)}'></i>
+      <span class='levelme ${getStarClass(level)}'>${level}</span>
+      <div class='tooltip'>XP: ${leaderBoard[b].xp || 0}</div>
+    `;
+    iconsContainer.appendChild(starContainer);
   }
 
   // Иконка YouTube для ютуберов
@@ -3862,7 +3845,7 @@ function drawCustomLeaderBoard() {
 
       // Отображаем игрока в кастомном leaderboard, если он в топ-10
       if (b < 10) {
-        const entryDiv = createLeaderboardEntry(name, leaderBoard[b].xp, "", isMe, isSystemLine, b);
+        const entryDiv = createLeaderboardEntry(name, leaderBoard[b].level, isMe, isSystemLine, b);
         
         // Вставляем HTML-код с помощью insertAdjacentHTML
         toplistDiv.insertAdjacentHTML("beforeend", entryDiv.outerHTML);
@@ -3880,6 +3863,7 @@ function drawLeaderBoard() {
   if (leaderBoard && leaderBoard.length > 0) {
     for (let b = 0; b < leaderBoard.length; ++b) {
       let name = leaderBoard[b].name || "Игрок";
+      const level = leaderBoard[b].level;
       const isSystemLine = leaderBoard[b].id == null; // турнир/арена строка без id
 
       // Определяем, если это я (сравнение по имени для кастомного режима)
@@ -3905,20 +3889,17 @@ function drawLeaderBoard() {
 
       // Отображаем игрока, если он в топ-10
       if (b < displayedPlayers) {
-        const entryDiv = createLeaderboardEntry(name, leaderBoard[b].xp, "", isMe, isSystemLine, b);
+        const entryDiv = createLeaderboardEntry(name, level, isMe, isSystemLine, b);
         toplistDiv.appendChild(entryDiv);
       }
     }
 
     // Показываем свой ранг, если вне топ-10
     if (myRank && myRank > displayedPlayers) {
-      const myPacketXp = accountData ? accountData.xp + 1 : 0;
-      const myAvatar = accountData && accountData.xp >= MAX_LEVEL_XP
-        ? (accountData.account_avatar || accountData.accountAvatar || "")
-        : "";
+      const level = accountData ? getLevel(accountData.xp) : -1;
       let myName = playerCells[0].name;
 
-      const myRankDiv = createLeaderboardEntry(myName, myPacketXp, myAvatar, true, false, myRank - 1);
+      const myRankDiv = createLeaderboardEntry(myName, level, true, false, myRank - 1);
       myRankDiv.style.color = "#FFAAAA"; // Для меня выделяем цветом
       toplistDiv.appendChild(myRankDiv);
     }
