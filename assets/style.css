@@ -342,7 +342,6 @@ i:hover{cursor:pointer;}
       transition:border-color .22s ease, color .22s ease, background .22s ease;
     }
     #myNicknamesBlock .nick-perk--on {
-      gap:5px;
       border-color:rgba(129,199,132,0.45);
       color:#a5d6a7;
       background:rgba(76,175,80,0.25);
