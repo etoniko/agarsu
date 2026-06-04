@@ -1,6 +1,3 @@
-// allowtxt.txt — два файла (содержимое может отличаться):
-// 1) GitHub Pages / статистика — allowtxt.txt рядом с shop.js
-// 2) Сайт магазина на сервере — /allowtxt.txt из корня папки сервера
 const ALLOWTXT_STATS = 'allowtxt.txt';
 const ALLOWTXT_SERVER = '/allowtxt.txt';
 
@@ -589,3 +586,37 @@ rotationNickCheckbox.addEventListener("change", calculateCost);
 window.addEventListener('storage', (event) => {
   if (event.key === 'accountToken') updateShopAuthNotice();
 });
+
+window.openShopPurchase = function (nickname, options = {}) {
+  if (typeof showContent === 'function') showContent('shop');
+
+  const isClan = !!options.clan;
+  const personal = document.getElementById('personal');
+  const clan = document.getElementById('clan');
+  if (personal) personal.checked = !isClan;
+  if (clan) clan.checked = isClan;
+  updateNicknameDisplay();
+
+  nicknameInput.value = String(nickname || '').trim();
+  updateCharCount();
+  hideError('nicknameError');
+  nicknameInput.setCustomValidity('');
+  isNicknameTaken = false;
+
+  invisibleNickCheckbox.checked = !!options.invisible;
+  rotationNickCheckbox.checked = !!options.rotation;
+
+  if (options.focusPassword) {
+    passwordInput.focus();
+  } else {
+    passwordInput.value = '';
+    hideError('passwordError');
+  }
+
+  if (options.focusSkin) {
+    fileInput.click();
+  }
+
+  calculateCost();
+  nicknameInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
