@@ -1767,20 +1767,11 @@ case 48:
                     const playerXp = msg.getUint32(offset, true);
                     offset += 4;
 
-                    const avatarLen = msg.getUint16(offset, true);
-                    offset += 2;
-                    let accountAvatar = "";
-                    for (let a = 0; a < avatarLen; a++) {
-                        accountAvatar += String.fromCharCode(msg.getUint16(offset, true));
-                        offset += 2;
-                    }
-
                     leaderBoard.push({
                         id: nodeId,
                         name: playerName,
                         level: playerXp ? getLevel(playerXp) : -1,
-                        xp: playerXp,
-                        accountAvatar
+                        xp: playerXp
                     });
                 }
                 drawLeaderBoard();
@@ -1924,14 +1915,6 @@ function addChat(view, offset) {
         const playerXp = view.getUint32(offset, true);
         offset += 4;
 
-        const avatarLen = view.getUint16(offset, true);
-        offset += 2;
-        let accountAvatar = "";
-        for (let a = 0; a < avatarLen; a++) {
-            accountAvatar += String.fromCharCode(view.getUint16(offset, true));
-            offset += 2;
-        }
-
         const pId = view.getUint16(offset, true);  // Считываем pID
         offset += 2;
 		
@@ -1940,7 +1923,6 @@ function addChat(view, offset) {
             "pId": pId,  // Добавляем playerPId
 			"playerXp": playerXp,
 			"playerLevel": playerXp ? getLevel(playerXp) : -1,
-            "accountAvatar": accountAvatar,
             "name": getString(),
             "color": color,
             "message": getString(),
@@ -2389,7 +2371,7 @@ if (admins.includes(lowerName)) {
     const nameContainer = document.createElement('div');
     nameContainer.className = 'chatX_name_container';
 
-    const levelIndicator = createLevelIndicator(lastMessage.playerXp, lastMessage.accountAvatar);
+    const levelIndicator = createLevelIndicator(lastMessage.playerXp, "");
     if (levelIndicator) nameContainer.appendChild(levelIndicator);
 
 	// --- YouTube иконка для ютуберов ---
@@ -3880,7 +3862,7 @@ function drawCustomLeaderBoard() {
 
       // Отображаем игрока в кастомном leaderboard, если он в топ-10
       if (b < 10) {
-        const entryDiv = createLeaderboardEntry(name, leaderBoard[b].xp, leaderBoard[b].accountAvatar, isMe, isSystemLine, b);
+        const entryDiv = createLeaderboardEntry(name, leaderBoard[b].xp, "", isMe, isSystemLine, b);
         
         // Вставляем HTML-код с помощью insertAdjacentHTML
         toplistDiv.insertAdjacentHTML("beforeend", entryDiv.outerHTML);
@@ -3923,7 +3905,7 @@ function drawLeaderBoard() {
 
       // Отображаем игрока, если он в топ-10
       if (b < displayedPlayers) {
-        const entryDiv = createLeaderboardEntry(name, leaderBoard[b].xp, leaderBoard[b].accountAvatar, isMe, isSystemLine, b);
+        const entryDiv = createLeaderboardEntry(name, leaderBoard[b].xp, "", isMe, isSystemLine, b);
         toplistDiv.appendChild(entryDiv);
       }
     }
