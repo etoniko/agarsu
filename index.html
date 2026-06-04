@@ -33,7 +33,7 @@
     <script src="/assets/scripts/log.js?0.0.2"></script>
     <script src="/assets/scripts/vector.js?0.0.2"></script>
     <script src="/assets/scripts/main_out.js?8.7.3"></script>
-	<script src="/assets/scripts/shop.js?27" defer></script>
+	<script src="/assets/scripts/shop.js?26" defer></script>
 	<script src="/assets/scripts/all.js?0.0.2" defer></script>
 	<script src="/assets/scripts/pass.js?0.0.2" defer></script>
 	<script src="/assets/scripts/skins.js?1.0.2" defer></script>
@@ -413,19 +413,18 @@ _tmr.push({id: "3761618", type: "pageView", start: (new Date()).getTime()});
           #store .nick-card-body { flex: 1; min-width: 140px; }
           #store .nick-perks { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
           #store .nick-perk {
-            font-size: 11px; padding: 2px 8px; border-radius: 10px;
+            display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap;
+            font-size: 11px; padding: 4px 8px; border-radius: 10px;
             background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.45);
           }
           #store .nick-perk--on { background: rgba(76,175,80,0.25); color: #a5d6a7; }
-          #store .nick-shop-actions {
-            display: flex; flex-wrap: wrap; gap: 6px; width: 100%; margin-top: 4px;
+          #store .nick-perk-label { line-height: 1.2; }
+          #store .nick-perk .nick-shop-btn {
+            font-size: 10px; padding: 2px 8px; border-radius: 6px; cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.25); background: rgba(30,144,255,0.35);
+            color: #fff; margin: 0;
           }
-          #store .nick-shop-btn {
-            font-size: 11px; padding: 4px 10px; border-radius: 8px; cursor: pointer;
-            border: 1px solid rgba(255,255,255,0.2); background: rgba(30,144,255,0.2);
-            color: #fff;
-          }
-          #store .nick-shop-btn:hover { background: rgba(30,144,255,0.45); }
+          #store .nick-perk .nick-shop-btn:hover { background: rgba(30,144,255,0.55); }
         </style>
         <div id="store" class="content">
           <div class="top-info">
