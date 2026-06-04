@@ -5,6 +5,7 @@
     if (level >= 50 && level < 100) return "azure";    // голубая
     if (level >= 100 && level < 150) return "red";     // красная
     if (level >= 150) return "white";                  // белая
+		if (level >= 200) return "black";                  // белая
     return "";
 }
 
@@ -4978,6 +4979,98 @@ $(document).ready(function() {
     observer.observe($("#overlays")[0], { attributes: true, attributeFilter: ['style'] });
 });
 	
+// === Покупки по нику (публичные списки api.agar.su) ===
+const SHOP_API = 'https://api.agar.su';
+let nickPerksLists = null;
+
+async function fetchNickPerksLists() {
+  if (nickPerksLists) return nickPerksLists;
+  const toSet = (text) =>
+    new Set(
+      String(text || '')
+        .split('\n')
+        .map((l) => l.trim())
+        .filter(Boolean)
+        .map((n) => n.toLowerCase())
+    );
+  const toSkinMap = (text) => {
+    const map = {};
+    String(text || '')
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .forEach((line) => {
+        const i = line.indexOf(':');
+        if (i === -1) return;
+        map[line.slice(0, i).trim().toLowerCase()] = line.slice(i + 1).trim();
+      });
+    return map;
+  };
+  try {
+    const [passR, invR, rotR, skinR] = await Promise.all([
+      fetch(`${SHOP_API}/pass.txt`),
+      fetch(`${SHOP_API}/invisible.txt`),
+      fetch(`${SHOP_API}/rotation.txt`),
+      fetch(`${SHOP_API}/skinlist.txt`),
+    ]);
+    nickPerksLists = {
+      pass: toSet(passR.ok ? await passR.text() : ''),
+      invisible: toSet(invR.ok ? await invR.text() : ''),
+      rotation: toSet(rotR.ok ? await rotR.text() : ''),
+      skinMap: toSkinMap(skinR.ok ? await skinR.text() : ''),
+    };
+  } catch (e) {
+    console.error('Ошибка загрузки списков покупок:', e);
+    nickPerksLists = {
+      pass: new Set(),
+      invisible: new Set(),
+      rotation: new Set(),
+      skinMap: {},
+    };
+  }
+  return nickPerksLists;
+}
+
+function nickInPublicSet(set, nickname) {
+  const lower = String(nickname || '').toLowerCase();
+  if (set.has(lower)) return true;
+  const clean = lower.replace(/\[|\]/g, '').trim();
+  return set.has(clean) || set.has(`[${clean}]`);
+}
+
+function nickHasPurchasedSkin(nickname, skinMap) {
+  const lower = String(nickname || '').toLowerCase();
+  if (skinMap[lower]) return true;
+  const clean = lower.replace(/\[|\]/g, '').trim();
+  return !!(skinMap[clean] || skinMap[`[${clean}]`] || getSkinUrlForNick(clean));
+}
+
+function getNickPerks(nickname, password, lists) {
+  const pass = String(password ?? '').trim();
+  return {
+    hasSkinPass: nickInPublicSet(lists.pass, nickname) || !!pass,
+    hasSkin: nickHasPurchasedSkin(nickname, lists.skinMap),
+    invisible: nickInPublicSet(lists.invisible, nickname),
+    rotation: nickInPublicSet(lists.rotation, nickname),
+  };
+}
+
+function makePerkBadge(label, active) {
+  const span = document.createElement('span');
+  span.className = 'nick-perk' + (active ? ' nick-perk--on' : '');
+  span.textContent = label;
+  span.title = active ? 'Куплено' : 'Не куплено';
+  return span;
+}
+
+function openShopForNick(nickPart, hasClan, options) {
+  if (typeof window.openShopPurchase === 'function') {
+    window.openShopPurchase(nickPart, { clan: hasClan, ...options });
+  } else if (typeof showContent === 'function') {
+    showContent('shop');
+  }
+}
+
 // === ПАРСИНГ НИКА ===
 function parseFullNick(full) {
   const str = String(full || '').trim();
@@ -5034,31 +5127,71 @@ function makePasswordBox(pass) {
 }
 
 // === РЕНДЕР КАРТОЧКИ ===
-function renderCard(list, fullNick) {
+function renderCard(list, fullNick, perks) {
   const { str, nickPart, pass, hasClan, cleanNick } = parseFullNick(fullNick);
   const label = hasClan ? nickPart : (nickPart || '?');
+  const p = perks || {
+    hasSkinPass: false,
+    hasSkin: false,
+    invisible: false,
+    rotation: false,
+  };
 
   const li = document.createElement('li');
+  li.className = 'nick-card';
 
   const skinUrl = getSkinUrlForNick(cleanNick);
   const avatar = skinUrl
     ? Object.assign(document.createElement('img'), { className: 'skin', src: skinUrl, loading: 'lazy' })
     : Object.assign(document.createElement('div'), { className: 'skin skin--empty', textContent: label.charAt(0).toUpperCase() });
 
+  const body = document.createElement('div');
+  body.className = 'nick-card-body';
+
   const name = document.createElement('div');
   name.className = 'nick';
   name.textContent = label;
-name.onclick = () => {
-  try { if (typeof setNick === 'function') setNick(str); } catch(e) {}
-  document.getElementById('nick').value = nickPart;
-  document.getElementById('pass').value = pass;
-  setCookie('userPass', pass, 7);
-  document.getElementById('pass').style.display = pass ? 'block' : 'none';
-  selectSkin(nickPart);
-};
+  name.onclick = () => {
+    try { if (typeof setNick === 'function') setNick(str); } catch (e) {}
+    document.getElementById('nick').value = nickPart;
+    document.getElementById('pass').value = pass;
+    setCookie('userPass', pass, 7);
+    document.getElementById('pass').style.display = pass ? 'block' : 'none';
+    selectSkin(nickPart);
+  };
+
+  const perksRow = document.createElement('div');
+  perksRow.className = 'nick-perks';
+  perksRow.append(
+    makePerkBadge('Skin pass', p.hasSkinPass),
+    makePerkBadge('Скин', p.hasSkin),
+    makePerkBadge('Невидимый ник', p.invisible),
+    makePerkBadge('Поворот', p.rotation)
+  );
+
+  const actions = document.createElement('div');
+  actions.className = 'nick-shop-actions';
+
+  const addBtn = (text, opts) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'nick-shop-btn';
+    btn.textContent = text;
+    btn.onclick = () => openShopForNick(nickPart, hasClan, opts);
+    actions.appendChild(btn);
+  };
+
+  if (p.hasSkin) addBtn('Обновить скин', { focusSkin: true });
+  else addBtn('Купить скин', { focusSkin: true });
+  if (p.hasSkinPass) addBtn('Сменить пароль', { focusPassword: true });
+  else addBtn('Skin pass', { focusPassword: true });
+  if (!p.invisible) addBtn('Невидимый ник', { invisible: true });
+  if (!p.rotation) addBtn('Поворот скина', { rotation: true });
+
+  body.append(name, perksRow, actions);
 
   const passBox = makePasswordBox(pass);
-  li.append(avatar, name, passBox);
+  li.append(avatar, body, passBox);
   list.appendChild(li);
 }
 
@@ -5077,6 +5210,7 @@ async function loadMyNicknames() {
   if (block) block.style.display = '';
 
   try {
+    nickPerksLists = null;
     const res = await accountApiGet('me/nicknames');
     if (!res.ok) {
       if (res.status === 401) {
@@ -5087,6 +5221,7 @@ async function loadMyNicknames() {
     }
 
     const data = await res.json();
+    const lists = await fetchNickPerksLists();
 
     // ОЧИСТКА списков, если они есть
     if (nickList) nickList.innerHTML = '';
@@ -5100,12 +5235,13 @@ async function loadMyNicknames() {
         const pass = (row.password ?? '').trim();
         const finalNick = pass && !full.includes('#') ? `${full}#${pass}` : full;
         const parsed = parseFullNick(finalNick);
+        const perks = getNickPerks(full, pass, lists);
 
         if (parsed.hasClan) {
-          if (clanList) renderCard(clanList, finalNick);
+          if (clanList) renderCard(clanList, finalNick, perks);
           clanCount++;
         } else if (parsed.nickPart) {
-          if (nickList) renderCard(nickList, finalNick);
+          if (nickList) renderCard(nickList, finalNick, perks);
           nickCount++;
         }
       });
