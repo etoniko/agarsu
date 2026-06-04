@@ -4,7 +4,8 @@
     if (level >= 1 && level < 50) return "";           // обычная
     if (level >= 50 && level < 100) return "azure";    // голубая
     if (level >= 100 && level < 150) return "red";     // красная
-    if (level >= 200) return "black";                  // черный
+    if (level >= 150) return "white";                  // белая
+	if (level >= 150) return "black";                  // черная
     return "";
 }
 
@@ -5054,11 +5055,27 @@ function getNickPerks(nickname, password, lists) {
   };
 }
 
-function makePerkBadge(label, active) {
+function makePerkBadge(label, active, btnLabel, onBuy) {
   const span = document.createElement('span');
   span.className = 'nick-perk' + (active ? ' nick-perk--on' : '');
-  span.textContent = label;
   span.title = active ? 'Куплено' : 'Не куплено';
+
+  const text = document.createElement('span');
+  text.className = 'nick-perk-label';
+  text.textContent = label;
+  span.appendChild(text);
+
+  if (btnLabel && onBuy) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'nick-shop-btn';
+    btn.textContent = btnLabel;
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      onBuy();
+    };
+    span.appendChild(btn);
+  }
   return span;
 }
 
@@ -5161,36 +5178,33 @@ function renderCard(list, fullNick, perks) {
 
   const perksRow = document.createElement('div');
   perksRow.className = 'nick-perks';
+  const shop = (opts) => () => openShopForNick(nickPart, hasClan, opts);
   perksRow.append(
-    makePerkBadge('pass', p.hasSkinPass),
-    makePerkBadge('Скин', p.hasSkin),
-    makePerkBadge('Невидимый ник', p.invisible),
-    makePerkBadge('Поворот скина', p.rotation)
+    makePerkBadge(
+      'Пароль',
+      p.hasSkinPass,
+      p.hasSkinPass ? 'Сменить пароль' : 'Купить Пароль',
+      shop({ focusPassword: true })
+    ),
+    makePerkBadge(
+      'Скин',
+      p.hasSkin,
+      p.hasSkin ? 'Обновить скин' : 'Купить скин',
+      shop({ focusSkin: true })
+    ),
+    makePerkBadge(
+      'Невидимый ник',
+      p.invisible,
+      p.invisible ? null : 'Купить',
+      p.invisible ? null : shop({ invisible: true })
+    ),
+    makePerkBadge(
+      'Поворот скина',
+      p.rotation,
+      p.rotation ? null : 'Купить',
+      p.rotation ? null : shop({ rotation: true })
+    )
   );
-
-  const actions = document.createElement('div');
-  actions.className = 'nick-shop-actions';
-
-  const addBtn = (text, opts) => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'nick-shop-btn';
-    btn.textContent = text;
-    btn.onclick = (e) => {
-      e.stopPropagation();
-      openShopForNick(nickPart, hasClan, opts);
-    };
-    actions.appendChild(btn);
-  };
-
-  if (p.hasSkin) addBtn('Обновить скин', { focusSkin: true });
-  else addBtn('Купить скин', { focusSkin: true });
-  if (p.hasSkinPass) addBtn('Сменить пароль', { focusPassword: true });
-  else addBtn('pass', { focusPassword: true });
-  if (!p.invisible) addBtn('Невидимый ник', { invisible: true });
-  if (!p.rotation) addBtn('Поворот скина', { rotation: true });
-
-  perksRow.append(actions);
   body.append(name, perksRow);
 
   const passBox = makePasswordBox(pass);
