@@ -5,7 +5,7 @@
     if (level >= 50 && level < 100) return "azure";    // голубая
     if (level >= 100 && level < 150) return "red";     // красная
     if (level >= 150) return "white";                  // белая
-	if (level >= 150) return "black";                  // черная
+	if (level >= 200) return "black";                  // черная
     return "";
 }
 
