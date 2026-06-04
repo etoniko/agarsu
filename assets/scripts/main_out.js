@@ -4104,6 +4104,7 @@ function cancelKeybindCapture() {
 }
 
 function normalizeMouseButton(btn) {
+    if (btn === 0) return 0;
     return btn === 3 ? 3 : 1;
 }
 
@@ -4112,7 +4113,9 @@ function loadMouseButtonSettings() {
     const eject = parseInt(getCookie("mouse_eject_btn"), 10);
     mouseSplitButton = normalizeMouseButton(split);
     mouseEjectButton = normalizeMouseButton(eject);
-    if (mouseSplitButton === mouseEjectButton) mouseEjectButton = mouseSplitButton === 1 ? 3 : 1;
+    if (mouseSplitButton !== 0 && mouseSplitButton === mouseEjectButton) {
+        mouseEjectButton = mouseSplitButton === 1 ? 3 : 1;
+    }
 
     const splitSel = document.getElementById("mouse-split-btn");
     const ejectSel = document.getElementById("mouse-eject-btn");
@@ -4134,7 +4137,7 @@ function initMouseButtonSettings() {
 
     splitSel.addEventListener("change", function() {
         mouseSplitButton = normalizeMouseButton(parseInt(this.value, 10));
-        if (mouseSplitButton === mouseEjectButton) {
+        if (mouseSplitButton !== 0 && mouseSplitButton === mouseEjectButton) {
             mouseEjectButton = mouseSplitButton === 1 ? 3 : 1;
             ejectSel.value = String(mouseEjectButton);
         }
@@ -4142,7 +4145,7 @@ function initMouseButtonSettings() {
     });
     ejectSel.addEventListener("change", function() {
         mouseEjectButton = normalizeMouseButton(parseInt(this.value, 10));
-        if (mouseSplitButton === mouseEjectButton) {
+        if (mouseEjectButton !== 0 && mouseSplitButton === mouseEjectButton) {
             mouseSplitButton = mouseEjectButton === 1 ? 3 : 1;
             splitSel.value = String(mouseSplitButton);
         }
