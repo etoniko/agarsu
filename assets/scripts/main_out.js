@@ -17,10 +17,9 @@ function getPlayerSkinId(nick) {
 function createLevelIcon(level, nick) {
     if (level >= 200) {
         const img = document.createElement('img');
-        img.className = 'star-skin ' + getStarClass(level);
+        img.className = 'account-level-avatar ' + getStarClass(level);
         img.src = `https://api.agar.su/skins/${getPlayerSkinId(nick)}.png`;
         img.onerror = () => { img.src = 'https://api.agar.su/skins/4.png'; };
-        img.style.cssText = 'width:16px;height:16px;object-fit:cover;border-radius:50%;vertical-align:middle';
         return img;
     }
     const starIcon = document.createElement('i');
@@ -2353,16 +2352,17 @@ if (admins.includes(lowerName)) {
         const levelContainer = document.createElement('div');
         levelContainer.className = 'star-container';
 
-        const levelSpan = document.createElement('span');
-        levelSpan.className = 'levelme ' + getStarClass(lastMessage.playerLevel);
-        levelSpan.textContent = lastMessage.playerLevel;
-
         const tooltip = document.createElement('div');
         tooltip.className = 'tooltip';
         tooltip.textContent = `XP: ${lastMessage.playerXp}`;
 
         levelContainer.appendChild(createLevelIcon(lastMessage.playerLevel, lastMessage.name));
-        levelContainer.appendChild(levelSpan);
+        if (lastMessage.playerLevel < 200) {
+            const levelSpan = document.createElement('span');
+            levelSpan.className = 'levelme ' + getStarClass(lastMessage.playerLevel);
+            levelSpan.textContent = lastMessage.playerLevel;
+            levelContainer.appendChild(levelSpan);
+        }
         levelContainer.appendChild(tooltip);
         nameContainer.appendChild(levelContainer);
     }
@@ -3778,13 +3778,15 @@ function createLeaderboardEntry(name, level, isMe, isSystemLine, b) {
     const starContainer = document.createElement("div");
     starContainer.className = "star-container";
     starContainer.appendChild(createLevelIcon(level, cleanName));
-    const levelSpan = document.createElement("span");
-    levelSpan.className = "levelme " + getStarClass(level);
-    levelSpan.textContent = level;
+    if (level < 200) {
+      const levelSpan = document.createElement("span");
+      levelSpan.className = "levelme " + getStarClass(level);
+      levelSpan.textContent = level;
+      starContainer.appendChild(levelSpan);
+    }
     const tooltip = document.createElement("div");
     tooltip.className = "tooltip";
     tooltip.textContent = "XP: " + (leaderBoard[b].xp || 0);
-    starContainer.appendChild(levelSpan);
     starContainer.appendChild(tooltip);
     iconsContainer.appendChild(starContainer);
   }
