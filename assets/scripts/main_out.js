@@ -9,6 +9,25 @@
     return "";
 }
 
+function getPlayerSkinId(nick) {
+    const normalized = normalizeNick((nick || '').replace(/<[^>]*>/g, ''));
+    return (normalized && skinList[normalized]) ? skinList[normalized] : '4';
+}
+
+function createLevelIcon(level, nick) {
+    if (level >= 200) {
+        const img = document.createElement('img');
+        img.className = 'star-skin ' + getStarClass(level);
+        img.src = `https://api.agar.su/skins/${getPlayerSkinId(nick)}.png`;
+        img.onerror = () => { img.src = 'https://api.agar.su/skins/4.png'; };
+        img.style.cssText = 'width:16px;height:16px;object-fit:cover;border-radius:50%;vertical-align:middle';
+        return img;
+    }
+    const starIcon = document.createElement('i');
+    starIcon.className = 'fas fa-star ' + getStarClass(level);
+    return starIcon;
+}
+
 const getXp = level => ~~(100 * (level ** 2 / 2));
 const getLevel = xp => ~~((xp / 100 * 2) ** 0.5);
 	
@@ -2334,9 +2353,6 @@ if (admins.includes(lowerName)) {
         const levelContainer = document.createElement('div');
         levelContainer.className = 'star-container';
 
-        const starIcon = document.createElement('i');
-        starIcon.className = 'fas fa-star ' + getStarClass(lastMessage.playerLevel);
-
         const levelSpan = document.createElement('span');
         levelSpan.className = 'levelme ' + getStarClass(lastMessage.playerLevel);
         levelSpan.textContent = lastMessage.playerLevel;
@@ -2345,7 +2361,7 @@ if (admins.includes(lowerName)) {
         tooltip.className = 'tooltip';
         tooltip.textContent = `XP: ${lastMessage.playerXp}`;
 
-        levelContainer.appendChild(starIcon);
+        levelContainer.appendChild(createLevelIcon(lastMessage.playerLevel, lastMessage.name));
         levelContainer.appendChild(levelSpan);
         levelContainer.appendChild(tooltip);
         nameContainer.appendChild(levelContainer);
@@ -3761,11 +3777,15 @@ function createLeaderboardEntry(name, level, isMe, isSystemLine, b) {
   if (level !== -1 && !isSystemLine) {
     const starContainer = document.createElement("div");
     starContainer.className = "star-container";
-    starContainer.innerHTML = `
-      <i class='fas fa-star ${getStarClass(level)}'></i>
-      <span class='levelme ${getStarClass(level)}'>${level}</span>
-      <div class='tooltip'>XP: ${leaderBoard[b].xp || 0}</div>
-    `;
+    starContainer.appendChild(createLevelIcon(level, cleanName));
+    const levelSpan = document.createElement("span");
+    levelSpan.className = "levelme " + getStarClass(level);
+    levelSpan.textContent = level;
+    const tooltip = document.createElement("div");
+    tooltip.className = "tooltip";
+    tooltip.textContent = "XP: " + (leaderBoard[b].xp || 0);
+    starContainer.appendChild(levelSpan);
+    starContainer.appendChild(tooltip);
     iconsContainer.appendChild(starContainer);
   }
 
