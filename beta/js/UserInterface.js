@@ -22,6 +22,7 @@ export default class UserInterface {
         this.spectateButton = document.getElementById("spectate")
         this.settingsButton = document.getElementById("settings")
         this.skinButton = document.getElementById("skin")
+        this.faviconLink = document.getElementById("favicon")
         this.nameInput = document.getElementById("name")
         this.passInput = document.getElementById("pass")
         this.serversButton = document.getElementById("servers")
@@ -186,6 +187,7 @@ export default class UserInterface {
         this.skinButton.style.backgroundSize = "contain"
         this.skinButton.style.backgroundRepeat = "no-repeat"
         this.skinButton.style.backgroundPosition = "center"
+        if (this.faviconLink) this.faviconLink.href = skinUrl
     }
 
     onServers() {
