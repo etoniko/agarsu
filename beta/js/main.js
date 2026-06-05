@@ -1,7 +1,7 @@
 import Network from "./Network.js"
 import Application from "./Application.js"
 import Storage from "./Storage.js"
-import UserInterface from "./UserInterface.js?1"
+import UserInterface from "./UserInterface.js?2"
 import Settings from "./Settings.js"
 
 Array.prototype.remove = function (a) {
