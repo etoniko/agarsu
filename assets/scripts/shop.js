@@ -420,13 +420,13 @@ function calculateCost() {
     return;
   }
 
-  const passwordCost = password ? 100 : 0;
+  const passwordCost = password ? 150 : 0;
   const invisibleCost = invisibleNickCheckbox.checked ? 500 : 0;
   const rotationCost = rotationNickCheckbox.checked ? 500 : 0;
   let skinCost = 0;
   let skinLabel = 'Скин';
   if (file) {
-    skinCost = file.type === 'image/gif' ? 4500 : 100;
+    skinCost = file.type === 'image/gif' ? 4500 : 150;
     skinLabel = file.type === 'image/gif' ? 'Скин GIF' : 'Скин PNG';
   }
   const total = (passwordCost + skinCost + invisibleCost + rotationCost) * multiplier;
