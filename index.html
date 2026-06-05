@@ -716,5 +716,19 @@ function openTelegramAuth() {
 	<audio id="privateMessageSound" preload="auto">
     <source src="/assets/message.mp3" type="audio/mpeg">
 </audio>
+  <div id="paymentWidgetOverlay" class="payment-widget-overlay" hidden aria-hidden="true">
+    <div class="payment-widget-backdrop" data-close-payment></div>
+    <div class="payment-widget-panel" role="dialog" aria-modal="true" aria-labelledby="paymentWidgetTitle">
+      <div class="payment-widget-header">
+        <div class="payment-widget-heading">
+          <span id="paymentWidgetTitle">Оплата скина</span>
+          <span class="payment-widget-hint">Self.PayAnyWay · карта, СБП и другие способы</span>
+        </div>
+        <button type="button" class="payment-widget-close" id="paymentWidgetClose" aria-label="Закрыть">&times;</button>
+      </div>
+      <iframe id="paymentWidgetFrame" class="payment-widget-frame" title="Оплата PayAnyWay" allow="payment *" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      <p class="payment-widget-footer">После оплаты закройте окно — покупка применится автоматически.</p>
+    </div>
+  </div>
 </body>
 </html>
