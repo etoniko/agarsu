@@ -537,6 +537,90 @@ document.getElementById("paymentForm").addEventListener("submit", async (e) => {
   }
 });
 
+function buildPaymentWidgetUrl(data) {
+  const confirmation = data?.confirmation;
+  if (confirmation?.widget_url) return confirmation.widget_url;
+  const assistantUrl = confirmation?.confirmation_url || data?.redirect;
+  if (!assistantUrl) return null;
+  try {
+    const parsed = new URL(assistantUrl);
+    return `https://www.payanyway.ru/assistant.widget?${parsed.searchParams.toString()}`;
+  } catch {
+    return assistantUrl
+      .replace("https://moneta.ru/assistant.htm", "https://www.payanyway.ru/assistant.widget")
+      .replace("http://moneta.ru/assistant.htm", "https://www.payanyway.ru/assistant.widget");
+  }
+}
+
+function openPaymentWidget(paymentUrl) {
+  const overlay = document.getElementById("paymentWidgetOverlay");
+  const frame = document.getElementById("paymentWidgetFrame");
+  if (!overlay || !frame || !paymentUrl) return false;
+
+  frame.src = paymentUrl;
+  overlay.hidden = false;
+  overlay.classList.add("is-open");
+  overlay.setAttribute("aria-hidden", "false");
+  document.body.classList.add("payment-widget-open");
+
+  const buyButton = document.getElementById("buyButton");
+  if (buyButton) buyButton.disabled = true;
+
+  showToast("Окно оплаты открыто", "info");
+  return true;
+}
+
+function closePaymentWidget(paid = false) {
+  const overlay = document.getElementById("paymentWidgetOverlay");
+  const frame = document.getElementById("paymentWidgetFrame");
+  if (!overlay) return;
+
+  overlay.classList.remove("is-open");
+  overlay.hidden = true;
+  overlay.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("payment-widget-open");
+
+  if (frame) frame.src = "about:blank";
+
+  calculateCost();
+
+  if (paid) {
+    showToast("Оплата прошла! Скин и пароль появятся в течение минуты.", "success");
+  }
+}
+
+function initPaymentWidgetOverlay() {
+  const overlay = document.getElementById("paymentWidgetOverlay");
+  if (!overlay || overlay.dataset.ready === "1") return;
+  overlay.dataset.ready = "1";
+
+  overlay.querySelectorAll("[data-close-payment]").forEach((el) => {
+    el.addEventListener("click", () => closePaymentWidget(false));
+  });
+
+  document.getElementById("paymentWidgetClose")?.addEventListener("click", () => {
+    closePaymentWidget(false);
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && overlay.classList.contains("is-open")) {
+      closePaymentWidget(false);
+    }
+  });
+
+  window.addEventListener("message", (event) => {
+    if (!overlay.classList.contains("is-open")) return;
+    const origin = String(event.origin || "");
+    if (!origin.includes("payanyway.ru") && !origin.includes("moneta.ru")) return;
+    const payload = event.data;
+    if (payload === "SUCCESS" || payload?.status === "success" || payload?.type === "payment-success") {
+      closePaymentWidget(true);
+    }
+  });
+}
+
+initPaymentWidgetOverlay();
+
 async function sendForm(formData, headers = {}) {
   try {
     const res = await fetch("https://api.agar.su/create-payment", {
@@ -551,6 +635,11 @@ async function sendForm(formData, headers = {}) {
     if (data.warning) {
       showError('formError', data.warning, false);
       setTimeout(() => hideError('formError'), 8000);
+    }
+
+    const widgetUrl = buildPaymentWidgetUrl(data);
+    if (widgetUrl && openPaymentWidget(widgetUrl)) {
+      return;
     }
 
     if (data?.confirmation?.confirmation_url) {
