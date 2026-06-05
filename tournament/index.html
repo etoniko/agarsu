@@ -125,11 +125,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 </aside>
 <script>
 (function () {
-  function basePath() {
-    var p = location.pathname.replace(/\/index\.html$/i, '').replace(/\/+$/, '');
-    return p ? p + '/' : './';
-  }
-  var ARCHIVE = basePath() + 'archive/';
+  var ARCHIVE = 'archive/';
   var PH = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28"><rect width="28" height="28" rx="14" fill="#1a3050"/></svg>');
 
   var loadEl = document.getElementById('load');
@@ -138,6 +134,35 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
   var world = document.getElementById('world');
   var camUi = document.getElementById('cam-ui');
   var hint = document.getElementById('hint');
+
+  function fail(msg) {
+    loadEl.textContent = msg;
+    loadEl.hidden = false;
+  }
+
+  function showReady() {
+    loadEl.hidden = true;
+    bar.hidden = false;
+    stage.hidden = false;
+    camUi.hidden = false;
+    hint.hidden = false;
+  }
+
+  function fetchJson(url, opts) {
+    return fetch(url, opts).then(function (r) {
+      if (!r.ok) throw new Error(url + ' → HTTP ' + r.status);
+      return r.text().then(function (t) {
+        try { return JSON.parse(t); }
+        catch (e) { throw new Error(url + ' — не JSON (проверьте путь archive/)'); }
+      });
+    });
+  }
+
+  window.addEventListener('unhandledrejection', function (e) {
+    if (loadEl.hidden) return;
+    fail('Ошибка: ' + (e.reason && e.reason.message ? e.reason.message : String(e.reason)));
+  });
+
   var barTag = document.getElementById('bar-tag');
   var barTitle = document.getElementById('bar-title');
   var barSub = document.getElementById('bar-sub');
@@ -451,45 +476,51 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 
   function boot() {
     var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    var opts = ctrl ? { signal: ctrl.signal } : {};
     var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 15000) : null;
-    fetch(ARCHIVE + 'manifest.json', ctrl ? { signal: ctrl.signal } : {}).then(function (r) {
-      if (!r.ok) throw new Error('manifest');
-      return r.json();
-    }).then(function (mf) {
+
+    loadEl.textContent = 'Загрузка…';
+    fetchJson(ARCHIVE + 'manifest.json', opts).then(function (mf) {
       manifest = mf;
       var nums = (mf.tournaments || []).map(Number).filter(function (n) { return n > 0; });
-      if (!nums.length) throw new Error('empty');
+      if (!nums.length) throw new Error('manifest пустой');
       currentNum = Math.max.apply(null, nums);
       nums.forEach(function (n) { validIds[n] = true; });
+      loadEl.textContent = 'Загрузка турниров…';
       return Promise.all(nums.map(function (n) {
-        return fetch(ARCHIVE + n + '.json').then(function (r) {
-          if (!r.ok) throw new Error(n);
-          return r.json().then(function (d) { return { n: n, d: d }; });
+        return fetchJson(ARCHIVE + n + '.json', opts).then(function (d) {
+          return { n: n, d: d };
         });
       }));
     }).then(function (items) {
       if (timer) clearTimeout(timer);
-      world.innerHTML = items.map(function (it) {
-        return buildScene(it.d, it.n, it.n === currentNum);
-      }).join('');
-      buildDrawer();
-      loadEl.hidden = true;
-      bar.hidden = false;
-      stage.hidden = false;
-      camUi.hidden = false;
-      hint.hidden = false;
-      applySkins();
-      go(parseHash(), { fromHash: true });
-      setTimeout(function () { hint.classList.add('gone'); }, 5000);
+      loadEl.textContent = 'Построение сетки…';
+      return new Promise(function (resolve, reject) {
+        requestAnimationFrame(function () {
+          try {
+            world.innerHTML = items.map(function (it) {
+              return buildScene(it.d, it.n, it.n === currentNum);
+            }).join('');
+            buildDrawer();
+            showReady();
+            applySkins();
+            go(parseHash(), { fromHash: true });
+            setTimeout(function () { hint.classList.add('gone'); }, 5000);
+            resolve();
+          } catch (e) { reject(e); }
+        });
+      });
     }).catch(function (err) {
       if (timer) clearTimeout(timer);
       var msg = 'Не удалось загрузить турниры.';
       if (location.protocol === 'file:') {
         msg += ' Откройте через HTTP-сервер, не двойным кликом по файлу.';
+      } else if (err && err.name === 'AbortError') {
+        msg += ' Таймаут. Проверьте, что на сервере есть папка archive/.';
       } else {
-        msg += ' Проверьте ' + ARCHIVE + 'manifest.json (' + (err && err.message ? err.message : 'ошибка') + ')';
+        msg += ' ' + (err && err.message ? err.message : 'ошибка');
       }
-      loadEl.textContent = msg;
+      fail(msg);
     });
   }
 
