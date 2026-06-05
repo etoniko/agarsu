@@ -182,12 +182,14 @@ export default class UserInterface {
     }
 
     updateSkinPreview() {
+        const nick = this.core.store.name?.trim()
         const skinUrl = this.core.app.getSkinUrl(this.core.store.name) || "/skins/4.png"
         this.skinButton.style.backgroundImage = `url("${skinUrl}")`
         this.skinButton.style.backgroundSize = "contain"
         this.skinButton.style.backgroundRepeat = "no-repeat"
         this.skinButton.style.backgroundPosition = "center"
         if (this.faviconLink) this.faviconLink.href = skinUrl
+        document.title = nick && nick !== "Unnamed" ? nick : "Beta"
     }
 
     onServers() {
