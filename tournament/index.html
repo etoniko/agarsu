@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="icon" href="/icon.svg" type="image/x-icon">
+<title>Турнир</title>
+<style>
+:root{
+  --navy:#050a14;--panel:#0b1525;--card:#0f1c30;--card2:#142238;
+  --blue:#4d9fff;--blue2:#7ab8ff;--blue-g:rgba(77,159,255,.2);
+  --win:#ff5c5c;--win2:#ff8a8a;--win-g:rgba(255,92,92,.14);
+  --txt:#e8f0fc;--dim:#8fa3c0;--mute:#5a7090;
+  --edge:#1a2d4a;--edge2:#264068;--lose:.4;
+  --bar-h:64px;--fight-w:248px;--row-h:44px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{height:100%;-webkit-text-size-adjust:100%}
+body{height:100%;margin:0;overflow:hidden;font:15px/1.5 system-ui,-apple-system,'Segoe UI',sans-serif;color:var(--txt);background:var(--navy)}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;padding:0}
+.bar{
+  position:fixed;top:0;left:0;right:0;z-index:50;min-height:var(--bar-h);
+  display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 20px;
+  background:rgba(5,10,20,.94);backdrop-filter:blur(14px);border-bottom:1px solid var(--edge);
+}
+.bar-main{flex:1;min-width:0}
+.bar-top{display:flex;align-items:center;gap:10px;min-width:0}
+.chip{flex-shrink:0;padding:4px 10px;border-radius:6px;background:var(--blue-g);border:1px solid var(--edge2);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--blue2)}
+.bar-title{margin:0;font-size:16px;font-weight:600;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-sub{margin:3px 0 0;font-size:13px;line-height:1.35;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-sub .win{color:var(--win);font-weight:600}
+.bar-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.bar-btn{padding:8px 16px;border-radius:8px;background:var(--card);border:1px solid var(--edge2);color:var(--blue2);font-size:13px;white-space:nowrap;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.bar-btn.ghost{color:var(--dim)}
+@media(hover:hover){.bar-btn:hover{background:var(--card2);border-color:var(--blue)}}
+.stage{position:fixed;top:var(--bar-h);left:0;right:0;bottom:0;overflow:hidden;cursor:grab;touch-action:none;user-select:none}
+.stage.grabbing{cursor:grabbing}
+.dots{position:absolute;inset:0;pointer-events:none;background-color:#071018;background-image:radial-gradient(circle,rgba(77,159,255,.22) 1px,transparent 1px);background-size:28px 28px}
+.world{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform}
+.scene[hidden]{display:none!important}
+.map-pad{padding:120px 140px}
+.map{display:inline-block;vertical-align:top}
+.map-tags{display:grid;grid-template-columns:repeat(var(--cols),max-content);gap:40px;margin-bottom:24px;justify-content:center}
+.map-tags span{text-align:center;font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+.map-grid{display:grid;grid-template-columns:repeat(var(--cols),max-content);gap:40px;align-items:stretch;justify-content:center}
+.lane{display:flex;flex-direction:column;justify-content:space-around;min-height:var(--colh);position:relative}
+.lane-l::after,.lane-r::after{content:'';position:absolute;top:4%;bottom:4%;width:20px;pointer-events:none}
+.lane-l::after{right:-20px;border-right:2px solid var(--edge)}
+.lane-r::after{left:-20px;border-left:2px solid var(--edge)}
+.lane-m{justify-content:center;align-items:center}
+.fight{width:var(--fight-w);background:var(--card);border:1px solid var(--edge);border-radius:14px;overflow:hidden;box-shadow:0 8px 28px rgba(0,0,0,.35);flex-shrink:0}
+.fight.crown{border-color:var(--win);box-shadow:0 8px 28px rgba(0,0,0,.35)}
+.fight.crown .cap{background:var(--win)}
+.fight.crown .cell.win{background:var(--win-g)}
+.fight.crown .cell.win .name{color:var(--win2)}
+.fight.crown .cell.win .row:first-child .name::before{background:var(--win)}
+.cap{height:3px;background:var(--edge2)}
+.mid{height:1px;background:var(--edge)}
+.cell{padding:4px 0}
+.cell.win{background:rgba(77,159,255,.12)}
+.cell.lose{opacity:var(--lose)}
+.row{display:flex;align-items:center;gap:10px;padding:0 14px;height:var(--row-h);min-height:var(--row-h);max-height:var(--row-h)}
+.row img{width:28px;height:28px;border-radius:50%;flex-shrink:0;border:1px solid var(--edge2);object-fit:cover;background:var(--card2)}
+.name{flex:1;min-width:0;font-size:14px;line-height:1.2;white-space:nowrap;overflow:hidden}
+.cell.win .name{font-weight:600;color:#fff}
+.cell.win .row:first-child .name::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--blue);margin-right:8px;vertical-align:middle}
+.cam-ui{position:fixed;right:20px;bottom:20px;z-index:50;display:flex;align-items:center;gap:6px;padding:8px;background:rgba(8,14,26,.92);backdrop-filter:blur(12px);border:1px solid var(--edge2);border-radius:14px}
+.cam-btn{width:40px;height:40px;border-radius:10px;background:var(--card);border:1px solid var(--edge);color:var(--txt);font-size:20px;display:flex;align-items:center;justify-content:center}
+.cam-pct{min-width:48px;text-align:center;font-size:13px;color:var(--dim);font-variant-numeric:tabular-nums}
+.hint{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:40;margin:0;padding:8px 16px;border-radius:20px;background:rgba(8,14,26,.8);color:var(--mute);font-size:12px;pointer-events:none;transition:opacity .4s}
+.hint.gone{opacity:0}
+.load{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:var(--navy);color:var(--dim)}
+.drawer{position:fixed;inset:0;z-index:60;pointer-events:none;visibility:hidden}
+.drawer.open{pointer-events:auto;visibility:visible}
+.drawer-bg{position:absolute;inset:0;background:rgba(4,8,16,.55);opacity:0;transition:opacity .2s}
+.drawer.open .drawer-bg{opacity:1}
+.drawer-box{position:absolute;top:0;right:0;width:min(400px,100%);height:100%;background:var(--panel);border-left:1px solid var(--edge2);transform:translateX(100%);transition:transform .22s;display:flex;flex-direction:column}
+.drawer.open .drawer-box{transform:none}
+.drawer-head{display:flex;justify-content:space-between;align-items:center;padding:20px 18px;border-bottom:1px solid var(--edge)}
+.drawer-scroll{flex:1;overflow-y:auto;padding:12px}
+.arc{display:flex;flex-direction:column;align-items:flex-start;gap:5px;width:100%;text-align:left;padding:14px;border-radius:10px;margin-bottom:6px;border:1px solid transparent}
+@media(hover:hover){.arc:hover{background:var(--card);border-color:var(--edge)}}
+.arc b{font-size:14px;font-weight:500}
+.arc small{font-size:12px;color:var(--dim)}
+@media(max-width:700px){
+  :root{--bar-h:56px;--fight-w:200px}
+  .bar{padding:8px 14px}
+  .map-pad{padding:80px 60px}
+  .map-tags,.map-grid{gap:28px}
+}
+</style>
+</head>
+<body>
+<div class="load" id="load">Загрузка…</div>
+<header class="bar" id="bar" hidden>
+  <div class="bar-main">
+    <div class="bar-top">
+      <span class="chip" id="bar-tag">Текущий</span>
+      <h1 class="bar-title" id="bar-title">Турнир</h1>
+    </div>
+    <p class="bar-sub" id="bar-sub"></p>
+  </div>
+  <div class="bar-actions">
+    <button type="button" class="bar-btn ghost" id="btn-live" hidden>← Текущий</button>
+    <button type="button" class="bar-btn" id="btn-arc">Архив</button>
+  </div>
+</header>
+<div class="stage" id="stage" hidden>
+  <div class="dots"></div>
+  <div class="world" id="world"></div>
+</div>
+<div class="cam-ui" id="cam-ui" hidden>
+  <button type="button" class="cam-btn" id="z-out">−</button>
+  <span class="cam-pct" id="z-pct">100%</span>
+  <button type="button" class="cam-btn" id="z-in">+</button>
+  <button type="button" class="cam-btn" id="z-fit" title="Вписать">◎</button>
+</div>
+<p class="hint" id="hint" hidden>Колёсико — зум · Перетаскивание — панорама</p>
+<aside class="drawer" id="drawer">
+  <div class="drawer-bg" id="drawer-bg"></div>
+  <div class="drawer-box">
+    <div class="drawer-head"><b>Архив</b><button type="button" class="bar-btn" id="btn-shut">✕</button></div>
+    <div class="drawer-scroll" id="arc-list"></div>
+  </div>
+</aside>
+<script>
+(function () {
+  function basePath() {
+    var p = location.pathname.replace(/\/index\.html$/i, '').replace(/\/+$/, '');
+    return p ? p + '/' : './';
+  }
+  var ARCHIVE = basePath() + 'archive/';
+  var PH = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28"><rect width="28" height="28" rx="14" fill="#1a3050"/></svg>');
+
+  var loadEl = document.getElementById('load');
+  var bar = document.getElementById('bar');
+  var stage = document.getElementById('stage');
+  var world = document.getElementById('world');
+  var camUi = document.getElementById('cam-ui');
+  var hint = document.getElementById('hint');
+  var barTag = document.getElementById('bar-tag');
+  var barTitle = document.getElementById('bar-title');
+  var barSub = document.getElementById('bar-sub');
+  var drawer = document.getElementById('drawer');
+  var arcList = document.getElementById('arc-list');
+  var btnLive = document.getElementById('btn-live');
+  var zPct = document.getElementById('z-pct');
+
+  var manifest = { tournaments: [] };
+  var currentNum = 0;
+  var validIds = { live: true };
+  var activeId = 'live';
+  var cam = { x: 0, y: 0, s: 1 };
+  var MIN = 0.08, MAX = 3, ZOOM = 1.1;
+  var NICK_MAX = 14, NICK_MIN = 8;
+
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function escA(s) { return esc(s).replace(/"/g, '&quot;'); }
+
+  function playersPerTeam(d) {
+    var m = String(d.format || '1x1').match(/^(\d+)x\d+$/i);
+    return m ? parseInt(m[1], 10) : 1;
+  }
+
+  function roundsPerSide(n) {
+    var h = n / 2, r = 0;
+    while (h > 1) { r++; h /= 2; }
+    return r;
+  }
+
+  function sideIndices(n, side) {
+    var half = n / 2, out = [], i;
+    for (i = 0; i < half; i++) out.push(side === 'left' ? i : i + half);
+    return out;
+  }
+
+  function roundPairs(side, round, data) {
+    if (round === 0) {
+      var idx = sideIndices(data.totalTeams, side), pairs = [], i;
+      for (i = 0; i < idx.length; i += 2) pairs.push([idx[i], idx[i + 1]]);
+      return pairs;
+    }
+    var prev = (data.winners[side][round - 1] || []).filter(function (x) { return x != null; });
+    if (prev.length < 2 || prev.length % 2) return [];
+    var ps = [], j;
+    for (j = 0; j < prev.length; j += 2) ps.push([prev[j], prev[j + 1]]);
+    return ps;
+  }
+
+  function columnLabels(n) {
+    var rounds = roundsPerSide(n), tags = [], r;
+    for (r = 0; r < rounds; r++) tags.push('1/' + (n / Math.pow(2, r + 1)));
+    tags.push('финал');
+    for (r = rounds - 1; r >= 0; r--) tags.push('1/' + (n / Math.pow(2, r + 1)));
+    return tags;
+  }
+
+  function getFinalPair(data) {
+    if (data.totalTeams <= 2) return [0, 1];
+    var rounds = roundsPerSide(data.totalTeams);
+    if ((data.winners.left || []).length < rounds || (data.winners.right || []).length < rounds) return null;
+    var lc = data.winners.left[rounds - 1][0], rc = data.winners.right[rounds - 1][0];
+    if (lc == null || rc == null) return null;
+    return [lc, rc];
+  }
+
+  function winnerName(data) {
+    if (data.winnerTeam && data.winnerTeam.players) {
+      var p = data.winnerTeam.players.filter(Boolean);
+      if (p.length) return p.join(' · ');
+    }
+    if (data.winners && data.winners.final != null) {
+      var t = data.teams[data.winners.final];
+      if (t) return (t.players || []).filter(Boolean).join(' · ');
+    }
+    return null;
+  }
+
+  function formatLabel(data) {
+    var ppt = playersPerTeam(data), n = data.totalTeams;
+    if (ppt === 1) return '1×1 · ' + n + ' слотов';
+    return ppt + '×' + ppt + ' · ' + n + ' пар';
+  }
+
+  function formatDate(iso) {
+    try {
+      return new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+    } catch (e) { return ''; }
+  }
+
+  function rowHtml(nick) {
+    return '<div class="row"><img src="' + PH + '" data-nick="' + escA(nick) + '" alt="">' +
+      '<span class="name" title="' + escA(nick) + '">' + esc(nick) + '</span></div>';
+  }
+
+  function cellHtml(teamIdx, pick, data) {
+    var cls = 'cell';
+    if (pick != null) cls += pick === teamIdx ? ' win' : ' lose';
+    var t = data.teams[teamIdx] || { players: [] };
+    var html = '<div class="' + cls + '">';
+    (t.players || ['']).forEach(function (p) { html += rowHtml(p || '—'); });
+    return html + '</div>';
+  }
+
+  function fightHtml(side, round, matchIdx, pair, data) {
+    var pick = data.winners[side] && data.winners[side][round] ? data.winners[side][round][matchIdx] : null;
+    var html = '<div class="fight"><div class="cap"></div>';
+    html += cellHtml(pair[0], pick, data) + '<div class="mid"></div>' + cellHtml(pair[1], pick, data);
+    return html + '</div>';
+  }
+
+  function finalFightHtml(data) {
+    var pair = getFinalPair(data);
+    if (!pair) return '<p style="text-align:center;color:var(--mute);padding:20px">—</p>';
+    var fin = data.winners.final;
+    var html = '<div class="fight crown"><div class="cap"></div>';
+    html += cellHtml(pair[0], fin, data) + '<div class="mid"></div>' + cellHtml(pair[1], fin, data);
+    return html + '</div>';
+  }
+
+  function ensureWinners(data) {
+    if (!data.winners) data.winners = { left: [], right: [], final: null };
+    if (!data.winners.left) data.winners.left = [];
+    if (!data.winners.right) data.winners.right = [];
+  }
+
+  function buildMap(data) {
+    ensureWinners(data);
+    var rounds = roundsPerSide(data.totalTeams);
+    var cols = Math.max(1, rounds * 2 + 1);
+    var ppt = playersPerTeam(data);
+    var colh = Math.max(200, (data.totalTeams / 4) * (ppt * 36 + 32));
+    var fw = data.totalTeams >= 128 ? 170 : data.totalTeams >= 64 ? 190 : 248;
+    var tags = columnLabels(data.totalTeams);
+    var html = '<div class="map" style="--cols:' + cols + ';--colh:' + colh + 'px;--fight-w:' + fw + 'px">';
+    html += '<div class="map-tags">' + tags.map(function (t) { return '<span>' + t + '</span>'; }).join('') + '</div><div class="map-grid">';
+    var c, pairs, rr, fi;
+    for (c = 0; c < cols; c++) {
+      var lane = 'lane';
+      if (c === 0) lane += ' lane-l';
+      else if (c === cols - 1) lane += ' lane-r';
+      else if (c === rounds) lane += ' lane-m';
+      html += '<div class="' + lane + '">';
+      if (c === rounds) html += finalFightHtml(data);
+      else if (c < rounds) {
+        pairs = roundPairs('left', c, data);
+        for (fi = 0; fi < pairs.length; fi++) html += fightHtml('left', c, fi, pairs[fi], data);
+      } else {
+        rr = cols - 1 - c;
+        pairs = roundPairs('right', rr, data);
+        for (fi = 0; fi < pairs.length; fi++) html += fightHtml('right', rr, fi, pairs[fi], data);
+      }
+      html += '</div>';
+    }
+    return html + '</div></div>';
+  }
+
+  function sceneMeta(data, num, isCurrent) {
+    var win = winnerName(data);
+    return {
+      tag: isCurrent ? 'Текущий' : 'Архив #' + num,
+      title: data.name || ('Турнир ' + num),
+      format: formatLabel(data),
+      mode: data.mode || '',
+      reward: data.reward || '',
+      date: formatDate(data.date),
+      winner: win || '—'
+    };
+  }
+
+  function buildScene(data, num, isCurrent) {
+    var m = sceneMeta(data, num, isCurrent);
+    var id = String(num);
+    return '<div class="scene" id="scene-' + id + '" data-tag="' + escA(m.tag) + '" data-title="' + escA(m.title) +
+      '" data-format="' + escA(m.format) + '" data-mode="' + escA(m.mode) + '" data-reward="' + escA(m.reward) +
+      '" data-date="' + escA(m.date) + '" data-winner="' + escA(m.winner) + '"' +
+      (isCurrent ? '' : ' hidden') + '><div class="map-pad">' + buildMap(data) + '</div></div>';
+  }
+
+  function resolveId(id) {
+    if (id === 'live') return String(currentNum);
+    return String(id);
+  }
+
+  function fitNick(el) {
+    el.style.transform = '';
+    el.style.fontSize = NICK_MAX + 'px';
+    if (!el.clientWidth) return;
+    var size = NICK_MAX;
+    while (size > NICK_MIN && el.scrollWidth > el.clientWidth) {
+      size -= 0.5;
+      el.style.fontSize = size + 'px';
+    }
+    if (el.scrollWidth > el.clientWidth) {
+      el.style.transform = 'scaleX(' + (el.clientWidth / el.scrollWidth) + ')';
+      el.style.transformOrigin = 'left center';
+    }
+  }
+
+  function fitNicks() {
+    var sc = document.getElementById('scene-' + activeId);
+    if (sc) sc.querySelectorAll('.name').forEach(fitNick);
+  }
+
+  function apply() {
+    world.style.transform = 'translate(' + cam.x + 'px,' + cam.y + 'px) scale(' + cam.s + ')';
+    zPct.textContent = Math.round(cam.s * 100) + '%';
+  }
+
+  function sceneEl() { return document.getElementById('scene-' + activeId); }
+
+  function fit() {
+    var sc = sceneEl();
+    if (!sc) return;
+    var pad = sc.querySelector('.map-pad');
+    var sz = { w: pad ? pad.offsetWidth : 800, h: pad ? pad.offsetHeight : 600 };
+    var sw = stage.clientWidth, sh = stage.clientHeight;
+    cam.s = clamp(Math.min((sw - 60) / sz.w, (sh - 60) / sz.h, 1.2), MIN, MAX);
+    cam.x = (sw - sz.w * cam.s) / 2;
+    cam.y = (sh - sz.h * cam.s) / 2;
+    apply();
+  }
+
+  function syncBarH() {
+    document.documentElement.style.setProperty('--bar-h', bar.offsetHeight + 'px');
+  }
+
+  function updateBar(sc) {
+    if (!sc) return;
+    barTag.textContent = sc.getAttribute('data-tag') || '';
+    barTitle.textContent = sc.getAttribute('data-title') || 'Турнир';
+    var parts = [], k, v, html, winner;
+    ['data-format', 'data-mode', 'data-reward'].forEach(function (key) {
+      v = sc.getAttribute(key);
+      if (v) parts.push(esc(v));
+    });
+    v = sc.getAttribute('data-date');
+    if (v) parts.push(esc(v));
+    html = parts.join(' · ');
+    winner = sc.getAttribute('data-winner');
+    if (winner) {
+      html += (html ? ' · ' : '') + 'Победители: ';
+      html += winner === '—' ? esc(winner) : '<span class="win">' + esc(winner) + '</span>';
+    }
+    barSub.innerHTML = html;
+    syncBarH();
+  }
+
+  function syncHash(id) {
+    var show = id === String(currentNum) ? '' : '#' + id;
+    if (location.hash === show) return;
+    history.replaceState(null, '', location.pathname + location.search + show);
+  }
+
+  function go(id, opts) {
+    opts = opts || {};
+    id = resolveId(id);
+    if (!validIds[id] && id !== String(currentNum)) id = String(currentNum);
+    document.querySelectorAll('.scene').forEach(function (s) {
+      s.hidden = s.id !== 'scene-' + id;
+    });
+    activeId = id;
+    updateBar(sceneEl());
+    btnLive.hidden = id === String(currentNum);
+    drawer.classList.remove('open');
+    if (!opts.fromHash) syncHash(id);
+    requestAnimationFrame(function () { requestAnimationFrame(function () { fitNicks(); fit(); }); });
+  }
+
+  function parseHash() {
+    var h = decodeURIComponent(location.hash.replace(/^#/, '').trim());
+    if (!h || h === 'live') return 'live';
+    var n = parseInt(h, 10);
+    return validIds[n] ? String(n) : 'live';
+  }
+
+  function buildDrawer() {
+    var items = manifest.tournaments.filter(function (n) { return n !== currentNum; }).sort(function (a, b) { return b - a; });
+    arcList.innerHTML = items.map(function (n) {
+      var sc = document.getElementById('scene-' + n);
+      if (!sc) return '';
+      var title = sc.getAttribute('data-title');
+      var sub = sc.getAttribute('data-date') + ' · ' + sc.getAttribute('data-format');
+      var win = sc.getAttribute('data-winner');
+      if (win && win !== '—') sub += ' · ' + win;
+      return '<button type="button" class="arc" data-id="' + n + '"><b>#' + n + ' · ' + esc(title) + '</b><small>' + esc(sub) + '</small></button>';
+    }).join('');
+    arcList.querySelectorAll('.arc').forEach(function (b) {
+      b.addEventListener('click', function () { go(b.getAttribute('data-id')); });
+    });
+  }
+
+  function applySkins() {
+    fetch('https://api.agar.su/skinlist.txt').then(function (r) { return r.ok ? r.text() : ''; }).then(function (t) {
+      if (!t) return;
+      var m = {};
+      t.split(/\r?\n/).forEach(function (l) {
+        if (!l.trim()) return;
+        var i = l.lastIndexOf(':');
+        if (i < 0) return;
+        var n = l.slice(0, i).trim().toLowerCase(), id = l.slice(i + 1).trim();
+        if (n && id && !m[n]) m[n] = id;
+      });
+      document.querySelectorAll('img[data-nick]').forEach(function (img) {
+        var id = m[img.getAttribute('data-nick').toLowerCase()];
+        if (id) img.src = 'https://api.agar.su/skins/' + id + '.png';
+      });
+    }).catch(function () {});
+  }
+
+  function boot() {
+    fetch(ARCHIVE + 'manifest.json').then(function (r) {
+      if (!r.ok) throw new Error('manifest');
+      return r.json();
+    }).then(function (mf) {
+      manifest = mf;
+      var nums = (mf.tournaments || []).map(Number).filter(function (n) { return n > 0; });
+      if (!nums.length) throw new Error('empty');
+      currentNum = Math.max.apply(null, nums);
+      nums.forEach(function (n) { validIds[n] = true; });
+      return Promise.all(nums.map(function (n) {
+        return fetch(ARCHIVE + n + '.json').then(function (r) {
+          if (!r.ok) throw new Error(n);
+          return r.json().then(function (d) { return { n: n, d: d }; });
+        });
+      }));
+    }).then(function (items) {
+      world.innerHTML = items.map(function (it) {
+        return buildScene(it.d, it.n, it.n === currentNum);
+      }).join('');
+      buildDrawer();
+      loadEl.hidden = true;
+      bar.hidden = false;
+      stage.hidden = false;
+      camUi.hidden = false;
+      hint.hidden = false;
+      applySkins();
+      go(parseHash(), { fromHash: true });
+      setTimeout(function () { hint.classList.add('gone'); }, 5000);
+    }).catch(function (err) {
+      var msg = 'Не удалось загрузить турниры.';
+      if (location.protocol === 'file:') {
+        msg += ' Откройте через HTTP-сервер, не двойным кликом по файлу.';
+      } else {
+        msg += ' Проверьте ' + ARCHIVE + 'manifest.json (' + (err && err.message ? err.message : 'ошибка') + ')';
+      }
+      loadEl.textContent = msg;
+    });
+  }
+
+  var drag = false, pid = null, lx = 0, ly = 0;
+  stage.addEventListener('pointerdown', function (e) {
+    if (e.target.closest('.cam-ui,.bar,.drawer-box')) return;
+    drag = true; pid = e.pointerId; lx = e.clientX; ly = e.clientY;
+    stage.setPointerCapture(e.pointerId);
+    stage.classList.add('grabbing');
+    hint.classList.add('gone');
+  });
+  stage.addEventListener('pointermove', function (e) {
+    if (!drag || e.pointerId !== pid) return;
+    cam.x += e.clientX - lx; cam.y += e.clientY - ly;
+    lx = e.clientX; ly = e.clientY; apply();
+  });
+  function endDrag(e) {
+    if (!drag) return;
+    drag = false;
+    try { stage.releasePointerCapture(e.pointerId); } catch (_) {}
+    stage.classList.remove('grabbing');
+  }
+  stage.addEventListener('pointerup', endDrag);
+  stage.addEventListener('pointercancel', endDrag);
+  stage.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    var r = stage.getBoundingClientRect();
+    var cx = e.clientX - r.left, cy = e.clientY - r.top;
+    var ns = clamp(cam.s * (e.deltaY < 0 ? ZOOM : 1 / ZOOM), MIN, MAX);
+    cam.x = cx - (cx - cam.x) * (ns / cam.s);
+    cam.y = cy - (cy - cam.y) * (ns / cam.s);
+    cam.s = ns; apply();
+    hint.classList.add('gone');
+  }, { passive: false });
+
+  document.getElementById('z-in').addEventListener('click', function () {
+    var cx = stage.clientWidth / 2, cy = stage.clientHeight / 2;
+    var ns = clamp(cam.s * ZOOM, MIN, MAX);
+    cam.x = cx - (cx - cam.x) * (ns / cam.s);
+    cam.y = cy - (cy - cam.y) * (ns / cam.s);
+    cam.s = ns; apply();
+  });
+  document.getElementById('z-out').addEventListener('click', function () {
+    var cx = stage.clientWidth / 2, cy = stage.clientHeight / 2;
+    var ns = clamp(cam.s / ZOOM, MIN, MAX);
+    cam.x = cx - (cx - cam.x) * (ns / cam.s);
+    cam.y = cy - (cy - cam.y) * (ns / cam.s);
+    cam.s = ns; apply();
+  });
+  document.getElementById('z-fit').addEventListener('click', fit);
+  document.getElementById('btn-arc').addEventListener('click', function () { drawer.classList.add('open'); });
+  document.getElementById('btn-shut').addEventListener('click', function () { drawer.classList.remove('open'); });
+  document.getElementById('drawer-bg').addEventListener('click', function () { drawer.classList.remove('open'); });
+  document.getElementById('btn-live').addEventListener('click', function () { go('live'); });
+  window.addEventListener('hashchange', function () { go(parseHash(), { fromHash: true }); });
+  window.addEventListener('resize', function () { syncBarH(); requestAnimationFrame(function () { fitNicks(); fit(); }); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') drawer.classList.remove('open');
+    if (e.key === '0') fit();
+  });
+
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(boot);
+  else boot();
+})();
+</script>
+</body>
+</html>
