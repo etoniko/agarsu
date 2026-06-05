@@ -105,11 +105,7 @@ a.link{color:var(--blue2)}
 
 <script>
 (function () {
-  function basePath() {
-    var p = location.pathname.replace(/\/admin\.html$/i, '').replace(/\/index\.html$/i, '').replace(/\/+$/, '');
-    return p ? p + '/' : './';
-  }
-  var ARCHIVE = basePath() + 'archive/';
+  var ARCHIVE = 'archive/';
 
   var manifest = { tournaments: [] };
   var cache = {};
