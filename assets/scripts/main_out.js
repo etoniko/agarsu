@@ -18,8 +18,8 @@ function createLevelIcon(level, nick) {
     if (level >= 200) {
         const img = document.createElement('img');
         img.className = 'account-level-avatar ' + getStarClass(level);
-        img.src = `https://api.agar.su/skins/${getPlayerSkinId(nick)}.png`;
-        img.onerror = () => { img.src = 'https://api.agar.su/skins/4.png'; };
+        img.src = `/skins/${getPlayerSkinId(nick)}.png`;
+        img.onerror = () => { img.src = '/skins/4.png'; };
         return img;
     }
     const starIcon = document.createElement('i');
@@ -68,7 +68,7 @@ stats.forEach((player, index) => {
         <div>${index + 1}</div>
         <div>${player.nick}</div>
         <div>${player.score}</div>
-        <div class="skinswraper"style="background-image: url('https://api.agar.su/skins/${player.skin}.png');"></div>
+        <div class="skinswraper"style="background-image: url('/skins/${player.skin}.png');"></div>
     `;
     container.appendChild(playerDiv);
 });
@@ -125,9 +125,8 @@ window.addEventListener('hashchange', setActiveFromHash);
         };
     })(wjQuery);
 
-const ONLINE_HUB_URL = "https://api.agar.su:6008/online?1";
+const ONLINE_HUB_URL = "https://api.agar.su:6008/online";
 
-// Онлайн: клиент ← api.agar.su:6008 ← игровые серверы (POST /report)
 async function updateOnlineCount() {
     let rows = [];
     try {
@@ -336,7 +335,7 @@ function normalizeNick(nick) {
 
 // Функция загрузки skinList.txt с нормализацией
 function fetchSkinList() {
-    fetch('https://api.agar.su/skinlist.txt')
+    fetch('/skinlist.txt')
         .then(response => {
             if (!response.ok) {
                 throw new Error('Ошибка сети: ' + response.status);
@@ -1971,7 +1970,7 @@ const maxDialogMessages = 100; // для ЛС
 // ==========================
 // Загрузка pass.txt
 // ==========================
-fetch('https://api.agar.su/pass.txt')
+fetch('/pass.txt')
     .then(response => {
         if (!response.ok) throw new Error('Ошибка сети: ' + response.status);
         return response.text();
@@ -2019,8 +2018,8 @@ function createDialog(number, senderName, senderAvatar) {
     avatarContainer.className = 'chatX_top_avatar';
     const avatar = document.createElement('img');
     avatar.className = 'chatX_avatar_private';
-    avatar.src = senderAvatar || 'https://api.agar.su/skins/4.png';
-    avatar.onerror = () => avatar.src = 'https://api.agar.su/skins/4.png';
+    avatar.src = senderAvatar || '/skins/4.png';
+    avatar.onerror = () => avatar.src = '/skins/4.png';
     avatar.title = senderName || `User ${number}`;
     avatarContainer.appendChild(avatar);
 
@@ -2316,7 +2315,7 @@ if (privateMatch) {
     if (!messageContent.startsWith('PvPInvite;')) {
         targetDialogId = `!ls${number}`;
         createDialog(number, lastMessage.name, skinList[normalizedName] ? 
-            `https://api.agar.su/skins/${skinList[normalizedName]}.png` : 'https://api.agar.su/skins/4.png');
+            `/skins/${skinList[normalizedName]}.png` : '/skins/4.png');
     }
 }
 
@@ -2339,8 +2338,8 @@ if (admins.includes(lowerName)) {
     const avatar = document.createElement('img');
     avatar.className = 'chatX_avatar';
     const skinId = skinList[normalizedName];
-    avatar.src = skinId ? `https://api.agar.su/skins/${skinId}.png` : 'https://api.agar.su/skins/4.png';
-    avatar.onerror = () => avatar.src = 'https://api.agar.su/skins/4.png';
+    avatar.src = skinId ? `/skins/${skinId}.png` : '/skins/4.png';
+    avatar.onerror = () => avatar.src = '/skins/4.png';
     avatarContainer.appendChild(avatar);
     msgDiv.appendChild(avatarContainer);
 
@@ -2488,7 +2487,7 @@ pmBtn.style.cursor = 'pointer';
 pmBtn.onclick = () => {
     // Создаём ЛС диалог
     createDialog(playerId, lastMessage.name, skinList[normalizeNick(lastMessage.name)] ? 
-        `https://api.agar.su/skins/${skinList[normalizeNick(lastMessage.name)]}.png` : 'https://api.agar.su/skins/4.png');
+        `/skins/${skinList[normalizeNick(lastMessage.name)]}.png` : '/skins/4.png');
     switchToDialog(`!ls${playerId}`);
     menu.remove();
 };
@@ -2601,8 +2600,8 @@ menu.appendChild(pvpBtn);
         const topAvatarImg = dialogs[targetDialogId].avatar.querySelector('img');
         if (topAvatarImg) {
             topAvatarImg.src = skinList[normalizedName]
-                ? `https://api.agar.su/skins/${skinList[normalizedName]}.png`
-                : 'https://api.agar.su/skins/4.png';
+                ? `/skins/${skinList[normalizedName]}.png`
+                : '/skins/4.png';
             topAvatarImg.title = lastMessage.name || `User ${targetDialogId.replace('!ls','')}`;
         }
     }
@@ -3540,8 +3539,8 @@ function drawWhiteGrid() {
             const normalizedNick = normalizeNick(topPlayer.nick);
             const skinId = skinList[normalizedNick];
                 innerImage.src = skinId
-                    ? `https://api.agar.su/skins/${skinId}.png`
-                    : "https://api.agar.su/skins/4.png";
+                    ? `/skins/${skinId}.png`
+                    : "/skins/4.png";
 
                 topPlayerSkin = skinId || 'default';
             }
@@ -4215,7 +4214,7 @@ wjQuery(window).on('load', function() {
 
 const transparent = new Set(["liqwid","⟨本⟩ Itana."]);
 let invisible = new Set(); // сначала пустой Set
-fetch("https://api.agar.su/invisible.txt")
+fetch("/invisible.txt")
   .then(r => r.text())
   .then(text => {
     text.split('\n').forEach(line => {
@@ -4225,7 +4224,7 @@ fetch("https://api.agar.su/invisible.txt")
   });
 const invisible2 = new Set(["нико"]); // невидимая масса
 const rotation = new Set(); //поворот скина
-fetch("https://api.agar.su/rotation.txt")
+fetch("/rotation.txt")
   .then(r => r.text())
   .then(text => {
     text.split('\n').forEach(line => {
@@ -4498,7 +4497,7 @@ if (showSkin && !this.isVirus) {
     if (skinId) {
         if (!skins[skinId]) {
             skins[skinId] = new Image();
-            skins[skinId].src = `https://api.agar.su/skins/${skinId}.png`;
+            skins[skinId].src = `/skins/${skinId}.png`;
         }
         const skinImg = skins[skinId];
         if (skinImg.complete && skinImg.width > 0) {
@@ -4922,7 +4921,7 @@ function refreshTopFromStats(stats) {
         const medal = index === 0 ? 'gold' : index === 1 ? 'silver' : 'bronze';
         const normalizedNick = normalizeNick(entry.nick);
         const skinCode = skinList?.[normalizedNick];
-        const skinUrl = skinCode ? `https://api.agar.su/skins/${skinCode}.png` : 'https://api.agar.su/skins/4.png';
+        const skinUrl = skinCode ? `/skins/${skinCode}.png` : '/skins/4.png';
         
         const row = document.createElement('div');
         row.className = 'rating-row ' + medal;
@@ -4965,7 +4964,6 @@ $(document).ready(function() {
 });
 	
 // === Покупки по нику (публичные списки api.agar.su) ===
-const SHOP_API = 'https://api.agar.su';
 let nickPerksLists = null;
 
 async function fetchNickPerksLists() {
@@ -4993,10 +4991,10 @@ async function fetchNickPerksLists() {
   };
   try {
     const [passR, invR, rotR, skinR] = await Promise.all([
-      fetch(`${SHOP_API}/pass.txt`),
-      fetch(`${SHOP_API}/invisible.txt`),
-      fetch(`${SHOP_API}/rotation.txt`),
-      fetch(`${SHOP_API}/skinlist.txt`),
+      fetch(`/pass.txt`),
+      fetch(`/invisible.txt`),
+      fetch(`/rotation.txt`),
+      fetch(`/skinlist.txt`)
     ]);
     nickPerksLists = {
       pass: toSet(passR.ok ? await passR.text() : ''),
@@ -5104,13 +5102,13 @@ function getSkinUrlForNick(nickname) {
     // Ищем в skinList
     const code = skinList[cleanKey];
     if (code) {
-      return `https://api.agar.su/skins/${code}.png`;
+      return `/skins/${code}.png`;
     }
 
     // Если не нашли — пробуем с []
     const withBrackets = `[${cleanKey}]`;
     const code2 = skinList[withBrackets];
-    return code2 ? `https://api.agar.su/skins/${code2}.png` : null;
+    return code2 ? `/skins/${code2}.png` : null;
 
   } catch (e) {
     console.error('Skin error:', e);
