@@ -136,7 +136,7 @@ function renderSkinsGalleryPage(page) {
         card.type = 'button';
         card.className = 'skins-gallery-card';
         card.innerHTML = `
-            <img src="https://api.agar.su/skins/${skin.code}.png" alt="" loading="lazy">
+            <img src="/skins/${skin.code}.png" alt="" loading="lazy">
             <h4>${escapeHtml(skin.nick)}</h4>
         `;
         card.addEventListener('click', async () => {
@@ -270,18 +270,18 @@ function updateAvatarDisplay() {
 
     if (players.length > 0) {
         const currentPlayer = players[currentIndex];
-        mainSkin.style.backgroundImage = `url(https://api.agar.su/skins/${currentPlayer.id}.png)`;
+        mainSkin.style.backgroundImage = `url(/skins/${currentPlayer.id}.png)`;
         const nickInput = document.getElementById('nick');
         if (nickInput) nickInput.value = currentPlayer.nick;
 
         const prevIndex = (currentIndex - 1 + players.length) % players.length;
         if (previousSkin && players[prevIndex]) {
-            previousSkin.style.backgroundImage = `url(https://api.agar.su/skins/${players[prevIndex].id}.png)`;
+            previousSkin.style.backgroundImage = `url(/skins/${players[prevIndex].id}.png)`;
         }
 
         const nextIndex = (currentIndex + 1) % players.length;
         if (nextSkin && players[nextIndex]) {
-            nextSkin.style.backgroundImage = `url(https://api.agar.su/skins/${players[nextIndex].id}.png)`;
+            nextSkin.style.backgroundImage = `url(/skins/${players[nextIndex].id}.png)`;
         }
     }
 }
