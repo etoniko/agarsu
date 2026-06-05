@@ -29,14 +29,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=new_releases" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="/assets/style.css?4" rel="stylesheet">
+    <link href="/assets/style.css?5" rel="stylesheet">
     <!-- Скрипты -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="/assets/scripts/jquery.js?0002"></script>
     <script src="/assets/scripts/log.js?0002"></script>
     <script src="/assets/scripts/vector.js?0002"></script>
     <script src="/assets/scripts/main_out.js"></script>
-	<script src="/assets/scripts/shop.js?4" defer></script>
+	<script src="/assets/scripts/shop.js?1" defer></script>
 	<script src="/assets/scripts/all.js" defer></script>
 	<script src="/assets/scripts/pass.js" defer></script>
 	<script src="/assets/scripts/skins.js" defer></script>
@@ -716,18 +716,20 @@ function openTelegramAuth() {
 	<audio id="privateMessageSound" preload="auto">
     <source src="/assets/message.mp3" type="audio/mpeg">
 </audio>
-  <div id="paymentWidgetOverlay" class="payment-widget-overlay" hidden aria-hidden="true">
-    <div class="payment-widget-backdrop" data-close-payment></div>
-    <div class="payment-widget-panel" role="dialog" aria-modal="true" aria-labelledby="paymentWidgetTitle">
-      <div class="payment-widget-header">
-        <div class="payment-widget-heading">
-          <span id="paymentWidgetTitle">Оплата скина</span>
-          <span class="payment-widget-hint">Self.PayAnyWay · карта, СБП и другие способы</span>
-        </div>
-        <button type="button" class="payment-widget-close" id="paymentWidgetClose" aria-label="Закрыть">&times;</button>
+  <div id="paymentWidgetOverlay" class="paw-overlay" hidden aria-hidden="true">
+    <div class="paw-overlay-backdrop" data-close-payment></div>
+    <div class="paw-widget-shell" role="dialog" aria-modal="true" aria-label="Оплата PayAnyWay">
+      <button type="button" class="paw-widget-close" id="paymentWidgetClose" aria-label="Закрыть">&times;</button>
+      <div id="monetaAssistantDiv" class="paw-assistant-wrap">
+        <iframe
+          id="paymentWidgetFrame"
+          class="paw-assistant-frame"
+          title="PayAnyWay"
+          scrolling="no"
+          allow="payment *"
+          referrerpolicy="no-referrer-when-downgrade"
+        ></iframe>
       </div>
-      <iframe id="paymentWidgetFrame" class="payment-widget-frame" title="Оплата PayAnyWay" allow="payment *" referrerpolicy="no-referrer-when-downgrade"></iframe>
-      <p class="payment-widget-footer">После оплаты закройте окно — покупка применится автоматически.</p>
     </div>
   </div>
 </body>
