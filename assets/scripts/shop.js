@@ -537,6 +537,56 @@ document.getElementById("paymentForm").addEventListener("submit", async (e) => {
   }
 });
 
+const PAW_WIDGET_WIDTH = 333;
+const PAW_WIDGET_HEIGHT = 520;
+const PAW_WIDGET_MIN_WIDTH = 320;
+const PAW_STATUS_RE = /^(none|success|fail|inprogress|return)$/;
+
+function isPayAnyWayOrigin(origin) {
+  try {
+    const host = new URL(origin).hostname;
+    return host === "payanyway.ru" || host.endsWith(".payanyway.ru")
+      || host === "moneta.ru" || host.endsWith(".moneta.ru");
+  } catch {
+    return false;
+  }
+}
+
+function parsePayAnyWayMessage(data) {
+  if (typeof data !== "string") return null;
+  if (PAW_STATUS_RE.test(data)) return { type: "status", status: data };
+  try {
+    const msg = JSON.parse(data);
+    if (msg && typeof msg === "object") return msg;
+  } catch (_) {}
+  return null;
+}
+
+function setPayAnyWayWidgetSize(width, height) {
+  const wrap = document.getElementById("monetaAssistantDiv");
+  const frame = document.getElementById("paymentWidgetFrame");
+  if (!wrap || !frame) return;
+
+  const nextWidth = Math.max(PAW_WIDGET_MIN_WIDTH, Math.min(Number(width) || PAW_WIDGET_WIDTH, window.innerWidth - 24));
+  const nextHeight = Math.min(Number(height) || PAW_WIDGET_HEIGHT, window.innerHeight - 24);
+
+  wrap.style.width = `${nextWidth}px`;
+  wrap.style.height = `${nextHeight}px`;
+  frame.style.width = `${nextWidth}px`;
+  frame.style.height = `${nextHeight}px`;
+}
+
+function resetPayAnyWayWidgetSize() {
+  setPayAnyWayWidgetSize(PAW_WIDGET_WIDTH, PAW_WIDGET_HEIGHT);
+}
+
+function requestPayAnyWayWidgetSize(frame) {
+  if (!frame?.contentWindow) return;
+  const payload = JSON.stringify({ m_type: "request", m_val: "widgetSize" });
+  frame.contentWindow.postMessage(payload, "https://www.payanyway.ru");
+  frame.contentWindow.postMessage(payload, "https://moneta.ru");
+}
+
 function buildPaymentWidgetUrl(data) {
   const confirmation = data?.confirmation;
   if (confirmation?.widget_url) return confirmation.widget_url;
@@ -557,16 +607,16 @@ function openPaymentWidget(paymentUrl) {
   const frame = document.getElementById("paymentWidgetFrame");
   if (!overlay || !frame || !paymentUrl) return false;
 
+  resetPayAnyWayWidgetSize();
   frame.src = paymentUrl;
   overlay.hidden = false;
   overlay.classList.add("is-open");
   overlay.setAttribute("aria-hidden", "false");
-  document.body.classList.add("payment-widget-open");
+  document.body.classList.add("paw-widget-open");
 
   const buyButton = document.getElementById("buyButton");
   if (buyButton) buyButton.disabled = true;
 
-  showToast("Окно оплаты открыто", "info");
   return true;
 }
 
@@ -578,10 +628,10 @@ function closePaymentWidget(paid = false) {
   overlay.classList.remove("is-open");
   overlay.hidden = true;
   overlay.setAttribute("aria-hidden", "true");
-  document.body.classList.remove("payment-widget-open");
+  document.body.classList.remove("paw-widget-open");
 
   if (frame) frame.src = "about:blank";
-
+  resetPayAnyWayWidgetSize();
   calculateCost();
 
   if (paid) {
@@ -589,8 +639,28 @@ function closePaymentWidget(paid = false) {
   }
 }
 
+function handlePayAnyWayWidgetMessage(event) {
+  const overlay = document.getElementById("paymentWidgetOverlay");
+  if (!overlay?.classList.contains("is-open")) return;
+  if (!isPayAnyWayOrigin(event.origin || "")) return;
+
+  const msg = parsePayAnyWayMessage(event.data);
+  if (!msg) return;
+
+  if (msg.type === "status" || msg.m_type === "status") {
+    const status = String(msg.status || msg.m_val || "").toLowerCase();
+    if (status === "success") closePaymentWidget(true);
+    return;
+  }
+
+  if (msg.m_type === "widgetSize") {
+    setPayAnyWayWidgetSize(msg.width, msg.height);
+  }
+}
+
 function initPaymentWidgetOverlay() {
   const overlay = document.getElementById("paymentWidgetOverlay");
+  const frame = document.getElementById("paymentWidgetFrame");
   if (!overlay || overlay.dataset.ready === "1") return;
   overlay.dataset.ready = "1";
 
@@ -608,15 +678,12 @@ function initPaymentWidgetOverlay() {
     }
   });
 
-  window.addEventListener("message", (event) => {
+  frame?.addEventListener("load", () => {
     if (!overlay.classList.contains("is-open")) return;
-    const origin = String(event.origin || "");
-    if (!origin.includes("payanyway.ru") && !origin.includes("moneta.ru")) return;
-    const payload = event.data;
-    if (payload === "SUCCESS" || payload?.status === "success" || payload?.type === "payment-success") {
-      closePaymentWidget(true);
-    }
+    requestPayAnyWayWidgetSize(frame);
   });
+
+  window.addEventListener("message", handlePayAnyWayWidgetMessage, false);
 }
 
 initPaymentWidgetOverlay();
