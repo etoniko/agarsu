@@ -70,6 +70,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 .hint{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:40;margin:0;padding:8px 16px;border-radius:20px;background:rgba(8,14,26,.8);color:var(--mute);font-size:12px;pointer-events:none;transition:opacity .4s}
 .hint.gone{opacity:0}
 .load{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:var(--navy);color:var(--dim)}
+.load[hidden]{display:none!important}
 .drawer{position:fixed;inset:0;z-index:60;pointer-events:none;visibility:hidden}
 .drawer.open{pointer-events:auto;visibility:visible}
 .drawer-bg{position:absolute;inset:0;background:rgba(4,8,16,.55);opacity:0;transition:opacity .2s}
@@ -149,12 +150,17 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
   var hint = document.getElementById('hint');
 
   function fail(msg) {
+    if (!loadEl) return;
     loadEl.textContent = msg;
     loadEl.hidden = false;
+    loadEl.style.display = 'flex';
   }
 
   function showReady() {
-    loadEl.hidden = true;
+    if (loadEl) {
+      loadEl.hidden = true;
+      loadEl.style.display = 'none';
+    }
     bar.hidden = false;
     stage.hidden = false;
     camUi.hidden = false;
