@@ -43,7 +43,7 @@ function bindSkinsGalleryResize() {
 
 async function loadSkinsGalleryData() {
     // Загружаем skinlist.txt для получения ID по никам
-    const skinRes = await fetch('https://api.agar.su/skinlist.txt');
+    const skinRes = await fetch('/skinlist.txt');
     if (!skinRes.ok) throw new Error('skinlist');
     const skinText = await skinRes.text();
     
@@ -194,7 +194,7 @@ async function initSkinsGallery() {
 
 // Функция загрузки списка скинов
 async function loadSkinsList() {
-    const response = await fetch('https://api.agar.su/skinlist.txt');
+    const response = await fetch('/skinlist.txt');
     const data = await response.text();
     const skinsMap = new Map();
 
