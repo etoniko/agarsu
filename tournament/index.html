@@ -125,7 +125,20 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 </aside>
 <script>
 (function () {
-  var ARCHIVE = 'archive/';
+  function pageBase() {
+    var path = location.pathname;
+    if (!path.endsWith('/')) {
+      path = /\.[a-z0-9]+$/i.test(path.split('/').pop() || '')
+        ? path.replace(/\/[^/]+$/, '/')
+        : path + '/';
+    }
+    return path;
+  }
+
+  function archiveUrl(file) {
+    return pageBase() + 'archive/' + file;
+  }
+
   var PH = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28"><rect width="28" height="28" rx="14" fill="#1a3050"/></svg>');
 
   var loadEl = document.getElementById('load');
@@ -480,7 +493,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
     var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 15000) : null;
 
     loadEl.textContent = 'Загрузка…';
-    fetchJson(ARCHIVE + 'manifest.json', opts).then(function (mf) {
+    fetchJson(archiveUrl('manifest.json'), opts).then(function (mf) {
       manifest = mf;
       var nums = (mf.tournaments || []).map(Number).filter(function (n) { return n > 0; });
       if (!nums.length) throw new Error('manifest пустой');
@@ -488,7 +501,13 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
       nums.forEach(function (n) { validIds[n] = true; });
       loadEl.textContent = 'Загрузка турниров…';
       return Promise.all(nums.map(function (n) {
-        return fetchJson(ARCHIVE + n + '.json', opts).then(function (d) {
+        return fetchJson(archiveUrl(n + '.json'), opts).then(function (d) {
+          if (!d.totalTeams || !(d.teams && d.teams.length)) {
+            throw new Error('Турнир #' + n + ': нет команд в JSON');
+          }
+          if (d.teams.length !== d.totalTeams) {
+            throw new Error('Турнир #' + n + ': teams=' + d.teams.length + ', totalTeams=' + d.totalTeams);
+          }
           return { n: n, d: d };
         });
       }));
@@ -519,6 +538,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
         msg += ' Таймаут. Проверьте, что на сервере есть папка archive/.';
       } else {
         msg += ' ' + (err && err.message ? err.message : 'ошибка');
+        msg += ' (путь: ' + archiveUrl('manifest.json') + ')';
       }
       fail(msg);
     });
