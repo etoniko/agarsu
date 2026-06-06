@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Личный Кабинет</title>
+  <link rel="icon" href="https://agar.su/icon.svg" type="image/x-icon">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    :root {
+      --bg: #eef0f4;
+      --bg2: #e4e8ee;
+      --surface: #ffffff;
+      --surface2: #f8f9fb;
+      --line: #e2e5eb;
+      --line2: #d0d5dd;
+      --text: #1a1d21;
+      --muted: #6b7280;
+      --muted2: #9ca3af;
+      --accent: #016bef;
+      --accent2: #0052cc;
+      --accent-soft: rgba(1,107,239,.08);
+      --accent-glow: rgba(1,107,239,.22);
+      --guest-bg: #e8ecf1;
+      --guest-icon: #9ca3af;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+      --shadow-xs: 0 1px 2px rgba(16,24,40,.05);
+      --shadow-sm: 0 2px 8px rgba(16,24,40,.06), 0 1px 2px rgba(16,24,40,.04);
+      --shadow-md: 0 12px 32px rgba(16,24,40,.08), 0 4px 8px rgba(16,24,40,.04);
+      --shadow-lg: 0 20px 48px rgba(16,24,40,.12);
+      --ease: cubic-bezier(.22, 1, .36, 1);
+      --dur: .24s;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    html, body { min-height: 100%; }
+    body {
+      font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 15px;
+      color: var(--text);
+      background: var(--bg);
+      background-image:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(1,107,239,.09), transparent 55%),
+        linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--accent); text-decoration: none; transition: color var(--dur) var(--ease); }
+    a:hover { color: var(--accent2); }
+    button, input { font-family: inherit; }
+    button { transition: all var(--dur) var(--ease); cursor: pointer; border: none; background: none; }
+
+    /* ── Avatars ── */
+    .pill-ava {
+      width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      overflow: hidden; transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+    }
+    .pill-ava.guest-ava { background: var(--guest-bg); color: var(--guest-icon); font-size: 14px; }
+    .pill-ava img {
+      width: 100%; height: 100%; object-fit: cover;
+      border: 2px solid #fff; box-shadow: var(--shadow-xs);
+      animation: avaIn .35s var(--ease);
+    }
+    @keyframes avaIn { from { opacity: 0; transform: scale(.9); } to { opacity: 1; transform: scale(1); } }
+
+    /* ── Gate ── */
+    #gate {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      padding: 40px 20px; opacity: 1; visibility: visible;
+      transition: opacity .4s var(--ease), visibility .4s var(--ease);
+    }
+    #gate.hidden { opacity: 0; visibility: hidden; pointer-events: none; position: fixed; inset: 0; }
+    .gate-card {
+      width: 100%; max-width: 440px;
+      background: var(--surface);
+      border-radius: var(--radius-xl);
+      padding: 40px 36px 32px;
+      box-shadow: var(--shadow-lg);
+      position: relative; overflow: hidden;
+      animation: riseIn .5s var(--ease) both;
+    }
+    .gate-card::before {
+      content: ""; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+      background: linear-gradient(90deg, var(--accent), #3b9bff, var(--accent));
+    }
+    @keyframes riseIn {
+      from { opacity: 0; transform: translateY(20px) scale(.97); }
+      to { opacity: 1; transform: none; }
+    }
+    .gate-brand { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 8px; }
+    .gate-brand img { width: 40px; height: 40px; filter: drop-shadow(0 2px 6px rgba(1,107,239,.2)); }
+    .gate-brand span { font-size: 22px; font-weight: 700; letter-spacing: -.03em; }
+    .gate-title { text-align: center; font-size: 15px; color: var(--muted); margin-bottom: 28px; font-weight: 500; }
+    .gate-auth { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+    #VkIdSdkOneTap { width: 100%; max-width: 360px; display: flex; justify-content: center; }
+    .gate-divider {
+      width: 100%; display: flex; align-items: center; gap: 14px;
+      color: var(--muted2); font-size: 13px; font-weight: 500;
+    }
+    .gate-divider::before, .gate-divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+    .gate-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; align-items: center; }
+    .btn-tg {
+      display: inline-flex; align-items: center; gap: 8px;
+      height: 42px; padding: 0 18px;
+      border: 1px solid var(--line); border-radius: var(--radius-sm);
+      background: var(--surface); color: var(--text); font-size: 14px; font-weight: 500;
+    }
+    .btn-tg:hover { background: var(--surface2); border-color: var(--line2); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+    .gate-skip {
+      display: block; width: 100%; margin-top: 24px; padding-top: 20px;
+      border-top: 1px solid var(--line);
+      text-align: center; font-size: 14px; color: var(--muted);
+    }
+    .gate-skip:hover { color: var(--accent); }
+
+    /* ── App ── */
+    #app {
+      display: none; min-height: 100vh; flex-direction: column;
+      opacity: 0; transform: translateY(10px);
+      transition: opacity .45s var(--ease), transform .45s var(--ease);
+    }
+    #app.ready { display: flex; opacity: 1; transform: none; }
+
+    .bar {
+      height: 56px;
+      background: rgba(255,255,255,.88);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(226,229,235,.8);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 max(20px, calc((100% - 1140px) / 2 + 20px));
+      position: sticky; top: 0; z-index: 100;
+    }
+    .bar-left, .bar-right { display: flex; align-items: center; gap: 10px; }
+    .bar-logo {
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 700; font-size: 15px; color: var(--text); text-decoration: none;
+    }
+    .bar-logo img { width: 28px; height: 28px; }
+    .bar-logo:hover { color: var(--accent); text-decoration: none; }
+    .bar-divider { width: 1px; height: 24px; background: var(--line); margin: 0 4px; }
+    .user-pill {
+      display: flex; align-items: center; gap: 9px;
+      padding: 5px 14px 5px 5px; border-radius: 99px;
+      background: var(--surface2); font-size: 14px; font-weight: 500;
+      max-width: 200px; border: 1px solid var(--line);
+      transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+    }
+    .user-pill span#userLabel {
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
+      transition: color var(--dur) var(--ease);
+    }
+    .user-pill.guest span#userLabel { color: var(--muted); font-weight: 400; }
+    .bar-btn {
+      height: 36px; padding: 0 16px; border-radius: var(--radius-sm);
+      border: 1px solid var(--line); background: var(--surface);
+      color: var(--text); font-size: 13px; font-weight: 500;
+    }
+    .bar-btn:hover { background: var(--surface2); border-color: var(--line2); }
+    .bar-btn.ghost { border-color: transparent; background: transparent; color: var(--muted); }
+    .bar-btn.ghost:hover { background: var(--surface2); color: var(--text); border-color: var(--line); }
+    .bar-btn.accent {
+      border: none; color: #fff;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+      box-shadow: 0 2px 8px var(--accent-glow);
+	  align-content: center;
+    }
+    .bar-btn.accent:hover { transform: translateY(-1px); box-shadow: 0 6px 16px var(--accent-glow); }
+
+    .shell {
+      flex: 1; display: grid;
+      grid-template-columns: 260px minmax(0, 1fr) 300px;
+      gap: 20px;
+      max-width: 1140px; width: 100%;
+      margin: 0 auto; padding: 24px 20px 36px;
+    }
+
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid rgba(255,255,255,.6);
+      overflow: hidden;
+      animation: cardIn .45s var(--ease) backwards;
+    }
+    .main .card:nth-child(1) { animation-delay: .05s; }
+    .main .card:nth-child(2) { animation-delay: .1s; }
+    .sidebar { animation-delay: 0s; }
+    .checkout { animation-delay: .12s; }
+    @keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+    .card-head {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--line);
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .card-head h2 { font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
+    .card-head span { font-size: 12px; color: var(--muted2); font-weight: 500; }
+
+    /* Sidebar */
+    .sidebar { align-self: start; position: sticky; top: 72px; }
+    .side-panel[hidden] { display: none !important; }
+    .side-panel:not([hidden]) { animation: panelIn .35s var(--ease); }
+    @keyframes panelIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+    .profile-block {
+      padding: 20px;
+      background: linear-gradient(135deg, var(--accent) 0%, #0052cc 100%);
+      color: #fff;
+      display: flex; gap: 14px; align-items: center;
+    }
+    .profile-block img {
+      width: 48px; height: 48px; border-radius: 50%; object-fit: cover;
+      border: 2px solid rgba(255,255,255,.35); flex-shrink: 0;
+      animation: avaIn .35s var(--ease);
+    }
+    .profile-block .nm { font-weight: 600; font-size: 15px; word-break: break-word; line-height: 1.3; }
+    .profile-block .id { font-size: 12px; opacity: .85; margin-top: 2px; }
+
+    .nick-tabs { display: flex; padding: 4px; gap: 4px; background: var(--surface2); margin: 12px 12px 0; border-radius: var(--radius-sm); }
+    .nick-tab {
+      flex: 1; padding: 8px 10px; border: none; border-radius: 6px;
+      font-size: 13px; font-weight: 500; color: var(--muted);
+      background: transparent; cursor: pointer;
+      transition: all var(--dur) var(--ease);
+    }
+    .nick-tab.on { background: var(--surface); color: var(--accent); box-shadow: var(--shadow-xs); }
+    .nick-list {
+      list-style: none; max-height: 320px; overflow-y: auto;
+      padding: 8px 12px 12px;
+    }
+    .nick-list::-webkit-scrollbar { width: 5px; }
+    .nick-list::-webkit-scrollbar-thumb { background: var(--line2); border-radius: 99px; }
+    .nick-list li {
+      padding: 10px 12px; font-size: 14px; cursor: pointer;
+      border-radius: var(--radius-sm); margin-bottom: 2px;
+      transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+      word-break: break-word;
+    }
+    .nick-list li:hover { background: var(--accent-soft); color: var(--accent); }
+    .nick-list li.empty { color: var(--muted2); cursor: default; text-align: center; padding: 24px 12px; }
+    .nick-list li.empty:hover { background: none; color: var(--muted2); }
+
+    .sidebar-guest { padding: 32px 24px; text-align: center; }
+    .sidebar-guest .guest-icon {
+      width: 64px; height: 64px; margin: 0 auto 16px;
+      border-radius: 50%; background: var(--surface2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px; color: var(--muted2);
+      border: 2px solid var(--line);
+      box-shadow: var(--shadow-xs);
+    }
+    .sidebar-guest p { font-size: 14px; color: var(--muted); margin-bottom: 6px; font-weight: 500; }
+    .sidebar-guest .hint { font-size: 12px; color: var(--muted2); line-height: 1.45; margin-bottom: 16px; }
+    .sidebar-guest .bar-btn { width: 100%; }
+
+    /* Main */
+    .main { min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+
+    .rates { padding: 18px 20px 20px; }
+    .rates-grid {
+      display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px;
+    }
+    .rate {
+      position: relative;
+      padding: 16px 10px 14px;
+      border-radius: var(--radius);
+      background: var(--surface2);
+      border: 1px solid transparent;
+      text-align: center;
+      transition: all var(--dur) var(--ease);
+      min-width: 0;
+    }
+    .rate:hover {
+      background: var(--surface);
+      border-color: rgba(1,107,239,.2);
+      box-shadow: 0 8px 24px rgba(1,107,239,.1);
+      transform: translateY(-3px);
+      z-index: 2;
+    }
+    .rate-icon {
+      width: 36px; height: 36px; margin: 0 auto 10px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px;
+    }
+    .rate:nth-child(1) .rate-icon { background: #dbeafe; color: #2563eb; }
+    .rate:nth-child(2) .rate-icon { background: #fef3c7; color: #d97706; }
+    .rate:nth-child(3) .rate-icon { background: #ede9fe; color: #7c3aed; }
+    .rate:nth-child(4) .rate-icon { background: #f3f4f6; color: #4b5563; }
+    .rate:nth-child(5) .rate-icon { background: #dcfce7; color: #16a34a; }
+    .rate .lbl {
+      font-size: 12px; color: var(--muted); font-weight: 500; margin-bottom: 4px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .rate .val {
+      font-size: 15px; font-weight: 700; letter-spacing: -.03em;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .rate .sub {
+      font-size: 11px; color: var(--muted2); margin-top: 4px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+
+    .order-body { padding: 20px 20px 24px; }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 148px 1fr;
+      gap: 28px;
+      align-items: start;
+    }
+    .form-grid .agreement { grid-column: 1 / -1; margin-top: 0; }
+
+    .skin-uploader {
+      width: 148px; height: 148px; border-radius: 50%;
+      border: 2px dashed var(--line2);
+      background: linear-gradient(145deg, #fafbfc, #f0f2f5);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; overflow: hidden; position: relative;
+      transition: all var(--dur) var(--ease);
+      box-shadow: inset 0 2px 6px rgba(0,0,0,.04);
+    }
+    .skin-uploader:hover {
+      border-color: var(--accent); border-style: solid;
+      box-shadow: 0 0 0 4px var(--accent-soft), inset 0 2px 6px rgba(0,0,0,.04);
+      transform: scale(1.02);
+    }
+    .skin-uploader.has-img { border-style: solid; border-color: var(--line); box-shadow: var(--shadow-sm); transform: none; }
+    .skin-uploader .ph { font-size: 12px; color: var(--muted); text-align: center; line-height: 1.4; padding: 8px; }
+    .skin-uploader .ph i { display: block; font-size: 20px; margin-bottom: 6px; color: var(--muted2); }
+    .skin-uploader.has-img .ph { display: none; }
+    #previewCanvas, #previewGif { display: none; width: 100%; height: 100%; object-fit: cover; }
+
+    .fields { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .field label {
+      display: block; font-size: 12px; font-weight: 600;
+      color: var(--muted); text-transform: uppercase; letter-spacing: .04em;
+      margin-bottom: 7px;
+    }
+    .field input {
+      width: 100%; height: 44px; padding: 0 42px 0 14px;
+      border: 1px solid var(--line); border-radius: var(--radius-sm);
+      font-size: 15px; outline: none; background: var(--surface);
+      transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+    }
+    .field input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+    .field input::placeholder { color: var(--muted2); }
+    .iw { position: relative; }
+    .cnt { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 11px; font-weight: 500; color: var(--muted2); }
+    .eye {
+      position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+      width: 32px; height: 32px; border: none; background: none;
+      color: var(--muted2); cursor: pointer; border-radius: 6px;
+    }
+    .eye:hover { background: var(--surface2); color: var(--text); }
+
+    .seg-wrap { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .seg {
+      display: inline-flex; padding: 3px;
+      background: var(--surface2); border-radius: var(--radius-sm);
+      border: 1px solid var(--line);
+    }
+    .seg label {
+      padding: 8px 18px; font-size: 13px; font-weight: 500; text-align: center;
+      cursor: pointer; border-radius: 6px; color: var(--muted);
+      transition: all var(--dur) var(--ease);
+    }
+    .seg label:has(input:checked) {
+      background: var(--surface); color: var(--accent);
+      box-shadow: var(--shadow-xs);
+    }
+    .seg input { display: none; }
+
+    .opts { display: flex; gap: 8px; }
+    .opt {
+      width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+      border: 1px solid var(--line); border-radius: var(--radius-sm);
+      cursor: pointer; color: var(--muted); font-size: 16px;
+      background: var(--surface); transition: all var(--dur) var(--ease);
+    }
+    .opt:hover { border-color: var(--line2); background: var(--surface2); transform: scale(1.04); }
+    .opt:has(input:checked) {
+      border-color: var(--accent); color: var(--accent);
+      background: var(--accent-soft); box-shadow: 0 0 0 3px rgba(1,107,239,.12);
+    }
+    .opt input { display: none; }
+
+    .agreement {
+      background: var(--accent-soft);
+      padding: 16px 18px;
+      border-radius: var(--radius);
+      margin-top: 4px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text);
+      border: 1px solid rgba(1,107,239,.12);
+    }
+    .agreement-notice {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 14px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(1,107,239,.1);
+      line-height: 1.55;
+    }
+    .agreement-notice strong { color: var(--text); font-weight: 600; }
+    .agreement label {
+      display: flex; align-items: flex-start; gap: 12px; cursor: pointer;
+    }
+    .agreement input[type="checkbox"] {
+      width: 20px; height: 20px; margin-top: 2px; flex-shrink: 0;
+      accent-color: var(--accent);
+    }
+    .agreement a { color: var(--accent); font-weight: 500; }
+    .agreement a:hover { color: var(--accent2); }
+    .agreement.shake {
+      animation: agreeShake .55s var(--ease);
+      border-color: #f87171;
+      box-shadow: 0 0 0 3px rgba(239,68,68,.18);
+    }
+    @keyframes agreeShake {
+      0%, 100% { transform: translateX(0); }
+      15% { transform: translateX(-8px); }
+      30% { transform: translateX(8px); }
+      45% { transform: translateX(-5px); }
+      60% { transform: translateX(5px); }
+      75% { transform: translateX(-2px); }
+    }
+
+    .alert {
+      display: grid; grid-template-rows: 0fr;
+      transition: grid-template-rows .3s var(--ease), margin .3s var(--ease);
+      margin-bottom: 0;
+    }
+    .alert > span { overflow: hidden; }
+    .alert.on { grid-template-rows: 1fr; margin-bottom: 14px; }
+    .alert-inner {
+      min-height: 0; padding: 11px 14px; border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 500;
+    }
+    .alert-err .alert-inner { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+
+    /* Checkout — всегда видим, без мигания opacity */
+    .checkout {
+      align-self: start; position: sticky; top: 72px;
+      box-shadow: var(--shadow-sm);
+      transition: box-shadow .35s var(--ease);
+    }
+    .checkout.is-ready {
+      box-shadow: var(--shadow-md);
+    }
+    .checkout.is-ready .card-head {
+      background: linear-gradient(135deg, var(--accent-soft), transparent);
+    }
+    .checkout-body { padding: 20px; }
+    .lines { list-style: none; margin-bottom: 4px; }
+    .lines li {
+      display: flex; justify-content: space-between; align-items: center; gap: 12px;
+      padding: 10px 0; font-size: 14px; color: var(--muted);
+      border-bottom: 1px dashed var(--line);
+    }
+    .lines li span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .lines li:last-child { border-bottom: none; }
+    .lines li b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+    .total-box {
+      margin: 16px 0 18px; padding: 16px;
+      background: var(--surface2); border-radius: var(--radius);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .total-box span { font-size: 14px; font-weight: 500; color: var(--muted); }
+    .total-box b {
+      font-size: 28px; font-weight: 700; letter-spacing: -.03em;
+      color: var(--accent); font-variant-numeric: tabular-nums;
+    }
+    .total-box b.pulse { animation: pricePulse .4s var(--ease); }
+    @keyframes pricePulse { 50% { transform: scale(1.05); } }
+    .btn-pay {
+      width: 100%; height: 48px; border: none; border-radius: var(--radius-sm);
+      font-size: 15px; font-weight: 600; color: #fff; cursor: pointer;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+      box-shadow: 0 4px 14px var(--accent-glow);
+      transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease), opacity var(--dur) var(--ease);
+    }
+    .btn-pay:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 24px var(--accent-glow); }
+    .btn-pay:active:not(:disabled) { transform: translateY(0); }
+    .btn-pay:disabled { opacity: .45; cursor: pointer; transform: none; box-shadow: none; }
+    .checkout-foot { margin-top: 14px; font-size: 12px; color: var(--muted2); text-align: center; }
+
+    .foot {
+      padding: 28px 20px; text-align: center;
+      font-size: 12px; color: var(--muted2); line-height: 1.8;
+      border-top: 1px solid var(--line);
+      background: rgba(255,255,255,.5);
+    }
+
+    #toasts {
+      position: fixed; top: 68px; right: 20px; z-index: 500;
+      display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+    }
+    .toast {
+      padding: 12px 18px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500;
+      background: var(--surface); box-shadow: var(--shadow-md); pointer-events: auto;
+      opacity: 0; transform: translateX(16px);
+      transition: opacity .3s var(--ease), transform .3s var(--ease);
+    }
+    .toast.on { opacity: 1; transform: none; }
+    .toast.ok { border-left: 3px solid #22c55e; }
+    .toast.err { border-left: 3px solid #ef4444; }
+
+    #tipPortal {
+      position: fixed; z-index: 600;
+      max-width: min(280px, calc(100vw - 32px));
+      padding: 10px 14px; border-radius: var(--radius-sm);
+      background: rgba(26,29,33,.94); color: #f3f4f6;
+      font-size: 13px; line-height: 1.45; font-weight: 400;
+      box-shadow: var(--shadow-md);
+      pointer-events: none; opacity: 0;
+      transform: translateY(6px) scale(.98);
+      transition: opacity .2s var(--ease), transform .2s var(--ease);
+      word-wrap: break-word;
+    }
+    #tipPortal.visible { opacity: 1; transform: translateY(0) scale(1); }
+    #tipPortal::after {
+      content: ""; position: absolute; left: 50%; transform: translateX(-50%);
+      border: 6px solid transparent;
+    }
+    #tipPortal:not(.below)::after { top: 100%; border-top-color: rgba(26,29,33,.94); }
+    #tipPortal.below::after { bottom: 100%; border-bottom-color: rgba(26,29,33,.94); }
+
+    @media (max-width: 980px) {
+      .shell { grid-template-columns: 1fr; padding: 16px; gap: 16px; }
+      .sidebar, .checkout { position: static; }
+      .rates-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .form-grid { grid-template-columns: 1fr; justify-items: center; }
+      .fields { width: 100%; }
+      .field-row { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 560px) {
+      .bar { padding: 0 14px; }
+      .rates-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .gate-card { padding: 32px 22px 26px; }
+      .bar-divider { display: none; }
+      .user-pill { max-width: 140px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Login gate -->
+<div id="gate">
+  <div class="gate-card">
+    <div class="gate-brand">
+      <img src="https://agar.su/icon.svg" alt="">
+      <span>Agar.su</span>
+    </div>
+    <div class="gate-title">Вход в магазин</div>
+    <div class="gate-auth">
+      <div id="VkIdSdkOneTap"></div>
+      <div class="gate-divider">или</div>
+      <div class="gate-row">
+        <div id="g_id_onload"
+             data-client_id="157257230972-4vh698jtf46c76sc7607oe1k9tr782je.apps.googleusercontent.com"
+             data-auto_prompt="false"
+             data-callback="onGoogleAuth"></div>
+        <div class="g_id_signin"
+             data-type="standard"
+             data-size="medium"
+             data-theme="outline"
+             data-text="signin_with"
+             data-shape="rectangular"></div>
+        <button type="button" class="btn-tg" onclick="openTelegramAuth()">
+          <i class="fab fa-telegram"></i> Telegram
+        </button>
+      </div>
+    </div>
+    <button type="button" class="gate-skip" id="skipBtn">Без входа</button>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app">
+  <header class="bar">
+    <div class="bar-left">
+      <a class="bar-logo" href="https://agar.su/">
+        <img src="https://agar.su/icon.svg" alt=""> Agar.su
+      </a>
+    </div>
+    <div class="bar-right">
+      <div id="userPill" class="user-pill guest">
+        <span class="pill-ava guest-ava" id="headerAva"><i class="fa-solid fa-user"></i></span>
+        <span id="userLabel">Гость</span>
+      </div>
+      <div class="bar-divider"></div>
+      <button type="button" class="bar-btn ghost" id="authActionBtn">Войти</button>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside class="card sidebar" id="sidebar">
+      <div id="sidebarAuth" class="side-panel" hidden>
+        <div class="profile-block">
+          <img id="sidebarAvatar" src="https://agar.su/icon.svg" alt="">
+          <div>
+            <div class="nm" id="sidebarName">—</div>
+            <div class="id" id="sidebarMeta">—</div>
+          </div>
+        </div>
+        <div class="nick-tabs">
+          <button type="button" class="nick-tab on" id="tabNicks">Ники</button>
+          <button type="button" class="nick-tab" id="tabClans">Кланы</button>
+        </div>
+        <ul class="nick-list" id="myNickList"></ul>
+        <ul class="nick-list" id="myClanList" style="display:none"></ul>
+      </div>
+      <div id="sidebarGuest" class="side-panel sidebar-guest">
+        <div class="guest-icon"><i class="fa-solid fa-user"></i></div>
+        <p>Гость</p>
+        <div class="hint">Войдите, чтобы видеть свои ники и кланы</div>
+        <button type="button" class="bar-btn" id="sidebarLoginBtn">Войти</button>
+      </div>
+    </aside>
+
+    <div class="main">
+      <div class="card">
+        <div class="card-head">
+          <h2>Тарифы</h2>
+          <span>наведите для деталей</span>
+        </div>
+        <div class="rates">
+          <div class="rates-grid">
+            <div class="rate" data-tip="PNG/JPG до 5 МБ, обрезка в круг. Клан ×2">
+              <div class="rate-icon"><i class="fa-solid fa-image"></i></div>
+              <div class="lbl">Скин</div><div class="val">100 ₽</div><div class="sub">клан 200 ₽</div>
+            </div>
+            <div class="rate" data-tip="Защита ника, до 5 символов">
+              <div class="rate-icon"><i class="fa-solid fa-key"></i></div>
+              <div class="lbl">Пароль</div><div class="val">100 ₽</div>
+            </div>
+            <div class="rate" data-tip="Анимированный GIF. Клан ×2">
+              <div class="rate-icon"><i class="fa-solid fa-film"></i></div>
+              <div class="lbl">GIF</div><div class="val">4 500 ₽</div><div class="sub">клан 9 000 ₽</div>
+            </div>
+            <div class="rate" data-tip="Скрытый текст ника. Клан ×2">
+              <div class="rate-icon"><i class="fa-solid fa-eye-slash"></i></div>
+              <div class="lbl">Невидимость</div><div class="val">500 ₽</div>
+            </div>
+            <div class="rate" data-tip="Скин следует за направлением. Клан ×2">
+              <div class="rate-icon"><i class="fa-solid fa-rotate"></i></div>
+              <div class="lbl">Поворот</div><div class="val">500 ₽</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>Новый заказ</h2></div>
+        <div class="order-body">
+          <div id="formError" class="alert alert-err"><span><span class="alert-inner"></span></span></div>
+          <div id="fileError" class="alert alert-err"><span><span class="alert-inner"></span></span></div>
+          <div id="nicknameError" class="alert alert-err"><span><span class="alert-inner"></span></span></div>
+          <div id="passwordError" class="alert alert-err"><span><span class="alert-inner"></span></span></div>
+
+          <form id="paymentForm" autocomplete="off">
+            <input type="file" id="fileInput" accept=".png,.jpg,.jpeg,.gif" hidden>
+            <div class="form-grid">
+              <label class="skin-uploader" id="previewContainer" for="fileInput">
+                <span class="ph"><i class="fa-solid fa-cloud-arrow-up"></i>Загрузить<br>скин</span>
+                <canvas id="previewCanvas" width="512" height="512"></canvas>
+                <img id="previewGif" alt="">
+              </label>
+              <div class="fields">
+                <div class="seg-wrap">
+                  <div class="seg">
+                    <label><input type="radio" name="serviceType" value="personal" id="personal" checked>Себе</label>
+                    <label><input type="radio" name="serviceType" value="clan" id="clan">Клан ×2</label>
+                  </div>
+                </div>
+                <div class="field-row">
+                  <div class="field">
+                    <label for="nickname">Ник</label>
+                    <div class="iw">
+                      <input type="text" id="nickname" placeholder="nickname" maxlength="16" required>
+                      <span class="cnt" id="charCount">0/16</span>
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label for="password">Пароль</label>
+                    <div class="iw">
+                      <input type="password" id="password" placeholder="необязательно" maxlength="5">
+                      <button type="button" class="eye" id="togglePassword"><i class="fa-solid fa-eye"></i></button>
+                    </div>
+                  </div>
+                </div>
+                <div class="seg-wrap">
+                  <div class="opts">
+                    <label class="opt" data-tip="Невидимый ник · 500 ₽"><input type="checkbox" id="invisibleNick"><i class="fa-solid fa-eye-slash"></i></label>
+                    <label class="opt" data-tip="Поворот скина · 500 ₽"><input type="checkbox" id="rotationNick"><i class="fa-solid fa-rotate"></i></label>
+                  </div>
+                </div>
+              </div>
+              <div class="agreement">
+                <div class="agreement-notice">
+                  <strong>Важно:</strong> Это цифровая услуга. Функции активируются автоматически после оплаты.<br>
+                  Возврат после активации невозможен (ст.&nbsp;26.1 Закона «О защите прав потребителей»).
+                </div>
+                <label>
+                  <input type="checkbox" id="agreement" required>
+                  <span>Согласен с <a href="https://agar.su/rules" target="_blank">правилами пользования</a>, <a href="https://agar.su/offer" target="_blank">публичной офертой</a> и <a href="https://agar.su/privacy" target="_blank">политикой конфиденциальности</a></span>
+                </label>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <aside class="card checkout" id="calculator">
+      <div class="card-head"><h2>Заказ</h2></div>
+      <div class="checkout-body">
+        <ul class="lines">
+          <li><span>Множитель</span><b id="multiplierText">×1</b></li>
+          <li id="passwordCost"><span>Пароль</span><b>0 ₽</b></li>
+          <li id="skinCost"><span>Скин</span><b>0 ₽</b></li>
+          <li id="invisibleCost" style="display:none"><span>Невидимость</span><b>0 ₽</b></li>
+          <li id="rotationCost" style="display:none"><span>Поворот</span><b>0 ₽</b></li>
+        </ul>
+        <div class="total-box"><span>Итого</span><b id="totalAmount">0 ₽</b></div>
+        <button type="submit" form="paymentForm" class="btn-pay" id="buyButton">Оплатить</button>
+        <div class="checkout-foot">Поддержка: <a href="https://t.me/agarsu" target="_blank">@agarsu</a></div>
+      </div>
+    </aside>
+  </div>
+
+  <footer class="foot">
+    НПД Дараселиа Н.И. · ИНН 503830093674 · ikometai@ya.ru<br>
+    <a href="https://agar.su/offer">Оферта</a> · <a href="https://agar.su/privacy">Конфиденциальность</a>
+  </footer>
+</div>
+
+<div id="toasts" aria-live="polite"></div>
+<div id="tipPortal" role="tooltip" aria-hidden="true"></div>
+
+<script>
+const API = 'https://api.agar.su';
+const GUEST_KEY = 'shopGuest';
+const paymentRules = { maxFileSize: 5 * 1024 * 1024 };
+const ALLOWED_CHARS = new Set();
+const errorCache = new Map();
+let isNicknameTaken = false;
+let accountProfile = null;
+
+const $ = id => document.getElementById(id);
+const nicknameInput = $('nickname');
+const passwordInput = $('password');
+const invisibleNickCheckbox = $('invisibleNick');
+const rotationNickCheckbox = $('rotationNick');
+const fileInput = $('fileInput');
+const previewContainer = $('previewContainer');
+const skinCanvas = $('previewCanvas');
+const skinCtx = skinCanvas.getContext('2d');
+const gifPreview = $('previewGif');
+
+function isAuth() { return !!localStorage.accountToken; }
+function isGuest() { return sessionStorage.getItem(GUEST_KEY) === '1'; }
+
+function showApp() {
+  $('gate').classList.add('hidden');
+  requestAnimationFrame(() => {
+    $('app').classList.add('ready');
+    syncShell();
+  });
+}
+
+function showGate() {
+  $('app').classList.remove('ready');
+  requestAnimationFrame(() => $('gate').classList.remove('hidden'));
+}
+
+function setHeaderAvatar(auth) {
+  const ava = $('headerAva');
+  const pill = $('userPill');
+  const label = $('userLabel');
+  if (!ava || !pill || !label) return;
+  if (auth && accountProfile) {
+    pill.classList.remove('guest');
+    ava.className = 'pill-ava';
+    const src = accountProfile.account_avatar || 'https://agar.su/icon.svg';
+    ava.innerHTML = `<img src="${src}" alt="" onerror="this.src='https://agar.su/icon.svg'">`;
+    label.textContent = accountProfile.account_name || 'Аккаунт';
+  } else {
+    pill.classList.add('guest');
+    ava.className = 'pill-ava guest-ava';
+    ava.innerHTML = '<i class="fa-solid fa-user"></i>';
+    label.textContent = 'Гость';
+  }
+}
+
+function syncShell() {
+  const auth = isAuth();
+  $('sidebarAuth').hidden = !auth;
+  $('sidebarGuest').hidden = auth;
+  setHeaderAvatar(auth);
+  $('authActionBtn').textContent = auth ? 'Выход' : 'Войти';
+}
+
+function enterGuest() {
+  sessionStorage.setItem(GUEST_KEY, '1');
+  showApp();
+}
+
+function enterAuth(token) {
+  sessionStorage.removeItem(GUEST_KEY);
+  localStorage.accountToken = token;
+  loadProfile().then(showApp);
+}
+
+function leaveSession() {
+  localStorage.removeItem('accountToken');
+  sessionStorage.removeItem(GUEST_KEY);
+  accountProfile = null;
+  showGate();
+}
+
+async function logoutAccount() {
+  if (isAuth()) {
+    try {
+      await fetch(API + '/api/me/logout', { headers: { Authorization: 'Game ' + localStorage.accountToken } });
+    } catch {}
+  }
+  leaveSession();
+}
+
+function api(tag, method = 'GET', body = null) {
+  const h = {};
+  if (localStorage.accountToken) h.Authorization = 'Game ' + localStorage.accountToken;
+  if (body) h['Content-Type'] = 'application/json';
+  return fetch(API + '/api/' + tag, { method, headers: h, body: body ? JSON.stringify(body) : null });
+}
+
+async function handleLogin(payload, provider) {
+  const routes = { telegram: 'auth/telegram', google: 'auth/google', vk: 'auth/vk' };
+  const url = routes[provider];
+  if (!url) return;
+  let body = payload;
+  if (provider === 'google') body = { credential: payload };
+  try {
+    const res = await fetch(API + '/api/' + url, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (data.error || !data.token) return alert(data.error || 'Ошибка входа');
+    enterAuth(data.token);
+  } catch { alert('Ошибка сети'); }
+}
+
+async function loadProfile() {
+  if (!isAuth()) return;
+  const res = await api('me/login');
+  if (!res.ok) return;
+  const data = await res.json();
+  if (data.error) {
+    if (data.status === 401) { leaveSession(); return; }
+    return;
+  }
+  accountProfile = data;
+  $('sidebarName').textContent = data.account_name || '—';
+  $('sidebarMeta').textContent = 'ID ' + (data.uid || '—');
+  $('sidebarAvatar').src = data.account_avatar || 'https://agar.su/icon.svg';
+  await loadNicks();
+  syncShell();
+}
+
+async function loadNicks() {
+  if (!isAuth()) return;
+  const res = await api('me/nicknames');
+  if (!res.ok) return;
+  const data = await res.json();
+  const all = data.nicknames || [];
+  const nicks = all.filter(r => !/^\[[^\[\]]+\]$/.test(String(r.nickname || '')));
+  const clans = all.filter(r => /^\[[^\[\]]+\]$/.test(String(r.nickname || '')));
+  renderList($('myNickList'), nicks, '—');
+  renderList($('myClanList'), clans, '—');
+}
+
+function renderList(el, items, empty) {
+  el.innerHTML = '';
+  if (!items.length) {
+    const li = document.createElement('li');
+    li.className = 'empty'; li.textContent = empty;
+    el.appendChild(li); return;
+  }
+  items.forEach(row => {
+    const li = document.createElement('li');
+    li.textContent = row.nickname + (row.password ? ' · ' + row.password : '');
+    li.onclick = () => {
+      const nick = String(row.nickname || '');
+      $('clan').checked = /^\[[^\[\]]+\]$/.test(nick);
+      $('personal').checked = !$('clan').checked;
+      updateNickMode();
+      nicknameInput.value = nick;
+      passwordInput.value = row.password || '';
+      updateCharCount();
+      nicknameInput.dispatchEvent(new Event('blur'));
+    };
+    el.appendChild(li);
+  });
+}
+
+function switchTab(nicks) {
+  $('tabNicks').classList.toggle('on', nicks);
+  $('tabClans').classList.toggle('on', !nicks);
+  $('myNickList').style.display = nicks ? '' : 'none';
+  $('myClanList').style.display = nicks ? 'none' : '';
+}
+
+function toast(msg, type = '') {
+  const t = document.createElement('div');
+  t.className = 'toast' + (type === 'ok' ? ' ok' : type === 'err' ? ' err' : '');
+  t.textContent = msg;
+  $('toasts').appendChild(t);
+  requestAnimationFrame(() => t.classList.add('on'));
+  setTimeout(() => { t.classList.remove('on'); setTimeout(() => t.remove(), 200); }, 4000);
+}
+
+function showErr(id, msg, t = false) {
+  const el = $(id); if (!el || !msg) return;
+  const k = id + msg;
+  const now = Date.now();
+  if (now - (errorCache.get(k) || 0) < 1200) return;
+  errorCache.set(k, now);
+  const inner = el.querySelector('.alert-inner') || el;
+  inner.textContent = msg;
+  el.classList.add('on');
+  if (t) toast(msg, 'err');
+}
+function hideErr(id) {
+  const el = $(id);
+  if (!el) return;
+  const inner = el.querySelector('.alert-inner') || el;
+  inner.textContent = '';
+  el.classList.remove('on');
+}
+
+function isCharOk(c, brackets) {
+  if (!brackets && (c === '[' || c === ']')) return false;
+  return ALLOWED_CHARS.has(c);
+}
+function stripNick(v, brackets) {
+  return [...v].filter(c => isCharOk(c, brackets)).join('');
+}
+
+function updateCharCount() {
+  const max = $('clan').checked ? 6 : 16;
+  $('charCount').textContent = nicknameInput.value.length + '/' + max;
+}
+function updateNickMode() {
+  nicknameInput.value = '';
+  nicknameInput.placeholder = $('clan').checked ? '[tag]' : 'nickname';
+  nicknameInput.maxLength = $('clan').checked ? 6 : 16;
+  updateCharCount();
+}
+
+function setRow(id, label, val) {
+  const row = $(id); if (!row) return;
+  const s = row.querySelector('span'), b = row.querySelector('b');
+  if (s && label) s.textContent = label;
+  if (b) b.textContent = val;
+}
+
+function calculateCost() {
+  const nick = nicknameInput.value.trim();
+  const pass = passwordInput.value.trim();
+  const file = fileInput.files[0];
+  const mul = $('clan').checked ? 2 : 1;
+  const has = pass || file || invisibleNickCheckbox.checked || rotationNickCheckbox.checked;
+  const ready = nick && !isNicknameTaken && has;
+
+  const pCost = pass ? 100 : 0;
+  const iCost = invisibleNickCheckbox.checked ? 500 : 0;
+  const rCost = rotationNickCheckbox.checked ? 500 : 0;
+  let sCost = 0, sLbl = 'Скин';
+  if (file) {
+    sCost = file.type === 'image/gif' ? 4500 : 100;
+    sLbl = file.type === 'image/gif' ? 'GIF' : 'Скин';
+  }
+  const total = ready ? (pCost + sCost + iCost + rCost) * mul : 0;
+
+  $('calculator').classList.toggle('is-ready', ready);
+  $('multiplierText').textContent = '×' + mul;
+  setRow('passwordCost', 'Пароль', pass && ready ? (pCost * mul) + ' ₽' : '0 ₽');
+  setRow('skinCost', sLbl, file && ready ? (sCost * mul) + ' ₽' : '0 ₽');
+  $('invisibleCost').style.display = invisibleNickCheckbox.checked ? 'flex' : 'none';
+  if (invisibleNickCheckbox.checked) setRow('invisibleCost', 'Невидимость', ready ? (iCost * mul) + ' ₽' : '0 ₽');
+  $('rotationCost').style.display = rotationNickCheckbox.checked ? 'flex' : 'none';
+  if (rotationNickCheckbox.checked) setRow('rotationCost', 'Поворот', ready ? (rCost * mul) + ' ₽' : '0 ₽');
+
+  const totalEl = $('totalAmount');
+  const totalStr = total + ' ₽';
+  if (totalEl.textContent !== totalStr) {
+    totalEl.textContent = totalStr;
+    totalEl.classList.remove('pulse');
+    void totalEl.offsetWidth;
+    totalEl.classList.add('pulse');
+  }
+
+  $('buyButton').disabled = !ready;
+}
+
+function shakeAgreement() {
+  const el = document.querySelector('.agreement');
+  if (!el) return;
+  el.classList.remove('shake');
+  void el.offsetWidth;
+  el.classList.add('shake');
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  setTimeout(() => el.classList.remove('shake'), 600);
+}
+
+function previewSkin(file) {
+  const url = URL.createObjectURL(file);
+  if (file.type === 'image/gif') {
+    skinCanvas.style.display = 'none';
+    gifPreview.style.display = 'block';
+    gifPreview.src = url;
+  } else {
+    gifPreview.style.display = 'none';
+    skinCanvas.style.display = 'block';
+    const img = new Image();
+    img.onload = () => {
+      skinCtx.clearRect(0, 0, 512, 512);
+      skinCtx.save();
+      skinCtx.beginPath();
+      skinCtx.arc(256, 256, 256, 0, Math.PI * 2);
+      skinCtx.clip();
+      const sc = Math.max(512 / img.width, 512 / img.height);
+      skinCtx.drawImage(img, (512 - img.width * sc) / 2, (512 - img.height * sc) / 2, img.width * sc, img.height * sc);
+      skinCtx.restore();
+    };
+    img.src = url;
+  }
+}
+
+async function sendForm(formData, headers = {}) {
+  try {
+    const res = await fetch(API + '/create-payment', { method: 'POST', headers, body: formData });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (data.warning) showErr('formError', data.warning);
+    if (data?.confirmation?.confirmation_url) {
+      toast('Переход к оплате', 'ok');
+      location.href = data.confirmation.confirmation_url;
+    } else if (data?.redirect) {
+      location.href = data.redirect;
+    } else {
+      showErr('formError', data?.error?.description || data?.error || 'Ошибка оплаты', true);
+    }
+  } catch {
+    showErr('formError', 'Ошибка соединения', true);
+  }
+}
+
+function openTelegramAuth() {
+  window.open('https://agar.su/telegram/', 'tgAuth', 'width=400,height=200');
+}
+window.onGoogleAuth = r => handleLogin(r.credential, 'google');
+window.onVkAuth = p => {
+  if (!p?.code || !p?.device_id) return alert('VK: нет кода');
+  handleLogin(p, 'vk');
+};
+
+$('skipBtn').onclick = enterGuest;
+$('authActionBtn').onclick = () => isAuth() ? logoutAccount() : showGate();
+$('sidebarLoginBtn').onclick = showGate;
+$('tabNicks').onclick = () => switchTab(true);
+$('tabClans').onclick = () => switchTab(false);
+
+window.addEventListener('message', e => {
+  if (e.origin !== 'https://agar.su' || e.data?.type !== 'telegram-auth') return;
+  handleLogin(e.data.user, 'telegram');
+});
+
+fetch(API + '/allowtxt.txt').then(r => r.text()).then(t => {
+  t.split(/\r?\n/).forEach(l => { if (l) ALLOWED_CHARS.add(l); });
+}).catch(() => {});
+
+nicknameInput.addEventListener('input', () => {
+  const clan = $('clan').checked;
+  if (nicknameInput.value && ![...nicknameInput.value].every(c => isCharOk(c, true))) {
+    nicknameInput.value = stripNick(nicknameInput.value, true);
+  }
+  if (!clan && /[\[\]]/.test(nicknameInput.value)) {
+    nicknameInput.value = nicknameInput.value.replace(/[\[\]]/g, '');
+  }
+  updateCharCount();
+  calculateCost();
+});
+
+passwordInput.addEventListener('input', () => {
+  if (passwordInput.value.length > 5) {
+    passwordInput.value = passwordInput.value.slice(0, 5);
+    showErr('passwordError', 'Макс. 5 символов');
+  } else hideErr('passwordError');
+  if (passwordInput.value && ![...passwordInput.value].every(c => isCharOk(c, true))) {
+    passwordInput.value = stripNick(passwordInput.value, true);
+  }
+  calculateCost();
+});
+
+nicknameInput.addEventListener('blur', async () => {
+  const clan = $('clan').checked;
+  let v = nicknameInput.value.trim();
+  if (clan) {
+    let inner = v.replace(/^\[|\]$/g, '').replace(/[\[\]]/g, '');
+    if (inner.length > 4) inner = inner.slice(0, 4);
+    nicknameInput.value = '[' + inner + ']';
+  } else {
+    v = stripNick(v, false).replace(/[\[\]]/g, '').slice(0, 16);
+    nicknameInput.value = v;
+  }
+  updateCharCount();
+
+  try {
+    const h = { 'Content-Type': 'application/json' };
+    if (isAuth()) h.Authorization = 'Game ' + localStorage.accountToken;
+    const res = await fetch(API + '/check-nickname', {
+      method: 'POST', headers: h,
+      body: JSON.stringify({ nickname: nicknameInput.value.trim() })
+    });
+    const data = await res.json();
+
+    if (isAuth() && data.taken) {
+      const me = await api('me/nicknames');
+      if (me.ok) {
+        const md = await me.json();
+        const mine = (md.nicknames || []).map(n => n.nickname.toLowerCase());
+        if (mine.includes(nicknameInput.value.trim().toLowerCase())) {
+          hideErr('nicknameError'); isNicknameTaken = false; calculateCost(); return;
+        }
+      }
+    }
+    if (data.taken) { showErr('nicknameError', data.error || 'Занят'); isNicknameTaken = true; }
+    else { hideErr('nicknameError'); isNicknameTaken = false; }
+  } catch { isNicknameTaken = false; }
+  calculateCost();
+});
+
+fileInput.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > paymentRules.maxFileSize) {
+    fileInput.value = ''; showErr('fileError', 'Макс. 5 МБ'); return;
+  }
+  if (!['image/png', 'image/jpeg', 'image/gif'].includes(file.type)) {
+    fileInput.value = ''; showErr('fileError', 'PNG, JPG, GIF'); return;
+  }
+  hideErr('fileError');
+  previewSkin(file);
+  previewContainer.classList.add('has-img');
+  calculateCost();
+});
+
+document.querySelectorAll('input[name="serviceType"]').forEach(r => {
+  r.addEventListener('change', () => { updateNickMode(); calculateCost(); });
+});
+invisibleNickCheckbox.onchange = calculateCost;
+rotationNickCheckbox.onchange = calculateCost;
+
+$('togglePassword').onclick = () => {
+  const i = $('togglePassword').querySelector('i');
+  passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
+  i.classList.toggle('fa-eye'); i.classList.toggle('fa-eye-slash');
+};
+
+$('paymentForm').onsubmit = async e => {
+  e.preventDefault();
+  const nick = nicknameInput.value.trim().toLowerCase();
+  const pass = passwordInput.value.trim().toLowerCase();
+  const file = fileInput.files[0];
+  if (!nick) return showErr('formError', 'Укажите ник', true);
+  if (!pass && !file && !invisibleNickCheckbox.checked && !rotationNickCheckbox.checked) {
+    return showErr('formError', 'Добавьте пароль, скин или опцию', true);
+  }
+  if (!$('agreement').checked) {
+    shakeAgreement();
+    return;
+  }
+
+  const fd = new FormData();
+  fd.append('name', nick);
+  fd.append('serviceType', document.querySelector('input[name="serviceType"]:checked')?.value || '');
+  if (pass) fd.append('password', pass);
+  if (invisibleNickCheckbox.checked) fd.append('invisible', '1');
+  if (rotationNickCheckbox.checked) fd.append('rotation', '1');
+  const h = {};
+  if (isAuth()) h.Authorization = 'Game ' + localStorage.accountToken;
+
+  if (file?.type === 'image/gif') {
+    fd.append('image', file, file.name);
+    await sendForm(fd, h);
+  } else if (file) {
+    skinCanvas.toBlob(async blob => {
+      if (!blob) return showErr('formError', 'Ошибка изображения', true);
+      fd.append('image', blob, 'skin.png');
+      await sendForm(fd, h);
+    }, 'image/png');
+  } else {
+    await sendForm(fd, h);
+  }
+};
+
+updateNickMode();
+calculateCost();
+
+(function initTips() {
+  const tip = $('tipPortal');
+  let anchor = null;
+
+  function place() {
+    if (!anchor || !tip.classList.contains('visible')) return;
+    tip.style.left = '-9999px';
+    tip.style.top = '0';
+    tip.classList.remove('below');
+    const r = anchor.getBoundingClientRect();
+    const tw = tip.offsetWidth;
+    const th = tip.offsetHeight;
+    const pad = 16;
+    const gap = 12;
+    let top = r.top - th - gap;
+    let left = r.left + r.width / 2 - tw / 2;
+    left = Math.max(pad, Math.min(left, window.innerWidth - tw - pad));
+    if (top < pad) {
+      top = r.bottom + gap;
+      tip.classList.add('below');
+    }
+    tip.style.left = Math.round(left) + 'px';
+    tip.style.top = Math.round(top) + 'px';
+  }
+
+  function show(el) {
+    const text = el.getAttribute('data-tip');
+    if (!text) return;
+    anchor = el;
+    tip.textContent = text;
+    tip.classList.add('visible');
+    tip.setAttribute('aria-hidden', 'false');
+    requestAnimationFrame(place);
+  }
+
+  function hide() {
+    anchor = null;
+    tip.classList.remove('visible', 'below');
+    tip.setAttribute('aria-hidden', 'true');
+  }
+
+  document.querySelectorAll('[data-tip]').forEach(el => {
+    el.addEventListener('mouseenter', () => show(el));
+    el.addEventListener('mouseleave', hide);
+    el.addEventListener('focus', () => show(el));
+    el.addEventListener('blur', hide);
+  });
+  window.addEventListener('scroll', place, true);
+  window.addEventListener('resize', place);
+})();
+
+if (isAuth()) loadProfile().then(showApp);
+else if (isGuest()) showApp();
+else showGate();
+</script>
+
+<script src="https://unpkg.com/@vkid/sdk@2/dist-sdk/umd/index.js"></script>
+<script>
+(function () {
+  const C = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-';
+  const rnd = n => { const b = new Uint8Array(n); crypto.getRandomValues(b); let s = ''; for (let i = 0; i < n; i++) s += C[b[i] % C.length]; return s; };
+  function send(code, dev) {
+    const cv = sessionStorage.getItem('vk_code_verifier'), st = sessionStorage.getItem('vk_state');
+    if (!cv || !st) return alert('VK: обновите страницу');
+    window.onVkAuth({ code, device_id: dev, code_verifier: cv, state: st });
+  }
+  function init() {
+    if (!('VKIDSDK' in window) || !$('VkIdSdkOneTap')) return;
+    const V = window.VKIDSDK;
+    const cv = rnd(64), st = rnd(32);
+    sessionStorage.setItem('vk_code_verifier', cv);
+    sessionStorage.setItem('vk_state', st);
+    V.Config.init({ app: 54069355, redirectUrl: 'https://agar.su', state: st, codeVerifier: cv, responseMode: V.ConfigResponseMode.Callback, source: V.ConfigSource.LOWCODE, scope: '' });
+    const p = new URLSearchParams(location.search);
+    if (p.get('code') && p.get('device_id')) {
+      send(p.get('code'), p.get('device_id'));
+      history.replaceState({}, '', location.pathname);
+      return;
+    }
+    new V.OneTap().render({ container: $('VkIdSdkOneTap'), showAlternativeLogin: true, oauthList: ['mail_ru', 'ok_ru'], styles: { width: 360, height: 44, borderRadius: 8 }, skin: V.OneTapSkin.Primary, scheme: V.Scheme.LIGHT, lang: V.Languages.RUS })
+      .on(V.WidgetEvents.ERROR, e => alert('VK: ' + (e?.error_description || e?.error || 'ошибка')))
+      .on(V.OneTapInternalEvents.LOGIN_SUCCESS, d => send(d.code, d.device_id));
+  }
+  if ('VKIDSDK' in window) init();
+  else document.querySelector('script[src*="@vkid/sdk"]')?.addEventListener('load', init);
+})();
+</script>
+</body>
+</html>
