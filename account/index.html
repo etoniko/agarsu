@@ -639,11 +639,11 @@
           <div class="rates-grid">
             <div class="rate" data-tip="PNG/JPG до 5 МБ, обрезка в круг. Клан ×2">
               <div class="rate-icon"><i class="fa-solid fa-image"></i></div>
-              <div class="lbl">Скин</div><div class="val">100 ₽</div><div class="sub">клан 200 ₽</div>
+              <div class="lbl">Скин</div><div class="val">150 ₽</div><div class="sub">клан 300 ₽</div>
             </div>
             <div class="rate" data-tip="Защита ника, до 5 символов">
               <div class="rate-icon"><i class="fa-solid fa-key"></i></div>
-              <div class="lbl">Пароль</div><div class="val">100 ₽</div>
+              <div class="lbl">Пароль</div><div class="val">150 ₽</div>
             </div>
             <div class="rate" data-tip="Анимированный GIF. Клан ×2">
               <div class="rate-icon"><i class="fa-solid fa-film"></i></div>
@@ -984,12 +984,12 @@ function calculateCost() {
   const has = pass || file || invisibleNickCheckbox.checked || rotationNickCheckbox.checked;
   const ready = nick && !isNicknameTaken && has;
 
-  const pCost = pass ? 100 : 0;
+  const pCost = pass ? 150 : 0;
   const iCost = invisibleNickCheckbox.checked ? 500 : 0;
   const rCost = rotationNickCheckbox.checked ? 500 : 0;
   let sCost = 0, sLbl = 'Скин';
   if (file) {
-    sCost = file.type === 'image/gif' ? 4500 : 100;
+    sCost = file.type === 'image/gif' ? 4500 : 150;
     sLbl = file.type === 'image/gif' ? 'GIF' : 'Скин';
   }
   const total = ready ? (pCost + sCost + iCost + rCost) * mul : 0;
