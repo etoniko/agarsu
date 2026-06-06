@@ -4,7 +4,7 @@
     if (level >= 1 && level < 50) return "";           // обычная
     if (level >= 50 && level < 100) return "azure";    // голубая
     if (level >= 100 && level < 150) return "red";     // красная
-		if (level >= 150 && level < 200) return "white";     // белая
+		if (level >= 150 && level < 200) return "red";     // белая
     if (level >= 200) return "black";                  // черный
     return "";
 }
@@ -18,8 +18,13 @@ function createLevelIcon(level, nick) {
     if (level >= 200) {
         const img = document.createElement('img');
         img.className = 'account-level-avatar ' + getStarClass(level);
-        img.src = `/skins/${getPlayerSkinId(nick)}.png`;
-        img.onerror = () => { img.src = '/skins/4.png'; };
+        setImgSrc(img, getSkinImageUrl(getPlayerSkinId(nick)));
+        img.onerror = () => {
+            if (!img.dataset.fallback) {
+                img.dataset.fallback = '1';
+                setImgSrc(img, SKIN_FALLBACK_URL);
+            }
+        };
         return img;
     }
     const starIcon = document.createElement('i');
@@ -39,14 +44,19 @@ const getLevel = xp => ~~((xp / 100 * 2) ** 0.5);
                                     throw new Error('Invalid stats data');
                                 }
 
-                                const skinsMap = await loadSkinsList(); // Загрузка skinsList
-
-                                // Обновляем каждый player в stats
-                                stats.forEach(player => {
-const normalizedNick = normalizeNick(player.nick);           // ← правильно!
-            const skinId = skinsMap.get(normalizedNick) || 'PPFtwqH';   // теперь ищет по нормализованному нику
-            player.skin = skinId;
-                                });
+                                if (typeof loadSkinsList === 'function') {
+                                    const skinsMap = await loadSkinsList();
+                                    stats.forEach(player => {
+                                        const normalizedNick = normalizeNick(player.nick);
+                                        const skinId = skinsMap.get(normalizedNick) || 'PPFtwqH';
+                                        player.skin = skinId;
+                                    });
+                                } else {
+                                    stats.forEach(player => {
+                                        const normalizedNick = normalizeNick(player.nick);
+                                        player.skin = skinList[normalizedNick] || 'PPFtwqH';
+                                    });
+                                }
 
                                 displayStats(stats);
                             } catch (error) {
@@ -55,7 +65,12 @@ const normalizedNick = normalizeNick(player.nick);           // ← правил
                         }
 
                         // Функция для отображения статистики
+                        let lastStatsRenderKey = '';
                         function displayStats(stats) {
+                            const renderKey = JSON.stringify(stats);
+                            if (renderKey === lastStatsRenderKey) return;
+                            lastStatsRenderKey = renderKey;
+
                             const container = document.getElementById('table-containerwraper');
                             container.innerHTML = ''; // Очищаем контейнер перед добавлением новых данных
 
@@ -68,7 +83,7 @@ stats.forEach((player, index) => {
         <div>${index + 1}</div>
         <div>${player.nick}</div>
         <div>${player.score}</div>
-        <div class="skinswraper"style="background-image: url('/skins/${player.skin}.png');"></div>
+        <div class="skinswraper"style="background-image: url('https://api.agar.su/skins/${player.skin}.png');"></div>
     `;
     container.appendChild(playerDiv);
 });
@@ -125,8 +140,9 @@ window.addEventListener('hashchange', setActiveFromHash);
         };
     })(wjQuery);
 
-const ONLINE_HUB_URL = "https://api.agar.su:6008/online";
+const ONLINE_HUB_URL = "https://api.agar.su:6008/online?1";
 
+// Онлайн: клиент ← api.agar.su:6008 ← игровые серверы (POST /report)
 async function updateOnlineCount() {
     let rows = [];
     try {
@@ -218,7 +234,7 @@ wHandle.startGame = function () {
 
 // host — для wss, api — HTTPS того же игрового сервера (клиент может быть на GitHub)
 const GAME_SERVERS = {
-        "ffa":        { host: "ffa.agar.su",           api: "https://ffa.agar.su" },
+        "ffa":        { host: "ffa.agar.su:6007",           api: "https://ffa.agar.su:6007" },
         "ms":         { host: "ffa.agar.su:6002",      api: "https://ffa.agar.su:6002" },
         "pvp1":       { host: "ffa.agar.su:6004",      api: "https://ffa.agar.su:6004" },
         "pvp2":       { host: "ffa.agar.su:6005",      api: "https://ffa.agar.su:6005" },
@@ -309,6 +325,47 @@ function initServers() {
 						
 let skinList = {}; // Глобальный объект для скинов
 
+const SKIN_FALLBACK_URL = 'https://api.agar.su/skins/4.png';
+const skinImageCache = new Map();
+
+function getSkinImageUrl(skinId, fallbackId = '4') {
+    const id = (skinId && String(skinId).trim()) || fallbackId;
+    return `https://api.agar.su/skins/${id}.png`;
+}
+
+function resolveAssetUrl(url) {
+    try { return new URL(url, location.href).href; }
+    catch { return url; }
+}
+
+function setImgSrc(img, url) {
+    if (!img || !url) return;
+    const resolved = resolveAssetUrl(url);
+    if (img.src !== resolved) img.src = url;
+}
+
+function loadCachedImage(url) {
+    const entry = skinImageCache.get(url);
+    if (entry instanceof Image) return entry;
+    if (entry === 'error') {
+        if (url === SKIN_FALLBACK_URL) return null;
+        return loadCachedImage(SKIN_FALLBACK_URL);
+    }
+    const img = new Image();
+    img.decoding = 'async';
+    skinImageCache.set(url, img);
+    img.onload = () => skinImageCache.set(url, img);
+    img.onerror = () => {
+        skinImageCache.set(url, 'error');
+        if (url !== SKIN_FALLBACK_URL) loadCachedImage(SKIN_FALLBACK_URL);
+    };
+    img.src = url;
+    return img;
+}
+
+function getSkinImage(skinId) {
+    return loadCachedImage(getSkinImageUrl(skinId));
+}
 
 // Функция нормализации ника (берёт ник внутри скобок или обрезает лишнее)
 function normalizeNick(nick) {
@@ -335,7 +392,7 @@ function normalizeNick(nick) {
 
 // Функция загрузки skinList.txt с нормализацией
 function fetchSkinList() {
-    fetch('/skinlist.txt')
+    fetch('https://api.agar.su/skinlist.txt')
         .then(response => {
             if (!response.ok) {
                 throw new Error('Ошибка сети: ' + response.status);
@@ -605,7 +662,7 @@ function initSettingsNav() {
 let stickerCooldown = false;
 let stickerCooldownTimer = null;
     ma = true;
-    const reconnectBtn = document.getElementById("reconnect-panel-btn");
+    const reconnectBtn = document.getElementById("connect-verify-reconnect-btn");
     if (reconnectBtn && !reconnectBtn.dataset.bound) {
         reconnectBtn.dataset.bound = "1";
         reconnectBtn.addEventListener("click", reconnectToServer);
@@ -1363,6 +1420,7 @@ function isMouseOverElement(element) {
     }
 
 let currentWebSocketUrl = null;
+let connectInProgress = false;
 const HIDDEN_TAB_DISCONNECT_MS = 600000;
 let hiddenTabDisconnectTimer = null;
 let wsClosedByHiddenTab = false;
@@ -1389,16 +1447,39 @@ function scheduleHiddenTabDisconnect() {
     }, HIDDEN_TAB_DISCONNECT_MS);
 }
 
-function showReconnectPanel(message) {
-    const panel = document.getElementById("reconnect-panel");
-    const msgEl = document.getElementById("reconnect-panel-message");
-    if (msgEl && message) msgEl.textContent = message;
-    if (panel) panel.style.display = "flex";
+function setConnectVerifyTransferVisible(show) {
+    const transfer = document.getElementById("connect-verify-transfer");
+    if (transfer) transfer.hidden = !show;
+}
+
+function resetConnectVerifyStream() {
+    const stream = document.getElementById("connect-verify-data-stream");
+    if (stream) stream.textContent = 'sha256("…") → …';
 }
 
 function hideReconnectPanel() {
-    const panel = document.getElementById("reconnect-panel");
-    if (panel) panel.style.display = "none";
+    const reconnect = document.getElementById("connect-verify-reconnect");
+    const icon = document.getElementById("connect-verify-icon");
+    const title = document.getElementById("connect-verify-title");
+    if (reconnect) reconnect.hidden = true;
+    if (icon) icon.className = "fas fa-shield-halved connect-verify-icon";
+    if (title) title.textContent = "Проверка безопасности";
+    setConnectVerifyTransferVisible(true);
+}
+
+function showReconnectPanel(message) {
+    const overlay = document.getElementById("connect-verify-overlay");
+    const textEl = document.getElementById("connect-verify-text");
+    const reconnect = document.getElementById("connect-verify-reconnect");
+    const icon = document.getElementById("connect-verify-icon");
+    const title = document.getElementById("connect-verify-title");
+    if (!overlay) return;
+    setConnectVerifyTransferVisible(false);
+    overlay.style.display = "flex";
+    if (icon) icon.className = "fas fa-plug connect-verify-icon";
+    if (title) title.textContent = "Соединение разорвано";
+    if (textEl) textEl.textContent = message || "Нажмите, чтобы переподключиться к серверу.";
+    if (reconnect) reconnect.hidden = false;
 }
 
 function reconnectToServer() {
@@ -1416,6 +1497,23 @@ document.addEventListener("visibilitychange", () => {
     }
 });
 
+function showConnectVerifyOverlay(text) {
+    const overlay = document.getElementById("connect-verify-overlay");
+    const title = document.getElementById("connect-verify-title");
+    if (!overlay) return;
+    hideReconnectPanel();
+    setConnectVerifyTransferVisible(true);
+    resetConnectVerifyStream();
+    if (title) title.textContent = "Проверка безопасности";
+    overlay.style.display = "flex";
+    setConnectVerifyText(text);
+}
+
+function setConnectVerifyText(text) {
+    const textEl = document.getElementById("connect-verify-text");
+    if (textEl && text) textEl.textContent = text;
+}
+
 function formatBanDuration(sec) {
     if (!sec) return "навсегда";
     if (sec < 60) return sec + " сек";
@@ -1429,6 +1527,7 @@ function formatBanDuration(sec) {
 }
 
 function showBanBanner(remainingSec, reason) {
+    hideConnectVerifyOverlay();
     const banner = document.getElementById("ban-banner");
     const msgEl = document.getElementById("ban-banner-message");
     if (!banner || !msgEl) return;
@@ -1444,6 +1543,153 @@ function hideBanBanner() {
     if (banner) banner.style.display = "none";
 }
 
+function hideConnectVerifyOverlay() {
+    const overlay = document.getElementById("connect-verify-overlay");
+    hideReconnectPanel();
+    resetConnectVerifyStream();
+    if (overlay) overlay.style.display = "none";
+}
+
+function updateConnectTransferStream(inputPreview, hashHex) {
+    const stream = document.getElementById("connect-verify-data-stream");
+    if (!stream) return;
+    const raw = String(inputPreview);
+    const tail = raw.length > 18 ? "…" + raw.slice(-14) : raw;
+    const h = String(hashHex || "");
+    stream.textContent = "sha256(\"" + tail + "\") → " + h.slice(0, 12) + "…";
+}
+
+const _sha256K = new Uint32Array([
+    0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+    0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+    0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+    0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+    0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+    0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+    0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+    0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2
+]);
+
+function sha256HexConnectSync(text) {
+    const enc = new TextEncoder().encode(String(text));
+    const len = enc.length;
+    const bitLen = len * 8;
+    const padLen = ((len + 9 + 63) >> 6) << 6;
+    const buf = new Uint8Array(padLen);
+    buf.set(enc);
+    buf[len] = 0x80;
+    const view = new DataView(buf.buffer);
+    view.setUint32(padLen - 4, bitLen, false);
+    let h0 = 0x6a09e667, h1 = 0xbb67ae85, h2 = 0x3c6ef372, h3 = 0xa54ff53a;
+    let h4 = 0x510e527f, h5 = 0x9b05688c, h6 = 0x1f83d9ab, h7 = 0x5be0cd19;
+    const w = new Uint32Array(64);
+    for (let off = 0; off < padLen; off += 64) {
+        for (let i = 0; i < 16; i++) w[i] = view.getUint32(off + i * 4, false);
+        for (let i = 16; i < 64; i++) {
+            const s0 = ((w[i - 15] >>> 7) | (w[i - 15] << 25)) ^ ((w[i - 15] >>> 18) | (w[i - 15] << 14)) ^ (w[i - 15] >>> 3);
+            const s1 = ((w[i - 2] >>> 17) | (w[i - 2] << 15)) ^ ((w[i - 2] >>> 19) | (w[i - 2] << 13)) ^ (w[i - 2] >>> 10);
+            w[i] = (w[i - 16] + s0 + w[i - 7] + s1) | 0;
+        }
+        let a = h0, b = h1, c = h2, d = h3, e = h4, f = h5, g = h6, h = h7;
+        for (let i = 0; i < 64; i++) {
+            const S1 = ((e >>> 6) | (e << 26)) ^ ((e >>> 11) | (e << 21)) ^ ((e >>> 25) | (e << 7));
+            const ch = (e & f) ^ (~e & g);
+            const t1 = (h + S1 + ch + _sha256K[i] + w[i]) | 0;
+            const S0 = ((a >>> 2) | (a << 30)) ^ ((a >>> 13) | (a << 19)) ^ ((a >>> 22) | (a << 10));
+            const maj = (a & b) ^ (a & c) ^ (b & c);
+            const t2 = (S0 + maj) | 0;
+            h = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b; b = a; a = (t1 + t2) | 0;
+        }
+        h0 = (h0 + a) | 0; h1 = (h1 + b) | 0; h2 = (h2 + c) | 0; h3 = (h3 + d) | 0;
+        h4 = (h4 + e) | 0; h5 = (h5 + f) | 0; h6 = (h6 + g) | 0; h7 = (h7 + h) | 0;
+    }
+    const out = new Uint32Array([h0, h1, h2, h3, h4, h5, h6, h7]);
+    let hex = "";
+    for (let i = 0; i < 8; i++) {
+        const v = out[i];
+        hex += ((v >>> 28) & 0xf).toString(16) + ((v >>> 24) & 0xf).toString(16) +
+               ((v >>> 20) & 0xf).toString(16) + ((v >>> 16) & 0xf).toString(16) +
+               ((v >>> 12) & 0xf).toString(16) + ((v >>> 8) & 0xf).toString(16) +
+               ((v >>> 4) & 0xf).toString(16) + (v & 0xf).toString(16);
+    }
+    return hex;
+}
+
+function solveConnectChallenge(challenge) {
+    const need = "0".repeat(challenge.difficulty);
+    const prefix = challenge.prefix;
+    let nonce = 0;
+    setConnectVerifyText("ПК обменивается данными с сервером…");
+
+    return new Promise((resolve) => {
+        function step() {
+            const t0 = performance.now();
+            while (performance.now() - t0 < 14) {
+                const input = prefix + nonce;
+                const hash = sha256HexConnectSync(input);
+                if (hash.startsWith(need)) {
+                    updateConnectTransferStream(input, hash);
+                    resolve(`${challenge.challengeId}:${nonce}`);
+                    return;
+                }
+                nonce++;
+                if (nonce % 1500 === 0) {
+                    setConnectVerifyText("Проверка безопасности…");
+                    updateConnectTransferStream(input, hash);
+                }
+            }
+            requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+    });
+}
+
+const serverPowSupportCache = new Map();
+
+async function fetchConnectToken(gameHost) {
+    const apiBase = getGameServerApiBase(gameHost);
+
+    if (serverPowSupportCache.get(apiBase) === false) {
+        return null;
+    }
+
+    setConnectVerifyText(
+        serverPowSupportCache.get(apiBase) === true ? "Запрос проверки…" : "Проверка сервера…"
+    );
+
+    let res;
+    try {
+        res = await fetch(apiBase + "/challenge", { cache: "no-store" });
+    } catch (err) {
+        serverPowSupportCache.set(apiBase, false);
+        return null;
+    }
+
+    if (!res.ok) {
+        serverPowSupportCache.set(apiBase, false);
+        return null;
+    }
+
+    let challenge;
+    try {
+        challenge = await res.json();
+    } catch (err) {
+        serverPowSupportCache.set(apiBase, false);
+        return null;
+    }
+
+    if (!challenge || !challenge.challengeId || challenge.prefix == null || challenge.difficulty == null) {
+        serverPowSupportCache.set(apiBase, false);
+        return null;
+    }
+
+    serverPowSupportCache.set(apiBase, true);
+    setConnectVerifyText("Проверка безопасности…");
+    const token = await solveConnectChallenge(challenge);
+    setConnectVerifyText("Подключение к серверу…");
+    return token;
+}
+
 function showConnecting() {
     const wsUrl = getGameServerWssUrl(CONNECTION_URL);
 
@@ -1457,8 +1703,12 @@ function showConnecting() {
     }
 }
 
-function wsConnect(wsUrlArg) {
+async function wsConnect(wsUrlArg) {
+    if (connectInProgress) return;
+    connectInProgress = true;
     hideBanBanner();
+    hideReconnectPanel();
+    showConnectVerifyOverlay("Подключение к серверу…");
 
     if (ws) {
         ws.onopen = null;
@@ -1477,16 +1727,34 @@ function wsConnect(wsUrlArg) {
     Cells = [];
     leaderBoard = [];
 
+    let connectToken = null;
+    try {
+        connectToken = await fetchConnectToken(c);
+    } catch (err) {
+        console.error("Connect token error:", err);
+        connectInProgress = false;
+        setConnectVerifyText("Ошибка подключения, повтор…");
+        return;
+    }
+
+    if (connectToken === null) {
+        hideConnectVerifyOverlay();
+    }
+
     const qs = new URLSearchParams();
     if (localStorage.accountToken) {
         qs.set("accountToken", localStorage.accountToken);
     }
-    const query = qs.toString();
-    ws = new WebSocket(wsUrl + (query ? "?" + query : ""), "eSejeKSVdysQvZs0ES1H");
+    if (connectToken) {
+        qs.set("connectToken", connectToken);
+    }
+
+    ws = new WebSocket(wsUrl + "?" + qs.toString(), "eSejeKSVdysQvZs0ES1H");
     ws.binaryType = "arraybuffer";
     ws.onopen = onWsOpen;
     ws.onmessage = onWsMessage;
     ws.onclose = onWsClose;
+    connectInProgress = false;
 }
 
     function prepareData(a) {
@@ -1506,6 +1774,7 @@ let pingstamp = 0;
     let gameHandshakeDone = false;
 
     function onWsOpen() {
+        setConnectVerifyText("Синхронизация с сервером…");
         gameHandshakeDone = false;
         var msg;
 
@@ -1525,6 +1794,7 @@ let pingstamp = 0;
     function onGameHandshakeReady() {
         if (gameHandshakeDone) return;
         gameHandshakeDone = true;
+        hideConnectVerifyOverlay();
         hideReconnectPanel();
         sendNickName();
         if (wsPingInterval) clearInterval(wsPingInterval);
@@ -1541,6 +1811,7 @@ let pingstamp = 0;
         clearInterval(wsPingInterval);
         wsPingInterval = null;
     }
+    if (connectInProgress) return;
     if (!ma) return;
     const msg = wsClosedByHiddenTab
         ? "Вкладка была неактивна более 60 секунд. Нажмите, чтобы переподключиться."
@@ -1632,10 +1903,12 @@ let pingstamp = 0;
         const messageType = msg.getUint8(offset++);
         switch (messageType) {
             case 91:
+                hideConnectVerifyOverlay();
                 const banRemaining = msg.getUint32(offset, true);
                 offset += 4;
                 const banReason = getString();
                 showBanBanner(banRemaining, banReason);
+                connectInProgress = false;
                 gameHandshakeDone = false;
                 if (wsPingInterval) {
                     clearInterval(wsPingInterval);
@@ -1970,7 +2243,7 @@ const maxDialogMessages = 100; // для ЛС
 // ==========================
 // Загрузка pass.txt
 // ==========================
-fetch('/pass.txt')
+fetch('https://api.agar.su/pass.txt')
     .then(response => {
         if (!response.ok) throw new Error('Ошибка сети: ' + response.status);
         return response.text();
@@ -2018,8 +2291,13 @@ function createDialog(number, senderName, senderAvatar) {
     avatarContainer.className = 'chatX_top_avatar';
     const avatar = document.createElement('img');
     avatar.className = 'chatX_avatar_private';
-    avatar.src = senderAvatar || '/skins/4.png';
-    avatar.onerror = () => avatar.src = '/skins/4.png';
+    setImgSrc(avatar, senderAvatar || SKIN_FALLBACK_URL);
+    avatar.onerror = () => {
+        if (!avatar.dataset.fallback) {
+            avatar.dataset.fallback = '1';
+            setImgSrc(avatar, SKIN_FALLBACK_URL);
+        }
+    };
     avatar.title = senderName || `User ${number}`;
     avatarContainer.appendChild(avatar);
 
@@ -2315,7 +2593,7 @@ if (privateMatch) {
     if (!messageContent.startsWith('PvPInvite;')) {
         targetDialogId = `!ls${number}`;
         createDialog(number, lastMessage.name, skinList[normalizedName] ? 
-            `/skins/${skinList[normalizedName]}.png` : '/skins/4.png');
+            `https://api.agar.su/skins/${skinList[normalizedName]}.png` : 'https://api.agar.su/skins/4.png');
     }
 }
 
@@ -2338,8 +2616,13 @@ if (admins.includes(lowerName)) {
     const avatar = document.createElement('img');
     avatar.className = 'chatX_avatar';
     const skinId = skinList[normalizedName];
-    avatar.src = skinId ? `/skins/${skinId}.png` : '/skins/4.png';
-    avatar.onerror = () => avatar.src = '/skins/4.png';
+    setImgSrc(avatar, skinId ? getSkinImageUrl(skinId) : SKIN_FALLBACK_URL);
+    avatar.onerror = () => {
+        if (!avatar.dataset.fallback) {
+            avatar.dataset.fallback = '1';
+            setImgSrc(avatar, SKIN_FALLBACK_URL);
+        }
+    };
     avatarContainer.appendChild(avatar);
     msgDiv.appendChild(avatarContainer);
 
@@ -2487,7 +2770,7 @@ pmBtn.style.cursor = 'pointer';
 pmBtn.onclick = () => {
     // Создаём ЛС диалог
     createDialog(playerId, lastMessage.name, skinList[normalizeNick(lastMessage.name)] ? 
-        `/skins/${skinList[normalizeNick(lastMessage.name)]}.png` : '/skins/4.png');
+        `https://api.agar.su/skins/${skinList[normalizeNick(lastMessage.name)]}.png` : 'https://api.agar.su/skins/4.png');
     switchToDialog(`!ls${playerId}`);
     menu.remove();
 };
@@ -2599,9 +2882,10 @@ menu.appendChild(pvpBtn);
         dialogMessages[targetDialogId].push(msgDiv);
         const topAvatarImg = dialogs[targetDialogId].avatar.querySelector('img');
         if (topAvatarImg) {
-            topAvatarImg.src = skinList[normalizedName]
-                ? `/skins/${skinList[normalizedName]}.png`
-                : '/skins/4.png';
+            const avatarUrl = skinList[normalizedName]
+                ? getSkinImageUrl(skinList[normalizedName])
+                : SKIN_FALLBACK_URL;
+            setImgSrc(topAvatarImg, avatarUrl);
             topAvatarImg.title = lastMessage.name || `User ${targetDialogId.replace('!ls','')}`;
         }
     }
@@ -3538,9 +3822,12 @@ function drawWhiteGrid() {
                 topPlayerScore = topPlayer.score;
             const normalizedNick = normalizeNick(topPlayer.nick);
             const skinId = skinList[normalizedNick];
-                innerImage.src = skinId
-                    ? `/skins/${skinId}.png`
-                    : "/skins/4.png";
+                const nextSrc = getSkinImageUrl(skinId);
+                if (innerImage.dataset.skinSrc !== nextSrc) {
+                    innerImage.dataset.skinSrc = nextSrc;
+                    isInnerImageLoaded = false;
+                    innerImage.src = nextSrc;
+                }
 
                 topPlayerSkin = skinId || 'default';
             }
@@ -3835,6 +4122,10 @@ function createLeaderboardEntry(name, level, isMe, isSystemLine, b) {
 }
 
 function drawCustomLeaderBoard() {
+  const renderKey = getLeaderBoardRenderKey();
+  if (renderKey === lastLeaderBoardRenderKey) return;
+  lastLeaderBoardRenderKey = renderKey;
+
   const toplistDiv = document.getElementById("toplistnow");
   toplistDiv.innerHTML = ""; // очищаем
 
@@ -3876,6 +4167,10 @@ function drawCustomLeaderBoard() {
 }
 
 function drawLeaderBoard() {
+  const renderKey = getLeaderBoardRenderKey();
+  if (renderKey === lastLeaderBoardRenderKey) return;
+  lastLeaderBoardRenderKey = renderKey;
+
   const toplistDiv = document.getElementById("toplistnow");
   toplistDiv.innerHTML = ""; // очищаем
   const displayedPlayers = 10;
@@ -4214,7 +4509,7 @@ wjQuery(window).on('load', function() {
 
 const transparent = new Set(["liqwid","⟨本⟩ Itana."]);
 let invisible = new Set(); // сначала пустой Set
-fetch("/invisible.txt")
+fetch("https://api.agar.su/invisible.txt")
   .then(r => r.text())
   .then(text => {
     text.split('\n').forEach(line => {
@@ -4224,7 +4519,7 @@ fetch("/invisible.txt")
   });
 const invisible2 = new Set(["нико"]); // невидимая масса
 const rotation = new Set(); //поворот скина
-fetch("/rotation.txt")
+fetch("https://api.agar.su/rotation.txt")
   .then(r => r.text())
   .then(text => {
     text.split('\n').forEach(line => {
@@ -4233,7 +4528,11 @@ fetch("/rotation.txt")
     });
   });
 let oldX = -1, oldY = -1, z = 1;
-const skins = {};
+let lastLeaderBoardRenderKey = '';
+
+function getLeaderBoardRenderKey() {
+    return leaderBoard.map(e => `${e.id}|${e.name}|${e.level}|${e.xp}`).join('\n');
+}
 
 Cell.prototype = {
     id: 0,
@@ -4495,12 +4794,8 @@ if (showSkin && !this.isVirus) {
     const skinName = normalizeNick(this.name);
     const skinId = skinList[skinName];
     if (skinId) {
-        if (!skins[skinId]) {
-            skins[skinId] = new Image();
-            skins[skinId].src = `/skins/${skinId}.png`;
-        }
-        const skinImg = skins[skinId];
-        if (skinImg.complete && skinImg.width > 0) {
+        const skinImg = getSkinImage(skinId);
+        if (skinImg && skinImg.complete && skinImg.width > 0) {
             ctx.save();
             ctx.clip();
 
@@ -4591,14 +4886,8 @@ if (!this.glowActive && mass >= 22400) this.glowActive = true;
 if (this.glowActive && mass <= 22300) this.glowActive = false;
 
 if (this.glowActive && showGlow) {
-    const effectId = "glow"; 
-    if (!skins[effectId]) {
-        skins[effectId] = new Image();
-        skins[effectId].src = `./assets/photo/limited.png`; // теперь обычный PNG
-    }
-
-    const effectImg = skins[effectId];
-    if (effectImg.complete && effectImg.width > 0) {
+    const effectImg = loadCachedImage("./assets/photo/limited.png");
+    if (effectImg && effectImg.complete && effectImg.width > 0) {
         ctx.save();
         ctx.clip();
 
@@ -4621,15 +4910,9 @@ if (this.glowActive && showGlow) {
 if (showStickers && this.stickerActive && this.currentSticker) {
     let stickerUrl = `https://agar.su/sticker/${this.currentSticker}.png`;
     
-    // Кешируем стикеры
-    if (!skins[stickerUrl]) {
-        skins[stickerUrl] = new Image();
-        skins[stickerUrl].src = stickerUrl;
-    }
-    
-    const stickerImg = skins[stickerUrl];
-    
-    if (stickerImg.complete && stickerImg.width > 0) {
+    const stickerImg = loadCachedImage(stickerUrl);
+
+    if (stickerImg && stickerImg.complete && stickerImg.width > 0) {
         ctx.save();
         ctx.clip();
  
@@ -4921,7 +5204,7 @@ function refreshTopFromStats(stats) {
         const medal = index === 0 ? 'gold' : index === 1 ? 'silver' : 'bronze';
         const normalizedNick = normalizeNick(entry.nick);
         const skinCode = skinList?.[normalizedNick];
-        const skinUrl = skinCode ? `/skins/${skinCode}.png` : '/skins/4.png';
+        const skinUrl = skinCode ? `https://api.agar.su/skins/${skinCode}.png` : 'https://api.agar.su/skins/4.png';
         
         const row = document.createElement('div');
         row.className = 'rating-row ' + medal;
@@ -4945,25 +5228,42 @@ function refreshTopFromStats(stats) {
 
 // Загружаем топ при открытии оверлея
 $(document).ready(function() {
+    let loadTopDataTimer = null;
+    let lastTopStatsKey = '';
+
     function loadTopData() {
         fetch(getGameServerApiBase(CONNECTION_URL) + "/checkStats")
             .then(res => res.ok ? res.json() : Promise.reject())
-            .then(stats => refreshTopFromStats(stats))
+            .then(stats => {
+                const statsKey = JSON.stringify(stats);
+                if (statsKey === lastTopStatsKey) return;
+                lastTopStatsKey = statsKey;
+                refreshTopFromStats(stats);
+            })
             .catch(e => console.error('Top load error:', e));
     }
-    
+
+    function scheduleLoadTopData() {
+        clearTimeout(loadTopDataTimer);
+        loadTopDataTimer = setTimeout(() => {
+            loadTopDataTimer = null;
+            if ($("#overlays").is(":visible")) loadTopData();
+        }, 300);
+    }
+
     if ($("#overlays").is(":visible")) {
         loadTopData();
     }
-    
+
     // Отслеживаем открытие оверлея
     const observer = new MutationObserver(() => {
-        if ($("#overlays").is(":visible")) loadTopData();
+        scheduleLoadTopData();
     });
     observer.observe($("#overlays")[0], { attributes: true, attributeFilter: ['style'] });
 });
 	
 // === Покупки по нику (публичные списки api.agar.su) ===
+const SHOP_API = 'https://api.agar.su';
 let nickPerksLists = null;
 
 async function fetchNickPerksLists() {
@@ -4991,10 +5291,10 @@ async function fetchNickPerksLists() {
   };
   try {
     const [passR, invR, rotR, skinR] = await Promise.all([
-      fetch(`/pass.txt`),
-      fetch(`/invisible.txt`),
-      fetch(`/rotation.txt`),
-      fetch(`/skinlist.txt`)
+      fetch(`${SHOP_API}/pass.txt`),
+      fetch(`${SHOP_API}/invisible.txt`),
+      fetch(`${SHOP_API}/rotation.txt`),
+      fetch(`${SHOP_API}/skinlist.txt`),
     ]);
     nickPerksLists = {
       pass: toSet(passR.ok ? await passR.text() : ''),
@@ -5102,13 +5402,13 @@ function getSkinUrlForNick(nickname) {
     // Ищем в skinList
     const code = skinList[cleanKey];
     if (code) {
-      return `/skins/${code}.png`;
+      return `https://api.agar.su/skins/${code}.png`;
     }
 
     // Если не нашли — пробуем с []
     const withBrackets = `[${cleanKey}]`;
     const code2 = skinList[withBrackets];
-    return code2 ? `/skins/${code2}.png` : null;
+    return code2 ? `https://api.agar.su/skins/${code2}.png` : null;
 
   } catch (e) {
     console.error('Skin error:', e);
