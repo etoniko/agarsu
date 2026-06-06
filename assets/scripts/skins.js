@@ -4,12 +4,7 @@ const actionInterval = 500;
 let actionTimeout;
 let currentIndex = 0;
 
-const MANUAL_SKINS_NICKS = [
-    "Ленин",
-    "Сталин",
-    "Гагарин",
-    "Жуков"
-];
+const MANUAL_SKINS_NICKS = ["Ленин","Сталин","Гагарин","Жуков","Хрущёв","CССР","Путин","Россия"];
 
 const SKINS_PER_PAGE_MOBILE = 8;  /* 2×4 */
 const SKINS_PER_PAGE_DESKTOP = 15; /* 5×3 */
@@ -19,6 +14,22 @@ let skinsGalleryPerPage = SKINS_PER_PAGE_DESKTOP;
 let skinsGalleryLoading = false;
 let skinsGalleryLoaded = false;
 let skinsGalleryResizeBound = false;
+let cachedSkinsMap = null;
+let cachedSkinsMapAt = 0;
+const SKINS_MAP_TTL = 60000;
+
+function getSkinPreviewUrl(skinId) {
+    return skinId ? `/skins/${skinId}.png` : '';
+}
+
+function setBackgroundImageIfChanged(el, skinId) {
+    if (!el) return;
+    const url = getSkinPreviewUrl(skinId);
+    const next = url ? `url(${url})` : '';
+    if (el.dataset.bgSrc === next) return;
+    el.dataset.bgSrc = next;
+    el.style.backgroundImage = next;
+}
 
 function getSkinsGalleryPerPage() {
     return window.matchMedia('(max-width: 599px)').matches
@@ -193,7 +204,10 @@ async function initSkinsGallery() {
 }
 
 // Функция загрузки списка скинов
-async function loadSkinsList() {
+async function loadSkinsList(force) {
+    if (!force && cachedSkinsMap && Date.now() - cachedSkinsMapAt < SKINS_MAP_TTL) {
+        return cachedSkinsMap;
+    }
     const response = await fetch('/skinlist.txt');
     const data = await response.text();
     const skinsMap = new Map();
@@ -202,6 +216,8 @@ async function loadSkinsList() {
         const [nick, id] = line.split(':');
         if (nick && id) skinsMap.set(normalizeNick(nick), id.trim());
     });
+    cachedSkinsMap = skinsMap;
+    cachedSkinsMapAt = Date.now();
     return skinsMap;
 }
 
@@ -234,7 +250,7 @@ async function selectSkin(nick) {
         updateAvatarDisplay();
     } else {
         const skinss = document.querySelector('#skinss');
-        if (skinss) skinss.style.backgroundImage = '';
+        if (skinss) setBackgroundImageIfChanged(skinss, '');
     }
 }
 
@@ -264,25 +280,29 @@ function updateAvatarDisplay() {
     const nextSkin = document.querySelector('#nextSkin');
     if (!mainSkin) return;
 
-    mainSkin.style.backgroundImage = '';
-    if (previousSkin) previousSkin.style.backgroundImage = '';
-    if (nextSkin) nextSkin.style.backgroundImage = '';
-
     if (players.length > 0) {
         const currentPlayer = players[currentIndex];
-        mainSkin.style.backgroundImage = `url(/skins/${currentPlayer.id}.png)`;
+        setBackgroundImageIfChanged(mainSkin, currentPlayer.id);
         const nickInput = document.getElementById('nick');
         if (nickInput) nickInput.value = currentPlayer.nick;
 
         const prevIndex = (currentIndex - 1 + players.length) % players.length;
         if (previousSkin && players[prevIndex]) {
-            previousSkin.style.backgroundImage = `url(/skins/${players[prevIndex].id}.png)`;
+            setBackgroundImageIfChanged(previousSkin, players[prevIndex].id);
+        } else if (previousSkin) {
+            setBackgroundImageIfChanged(previousSkin, '');
         }
 
         const nextIndex = (currentIndex + 1) % players.length;
         if (nextSkin && players[nextIndex]) {
-            nextSkin.style.backgroundImage = `url(/skins/${players[nextIndex].id}.png)`;
+            setBackgroundImageIfChanged(nextSkin, players[nextIndex].id);
+        } else if (nextSkin) {
+            setBackgroundImageIfChanged(nextSkin, '');
         }
+    } else {
+        setBackgroundImageIfChanged(mainSkin, '');
+        setBackgroundImageIfChanged(previousSkin, '');
+        setBackgroundImageIfChanged(nextSkin, '');
     }
 }
 
