@@ -4,7 +4,12 @@ const actionInterval = 500;
 let actionTimeout;
 let currentIndex = 0;
 
-const MANUAL_SKINS_NICKS = ["Ленин","Сталин","Гагарин","Жуков","Хрущёв","CССР","Путин","Россия"];
+const MANUAL_SKINS_NICKS = [
+    "Ленин",
+    "Сталин",
+    "Гагарин",
+    "Жуков"
+];
 
 const SKINS_PER_PAGE_MOBILE = 8;  /* 2×4 */
 const SKINS_PER_PAGE_DESKTOP = 15; /* 5×3 */
@@ -16,7 +21,8 @@ let skinsGalleryLoaded = false;
 let skinsGalleryResizeBound = false;
 let cachedSkinsMap = null;
 let cachedSkinsMapAt = 0;
-const SKINS_MAP_TTL = 60000;
+const SKINS_MAP_TTL = 0;
+const LIST_FETCH_OPTS = { cache: 'no-store' };
 
 function getSkinPreviewUrl(skinId) {
     return skinId ? `https://api.agar.su/skins/${skinId}.png` : '';
@@ -54,7 +60,7 @@ function bindSkinsGalleryResize() {
 
 async function loadSkinsGalleryData() {
     // Загружаем skinlist.txt для получения ID по никам
-    const skinRes = await fetch('https://api.agar.su/skinlist.txt');
+    const skinRes = await fetch('https://api.agar.su/skinlist.txt', LIST_FETCH_OPTS);
     if (!skinRes.ok) throw new Error('skinlist');
     const skinText = await skinRes.text();
     
@@ -208,13 +214,18 @@ async function loadSkinsList(force) {
     if (!force && cachedSkinsMap && Date.now() - cachedSkinsMapAt < SKINS_MAP_TTL) {
         return cachedSkinsMap;
     }
-    const response = await fetch('/skinlist.txt');
+    const response = await fetch('/skinlist.txt', LIST_FETCH_OPTS);
     const data = await response.text();
     const skinsMap = new Map();
 
     data.split('\n').forEach((line) => {
-        const [nick, id] = line.split(':');
-        if (nick && id) skinsMap.set(normalizeNick(nick), id.trim());
+        const trimmed = line.trim();
+        if (!trimmed) return;
+        const idx = trimmed.indexOf(':');
+        if (idx < 0) return;
+        const nick = trimmed.slice(0, idx).trim();
+        const id = trimmed.slice(idx + 1).trim();
+        if (nick && id) skinsMap.set(normalizeNick(nick), id);
     });
     cachedSkinsMap = skinsMap;
     cachedSkinsMapAt = Date.now();
@@ -239,12 +250,21 @@ function normalizeNick(nick) {
     return n.toLowerCase();
 }
 
-async function selectSkin(nick) {
-    const skinsMap = await loadSkinsList();
+function lookupSkinId(skinsMap, nick) {
     const normalizedNick = normalizeNick(nick);
+    if (!normalizedNick) return null;
+    if (skinsMap.has(normalizedNick)) return skinsMap.get(normalizedNick);
+    const clean = normalizedNick.replace(/\[|\]/g, '').trim();
+    if (skinsMap.has(clean)) return skinsMap.get(clean);
+    if (skinsMap.has(`[${clean}]`)) return skinsMap.get(`[${clean}]`);
+    return null;
+}
 
-    if (skinsMap.has(normalizedNick)) {
-        const id = skinsMap.get(normalizedNick);
+async function selectSkin(nick, forceReload) {
+    const skinsMap = await loadSkinsList(!!forceReload);
+    const id = lookupSkinId(skinsMap, nick);
+
+    if (id) {
         savePlayerData(nick, id);
         currentIndex = getCurrentPlayerIndex(nick);
         updateAvatarDisplay();
@@ -253,6 +273,13 @@ async function selectSkin(nick) {
         if (skinss) setBackgroundImageIfChanged(skinss, '');
     }
 }
+
+async function reloadMenuSkinForNick(nick) {
+    await selectSkin(nick, true);
+}
+
+window.reloadMenuSkinForNick = reloadMenuSkinForNick;
+window.selectSkin = selectSkin;
 
 function getCurrentPlayerIndex(nick) {
     const players = JSON.parse(localStorage.getItem('players') || '[]');
@@ -339,7 +366,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const nickname = this.value;
             clearTimeout(actionTimeout);
             actionTimeout = setTimeout(async () => {
-                await selectSkin(nickname);
+                await selectSkin(nickname, true);
             }, actionInterval);
         });
     }
@@ -347,6 +374,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const players = JSON.parse(localStorage.getItem('players') || '[]');
     if (players.length > 0) {
         currentIndex = 0;
-        updateAvatarDisplay();
+        selectSkin(players[currentIndex].nick, true);
+    } else if (nickInput && nickInput.value.trim()) {
+        selectSkin(nickInput.value.trim(), true);
     }
+});
+
+window.addEventListener('agar-lists-updated', () => {
+    const nickInput = document.getElementById('nick');
+    if (!nickInput) return;
+    const nick = nickInput.value.trim();
+    if (nick) reloadMenuSkinForNick(nick);
 });
