@@ -1,47 +1,50 @@
-(function () {
-    const LIST_FETCH_OPTS = { cache: 'no-store' };
-    let allowedNicks = new Set();
-    let loadPromise = null;
+document.addEventListener('DOMContentLoaded', () => {
+    const nickInput = document.getElementById('nick');
+    const passInput = document.getElementById('pass');
+    let allowedNicks = [];
 
-    function normalizeNick(nick) {
-        if (!nick) return '';
+    // --- Универсальная функция нормализации ника ---
+function normalizeNick(nick) {
+    if (!nick) return '';
 
-        let n = nick.trim();
+    let n = nick.trim();
 
-        if (n.startsWith('[')) {
-            const endIndex = n.indexOf(']');
-            if (endIndex === -1) return '';
+    const brackets = { '[': ']', '{': '}', '(': ')', '|': '|' };
+    const firstChar = n.charAt(0);
+    const lastChar = n.charAt(n.length - 1);
 
-            const innerNick = n.substring(1, endIndex).trim();
-            if (!innerNick || innerNick !== n.substring(1, endIndex)) return '';
+    if (brackets[firstChar]) {
+        const closeChar = brackets[firstChar];
+        const endIndex = n.indexOf(closeChar, 1);
 
-            return `[${innerNick}]`.toLowerCase();
-        }
+        // Проверяем, что закрывающая скобка есть и ник внутри не пустой
+        if (endIndex === -1) return ''; 
 
+        const innerNick = n.substring(1, endIndex);
+        if (!innerNick || innerNick.trim() !== innerNick) return ''; // нет пробелов в начале/конце
+
+        n = innerNick; 
+    } else {
+        // Ник без скобок: нельзя содержать пробелы в начале/конце
         if (!n || n.trim() !== n) return '';
-        return n.toLowerCase();
     }
 
-    function nickInPassList(nick) {
-        const normalized = normalizeNick(nick);
-        if (!normalized) return false;
-        if (allowedNicks.has(normalized)) return true;
-        const clean = normalized.replace(/\[|\]/g, '').trim();
-        return allowedNicks.has(clean) || allowedNicks.has(`[${clean}]`);
-    }
+    return n.toLowerCase();
+}
 
+    // --- Работа с cookie ---
     function setCookie(name, value, days) {
-        let expires = '';
+        let expires = "";
         if (days) {
             const date = new Date();
-            date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
-            expires = '; expires=' + date.toUTCString();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            expires = "; expires=" + date.toUTCString();
         }
-        document.cookie = name + '=' + encodeURIComponent(value || '') + expires + '; path=/';
+        document.cookie = name + "=" + encodeURIComponent(value || "") + expires + "; path=/";
     }
 
     function getCookie(name) {
-        const nameEQ = name + '=';
+        const nameEQ = name + "=";
         const ca = document.cookie.split(';');
         for (let i = 0; i < ca.length; i++) {
             let c = ca[i].trim();
@@ -50,109 +53,61 @@
         return null;
     }
 
-    function getNickInput() {
-        return document.getElementById('nick');
-    }
+    // --- Загрузка списка ников ---
+    fetch('https://api.agar.su/pass.txt')
+        .then(response => {
+            if (!response.ok) throw new Error('Не удалось загрузить pass.txt');
+            return response.text();
+        })
+        .then(data => {
+            allowedNicks = data.split('\n')
+                               .map(n => normalizeNick(n))
+                               .filter(n => n !== '');
 
-    function getPassInput() {
-        return document.getElementById('pass');
-    }
-
-    function updatePassFieldForNick(nick) {
-        const passInput = getPassInput();
-        if (!passInput) return;
-        passInput.style.display = nickInPassList(nick) ? 'block' : 'none';
-    }
-
-    async function loadPassList(force) {
-        if (!force && loadPromise) return loadPromise;
-
-        loadPromise = fetch('/pass.txt', LIST_FETCH_OPTS)
-            .then((response) => {
-                if (!response.ok) throw new Error('Не удалось загрузить pass.txt');
-                return response.text();
-            })
-            .then((data) => {
-                allowedNicks = new Set(
-                    data
-                        .split('\n')
-                        .map((line) => normalizeNick(line.trim()))
-                        .filter(Boolean)
-                );
-            })
-            .catch((error) => {
-                console.error('Ошибка при загрузке pass.txt:', error);
-            })
-            .finally(() => {
-                loadPromise = null;
-            });
-
-        await loadPromise;
-        return allowedNicks;
-    }
-
-    async function refreshPassForCurrentNick(force) {
-        await loadPassList(force);
-        const nickInput = getNickInput();
-        const passInput = getPassInput();
-        if (!nickInput || !passInput) return;
-
-        const currentNick = nickInput.value.trim();
-        updatePassFieldForNick(currentNick);
-    }
-
-    window.reloadPassList = (force) => loadPassList(!!force);
-    window.updatePassFieldForNick = updatePassFieldForNick;
-    window.refreshPassForCurrentNick = refreshPassForCurrentNick;
-
-    document.addEventListener('DOMContentLoaded', () => {
-        const nickInput = getNickInput();
-        const passInput = getPassInput();
-        if (!nickInput || !passInput) return;
-
-        loadPassList(true).then(() => {
             const savedNick = getCookie('userNick');
             const savedPass = getCookie('userPass');
 
             if (savedNick) {
                 nickInput.value = savedNick;
-                updatePassFieldForNick(savedNick);
+                checkNickStatus(savedNick);
             }
 
             if (savedPass) {
                 passInput.value = savedPass;
-            } else {
-                updatePassFieldForNick(nickInput.value.trim());
             }
+        })
+        .catch(error => {
+            console.error('Ошибка при загрузке pass.txt:', error);
         });
 
-        let refreshTimer;
-        nickInput.addEventListener('input', () => {
-            const currentNick = nickInput.value.trim();
-            if (currentNick) {
-                setCookie('userNick', currentNick, 7);
-            } else {
-                setCookie('userNick', '', -1);
-                passInput.style.display = 'none';
-            }
+    function checkNickStatus(nick) {
+        const normalized = normalizeNick(nick);
+        if (allowedNicks.includes(normalized)) {
+            passInput.style.display = 'block';
+        } else {
+            passInput.style.display = 'none';
+        }
+    }
 
-            clearTimeout(refreshTimer);
-            refreshTimer = setTimeout(() => {
-                refreshPassForCurrentNick(true);
-            }, 300);
-        });
-
-        passInput.addEventListener('input', () => {
-            const currentPass = passInput.value.trim();
-            if (currentPass) {
-                setCookie('userPass', currentPass, 7);
-            } else {
-                setCookie('userPass', '', -1);
-            }
-        });
+    // --- Сохраняем изменения в полях ---
+    nickInput.addEventListener('input', () => {
+        const currentNick = nickInput.value.trim();
+        if (currentNick) {
+            setCookie('userNick', currentNick, 7);
+        } else {
+            setCookie('userNick', '', -1); // Удалить cookie
+            passInput.style.display = 'none';
+        }
+        checkNickStatus(currentNick);
     });
 
-    window.addEventListener('agar-lists-updated', () => {
-        refreshPassForCurrentNick(true);
+    passInput.addEventListener('input', () => {
+        const currentPass = passInput.value.trim();
+        if (currentPass) {
+            setCookie('userPass', currentPass, 7);
+        } else {
+            setCookie('userPass', '', -1); // Удалить cookie
+        }
     });
-})();
+
+});
