@@ -102,6 +102,7 @@
     color: white;
     overflow: hidden;
     font-family: Arial, sans-serif;
+    cursor: pointer;
 }
 
 /* Верхняя синяя часть */
