@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Рейтинг сервера — Agar.su</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.2/css/all.min.css">
+  <style>
+    :root {
+      --bg: #0f1118; --panel: #1a1d28; --panel2: #222633; --text: #e8ecf4;
+      --muted: #8b93a7; --accent: #5b8cff; --gold: #ffd54f; --silver: #cfd8dc;
+      --bronze: #ffab40; --border: #2d3345; --ok: #4caf50; --bad: #ef5350;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: "Segoe UI", system-ui, sans-serif;
+      background: radial-gradient(ellipse at top, #1a2240 0%, var(--bg) 55%);
+      color: var(--text); min-height: 100vh;
+    }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 24px 16px 48px; }
+    a.back { color: var(--muted); text-decoration: none; font-size: 0.95rem; display: inline-block; margin-bottom: 16px; }
+    a.back:hover { color: var(--accent); }
+    h1 { margin: 0 0 8px; font-size: 1.8rem; }
+    .sub { color: var(--muted); margin-bottom: 18px; font-size: 0.95rem; line-height: 1.6; }
+    .meta { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; }
+    .pill {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 999px;
+      padding: 8px 14px; font-size: 0.85rem; color: var(--muted);
+    }
+    .pill strong { color: var(--text); }
+    .pill.bad-pill { border-color: rgba(239,83,80,.35); color: #ffcdd2; }
+    .srv-nav {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px;
+    }
+    .srv-tab {
+      padding: 8px 14px; border-radius: 999px; border: 1px solid var(--border);
+      background: var(--panel); color: var(--muted); text-decoration: none; font-size: 0.88rem;
+      transition: border-color .15s, color .15s, background .15s;
+    }
+    .srv-tab:hover { border-color: var(--accent); color: var(--text); }
+    .srv-tab.active {
+      border-color: rgba(91,140,255,.55); color: var(--accent); background: rgba(91,140,255,.1);
+    }
+    .srv-tab .dot {
+      display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px;
+      vertical-align: middle;
+    }
+    .srv-tab .dot.ok { background: var(--ok); }
+    .srv-tab .dot.bad { background: var(--bad); }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+    .card {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+      overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,.25);
+    }
+    .card-head {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 16px 18px; background: var(--panel2); border-bottom: 1px solid var(--border);
+    }
+    .card-head h2 { margin: 0; font-size: 1.05rem; flex: 1; }
+    .toggle-list {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 36px; height: 36px; padding: 0; border-radius: 8px;
+      border: 1px solid var(--border); background: var(--panel);
+      color: var(--muted); cursor: pointer; flex-shrink: 0;
+    }
+    .toggle-list:hover { border-color: var(--accent); color: var(--accent); }
+    .toggle-list[aria-expanded="true"] { color: var(--accent); border-color: rgba(91,140,255,.45); }
+    .toggle-list[aria-expanded="true"] i { transform: rotate(180deg); }
+    .toggle-list i { transition: transform .2s ease; }
+    .rank-wrap { min-height: 120px; }
+    .rank-panel { --rank-row-h: 46px; padding: 20px 24px 24px; }
+    .rank-head {
+      padding: 0 8px 12px; border-bottom: 1px solid var(--border); margin-bottom: 6px;
+    }
+    .rank-row {
+      display: grid;
+      grid-template-columns: 44px minmax(0, 1fr) 72px 58px;
+      column-gap: 14px; align-items: center; min-height: var(--rank-row-h);
+      padding: 0 8px; border-radius: 8px;
+    }
+    .rank-row.head {
+      min-height: 32px; font-size: 0.76rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .04em; color: var(--muted);
+    }
+    .rank-row.head span:nth-child(n+3),
+    .rank-row .c-score,
+    .rank-row .c-pts { text-align: right; }
+    .rank-body {
+      height: calc(var(--rank-row-h) * 10); overflow: hidden;
+      padding: 0 2px 0 8px; border-bottom: 1px solid var(--border);
+    }
+    .rank-panel.is-expanded .rank-body {
+      overflow-y: auto; padding-right: 4px;
+      scrollbar-width: thin; scrollbar-color: rgba(139,147,167,.45) transparent;
+    }
+    .rank-panel.is-expanded .rank-body::-webkit-scrollbar { width: 6px; }
+    .rank-panel.is-expanded .rank-body::-webkit-scrollbar-thumb {
+      background: rgba(139,147,167,.45); border-radius: 999px;
+    }
+    .rank-rows .rank-row { border-bottom: 1px solid rgba(45, 51, 69, .65); }
+    .rank-rows .rank-row:hover { background: rgba(91,140,255,.06); }
+    .rank-panel:not(.is-expanded) .rank-rows .rank-row:nth-child(n+11) { display: none; }
+    .rank-panel.is-expanded .rank-head { padding-right: 16px; }
+    .c-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .rank { font-weight: 700; }
+    .rank-1 { color: var(--gold); } .rank-2 { color: var(--silver); } .rank-3 { color: var(--bronze); }
+    .pts { font-weight: 700; color: var(--accent); }
+    .score { color: var(--muted); font-size: 0.9rem; }
+    .nick-link { color: var(--text); text-decoration: none; }
+    .nick-link:hover { color: var(--accent); }
+    .clan-tag { color: #81c784; }
+    .loading { color: var(--muted); padding: 24px; text-align: center; }
+    .err {
+      background: rgba(239,83,80,.12); border: 1px solid rgba(239,83,80,.35);
+      color: #ffcdd2; padding: 12px 14px; border-radius: 10px; margin-bottom: 16px; display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a href="../" class="back">← Глобальный рейтинг</a>
+    <h1 id="title">Рейтинг сервера</h1>
+    <p class="sub">Топ игроков и кланов <strong>на выбранном сервере</strong> — снимок последнего опроса.
+    Очки — за место в топе на этом сервере в момент обновления.</p>
+
+    <div id="error" class="err"></div>
+    <nav class="srv-nav" id="srvNav"></nav>
+
+    <div class="meta">
+      <div class="pill">Обновлено: <strong id="updated">—</strong></div>
+      <div class="pill" id="statusPill">Статус: <strong id="statusText">—</strong></div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="card-head">
+          <h2>Игроки на сервере</h2>
+          <button type="button" class="toggle-list" id="togglePlayers" aria-expanded="false" hidden>
+            <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div id="playersWrap"><div class="loading">Загрузка…</div></div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <h2>Кланы на сервере</h2>
+          <button type="button" class="toggle-list" id="toggleClans" aria-expanded="false" hidden>
+            <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div id="clansWrap"><div class="loading">Загрузка…</div></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../config.js"></script>
+  <script>
+    const API = window.STATS_API || "https://api.agar.su:6009";
+    const REFRESH_MS = window.STATS_REFRESH_MS || 300000;
+    const TOP_COLLAPSED = 10;
+    const profileUrl = window.statsProfileUrl;
+    const serverUrl = window.statsServerUrl;
+
+    const state = {
+      serverId: null,
+      serverList: [],
+      players: [],
+      clans: [],
+      playersExpanded: false,
+      clansExpanded: false,
+    };
+
+    function esc(s) {
+      return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    }
+
+    function rankClass(n) {
+      if (n === 1) return "rank rank-1";
+      if (n === 2) return "rank rank-2";
+      if (n === 3) return "rank rank-3";
+      return "rank";
+    }
+
+    function nickCell(row) {
+      const label = esc(row.nick);
+      return row.id
+        ? `<a href="${esc(profileUrl(row.id))}" class="nick-link">${label}</a>`
+        : label;
+    }
+
+    function clanCell(row) {
+      const label = esc(row.clan);
+      return row.id
+        ? `<a href="${esc(profileUrl(row.id))}" class="nick-link clan-tag">${label}</a>`
+        : `<span class="clan-tag">${label}</span>`;
+    }
+
+    function rankRowHtml(rank, nameHtml, score, points) {
+      return `<div class="rank-row">
+        <span class="${rankClass(rank)}">${rank}</span>
+        <span class="c-name">${nameHtml}</span>
+        <span class="c-score score">${score}</span>
+        <span class="c-pts pts">${points}</span>
+      </div>`;
+    }
+
+    function panelShell(kind, cols) {
+      return `<div class="rank-wrap"><div class="rank-panel" id="${kind}Panel">
+        <div class="rank-head"><div class="rank-row head">
+          <span>#</span><span>${cols[0]}</span><span>${cols[1]}</span><span>${cols[2]}</span>
+        </div></div>
+        <div class="rank-body"><div class="rank-rows" id="${kind}Rows"></div></div>
+      </div></div>`;
+    }
+
+    function ensurePanel(wrapId, kind, cols) {
+      const wrap = document.getElementById(wrapId);
+      if (wrap.querySelector(".rank-panel")) return;
+      wrap.innerHTML = panelShell(kind, cols);
+      if (state[kind + "Expanded"]) {
+        document.getElementById(kind + "Panel").classList.add("is-expanded");
+      }
+    }
+
+    function syncToggle(btn, expanded, total) {
+      if (!btn) return;
+      btn.hidden = total <= TOP_COLLAPSED;
+      btn.setAttribute("aria-expanded", expanded ? "true" : "false");
+      btn.title = expanded ? "Свернуть до топ-10" : "Показать весь список";
+      btn.setAttribute("aria-label", btn.title);
+    }
+
+    function paintLists() {
+      ensurePanel("playersWrap", "players", ["Ник", "Рекорд", "Очки"]);
+      ensurePanel("clansWrap", "clans", ["Клан", "Рекорд", "Очки"]);
+
+      document.getElementById("playersRows").innerHTML = state.players.length
+        ? state.players.map((r) => rankRowHtml(r.rank, nickCell(r), r.score, r.points)).join("")
+        : '<div class="loading" style="padding:20px 8px">Нет игроков</div>';
+
+      document.getElementById("clansRows").innerHTML = state.clans.length
+        ? state.clans.map((r) => rankRowHtml(r.rank, clanCell(r), r.score, r.points)).join("")
+        : '<div class="loading" style="padding:20px 8px">Нет кланов</div>';
+
+      ["players", "clans"].forEach((kind) => {
+        const panel = document.getElementById(kind + "Panel");
+        const items = state[kind];
+        const expanded = state[kind + "Expanded"];
+        panel.classList.toggle("is-expanded", expanded);
+        syncToggle(document.getElementById("toggle" + kind[0].toUpperCase() + kind.slice(1)), expanded, items.length);
+      });
+    }
+
+    function renderNav() {
+      const nav = document.getElementById("srvNav");
+      nav.innerHTML = state.serverList.map((s) => {
+        const active = s.id === state.serverId ? " active" : "";
+        const dot = s.ok ? "ok" : "bad";
+        return `<a href="${esc(serverUrl(s.id))}" class="srv-tab${active}" data-id="${esc(s.id)}">
+          <span class="dot ${dot}"></span>${esc(s.name)}</a>`;
+      }).join("");
+    }
+
+    function currentHashId() {
+      const h = (location.hash || "").replace(/^#/, "").trim();
+      return h || null;
+    }
+
+    async function loadServerList() {
+      const res = await fetch(API + "/api/servers", { cache: "no-store" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      state.serverList = data.servers || [];
+      if (!state.serverList.length) throw new Error("нет серверов");
+      if (!state.serverId || !state.serverList.some((s) => s.id === state.serverId)) {
+        state.serverId = state.serverList[0].id;
+      }
+      return data.updatedAt;
+    }
+
+    async function loadServer(id) {
+      const errEl = document.getElementById("error");
+      errEl.style.display = "none";
+      state.serverId = id;
+      state.playersExpanded = false;
+      state.clansExpanded = false;
+
+      try {
+        if (!state.serverList.length) await loadServerList();
+
+        const res = await fetch(API + "/api/server/" + encodeURIComponent(id), { cache: "no-store" });
+        if (!res.ok) throw new Error(res.status === 404 ? "Сервер не найден" : "HTTP " + res.status);
+        const data = await res.json();
+
+        document.getElementById("title").textContent = data.name || id;
+        document.title = (data.name || id) + " — Agar.su";
+        document.getElementById("updated").textContent = data.updatedAt
+          ? new Date(data.updatedAt).toLocaleString("ru-RU") : "—";
+
+        const pill = document.getElementById("statusPill");
+        const st = document.getElementById("statusText");
+        if (data.ok) {
+          pill.classList.remove("bad-pill");
+          st.textContent = "онлайн";
+        } else {
+          pill.classList.add("bad-pill");
+          st.textContent = data.error ? "ошибка" : "нет данных";
+        }
+
+        state.players = data.players || [];
+        state.clans = data.clans || [];
+        renderNav();
+        paintLists();
+
+        if (location.hash.replace(/^#/, "") !== id) {
+          history.replaceState(null, "", "#" + encodeURIComponent(id));
+        }
+      } catch (e) {
+        errEl.textContent = "Не удалось загрузить: " + e.message;
+        errEl.style.display = "block";
+      }
+    }
+
+    async function init() {
+      try {
+        await loadServerList();
+        const id = currentHashId() || state.serverList[0].id;
+        await loadServer(id);
+      } catch (e) {
+        const errEl = document.getElementById("error");
+        errEl.textContent = e.message;
+        errEl.style.display = "block";
+      }
+    }
+
+    document.getElementById("togglePlayers").addEventListener("click", () => {
+      state.playersExpanded = !state.playersExpanded;
+      document.getElementById("playersPanel").classList.toggle("is-expanded", state.playersExpanded);
+      syncToggle(document.getElementById("togglePlayers"), state.playersExpanded, state.players.length);
+      const body = document.querySelector("#playersPanel .rank-body");
+      if (body) body.scrollTop = 0;
+    });
+    document.getElementById("toggleClans").addEventListener("click", () => {
+      state.clansExpanded = !state.clansExpanded;
+      document.getElementById("clansPanel").classList.toggle("is-expanded", state.clansExpanded);
+      syncToggle(document.getElementById("toggleClans"), state.clansExpanded, state.clans.length);
+      const body = document.querySelector("#clansPanel .rank-body");
+      if (body) body.scrollTop = 0;
+    });
+
+    window.addEventListener("hashchange", () => {
+      const id = currentHashId();
+      if (id && id !== state.serverId) loadServer(id);
+    });
+
+    init();
+    setInterval(() => {
+      if (state.serverId) loadServer(state.serverId);
+    }, REFRESH_MS);
+  </script>
+</body>
+</html>
