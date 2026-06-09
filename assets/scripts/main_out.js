@@ -2234,6 +2234,31 @@ const youtubers = ["salruz", "morcov","sealand"];
 const url_youtubers = ["https://youtube.com/@SalRuzO", "https://www.youtube.com/@MORCCVA","https://www.youtube.com/@sealandv"];
 
 let passUsers = [];
+let passNickToId = new Map();
+const STATS_API = "https://api.agar.su:6009";
+const STATS_PAGE_URL = "https://agar.su/stats/";
+const STATS_PROFILE_BASE = "https://agar.su/stats/users/?id=";
+
+function passNickVariants(norm) {
+  if (!norm) return [];
+  const out = new Set([norm]);
+  const clean = norm.replace(/\[|\]/g, "").trim();
+  if (clean) {
+    out.add(clean);
+    out.add(`[${clean}]`);
+  }
+  return [...out];
+}
+
+function resolvePassId(name) {
+  const clean = String(name || "").replace(/<[^>]*>/g, "");
+  const norm = normalizeNick(clean);
+  for (const v of passNickVariants(norm)) {
+    if (passNickToId.has(v)) return passNickToId.get(v);
+  }
+  return null;
+}
+
 const ignoredPlayers = new Set();
 let activeDialog = null;
 const dialogs = {};
@@ -2250,9 +2275,20 @@ fetch('https://api.agar.su/pass.txt')
         return response.text();
     })
     .then(text => {
-        passUsers = text.split('\n')
-            .map(n => normalizeNick(n).toLowerCase())
-            .filter(n => n.length > 0);
+        passNickToId = new Map();
+        passUsers = [];
+        let lineNum = 0;
+        for (const line of text.split('\n')) {
+            const trimmed = line.trim();
+            if (!trimmed || trimmed.startsWith('#')) continue;
+            lineNum += 1;
+            const norm = normalizeNick(trimmed);
+            if (!norm) continue;
+            passUsers.push(norm);
+            for (const v of passNickVariants(norm)) {
+                if (!passNickToId.has(v)) passNickToId.set(v, String(lineNum));
+            }
+        }
     })
     .catch(err => console.error('Ошибка загрузки pass.txt:', err));
 
@@ -4049,13 +4085,20 @@ function createLeaderboardEntry(name, level, isMe, isSystemLine, b) {
   // Вставляем HTML-разметку, если она присутствует в имени
   nameSpan.innerHTML = name;
   
-  // Добавляем тултип и клик для турнирных игроков
-  if (!isSystemLine && isTournamentPlayer) {
-    nameSpan.title = isWinner ? "🏆 ПОБЕДИТЕЛЬ ТУРНИРА 🏆" : "Участник турнира";
-    nameSpan.style.cursor = "pointer";
-    nameSpan.onclick = function() {
-      window.open("https://agar.su/tournament", "_blank");
-    };
+  if (!isSystemLine && isTournamentPlayer && !isWinner) {
+    nameSpan.title = "Участник турнира";
+  }
+
+  if (!isSystemLine) {
+    const passId = resolvePassId(cleanName);
+    if (passId) {
+      nameSpan.title = "Статистика игрока";
+      nameSpan.style.cursor = "pointer";
+      nameSpan.onclick = function (e) {
+        e.stopPropagation();
+        window.open(STATS_PROFILE_BASE + encodeURIComponent(passId), "_blank");
+      };
+    }
   }
 
   // Контейнер для иконок (звезда + ютуб + спонсор + победитель)
@@ -5190,77 +5233,93 @@ if (showName && this.name && this.nameCache && this.size > 10 && !isInvisible2) 
 
 	// ДОБАВИТЬ В КОНЕЦ КОДА 2 (после всех существующих функций)
 
-// Функция для отображения ТОПа из уже загруженной статистики
-function refreshTopFromStats(stats) {
+function refreshGlobalRatingHome(data) {
     const container = document.getElementById('topswindow');
     if (!container) return;
-    
+
     container.innerHTML = '';
-    
-    const isClan = nick => /^\[[^\]]+\]/.test(nick.trim());
-    const players = stats.filter(p => !isClan(p.nick)).slice(0, 3);
-    const clans = stats.filter(p => isClan(p.nick)).slice(0, 3);
-    
-    function createRow(entry, index) {
+
+    const players = (data.players || []).slice(0, 3);
+    const clans = (data.clans || []).slice(0, 3);
+
+    function createRow(name, points, index) {
         const medal = index === 0 ? 'gold' : index === 1 ? 'silver' : 'bronze';
-        const normalizedNick = normalizeNick(entry.nick);
+        const normalizedNick = normalizeNick(String(name || '').replace(/<[^>]*>/g, ''));
         const skinCode = skinList?.[normalizedNick];
         const skinUrl = skinCode ? `https://api.agar.su/skins/${skinCode}.png` : 'https://api.agar.su/skins/4.png';
-        
+
         const row = document.createElement('div');
         row.className = 'rating-row ' + medal;
-        row.setAttribute('title', entry.time);
-        row.innerHTML = `<div>${index + 1}</div><div>${entry.nick}</div><div>${entry.score}</div><div class="avatar" style="background-image: url('${skinUrl}');"></div>`;
+        row.innerHTML = `<div>${index + 1}</div><div>${name || '—'}</div><div>${Number(points) || 0}</div><div class="avatar" style="background-image: url('${skinUrl}');"></div>`;
         return row;
     }
-    
+
     const playersTitle = document.createElement('div');
     playersTitle.className = 'section-title';
-    playersTitle.innerText = 'Top players';
+    playersTitle.innerText = 'Топ игроков';
     container.appendChild(playersTitle);
-    players.forEach((p, i) => container.appendChild(createRow(p, i)));
-    
-    const clansTitle = document.createElement('div');
-    clansTitle.className = 'section-title';
-    clansTitle.innerText = 'Top Clans';
-    container.appendChild(clansTitle);
-    clans.forEach((c, i) => container.appendChild(createRow(c, i)));
-}
-
-// Загружаем топ при открытии оверлея
-$(document).ready(function() {
-    let loadTopDataTimer = null;
-    let lastTopStatsKey = '';
-
-    function loadTopData() {
-        fetch(getGameServerApiBase(CONNECTION_URL) + "/checkStats")
-            .then(res => res.ok ? res.json() : Promise.reject())
-            .then(stats => {
-                const statsKey = JSON.stringify(stats);
-                if (statsKey === lastTopStatsKey) return;
-                lastTopStatsKey = statsKey;
-                refreshTopFromStats(stats);
-            })
-            .catch(e => console.error('Top load error:', e));
+    if (!players.length) {
+        const empty = document.createElement('div');
+        empty.className = 'rating-row';
+        empty.innerHTML = '<div></div><div>—</div><div>0</div><div class="avatar" style="background-image:url(\'https://api.agar.su/skins/4.png\');"></div>';
+        container.appendChild(empty);
+    } else {
+        players.forEach((p, i) => container.appendChild(createRow(p.nick, p.points, i)));
     }
 
-    function scheduleLoadTopData() {
-        clearTimeout(loadTopDataTimer);
-        loadTopDataTimer = setTimeout(() => {
-            loadTopDataTimer = null;
-            if ($("#overlays").is(":visible")) loadTopData();
+    const clansTitle = document.createElement('div');
+    clansTitle.className = 'section-title';
+    clansTitle.innerText = 'Топ кланов';
+    container.appendChild(clansTitle);
+    if (!clans.length) {
+        const empty = document.createElement('div');
+        empty.className = 'rating-row';
+        empty.innerHTML = '<div></div><div>—</div><div>0</div><div class="avatar" style="background-image:url(\'https://api.agar.su/skins/4.png\');"></div>';
+        container.appendChild(empty);
+    } else {
+        clans.forEach((c, i) => container.appendChild(createRow(c.clan, c.points, i)));
+    }
+}
+
+$(document).ready(function() {
+    let loadGlobalRatingTimer = null;
+    let lastGlobalRatingKey = '';
+
+    const ratingHome = document.getElementById('ratinghome');
+    if (ratingHome) {
+        ratingHome.addEventListener('click', () => window.open(STATS_PAGE_URL, '_blank'));
+    }
+
+    function loadGlobalRatingHome() {
+        fetch(STATS_API + '/api/rankings?limit=3', { cache: 'no-store' })
+            .then(res => res.ok ? res.json() : Promise.reject())
+            .then(data => {
+                const key = JSON.stringify({ p: data.players, c: data.clans, u: data.updatedAt });
+                if (key === lastGlobalRatingKey) return;
+                lastGlobalRatingKey = key;
+                refreshGlobalRatingHome(data);
+            })
+            .catch(e => console.error('Global rating load error:', e));
+    }
+
+    function scheduleLoadGlobalRatingHome() {
+        clearTimeout(loadGlobalRatingTimer);
+        loadGlobalRatingTimer = setTimeout(() => {
+            loadGlobalRatingTimer = null;
+            if ($("#overlays").is(":visible")) loadGlobalRatingHome();
         }, 300);
     }
 
     if ($("#overlays").is(":visible")) {
-        loadTopData();
+        loadGlobalRatingHome();
     }
 
-    // Отслеживаем открытие оверлея
-    const observer = new MutationObserver(() => {
-        scheduleLoadTopData();
-    });
+    const observer = new MutationObserver(() => scheduleLoadGlobalRatingHome());
     observer.observe($("#overlays")[0], { attributes: true, attributeFilter: ['style'] });
+
+    setInterval(() => {
+        if ($("#overlays").is(":visible")) loadGlobalRatingHome();
+    }, 300000);
 });
 	
 // === Покупки по нику (публичные списки api.agar.su) ===
