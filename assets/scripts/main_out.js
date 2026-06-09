@@ -5233,6 +5233,16 @@ if (showName && this.name && this.nameCache && this.size > 10 && !isInvisible2) 
 
 	// ДОБАВИТЬ В КОНЕЦ КОДА 2 (после всех существующих функций)
 
+function pointsLabel(n) {
+    n = Math.abs(Number(n) || 0);
+    const mod10 = n % 10;
+    const mod100 = n % 100;
+    if (mod100 >= 11 && mod100 <= 14) return n + " очков";
+    if (mod10 === 1) return n + " очко";
+    if (mod10 >= 2 && mod10 <= 4) return n + " очка";
+    return n + " очков";
+}
+
 function refreshGlobalRatingHome(data) {
     const container = document.getElementById('topswindow');
     if (!container) return;
@@ -5242,42 +5252,50 @@ function refreshGlobalRatingHome(data) {
     const players = (data.players || []).slice(0, 3);
     const clans = (data.clans || []).slice(0, 3);
 
-    function createRow(name, points, index) {
+    function createRow(name, points, index, passId) {
         const medal = index === 0 ? 'gold' : index === 1 ? 'silver' : 'bronze';
         const normalizedNick = normalizeNick(String(name || '').replace(/<[^>]*>/g, ''));
         const skinCode = skinList?.[normalizedNick];
         const skinUrl = skinCode ? `https://api.agar.su/skins/${skinCode}.png` : 'https://api.agar.su/skins/4.png';
 
+        const pts = Number(points) || 0;
         const row = document.createElement('div');
-        row.className = 'rating-row ' + medal;
-        row.innerHTML = `<div>${index + 1}</div><div>${name || '—'}</div><div>${Number(points) || 0}</div><div class="avatar" style="background-image: url('${skinUrl}');"></div>`;
+        row.className = 'rating-row ' + medal + (passId ? ' rating-row--link' : '');
+        row.innerHTML = `<div>${index + 1}</div><div>${name || '—'}</div><div class="rating-pts">${pointsLabel(pts)}</div><div class="avatar" style="background-image: url('${skinUrl}');"></div>`;
+        if (passId) {
+            row.title = 'Профиль';
+            row.addEventListener('click', (e) => {
+                e.stopPropagation();
+                window.open(STATS_PROFILE_BASE + encodeURIComponent(passId), '_blank');
+            });
+        }
         return row;
     }
 
     const playersTitle = document.createElement('div');
     playersTitle.className = 'section-title';
-    playersTitle.innerText = 'Топ игроков';
+    playersTitle.innerText = 'Top players';
     container.appendChild(playersTitle);
     if (!players.length) {
         const empty = document.createElement('div');
         empty.className = 'rating-row';
-        empty.innerHTML = '<div></div><div>—</div><div>0</div><div class="avatar" style="background-image:url(\'https://api.agar.su/skins/4.png\');"></div>';
+        empty.innerHTML = '<div></div><div>—</div><div class="rating-pts">0 очков</div><div class="avatar" style="background-image:url(\'https://api.agar.su/skins/4.png\');"></div>';
         container.appendChild(empty);
     } else {
-        players.forEach((p, i) => container.appendChild(createRow(p.nick, p.points, i)));
+        players.forEach((p, i) => container.appendChild(createRow(p.nick, p.points, i, p.id)));
     }
 
     const clansTitle = document.createElement('div');
     clansTitle.className = 'section-title';
-    clansTitle.innerText = 'Топ кланов';
+    clansTitle.innerText = 'Top Clans';
     container.appendChild(clansTitle);
     if (!clans.length) {
         const empty = document.createElement('div');
         empty.className = 'rating-row';
-        empty.innerHTML = '<div></div><div>—</div><div>0</div><div class="avatar" style="background-image:url(\'https://api.agar.su/skins/4.png\');"></div>';
+        empty.innerHTML = '<div></div><div>—</div><div class="rating-pts">0 очков</div><div class="avatar" style="background-image:url(\'https://api.agar.su/skins/4.png\');"></div>';
         container.appendChild(empty);
     } else {
-        clans.forEach((c, i) => container.appendChild(createRow(c.clan, c.points, i)));
+        clans.forEach((c, i) => container.appendChild(createRow(c.clan, c.points, i, c.id)));
     }
 }
 
@@ -5286,8 +5304,9 @@ $(document).ready(function() {
     let lastGlobalRatingKey = '';
 
     const ratingHome = document.getElementById('ratinghome');
-    if (ratingHome) {
-        ratingHome.addEventListener('click', () => window.open(STATS_PAGE_URL, '_blank'));
+    const ratingHeader = ratingHome && ratingHome.querySelector('.rating-header');
+    if (ratingHeader) {
+        ratingHeader.addEventListener('click', () => window.open(STATS_PAGE_URL, '_blank'));
     }
 
     function loadGlobalRatingHome() {
