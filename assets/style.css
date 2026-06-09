@@ -2547,3 +2547,5 @@ color: #54ff00;
 padding: 1px 3px 1px 3px;
 border-radius: 100%
 }
+
+.agario{background: url(/assets/photo/agario.png);width: 17px;height: 17px;background-size: cover;}
