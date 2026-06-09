@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Профиль — Agar.su</title>
-  <link rel="icon" href="https://agar.su/icon.svg" type="image/x-icon">
+  <title>Profile — Agar.su</title>
+  <link id="pageIcon" rel="icon" type="image/png" href="https://api.agar.su/skins/4.png">
   <style>
     :root {
       --bg: #0f1118; --panel: #1a1d28; --panel2: #222633; --text: #e8ecf4;
@@ -32,6 +32,9 @@
     th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
     th { color: var(--muted); font-size: 0.78rem; text-transform: uppercase; }
     .pts { color: var(--accent); font-weight: 700; }
+    .pts.rank-gold { color: gold; }
+    .pts.rank-silver { color: #a8a7a4; }
+    .pts.rank-bronze { color: #cb7821; }
     .muted { color: var(--muted); }
     .err {
       color: #ffcdd2; background: rgba(239,83,80,.12);
@@ -42,7 +45,16 @@
       width: 72px; height: 72px; border-radius: 50%; border: 2px solid var(--border);
       object-fit: cover; flex-shrink: 0; background: var(--panel2);
     }
-    .profile-nick { font-size: 1.4rem; font-weight: 700; color: var(--gold); }
+    .profile-nick { font-size: 1.4rem; font-weight: 700; color: var(--text); }
+    .profile-nick.rank-gold { color: gold; }
+    .profile-nick.rank-silver { color: #a8a7a4; }
+    .profile-nick.rank-bronze { color: #cb7821; }
+    .profile-nick-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .profile-trophy {
+      display: inline-flex; width: 26px; height: 26px; flex-shrink: 0;
+    }
+    .profile-trophy img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .profile-trophy:hover { filter: brightness(1.15); }
     .btn {
       padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border);
       background: var(--panel2); color: var(--text); cursor: pointer; font-size: 0.9rem;
@@ -96,26 +108,64 @@
       }
     }
 
+    /** Золото/серебро/бронза — только топ-3 по очкам глобального рейтинга */
+    function nickRankClass(stats) {
+      const r = Number(stats && stats.globalRank);
+      if (r < 1 || r > 3) return "";
+      if (r === 1) return "rank-gold";
+      if (r === 2) return "rank-silver";
+      if (r === 3) return "rank-bronze";
+      return "";
+    }
+
+    function vaasTrophyHtml(nick) {
+      if (String(nick || "").trim().toLowerCase() !== "vaas") return "";
+      return `<a href="https://agar.su/tournament/#1" class="profile-trophy" target="_blank" rel="noopener" title="Победитель турнира">` +
+        `<img src="https://agar.su/assets/photo/trophy.png" alt="Победитель турнира"></a>`;
+    }
+
+    function setPageMeta(stats, nick, avatarUrl) {
+      const rank = stats.globalRank;
+      const rankPart = rank ? "#" + rank + " " : "";
+      document.title = rankPart + nick + " — Profile · Agar.su";
+
+      const iconUrl = avatarUrl || window.DEFAULT_SKIN_URL || "https://api.agar.su/skins/4.png";
+      let link = document.getElementById("pageIcon");
+      if (!link) {
+        link = document.createElement("link");
+        link.id = "pageIcon";
+        link.rel = "icon";
+        link.type = "image/png";
+        document.head.appendChild(link);
+      }
+      if (link.href !== iconUrl) link.href = iconUrl;
+    }
+
     function formatGlobalRank(stats) {
       if (!stats.globalRank) return '<span class="muted">—</span>';
       const boardLabel = stats.rankBoard === "clans" ? "кланов" : "игроков";
       const total = stats.globalRankTotal ? ` <span class="muted">из ${stats.globalRankTotal} ${boardLabel}</span>` : "";
-      return `<span class="pts">${stats.globalRank}</span>${total}`;
+      const rankCls = nickRankClass(stats);
+      return `<span class="pts ${rankCls}">${stats.globalRank}</span>${total}`;
     }
 
     function render(stats) {
       const id = stats.id || stats.uid;
       const nick = stats.nick || (stats.nicks && stats.nicks[0]) || "—";
       const ava = resolveAvatar(stats) || resolveAvatar({ nick });
-      document.title = nick + " — Agar.su";
+      setPageMeta(stats, nick, ava);
 
       document.getElementById("head").innerHTML = "";
       const head = document.getElementById("head");
+      const rankCls = nickRankClass(stats);
       head.innerHTML = `
         <div class="profile-head">
           <img class="avatar" src="${esc(ava)}" alt="">
           <div>
-            <div class="profile-nick">${esc(nick)}</div>
+            <div class="profile-nick-row">
+              <div class="profile-nick ${rankCls}">${esc(nick)}</div>
+              ${vaasTrophyHtml(nick)}
+            </div>
           </div>
           <button class="btn" id="copyBtn" type="button">Копировать ссылку</button>
         </div>`;
