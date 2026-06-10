@@ -3356,7 +3356,7 @@ function shareStats(platform) {
 // ===== ИНИЦИАЛИЗАЦИЯ =====
 window.addEventListener('load', () => {
     updateShareText();
-    ['vk'm].forEach(p => {
+    ['vk'].forEach(p => {
         const btn = document.querySelector(`.${p}`);
         if (btn) btn.addEventListener('click', () => shareStats(p));
     });
