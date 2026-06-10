@@ -26,18 +26,17 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=new_releases" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="/assets/style.css" rel="stylesheet">
+    <link href="/assets/scripts/style.css?701" rel="stylesheet">
     <!-- Скрипты -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="/assets/scripts/jquery.js?0002"></script>
-    <script src="/assets/scripts/log.js?0002"></script>
-    <script src="/assets/scripts/vector.js?0002"></script>
-    <script src="/assets/scripts/main_out.js?005"></script>
-	<script src="/assets/scripts/shop.js?6" defer></script>
-	<script src="/assets/scripts/all.js" defer></script>
-	<script src="/assets/scripts/pass.js?004" defer></script>
-	<script src="/assets/scripts/skins.js?005" defer></script>
-	<script src="/assets/scripts/rating.js" defer></script>
+    <script src="/assets/scripts/jquery.js?0.0.2"></script>
+    <script src="/assets/scripts/log.js?0.0.2"></script>
+    <script src="/assets/scripts/vector.js?0.0.2"></script>
+    <script src="/assets/scripts/main_out.js?701"></script>
+	<script src="/assets/scripts/shop.js?26" defer></script>
+	<script src="/assets/scripts/all.js?0.0.2" defer></script>
+	<script src="/assets/scripts/pass.js?0.0.4" defer></script>
+	<script src="/assets/scripts/skins.js?1.0.4" defer></script>
+	<script src="/assets/scripts/rating.js?0.0.4" defer></script>
 		<!-- Yandex.RTB -->
 <script>window.yaContextCb=window.yaContextCb||[]</script>
 <script src="https://yandex.ru/ads/system/context.js" async></script>
@@ -72,7 +71,7 @@ _tmr.push({id: "3761618", type: "pageView", start: (new Date()).getTime()});
 <body>
   <div id="overlays" class="overlays">
     <div class="social"><a href="https://t.me/agarsu" target="_blank" class="tg"><i style="background: radial-gradient(white 9px, #1e90ff00 50%);border-radius: 50%;" class="fab fa-telegram"></i></a><a href="https://vk.com/club233723574" target="_blank" class="soc"><i class="fab fa-vk"></i></a><a href="#" class="soc"><i style="cursor: not-allowed;" class="fab fa-discord"></i></a></div>
-    <div class="add-yandex" id="yandex-rating-ad"><div id="yandex_rtb_R-A-15699059-13"></div></div>
+    <div class="add-yandex" id="ratinghome"><div id="yandex_rtb_R-A-15699059-13"></div></div>
 	  <div class="center">
       <div class="sidebar">
         <div class="menu-item" onclick="showContent('shop')" style="
@@ -173,9 +172,10 @@ _tmr.push({id: "3761618", type: "pageView", start: (new Date()).getTime()});
           </div>
         </div>
         <button type="submit" id="buyButton" class="shop-buy-btn" form="paymentForm" disabled>КУПИТЬ</button>
-<p class="shop-support">
-          Поддержка: <a href="mailto:ikometai@yandex.ru">ikometai@ya.ru</a><br>
-          ИНН: 503830093674 Дараселиа Н.И.
+        <p class="shop-support">
+          Поддержка: <a href="https://t.me/nikkkkkysha" target="_blank">@nikkkkkysha</a>
+          <span>·</span>
+          <a href="mailto:ikometai@yandex.ru">ikometai@ya.ru</a>
         </p>
       </aside>
     </div>
@@ -383,9 +383,8 @@ _tmr.push({id: "3761618", type: "pageView", start: (new Date()).getTime()});
           </div>
 		  <div class="servers">
 <ul class="gamemode">
-    <li data-ip="ffa.agar.su" id="ffa"><span class="fi fi-ru"></span>FFA - 𝙈𝙤𝙨𝙘𝙤𝙬<i class="fas fa-eye"></i><span class="online-count">10</span><i class="fas fa-user"></i><span class="online-count">40/200</span></li>
-	<li data-ip="ffa.agar.su:6003" id="ffa1"><span class="agario"></span>FFA - Agar.io<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/200</span></li>
-	<li data-ip="ffa.agar.su:6002" id="ms"><span class="fi fi-ru"></span>MegaSplit<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/120</span></li>
+    <li data-ip="ffa.agar.su:6007" id="ffa"><span class="fi fi-ru"></span>FFA - 𝙈𝙤𝙨𝙘𝙤𝙬<i class="fas fa-eye"></i><span class="online-count">10</span><i class="fas fa-user"></i><span class="online-count">40/500</span></li>
+    <li data-ip="ffa.agar.su:6002" id="ms"><span class="fi fi-ru"></span>MegaSplit<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/120</span></li>
 	<li data-ip="ffa.agar.su:6004" id="pvp1"><span class="fi fi-ru"></span>pvp1: 1x1 ffa 1k<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/50</span></li>
 	<li data-ip="ffa.agar.su:6005" id="pvp2"><span class="fi fi-ru"></span>pvp2: 2x2 ms 1k<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/50</span></li>
 	<li data-ip="ffa.agar.su:6006" id="tournament"><span class="fi fi-ru"></span>Tournament<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/50</span></li>
@@ -421,47 +420,27 @@ _tmr.push({id: "3761618", type: "pageView", start: (new Date()).getTime()});
   </div>
   <div class="list-wrap" id="nickWrap"><ul id="myNickList" class="list"></ul></div>
   <div class="list-wrap" id="clanWrap" style="display:none;"><ul id="myClanList" class="list"></ul></div>
+  <div id="restoreProgressBlock" class="restore-progress-block">
+    <button type="button" id="restoreToggle" class="restore-toggle" aria-expanded="false">
+      <i class="fas fa-link"></i> Восстановить прогресс с Google / Telegram
+    </button>
+    <div id="restorePanel" class="restore-panel" hidden>
+      <p class="restore-note">Если вы играли через Google или Telegram — подтвердите старый аккаунт. Ваш прежний ID, опыт и ники останутся, вход будет через VK. Для Google и Telegram может понадобиться VPN.</p>
+      <div class="restore-actions">
+        <div id="restoreGoogleContainer" class="restore-google-wrap"></div>
+        <button type="button" class="auth-telegram-btn restore-telegram-btn" id="restoreTelegramBtn">
+          <i class="fab fa-telegram"></i> Восстановить через Telegram
+        </button>
+      </div>
+      <div id="restoreStatus" class="restore-status" role="status" hidden></div>
+    </div>
+  </div>
 </div>
 <div id="authlog">
   <div id="vkAuthContainer" class="auth-block auth-block-vk">
     <div id="VkIdSdkOneTap"></div>
   </div>
-
-  <div class="auth-divider"><span>или</span></div>
-
-  <div class="auth-vpn-section">
-    <p class="auth-vpn-note">Google и Telegram — нужен VPN</p>
-    <div class="auth-alt-row">
-      <div class="auth-alt-item">
-        <div id="g_id_onload"
-             data-client_id="157257230972-4vh698jtf46c76sc7607oe1k9tr782je.apps.googleusercontent.com"
-             data-auto_prompt="false"
-             data-callback="onGoogleAuth"></div>
-        <div class="g_id_signin" id="googleLoginButton"
-             data-type="standard"
-             data-size="medium"
-             data-theme="outline"
-             data-text="signin_with"
-             data-shape="rectangular"></div>
-      </div>
-      <div class="auth-alt-item">
-        <button type="button" class="auth-telegram-btn" id="telegramLoginButton" onclick="openTelegramAuth()">
-          <i class="fab fa-telegram"></i> Telegram
-        </button>
-      </div>
-    </div>
-  </div>
 </div>
-
-<script>
-function openTelegramAuth() {
-  window.open(
-    "https://agar.su/telegram/",
-    "tgAuth",
-    "width=400,height=200"
-  );
-}
-</script>
 <script src="https://unpkg.com/@vkid/sdk@2/dist-sdk/umd/index.js"></script>
 <script src="/assets/scripts/vk-auth.js?6"></script>
 
@@ -470,9 +449,57 @@ function openTelegramAuth() {
       </div>
     </div>
 	  <div class="rating-home" id="ratinghome">
-    <div class="rating-header" title="Глобальная статистика">Статистика</div>
+
+    <div class="rating-header">Статистика</div>
+
     <div class="rating-content" id="topswindow">
-        <p class="muted" style="margin:0;color:#8b93a7;font-size:13px;">Загрузка…</p>
+
+        <div class="section-title">Top players</div>
+
+        <div class="rating-row gold" title="19:34 19.02">
+            <div>1</div>
+            <div>-</div>
+            <div>-</div>
+            <div class="avatar" style="background-image: url('https://api.agar.su/skins/PPFtwqH.png');"></div>
+        </div>
+
+        <div class="rating-row silver" title="0:53 25.01">
+            <div>2</div>
+            <div>-</div>
+            <div>-</div>
+            <div class="avatar" style="background-image: url('https://api.agar.su/skins/PPFtwqH.png');"></div>
+        </div>
+
+        <div class="rating-row bronze" title="14:33 16.12">
+            <div>3</div>
+            <div>-</div>
+            <div>-</div>
+            <div class="avatar" style="background-image: url('https://api.agar.su/skins/PPFtwqH.png');"></div>
+        </div>
+
+        <div class="section-title">Top Clans</div>
+
+        <div class="rating-row gold" title="0:19 08.02">
+            <div>1</div>
+            <div>-</div>
+            <div>-</div>
+            <div class="avatar" style="background-image: url('https://api.agar.su/skins/PPFtwqH.png');"></div>
+        </div>
+
+        <div class="rating-row silver" title="0:19 08.02">
+            <div>2</div>
+            <div>-</div>
+            <div>-</div>
+            <div class="avatar" style="background-image: url('https://api.agar.su/skins/PPFtwqH.png');"></div>
+        </div>
+
+        <div class="rating-row bronze" title="0:19 08.02">
+            <div>3</div>
+            <div>-</div>
+            <div>-</div>
+            <div class="avatar" style="background-image: url('https://api.agar.su/skins/PPFtwqH.png');"></div>
+        </div>
+
     </div>
 </div>
 	  <footer class="footer"><a href="privacy.html">Политика конфиденциальности</a> ·<a href="rules.html">Правила сайта</a>· <a href="offer.html">Публичная оферта</a></footer>
@@ -485,7 +512,38 @@ function openTelegramAuth() {
 
 
 	
+  <div id="canvas-stage" class="canvas-stage">
   <canvas id="canvas"></canvas>
+  <div id="connect-verify-overlay" style="display:none;">
+    <div id="connect-verify">
+      <i id="connect-verify-icon" class="fas fa-shield-halved connect-verify-icon" aria-hidden="true"></i>
+      <div id="connect-verify-title">Проверка безопасности</div>
+      <div id="connect-verify-text">Подождите, идёт подключение к серверу…</div>
+      <div class="connect-verify-transfer" id="connect-verify-transfer">
+        <div class="connect-verify-node connect-verify-pc">
+          <i class="fas fa-desktop"></i>
+          <span>ПК</span>
+        </div>
+        <div class="connect-verify-link">
+          <div class="connect-verify-packets" aria-hidden="true">
+            <span class="connect-packet connect-packet-out"></span>
+            <span class="connect-packet connect-packet-in"></span>
+            <span class="connect-packet connect-packet-out connect-packet-delay"></span>
+            <span class="connect-packet connect-packet-in connect-packet-delay"></span>
+          </div>
+          <div class="connect-verify-data-stream" id="connect-verify-data-stream">sha256("…") → …</div>
+        </div>
+        <div class="connect-verify-node connect-verify-server">
+          <i class="fas fa-server"></i>
+          <span>Сервер</span>
+        </div>
+      </div>
+      <div id="connect-verify-reconnect" hidden>
+        <button type="button" id="connect-verify-reconnect-btn" class="connect-verify-reconnect-btn">Переподключиться</button>
+      </div>
+    </div>
+  </div>
+  </div>
   <div class="noscroll chatX_window" id="chatX_window">
     <div class="chatX_top" id="chatX_top">
         <div onclick="switchToDialog(null);" class="chatX_top_avatar"><i class="fa fa-globe"></i></div>
@@ -529,42 +587,6 @@ function openTelegramAuth() {
         <div class="ban-banner-title">Доступ заблокирован</div>
         <div id="ban-banner-message"></div>
       </div>
-    </div>
-  </div>
-  <div id="connect-verify-overlay" style="display:none;">
-    <div id="connect-verify">
-      <i class="fas fa-shield-halved connect-verify-icon"></i>
-      <div id="connect-verify-title">Проверка безопасности</div>
-      <div id="connect-verify-text">Подождите, идёт подключение к серверу…</div>
-      <div class="connect-verify-transfer" id="connect-verify-transfer" hidden>
-        <div class="connect-verify-node connect-verify-pc">
-          <i class="fas fa-desktop"></i>
-          <span>ПК</span>
-        </div>
-        <div class="connect-verify-link">
-          <div class="connect-verify-packets" aria-hidden="true">
-            <span class="connect-packet connect-packet-out"></span>
-            <span class="connect-packet connect-packet-in"></span>
-            <span class="connect-packet connect-packet-out connect-packet-delay"></span>
-            <span class="connect-packet connect-packet-in connect-packet-delay"></span>
-          </div>
-          <div class="connect-verify-data-stream" id="connect-verify-data-stream">—</div>
-        </div>
-        <div class="connect-verify-node connect-verify-server">
-          <i class="fas fa-server"></i>
-          <span>Сервер</span>
-        </div>
-      </div>
-      <div class="connect-verify-bar"><div id="connect-verify-progress"></div></div>
-    </div>
-  </div>
-  <div id="reconnect-panel" class="reconnect-panel" style="display:none;" role="dialog" aria-labelledby="reconnect-panel-title">
-    <div class="reconnect-panel-inner">
-      <i class="fas fa-plug reconnect-panel-icon" aria-hidden="true"></i>
-      <div class="reconnect-panel-text">
-        <div id="reconnect-panel-message">Перезагрузите станицу.</div>
-      </div>
-      <button type="button" id="reconnect-panel-btn" class="reconnect-panel-btn">Переподключиться</button>
     </div>
   </div>
   <div id="map" class="map">
