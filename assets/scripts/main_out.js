@@ -192,6 +192,50 @@ async function updateOnlineCount() {
 	
 const forbiddenChars = ["﷽", "𒐫", "𒈙", "⸻", "꧅", "ဪ", "௵", "௸", "‱", "ㅤ", "⁣","‎ ", "​", "‌", "‍", "‎", "‏", " ", " ", " ", " ", " "," ", " ", " ", " ", " ", " ", "​", "﻿", "", " ","⠀","ﾠ","卐","卍"]; //  ЗАПРЕЩЕНО!
 
+const PUBLIC_LIST_FETCH_OPTS = { cache: 'no-store', credentials: 'same-origin' };
+
+function publicListUrl(file) {
+    const name = String(file || '').replace(/^\//, '');
+    return '/' + name + '?v=' + Date.now();
+}
+
+function fetchPublicListText(file) {
+    return fetch(publicListUrl(file), PUBLIC_LIST_FETCH_OPTS).then((response) => {
+        if (!response.ok) throw new Error(file + ': ' + response.status);
+        return response.text();
+    });
+}
+
+window.fetchPublicListText = fetchPublicListText;
+window.publicListUrl = publicListUrl;
+
+let badWordsSet = null;
+
+fetch(publicListUrl('word.txt'))
+    .then(response => response.text())
+    .then(text => {
+        const words = text.split('\n').map(word => word.trim().toLowerCase()).filter(Boolean);
+        badWordsSet = new Set(words);
+    })
+    .catch(error => console.error('Ошибка загрузки списка матерных слов:', error));
+
+function censorMessage(message) {
+    if (!badWordsSet) return message;
+
+    const words = message.split(' ').filter(word => word !== '');
+    let censoredMessage = '';
+    for (let i = 0; i < words.length; i++) {
+        const word = words[i];
+        if (badWordsSet.has(word.toLowerCase())) {
+            censoredMessage += '***';
+        } else {
+            censoredMessage += word;
+        }
+        if (i < words.length - 1) censoredMessage += ' ';
+    }
+    return censoredMessage;
+}
+
 wHandle.startGame = function () {
     let nickInput = document.getElementById('nick').value.trim();
     let passInput = document.getElementById('pass').value;
@@ -235,7 +279,7 @@ wHandle.startGame = function () {
 // host — для wss, api — HTTPS того же игрового сервера (клиент может быть на GitHub)
 const GAME_SERVERS = {
 	    "ffa":        { host: "ffa.agar.su",           api: "https://ffa.agar.su" },
-        "ffa1":        { host: "ffa.agar.su:6003",     api: "https://ffa.agar.su:6003" },
+        "ffa1":        { host: "ffa.agar.su:6007",           api: "https://ffa.agar.su:6007" },
         "ms":         { host: "ffa.agar.su:6002",      api: "https://ffa.agar.su:6002" },
         "pvp1":       { host: "ffa.agar.su:6004",      api: "https://ffa.agar.su:6004" },
         "pvp2":       { host: "ffa.agar.su:6005",      api: "https://ffa.agar.su:6005" },
@@ -325,6 +369,8 @@ function initServers() {
 	
 						
 let skinList = {}; // Глобальный объект для скинов
+let passUsers = [];
+let nickPerksLists = null;
 
 const SKIN_FALLBACK_URL = 'https://api.agar.su/skins/4.png';
 const skinImageCache = new Map();
@@ -391,35 +437,76 @@ function normalizeNick(nick) {
     }
 }
 
-// Функция загрузки skinList.txt с нормализацией
+function parseSkinListText(data) {
+    const next = {};
+    String(data || '').split('\n').forEach((line) => {
+        const trimmed = line.trim();
+        if (!trimmed) return;
+        const idx = trimmed.indexOf(':');
+        if (idx < 0) return;
+        const name = normalizeNick(trimmed.slice(0, idx).trim());
+        const id = trimmed.slice(idx + 1).trim();
+        if (name && id) next[name] = id;
+    });
+    return next;
+}
+
+function parsePassListText(data) {
+    return String(data || '')
+        .split('\n')
+        .map((n) => normalizeNick(n.trim()))
+        .filter((n) => n.length > 0);
+}
+
+function notifyPublicListsUpdated() {
+    try {
+        window.dispatchEvent(new Event('agar-lists-updated'));
+    } catch (e) {}
+    const nick = (document.getElementById('nick')?.value || '').trim();
+    if (typeof window.refreshPassForCurrentNick === 'function') {
+        window.refreshPassForCurrentNick(true);
+    }
+    if (nick && typeof window.reloadMenuSkinForNick === 'function') {
+        window.reloadMenuSkinForNick(nick);
+    }
+}
+
 function fetchSkinList() {
-    fetch('https://api.agar.su/skinlist.txt')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Ошибка сети: ' + response.status);
-            }
-            return response.text();
+    return fetchPublicListText('skinlist.txt')
+        .then((data) => {
+            skinList = parseSkinListText(data);
+            notifyPublicListsUpdated();
         })
-        .then(data => {
-            skinList = {}; // Очищаем предыдущий список скинов
-            data.split('\n').forEach(line => {
-                let [name, id] = line.split(':');
-                if (name && id) {
-                    name = normalizeNick(name);
-                    skinList[name] = id.trim();
-                }
-            });
-        })
-        .catch(error => {
-            console.error('Ошибка загрузки skinList.txt:', error);
+        .catch((error) => {
+            console.error('Ошибка загрузки skinlist.txt:', error);
         });
 }
 
-// Первоначальная загрузка
-fetchSkinList();
+function fetchPassUsers() {
+    return fetchPublicListText('pass.txt')
+        .then((text) => {
+            passUsers = parsePassListText(text);
+            notifyPublicListsUpdated();
+        })
+        .catch((err) => console.error('Ошибка загрузки pass.txt:', err));
+}
 
-// Периодическая проверка изменений каждые 5 минут
-setInterval(fetchSkinList, 300000);
+function refreshPublicLists() {
+    nickPerksLists = null;
+    if (typeof window.invalidateSkinsGallery === 'function') {
+        window.invalidateSkinsGallery();
+    }
+    return Promise.all([fetchSkinList(), fetchPassUsers()]);
+}
+
+window.refreshPublicLists = refreshPublicLists;
+
+refreshPublicLists();
+setInterval(refreshPublicLists, 120000);
+
+window.addEventListener('pageshow', (event) => {
+    if (event.persisted) refreshPublicLists();
+});
 
 
     var
@@ -2189,42 +2276,6 @@ function addChat(view, offset) {
 
 
 
-let badWordsSet; // Используем Set вместо массива
-
-fetch('/word.txt')
-    .then(response => response.text())
-    .then(text => {
-        const words = text.split('\n').map(word => word.trim().toLowerCase());
-        badWordsSet = new Set(words); // Создаем Set из массива
-    })
-    .catch(error => console.error('Ошибка загрузки списка матерных слов:', error));
-
-
-function censorMessage(message) {
-    if (!badWordsSet) {
-        console.warn("Список матерных слов не загружен. Антимат не работает.");
-        return message;
-    }
-
-    const words = message.split(' ').filter(word => word !== "");
-    let censoredMessage = "";  // Собираем результат в строку
-    for (let i = 0; i < words.length; i++) {
-        const word = words[i];
-        const lowerCaseWord = word.toLowerCase();
-
-        if (badWordsSet.has(lowerCaseWord)) {
-            censoredMessage += "***";
-        } else {
-            censoredMessage += word;
-        }
-
-        if (i < words.length - 1) {
-            censoredMessage += " "; // Добавляем пробел, если это не последнее слово
-        }
-    }
-    return censoredMessage;
-}
-
 let currentUserRole = 'user';
 const admins = ["нико","^iStack","banshee"];
 const moderator = ["rizwer","pulik","могучий жидяра","salruz","morcov"];
@@ -2233,64 +2284,12 @@ const mod = ["☼k☼"];
 const youtubers = ["salruz", "morcov","sealand"];
 const url_youtubers = ["https://youtube.com/@SalRuzO", "https://www.youtube.com/@MORCCVA","https://www.youtube.com/@sealandv"];
 
-let passUsers = [];
-let passNickToId = new Map();
-const STATS_API = "https://api.agar.su:6009";
-const STATS_PAGE_URL = "https://agar.su/stats/";
-const STATS_PROFILE_BASE = "https://agar.su/stats/users/?id=";
-
-function passNickVariants(norm) {
-  if (!norm) return [];
-  const out = new Set([norm]);
-  const clean = norm.replace(/\[|\]/g, "").trim();
-  if (clean) {
-    out.add(clean);
-    out.add(`[${clean}]`);
-  }
-  return [...out];
-}
-
-function resolvePassId(name) {
-  const clean = String(name || "").replace(/<[^>]*>/g, "");
-  const norm = normalizeNick(clean);
-  for (const v of passNickVariants(norm)) {
-    if (passNickToId.has(v)) return passNickToId.get(v);
-  }
-  return null;
-}
-
 const ignoredPlayers = new Set();
 let activeDialog = null;
 const dialogs = {};
 const dialogMessages = {};
 const maxGlobalMessages = 50; // для глобального чата
 const maxDialogMessages = 100; // для ЛС
-
-// ==========================
-// Загрузка pass.txt
-// ==========================
-fetch('https://api.agar.su/pass.txt')
-    .then(response => {
-        if (!response.ok) throw new Error('Ошибка сети: ' + response.status);
-        return response.text();
-    })
-    .then(text => {
-        passNickToId = new Map();
-        passUsers = [];
-        let lineNum = 0;
-        for (const line of text.split('\n')) {
-            const trimmed = line.trim();
-            if (!trimmed || trimmed.startsWith('#')) continue;
-            lineNum += 1;
-            const norm = normalizeNick(trimmed);
-            if (!norm) continue;
-            passUsers.push(norm);
-            for (const v of passNickVariants(norm)) {
-                if (!passNickToId.has(v)) passNickToId.set(v, String(lineNum));
-            }
-        }
-    })
-    .catch(err => console.error('Ошибка загрузки pass.txt:', err));
 
 // ==========================
 // Подсветка упоминаний
@@ -4085,20 +4084,13 @@ function createLeaderboardEntry(name, level, isMe, isSystemLine, b) {
   // Вставляем HTML-разметку, если она присутствует в имени
   nameSpan.innerHTML = name;
   
-  if (!isSystemLine && isTournamentPlayer && !isWinner) {
-    nameSpan.title = "Участник турнира";
-  }
-
-  if (!isSystemLine) {
-    const passId = resolvePassId(cleanName);
-    if (passId) {
-      nameSpan.title = "Статистика игрока";
-      nameSpan.style.cursor = "pointer";
-      nameSpan.onclick = function (e) {
-        e.stopPropagation();
-        window.open(STATS_PROFILE_BASE + encodeURIComponent(passId), "_blank");
-      };
-    }
+  // Добавляем тултип и клик для турнирных игроков
+  if (!isSystemLine && isTournamentPlayer) {
+    nameSpan.title = isWinner ? "🏆 ПОБЕДИТЕЛЬ ТУРНИРА 🏆" : "Участник турнира";
+    nameSpan.style.cursor = "pointer";
+    nameSpan.onclick = function() {
+      window.open("https://agar.su/tournament", "_blank");
+    };
   }
 
   // Контейнер для иконок (звезда + ютуб + спонсор + победитель)
@@ -5233,120 +5225,84 @@ if (showName && this.name && this.nameCache && this.size > 10 && !isInvisible2) 
 
 	// ДОБАВИТЬ В КОНЕЦ КОДА 2 (после всех существующих функций)
 
-function pointsLabel(n) {
-    n = Math.abs(Number(n) || 0);
-    const mod10 = n % 10;
-    const mod100 = n % 100;
-    if (mod100 >= 11 && mod100 <= 14) return n + " очков";
-    if (mod10 === 1) return n + " очко";
-    if (mod10 >= 2 && mod10 <= 4) return n + " очка";
-    return n + " очков";
-}
-
-function refreshGlobalRatingHome(data) {
+// Функция для отображения ТОПа из уже загруженной статистики
+function refreshTopFromStats(stats) {
     const container = document.getElementById('topswindow');
     if (!container) return;
-
+    
     container.innerHTML = '';
-
-    const players = (data.players || []).slice(0, 3);
-    const clans = (data.clans || []).slice(0, 3);
-
-    function createRow(name, points, index, passId) {
+    
+    const isClan = nick => /^\[[^\]]+\]/.test(nick.trim());
+    const players = stats.filter(p => !isClan(p.nick)).slice(0, 3);
+    const clans = stats.filter(p => isClan(p.nick)).slice(0, 3);
+    
+    function createRow(entry, index) {
         const medal = index === 0 ? 'gold' : index === 1 ? 'silver' : 'bronze';
-        const normalizedNick = normalizeNick(String(name || '').replace(/<[^>]*>/g, ''));
+        const normalizedNick = normalizeNick(entry.nick);
         const skinCode = skinList?.[normalizedNick];
         const skinUrl = skinCode ? `https://api.agar.su/skins/${skinCode}.png` : 'https://api.agar.su/skins/4.png';
-
-        const pts = Number(points) || 0;
+        
         const row = document.createElement('div');
-        row.className = 'rating-row ' + medal + (passId ? ' rating-row--link' : '');
-        row.innerHTML = `<div>${index + 1}</div><div>${name || '—'}</div><div class="rating-pts">${pointsLabel(pts)}</div><div class="avatar" style="background-image: url('${skinUrl}');"></div>`;
-        if (passId) {
-            row.title = 'Профиль';
-            row.addEventListener('click', (e) => {
-                e.stopPropagation();
-                window.open(STATS_PROFILE_BASE + encodeURIComponent(passId), '_blank');
-            });
-        }
+        row.className = 'rating-row ' + medal;
+        row.setAttribute('title', entry.time);
+        row.innerHTML = `<div>${index + 1}</div><div>${entry.nick}</div><div>${entry.score}</div><div class="avatar" style="background-image: url('${skinUrl}');"></div>`;
         return row;
     }
-
+    
     const playersTitle = document.createElement('div');
     playersTitle.className = 'section-title';
     playersTitle.innerText = 'Top players';
     container.appendChild(playersTitle);
-    if (!players.length) {
-        const empty = document.createElement('div');
-        empty.className = 'rating-row';
-        empty.innerHTML = '<div></div><div>—</div><div class="rating-pts">0 очков</div><div class="avatar" style="background-image:url(\'https://api.agar.su/skins/4.png\');"></div>';
-        container.appendChild(empty);
-    } else {
-        players.forEach((p, i) => container.appendChild(createRow(p.nick, p.points, i, p.id)));
-    }
-
+    players.forEach((p, i) => container.appendChild(createRow(p, i)));
+    
     const clansTitle = document.createElement('div');
     clansTitle.className = 'section-title';
     clansTitle.innerText = 'Top Clans';
     container.appendChild(clansTitle);
-    if (!clans.length) {
-        const empty = document.createElement('div');
-        empty.className = 'rating-row';
-        empty.innerHTML = '<div></div><div>—</div><div class="rating-pts">0 очков</div><div class="avatar" style="background-image:url(\'https://api.agar.su/skins/4.png\');"></div>';
-        container.appendChild(empty);
-    } else {
-        clans.forEach((c, i) => container.appendChild(createRow(c.clan, c.points, i, c.id)));
-    }
+    clans.forEach((c, i) => container.appendChild(createRow(c, i)));
 }
 
+// Загружаем топ при открытии оверлея
 $(document).ready(function() {
-    let loadGlobalRatingTimer = null;
-    let lastGlobalRatingKey = '';
+    let loadTopDataTimer = null;
+    let lastTopStatsKey = '';
 
-    const ratingHome = document.getElementById('ratinghome');
-    const ratingHeader = ratingHome && ratingHome.querySelector('.rating-header');
-    if (ratingHeader) {
-        ratingHeader.addEventListener('click', () => window.open(STATS_PAGE_URL, '_blank'));
-    }
-
-    function loadGlobalRatingHome() {
-        fetch(STATS_API + '/api/rankings?limit=3', { cache: 'no-store' })
+    function loadTopData() {
+        fetch(getGameServerApiBase(CONNECTION_URL) + "/checkStats")
             .then(res => res.ok ? res.json() : Promise.reject())
-            .then(data => {
-                const key = JSON.stringify({ p: data.players, c: data.clans, u: data.updatedAt });
-                if (key === lastGlobalRatingKey) return;
-                lastGlobalRatingKey = key;
-                refreshGlobalRatingHome(data);
+            .then(stats => {
+                const statsKey = JSON.stringify(stats);
+                if (statsKey === lastTopStatsKey) return;
+                lastTopStatsKey = statsKey;
+                refreshTopFromStats(stats);
             })
-            .catch(e => console.error('Global rating load error:', e));
+            .catch(e => console.error('Top load error:', e));
     }
 
-    function scheduleLoadGlobalRatingHome() {
-        clearTimeout(loadGlobalRatingTimer);
-        loadGlobalRatingTimer = setTimeout(() => {
-            loadGlobalRatingTimer = null;
-            if ($("#overlays").is(":visible")) loadGlobalRatingHome();
+    function scheduleLoadTopData() {
+        clearTimeout(loadTopDataTimer);
+        loadTopDataTimer = setTimeout(() => {
+            loadTopDataTimer = null;
+            if ($("#overlays").is(":visible")) loadTopData();
         }, 300);
     }
 
     if ($("#overlays").is(":visible")) {
-        loadGlobalRatingHome();
+        loadTopData();
     }
 
-    const observer = new MutationObserver(() => scheduleLoadGlobalRatingHome());
+    // Отслеживаем открытие оверлея
+    const observer = new MutationObserver(() => {
+        scheduleLoadTopData();
+    });
     observer.observe($("#overlays")[0], { attributes: true, attributeFilter: ['style'] });
-
-    setInterval(() => {
-        if ($("#overlays").is(":visible")) loadGlobalRatingHome();
-    }, 300000);
 });
 	
 // === Покупки по нику (публичные списки api.agar.su) ===
 const SHOP_API = 'https://api.agar.su';
-let nickPerksLists = null;
 
-async function fetchNickPerksLists() {
-  if (nickPerksLists) return nickPerksLists;
+async function fetchNickPerksLists(force) {
+  if (!force && nickPerksLists) return nickPerksLists;
   const toSet = (text) =>
     new Set(
       String(text || '')
@@ -5370,10 +5326,10 @@ async function fetchNickPerksLists() {
   };
   try {
     const [passR, invR, rotR, skinR] = await Promise.all([
-      fetch(`${SHOP_API}/pass.txt`),
-      fetch(`${SHOP_API}/invisible.txt`),
-      fetch(`${SHOP_API}/rotation.txt`),
-      fetch(`${SHOP_API}/skinlist.txt`),
+      fetch(publicListUrl('pass.txt'), PUBLIC_LIST_FETCH_OPTS),
+      fetch(publicListUrl('invisible.txt'), PUBLIC_LIST_FETCH_OPTS),
+      fetch(publicListUrl('rotation.txt'), PUBLIC_LIST_FETCH_OPTS),
+      fetch(publicListUrl('skinlist.txt'), PUBLIC_LIST_FETCH_OPTS),
     ]);
     nickPerksLists = {
       pass: toSet(passR.ok ? await passR.text() : ''),
@@ -5546,8 +5502,12 @@ function renderCard(list, fullNick, perks) {
     document.getElementById('nick').value = nickPart;
     document.getElementById('pass').value = pass;
     setCookie('userPass', pass, 7);
-    document.getElementById('pass').style.display = pass ? 'block' : 'none';
-    selectSkin(nickPart);
+    if (typeof updatePassFieldForNick === 'function') {
+      updatePassFieldForNick(nickPart);
+    } else {
+      document.getElementById('pass').style.display = pass ? 'block' : 'none';
+    }
+    if (typeof selectSkin === 'function') selectSkin(nickPart, true);
   };
 
   const perksRow = document.createElement('div');
@@ -5601,7 +5561,6 @@ async function loadMyNicknames() {
   if (block) block.style.display = '';
 
   try {
-    nickPerksLists = null;
     const res = await accountApiGet('me/nicknames');
     if (!res.ok) {
       if (res.status === 401) {
@@ -5612,7 +5571,7 @@ async function loadMyNicknames() {
     }
 
     const data = await res.json();
-    const lists = await fetchNickPerksLists();
+    const lists = await fetchNickPerksLists(true);
 
     // ОЧИСТКА списков, если они есть
     if (nickList) nickList.innerHTML = '';
@@ -5710,6 +5669,12 @@ accountData = null;
   const block = document.getElementById('myNicknamesBlock');
   if (block) block.style.display = 'none';
 
+  const restorePanel = document.getElementById('restorePanel');
+  const restoreToggle = document.getElementById('restoreToggle');
+  if (restorePanel) restorePanel.hidden = true;
+  if (restoreToggle) restoreToggle.setAttribute('aria-expanded', 'false');
+  setRestoreStatus('');
+
   // === ОЧИСТКА (опционально) ===
   const nickList = document.getElementById('myNickList');
   const clanList = document.getElementById('myClanList');
@@ -5751,22 +5716,16 @@ const accountApiGet = (tag, method = 'GET', body = null) => {
     return fetch("https://api.agar.su/api/" + tag, { method, headers, body: body ? JSON.stringify(body) : null });
 };
 
-// --------------------- Login via Telegram / Google ---------------------
+// --------------------- Login via VK ---------------------
 async function handleLogin(tokenOrUser, provider) {
-    let url, options;
-    if (provider === 'telegram') {
-        url = 'auth/telegram';
-        options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(tokenOrUser) };
-    } else if (provider === 'google') {
-        url = 'auth/google';
-        options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ credential: tokenOrUser }) };
-    } else if (provider === 'vk') {
-        url = 'auth/vk';
-        options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(tokenOrUser) };
-    }
+    if (provider !== "vk") return;
     let res;
     try {
-        res = await fetch("https://api.agar.su/api/" + url, options);
+        res = await fetch("https://api.agar.su/api/auth/vk", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(tokenOrUser),
+        });
     } catch (e) {
         return alert("Ошибка сети при авторизации");
     }
@@ -5780,26 +5739,6 @@ async function handleLogin(tokenOrUser, provider) {
     wHandle.onAccountLoggedIn(data.token);
 }
 
-// Telegram callback
-wHandle.onTelegramAuth = function(user) {
-    handleLogin(user, 'telegram');
-};
-// --------------------- Telegram Popup Listener ---------------------
-window.addEventListener("message", function(event) {
-    if (event.origin !== "https://agar.su") return;
-
-    if (event.data.type === "telegram-auth") {
-        const user = event.data.user;
-
-        handleLogin(user, 'telegram');
-    }
-});
-
-// Google callback
-wHandle.onGoogleAuth = function(response) {
-    handleLogin(response.credential, 'google');
-};
-
 // VK ID: Auth Code → обмен на api.agar.su (OAuth 2.1 + PKCE, см. id.vk.com/docs)
 wHandle.onVkAuth = function(payload) {
     if (!payload || !payload.code || !payload.device_id) {
@@ -5807,6 +5746,141 @@ wHandle.onVkAuth = function(payload) {
     }
     handleLogin(payload, "vk");
 };
+
+// --------------------- Restore progress from Google / Telegram ---------------------
+const GOOGLE_RESTORE_CLIENT_ID = "157257230972-4vh698jtf46c76sc7607oe1k9tr782je.apps.googleusercontent.com";
+let restoreGoogleInitialized = false;
+
+const setRestoreStatus = (text, type = "info") => {
+    const el = document.getElementById("restoreStatus");
+    if (!el) return;
+    el.hidden = !text;
+    el.textContent = text || "";
+    el.className = "restore-status" + (type ? ` restore-status--${type}` : "");
+};
+
+const handleRestoreResponse = async (res) => {
+    let data;
+    try {
+        data = await res.json();
+    } catch (e) {
+        setRestoreStatus("Ошибка ответа сервера", "error");
+        return;
+    }
+    if (!res.ok || data.error) {
+        setRestoreStatus(data.error || "Не удалось восстановить прогресс", "error");
+        return;
+    }
+    setRestoreStatus(data.message || "Аккаунт привязан к VK", "success");
+    if (data.token) {
+        wHandle.onAccountLoggedIn(data.token);
+    } else {
+        loadAccountUserData();
+    }
+};
+
+async function restoreProgressFromTelegram(user) {
+    if (!localStorage.accountToken) {
+        return alert("Сначала войдите через VK");
+    }
+    setRestoreStatus("Переносим прогресс…", "info");
+    try {
+        const res = await accountApiGet("me/restore/telegram", "POST", user);
+        await handleRestoreResponse(res);
+    } catch (e) {
+        setRestoreStatus("Ошибка сети", "error");
+    }
+}
+
+async function restoreProgressFromGoogle(credential) {
+    if (!localStorage.accountToken) {
+        return alert("Сначала войдите через VK");
+    }
+    setRestoreStatus("Переносим прогресс…", "info");
+    try {
+        const res = await accountApiGet("me/restore/google", "POST", { credential });
+        await handleRestoreResponse(res);
+    } catch (e) {
+        setRestoreStatus("Ошибка сети", "error");
+    }
+}
+
+wHandle.onRestoreGoogleAuth = function(response) {
+    if (response?.credential) restoreProgressFromGoogle(response.credential);
+};
+
+function loadGoogleRestoreScript() {
+    return new Promise((resolve, reject) => {
+        if (window.google?.accounts?.id) return resolve();
+        const existing = document.querySelector('script[src*="accounts.google.com/gsi/client"]');
+        if (existing) {
+            existing.addEventListener("load", () => resolve(), { once: true });
+            existing.addEventListener("error", () => reject(new Error("Google script failed")), { once: true });
+            return;
+        }
+        const script = document.createElement("script");
+        script.src = "https://accounts.google.com/gsi/client";
+        script.async = true;
+        script.defer = true;
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error("Google script failed"));
+        document.head.appendChild(script);
+    });
+}
+
+async function initRestoreGoogleButton() {
+    const container = document.getElementById("restoreGoogleContainer");
+    if (!container || restoreGoogleInitialized) return;
+    try {
+        await loadGoogleRestoreScript();
+        window.google.accounts.id.initialize({
+            client_id: GOOGLE_RESTORE_CLIENT_ID,
+            callback: wHandle.onRestoreGoogleAuth,
+        });
+        window.google.accounts.id.renderButton(container, {
+            type: "standard",
+            size: "medium",
+            theme: "outline",
+            text: "continue_with",
+            shape: "rectangular",
+        });
+        restoreGoogleInitialized = true;
+    } catch (e) {
+        setRestoreStatus("Не удалось загрузить Google", "error");
+    }
+}
+
+function wireRestoreProgressUI() {
+    const toggle = document.getElementById("restoreToggle");
+    const panel = document.getElementById("restorePanel");
+    const tgBtn = document.getElementById("restoreTelegramBtn");
+    if (!toggle || !panel || toggle.dataset.wired) return;
+    toggle.dataset.wired = "1";
+
+    toggle.addEventListener("click", () => {
+        const open = panel.hidden;
+        panel.hidden = !open;
+        toggle.setAttribute("aria-expanded", open ? "true" : "false");
+        if (open) initRestoreGoogleButton();
+    });
+
+    if (tgBtn) {
+        tgBtn.addEventListener("click", () => {
+            window._telegramRestoreMode = true;
+            window.open("https://agar.su/telegram/", "tgRestore", "width=400,height=200");
+        });
+    }
+}
+
+window.addEventListener("message", function(event) {
+    if (event.origin !== "https://agar.su") return;
+    if (event.data.type === "telegram-auth" && window._telegramRestoreMode) {
+        window._telegramRestoreMode = false;
+        restoreProgressFromTelegram(event.data.user);
+    }
+});
+
+wireRestoreProgressUI();
 
 // --------------------- Account ---------------------
 wHandle.onAccountLoggedIn = token => {
@@ -5834,15 +5908,13 @@ wHandle.logoutAccount = async () => {
 let accountData;
 
 const hideAuthButtons = () => {
-    document.querySelectorAll("#authlog .auth-provider-vpn, #authlog .auth-divider, #vkAuthContainer").forEach(el => {
-        el.style.display = "none";
-    });
+    const vk = document.getElementById("vkAuthContainer");
+    if (vk) vk.style.display = "none";
 };
 
 const showAuthButtons = () => {
-    document.querySelectorAll("#authlog .auth-provider, #authlog .auth-divider").forEach(el => {
-        el.style.display = el.classList.contains("auth-divider") ? "flex" : "flex";
-    });
+    const vk = document.getElementById("vkAuthContainer");
+    if (vk) vk.style.display = "flex";
 };
 
 const setAccountData = data => {
