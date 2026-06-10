@@ -3344,11 +3344,7 @@ function shareStats(platform) {
     const text = encodeURIComponent(getStatsText());
     const url = encodeURIComponent(location.href);
     const urls = {
-        vk: `https://vk.com/share.php?url=${url}&title=${text}`,
-        telegram: `https://t.me/share/url?url=${url}&text=${text}`,
-        whatsapp: `https://wa.me/?text=${text}%20${url}`,
-        facebook: `https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`,
-        twitter: `https://twitter.com/intent/tweet?url=${url}&text=${text}`
+        vk: `https://vk.com/share.php?url=${url}&title=${text}`
     };
 
     const w = 650, h = 450;
@@ -3360,7 +3356,7 @@ function shareStats(platform) {
 // ===== ИНИЦИАЛИЗАЦИЯ =====
 window.addEventListener('load', () => {
     updateShareText();
-    ['vk', 'telegram', 'whatsapp', 'facebook', 'twitter'].forEach(p => {
+    ['vk'm].forEach(p => {
         const btn = document.querySelector(`.${p}`);
         if (btn) btn.addEventListener('click', () => shareStats(p));
     });
