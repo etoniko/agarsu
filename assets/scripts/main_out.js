@@ -3344,7 +3344,11 @@ function shareStats(platform) {
     const text = encodeURIComponent(getStatsText());
     const url = encodeURIComponent(location.href);
     const urls = {
-        vk: `https://vk.com/share.php?url=${url}&title=${text}`
+        vk: `https://vk.com/share.php?url=${url}&title=${text}`,
+        telegram: `https://t.me/share/url?url=${url}&text=${text}`,
+        whatsapp: `https://wa.me/?text=${text}%20${url}`,
+        facebook: `https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`,
+        twitter: `https://twitter.com/intent/tweet?url=${url}&text=${text}`
     };
 
     const w = 650, h = 450;
@@ -3356,7 +3360,7 @@ function shareStats(platform) {
 // ===== ИНИЦИАЛИЗАЦИЯ =====
 window.addEventListener('load', () => {
     updateShareText();
-    ['vk'].forEach(p => {
+    ['vk', 'telegram', 'whatsapp', 'facebook', 'twitter'].forEach(p => {
         const btn = document.querySelector(`.${p}`);
         if (btn) btn.addEventListener('click', () => shareStats(p));
     });
@@ -5670,6 +5674,15 @@ async function loadMyNicknames() {
   }
 }
 
+// === Восстановление прогресса: только вкладка «Ваши ники», не после restore ===
+function updateRestoreBlockVisibility() {
+  const block = document.getElementById('restoreProgressBlock');
+  if (!block) return;
+  const restored = Boolean(accountData?.restored_at);
+  const onClansTab = document.getElementById('tabClans')?.classList.contains('active');
+  block.style.display = restored || onClansTab ? 'none' : '';
+}
+
 // === ТАБЫ ===
 function showNickClanTab(which) {
   const tabN = document.getElementById('tabNicknames');
@@ -5681,6 +5694,7 @@ function showNickClanTab(which) {
   tabC.classList.toggle('active', which === 'clans');
   nick.style.display = which === 'nicks' ? '' : 'none';
   clan.style.display = which === 'clans' ? '' : 'none';
+  updateRestoreBlockVisibility();
 }
 
 function wireTabsOnce() {
@@ -5810,7 +5824,9 @@ const handleRestoreResponse = async (res) => {
     }
     setRestoreStatus(data.message || "Аккаунт привязан к VK", "success");
     if (data.token) {
+        if (data.restored_at && accountData) accountData.restored_at = data.restored_at;
         wHandle.onAccountLoggedIn(data.token);
+        updateRestoreBlockVisibility();
     } else {
         loadAccountUserData();
     }
@@ -5991,6 +6007,7 @@ if (typeof window.updateAccountMenuLabel === "function") {
 
 const displayAccountData = () => {
     if (!accountData) return;
+    updateRestoreBlockVisibility();
     const currLevel = getLevel(accountData.xp);
     const nextXp = getXp(currLevel + 1);
     const progressPercent = (accountData.xp / nextXp) * 100;
