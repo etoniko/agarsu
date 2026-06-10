@@ -5917,7 +5917,14 @@ window.addEventListener("message", function(event) {
     }
 });
 
-wireRestoreProgressUI();
+function initRestoreProgressUI() {
+    wireRestoreProgressUI();
+}
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initRestoreProgressUI);
+} else {
+    initRestoreProgressUI();
+}
 
 // --------------------- Account ---------------------
 wHandle.onAccountLoggedIn = token => {
