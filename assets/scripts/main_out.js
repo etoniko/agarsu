@@ -5725,7 +5725,6 @@ accountData = null;
   if (restorePanel) restorePanel.hidden = true;
   if (restoreToggle) restoreToggle.setAttribute('aria-expanded', 'false');
   setRestoreStatus('');
-  showRestoreAdblockNote(false);
 
   // === ОЧИСТКА (опционально) ===
   const nickList = document.getElementById('myNickList');
@@ -5813,27 +5812,13 @@ const setRestoreStatus = (text, type = "info") => {
     el.className = "restore-status" + (type ? ` restore-status--${type}` : "");
 };
 
-const showRestoreAdblockNote = (show = true) => {
-    const note = document.getElementById("restoreAdblockNote");
-    if (note) note.hidden = !show;
-};
-
-const isLikelyAdblockError = (error) => {
-    const msg = String(error?.message || error || "").toLowerCase();
-    return (
-        msg.includes("adblock") ||
-        msg.includes("blocked") ||
-        msg.includes("failed to load") ||
-        msg.includes("google script failed") ||
-        msg.includes("network") ||
-        msg.includes("fetch")
-    );
-};
-
-const notifyRestoreAdblock = (error) => {
-    showRestoreAdblockNote(true);
+const notifyRestoreAdblock = () => {
     setRestoreStatus(RESTORE_ADBLOCK_MSG, "error");
-    if (error) console.warn("Restore blocked:", error);
+};
+
+const isRestoreScriptBlocked = (error) => {
+    const msg = String(error?.message || error || "").toLowerCase();
+    return msg.includes("google script failed") || msg.includes("blocked");
 };
 
 const handleRestoreResponse = async (res) => {
@@ -5867,8 +5852,7 @@ async function restoreProgressFromTelegram(user) {
         const res = await accountApiGet("me/restore/telegram", "POST", user);
         await handleRestoreResponse(res);
     } catch (e) {
-        if (isLikelyAdblockError(e)) notifyRestoreAdblock(e);
-        else setRestoreStatus("Ошибка сети", "error");
+        setRestoreStatus("Ошибка сети", "error");
     }
 }
 
@@ -5881,8 +5865,7 @@ async function restoreProgressFromGoogle(credential) {
         const res = await accountApiGet("me/restore/google", "POST", { credential });
         await handleRestoreResponse(res);
     } catch (e) {
-        if (isLikelyAdblockError(e)) notifyRestoreAdblock(e);
-        else setRestoreStatus("Ошибка сети", "error");
+        setRestoreStatus("Ошибка сети", "error");
     }
 }
 
@@ -5923,37 +5906,6 @@ function ensureRestoreGoogleClient() {
     }
 }
 
-function googleWidgetRendered(container) {
-    if (!container) return false;
-    return Boolean(
-        container.querySelector("iframe, div[data-gsi], .S9gUrf-YoZ4jf") ||
-            (container.children.length && container.offsetHeight > 4)
-    );
-}
-
-async function initRestoreGoogleButton() {
-    const container = document.getElementById("restoreGoogleContainer");
-    if (!container) return;
-    try {
-        await loadGoogleRestoreScript();
-        ensureRestoreGoogleClient();
-        window.google.accounts.id.renderButton(container, {
-            type: "standard",
-            size: "medium",
-            theme: "outline",
-            text: "continue_with",
-            shape: "rectangular",
-        });
-        window.setTimeout(() => {
-            if (!googleWidgetRendered(container)) {
-                notifyRestoreAdblock("Google widget not rendered");
-            }
-        }, 2500);
-    } catch (e) {
-        notifyRestoreAdblock(e);
-    }
-}
-
 async function startGoogleRestore() {
     if (!localStorage.accountToken) {
         return alert("Сначала войдите через VK");
@@ -5965,15 +5917,16 @@ async function startGoogleRestore() {
         window.google.accounts.id.prompt((notification) => {
             if (!notification) return;
             if (notification.isNotDisplayed?.()) {
-                notifyRestoreAdblock("Google prompt not displayed");
+                notifyRestoreAdblock();
             } else if (notification.isSkippedMoment?.()) {
-                notifyRestoreAdblock("Google prompt skipped");
+                setRestoreStatus("Не удалось открыть вход Google", "error");
             } else if (notification.isDismissedMoment?.()) {
                 setRestoreStatus("Вход Google отменён", "info");
             }
         });
     } catch (e) {
-        notifyRestoreAdblock(e);
+        if (isRestoreScriptBlocked(e)) notifyRestoreAdblock();
+        else setRestoreStatus("Не удалось загрузить Google", "error");
     }
 }
 
@@ -5986,15 +5939,8 @@ function startTelegramRestore() {
     const popup = window.open("https://agar.su/telegram/", "tgRestore", "width=400,height=200");
     if (!popup) {
         window._telegramRestoreMode = false;
-        notifyRestoreAdblock("Telegram popup blocked");
-        return;
+        notifyRestoreAdblock();
     }
-    window.setTimeout(() => {
-        if (window._telegramRestoreMode && popup.closed) {
-            window._telegramRestoreMode = false;
-            notifyRestoreAdblock("Telegram popup closed");
-        }
-    }, 1200);
 }
 
 function wireRestoreProgressUI() {
@@ -6009,10 +5955,6 @@ function wireRestoreProgressUI() {
         const open = panel.hidden;
         panel.hidden = !open;
         toggle.setAttribute("aria-expanded", open ? "true" : "false");
-        if (open) {
-            showRestoreAdblockNote(false);
-            initRestoreGoogleButton();
-        }
     });
 
     if (googleBtn) {
