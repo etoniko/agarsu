@@ -91,12 +91,6 @@
       .on(VKID.OAuthListInternalEvents.LOGIN_SUCCESS, function (payload) {
         sendCodeToServer(payload.code, payload.device_id);
       });
-
-    window.setTimeout(function () {
-      if (!container.querySelector("iframe, button, a, [role='button']")) {
-        showVkAuthLoadError();
-      }
-    }, 3000);
   }
 
   const sdkScript = document.querySelector('script[src*="@vkid/sdk"]');
@@ -105,9 +99,6 @@
   } else if (sdkScript) {
     sdkScript.addEventListener("load", initVkAuth);
     sdkScript.addEventListener("error", showVkAuthLoadError);
-    window.setTimeout(function () {
-      if (!("VKIDSDK" in window)) showVkAuthLoadError();
-    }, 8000);
   } else {
     showVkAuthLoadError();
   }
