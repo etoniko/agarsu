@@ -26,12 +26,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=new_releases" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="/assets/style.css?779" rel="stylesheet">
+    <link href="/assets/style.css?781" rel="stylesheet">
     <!-- Скрипты -->
     <script src="/assets/scripts/jquery.js?0.0.2"></script>
     <script src="/assets/scripts/log.js?0.0.2"></script>
     <script src="/assets/scripts/vector.js?0.0.2"></script>
-    <script src="/assets/scripts/main_out.js?0072"></script>
+    <script src="/assets/scripts/main_out.js?0074"></script>
 	<script src="/assets/scripts/shop.js?26" defer></script>
 	<script src="/assets/scripts/all.js?0.0.2" defer></script>
 	<script src="/assets/scripts/pass.js?0.0.4" defer></script>
@@ -432,9 +432,13 @@ _tmr.push({id: "3761618", type: "pageView", start: (new Date()).getTime()});
     </button>
     <div id="restorePanel" class="restore-panel" hidden>
       <p class="restore-note">Если вы играли через Google или Telegram — подтвердите старый аккаунт. Ваш прежний ID, опыт и ники останутся, вход будет через VK. Для Google и Telegram может понадобиться VPN.</p>
+      <p class="restore-adblock-note" id="restoreAdblockNote" hidden>Если кнопки Google или Telegram не работают — отключите блокировщик рекламы (AdBlock) для agar.su и обновите страницу.</p>
       <div class="restore-actions">
-        <div id="restoreGoogleContainer" class="restore-google-wrap"></div>
-        <button type="button" class="auth-telegram-btn restore-telegram-btn" id="restoreTelegramBtn">
+        <div id="restoreGoogleContainer" class="restore-google-wrap" aria-hidden="true"></div>
+        <button type="button" class="restore-provider-btn restore-google-btn" id="restoreGoogleBtn">
+          <i class="fab fa-google"></i> Восстановить через Google
+        </button>
+        <button type="button" class="restore-provider-btn restore-telegram-btn" id="restoreTelegramBtn">
           <i class="fab fa-telegram"></i> Восстановить через Telegram
         </button>
       </div>
@@ -444,11 +448,11 @@ _tmr.push({id: "3761618", type: "pageView", start: (new Date()).getTime()});
 </div>
 <div id="authlog">
   <div id="vkAuthContainer" class="auth-block auth-block-vk">
-    <div id="VkIdSdkOneTap"></div>
+    <div id="VkIdSdkOAuthList" class="auth-oauth-list"></div>
   </div>
 </div>
 <script src="https://unpkg.com/@vkid/sdk@2/dist-sdk/umd/index.js"></script>
-<script src="/assets/scripts/vk-auth.js?6"></script>
+<script src="/assets/scripts/vk-auth.js?8"></script>
 
           </div>
         </div>
