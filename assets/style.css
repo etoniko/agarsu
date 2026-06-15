@@ -1990,10 +1990,7 @@ input{font-size:16px;}
 .restore-panel{margin-top:10px;padding:12px;border:1px solid #2b3242;border-radius:12px;background:#0e1422;}
 .restore-panel[hidden]{display:none!important;}
 .restore-note{margin:0 0 10px;font-size:12px;line-height:1.4;color:#8fa8d4;}
-.restore-adblock-note{margin:0 0 10px;padding:8px 10px;border-radius:8px;font-size:12px;line-height:1.45;color:#fcd34d;background:#78350f33;border:1px solid #92400e55;}
-.restore-adblock-note[hidden]{display:none!important;}
 .restore-actions{display:flex;flex-direction:column;align-items:stretch;gap:10px;width:100%;max-width:360px;}
-.restore-google-wrap{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;}
 .restore-provider-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:40px;padding:0 14px;border:1px solid #ffffff20;border-radius:8px;background:#88888859;color:#ffffffbf;font-size:13px;font-weight:500;cursor:pointer;transition:background .15s,color .15s,opacity .15s;}
 .restore-provider-btn:hover{background:#99999973;color:#ffffffd9;opacity:1;}
 .restore-google-btn i{color:#ea4335;font-size:17px;opacity:0.95;}
