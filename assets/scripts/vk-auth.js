@@ -19,14 +19,6 @@
     alert("VK: " + msg);
   }
 
-  function showVkAuthLoadError() {
-    const container = document.getElementById("VkIdSdkOAuthList");
-    if (!container || container.dataset.vkFallbackShown) return;
-    container.dataset.vkFallbackShown = "1";
-    container.innerHTML =
-      '<p class="auth-load-error">Не удалось загрузить вход VK / OK / Mail. Отключите блокировщик рекламы (AdBlock) для agar.su и обновите страницу.</p>';
-  }
-
   // Auth Code → на бэкенд api.agar.su (обмен code→token по документации VK ID Web)
   function sendCodeToServer(code, deviceId) {
     const codeVerifier = sessionStorage.getItem("vk_code_verifier");
@@ -43,13 +35,10 @@
   }
 
   function initVkAuth() {
-    if (!("VKIDSDK" in window)) {
-      showVkAuthLoadError();
-      return;
-    }
+    if (!("VKIDSDK" in window)) return;
 
     const VKID = window.VKIDSDK;
-    const container = document.getElementById("VkIdSdkOAuthList");
+    const container = document.getElementById("VkIdSdkOneTap");
     if (!container) return;
 
     // PKCE: code_verifier генерируем сами → обмен на бэкенде (id.vk.ru/oauth2/auth)
@@ -58,6 +47,7 @@
     sessionStorage.setItem("vk_code_verifier", codeVerifier);
     sessionStorage.setItem("vk_state", state);
 
+    // Как в кабинете VK ID (Low-code One Tap) + codeVerifier для backend exchange
     VKID.Config.init({
       app: 54069355,
       redirectUrl: "https://agar.su",
@@ -78,28 +68,26 @@
       return;
     }
 
-    const oauthList = new VKID.OAuthList();
-    oauthList
+    const oneTap = new VKID.OneTap();
+    oneTap
       .render({
         container,
-        oauthList: [VKID.OAuthName.VK, VKID.OAuthName.MAIL, VKID.OAuthName.OK],
-        styles: { height: 44, borderRadius: 8 },
+        showAlternativeLogin: true,
+        oauthList: ["mail_ru", "ok_ru"],
+        styles: { width: 360, height: 44, borderRadius: 8 },
+        skin: VKID.OneTapSkin.Primary,
         scheme: VKID.Scheme.LIGHT,
         lang: VKID.Languages.RUS,
       })
       .on(VKID.WidgetEvents.ERROR, vkidOnError)
-      .on(VKID.OAuthListInternalEvents.LOGIN_SUCCESS, function (payload) {
+      .on(VKID.OneTapInternalEvents.LOGIN_SUCCESS, function (payload) {
         sendCodeToServer(payload.code, payload.device_id);
       });
   }
 
-  const sdkScript = document.querySelector('script[src*="@vkid/sdk"]');
   if ("VKIDSDK" in window) {
     initVkAuth();
-  } else if (sdkScript) {
-    sdkScript.addEventListener("load", initVkAuth);
-    sdkScript.addEventListener("error", showVkAuthLoadError);
   } else {
-    showVkAuthLoadError();
+    document.querySelector('script[src*="@vkid/sdk"]')?.addEventListener("load", initVkAuth);
   }
 })();
