@@ -239,7 +239,8 @@ const GAME_SERVERS = {
         "ms":         { host: "ffa.agar.su:6002",      api: "https://ffa.agar.su:6002" },
         "pvp1":       { host: "ffa.agar.su:6004",      api: "https://ffa.agar.su:6004" },
         "pvp2":       { host: "ffa.agar.su:6005",      api: "https://ffa.agar.su:6005" },
-        "tournament": { host: "ffa.agar.su:6006",      api: "https://ffa.agar.su:6006" }
+        "tournament": { host: "ffa.agar.su:6006",      api: "https://ffa.agar.su:6006" },
+	    "tournament2": { host: "ffa.agar.su:6007",      api: "https://ffa.agar.su:6007" }
     };
 const SERVERS = Object.fromEntries(
     Object.entries(GAME_SERVERS).map(([id, s]) => [id, s.host])
