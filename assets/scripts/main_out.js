@@ -2234,29 +2234,33 @@ const youtubers = ["salruz", "morcov","sealand"];
 const url_youtubers = ["https://youtube.com/@SalRuzO", "https://www.youtube.com/@MORCCVA","https://www.youtube.com/@sealandv"];
 
 let passUsers = [];
-let passNickToId = new Map();
+let passPlayerNickToId = new Map();
+let passClanNickToId = new Map();
 const STATS_API = "https://api.agar.su:6009";
 const STATS_PAGE_URL = "https://agar.su/stats/";
 const STATS_PROFILE_BASE = "https://agar.su/stats/users/?id=";
+const STATS_CLAN_PROFILE_BASE = "https://agar.su/stats/clans/?id=";
 
-function passNickVariants(norm) {
-  if (!norm) return [];
-  const out = new Set([norm]);
-  const clean = norm.replace(/\[|\]/g, "").trim();
-  if (clean) {
-    out.add(clean);
-    out.add(`[${clean}]`);
-  }
-  return [...out];
+function resolveClanPassIdFromName(name) {
+  const clean = String(name || "").replace(/<[^>]*>/g, "");
+  const m = clean.match(/^\[([^\]]+)\]/);
+  if (!m) return null;
+  const clanKey = normalizeNick(`[${m[1]}]`);
+  if (!clanKey) return null;
+  return passClanNickToId.get(clanKey) || null;
+}
+
+function resolvePlayerPassIdFromName(name) {
+  const clean = String(name || "").replace(/<[^>]*>/g, "");
+  const m = clean.match(/^\[([^\]]+)\](.*)$/);
+  if (m) return null;
+  const norm = normalizeNick(clean);
+  if (!norm || norm.startsWith("[")) return null;
+  return passPlayerNickToId.get(norm) || null;
 }
 
 function resolvePassId(name) {
-  const clean = String(name || "").replace(/<[^>]*>/g, "");
-  const norm = normalizeNick(clean);
-  for (const v of passNickVariants(norm)) {
-    if (passNickToId.has(v)) return passNickToId.get(v);
-  }
-  return null;
+  return resolveClanPassIdFromName(name) || resolvePlayerPassIdFromName(name);
 }
 
 const ignoredPlayers = new Set();
@@ -2275,7 +2279,8 @@ fetch('https://api.agar.su/pass.txt')
         return response.text();
     })
     .then(text => {
-        passNickToId = new Map();
+        passPlayerNickToId = new Map();
+        passClanNickToId = new Map();
         passUsers = [];
         let lineNum = 0;
         for (const line of text.split('\n')) {
@@ -2285,8 +2290,11 @@ fetch('https://api.agar.su/pass.txt')
             const norm = normalizeNick(trimmed);
             if (!norm) continue;
             passUsers.push(norm);
-            for (const v of passNickVariants(norm)) {
-                if (!passNickToId.has(v)) passNickToId.set(v, String(lineNum));
+            const passId = String(lineNum);
+            if (norm.startsWith('[') && norm.endsWith(']')) {
+                if (!passClanNickToId.has(norm)) passClanNickToId.set(norm, passId);
+            } else {
+                if (!passPlayerNickToId.has(norm)) passPlayerNickToId.set(norm, passId);
             }
         }
     })
@@ -4090,13 +4098,16 @@ function createLeaderboardEntry(name, level, isMe, isSystemLine, b) {
   }
 
   if (!isSystemLine) {
-    const passId = resolvePassId(cleanName);
+    const clanPassId = resolveClanPassIdFromName(cleanName);
+    const playerPassId = resolvePlayerPassIdFromName(cleanName);
+    const passId = clanPassId || playerPassId;
     if (passId) {
-      nameSpan.title = "Статистика игрока";
+      const profileBase = clanPassId ? STATS_CLAN_PROFILE_BASE : STATS_PROFILE_BASE;
+      nameSpan.title = clanPassId ? "Статистика клана" : "Статистика игрока";
       nameSpan.style.cursor = "pointer";
       nameSpan.onclick = function (e) {
         e.stopPropagation();
-        window.open(STATS_PROFILE_BASE + encodeURIComponent(passId), "_blank");
+        window.open(profileBase + encodeURIComponent(passId), "_blank");
       };
     }
   }
@@ -5252,7 +5263,7 @@ function refreshGlobalRatingHome(data) {
     const players = (data.players || []).slice(0, 3);
     const clans = (data.clans || []).slice(0, 3);
 
-    function createRow(name, points, index, passId) {
+    function createRow(name, points, index, passId, isClan) {
         const medal = index === 0 ? 'gold' : index === 1 ? 'silver' : 'bronze';
         const normalizedNick = normalizeNick(String(name || '').replace(/<[^>]*>/g, ''));
         const skinCode = skinList?.[normalizedNick];
@@ -5263,10 +5274,11 @@ function refreshGlobalRatingHome(data) {
         row.className = 'rating-row ' + medal + (passId ? ' rating-row--link' : '');
         row.innerHTML = `<div>${index + 1}</div><div>${name || '—'}</div><div class="rating-pts">${pointsLabel(pts)}</div><div class="avatar" style="background-image: url('${skinUrl}');"></div>`;
         if (passId) {
-            row.title = 'Профиль';
+            const profileBase = isClan ? STATS_CLAN_PROFILE_BASE : STATS_PROFILE_BASE;
+            row.title = isClan ? 'Профиль клана' : 'Профиль';
             row.addEventListener('click', (e) => {
                 e.stopPropagation();
-                window.open(STATS_PROFILE_BASE + encodeURIComponent(passId), '_blank');
+                window.open(profileBase + encodeURIComponent(passId), '_blank');
             });
         }
         return row;
@@ -5282,7 +5294,7 @@ function refreshGlobalRatingHome(data) {
         empty.innerHTML = '<div></div><div>—</div><div class="rating-pts">0 очков</div><div class="avatar" style="background-image:url(\'https://api.agar.su/skins/4.png\');"></div>';
         container.appendChild(empty);
     } else {
-        players.forEach((p, i) => container.appendChild(createRow(p.nick, p.points, i, p.id)));
+        players.forEach((p, i) => container.appendChild(createRow(p.nick, p.points, i, p.id, false)));
     }
 
     const clansTitle = document.createElement('div');
@@ -5295,7 +5307,7 @@ function refreshGlobalRatingHome(data) {
         empty.innerHTML = '<div></div><div>—</div><div class="rating-pts">0 очков</div><div class="avatar" style="background-image:url(\'https://api.agar.su/skins/4.png\');"></div>';
         container.appendChild(empty);
     } else {
-        clans.forEach((c, i) => container.appendChild(createRow(c.clan, c.points, i, c.id)));
+        clans.forEach((c, i) => container.appendChild(createRow(c.clan, c.points, i, c.id, true)));
     }
 }
 
