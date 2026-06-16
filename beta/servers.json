@@ -9,7 +9,7 @@
         "api": "https://ffa.agar.su:6006",
         "name": "Tournament"
     },
-        "tournament": {
+        "tournament2": {
         "host": "ffa.agar.su:6007",
         "api": "https://ffa.agar.su:6007",
         "name": "Tournament2"
