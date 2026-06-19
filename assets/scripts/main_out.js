@@ -258,6 +258,15 @@ function getGameServerWssUrl(host) {
     const h = host || GAME_SERVERS.ffa.host;
     return "wss://" + String(h).replace(/^wss?:\/\//i, "");
 }
+
+function getDeviceBanId() {
+    let id = localStorage.getItem("deviceBanId");
+    if (!id) {
+        id = "d_" + (crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2, 10)));
+        localStorage.setItem("deviceBanId", id);
+    }
+    return id;
+}
 	
 wjQuery(document).ready(() => {
 document.querySelectorAll('.gamemode li').forEach(li => {
@@ -974,9 +983,13 @@ let stickerCooldownTimer = null;
     const updatePlayerList = (players) => {
         const playerList = document.getElementById("playerList");
         playerList.innerHTML = "";
+        const hideIp = currentUserRole !== "admin";
         const header = document.createElement("div");
         header.className = "infoApanel";
-        ["IP", "ID", "Имя", "Клеток", "X", "Y", "Масса", "Kick", "Ban", "Kill", "Mute"].forEach(text => {
+        const columns = hideIp
+            ? ["ID", "Имя", "Клеток", "X", "Y", "Масса", "Kick", "Ban", "Kill", "Mute"]
+            : ["IP", "ID", "Имя", "Клеток", "X", "Y", "Масса", "Kick", "Ban", "Kill", "Mute"];
+        columns.forEach(text => {
             const div = document.createElement("div");
             div.textContent = text;
             header.appendChild(div);
@@ -985,20 +998,16 @@ let stickerCooldownTimer = null;
         players.forEach(player => {
             const row = document.createElement("div");
             row.className = "infoAplayer";
-            const fields = [
-                player.ip,
-                player.id,
-                player.name,
-                player.cellCount,
-                Math.round(player.x || 0),
-                Math.round(player.y || 0),
-                player.mass
-            ];
+            const fields = hideIp
+                ? [player.id, player.name, player.cellCount, Math.round(player.x || 0), Math.round(player.y || 0), player.mass]
+                : [player.ip, player.id, player.name, player.cellCount, Math.round(player.x || 0), Math.round(player.y || 0), player.mass];
             fields.forEach((value, i) => {
                 const cell = document.createElement("div");
                 cell.className = "player-cell";
                 cell.textContent = value;
-                if (i === 2) {
+                const nameColIndex = hideIp ? 1 : 2;
+                const massColIndex = hideIp ? 5 : 6;
+                if (i === nameColIndex) {
                     cell.className += " name-cell";
                     cell.title = "Клик — изменить ник";
                     cell.onclick = () => {
@@ -1013,7 +1022,7 @@ let stickerCooldownTimer = null;
                         }
                     };
                 }
-                if (i === 6) {
+                if (i === massColIndex) {
                     cell.className += " mass-cell";
                     if (!player.kick) {
                         cell.title = "Клик — изменить массу";
@@ -1033,7 +1042,7 @@ let stickerCooldownTimer = null;
             });
             const actions = [
                 { prop: "kick", cmd: `/kick ${player.id}`, text: "Кик" },
-                { prop: "ban",  cmd: `/ban ${player.ip}`,  text: "Бан"  },
+                { prop: "ban",  cmd: `/ban ${player.id}`,  text: "Бан"  },
                 { prop: "kill", cmd: `/kill ${player.id}`, text: "Убить" },
                 { prop: "mute", cmd: `/mute ${player.id}`, text: "Mute" },
                 { prop: "unmute", cmd: `/unmute ${player.id}`, text: "unMute" }
@@ -1747,6 +1756,7 @@ async function wsConnect(wsUrlArg) {
     if (localStorage.accountToken) {
         qs.set("accountToken", localStorage.accountToken);
     }
+    qs.set("deviceId", getDeviceBanId());
     if (connectToken) {
         qs.set("connectToken", connectToken);
     }
