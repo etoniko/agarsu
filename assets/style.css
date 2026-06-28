@@ -1955,7 +1955,18 @@ input{font-size:16px;}
 .avatarXcontainer::after{content:"verified_user";font-family:'Material Icons';position:absolute;right:1px;bottom:1px;font-size:19px;color:#08dd24;display:var(--after-display, none);background: radial-gradient(white 4px, #1e90ff00 50%);}
 .chatX_nick{font-size:15px;max-width:185px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:ltr;height:20px;}
 .chatX_nick--accent{color:#ff4e3e;font-weight:700;}
-.chatX_text{clip-path: inset(0 0 0% 0);display: inline-block;min-height:30px;font-size:14px;}
+.chatX_text{clip-path: inset(0 0 0% 0);display: inline-block;min-height:30px;font-size:14px;line-height:1.45}
+.chatX_text a.chatX_link{
+  color:#60a5fa;text-decoration:underline;text-underline-offset:2px;
+  font-weight:600;cursor:pointer;pointer-events:auto;
+}
+.chatX_text a.chatX_link--in{color:#7ab8ff}
+.chatX_text a.chatX_link:hover{color:#9ecaff}
+.chatX_announce{
+  background:linear-gradient(135deg,rgba(77,159,255,.18),rgba(15,28,48,.85));
+  border:1px solid rgba(77,159,255,.28);
+  flex-shrink:0;
+}
 .mention {color: #00ff4f;text-shadow: #00ff4f 1px 0 10px;}
 .chatX_time{position:absolute;right:8px;top:6px;font-size:11px;color:#dadada;}
 .chatX_name_container{display:flex;gap:3px;padding-bottom:2px;align-items:baseline;}
