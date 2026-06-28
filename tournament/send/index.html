@@ -78,51 +78,56 @@ input::placeholder{color:var(--mute)}
 .preview.show{display:flex}
 .preview img{width:48px;height:48px;border-radius:50%;border:1px solid var(--edge2);object-fit:cover;background:var(--card2)}
 .preview span{font-size:14px;font-weight:500;word-break:break-all}
-.contacts{
-  margin-top:20px;padding:20px 18px;border-radius:14px;
-  background:var(--panel);border:1px solid var(--edge2);
-  box-shadow:0 8px 28px rgba(0,0,0,.22);
+.confirm[hidden]{display:none!important}
+.confirm{
+  margin-top:18px;padding:16px;border-radius:14px;
+  background:var(--card);border:1px solid var(--edge2);
 }
-.contacts h2{
-  margin:0 0 4px;font-size:15px;font-weight:600;letter-spacing:.02em;
+.confirm h2{margin:0 0 8px;font-size:15px;font-weight:600}
+.confirm p{margin:0 0 12px;font-size:13px;color:var(--dim);line-height:1.45}
+.code-box{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:14px 16px;margin-bottom:14px;border-radius:12px;
+  background:var(--navy);border:1px dashed var(--edge2);
 }
-.contacts-sub{margin:0 0 14px;font-size:13px;color:var(--dim);line-height:1.4}
-.contact-tg{
-  display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
-  background:var(--card);border:1px solid var(--edge);color:var(--txt);text-decoration:none;
-  transition:border-color .18s,background .18s,transform .12s;
-  -webkit-tap-highlight-color:transparent;
+.code-val{
+  font-size:28px;font-weight:700;letter-spacing:.18em;font-family:ui-monospace,monospace;
+  color:var(--blue2);
 }
-.contact-tg:hover{
-  text-decoration:none;color:var(--txt);
-  background:var(--card2);border-color:rgba(38,165,228,.45);transform:translateY(-1px);
+.code-copy{
+  padding:8px 12px;border-radius:8px;border:1px solid var(--edge2);
+  background:var(--card2);color:var(--dim);font-size:12px;cursor:pointer;
 }
-.contact-tg-icon{
-  width:40px;height:40px;border-radius:10px;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;
-  background:rgba(38,165,228,.14);color:#26a5e4;
+.code-copy:hover{color:var(--txt);border-color:var(--blue)}
+.links{display:flex;flex-direction:column;gap:8px}
+.link-btn{
+  display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;
+  background:var(--card2);border:1px solid var(--edge);color:var(--txt);text-decoration:none;
+  font-size:14px;transition:border-color .15s,background .15s;
 }
-.contact-tg-icon svg{width:20px;height:20px;fill:currentColor}
-.contact-tg-text{display:flex;flex-direction:column;gap:2px;min-width:0}
-.contact-tg-text b{font-size:14px;font-weight:600}
-.contact-tg-text span{font-size:12px;color:var(--dim)}
+.link-btn:hover{text-decoration:none;color:var(--txt);border-color:var(--blue);background:var(--panel)}
+.link-btn svg{width:18px;height:18px;flex-shrink:0;fill:currentColor}
+.link-btn.tg{color:#6ec9f5}
+.link-btn.vk{color:#7aa7ff}
 .foot{margin-top:18px;text-align:center;font-size:12px;color:var(--mute)}
 @media(max-width:480px){
   .card{padding:22px 18px 18px}
   h1{font-size:20px}
+  .code-val{font-size:24px}
 }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <a class="back" href="https://agar.su/tournament">← Турнирная сетка</a>
+  <a class="back" href="https://agar.su/">← Турнирная сетка</a>
   <div class="card">
     <span class="chip">Регистрация</span>
     <h1>Agar.su Tournament June 2026</h1>
     <p class="sub">Форма заявки на участие в турнире. Участвовать могут только игроки со скином и паролем на ник.</p>
     <ul class="rules">
-      <li>На вашем нике должен быть <strong>скин</strong> и <strong>пароль.</strong></li>
+      <li>На вашем нике должен быть <strong>скин</strong> и <strong>пароль</strong></li>
       <li>Ники с <strong>[ ]</strong> (кланы) не допускаются</li>
+      <li>После заявки отправьте <strong>код</strong> в Telegram или VK — так мы увидим ваш контакт</li>
     </ul>
     <div class="preview" id="preview">
       <img id="skin-img" src="" alt="" width="48" height="48">
@@ -143,24 +148,29 @@ input::placeholder{color:var(--mute)}
       </div>
       <button type="submit" class="btn" id="submit">Отправить заявку на турнир</button>
     </form>
+
+    <div class="confirm" id="confirm" hidden>
+      <h2>Ваш код подтверждения</h2>
+      <p>Отправьте этот код в сообщения — мы увидим ваш ник в игре и ваш контакт для связи по турниру.</p>
+      <div class="code-box">
+        <span class="code-val" id="code-val">-----</span>
+        <button type="button" class="code-copy" id="code-copy">Копировать</button>
+      </div>
+      <div class="links">
+        <a class="link-btn tg" href="https://t.me/agarsu" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24"><path d="M9.78 15.28 9.5 19.3c.55 0 .79-.24 1.08-.52l2.6-2.49 5.39 3.95c.99.55 1.69.26 1.96-.92l3.54-16.62h.01c.32-1.48-.54-2.06-1.5-1.7L1.2 9.37C-.22 9.93-.2 10.73.96 11.08l5.5 1.72L19.1 5.3c.66-.43 1.27-.2.77.23"/></svg>
+          Telegram — t.me/agarsu
+        </a>
+        <a class="link-btn vk" href="https://vk.com/im/convo/-233723574" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24"><path d="M15.07 2H8.93C3.33 2 2 3.33 2 8.93v6.14C2 20.67 3.33 22 8.93 22h6.14c5.6 0 6.93-1.33 6.93-6.93V8.93C22 3.33 20.67 2 15.07 2zm3.08 14.27h-1.46c-.55 0-.72-.44-1.71-1.42-.86-.83-1.24-.94-1.45-.94-.3 0-.38.09-.38.5v1.3c0 .36-.12.58-1.08.58-1.59 0-3.35-.96-4.6-2.76-1.87-2.6-2.38-4.56-2.38-4.96 0-.21.09-.41.5-.41h1.46c.37 0 .51.17.65.57.72 2.08 1.92 3.9 2.41 3.9.19 0 .27-.09.27-.58V9.66c-.06-1-.58-1.08-.58-1.45 0-.17.14-.34.37-.34h2.3c.33 0 .45.17.45.54v2.89c0 .33.15.45.24.45.19 0 .35-.12.7-.47 1.08-1.21 1.85-3.07 1.85-3.07.1-.22.27-.41.64-.41h1.46c.44 0 .53.23.44.54-.18.86-1.93 3.37-1.93 3.37-.15.25-.21.36 0 .65.15.21.66.64 1 1.05.64.74 1.13 1.36 1.26 1.79.14.42-.07.64-.5.64z"/></svg>
+          ВКонтакте — сообщения
+        </a>
+      </div>
+    </div>
+
     <div class="msg" id="msg" role="alert"></div>
   </div>
-
-  <section class="contacts" aria-label="Контакты">
-    <h2>Контакты</h2>
-    <p class="contacts-sub">Вопросы по турниру — напишите в Telegram</p>
-    <a class="contact-tg" href="https://t.me/agarsu" target="_blank" rel="noopener noreferrer">
-      <span class="contact-tg-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9.78 15.28 9.5 19.3c.55 0 .79-.24 1.08-.52l2.6-2.49 5.39 3.95c.99.55 1.69.26 1.96-.92l3.54-16.62h.01c.32-1.48-.54-2.06-1.5-1.7L1.2 9.37C-.22 9.93-.2 10.73.96 11.08l5.5 1.72L19.1 5.3c.66-.43 1.27-.2.77.23"/></svg>
-      </span>
-      <span class="contact-tg-text">
-        <b>Telegram</b>
-        <span>t.me/agarsu</span>
-      </span>
-    </a>
-  </section>
-
-  <p class="foot">Проверка заявки выполняется на сервере api.agar.su</p>
+  <p class="foot">Проверка заявки — api.agar.su:6001</p>
 </div>
 <script>
 (function () {
@@ -172,8 +182,12 @@ input::placeholder{color:var(--mute)}
   var preview = document.getElementById('preview');
   var skinImg = document.getElementById('skin-img');
   var skinNick = document.getElementById('skin-nick');
+  var confirmBox = document.getElementById('confirm');
+  var codeVal = document.getElementById('code-val');
+  var codeCopy = document.getElementById('code-copy');
   var skinMap = {};
   var skinTimer = null;
+  var activeCode = '';
 
   var PH = 'data:image/svg+xml,' + encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"><rect width="48" height="48" rx="24" fill="#1a3050"/></svg>'
@@ -188,6 +202,25 @@ input::placeholder{color:var(--mute)}
     msg.className = 'msg';
     msg.textContent = '';
   }
+
+  function showCode(code) {
+    activeCode = code;
+    codeVal.textContent = code;
+    confirmBox.hidden = false;
+  }
+
+  codeCopy.addEventListener('click', function () {
+    if (!activeCode) return;
+    var done = function () { codeCopy.textContent = 'Скопировано'; };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(activeCode).then(done).catch(function () {
+        codeCopy.textContent = activeCode;
+      });
+    } else {
+      codeCopy.textContent = activeCode;
+    }
+    setTimeout(function () { codeCopy.textContent = 'Копировать'; }, 2000);
+  });
 
   function parseSkinlist(text) {
     var m = {};
@@ -267,18 +300,23 @@ input::placeholder{color:var(--mute)}
         });
       })
       .then(function (res) {
-        if (res.data.ok) {
-          showMsg(res.data.message || 'Заявка отправлена!', 'ok');
-          form.reset();
-          preview.classList.remove('show');
+        if (res.data.ok && res.data.code) {
+          showCode(res.data.code);
+          showMsg('Заявка принята! Отправьте код в Telegram или VK.', 'ok');
+          form.querySelectorAll('input').forEach(function (el) { el.disabled = true; });
+          submitBtn.textContent = 'Заявка отправлена';
+        } else if (res.data.ok) {
+          showMsg(res.data.message || 'Готово.', 'ok');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Отправить заявку на турнир';
         } else {
           showMsg(res.data.error || 'Не удалось отправить заявку.', 'err');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Отправить заявку на турнир';
         }
       })
       .catch(function () {
         showMsg('Ошибка сети. Попробуйте позже.', 'err');
-      })
-      .finally(function () {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Отправить заявку на турнир';
       });
