@@ -24,7 +24,7 @@ body{
 }
 a{color:var(--blue2);text-decoration:none}
 a:hover{text-decoration:underline}
-.wrap{max-width:440px;margin:0 auto}
+.wrap{max-width:460px;margin:0 auto}
 .back{display:inline-flex;align-items:center;gap:6px;margin-bottom:20px;color:var(--dim);font-size:13px}
 .back:hover{color:var(--blue2);text-decoration:none}
 .card{
@@ -78,7 +78,35 @@ input::placeholder{color:var(--mute)}
 .preview.show{display:flex}
 .preview img{width:48px;height:48px;border-radius:50%;border:1px solid var(--edge2);object-fit:cover;background:var(--card2)}
 .preview span{font-size:14px;font-weight:500;word-break:break-all}
-.foot{margin-top:20px;text-align:center;font-size:12px;color:var(--mute)}
+.contacts{
+  margin-top:20px;padding:20px 18px;border-radius:14px;
+  background:var(--panel);border:1px solid var(--edge2);
+  box-shadow:0 8px 28px rgba(0,0,0,.22);
+}
+.contacts h2{
+  margin:0 0 4px;font-size:15px;font-weight:600;letter-spacing:.02em;
+}
+.contacts-sub{margin:0 0 14px;font-size:13px;color:var(--dim);line-height:1.4}
+.contact-tg{
+  display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
+  background:var(--card);border:1px solid var(--edge);color:var(--txt);text-decoration:none;
+  transition:border-color .18s,background .18s,transform .12s;
+  -webkit-tap-highlight-color:transparent;
+}
+.contact-tg:hover{
+  text-decoration:none;color:var(--txt);
+  background:var(--card2);border-color:rgba(38,165,228,.45);transform:translateY(-1px);
+}
+.contact-tg-icon{
+  width:40px;height:40px;border-radius:10px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(38,165,228,.14);color:#26a5e4;
+}
+.contact-tg-icon svg{width:20px;height:20px;fill:currentColor}
+.contact-tg-text{display:flex;flex-direction:column;gap:2px;min-width:0}
+.contact-tg-text b{font-size:14px;font-weight:600}
+.contact-tg-text span{font-size:12px;color:var(--dim)}
+.foot{margin-top:18px;text-align:center;font-size:12px;color:var(--mute)}
 @media(max-width:480px){
   .card{padding:22px 18px 18px}
   h1{font-size:20px}
@@ -93,8 +121,7 @@ input::placeholder{color:var(--mute)}
     <h1>Agar.su Tournament June 2026</h1>
     <p class="sub">Форма заявки на участие в турнире. Участвовать могут только игроки со скином и паролем на ник.</p>
     <ul class="rules">
-      <li>Нужен <strong>скин</strong> на вашем нике</li>
-      <li>Нужен <strong>пароль</strong> на нике в игре</li>
+      <li>На вашем нике должен быть <strong>скин</strong> и <strong>пароль.</strong></li>
       <li>Ники с <strong>[ ]</strong> (кланы) не допускаются</li>
     </ul>
     <div class="preview" id="preview">
@@ -118,7 +145,22 @@ input::placeholder{color:var(--mute)}
     </form>
     <div class="msg" id="msg" role="alert"></div>
   </div>
-  <p class="foot">*Проверка выполняется на сервере</p>
+
+  <section class="contacts" aria-label="Контакты">
+    <h2>Контакты</h2>
+    <p class="contacts-sub">Вопросы по турниру — напишите в Telegram</p>
+    <a class="contact-tg" href="https://t.me/agarsu" target="_blank" rel="noopener noreferrer">
+      <span class="contact-tg-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9.78 15.28 9.5 19.3c.55 0 .79-.24 1.08-.52l2.6-2.49 5.39 3.95c.99.55 1.69.26 1.96-.92l3.54-16.62h.01c.32-1.48-.54-2.06-1.5-1.7L1.2 9.37C-.22 9.93-.2 10.73.96 11.08l5.5 1.72L19.1 5.3c.66-.43 1.27-.2.77.23"/></svg>
+      </span>
+      <span class="contact-tg-text">
+        <b>Telegram</b>
+        <span>t.me/agarsu</span>
+      </span>
+    </a>
+  </section>
+
+  <p class="foot">Проверка заявки выполняется на сервере api.agar.su</p>
 </div>
 <script>
 (function () {
