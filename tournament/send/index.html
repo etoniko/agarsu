@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="icon" href="https://agar.su/icon.svg" type="image/x-icon">
+<title>Заявка — Agar.su Tournament June 2026</title>
+<style>
+:root{
+  --navy:#050a14;--panel:#0b1525;--card:#0f1c30;--card2:#142238;
+  --blue:#4d9fff;--blue2:#7ab8ff;--blue-g:rgba(77,159,255,.2);
+  --win:#ff5c5c;--win2:#ff8a8a;--win-g:rgba(255,92,92,.14);
+  --ok:#3dd68c;--ok-g:rgba(61,214,140,.15);
+  --txt:#e8f0fc;--dim:#8fa3c0;--mute:#5a7090;
+  --edge:#1a2d4a;--edge2:#264068;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{min-height:100%;-webkit-text-size-adjust:100%}
+body{
+  min-height:100%;margin:0;padding:24px 16px 40px;
+  font:15px/1.5 system-ui,-apple-system,'Segoe UI',sans-serif;
+  color:var(--txt);background:var(--navy);
+  background-image:radial-gradient(ellipse 80% 50% at 50% -20%,rgba(77,159,255,.12),transparent);
+}
+a{color:var(--blue2);text-decoration:none}
+a:hover{text-decoration:underline}
+.wrap{max-width:440px;margin:0 auto}
+.back{display:inline-flex;align-items:center;gap:6px;margin-bottom:20px;color:var(--dim);font-size:13px}
+.back:hover{color:var(--blue2);text-decoration:none}
+.card{
+  background:var(--panel);border:1px solid var(--edge2);border-radius:16px;
+  padding:28px 24px 24px;box-shadow:0 12px 40px rgba(0,0,0,.35);
+}
+.chip{
+  display:inline-block;padding:4px 10px;border-radius:6px;
+  background:var(--blue-g);border:1px solid var(--edge2);
+  font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--blue2);
+  margin-bottom:12px;
+}
+h1{margin:0 0 6px;font-size:22px;font-weight:600;line-height:1.25}
+.sub{margin:0 0 24px;font-size:14px;color:var(--dim);line-height:1.45}
+.rules{
+  margin:0 0 22px;padding:12px 14px;border-radius:10px;
+  background:var(--card);border:1px solid var(--edge);font-size:13px;color:var(--dim);
+}
+.rules li{margin:4px 0 4px 18px}
+.rules strong{color:var(--txt);font-weight:500}
+label{display:block;margin-bottom:6px;font-size:13px;font-weight:500;color:var(--dim)}
+.field{margin-bottom:16px}
+input[type="text"],input[type="password"]{
+  width:100%;padding:12px 14px;border-radius:10px;
+  border:1px solid var(--edge2);background:var(--card);color:var(--txt);
+  font:inherit;outline:none;transition:border-color .15s,box-shadow .15s;
+}
+input:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-g)}
+input::placeholder{color:var(--mute)}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none}
+.btn{
+  width:100%;margin-top:8px;padding:13px 18px;border:0;border-radius:10px;
+  background:linear-gradient(180deg,var(--blue),#3a8ae8);
+  color:#fff;font:inherit;font-size:15px;font-weight:600;cursor:pointer;
+  transition:opacity .15s,transform .1s;-webkit-tap-highlight-color:transparent;
+}
+.btn:hover:not(:disabled){opacity:.95}
+.btn:active:not(:disabled){transform:scale(.99)}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.msg{
+  margin-top:16px;padding:12px 14px;border-radius:10px;font-size:14px;line-height:1.45;
+  display:none;
+}
+.msg.show{display:block}
+.msg.err{background:var(--win-g);border:1px solid rgba(255,92,92,.35);color:var(--win2)}
+.msg.ok{background:var(--ok-g);border:1px solid rgba(61,214,140,.35);color:var(--ok)}
+.preview{
+  display:none;align-items:center;gap:12px;margin-bottom:18px;padding:12px 14px;
+  border-radius:10px;background:var(--card);border:1px solid var(--edge);
+}
+.preview.show{display:flex}
+.preview img{width:48px;height:48px;border-radius:50%;border:1px solid var(--edge2);object-fit:cover;background:var(--card2)}
+.preview span{font-size:14px;font-weight:500;word-break:break-all}
+.foot{margin-top:20px;text-align:center;font-size:12px;color:var(--mute)}
+@media(max-width:480px){
+  .card{padding:22px 18px 18px}
+  h1{font-size:20px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="https://agar.su/">← Турнирная сетка</a>
+  <div class="card">
+    <span class="chip">Регистрация</span>
+    <h1>Agar.su Tournament June 2026</h1>
+    <p class="sub">Форма заявки на участие в турнире. Участвовать могут только игроки со скином и паролем на ник.</p>
+    <ul class="rules">
+      <li>Нужен <strong>скин</strong> на вашем нике</li>
+      <li>Нужен <strong>пароль</strong> на нике в игре</li>
+      <li>Ники с <strong>[ ]</strong> (кланы) не допускаются</li>
+    </ul>
+    <div class="preview" id="preview">
+      <img id="skin-img" src="" alt="" width="48" height="48">
+      <span id="skin-nick"></span>
+    </div>
+    <form id="form" novalidate>
+      <div class="field hp" aria-hidden="true">
+        <label for="website">Сайт</label>
+        <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="nick">Ваш ник</label>
+        <input type="text" id="nick" name="nick" required maxlength="64" autocomplete="username" placeholder="Точный ник из игры">
+      </div>
+      <div class="field">
+        <label for="password">Ваш пароль</label>
+        <input type="password" id="password" name="password" required maxlength="128" autocomplete="current-password" placeholder="Пароль от ника">
+      </div>
+      <button type="submit" class="btn" id="submit">Отправить заявку на турнир</button>
+    </form>
+    <div class="msg" id="msg" role="alert"></div>
+  </div>
+  <p class="foot">*Проверка выполняется на сервере</p>
+</div>
+<script>
+(function () {
+  var API_BASE = 'https://api.agar.su:6001';
+  var form = document.getElementById('form');
+  var msg = document.getElementById('msg');
+  var submitBtn = document.getElementById('submit');
+  var nickInput = document.getElementById('nick');
+  var preview = document.getElementById('preview');
+  var skinImg = document.getElementById('skin-img');
+  var skinNick = document.getElementById('skin-nick');
+  var skinMap = {};
+  var skinTimer = null;
+
+  var PH = 'data:image/svg+xml,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"><rect width="48" height="48" rx="24" fill="#1a3050"/></svg>'
+  );
+
+  function showMsg(text, type) {
+    msg.textContent = text;
+    msg.className = 'msg show ' + (type || 'err');
+  }
+
+  function hideMsg() {
+    msg.className = 'msg';
+    msg.textContent = '';
+  }
+
+  function parseSkinlist(text) {
+    var m = {};
+    text.split(/\r?\n/).forEach(function (line) {
+      if (!line.trim()) return;
+      var i = line.lastIndexOf(':');
+      if (i < 1) return;
+      var n = line.slice(0, i).trim();
+      var id = line.slice(i + 1).trim();
+      if (n && id && !m[n.toLowerCase()]) m[n.toLowerCase()] = { nick: n, id: id };
+    });
+    return m;
+  }
+
+  fetch('https://api.agar.su/skinlist.txt')
+    .then(function (r) { return r.ok ? r.text() : ''; })
+    .then(function (t) { if (t) skinMap = parseSkinlist(t); })
+    .catch(function () {});
+
+  function updatePreview() {
+    var val = nickInput.value.trim();
+    if (!val) {
+      preview.classList.remove('show');
+      return;
+    }
+    var entry = skinMap[val.toLowerCase()];
+    if (entry) {
+      skinNick.textContent = entry.nick;
+      skinImg.src = 'https://api.agar.su/skins/' + entry.id + '.png';
+      skinImg.onerror = function () { skinImg.src = PH; };
+      preview.classList.add('show');
+    } else {
+      skinNick.textContent = val;
+      skinImg.src = PH;
+      preview.classList.add('show');
+    }
+  }
+
+  nickInput.addEventListener('input', function () {
+    clearTimeout(skinTimer);
+    skinTimer = setTimeout(updatePreview, 200);
+  });
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    hideMsg();
+
+    var nick = nickInput.value.trim();
+    var password = document.getElementById('password').value;
+    var website = document.getElementById('website').value;
+
+    if (!nick) {
+      showMsg('Введите ник.', 'err');
+      nickInput.focus();
+      return;
+    }
+    if (/[\[\]]/.test(nick)) {
+      showMsg('Клановые ники с [ ] не могут участвовать.', 'err');
+      return;
+    }
+    if (!password) {
+      showMsg('Введите пароль.', 'err');
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Отправка…';
+
+    fetch(API_BASE + '/api/tournament/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nick: nick, password: password, website: website })
+    })
+      .then(function (r) {
+        return r.json().then(function (data) {
+          return { status: r.status, data: data };
+        });
+      })
+      .then(function (res) {
+        if (res.data.ok) {
+          showMsg(res.data.message || 'Заявка отправлена!', 'ok');
+          form.reset();
+          preview.classList.remove('show');
+        } else {
+          showMsg(res.data.error || 'Не удалось отправить заявку.', 'err');
+        }
+      })
+      .catch(function () {
+        showMsg('Ошибка сети. Попробуйте позже.', 'err');
+      })
+      .finally(function () {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Отправить заявку на турнир';
+      });
+  });
+})();
+</script>
+</body>
+</html>
