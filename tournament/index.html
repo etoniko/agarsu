@@ -31,8 +31,17 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 .bar-sub .win{color:var(--win);font-weight:600}
 .bar-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
 .bar-btn{padding:8px 16px;border-radius:8px;background:var(--card);border:1px solid var(--edge2);color:var(--blue2);font-size:13px;white-space:nowrap;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+a.bar-btn{text-decoration:none;display:inline-flex;align-items:center}
 .bar-btn.ghost{color:var(--dim)}
-@media(hover:hover){.bar-btn:hover{background:var(--card2);border-color:var(--blue)}}
+.bar-btn.accent{
+  background:linear-gradient(180deg,var(--blue),#3a8ae8);
+  border-color:transparent;color:#fff;font-weight:600;
+}
+@media(hover:hover){
+  .bar-btn:not(.accent):hover{background:var(--card2);border-color:var(--blue)}
+  .bar-btn.accent:hover{opacity:.92}
+}
+@media(max-width:700px){.bar-btn.accent{padding:8px 12px;font-size:12px}}
 .stage{position:fixed;top:var(--bar-h);left:0;right:0;bottom:0;overflow:hidden;cursor:grab;touch-action:none;user-select:none}
 .stage.grabbing{cursor:grabbing}
 .dots{position:absolute;inset:0;pointer-events:none;background-color:#071018;background-image:radial-gradient(circle,rgba(77,159,255,.22) 1px,transparent 1px);background-size:28px 28px}
@@ -102,6 +111,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
     <p class="bar-sub" id="bar-sub"></p>
   </div>
   <div class="bar-actions">
+    <a class="bar-btn accent" href="/send/">Заявка на турнир</a>
     <button type="button" class="bar-btn ghost" id="btn-live" hidden>← Текущий</button>
     <button type="button" class="bar-btn" id="btn-arc">Архив</button>
   </div>
@@ -116,7 +126,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
   <button type="button" class="cam-btn" id="z-in">+</button>
   <button type="button" class="cam-btn" id="z-fit" title="Вписать">◎</button>
 </div>
-<p class="hint" id="hint" hidden>Колёсико — зум · Перетаскивание — панорама</p>
+<p class="hint" id="hint" hidden>Колёсико / два пальца — зум · Перетаскивание — панорама</p>
 <aside class="drawer" id="drawer">
   <div class="drawer-bg" id="drawer-bg"></div>
   <div class="drawer-box">
@@ -550,51 +560,104 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
     });
   }
 
-  var drag = false, pid = null, lx = 0, ly = 0;
+  function zoomAt(cx, cy, ns) {
+    ns = clamp(ns, MIN, MAX);
+    cam.x = cx - (cx - cam.x) * (ns / cam.s);
+    cam.y = cy - (cy - cam.y) * (ns / cam.s);
+    cam.s = ns;
+    apply();
+  }
+
+  function pinchDist(a, b) {
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  }
+
+  function pinchMid(a, b) {
+    return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+  }
+
+  var pointers = new Map();
+  var lastPinchDist = 0;
+  var dragPid = null;
+  var dragLx = 0;
+  var dragLy = 0;
+
   stage.addEventListener('pointerdown', function (e) {
     if (e.target.closest('.cam-ui,.bar,.drawer-box')) return;
-    drag = true; pid = e.pointerId; lx = e.clientX; ly = e.clientY;
     stage.setPointerCapture(e.pointerId);
-    stage.classList.add('grabbing');
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     hint.classList.add('gone');
+    if (pointers.size === 1) {
+      dragPid = e.pointerId;
+      dragLx = e.clientX;
+      dragLy = e.clientY;
+      stage.classList.add('grabbing');
+    } else if (pointers.size === 2) {
+      dragPid = null;
+      stage.classList.remove('grabbing');
+      var pts = Array.from(pointers.values());
+      lastPinchDist = pinchDist(pts[0], pts[1]);
+    }
   });
+
   stage.addEventListener('pointermove', function (e) {
-    if (!drag || e.pointerId !== pid) return;
-    cam.x += e.clientX - lx; cam.y += e.clientY - ly;
-    lx = e.clientX; ly = e.clientY; apply();
+    if (!pointers.has(e.pointerId)) return;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (pointers.size >= 2) {
+      var pts = Array.from(pointers.values());
+      var dist = pinchDist(pts[0], pts[1]);
+      if (lastPinchDist > 0) {
+        var mid = pinchMid(pts[0], pts[1]);
+        var r = stage.getBoundingClientRect();
+        var cx = mid.x - r.left;
+        var cy = mid.y - r.top;
+        zoomAt(cx, cy, cam.s * (dist / lastPinchDist));
+      }
+      lastPinchDist = dist;
+      return;
+    }
+
+    if (dragPid === e.pointerId) {
+      cam.x += e.clientX - dragLx;
+      cam.y += e.clientY - dragLy;
+      dragLx = e.clientX;
+      dragLy = e.clientY;
+      apply();
+    }
   });
-  function endDrag(e) {
-    if (!drag) return;
-    drag = false;
+
+  function endPointer(e) {
+    if (!pointers.has(e.pointerId)) return;
+    pointers.delete(e.pointerId);
     try { stage.releasePointerCapture(e.pointerId); } catch (_) {}
-    stage.classList.remove('grabbing');
+    if (pointers.size < 2) lastPinchDist = 0;
+    if (pointers.size === 1) {
+      var rem = pointers.entries().next().value;
+      dragPid = rem[0];
+      dragLx = rem[1].x;
+      dragLy = rem[1].y;
+    } else {
+      dragPid = null;
+    }
+    if (!pointers.size) stage.classList.remove('grabbing');
   }
-  stage.addEventListener('pointerup', endDrag);
-  stage.addEventListener('pointercancel', endDrag);
+
+  stage.addEventListener('pointerup', endPointer);
+  stage.addEventListener('pointercancel', endPointer);
   stage.addEventListener('wheel', function (e) {
     e.preventDefault();
     var r = stage.getBoundingClientRect();
     var cx = e.clientX - r.left, cy = e.clientY - r.top;
-    var ns = clamp(cam.s * (e.deltaY < 0 ? ZOOM : 1 / ZOOM), MIN, MAX);
-    cam.x = cx - (cx - cam.x) * (ns / cam.s);
-    cam.y = cy - (cy - cam.y) * (ns / cam.s);
-    cam.s = ns; apply();
+    zoomAt(cx, cy, cam.s * (e.deltaY < 0 ? ZOOM : 1 / ZOOM));
     hint.classList.add('gone');
   }, { passive: false });
 
   document.getElementById('z-in').addEventListener('click', function () {
-    var cx = stage.clientWidth / 2, cy = stage.clientHeight / 2;
-    var ns = clamp(cam.s * ZOOM, MIN, MAX);
-    cam.x = cx - (cx - cam.x) * (ns / cam.s);
-    cam.y = cy - (cy - cam.y) * (ns / cam.s);
-    cam.s = ns; apply();
+    zoomAt(stage.clientWidth / 2, stage.clientHeight / 2, cam.s * ZOOM);
   });
   document.getElementById('z-out').addEventListener('click', function () {
-    var cx = stage.clientWidth / 2, cy = stage.clientHeight / 2;
-    var ns = clamp(cam.s / ZOOM, MIN, MAX);
-    cam.x = cx - (cx - cam.x) * (ns / cam.s);
-    cam.y = cy - (cy - cam.y) * (ns / cam.s);
-    cam.s = ns; apply();
+    zoomAt(stage.clientWidth / 2, stage.clientHeight / 2, cam.s / ZOOM);
   });
   document.getElementById('z-fit').addEventListener('click', fit);
   document.getElementById('btn-arc').addEventListener('click', function () { drawer.classList.add('open'); });
