@@ -111,7 +111,7 @@ a.bar-btn{text-decoration:none;display:inline-flex;align-items:center}
     <p class="bar-sub" id="bar-sub"></p>
   </div>
   <div class="bar-actions">
-    <a class="bar-btn accent" href="./send/">Заявка на турнир</a>
+    <a class="bar-btn accent" href="/send/">Заявка на турнир</a>
     <button type="button" class="bar-btn ghost" id="btn-live" hidden>← Текущий</button>
     <button type="button" class="bar-btn" id="btn-arc">Архив</button>
   </div>
@@ -578,9 +578,18 @@ a.bar-btn{text-decoration:none;display:inline-flex;align-items:center}
 
   var pointers = new Map();
   var lastPinchDist = 0;
+  var lastPinchMid = null;
   var dragPid = null;
   var dragLx = 0;
   var dragLy = 0;
+
+  function initPinchState() {
+    var pts = Array.from(pointers.values());
+    if (pts.length < 2) return;
+    lastPinchDist = pinchDist(pts[0], pts[1]);
+    var mid = pinchMid(pts[0], pts[1]);
+    lastPinchMid = { x: mid.x, y: mid.y };
+  }
 
   stage.addEventListener('pointerdown', function (e) {
     if (e.target.closest('.cam-ui,.bar,.drawer-box')) return;
@@ -592,11 +601,10 @@ a.bar-btn{text-decoration:none;display:inline-flex;align-items:center}
       dragLx = e.clientX;
       dragLy = e.clientY;
       stage.classList.add('grabbing');
-    } else if (pointers.size === 2) {
+    } else if (pointers.size >= 2) {
       dragPid = null;
       stage.classList.remove('grabbing');
-      var pts = Array.from(pointers.values());
-      lastPinchDist = pinchDist(pts[0], pts[1]);
+      initPinchState();
     }
   });
 
@@ -607,14 +615,17 @@ a.bar-btn{text-decoration:none;display:inline-flex;align-items:center}
     if (pointers.size >= 2) {
       var pts = Array.from(pointers.values());
       var dist = pinchDist(pts[0], pts[1]);
-      if (lastPinchDist > 0) {
-        var mid = pinchMid(pts[0], pts[1]);
+      var mid = pinchMid(pts[0], pts[1]);
+      if (lastPinchDist > 0 && lastPinchMid) {
+        cam.x += mid.x - lastPinchMid.x;
+        cam.y += mid.y - lastPinchMid.y;
         var r = stage.getBoundingClientRect();
         var cx = mid.x - r.left;
         var cy = mid.y - r.top;
         zoomAt(cx, cy, cam.s * (dist / lastPinchDist));
       }
       lastPinchDist = dist;
+      lastPinchMid = { x: mid.x, y: mid.y };
       return;
     }
 
@@ -631,12 +642,19 @@ a.bar-btn{text-decoration:none;display:inline-flex;align-items:center}
     if (!pointers.has(e.pointerId)) return;
     pointers.delete(e.pointerId);
     try { stage.releasePointerCapture(e.pointerId); } catch (_) {}
-    if (pointers.size < 2) lastPinchDist = 0;
+    if (pointers.size < 2) {
+      lastPinchDist = 0;
+      lastPinchMid = null;
+    }
     if (pointers.size === 1) {
       var rem = pointers.entries().next().value;
       dragPid = rem[0];
       dragLx = rem[1].x;
       dragLy = rem[1].y;
+      stage.classList.add('grabbing');
+    } else if (pointers.size >= 2) {
+      dragPid = null;
+      initPinchState();
     } else {
       dragPid = null;
     }
