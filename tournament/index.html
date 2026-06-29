@@ -150,6 +150,13 @@ a.bar-btn{text-decoration:none;display:inline-flex;align-items:center}
     return pageBase() + 'archive/' + file;
   }
 
+  function cacheBust(url) {
+    var chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    var q = '';
+    for (var i = 0; i < 5; i++) q += chars.charAt((Math.random() * chars.length) | 0);
+    return url + '?' + q;
+  }
+
   var PH = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28"><rect width="28" height="28" rx="14" fill="#1a3050"/></svg>');
 
   var loadEl = document.getElementById('load');
@@ -178,7 +185,7 @@ a.bar-btn{text-decoration:none;display:inline-flex;align-items:center}
   }
 
   function fetchJson(url, opts) {
-    return fetch(url, opts).then(function (r) {
+    return fetch(cacheBust(url), opts).then(function (r) {
       if (!r.ok) throw new Error(url + ' → HTTP ' + r.status);
       return r.text().then(function (t) {
         try { return JSON.parse(t); }
