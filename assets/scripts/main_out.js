@@ -4561,7 +4561,7 @@ wjQuery(window).on('load', function() {
 
 
 
-const transparent = new Set(["liqwid","⟨本⟩ Itana."]);
+const transparent = new Set(["liqwid","⟨本⟩ Itana.","†Ĵώâ4ќâ†"]);
 let invisible = new Set(); // сначала пустой Set
 fetch("https://api.agar.su/invisible.txt")
   .then(r => r.text())
