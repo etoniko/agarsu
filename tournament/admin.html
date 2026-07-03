@@ -117,8 +117,8 @@ a.link{color:var(--blue2)}
   var cur = null;
   var dirty = false;
 
-  var TEAM_OPTS = [2, 4, 8, 16, 32, 64, 128, 256];
   var MODES = ['Classic', 'FFA Teams', 'Gigasplit', 'Megasplit', 'Crazy', 'Другое'];
+  var MAX_SLOTS = 512;
 
   function $(id) { return document.getElementById(id); }
 
@@ -148,31 +148,53 @@ a.link{color:var(--blue2)}
   }
 
   function sideIndices(n, side) {
-    var half = n / 2;
+    var leftCount = Math.ceil(n / 2);
+    var start = side === 'left' ? 0 : leftCount;
+    var count = side === 'left' ? leftCount : n - leftCount;
     var out = [];
-    for (var i = 0; i < half; i++) out.push(side === 'left' ? i : i + half);
+    for (var i = 0; i < count; i++) out.push(start + i);
     return out;
   }
 
+  function sideParticipantsAtRound(n, round) {
+    var count = Math.ceil(n / 2);
+    for (var r = 0; r < round; r++) count = Math.ceil(count / 2);
+    return count;
+  }
+
   function roundsPerSide(n) {
-    var h = n / 2;
+    var h = Math.ceil(n / 2);
     var r = 0;
-    while (h > 1) { r++; h /= 2; }
+    while (h > 1) { r++; h = Math.ceil(h / 2); }
     return r;
   }
 
+  function roundParticipants(side, round, data) {
+    if (round === 0) return sideIndices(data.totalTeams, side);
+    return roundAdvancers(side, round - 1, data);
+  }
+
   function roundPairs(side, round, data) {
-    if (round === 0) {
-      var idx = sideIndices(data.totalTeams, side);
-      var pairs = [];
-      for (var i = 0; i < idx.length; i += 2) pairs.push([idx[i], idx[i + 1]]);
-      return pairs;
+    var ps = roundParticipants(side, round, data);
+    var pairs = [];
+    for (var i = 0; i + 1 < ps.length; i += 2) pairs.push([ps[i], ps[i + 1]]);
+    return pairs;
+  }
+
+  function roundAdvancers(side, round, data) {
+    var pairs = roundPairs(side, round, data);
+    var winners = (data.winners[side][round] || []);
+    var participants = roundParticipants(side, round, data);
+    var out = [];
+    var inPair = {};
+    for (var i = 0; i < pairs.length; i++) {
+      if (winners[i] != null) out.push(winners[i]);
     }
-    var prev = (data.winners[side][round - 1] || []).filter(function (x) { return x != null; });
-    if (prev.length < 2 || prev.length % 2) return [];
-    var ps = [];
-    for (var j = 0; j < prev.length; j += 2) ps.push([prev[j], prev[j + 1]]);
-    return ps;
+    pairs.forEach(function (p) { p.forEach(function (x) { inPair[x] = true; }); });
+    for (var j = 0; j < participants.length; j++) {
+      if (!inPair[participants[j]]) out.push(participants[j]);
+    }
+    return out;
   }
 
   function ensureWinners(data) {
@@ -185,17 +207,18 @@ a.link{color:var(--blue2)}
     var rounds = roundsPerSide(n);
     var tags = [];
     var r;
-    for (r = 0; r < rounds; r++) tags.push('1/' + (n / Math.pow(2, r + 1)));
+    for (r = 0; r < rounds; r++) tags.push('1/' + sideParticipantsAtRound(n, r));
     tags.push('финал');
-    for (r = rounds - 1; r >= 0; r--) tags.push('1/' + (n / Math.pow(2, r + 1)));
+    for (r = rounds - 1; r >= 0; r--) tags.push('1/' + sideParticipantsAtRound(n, r));
     return tags;
   }
 
   function isRoundReady(side, round, data) {
     if (round === 0) return true;
     var prevPairs = roundPairs(side, round - 1, data);
+    if (!prevPairs.length) return true;
     var prevWinners = data.winners[side][round - 1] || [];
-    return prevPairs.length > 0 && prevWinners.length === prevPairs.length &&
+    return prevWinners.length === prevPairs.length &&
       prevWinners.every(function (x) { return x != null; });
   }
 
@@ -229,12 +252,28 @@ a.link{color:var(--blue2)}
     return html + '</div>';
   }
 
-  function getFinalPair(data) {
-    if (data.totalTeams <= 2) return [0, 1];
+  function getSideChampion(data, side) {
     var rounds = roundsPerSide(data.totalTeams);
-    if (data.winners.left.length < rounds || data.winners.right.length < rounds) return null;
-    var lc = data.winners.left[rounds - 1][0];
-    var rc = data.winners.right[rounds - 1][0];
+    if (rounds === 0) {
+      var idx = sideIndices(data.totalTeams, side);
+      return idx.length === 1 ? idx[0] : null;
+    }
+    var lastRound = rounds - 1;
+    var pairs = roundPairs(side, lastRound, data);
+    if (!pairs.length) {
+      var parts = roundParticipants(side, lastRound, data);
+      return parts.length === 1 ? parts[0] : null;
+    }
+    var row = data.winners[side][lastRound];
+    if (!row || row[0] == null) return null;
+    return row[0];
+  }
+
+  function getFinalPair(data) {
+    if (data.totalTeams <= 1) return null;
+    if (data.totalTeams === 2) return [0, 1];
+    var lc = getSideChampion(data, 'left');
+    var rc = getSideChampion(data, 'right');
     if (lc == null || rc == null) return null;
     return [lc, rc];
   }
@@ -371,12 +410,6 @@ a.link{color:var(--blue2)}
       var sel = (modeKnown ? d.mode : 'Другое') === m ? ' selected' : '';
       return '<option' + sel + '>' + m + '</option>';
     }).join('');
-    var counts = TEAM_OPTS.slice();
-    if (counts.indexOf(d.totalTeams) < 0 && d.totalTeams >= 2) counts.push(d.totalTeams);
-    counts.sort(function (a, b) { return a - b; });
-    var teamOpts = counts.map(function (n) {
-      return '<option value="' + n + '"' + (d.totalTeams === n ? ' selected' : '') + '>' + n + ' ' + unitsInGrid(d) + '</option>';
-    }).join('');
     var pptLabel = isSolo(d) ? 'Игроков в слоте' : 'Игроков в команде';
 
     workspace.innerHTML =
@@ -385,15 +418,15 @@ a.link{color:var(--blue2)}
       '<div class="field"><label>Номер файла</label><input id="f-id" value="' + (d.num || d.id) + '" readonly></div>' +
       '<div class="field"><label>Дата</label><input id="f-date" type="datetime-local" value="' + esc(toLocal(d.date)) + '"></div>' +
       '<div class="field"><label>' + pptLabel + '</label><input id="f-ppt" type="number" min="1" max="10" value="' + ppt + '"></div>' +
-      '<div class="field"><label>' + unitsCap(d) + ' в сетке</label><select id="f-teams">' + teamOpts + '</select></div>' +
+      '<div class="field"><label>' + unitsCap(d) + ' в сетке</label><input id="f-teams" type="number" min="2" max="' + MAX_SLOTS + '" value="' + d.totalTeams + '"></div>' +
       '<div class="field"><label>Режим</label><select id="f-mode">' + modeOpts + '</select><input id="f-mode-custom" placeholder="Свой режим" value="' +
         esc(MODES.indexOf(d.mode) >= 0 ? '' : (d.mode || '')) + '" style="margin-top:6px;width:100%"></div>' +
       '<div class="field"><label>Награда</label><input id="f-reward" value="' + esc(d.reward || '') + '"></div>' +
-      '</div><p class="hint">Формат: <b>' + esc(d.format) + '</b>. Клик — победитель. Повторный клик — отмена.</p></div>' +
+      '</div><p class="hint">Формат: <b>' + esc(d.format) + '</b>. Любое число ' + unitsInGrid(d) + ' (2–' + MAX_SLOTS + '). Нечётное — автоматический проход. Клик — победитель.</p></div>' +
 
       '<div class="section"><h2>' + (isSolo(d) ? 'Слоты' : 'Команды') + ' (' + d.totalTeams + ')</h2><div class="teams" id="teams-box"></div></div>' +
 
-      '<div class="section"><h2>Сетка</h2><p class="hint">До 256 ' + unitsInGrid(d) + '. Синий — победитель, красный — чемпион.</p>' +
+      '<div class="section"><h2>Сетка</h2><p class="hint">До ' + MAX_SLOTS + ' ' + unitsInGrid(d) + '. Синий — победитель, красный — чемпион.</p>' +
       '<div class="map-wrap" id="map-box">' + renderVisualMap(d) + '</div></div>';
 
     var teamsBox = $('teams-box');
@@ -444,7 +477,10 @@ a.link{color:var(--blue2)}
       render();
     });
     $('f-teams').addEventListener('change', function () {
-      rebuildTeams(cur, parseInt($('f-teams').value, 10), playersPerTeam(cur));
+      var n = parseInt($('f-teams').value, 10);
+      if (isNaN(n) || n < 2) n = 2;
+      if (n > MAX_SLOTS) n = MAX_SLOTS;
+      rebuildTeams(cur, n, playersPerTeam(cur));
       render();
     });
   }
@@ -553,15 +589,15 @@ a.link{color:var(--blue2)}
   }
 
   function createNew() {
-    var ppt = 2;
-    var teams = 16;
+    var ppt = 1;
+    var teams = 26;
     var n = currentNum() + 1;
     cur = {
       id: n, num: n, name: 'Новый турнир #' + n, date: new Date().toISOString(),
-      archivedAt: new Date().toISOString(), totalTeams: teams, format: '2x2',
-      mode: 'FFA Teams', reward: '',
+      archivedAt: new Date().toISOString(), totalTeams: teams, format: '1x1',
+      mode: 'Classic', reward: '',
       teams: Array.from({ length: teams }, function (_, i) {
-        return { players: ['Игрок ' + (i * 2 + 1), 'Игрок ' + (i * 2 + 2)] };
+        return { players: ['Слот ' + (i + 1)] };
       }),
       winners: { left: [], right: [], final: null }, winnerTeam: null,
     };
