@@ -59,6 +59,14 @@ button.danger{color:var(--red)}
 .cell.pickable:hover{background:var(--card2)}
 .cell.win{background:rgba(77,159,255,.14)}
 .cell.lose{opacity:.42}
+.cell.pending{opacity:.72}
+.fight.bye{opacity:.45;border-style:dashed;box-shadow:none;margin-top:auto;align-self:center}
+.fight.bye .cap{background:var(--line)}
+.cell.bye{cursor:default;padding:2px 0}
+.cell.bye .name{color:var(--mute);font-size:12px}
+.bye-lbl{display:block;padding:0 10px 4px;font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.fight.crown .cell.pending .name{color:var(--dim);font-weight:400}
+.fight.crown .cell.pending .row:first-child .name::before{display:none}
 .cell.lose.pickable{opacity:.58;cursor:pointer}
 .cell.lose.pickable:hover{opacity:.9;background:var(--card2)}
 .cell.win-pick{background:rgba(255,92,92,.14)}
@@ -197,6 +205,31 @@ a.link{color:var(--blue2)}
     return out;
   }
 
+  function roundByes(side, round, data) {
+    var participants = roundParticipants(side, round, data);
+    var pairs = roundPairs(side, round, data);
+    var inPair = {};
+    var out = [];
+    pairs.forEach(function (p) { p.forEach(function (x) { inPair[x] = true; }); });
+    for (var i = 0; i < participants.length; i++) {
+      if (!inPair[participants[i]]) out.push(participants[i]);
+    }
+    return out;
+  }
+
+  function isSideComplete(data, side) {
+    var rounds = roundsPerSide(data.totalTeams);
+    for (var r = 0; r < rounds; r++) {
+      var pairs = roundPairs(side, r, data);
+      if (!pairs.length) continue;
+      var winners = data.winners[side][r] || [];
+      for (var i = 0; i < pairs.length; i++) {
+        if (winners[i] == null) return false;
+      }
+    }
+    return true;
+  }
+
   function ensureWinners(data) {
     if (!data.winners) data.winners = { left: [], right: [], final: null };
     if (!data.winners.left) data.winners.left = [];
@@ -222,13 +255,23 @@ a.link{color:var(--blue2)}
       prevWinners.every(function (x) { return x != null; });
   }
 
-  function cellClass(teamIdx, pick, ready, crown) {
+  function cellClass(teamIdx, pick, ready, crown, pending) {
     var cls = 'cell';
+    if (pending) return cls + ' pending pickable';
     if (!ready) return cls + ' lose';
     cls += ' pickable';
     if (pick == null) return cls;
     if (pick === teamIdx) return cls + (crown ? ' win-pick' : ' win');
     return cls + ' lose';
+  }
+
+  function renderByeBox(teamIdx, data) {
+    var t = data.teams[teamIdx] || { players: [] };
+    var html = '<div class="fight bye"><div class="cap"></div><span class="bye-lbl">автопроход</span><div class="cell bye">';
+    (t.players || ['']).forEach(function (p) {
+      html += '<div class="row"><span class="name" title="' + esc(p) + '">' + esc(p || '—') + '</span></div>';
+    });
+    return html + '</div></div>';
   }
 
   function renderCell(side, round, matchIdx, teamIdx, cls, data) {
@@ -253,20 +296,14 @@ a.link{color:var(--blue2)}
   }
 
   function getSideChampion(data, side) {
+    if (!isSideComplete(data, side)) return null;
     var rounds = roundsPerSide(data.totalTeams);
     if (rounds === 0) {
       var idx = sideIndices(data.totalTeams, side);
       return idx.length === 1 ? idx[0] : null;
     }
-    var lastRound = rounds - 1;
-    var pairs = roundPairs(side, lastRound, data);
-    if (!pairs.length) {
-      var parts = roundParticipants(side, lastRound, data);
-      return parts.length === 1 ? parts[0] : null;
-    }
-    var row = data.winners[side][lastRound];
-    if (!row || row[0] == null) return null;
-    return row[0];
+    var adv = roundAdvancers(side, rounds - 1, data);
+    return adv.length === 1 ? adv[0] : null;
   }
 
   function getFinalPair(data) {
@@ -280,11 +317,12 @@ a.link{color:var(--blue2)}
 
   function renderFinalFight(data) {
     var pair = getFinalPair(data);
-    if (!pair) return '<p class="map-empty">Дойдите до финала с обеих сторон</p>';
+    if (!pair) return '<p class="map-empty">Финал — после полуфиналов с обеих сторон</p>';
     var fin = data.winners.final;
+    var pending = fin == null;
     var html = '<div class="fight crown"><div class="cap"></div>';
     pair.forEach(function (ti, idx) {
-      html += renderCell('final', 0, 0, ti, cellClass(ti, fin, true, true), data);
+      html += renderCell('final', 0, 0, ti, cellClass(ti, fin, true, true, pending), data);
       if (idx === 0) html += '<div class="mid"></div>';
     });
     return html + '</div>';
@@ -314,12 +352,14 @@ a.link{color:var(--blue2)}
         pairsL.forEach(function (pair, fi) {
           html += renderFightBox('left', c, fi, pair, data);
         });
+        if (c === 0) roundByes('left', c, data).forEach(function (b) { html += renderByeBox(b, data); });
       } else {
         var rr = cols - 1 - c;
         var pairsR = roundPairs('right', rr, data);
         pairsR.forEach(function (pair, fi) {
           html += renderFightBox('right', rr, fi, pair, data);
         });
+        if (rr === 0) roundByes('right', rr, data).forEach(function (b) { html += renderByeBox(b, data); });
       }
       html += '</div>';
     }
