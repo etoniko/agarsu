@@ -2,158 +2,40 @@
   "id": 2,
   "name": "TOURNAMENT JUNE 2026",
   "date": "2026-07-03T16:28:00.000Z",
-  "archivedAt": "2026-07-03T18:05:39.929Z",
-  "totalTeams": 26,
+  "archivedAt": "2026-07-03T19:00:00.000Z",
+  "totalTeams": 24,
   "format": "1x1",
   "mode": "Classic",
   "reward": "5000р",
   "teams": [
-    {
-      "players": [
-        "khirad"
-      ]
-    },
-    {
-      "players": [
-        "Оbladait"
-      ]
-    },
-    {
-      "players": [
-        "Всекончал"
-      ]
-    },
-    {
-      "players": [
-        "bl1ck"
-      ]
-    },
-    {
-      "players": [
-        "newlightchild"
-      ]
-    },
-    {
-      "players": [
-        "morcov"
-      ]
-    },
-    {
-      "players": [
-        "☼K☼"
-      ]
-    },
-    {
-      "players": [
-        "ау"
-      ]
-    },
-    {
-      "players": [
-        "v_potoke"
-      ]
-    },
-    {
-      "players": [
-        "Папа"
-      ]
-    },
-    {
-      "players": [
-        "deffka"
-      ]
-    },
-    {
-      "players": [
-        "прошка"
-      ]
-    },
-    {
-      "players": [
-        "ᴋɪᴘʟᴇɴᴋᴀ🪐"
-      ]
-    },
-    {
-      "players": [
-        "griffin"
-      ]
-    },
-    {
-      "players": [
-        "some no mai"
-      ]
-    },
-    {
-      "players": [
-        "АЛИК ))))"
-      ]
-    },
-    {
-      "players": [
-        "Jeff"
-      ]
-    },
-    {
-      "players": [
-        "PULIK"
-      ]
-    },
-    {
-      "players": [
-        "salruz"
-      ]
-    },
-    {
-      "players": [
-        "vaas"
-      ]
-    },
-    {
-      "players": [
-        "aeris"
-      ]
-    },
-    {
-      "players": [
-        "sorry"
-      ]
-    },
-    {
-      "players": [
-        "курага"
-      ]
-    },
-    {
-      "players": [
-        "полина"
-      ]
-    },
-    {
-      "players": [
-        "ʟᴇɢᴇɴᴅ"
-      ]
-    },
-    {
-      "players": [
-        "𝓙𝓲𝓷𝔁"
-      ]
-    }
+    { "players": ["khirad"] },
+    { "players": ["Оbladait"] },
+    { "players": ["Всекончал"] },
+    { "players": ["bl1ck"] },
+    { "players": ["newlightchild"] },
+    { "players": ["morcov"] },
+    { "players": ["☼K☼"] },
+    { "players": ["ау"] },
+    { "players": ["v_potoke"] },
+    { "players": ["Папа"] },
+    { "players": ["deffka"] },
+    { "players": ["прошка"] },
+    { "players": ["griffin"] },
+    { "players": ["some no mai"] },
+    { "players": ["АЛИК ))))"] },
+    { "players": ["Jeff"] },
+    { "players": ["PULIK"] },
+    { "players": ["salruz"] },
+    { "players": ["vaas"] },
+    { "players": ["aeris"] },
+    { "players": ["sorry"] },
+    { "players": ["курага"] },
+    { "players": ["полина"] },
+    { "players": ["ʟᴇɢᴇɴᴅ"] }
   ],
   "winners": {
-    "left": [
-      [
-        1
-      ]
-    ],
-    "right": [
-      [
-        null,
-        null,
-        18,
-        null,
-        null
-      ]
-    ],
+    "left": [],
+    "right": [],
     "final": null
   },
   "status": "archived",
