@@ -2226,7 +2226,7 @@ function censorMessage(message) {
 
 let currentUserRole = 'user';
 const admins = ["нико","^iStack","banshee"];
-const moderator = ["rizwer","pulik","могучий жидяра","salruz","morcov"];
+const moderator = ["rizwer","pulik","могучий жидяра","salruz","morcov","khirad"];
 const moders = ["cosmos","rizwer","bambule","☼k☼","pulik","могучий жидяра","salruz","morcov"];
 const mod = ["☼k☼"];
 const youtubers = ["salruz", "morcov","sealand"];
