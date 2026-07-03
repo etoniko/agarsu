@@ -2,7 +2,7 @@
   "id": 2,
   "name": "TOURNAMENT JUNE 2026",
   "date": "2026-07-03T16:28:00.000Z",
-  "archivedAt": "2026-07-03T15:51:45.741Z",
+  "archivedAt": "2026-07-03T17:51:58.475Z",
   "totalTeams": 26,
   "format": "1x1",
   "mode": "Classic",
@@ -15,7 +15,7 @@
     },
     {
       "players": [
-        "Оbladаit"
+        "Оbladait"
       ]
     },
     {
@@ -142,14 +142,16 @@
   "winners": {
     "left": [
       [
-        null
+        1
       ]
     ],
     "right": [
       [
         null,
         null,
-        null
+        null,
+        20,
+        22
       ]
     ],
     "final": null
