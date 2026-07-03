@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="icon" href="/icon.svg" type="image/x-icon">
+<title>Турнир</title>
+<style>
+:root{
+  --navy:#050a14;--panel:#0b1525;--card:#0f1c30;--card2:#142238;
+  --blue:#4d9fff;--blue2:#7ab8ff;--blue-g:rgba(77,159,255,.2);
+  --win:#ff5c5c;--win2:#ff8a8a;--win-g:rgba(255,92,92,.14);
+  --txt:#e8f0fc;--dim:#8fa3c0;--mute:#5a7090;
+  --edge:#1a2d4a;--edge2:#264068;--lose:.4;
+  --bar-h:64px;--fight-w:248px;--row-h:44px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{height:100%;-webkit-text-size-adjust:100%}
+body{height:100%;margin:0;overflow:hidden;font:15px/1.5 system-ui,-apple-system,'Segoe UI',sans-serif;color:var(--txt);background:var(--navy)}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;padding:0}
+.bar{
+  position:fixed;top:0;left:0;right:0;z-index:50;min-height:var(--bar-h);
+  display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 20px;
+  background:rgba(5,10,20,.94);backdrop-filter:blur(14px);border-bottom:1px solid var(--edge);
+}
+.bar-main{flex:1;min-width:0}
+.bar-top{display:flex;align-items:center;gap:10px;min-width:0}
+.chip{flex-shrink:0;padding:4px 10px;border-radius:6px;background:var(--blue-g);border:1px solid var(--edge2);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--blue2)}
+.bar-title{margin:0;font-size:16px;font-weight:600;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-sub{margin:3px 0 0;font-size:13px;line-height:1.35;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-sub .win{color:var(--win);font-weight:600}
+.bar-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.bar-btn{padding:8px 16px;border-radius:8px;background:var(--card);border:1px solid var(--edge2);color:var(--blue2);font-size:13px;white-space:nowrap;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+a.bar-btn{text-decoration:none;display:inline-flex;align-items:center}
+.bar-btn.ghost{color:var(--dim)}
+.bar-btn.accent{
+  background:linear-gradient(180deg,var(--blue),#3a8ae8);
+  border-color:transparent;color:#fff;font-weight:600;
+}
+@media(hover:hover){
+  .bar-btn:not(.accent):hover{background:var(--card2);border-color:var(--blue)}
+  .bar-btn.accent:hover{opacity:.92}
+}
+@media(max-width:700px){.bar-btn.accent{padding:8px 12px;font-size:12px}}
+.stage{position:fixed;top:var(--bar-h);left:0;right:0;bottom:0;overflow:hidden;cursor:grab;touch-action:none;user-select:none}
+.stage.grabbing{cursor:grabbing}
+.dots{position:absolute;inset:0;pointer-events:none;background-color:#071018;background-image:radial-gradient(circle,rgba(77,159,255,.22) 1px,transparent 1px);background-size:28px 28px}
+.world{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform}
+.scene[hidden]{display:none!important}
+.map-pad{padding:120px 140px}
+.map{display:inline-block;vertical-align:top}
+.map-tags{display:grid;grid-template-columns:repeat(var(--cols),max-content);gap:40px;margin-bottom:24px;justify-content:center}
+.map-tags span{text-align:center;font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+.map-grid{display:grid;grid-template-columns:repeat(var(--cols),max-content);gap:40px;align-items:stretch;justify-content:center}
+.lane{display:grid;grid-template-rows:repeat(var(--rows,6),minmax(calc(var(--row-h)*2 + 14px),1fr));min-height:var(--colh);position:relative;align-content:stretch;gap:6px}
+.lane-l::after,.lane-r::after{content:'';position:absolute;top:4%;bottom:4%;width:20px;pointer-events:none}
+.lane-l::after{right:-20px;border-right:2px solid var(--edge)}
+.lane-r::after{left:-20px;border-left:2px solid var(--edge)}
+.lane-m{display:flex;grid-template-rows:none;justify-content:center;align-items:center}
+.fight{width:var(--fight-w);background:var(--card);border:1px solid var(--edge);border-radius:14px;overflow:hidden;box-shadow:0 8px 28px rgba(0,0,0,.35);flex-shrink:0;align-self:center;position:relative}
+.fight.advance{border-style:dashed;border-color:var(--blue);opacity:.95}
+.fight.advance .cell.pending .name{color:var(--mute);font-size:12px;font-style:italic}
+.lane-l .fight::after,.lane-r .fight::after{content:'';position:absolute;top:50%;width:14px;height:2px;background:var(--edge);pointer-events:none;transform:translateY(-50%)}
+.lane-l .fight::after{right:-14px}
+.lane-r .fight::after{left:-14px}
+.fight.crown{border-color:var(--win);box-shadow:0 8px 28px rgba(0,0,0,.35)}
+.fight.crown .cap{background:var(--win)}
+.fight.crown .cell.win{background:var(--win-g)}
+.fight.crown .cell.win .name{color:var(--win2)}
+.fight.crown .cell.win .row:first-child .name::before{background:var(--win)}
+.cap{height:3px;background:var(--edge2)}
+.mid{height:1px;background:var(--edge)}
+.cell{padding:4px 0}
+.cell.win{background:rgba(77,159,255,.12)}
+.cell.lose{opacity:var(--lose)}
+.cell.pending{opacity:.72}
+.fight.crown .cell.pending .name{color:var(--dim);font-weight:400}
+.fight.crown .cell.pending .row:first-child .name::before{display:none}
+.row{display:flex;align-items:center;gap:10px;padding:0 14px;height:var(--row-h);min-height:var(--row-h);max-height:var(--row-h)}
+.row img{width:28px;height:28px;border-radius:50%;flex-shrink:0;border:1px solid var(--edge2);object-fit:cover;background:var(--card2)}
+.name{flex:1;min-width:0;font-size:14px;line-height:1.2;white-space:nowrap;overflow:hidden}
+.cell.win .name{font-weight:600;color:#fff}
+.cell.win .row:first-child .name::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--blue);margin-right:8px;vertical-align:middle}
+.cam-ui{position:fixed;right:20px;bottom:20px;z-index:50;display:flex;align-items:center;gap:6px;padding:8px;background:rgba(8,14,26,.92);backdrop-filter:blur(12px);border:1px solid var(--edge2);border-radius:14px}
+.cam-btn{width:40px;height:40px;border-radius:10px;background:var(--card);border:1px solid var(--edge);color:var(--txt);font-size:20px;display:flex;align-items:center;justify-content:center}
+.cam-pct{min-width:48px;text-align:center;font-size:13px;color:var(--dim);font-variant-numeric:tabular-nums}
+.hint{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:40;margin:0;padding:8px 16px;border-radius:20px;background:rgba(8,14,26,.8);color:var(--mute);font-size:12px;pointer-events:none;transition:opacity .4s}
+.hint.gone{opacity:0}
+.load{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:var(--navy);color:var(--dim)}
+.load[hidden]{display:none!important}
+.drawer{position:fixed;inset:0;z-index:60;pointer-events:none;visibility:hidden}
+.drawer.open{pointer-events:auto;visibility:visible}
+.drawer-bg{position:absolute;inset:0;background:rgba(4,8,16,.55);opacity:0;transition:opacity .2s}
+.drawer.open .drawer-bg{opacity:1}
+.drawer-box{position:absolute;top:0;right:0;width:min(400px,100%);height:100%;background:var(--panel);border-left:1px solid var(--edge2);transform:translateX(100%);transition:transform .22s;display:flex;flex-direction:column}
+.drawer.open .drawer-box{transform:none}
+.drawer-head{display:flex;justify-content:space-between;align-items:center;padding:20px 18px;border-bottom:1px solid var(--edge)}
+.drawer-scroll{flex:1;overflow-y:auto;padding:12px}
+.arc{display:flex;flex-direction:column;align-items:flex-start;gap:5px;width:100%;text-align:left;padding:14px;border-radius:10px;margin-bottom:6px;border:1px solid transparent}
+@media(hover:hover){.arc:hover{background:var(--card);border-color:var(--edge)}}
+.arc b{font-size:14px;font-weight:500}
+.arc small{font-size:12px;color:var(--dim)}
+@media(max-width:700px){
+  :root{--bar-h:56px;--fight-w:200px}
+  .bar{padding:8px 14px}
+  .map-pad{padding:80px 60px}
+  .map-tags,.map-grid{gap:28px}
+}
+</style>
+</head>
+<body>
+<div class="load" id="load">Загрузка…</div>
+<header class="bar" id="bar" hidden>
+  <div class="bar-main">
+    <div class="bar-top">
+      <span class="chip" id="bar-tag">Текущий</span>
+      <h1 class="bar-title" id="bar-title">Турнир</h1>
+    </div>
+    <p class="bar-sub" id="bar-sub"></p>
+  </div>
+  <div class="bar-actions">
+    <a class="bar-btn accent" href="./send/">Заявка на турнир</a>
+    <button type="button" class="bar-btn ghost" id="btn-live" hidden>← Текущий</button>
+    <button type="button" class="bar-btn" id="btn-arc">Архив</button>
+  </div>
+</header>
+<div class="stage" id="stage" hidden>
+  <div class="dots"></div>
+  <div class="world" id="world"></div>
+</div>
+<div class="cam-ui" id="cam-ui" hidden>
+  <button type="button" class="cam-btn" id="z-out">−</button>
+  <span class="cam-pct" id="z-pct">100%</span>
+  <button type="button" class="cam-btn" id="z-in">+</button>
+  <button type="button" class="cam-btn" id="z-fit" title="Вписать">◎</button>
+</div>
+<p class="hint" id="hint" hidden>Колёсико / два пальца — зум · Перетаскивание — панорама</p>
+<aside class="drawer" id="drawer">
+  <div class="drawer-bg" id="drawer-bg"></div>
+  <div class="drawer-box">
+    <div class="drawer-head"><b>Архив</b><button type="button" class="bar-btn" id="btn-shut">✕</button></div>
+    <div class="drawer-scroll" id="arc-list"></div>
+  </div>
+</aside>
+<script>
+(function () {
+  function pageBase() {
+    var path = location.pathname;
+    if (!path.endsWith('/')) {
+      path = /\.[a-z0-9]+$/i.test(path.split('/').pop() || '')
+        ? path.replace(/\/[^/]+$/, '/')
+        : path + '/';
+    }
+    return path;
+  }
+
+  function archiveUrl(file) {
+    return pageBase() + 'archive/' + file;
+  }
+
+  function cacheBust(url) {
+    var chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    var q = '';
+    for (var i = 0; i < 5; i++) q += chars.charAt((Math.random() * chars.length) | 0);
+    return url + '?' + q;
+  }
+
+  var PH = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28"><rect width="28" height="28" rx="14" fill="#1a3050"/></svg>');
+
+  var loadEl = document.getElementById('load');
+  var bar = document.getElementById('bar');
+  var stage = document.getElementById('stage');
+  var world = document.getElementById('world');
+  var camUi = document.getElementById('cam-ui');
+  var hint = document.getElementById('hint');
+
+  function fail(msg) {
+    if (!loadEl) return;
+    loadEl.textContent = msg;
+    loadEl.hidden = false;
+    loadEl.style.display = 'flex';
+  }
+
+  function showReady() {
+    if (loadEl) {
+      loadEl.hidden = true;
+      loadEl.style.display = 'none';
+    }
+    bar.hidden = false;
+    stage.hidden = false;
+    camUi.hidden = false;
+    hint.hidden = false;
+  }
+
+  function fetchJson(url, opts) {
+    return fetch(cacheBust(url), opts).then(function (r) {
+      if (!r.ok) throw new Error(url + ' → HTTP ' + r.status);
+      return r.text().then(function (t) {
+        try { return JSON.parse(t); }
+        catch (e) { throw new Error(url + ' — не JSON (проверьте путь archive/)'); }
+      });
+    });
+  }
+
+  window.addEventListener('unhandledrejection', function (e) {
+    if (loadEl.hidden) return;
+    fail('Ошибка: ' + (e.reason && e.reason.message ? e.reason.message : String(e.reason)));
+  });
+
+  var barTag = document.getElementById('bar-tag');
+  var barTitle = document.getElementById('bar-title');
+  var barSub = document.getElementById('bar-sub');
+  var drawer = document.getElementById('drawer');
+  var arcList = document.getElementById('arc-list');
+  var btnLive = document.getElementById('btn-live');
+  var zPct = document.getElementById('z-pct');
+
+  var manifest = { tournaments: [] };
+  var currentNum = 0;
+  var validIds = { live: true };
+  var activeId = 'live';
+  var cam = { x: 0, y: 0, s: 1 };
+  var MIN = 0.08, MAX = 3, ZOOM = 1.1;
+  var NICK_MAX = 14, NICK_MIN = 8;
+
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function escA(s) { return esc(s).replace(/"/g, '&quot;'); }
+
+  function playersPerTeam(d) {
+    var m = String(d.format || '1x1').match(/^(\d+)x\d+$/i);
+    return m ? parseInt(m[1], 10) : 1;
+  }
+
+  function sideIndices(n, side) {
+    var leftCount = Math.ceil(n / 2);
+    var start = side === 'left' ? 0 : leftCount;
+    var count = side === 'left' ? leftCount : n - leftCount;
+    var out = [], i;
+    for (i = 0; i < count; i++) out.push(start + i);
+    return out;
+  }
+
+  function teamEq(a, b) {
+    return a != null && b != null && Number(a) === Number(b);
+  }
+
+  function roundsPerSide(n) {
+    var h = Math.ceil(n / 2), r = 0;
+    while (h > 1) { r++; h = Math.ceil(h / 2); }
+    return r;
+  }
+
+  function sideParticipantsAtRound(n, round) {
+    var count = Math.ceil(n / 2), r;
+    for (r = 0; r < round; r++) count = Math.ceil(count / 2);
+    return count;
+  }
+
+  function round0Pairs(side, data) {
+    var idx = sideIndices(data.totalTeams, side), pairs = [], i;
+    for (i = 0; i + 1 < idx.length; i += 2) pairs.push([idx[i], idx[i + 1]]);
+    return pairs;
+  }
+
+  function maxSideRows(data) {
+    return Math.max(
+      round0Pairs('left', data).length,
+      round0Pairs('right', data).length,
+      1
+    );
+  }
+
+  function gridRowStyle(lane) {
+    var r1 = Math.floor(lane) + 1;
+    var r2 = Math.ceil(lane) + 2;
+    if (r2 <= r1) r2 = r1 + 1;
+    return r1 + ' / ' + r2;
+  }
+
+  function fightLane(round, matchIdx) {
+    if (round === 0) return matchIdx;
+    return (fightLane(round - 1, matchIdx * 2) + fightLane(round - 1, matchIdx * 2 + 1)) / 2;
+  }
+
+  function getRoundWinner(side, round, matchIdx, data) {
+    var row = data.winners[side] && data.winners[side][round];
+    if (!row || row[matchIdx] == null) return null;
+    return Number(row[matchIdx]);
+  }
+
+  function getTreeMatchState(side, round, matchIdx, data) {
+    var lane = fightLane(round, matchIdx);
+    if (round === 0) {
+      var pairs = round0Pairs(side, data);
+      if (matchIdx >= pairs.length) return null;
+      return { type: 'fight', matchIdx: matchIdx, pair: pairs[matchIdx], lane: lane };
+    }
+    var f0 = matchIdx * 2, f1 = matchIdx * 2 + 1;
+    var w0 = getRoundWinner(side, round - 1, f0, data);
+    var w1 = getRoundWinner(side, round - 1, f1, data);
+    if (w0 != null && w1 != null) {
+      return { type: 'fight', matchIdx: matchIdx, pair: [w0, w1], lane: lane };
+    }
+    if (w0 != null) {
+      return { type: 'partial', matchIdx: matchIdx, team: w0, top: true, lane: lane };
+    }
+    if (w1 != null) {
+      return { type: 'partial', matchIdx: matchIdx, team: w1, top: false, lane: lane };
+    }
+    return null;
+  }
+
+  function expectedPairCount(side, round, data) {
+    var n = side === 'left' ? Math.ceil(data.totalTeams / 2) : Math.floor(data.totalTeams / 2);
+    return Math.max(0, Math.floor(n / Math.pow(2, round + 1)));
+  }
+
+  function roundParticipants(side, round, data) {
+    if (round === 0) return sideIndices(data.totalTeams, side);
+    return roundAdvancers(side, round - 1, data);
+  }
+
+  function roundPairs(side, round, data) {
+    var count = round === 0
+      ? round0Pairs(side, data).length
+      : expectedPairCount(side, round, data);
+    var pairs = [], i, state;
+    for (i = 0; i < count; i++) {
+      state = getTreeMatchState(side, round, i, data);
+      if (state && state.type === 'fight') pairs.push(state.pair);
+    }
+    return pairs;
+  }
+
+  function isRoundComplete(side, round, data) {
+    var count = expectedPairCount(side, round, data);
+    if (!count) return true;
+    var winners = data.winners[side][round] || [];
+    for (var i = 0; i < count; i++) {
+      if (winners[i] == null) return false;
+    }
+    return true;
+  }
+
+  function roundAdvancers(side, round, data) {
+    var count = expectedPairCount(side, round, data);
+    var winners = data.winners[side][round] || [];
+    var out = [], i;
+    for (i = 0; i < count; i++) {
+      if (winners[i] != null) out.push(Number(winners[i]));
+    }
+    return out;
+  }
+
+  function getColumnItems(side, round, data) {
+    var count = round === 0
+      ? round0Pairs(side, data).length
+      : expectedPairCount(side, round, data);
+    var items = [], i, state;
+    for (i = 0; i < count; i++) {
+      state = getTreeMatchState(side, round, i, data);
+      if (!state) continue;
+      state.gridRow = gridRowStyle(state.lane);
+      items.push(state);
+    }
+    return items;
+  }
+
+  function columnLabels(n) {
+    var rounds = roundsPerSide(n), tags = [], r;
+    for (r = 0; r < rounds; r++) tags.push('1/' + sideParticipantsAtRound(n, r));
+    tags.push('финал');
+    for (r = rounds - 1; r >= 0; r--) tags.push('1/' + sideParticipantsAtRound(n, r));
+    return tags;
+  }
+
+  function isSideComplete(data, side) {
+    var rounds = roundsPerSide(data.totalTeams), r;
+    for (r = 0; r < rounds; r++) {
+      if (!isRoundComplete(side, r, data)) return false;
+    }
+    return true;
+  }
+
+  function getSideChampion(data, side) {
+    if (!isSideComplete(data, side)) return null;
+    var rounds = roundsPerSide(data.totalTeams);
+    if (rounds === 0) {
+      var idx = sideIndices(data.totalTeams, side);
+      return idx.length === 1 ? idx[0] : null;
+    }
+    var adv = roundAdvancers(side, rounds - 1, data);
+    return adv.length === 1 ? adv[0] : null;
+  }
+
+  function getFinalPair(data) {
+    if (data.totalTeams <= 1) return null;
+    if (data.totalTeams === 2) return [0, 1];
+    var lc = getSideChampion(data, 'left');
+    var rc = getSideChampion(data, 'right');
+    if (lc == null || rc == null) return null;
+    return [lc, rc];
+  }
+
+  function winnerName(data) {
+    if (data.winnerTeam && data.winnerTeam.players) {
+      var p = data.winnerTeam.players.filter(Boolean);
+      if (p.length) return p.join(' · ');
+    }
+    if (data.winners && data.winners.final != null) {
+      var t = data.teams[data.winners.final];
+      if (t) return (t.players || []).filter(Boolean).join(' · ');
+    }
+    return null;
+  }
+
+  function formatLabel(data) {
+    var ppt = playersPerTeam(data), n = data.totalTeams;
+    if (ppt === 1) return '1×1 · ' + n + ' слотов';
+    return ppt + '×' + ppt + ' · ' + n + ' пар';
+  }
+
+  function formatDate(iso) {
+    try {
+      return new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+    } catch (e) { return ''; }
+  }
+
+  function rowHtml(nick) {
+    return '<div class="row"><img src="' + PH + '" data-nick="' + escA(nick) + '" alt="">' +
+      '<span class="name" title="' + escA(nick) + '">' + esc(nick) + '</span></div>';
+  }
+
+  function cellHtml(teamIdx, pick, data, pending) {
+    var cls = 'cell';
+    if (pending) cls += ' pending';
+    else if (pick != null) cls += teamEq(pick, teamIdx) ? ' win' : ' lose';
+    var t = data.teams[teamIdx] || { players: [] };
+    var html = '<div class="' + cls + '">';
+    (t.players || ['']).forEach(function (p) { html += rowHtml(p || '—'); });
+    return html + '</div>';
+  }
+
+  function fightHtml(side, round, matchIdx, pair, data, gridRow) {
+    var pick = data.winners[side] && data.winners[side][round] ? data.winners[side][round][matchIdx] : null;
+    var style = gridRow ? ' style="grid-row:' + gridRow + '"' : '';
+    var html = '<div class="fight"' + style + '><div class="cap"></div>';
+    html += cellHtml(pair[0], pick, data) + '<div class="mid"></div>' + cellHtml(pair[1], pick, data);
+    return html + '</div>';
+  }
+
+  function partialHtml(item, data) {
+    var t = data.teams[item.team] || { players: [] };
+    var pending = '<div class="cell pending"><div class="row"><span class="name">ожидание соперника</span></div></div>';
+    var win = '';
+    (t.players || ['']).forEach(function (p) {
+      win += '<div class="cell win">' + rowHtml(p || '—') + '</div>';
+    });
+    var body = item.top ? win + '<div class="mid"></div>' + pending : pending + '<div class="mid"></div>' + win;
+    return '<div class="fight advance" style="grid-row:' + item.gridRow + '"><div class="cap"></div>' + body + '</div>';
+  }
+
+  function finalFightHtml(data) {
+    var pair = getFinalPair(data);
+    if (!pair) return '<p style="text-align:center;color:var(--mute);padding:20px;font-size:13px">Финал — после полуфиналов</p>';
+    var fin = data.winners.final;
+    var pending = fin == null;
+    var html = '<div class="fight crown"><div class="cap"></div>';
+    html += cellHtml(pair[0], fin, data, pending) + '<div class="mid"></div>' + cellHtml(pair[1], fin, data, pending);
+    return html + '</div>';
+  }
+
+  function ensureWinners(data) {
+    if (!data.winners) data.winners = { left: [], right: [], final: null };
+    if (!data.winners.left) data.winners.left = [];
+    if (!data.winners.right) data.winners.right = [];
+  }
+
+  function buildMap(data) {
+    ensureWinners(data);
+    var rounds = roundsPerSide(data.totalTeams);
+    var cols = Math.max(1, rounds * 2 + 1);
+    var ppt = playersPerTeam(data);
+    var maxRows = maxSideRows(data);
+    var colh = Math.max(200, maxRows * (ppt * 36 + 32));
+    var fw = data.totalTeams >= 128 ? 170 : data.totalTeams >= 64 ? 190 : 248;
+    var tags = columnLabels(data.totalTeams);
+    var html = '<div class="map" style="--cols:' + cols + ';--rows:' + maxRows + ';--colh:' + colh + 'px;--fight-w:' + fw + 'px">';
+    html += '<div class="map-tags">' + tags.map(function (t) { return '<span>' + t + '</span>'; }).join('') + '</div><div class="map-grid">';
+    var c, items, rr, fi;
+    for (c = 0; c < cols; c++) {
+      var lane = 'lane';
+      if (c === 0) lane += ' lane-l';
+      else if (c === cols - 1) lane += ' lane-r';
+      else if (c === rounds) lane += ' lane-m';
+      html += '<div class="' + lane + '" style="--rows:' + maxRows + '">';
+      if (c === rounds) html += finalFightHtml(data);
+      else if (c < rounds) {
+        items = getColumnItems('left', c, data);
+        for (fi = 0; fi < items.length; fi++) {
+          if (items[fi].type === 'fight') {
+            html += fightHtml('left', c, items[fi].matchIdx, items[fi].pair, data, items[fi].gridRow);
+          } else if (items[fi].type === 'partial') {
+            html += partialHtml(items[fi], data);
+          }
+        }
+      } else {
+        rr = cols - 1 - c;
+        items = getColumnItems('right', rr, data);
+        for (fi = 0; fi < items.length; fi++) {
+          if (items[fi].type === 'fight') {
+            html += fightHtml('right', rr, items[fi].matchIdx, items[fi].pair, data, items[fi].gridRow);
+          } else if (items[fi].type === 'partial') {
+            html += partialHtml(items[fi], data);
+          }
+        }
+      }
+      html += '</div>';
+    }
+    return html + '</div></div>';
+  }
+
+  function sceneMeta(data, num, isCurrent) {
+    var win = winnerName(data);
+    return {
+      tag: isCurrent ? 'Текущий' : 'Архив #' + num,
+      title: data.name || ('Турнир ' + num),
+      format: formatLabel(data),
+      mode: data.mode || '',
+      reward: data.reward || '',
+      date: formatDate(data.date),
+      winner: win || '—'
+    };
+  }
+
+  function buildScene(data, num, isCurrent) {
+    var m = sceneMeta(data, num, isCurrent);
+    var id = String(num);
+    return '<div class="scene" id="scene-' + id + '" data-tag="' + escA(m.tag) + '" data-title="' + escA(m.title) +
+      '" data-format="' + escA(m.format) + '" data-mode="' + escA(m.mode) + '" data-reward="' + escA(m.reward) +
+      '" data-date="' + escA(m.date) + '" data-winner="' + escA(m.winner) + '"' +
+      (isCurrent ? '' : ' hidden') + '><div class="map-pad">' + buildMap(data) + '</div></div>';
+  }
+
+  function resolveId(id) {
+    if (id === 'live') return String(currentNum);
+    return String(id);
+  }
+
+  function fitNick(el) {
+    el.style.transform = '';
+    el.style.fontSize = NICK_MAX + 'px';
+    if (!el.clientWidth) return;
+    var size = NICK_MAX;
+    while (size > NICK_MIN && el.scrollWidth > el.clientWidth) {
+      size -= 0.5;
+      el.style.fontSize = size + 'px';
+    }
+    if (el.scrollWidth > el.clientWidth) {
+      el.style.transform = 'scaleX(' + (el.clientWidth / el.scrollWidth) + ')';
+      el.style.transformOrigin = 'left center';
+    }
+  }
+
+  function fitNicks() {
+    var sc = document.getElementById('scene-' + activeId);
+    if (sc) sc.querySelectorAll('.name').forEach(fitNick);
+  }
+
+  function apply() {
+    world.style.transform = 'translate(' + cam.x + 'px,' + cam.y + 'px) scale(' + cam.s + ')';
+    zPct.textContent = Math.round(cam.s * 100) + '%';
+  }
+
+  function sceneEl() { return document.getElementById('scene-' + activeId); }
+
+  function fit() {
+    var sc = sceneEl();
+    if (!sc) return;
+    var pad = sc.querySelector('.map-pad');
+    var sz = { w: pad ? pad.offsetWidth : 800, h: pad ? pad.offsetHeight : 600 };
+    var sw = stage.clientWidth, sh = stage.clientHeight;
+    cam.s = clamp(Math.min((sw - 60) / sz.w, (sh - 60) / sz.h, 1.2), MIN, MAX);
+    cam.x = (sw - sz.w * cam.s) / 2;
+    cam.y = (sh - sz.h * cam.s) / 2;
+    apply();
+  }
+
+  function syncBarH() {
+    document.documentElement.style.setProperty('--bar-h', bar.offsetHeight + 'px');
+  }
+
+  function updateBar(sc) {
+    if (!sc) return;
+    barTag.textContent = sc.getAttribute('data-tag') || '';
+    barTitle.textContent = sc.getAttribute('data-title') || 'Турнир';
+    var parts = [], k, v, html, winner;
+    ['data-format', 'data-mode', 'data-reward'].forEach(function (key) {
+      v = sc.getAttribute(key);
+      if (v) parts.push(esc(v));
+    });
+    v = sc.getAttribute('data-date');
+    if (v) parts.push(esc(v));
+    html = parts.join(' · ');
+    winner = sc.getAttribute('data-winner');
+    if (winner) {
+      html += (html ? ' · ' : '') + 'Победители: ';
+      html += winner === '—' ? esc(winner) : '<span class="win">' + esc(winner) + '</span>';
+    }
+    barSub.innerHTML = html;
+    syncBarH();
+  }
+
+  function syncHash(id) {
+    var show = id === String(currentNum) ? '' : '#' + id;
+    if (location.hash === show) return;
+    history.replaceState(null, '', location.pathname + location.search + show);
+  }
+
+  function go(id, opts) {
+    opts = opts || {};
+    id = resolveId(id);
+    if (!validIds[id] && id !== String(currentNum)) id = String(currentNum);
+    document.querySelectorAll('.scene').forEach(function (s) {
+      s.hidden = s.id !== 'scene-' + id;
+    });
+    activeId = id;
+    updateBar(sceneEl());
+    btnLive.hidden = id === String(currentNum);
+    drawer.classList.remove('open');
+    if (!opts.fromHash) syncHash(id);
+    requestAnimationFrame(function () { requestAnimationFrame(function () { fitNicks(); fit(); }); });
+  }
+
+  function parseHash() {
+    var h = decodeURIComponent(location.hash.replace(/^#/, '').trim());
+    if (!h || h === 'live') return 'live';
+    var n = parseInt(h, 10);
+    return validIds[n] ? String(n) : 'live';
+  }
+
+  function buildDrawer() {
+    var items = manifest.tournaments.filter(function (n) { return n !== currentNum; }).sort(function (a, b) { return b - a; });
+    arcList.innerHTML = items.map(function (n) {
+      var sc = document.getElementById('scene-' + n);
+      if (!sc) return '';
+      var title = sc.getAttribute('data-title');
+      var sub = sc.getAttribute('data-date') + ' · ' + sc.getAttribute('data-format');
+      var win = sc.getAttribute('data-winner');
+      if (win && win !== '—') sub += ' · ' + win;
+      return '<button type="button" class="arc" data-id="' + n + '"><b>#' + n + ' · ' + esc(title) + '</b><small>' + esc(sub) + '</small></button>';
+    }).join('');
+    arcList.querySelectorAll('.arc').forEach(function (b) {
+      b.addEventListener('click', function () { go(b.getAttribute('data-id')); });
+    });
+  }
+
+  function applySkins() {
+    fetch('https://api.agar.su/skinlist.txt').then(function (r) { return r.ok ? r.text() : ''; }).then(function (t) {
+      if (!t) return;
+      var m = {};
+      t.split(/\r?\n/).forEach(function (l) {
+        if (!l.trim()) return;
+        var i = l.lastIndexOf(':');
+        if (i < 0) return;
+        var n = l.slice(0, i).trim().toLowerCase(), id = l.slice(i + 1).trim();
+        if (n && id && !m[n]) m[n] = id;
+      });
+      document.querySelectorAll('img[data-nick]').forEach(function (img) {
+        var id = m[img.getAttribute('data-nick').toLowerCase()];
+        if (id) img.src = 'https://api.agar.su/skins/' + id + '.png';
+      });
+    }).catch(function () {});
+  }
+
+  function boot() {
+    var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    var opts = ctrl ? { signal: ctrl.signal } : {};
+    var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 15000) : null;
+
+    loadEl.textContent = 'Загрузка…';
+    fetchJson(archiveUrl('manifest.json'), opts).then(function (mf) {
+      manifest = mf;
+      var nums = (mf.tournaments || []).map(Number).filter(function (n) { return n > 0; });
+      if (!nums.length) throw new Error('manifest пустой');
+      currentNum = Math.max.apply(null, nums);
+      nums.forEach(function (n) { validIds[n] = true; });
+      loadEl.textContent = 'Загрузка турниров…';
+      return Promise.all(nums.map(function (n) {
+        return fetchJson(archiveUrl(n + '.json'), opts).then(function (d) {
+          if (!d.totalTeams || !(d.teams && d.teams.length)) {
+            throw new Error('Турнир #' + n + ': нет команд в JSON');
+          }
+          if (d.teams.length !== d.totalTeams) {
+            throw new Error('Турнир #' + n + ': teams=' + d.teams.length + ', totalTeams=' + d.totalTeams);
+          }
+          return { n: n, d: d };
+        });
+      }));
+    }).then(function (items) {
+      if (timer) clearTimeout(timer);
+      loadEl.textContent = 'Построение сетки…';
+      return new Promise(function (resolve, reject) {
+        requestAnimationFrame(function () {
+          try {
+            world.innerHTML = items.map(function (it) {
+              return buildScene(it.d, it.n, it.n === currentNum);
+            }).join('');
+            buildDrawer();
+            showReady();
+            applySkins();
+            go(parseHash(), { fromHash: true });
+            setTimeout(function () { hint.classList.add('gone'); }, 5000);
+            resolve();
+          } catch (e) { reject(e); }
+        });
+      });
+    }).catch(function (err) {
+      if (timer) clearTimeout(timer);
+      var msg = 'Не удалось загрузить турниры.';
+      if (location.protocol === 'file:') {
+        msg += ' Откройте через HTTP-сервер, не двойным кликом по файлу.';
+      } else if (err && err.name === 'AbortError') {
+        msg += ' Таймаут. Проверьте, что на сервере есть папка archive/.';
+      } else {
+        msg += ' ' + (err && err.message ? err.message : 'ошибка');
+        msg += ' (путь: ' + archiveUrl('manifest.json') + ')';
+      }
+      fail(msg);
+    });
+  }
+
+  function zoomAt(cx, cy, ns) {
+    ns = clamp(ns, MIN, MAX);
+    cam.x = cx - (cx - cam.x) * (ns / cam.s);
+    cam.y = cy - (cy - cam.y) * (ns / cam.s);
+    cam.s = ns;
+    apply();
+  }
+
+  function pinchDist(a, b) {
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  }
+
+  function pinchMid(a, b) {
+    return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+  }
+
+  var pointers = new Map();
+  var lastPinchDist = 0;
+  var lastPinchMid = null;
+  var dragPid = null;
+  var dragLx = 0;
+  var dragLy = 0;
+
+  function initPinchState() {
+    var pts = Array.from(pointers.values());
+    if (pts.length < 2) return;
+    lastPinchDist = pinchDist(pts[0], pts[1]);
+    var mid = pinchMid(pts[0], pts[1]);
+    lastPinchMid = { x: mid.x, y: mid.y };
+  }
+
+  stage.addEventListener('pointerdown', function (e) {
+    if (e.target.closest('.cam-ui,.bar,.drawer-box')) return;
+    stage.setPointerCapture(e.pointerId);
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    hint.classList.add('gone');
+    if (pointers.size === 1) {
+      dragPid = e.pointerId;
+      dragLx = e.clientX;
+      dragLy = e.clientY;
+      stage.classList.add('grabbing');
+    } else if (pointers.size >= 2) {
+      dragPid = null;
+      stage.classList.remove('grabbing');
+      initPinchState();
+    }
+  });
+
+  stage.addEventListener('pointermove', function (e) {
+    if (!pointers.has(e.pointerId)) return;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (pointers.size >= 2) {
+      var pts = Array.from(pointers.values());
+      var dist = pinchDist(pts[0], pts[1]);
+      var mid = pinchMid(pts[0], pts[1]);
+      if (lastPinchDist > 0 && lastPinchMid) {
+        cam.x += mid.x - lastPinchMid.x;
+        cam.y += mid.y - lastPinchMid.y;
+        var r = stage.getBoundingClientRect();
+        var cx = mid.x - r.left;
+        var cy = mid.y - r.top;
+        zoomAt(cx, cy, cam.s * (dist / lastPinchDist));
+      }
+      lastPinchDist = dist;
+      lastPinchMid = { x: mid.x, y: mid.y };
+      return;
+    }
+
+    if (dragPid === e.pointerId) {
+      cam.x += e.clientX - dragLx;
+      cam.y += e.clientY - dragLy;
+      dragLx = e.clientX;
+      dragLy = e.clientY;
+      apply();
+    }
+  });
+
+  function endPointer(e) {
+    if (!pointers.has(e.pointerId)) return;
+    pointers.delete(e.pointerId);
+    try { stage.releasePointerCapture(e.pointerId); } catch (_) {}
+    if (pointers.size < 2) {
+      lastPinchDist = 0;
+      lastPinchMid = null;
+    }
+    if (pointers.size === 1) {
+      var rem = pointers.entries().next().value;
+      dragPid = rem[0];
+      dragLx = rem[1].x;
+      dragLy = rem[1].y;
+      stage.classList.add('grabbing');
+    } else if (pointers.size >= 2) {
+      dragPid = null;
+      initPinchState();
+    } else {
+      dragPid = null;
+    }
+    if (!pointers.size) stage.classList.remove('grabbing');
+  }
+
+  stage.addEventListener('pointerup', endPointer);
+  stage.addEventListener('pointercancel', endPointer);
+  stage.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    var r = stage.getBoundingClientRect();
+    var cx = e.clientX - r.left, cy = e.clientY - r.top;
+    zoomAt(cx, cy, cam.s * (e.deltaY < 0 ? ZOOM : 1 / ZOOM));
+    hint.classList.add('gone');
+  }, { passive: false });
+
+  document.getElementById('z-in').addEventListener('click', function () {
+    zoomAt(stage.clientWidth / 2, stage.clientHeight / 2, cam.s * ZOOM);
+  });
+  document.getElementById('z-out').addEventListener('click', function () {
+    zoomAt(stage.clientWidth / 2, stage.clientHeight / 2, cam.s / ZOOM);
+  });
+  document.getElementById('z-fit').addEventListener('click', fit);
+  document.getElementById('btn-arc').addEventListener('click', function () { drawer.classList.add('open'); });
+  document.getElementById('btn-shut').addEventListener('click', function () { drawer.classList.remove('open'); });
+  document.getElementById('drawer-bg').addEventListener('click', function () { drawer.classList.remove('open'); });
+  document.getElementById('btn-live').addEventListener('click', function () { go('live'); });
+  window.addEventListener('hashchange', function () { go(parseHash(), { fromHash: true }); });
+  window.addEventListener('resize', function () { syncBarH(); requestAnimationFrame(function () { fitNicks(); fit(); }); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') drawer.classList.remove('open');
+    if (e.key === '0') fit();
+  });
+
+  // system-ui only — fonts.ready can hang forever on GitHub Pages / some browsers
+  boot();
+})();
+</script>
+</body>
+</html>

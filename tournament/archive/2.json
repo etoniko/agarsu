@@ -1,0 +1,152 @@
+{
+  "id": 2,
+  "name": "TOURNAMENT JUNE 2026",
+  "date": "2026-07-03T16:28:00.000Z",
+  "archivedAt": "2026-07-03T20:35:14.042Z",
+  "totalTeams": 24,
+  "format": "1x1",
+  "mode": "Classic",
+  "reward": "5000р",
+  "teams": [
+    {
+      "players": [
+        "khirad"
+      ]
+    },
+    {
+      "players": [
+        "Оbladait"
+      ]
+    },
+    {
+      "players": [
+        "Всекончал"
+      ]
+    },
+    {
+      "players": [
+        "bl1ck"
+      ]
+    },
+    {
+      "players": [
+        "newlightchild"
+      ]
+    },
+    {
+      "players": [
+        "morcov"
+      ]
+    },
+    {
+      "players": [
+        "☼K☼"
+      ]
+    },
+    {
+      "players": [
+        "ау"
+      ]
+    },
+    {
+      "players": [
+        "v_potoke"
+      ]
+    },
+    {
+      "players": [
+        "Папа"
+      ]
+    },
+    {
+      "players": [
+        "deffka"
+      ]
+    },
+    {
+      "players": [
+        "прошка"
+      ]
+    },
+    {
+      "players": [
+        "griffin"
+      ]
+    },
+    {
+      "players": [
+        "some no mai"
+      ]
+    },
+    {
+      "players": [
+        "АЛИК ))))"
+      ]
+    },
+    {
+      "players": [
+        "Jeff"
+      ]
+    },
+    {
+      "players": [
+        "PULIK"
+      ]
+    },
+    {
+      "players": [
+        "salruz"
+      ]
+    },
+    {
+      "players": [
+        "vaas"
+      ]
+    },
+    {
+      "players": [
+        "aeris"
+      ]
+    },
+    {
+      "players": [
+        "sorry"
+      ]
+    },
+    {
+      "players": [
+        "курага"
+      ]
+    },
+    {
+      "players": [
+        "полина"
+      ]
+    },
+    {
+      "players": [
+        "ʟᴇɢᴇɴᴅ"
+      ]
+    }
+  ],
+  "winners": {
+    "left": [
+      [
+        1,
+        null,
+        null
+      ]
+    ],
+    "right": [
+      [
+        null,
+        15,
+        17
+      ]
+    ],
+    "final": null
+  },
+  "status": "archived",
+  "winnerTeam": null,
+  "num": 2
+}
