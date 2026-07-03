@@ -1424,6 +1424,41 @@ let connectInProgress = false;
 const HIDDEN_TAB_DISCONNECT_MS = 600000;
 let hiddenTabDisconnectTimer = null;
 let wsClosedByHiddenTab = false;
+let spectReconnectTimer = null;
+const SPECT_RECONNECT_INTERVAL_MS = 2000;
+
+function isSpectMode() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const hash = window.location.hash;
+    return urlParams.has('spect') || hash.includes('?spect');
+}
+
+function clearSpectReconnectTimer() {
+    if (spectReconnectTimer) {
+        clearInterval(spectReconnectTimer);
+        spectReconnectTimer = null;
+    }
+}
+
+function scheduleSpectReconnect() {
+    clearSpectReconnectTimer();
+    if (!isSpectMode() || !ma) return;
+
+    hideReconnectPanel();
+    showConnectVerifyOverlay("Переподключение к серверу…");
+
+    const tryReconnect = () => {
+        if (!ma || !isSpectMode()) {
+            clearSpectReconnectTimer();
+            return;
+        }
+        if (isWsConnected() || connectInProgress || (ws && ws.readyState === WebSocket.CONNECTING)) return;
+        showConnecting();
+    };
+
+    tryReconnect();
+    spectReconnectTimer = setInterval(tryReconnect, SPECT_RECONNECT_INTERVAL_MS);
+}
 
 function isWsConnected() {
     return ws && ws.readyState === WebSocket.OPEN;
@@ -1484,6 +1519,7 @@ function showReconnectPanel(message) {
 
 function reconnectToServer() {
     hideReconnectPanel();
+    clearSpectReconnectTimer();
     wsClosedByHiddenTab = false;
     if (!ma) return;
     showConnecting();
@@ -1733,6 +1769,10 @@ async function wsConnect(wsUrlArg) {
     } catch (err) {
         console.error("Connect token error:", err);
         connectInProgress = false;
+        if (isSpectMode()) {
+            scheduleSpectReconnect();
+            return;
+        }
         setConnectVerifyText("Ошибка подключения, повтор…");
         return;
     }
@@ -1794,9 +1834,13 @@ let pingstamp = 0;
     function onGameHandshakeReady() {
         if (gameHandshakeDone) return;
         gameHandshakeDone = true;
+        clearSpectReconnectTimer();
         hideConnectVerifyOverlay();
         hideReconnectPanel();
         sendNickName();
+        if (isSpectMode() && userNickName == null) {
+            sendUint8(1);
+        }
         if (wsPingInterval) clearInterval(wsPingInterval);
         wsPingInterval = setInterval(() => {
             pingstamp = Date.now();
@@ -1813,6 +1857,11 @@ let pingstamp = 0;
     }
     if (connectInProgress) return;
     if (!ma) return;
+    if (isSpectMode()) {
+        wsClosedByHiddenTab = false;
+        scheduleSpectReconnect();
+        return;
+    }
     const msg = wsClosedByHiddenTab
         ? "Вкладка была неактивна более 60 секунд. Нажмите, чтобы переподключиться."
         : "Соединение с сервером потеряно. Нажмите, чтобы переподключиться.";
