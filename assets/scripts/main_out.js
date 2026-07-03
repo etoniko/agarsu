@@ -94,18 +94,18 @@ stats.forEach((player, index) => {
 
     // --- Подсветка активного сервера из hash ---
     function setActiveFromHash() {
-        const hash = location.hash.replace('#','') || 'ffa'; // по умолчанию ffa
+        const hash = location.hash.replace('#','') || 'ffa';
+        const hashWithoutParams = hash.split('?')[0];
         document.querySelectorAll('.gamemode li').forEach(li => li.classList.remove('active'));
-        const activeLi = document.getElementById(hash);
+        const activeLi = document.getElementById(hashWithoutParams);
 		const titleEl = document.getElementById('serverTitle');
         if(activeLi) {
             activeLi.classList.add('active');
-			titleEl.textContent = `Статистика ${hash}`;
-            // Если сервер ещё не выбран руками — ставим его
+			titleEl.textContent = `Статистика ${hashWithoutParams}`;
             if (!SELECTED_SERVER) {
                 SELECTED_SERVER = activeLi.dataset.ip;
             }
-			chekstats();
+			wHandle.chekstats();
         }
     }
 
@@ -308,6 +308,10 @@ function initServers() {
         // Не трогаем zoom здесь, он установится в gameLoop
         // Просто запоминаем что нужно запустить spectate
         window._autoSpectate = true;
+    }
+
+    if (typeof wHandle.chekstats === 'function') {
+        wHandle.chekstats();
     }
 }
 
@@ -3499,7 +3503,6 @@ function drawGameScene() {
 
     ctx.restore();
 
-
     drawSplitIcon(ctx);
     drawTouch(ctx);
 }
@@ -3893,7 +3896,8 @@ function drawWhiteGrid() {
     // Инициализация изображений
     const innerImage = new Image();
     const centerBackground = new Image();
-    centerBackground.src = "/assets/photo/center.png"; // Фоновое изображение
+    centerBackground.src = "/assets/photo/center.png";
+    innerImage.src = getSkinImageUrl('4');
 
     // Переменные для хранения данных топ-1 игрока
     let topPlayerNick = '';
@@ -3944,7 +3948,7 @@ function drawWhiteGrid() {
     };
 
     function drawCenterBackground() {
-        if (!isBackgroundLoaded || !isInnerImageLoaded) {
+        if (!isBackgroundLoaded) {
             return;
         }
 
@@ -3959,27 +3963,26 @@ function drawWhiteGrid() {
         const scaledInnerImageWidth = innerImageWidth * viewZoom;
         const scaledInnerImageHeight = innerImageHeight * viewZoom;
 
-        // Сначала рисуем внутреннее изображение (скин игрока) в виде круга
-        ctx.save();
-        const radius = Math.min(scaledInnerImageWidth, scaledInnerImageHeight) / 2; // Радиус круга
+        if (isInnerImageLoaded) {
+            ctx.save();
+            const radius = Math.min(scaledInnerImageWidth, scaledInnerImageHeight) / 2;
 
-        // Создаём круг
-        ctx.beginPath();
-        ctx.arc(screenX, screenY, radius, 0, 2 * Math.PI);
-        ctx.closePath();
-        ctx.clip();
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, radius, 0, 2 * Math.PI);
+            ctx.closePath();
+            ctx.clip();
 
-        ctx.drawImage(
-            innerImage,
-            screenX - scaledInnerImageWidth / 2,
-            screenY - scaledInnerImageHeight / 2,
-            scaledInnerImageWidth,
-            scaledInnerImageHeight
-        );
+            ctx.drawImage(
+                innerImage,
+                screenX - scaledInnerImageWidth / 2,
+                screenY - scaledInnerImageHeight / 2,
+                scaledInnerImageWidth,
+                scaledInnerImageHeight
+            );
 
-        ctx.restore();
+            ctx.restore();
+        }
 
-        // Затем рисуем фон
         ctx.drawImage(
             centerBackground,
             screenX - scaledBackgroundWidth / 2,
@@ -3988,13 +3991,19 @@ function drawWhiteGrid() {
             scaledBackgroundHeight
         );
 
-        // Устанавливаем стиль текста
-        ctx.fillStyle = "white";
-        ctx.font = `${22 * viewZoom}px Ubuntu`;
-        ctx.textAlign = "center";
+        if (topPlayerNick || topPlayerScore) {
+            const radius = Math.min(scaledInnerImageWidth, scaledInnerImageHeight) / 2;
+            ctx.fillStyle = "white";
+            ctx.font = `${22 * viewZoom}px Ubuntu`;
+            ctx.textAlign = "center";
 
-        ctx.fillText(topPlayerNick, screenX, screenY + radius - 415 * viewZoom);
-        ctx.fillText(`${topPlayerScore}`, screenX, screenY + radius - 15 * viewZoom);
+            if (topPlayerNick) {
+                ctx.fillText(topPlayerNick, screenX, screenY + radius - 415 * viewZoom);
+            }
+            if (topPlayerScore) {
+                ctx.fillText(`${topPlayerScore}`, screenX, screenY + radius - 15 * viewZoom);
+            }
+        }
     }
 
 
@@ -4400,7 +4409,7 @@ wHandle.setNick = function (arg) {
         showConnect = true;
     }
 };
-    wHandle.spectate = function () { setserver(SELECTED_SERVER);  userNickName = null; hideOverlays(); wjQuery("#statics").hide();    if (!showConnect) {
+    wHandle.spectate = function () { setserver(SELECTED_SERVER);  userNickName = null; hideOverlays(); wjQuery("#statics").hide(); wHandle.chekstats();    if (!showConnect) {
         showConnecting();
         showConnect = true;
     }};
