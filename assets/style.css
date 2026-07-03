@@ -32,6 +32,11 @@
     border-radius: 10px;
     padding: 5px;
 }
+.khirad {
+    background: #0044c566 !important;
+    border-radius: 10px;
+    padding: 5px;
+}
 .chatX_msg[class*="☼k☼"]{
     background: linear-gradient(rgb(0 0 0 / 33%), rgb(0 0 0 / 50%)), url(/assets/photo/778.jpg?3) !important;
     background-size: cover !important;
