@@ -70,6 +70,7 @@ a.bar-btn{text-decoration:none;display:inline-flex;align-items:center}
 .cell.lose{opacity:var(--lose)}
 .cell.pending{opacity:.72}
 .fight.bye{opacity:.45;border-style:dashed;box-shadow:none;margin-top:auto;align-self:center}
+.fight.bye.out,.cell.bye.out{opacity:.28}
 .fight.bye .cap{background:var(--edge)}
 .cell.bye{padding:2px 0}
 .cell.bye .name{color:var(--mute);font-size:13px}
@@ -241,85 +242,157 @@ a.bar-btn{text-decoration:none;display:inline-flex;align-items:center}
     return out;
   }
 
-  function sideParticipantsAtRound(n, round) {
-    var count = Math.ceil(n / 2), r;
-    for (r = 0; r < round; r++) count = Math.ceil(count / 2);
-    return count;
+  function teamEq(a, b) {
+    return a != null && b != null && Number(a) === Number(b);
+  }
+
+  var feedLayerCache = {};
+
+  function buildFeedLayers(indices) {
+    var layers = [];
+    var fights = [];
+    var i;
+    for (i = 0; i + 1 < indices.length; i += 2) {
+      fights.push({
+        a: { t: 'slot', i: indices[i] },
+        b: { t: 'slot', i: indices[i + 1] },
+        need: []
+      });
+    }
+    layers.push({ fights: fights, trailingBye: indices.length % 2 === 1 ? indices[indices.length - 1] : null, carry: null });
+
+    var r = 0;
+    while (true) {
+      var prev = layers[r];
+      if (prev.fights.length <= 1 && !prev.trailingBye && !prev.carry) break;
+
+      var nextFights = [];
+      var skip = 0;
+
+      if (prev.trailingBye != null && prev.fights.length > 0) {
+        nextFights.push({
+          a: { t: 'win', r: r, m: 0 },
+          b: { t: 'slot', i: prev.trailingBye },
+          need: [{ r: r, m: 0 }]
+        });
+        skip = 1;
+      } else if (prev.carry != null) {
+        nextFights.push({
+          a: { t: 'win', r: prev.carry.r, m: prev.carry.m },
+          b: { t: 'win', r: r, m: 0 },
+          need: [{ r: prev.carry.r, m: prev.carry.m }, { r: r, m: 0 }]
+        });
+        skip = 1;
+      }
+
+      for (var j = skip; j + 1 < prev.fights.length; j += 2) {
+        nextFights.push({
+          a: { t: 'win', r: r, m: j },
+          b: { t: 'win', r: r, m: j + 1 },
+          need: [{ r: r, m: j }, { r: r, m: j + 1 }]
+        });
+      }
+
+      var carry = null;
+      if ((prev.fights.length - skip) % 2 === 1) {
+        carry = { r: r, m: prev.fights.length - 1 };
+      }
+
+      layers.push({ fights: nextFights, trailingBye: null, carry: carry });
+      r++;
+    }
+    return layers;
+  }
+
+  function getFeedLayers(data, side) {
+    var key = side + ':' + data.totalTeams;
+    if (!feedLayerCache[key]) {
+      feedLayerCache[key] = buildFeedLayers(sideIndices(data.totalTeams, side));
+    }
+    return feedLayerCache[key];
+  }
+
+  function fightWinner(side, round, match, data) {
+    var row = data.winners[side][round];
+    if (!row || row[match] == null) return null;
+    return Number(row[match]);
+  }
+
+  function resolveFeed(side, feed, data) {
+    if (feed.t === 'slot') return feed.i;
+    if (feed.t === 'win') return fightWinner(side, feed.r, feed.m, data);
+    return null;
+  }
+
+  function fightNeedMet(side, fight, data) {
+    for (var i = 0; i < fight.need.length; i++) {
+      var n = fight.need[i];
+      if (fightWinner(side, n.r, n.m, data) == null) return false;
+    }
+    return true;
+  }
+
+  function resolveFightPair(side, round, matchIdx, data) {
+    var layers = getFeedLayers(data, side);
+    var fight = layers[round] && layers[round].fights[matchIdx];
+    if (!fight || !fightNeedMet(side, fight, data)) return null;
+    var a = resolveFeed(side, fight.a, data);
+    var b = resolveFeed(side, fight.b, data);
+    if (a == null || b == null) return null;
+    return [a, b];
+  }
+
+  function isPlayerEliminated(side, teamIdx, data) {
+    var layers = getFeedLayers(data, side);
+    var r, m, pair, pick;
+    for (r = 0; r < layers.length; r++) {
+      for (m = 0; m < layers[r].fights.length; m++) {
+        pair = resolveFightPair(side, r, m, data);
+        if (!pair) continue;
+        pick = fightWinner(side, r, m, data);
+        if (pick == null) continue;
+        if ((teamEq(pair[0], teamIdx) || teamEq(pair[1], teamIdx)) && !teamEq(pick, teamIdx)) return true;
+      }
+    }
+    return false;
   }
 
   function roundsPerSide(n) {
-    var h = Math.ceil(n / 2), r = 0;
-    while (h > 1) { r++; h = Math.ceil(h / 2); }
-    return r;
+    return buildFeedLayers(sideIndices(n, 'left')).length;
   }
 
-  function roundParticipants(side, round, data) {
-    if (round === 0) return sideIndices(data.totalTeams, side);
-    return roundAdvancers(side, round - 1, data);
-  }
-
-  function roundPairs(side, round, data) {
-    var ps = roundParticipants(side, round, data), pairs = [], i;
-    for (i = 0; i + 1 < ps.length; i += 2) pairs.push([ps[i], ps[i + 1]]);
-    return pairs;
-  }
-
-  function roundAdvancers(side, round, data) {
-    var pairs = roundPairs(side, round, data);
-    var winners = (data.winners[side][round] || []);
-    var participants = roundParticipants(side, round, data);
-    var out = [], inPair = {}, i, j;
-    for (i = 0; i < pairs.length; i++) {
-      if (winners[i] != null) out.push(winners[i]);
-    }
-    pairs.forEach(function (p) { p.forEach(function (x) { inPair[x] = true; }); });
-    for (j = 0; j < participants.length; j++) {
-      if (!inPair[participants[j]]) out.push(participants[j]);
-    }
-    return out;
+  function sideParticipantsAtRound(n, round) {
+    var layers = buildFeedLayers(sideIndices(n, 'left'));
+    if (!layers[round]) return 1;
+    var layer = layers[round];
+    return layer.fights.length + (layer.trailingBye != null ? 1 : 0);
   }
 
   function columnLabels(n) {
-    var rounds = roundsPerSide(n), tags = [], r;
+    var rounds = Math.max(
+      buildFeedLayers(sideIndices(n, 'left')).length,
+      buildFeedLayers(sideIndices(n, 'right')).length
+    );
+    var tags = [], r;
     for (r = 0; r < rounds; r++) tags.push('1/' + sideParticipantsAtRound(n, r));
     tags.push('финал');
     for (r = rounds - 1; r >= 0; r--) tags.push('1/' + sideParticipantsAtRound(n, r));
     return tags;
   }
 
-  function roundByes(side, round, data) {
-    var participants = roundParticipants(side, round, data);
-    var pairs = roundPairs(side, round, data);
-    var inPair = {}, out = [], i;
-    pairs.forEach(function (p) { p.forEach(function (x) { inPair[x] = true; }); });
-    for (i = 0; i < participants.length; i++) {
-      if (!inPair[participants[i]]) out.push(participants[i]);
-    }
-    return out;
-  }
-
   function isSideComplete(data, side) {
-    var rounds = roundsPerSide(data.totalTeams), r, pairs, winners, i;
-    for (r = 0; r < rounds; r++) {
-      pairs = roundPairs(side, r, data);
-      if (!pairs.length) continue;
-      winners = data.winners[side][r] || [];
-      for (i = 0; i < pairs.length; i++) {
-        if (winners[i] == null) return false;
-      }
-    }
-    return true;
+    var layers = getFeedLayers(data, side);
+    if (!layers.length) return false;
+    var last = layers.length - 1;
+    if (layers[last].fights.length !== 1) return false;
+    return fightWinner(side, last, 0, data) != null;
   }
 
   function getSideChampion(data, side) {
     if (!isSideComplete(data, side)) return null;
-    var rounds = roundsPerSide(data.totalTeams);
-    if (rounds === 0) {
-      var idx = sideIndices(data.totalTeams, side);
-      return idx.length === 1 ? idx[0] : null;
-    }
-    var adv = roundAdvancers(side, rounds - 1, data);
-    return adv.length === 1 ? adv[0] : null;
+    var layers = getFeedLayers(data, side);
+    var last = layers.length - 1;
+    return fightWinner(side, last, 0, data);
   }
 
   function getFinalPair(data) {
@@ -363,18 +436,38 @@ a.bar-btn{text-decoration:none;display:inline-flex;align-items:center}
   function cellHtml(teamIdx, pick, data, pending) {
     var cls = 'cell';
     if (pending) cls += ' pending';
-    else if (pick != null) cls += pick === teamIdx ? ' win' : ' lose';
+    else if (pick != null) cls += teamEq(pick, teamIdx) ? ' win' : ' lose';
     var t = data.teams[teamIdx] || { players: [] };
     var html = '<div class="' + cls + '">';
     (t.players || ['']).forEach(function (p) { html += rowHtml(p || '—'); });
     return html + '</div>';
   }
 
-  function byeHtml(teamIdx, data) {
+  function byeHtml(teamIdx, data, eliminated) {
     var t = data.teams[teamIdx] || { players: [] };
-    var html = '<div class="fight bye"><div class="cap"></div><span class="bye-lbl">автопроход</span><div class="cell bye">';
+    var cls = 'fight bye' + (eliminated ? ' out' : '');
+    var html = '<div class="' + cls + '"><div class="cap"></div><span class="bye-lbl">автопроход</span><div class="cell bye' + (eliminated ? ' out' : '') + '">';
     (t.players || ['']).forEach(function (p) { html += rowHtml(p || '—'); });
     return html + '</div></div>';
+  }
+
+  function renderSideLane(side, col, data, rounds) {
+    var layers = getFeedLayers(data, side);
+    var html = '';
+    var layer = layers[col];
+    if (!layer) return html;
+    var fi, pair, fight;
+    for (fi = 0; fi < layer.fights.length; fi++) {
+      fight = layer.fights[fi];
+      if (!fight.need.length || fightNeedMet(side, fight, data)) {
+        pair = resolveFightPair(side, col, fi, data);
+        if (pair) html += fightHtml(side, col, fi, pair, data);
+      }
+    }
+    if (col === 0 && layer.trailingBye != null) {
+      html += byeHtml(layer.trailingBye, data, isPlayerEliminated(side, layer.trailingBye, data));
+    }
+    return html;
   }
 
   function fightHtml(side, round, matchIdx, pair, data) {
@@ -402,7 +495,10 @@ a.bar-btn{text-decoration:none;display:inline-flex;align-items:center}
 
   function buildMap(data) {
     ensureWinners(data);
-    var rounds = roundsPerSide(data.totalTeams);
+    var rounds = Math.max(
+      getFeedLayers(data, 'left').length,
+      getFeedLayers(data, 'right').length
+    );
     var cols = Math.max(1, rounds * 2 + 1);
     var ppt = playersPerTeam(data);
     var colh = Math.max(200, (data.totalTeams / 4) * (ppt * 36 + 32));
@@ -410,7 +506,7 @@ a.bar-btn{text-decoration:none;display:inline-flex;align-items:center}
     var tags = columnLabels(data.totalTeams);
     var html = '<div class="map" style="--cols:' + cols + ';--colh:' + colh + 'px;--fight-w:' + fw + 'px">';
     html += '<div class="map-tags">' + tags.map(function (t) { return '<span>' + t + '</span>'; }).join('') + '</div><div class="map-grid">';
-    var c, pairs, rr, fi;
+    var c;
     for (c = 0; c < cols; c++) {
       var lane = 'lane';
       if (c === 0) lane += ' lane-l';
@@ -418,16 +514,8 @@ a.bar-btn{text-decoration:none;display:inline-flex;align-items:center}
       else if (c === rounds) lane += ' lane-m';
       html += '<div class="' + lane + '">';
       if (c === rounds) html += finalFightHtml(data);
-      else if (c < rounds) {
-        pairs = roundPairs('left', c, data);
-        for (fi = 0; fi < pairs.length; fi++) html += fightHtml('left', c, fi, pairs[fi], data);
-        if (c === 0) roundByes('left', c, data).forEach(function (b) { html += byeHtml(b, data); });
-      } else {
-        rr = cols - 1 - c;
-        pairs = roundPairs('right', rr, data);
-        for (fi = 0; fi < pairs.length; fi++) html += fightHtml('right', rr, fi, pairs[fi], data);
-        if (rr === 0) roundByes('right', rr, data).forEach(function (b) { html += byeHtml(b, data); });
-      }
+      else if (c < rounds) html += renderSideLane('left', c, data, rounds);
+      else html += renderSideLane('right', cols - 1 - c, data, rounds);
       html += '</div>';
     }
     return html + '</div></div>';
