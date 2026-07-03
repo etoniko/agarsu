@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <link rel="icon" href="/icon.svg" type="image/x-icon">
-<title>Турнирная сетка</title>
+<title>Турнир</title>
 <style>
 :root{
   --navy:#050a14;--panel:#0b1525;--card:#0f1c30;--card2:#142238;
@@ -36,8 +36,6 @@ a.bar-btn{text-decoration:none;display:inline-flex;align-items:center}
 .bar-btn.accent{
   background:linear-gradient(180deg,var(--blue),#3a8ae8);
   border-color:transparent;color:#fff;font-weight:600;
-  opacity: 0.2;
-  cursor: no-drop;
 }
 @media(hover:hover){
   .bar-btn:not(.accent):hover{background:var(--card2);border-color:var(--blue)}
@@ -70,6 +68,14 @@ a.bar-btn{text-decoration:none;display:inline-flex;align-items:center}
 .cell{padding:4px 0}
 .cell.win{background:rgba(77,159,255,.12)}
 .cell.lose{opacity:var(--lose)}
+.cell.pending{opacity:.72}
+.fight.bye{opacity:.45;border-style:dashed;box-shadow:none;margin-top:auto;align-self:center}
+.fight.bye .cap{background:var(--edge)}
+.cell.bye{padding:2px 0}
+.cell.bye .name{color:var(--mute);font-size:13px}
+.bye-lbl{display:block;padding:0 14px 4px;font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.fight.crown .cell.pending .name{color:var(--dim);font-weight:400}
+.fight.crown .cell.pending .row:first-child .name::before{display:none}
 .row{display:flex;align-items:center;gap:10px;padding:0 14px;height:var(--row-h);min-height:var(--row-h);max-height:var(--row-h)}
 .row img{width:28px;height:28px;border-radius:50%;flex-shrink:0;border:1px solid var(--edge2);object-fit:cover;background:var(--card2)}
 .name{flex:1;min-width:0;font-size:14px;line-height:1.2;white-space:nowrap;overflow:hidden}
@@ -281,21 +287,39 @@ a.bar-btn{text-decoration:none;display:inline-flex;align-items:center}
     return tags;
   }
 
+  function roundByes(side, round, data) {
+    var participants = roundParticipants(side, round, data);
+    var pairs = roundPairs(side, round, data);
+    var inPair = {}, out = [], i;
+    pairs.forEach(function (p) { p.forEach(function (x) { inPair[x] = true; }); });
+    for (i = 0; i < participants.length; i++) {
+      if (!inPair[participants[i]]) out.push(participants[i]);
+    }
+    return out;
+  }
+
+  function isSideComplete(data, side) {
+    var rounds = roundsPerSide(data.totalTeams), r, pairs, winners, i;
+    for (r = 0; r < rounds; r++) {
+      pairs = roundPairs(side, r, data);
+      if (!pairs.length) continue;
+      winners = data.winners[side][r] || [];
+      for (i = 0; i < pairs.length; i++) {
+        if (winners[i] == null) return false;
+      }
+    }
+    return true;
+  }
+
   function getSideChampion(data, side) {
+    if (!isSideComplete(data, side)) return null;
     var rounds = roundsPerSide(data.totalTeams);
     if (rounds === 0) {
       var idx = sideIndices(data.totalTeams, side);
       return idx.length === 1 ? idx[0] : null;
     }
-    var lastRound = rounds - 1;
-    var pairs = roundPairs(side, lastRound, data);
-    if (!pairs.length) {
-      var parts = roundParticipants(side, lastRound, data);
-      return parts.length === 1 ? parts[0] : null;
-    }
-    var row = data.winners[side][lastRound];
-    if (!row || row[0] == null) return null;
-    return row[0];
+    var adv = roundAdvancers(side, rounds - 1, data);
+    return adv.length === 1 ? adv[0] : null;
   }
 
   function getFinalPair(data) {
@@ -336,13 +360,21 @@ a.bar-btn{text-decoration:none;display:inline-flex;align-items:center}
       '<span class="name" title="' + escA(nick) + '">' + esc(nick) + '</span></div>';
   }
 
-  function cellHtml(teamIdx, pick, data) {
+  function cellHtml(teamIdx, pick, data, pending) {
     var cls = 'cell';
-    if (pick != null) cls += pick === teamIdx ? ' win' : ' lose';
+    if (pending) cls += ' pending';
+    else if (pick != null) cls += pick === teamIdx ? ' win' : ' lose';
     var t = data.teams[teamIdx] || { players: [] };
     var html = '<div class="' + cls + '">';
     (t.players || ['']).forEach(function (p) { html += rowHtml(p || '—'); });
     return html + '</div>';
+  }
+
+  function byeHtml(teamIdx, data) {
+    var t = data.teams[teamIdx] || { players: [] };
+    var html = '<div class="fight bye"><div class="cap"></div><span class="bye-lbl">автопроход</span><div class="cell bye">';
+    (t.players || ['']).forEach(function (p) { html += rowHtml(p || '—'); });
+    return html + '</div></div>';
   }
 
   function fightHtml(side, round, matchIdx, pair, data) {
@@ -354,10 +386,11 @@ a.bar-btn{text-decoration:none;display:inline-flex;align-items:center}
 
   function finalFightHtml(data) {
     var pair = getFinalPair(data);
-    if (!pair) return '<p style="text-align:center;color:var(--mute);padding:20px">—</p>';
+    if (!pair) return '<p style="text-align:center;color:var(--mute);padding:20px;font-size:13px">Финал — после полуфиналов</p>';
     var fin = data.winners.final;
+    var pending = fin == null;
     var html = '<div class="fight crown"><div class="cap"></div>';
-    html += cellHtml(pair[0], fin, data) + '<div class="mid"></div>' + cellHtml(pair[1], fin, data);
+    html += cellHtml(pair[0], fin, data, pending) + '<div class="mid"></div>' + cellHtml(pair[1], fin, data, pending);
     return html + '</div>';
   }
 
@@ -388,10 +421,12 @@ a.bar-btn{text-decoration:none;display:inline-flex;align-items:center}
       else if (c < rounds) {
         pairs = roundPairs('left', c, data);
         for (fi = 0; fi < pairs.length; fi++) html += fightHtml('left', c, fi, pairs[fi], data);
+        if (c === 0) roundByes('left', c, data).forEach(function (b) { html += byeHtml(b, data); });
       } else {
         rr = cols - 1 - c;
         pairs = roundPairs('right', rr, data);
         for (fi = 0; fi < pairs.length; fi++) html += fightHtml('right', rr, fi, pairs[fi], data);
+        if (rr === 0) roundByes('right', rr, data).forEach(function (b) { html += byeHtml(b, data); });
       }
       html += '</div>';
     }
