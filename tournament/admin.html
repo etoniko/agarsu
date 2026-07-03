@@ -56,11 +56,15 @@ button.danger{color:var(--red)}
 .cap{height:3px;background:var(--line)}
 .mid{height:1px;background:var(--line)}
 .cell{cursor:pointer}
-.cell.pickable:hover{background:var(--card2)}
+.cell.pickable{cursor:pointer}
+.cell.lose.pickable:hover{opacity:.85;background:var(--card2)}
+.cell.win.pickable:hover,.cell.win-pick.pickable:hover{filter:brightness(1.08)}
 .cell.win{background:rgba(77,159,255,.14)}
 .cell.lose{opacity:.42}
+.cell.pending{opacity:.72}
 .cell.lose.pickable{opacity:.58;cursor:pointer}
-.cell.lose.pickable:hover{opacity:.9;background:var(--card2)}
+.fight.crown .cell.pending .name{color:var(--dim);font-weight:400}
+.fight.crown .cell.pending .row:first-child .name::before{display:none}
 .cell.win-pick{background:rgba(255,92,92,.14)}
 .fight.crown .cell.win-pick .name{color:#ffb4b4;font-weight:600}
 .row{display:flex;align-items:center;gap:8px;padding:0 10px;height:var(--row-h);min-height:var(--row-h)}
@@ -156,17 +160,27 @@ a.link{color:var(--blue2)}
     return out;
   }
 
+  function roundsPerSide(n) {
+    var h = Math.ceil(n / 2), r = 0;
+    while (h > 1) { r++; h = Math.ceil(h / 2); }
+    return r;
+  }
+
   function sideParticipantsAtRound(n, round) {
-    var count = Math.ceil(n / 2);
-    for (var r = 0; r < round; r++) count = Math.ceil(count / 2);
+    var count = Math.ceil(n / 2), r;
+    for (r = 0; r < round; r++) count = Math.ceil(count / 2);
     return count;
   }
 
-  function roundsPerSide(n) {
-    var h = Math.ceil(n / 2);
-    var r = 0;
-    while (h > 1) { r++; h = Math.ceil(h / 2); }
-    return r;
+  function round0Pairs(side, data) {
+    var idx = sideIndices(data.totalTeams, side), pairs = [], i;
+    for (i = 0; i + 1 < idx.length; i += 2) pairs.push([idx[i], idx[i + 1]]);
+    return pairs;
+  }
+
+  function expectedPairCount(side, round, data) {
+    var n = side === 'left' ? Math.ceil(data.totalTeams / 2) : Math.floor(data.totalTeams / 2);
+    return Math.max(0, Math.floor(n / Math.pow(2, round + 1)));
   }
 
   function roundParticipants(side, round, data) {
@@ -175,26 +189,48 @@ a.link{color:var(--blue2)}
   }
 
   function roundPairs(side, round, data) {
-    var ps = roundParticipants(side, round, data);
-    var pairs = [];
-    for (var i = 0; i + 1 < ps.length; i += 2) pairs.push([ps[i], ps[i + 1]]);
+    var ps = roundParticipants(side, round, data), pairs = [], i;
+    for (i = 0; i + 1 < ps.length; i += 2) pairs.push([ps[i], ps[i + 1]]);
     return pairs;
   }
 
-  function roundAdvancers(side, round, data) {
-    var pairs = roundPairs(side, round, data);
-    var winners = (data.winners[side][round] || []);
-    var participants = roundParticipants(side, round, data);
-    var out = [];
-    var inPair = {};
-    for (var i = 0; i < pairs.length; i++) {
-      if (winners[i] != null) out.push(winners[i]);
+  function isRoundComplete(side, round, data) {
+    var count = expectedPairCount(side, round, data);
+    if (!count) return true;
+    var winners = data.winners[side][round] || [];
+    for (var i = 0; i < count; i++) {
+      if (winners[i] == null) return false;
     }
-    pairs.forEach(function (p) { p.forEach(function (x) { inPair[x] = true; }); });
-    for (var j = 0; j < participants.length; j++) {
-      if (!inPair[participants[j]]) out.push(participants[j]);
+    return true;
+  }
+
+  function roundAdvancers(side, round, data) {
+    var pairs = round === 0 ? round0Pairs(side, data) : roundPairs(side, round, data);
+    var winners = (data.winners[side][round] || []);
+    var out = [], i;
+    for (i = 0; i < pairs.length; i++) {
+      if (winners[i] != null) out.push(Number(winners[i]));
     }
     return out;
+  }
+
+  function isSideComplete(data, side) {
+    var rounds = roundsPerSide(data.totalTeams), r;
+    for (r = 0; r < rounds; r++) {
+      if (!isRoundComplete(side, r, data)) return false;
+    }
+    return true;
+  }
+
+  function getSideChampion(data, side) {
+    if (!isSideComplete(data, side)) return null;
+    var rounds = roundsPerSide(data.totalTeams);
+    if (rounds === 0) {
+      var idx = sideIndices(data.totalTeams, side);
+      return idx.length === 1 ? idx[0] : null;
+    }
+    var adv = roundAdvancers(side, rounds - 1, data);
+    return adv.length === 1 ? adv[0] : null;
   }
 
   function ensureWinners(data) {
@@ -213,28 +249,38 @@ a.link{color:var(--blue2)}
     return tags;
   }
 
-  function isRoundReady(side, round, data) {
-    if (round === 0) return true;
-    var prevPairs = roundPairs(side, round - 1, data);
-    if (!prevPairs.length) return true;
-    var prevWinners = data.winners[side][round - 1] || [];
-    return prevWinners.length === prevPairs.length &&
-      prevWinners.every(function (x) { return x != null; });
+  function isFightEditable(side, round, matchIdx, data) {
+    if (round === 0 || side === 'final') return true;
+    var row = data.winners[side] && data.winners[side][round];
+    if (row && row[matchIdx] != null) return true;
+    return matchIdx < roundPairs(side, round, data).length;
   }
 
-  function cellClass(teamIdx, pick, ready, crown) {
+  function isMatchEditable(side, round, data, matchIdx) {
+    if (side === 'final') return true;
+    return isFightEditable(side, round, matchIdx, data);
+  }
+
+  function cellClass(teamIdx, pick, editable, crown, pending) {
     var cls = 'cell';
-    if (!ready) return cls + ' lose';
+    if (pending) return cls + ' pending pickable';
+    if (!editable) return cls + ' lose';
     cls += ' pickable';
     if (pick == null) return cls;
-    if (pick === teamIdx) return cls + (crown ? ' win-pick' : ' win');
+    if (teamEq(pick, teamIdx)) return cls + (crown ? ' win-pick' : ' win');
     return cls + ' lose';
   }
 
-  function renderCell(side, round, matchIdx, teamIdx, cls, data) {
+  function teamEq(a, b) {
+    return a != null && b != null && Number(a) === Number(b);
+  }
+
+  function renderCell(side, round, matchIdx, teamIdx, cls, data, pick) {
     var t = data.teams[teamIdx] || { players: [] };
+    var tip = pick == null ? 'Выбрать победителя' :
+      teamEq(pick, teamIdx) ? 'Повторный клик — отменить' : 'Выбрать победителя';
     var html = '<div class="' + cls + '" data-side="' + side + '" data-round="' + round +
-      '" data-match="' + matchIdx + '" data-team="' + teamIdx + '">';
+      '" data-match="' + matchIdx + '" data-team="' + teamIdx + '" title="' + esc(tip) + '">';
     (t.players || ['']).forEach(function (p) {
       html += '<div class="row"><span class="name" title="' + esc(p) + '">' + esc(p || '—') + '</span></div>';
     });
@@ -243,30 +289,13 @@ a.link{color:var(--blue2)}
 
   function renderFightBox(side, round, matchIdx, pair, data) {
     var pick = data.winners[side][round] && data.winners[side][round][matchIdx];
-    var ready = isRoundReady(side, round, data);
+    var editable = isFightEditable(side, round, matchIdx, data);
     var html = '<div class="fight"><div class="cap"></div>';
     pair.forEach(function (ti, idx) {
-      html += renderCell(side, round, matchIdx, ti, cellClass(ti, pick, ready, false), data);
+      html += renderCell(side, round, matchIdx, ti, cellClass(ti, pick, editable, false), data, pick);
       if (idx === 0) html += '<div class="mid"></div>';
     });
     return html + '</div>';
-  }
-
-  function getSideChampion(data, side) {
-    var rounds = roundsPerSide(data.totalTeams);
-    if (rounds === 0) {
-      var idx = sideIndices(data.totalTeams, side);
-      return idx.length === 1 ? idx[0] : null;
-    }
-    var lastRound = rounds - 1;
-    var pairs = roundPairs(side, lastRound, data);
-    if (!pairs.length) {
-      var parts = roundParticipants(side, lastRound, data);
-      return parts.length === 1 ? parts[0] : null;
-    }
-    var row = data.winners[side][lastRound];
-    if (!row || row[0] == null) return null;
-    return row[0];
   }
 
   function getFinalPair(data) {
@@ -280,11 +309,12 @@ a.link{color:var(--blue2)}
 
   function renderFinalFight(data) {
     var pair = getFinalPair(data);
-    if (!pair) return '<p class="map-empty">Дойдите до финала с обеих сторон</p>';
+    if (!pair) return '<p class="map-empty">Финал — после полуфиналов с обеих сторон</p>';
     var fin = data.winners.final;
+    var pending = fin == null;
     var html = '<div class="fight crown"><div class="cap"></div>';
     pair.forEach(function (ti, idx) {
-      html += renderCell('final', 0, 0, ti, cellClass(ti, fin, true, true), data);
+      html += renderCell('final', 0, 0, ti, cellClass(ti, fin, true, true, pending), data, fin);
       if (idx === 0) html += '<div class="mid"></div>';
     });
     return html + '</div>';
@@ -300,7 +330,7 @@ a.link{color:var(--blue2)}
     var html = '<div class="map" style="--cols:' + cols + ';--colh:' + colh + 'px;--fight-w:' + fightW + 'px">';
     html += '<div class="map-tags">' + tags.map(function (t) { return '<span>' + t + '</span>'; }).join('') + '</div>';
     html += '<div class="map-grid">';
-    var c;
+    var c, pairs, rr, fi;
     for (c = 0; c < cols; c++) {
       var laneCls = 'lane';
       if (c === 0) laneCls += ' lane-l';
@@ -310,16 +340,12 @@ a.link{color:var(--blue2)}
       if (c === rounds) {
         html += renderFinalFight(data);
       } else if (c < rounds) {
-        var pairsL = roundPairs('left', c, data);
-        pairsL.forEach(function (pair, fi) {
-          html += renderFightBox('left', c, fi, pair, data);
-        });
+        pairs = roundPairs('left', c, data);
+        for (fi = 0; fi < pairs.length; fi++) html += renderFightBox('left', c, fi, pairs[fi], data);
       } else {
-        var rr = cols - 1 - c;
-        var pairsR = roundPairs('right', rr, data);
-        pairsR.forEach(function (pair, fi) {
-          html += renderFightBox('right', rr, fi, pair, data);
-        });
+        rr = cols - 1 - c;
+        pairs = roundPairs('right', rr, data);
+        for (fi = 0; fi < pairs.length; fi++) html += renderFightBox('right', rr, fi, pairs[fi], data);
       }
       html += '</div>';
     }
@@ -330,7 +356,9 @@ a.link{color:var(--blue2)}
     ensureWinners(data);
     while (data.winners[side].length <= round) data.winners[side].push([]);
     var row = (data.winners[side][round] || []).slice();
-    if (row[matchIdx] === teamIdx) row[matchIdx] = null;
+    while (row.length <= matchIdx) row.push(null);
+    teamIdx = Number(teamIdx);
+    if (teamEq(row[matchIdx], teamIdx)) row[matchIdx] = null;
     else row[matchIdx] = teamIdx;
     data.winners[side][round] = row;
     data.winners[side].length = round + 1;
@@ -342,7 +370,8 @@ a.link{color:var(--blue2)}
 
   function setFinal(data, teamIdx) {
     ensureWinners(data);
-    if (data.winners.final === teamIdx) {
+    teamIdx = Number(teamIdx);
+    if (teamEq(data.winners.final, teamIdx)) {
       data.winners.final = null;
       data.winnerTeam = null;
     } else {
@@ -422,7 +451,7 @@ a.link{color:var(--blue2)}
       '<div class="field"><label>Режим</label><select id="f-mode">' + modeOpts + '</select><input id="f-mode-custom" placeholder="Свой режим" value="' +
         esc(MODES.indexOf(d.mode) >= 0 ? '' : (d.mode || '')) + '" style="margin-top:6px;width:100%"></div>' +
       '<div class="field"><label>Награда</label><input id="f-reward" value="' + esc(d.reward || '') + '"></div>' +
-      '</div><p class="hint">Формат: <b>' + esc(d.format) + '</b>. Любое число ' + unitsInGrid(d) + ' (2–' + MAX_SLOTS + '). Нечётное — автоматический проход. Клик — победитель.</p></div>' +
+      '</div><p class="hint">Формат: <b>' + esc(d.format) + '</b>. Клик — победитель. Повторный клик по победителю — отмена. Можно сменить выбор в любом матче.</p></div>' +
 
       '<div class="section"><h2>' + (isSolo(d) ? 'Слоты' : 'Команды') + ' (' + d.totalTeams + ')</h2><div class="teams" id="teams-box"></div></div>' +
 
@@ -487,12 +516,13 @@ a.link{color:var(--blue2)}
 
   function bindBracket() {
     workspace.querySelectorAll('.cell.pickable[data-team]').forEach(function (el) {
-      el.addEventListener('click', function () {
+      el.addEventListener('click', function (e) {
+        e.stopPropagation();
         var side = el.getAttribute('data-side');
-        var team = parseInt(el.getAttribute('data-team'), 10);
+        var team = Number(el.getAttribute('data-team'));
         if (side === 'final') setFinal(cur, team);
-        else setPick(cur, side, parseInt(el.getAttribute('data-round'), 10),
-          parseInt(el.getAttribute('data-match'), 10), team);
+        else setPick(cur, side, Number(el.getAttribute('data-round')),
+          Number(el.getAttribute('data-match')), team);
       });
     });
   }
@@ -590,7 +620,7 @@ a.link{color:var(--blue2)}
 
   function createNew() {
     var ppt = 1;
-    var teams = 26;
+    var teams = 24;
     var n = currentNum() + 1;
     cur = {
       id: n, num: n, name: 'Новый турнир #' + n, date: new Date().toISOString(),
