@@ -2,7 +2,7 @@
   "id": 2,
   "name": "TOURNAMENT JUNE 2026",
   "date": "2026-07-03T16:28:00.000Z",
-  "archivedAt": "2026-07-05T19:38:19.170Z",
+  "archivedAt": "2026-07-05T20:26:13.713Z",
   "totalTeams": 24,
   "format": "1x1",
   "mode": "Classic",
@@ -151,11 +151,21 @@
         15,
         17,
         18,
-        null,
+        21,
         23
       ]
     ],
-    "final": null
+    "final": null,
+    "finalCross": [
+      null,
+      null,
+      null
+    ],
+    "finalRR": [
+      null,
+      null,
+      null
+    ]
   },
   "status": "archived",
   "winnerTeam": null,
