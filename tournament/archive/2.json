@@ -1,0 +1,163 @@
+{
+  "id": 2,
+  "name": "TOURNAMENT JUNE 2026",
+  "date": "2026-07-03T16:28:00.000Z",
+  "archivedAt": "2026-07-05T19:38:19.170Z",
+  "totalTeams": 24,
+  "format": "1x1",
+  "mode": "Classic",
+  "reward": "5000р",
+  "teams": [
+    {
+      "players": [
+        "khirad"
+      ]
+    },
+    {
+      "players": [
+        "Оbladait"
+      ]
+    },
+    {
+      "players": [
+        "Всекончал"
+      ]
+    },
+    {
+      "players": [
+        "bl1ck"
+      ]
+    },
+    {
+      "players": [
+        "newlightchild"
+      ]
+    },
+    {
+      "players": [
+        "morcov"
+      ]
+    },
+    {
+      "players": [
+        "☼K☼"
+      ]
+    },
+    {
+      "players": [
+        "ау"
+      ]
+    },
+    {
+      "players": [
+        "v_potoke"
+      ]
+    },
+    {
+      "players": [
+        "Папа"
+      ]
+    },
+    {
+      "players": [
+        "deffka"
+      ]
+    },
+    {
+      "players": [
+        "прошка"
+      ]
+    },
+    {
+      "players": [
+        "griffin"
+      ]
+    },
+    {
+      "players": [
+        "some no mai"
+      ]
+    },
+    {
+      "players": [
+        "АЛИК ))))"
+      ]
+    },
+    {
+      "players": [
+        "Jeff"
+      ]
+    },
+    {
+      "players": [
+        "PULIK"
+      ]
+    },
+    {
+      "players": [
+        "salruz"
+      ]
+    },
+    {
+      "players": [
+        "vaas"
+      ]
+    },
+    {
+      "players": [
+        "aeris"
+      ]
+    },
+    {
+      "players": [
+        "sorry"
+      ]
+    },
+    {
+      "players": [
+        "курага"
+      ]
+    },
+    {
+      "players": [
+        "𝓙𝓲𝓷𝔁"
+      ]
+    },
+    {
+      "players": [
+        "ʟᴇɢᴇɴᴅ"
+      ]
+    }
+  ],
+  "winners": {
+    "left": [
+      [
+        1,
+        2,
+        5,
+        6,
+        9,
+        11
+      ],
+      [
+        null,
+        null,
+        null
+      ]
+    ],
+    "right": [
+      [
+        13,
+        15,
+        17,
+        18,
+        null,
+        23
+      ]
+    ],
+    "final": null
+  },
+  "status": "archived",
+  "winnerTeam": null,
+  "num": 2
+}
