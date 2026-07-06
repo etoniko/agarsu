@@ -2,7 +2,7 @@
   "id": 2,
   "name": "TOURNAMENT JUNE 2026",
   "date": "2026-07-03T16:28:00.000Z",
-  "archivedAt": "2026-07-05T20:26:13.713Z",
+  "archivedAt": "2026-07-06T04:21:15.893Z",
   "totalTeams": 24,
   "format": "1x1",
   "mode": "Classic",
@@ -141,7 +141,7 @@
       ],
       [
         null,
-        null,
+        5,
         null
       ]
     ],
