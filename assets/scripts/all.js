@@ -36,7 +36,7 @@ function showLogoutNotification() {
 
 const chatWindow = document.getElementById('chatX_window');
 const chatContainer = document.getElementById('chatX_container');
-const chatTop = document.getElementById('chatX_top');
+const chatBurger = document.getElementById('chatX_burger');
 const CHAT_SIZE_KEY = 'chatX_size_v1';
 const CHAT_MIN_W = 220;
 const CHAT_MAX_W = 520;
@@ -80,8 +80,7 @@ let chatResizeStartW = 0;
 let chatResizeStartH = 0;
 
 function startChatResize(e) {
-    if (!chatTop || !chatWindow) return;
-    if (e.target.closest('.chatX_close') || e.target.closest('.chatX_top_avatar')) return;
+    if (!chatBurger || !chatWindow) return;
     e.preventDefault();
     e.stopPropagation();
     chatResizing = true;
@@ -106,9 +105,9 @@ function stopChatResize() {
     document.body.style.userSelect = '';
 }
 
-if (chatTop) {
-    chatTop.addEventListener('mousedown', startChatResize);
-    chatTop.addEventListener('touchstart', startChatResize, { passive: false });
+if (chatBurger) {
+    chatBurger.addEventListener('mousedown', startChatResize);
+    chatBurger.addEventListener('touchstart', startChatResize, { passive: false });
 }
 document.addEventListener('mousemove', doChatResize);
 document.addEventListener('touchmove', doChatResize, { passive: false });
