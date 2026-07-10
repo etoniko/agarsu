@@ -180,27 +180,6 @@ async function updateOnlineCount() {
     if (onlineElement) {
         onlineElement.textContent = `Онлайн: ${totalOnline}`;
     }
-
-    try {
-        const kotovRes = await fetch(getGameServerApiBase(GAME_SERVERS.kotov.host) + "/process", { cache: "no-store" });
-        if (kotovRes.ok) {
-            const kotovData = await kotovRes.json();
-            const kotovLi = document.getElementById("kotov");
-            if (kotovLi) {
-                const playing = kotovData.playing ?? 0;
-                const observers = kotovData.no_playing ?? 0;
-                const spans = kotovLi.querySelectorAll(".online-count");
-                if (spans.length >= 2) {
-                    spans[0].textContent = observers;
-                    spans[1].textContent = `${playing}/64`;
-                }
-                totalOnline += playing + observers;
-                if (onlineElement) {
-                    onlineElement.textContent = `Онлайн: ${totalOnline}`;
-                }
-            }
-        }
-    } catch (_) {}
 }
 
 
@@ -226,11 +205,7 @@ wHandle.startGame = function () {
     if (nickInput.length > 16) nickInput = nickInput.substring(0, 16);
     if (passInput.length > 8) passInput = passInput.substring(0, 8);
 
-    if (isNickOnlyServer(SELECTED_SERVER || CONNECTION_URL)) {
-        setNick(nickInput);
-    } else {
-        setNick(nickInput + "#" + passInput);
-    }
+    setNick(nickInput + "#" + passInput);
 };
 
 
@@ -260,74 +235,27 @@ wHandle.startGame = function () {
 // host — для wss, api — HTTPS того же игрового сервера (клиент может быть на GitHub)
 const GAME_SERVERS = {
 	    "ffa":        { host: "ffa.agar.su",           api: "https://ffa.agar.su" },
-	    "ffa2":       { host: "ffa.agar.su:6003",      api: "https://ffa.agar.su:6003" },
+        "ffa2":       { host: "ffa.agar.su:6003",      api: "https://ffa.agar.su:6003" },
         "ms":         { host: "ffa.agar.su:6002",      api: "https://ffa.agar.su:6002" },
         "pvp2":       { host: "ffa.agar.su:6005",      api: "https://ffa.agar.su:6005" },
         "tournament": { host: "ffa.agar.su:6006",      api: "https://ffa.agar.su:6006" },
-	    "tournament2": { host: "ffa.agar.su:6007",      api: "https://ffa.agar.su:6007" },
-        "kotov":      { host: "kotov.fun:20001", nickOnly: true }
+	    "tournament2": { host: "ffa.agar.su:6007",      api: "https://ffa.agar.su:6007" }
     };
 const SERVERS = Object.fromEntries(
     Object.entries(GAME_SERVERS).map(([id, s]) => [id, s.host])
 );
 
-function getGameServerEntry(hostOrUrl) {
-    if (!hostOrUrl) return null;
-    const normalized = String(hostOrUrl).replace(/^wss?:\/\//i, "");
-    return Object.values(GAME_SERVERS).find(
-        s => s.host === hostOrUrl || s.host === normalized || s.api === hostOrUrl
-    ) || null;
-}
-
-function isNickOnlyServer(hostOrUrl) {
-    const entry = getGameServerEntry(hostOrUrl || SELECTED_SERVER || CONNECTION_URL);
-    return !!entry?.nickOnly;
-}
-
-function updatePassFieldForServer(hostOrUrl) {
-    const passEl = document.getElementById("pass");
-    if (!passEl) return;
-    if (isNickOnlyServer(hostOrUrl)) {
-        passEl.style.display = "none";
-        passEl.value = "";
-        setCookie("userPass", "", -1);
-        return;
-    }
-    if (typeof window.__passCheckNick === "function") {
-        window.__passCheckNick(document.getElementById("nick")?.value?.trim() || "");
-    }
-}
-
-function resolveServerScheme(entry, kind) {
-    const key = kind === "api" ? "apiScheme" : "wsScheme";
-    if (entry?.[key]) return entry[key];
-    if (entry?.nickOnly) {
-        return location.protocol === "https:"
-            ? (kind === "api" ? "https" : "wss")
-            : (kind === "api" ? "http" : "ws");
-    }
-    return kind === "api" ? "https" : "wss";
-}
-
 function getGameServerApiBase(hostOrUrl) {
     if (!hostOrUrl) return GAME_SERVERS.ffa.api;
-    const entry = getGameServerEntry(hostOrUrl);
-    if (entry) {
-        if (entry.api) return entry.api.replace(/\/$/, "");
-        return `${resolveServerScheme(entry, "api")}://${entry.host}`;
-    }
+    const entry = Object.values(GAME_SERVERS).find(s => s.host === hostOrUrl || s.api === hostOrUrl);
+    if (entry) return entry.api;
     if (/^https?:\/\//i.test(hostOrUrl)) return hostOrUrl.replace(/\/$/, "");
     return "https://" + String(hostOrUrl).replace(/^wss?:\/\//i, "");
 }
 
 function getGameServerWssUrl(host) {
-    const entry = getGameServerEntry(host);
     const h = host || GAME_SERVERS.ffa.host;
-    const normalized = String(h).replace(/^wss?:\/\//i, "");
-    if (entry) {
-        return `${resolveServerScheme(entry, "ws")}://${normalized}`;
-    }
-    return "wss://" + normalized;
+    return "wss://" + String(h).replace(/^wss?:\/\//i, "");
 }
 	
 wjQuery(document).ready(() => {
@@ -342,7 +270,6 @@ document.querySelectorAll('.gamemode li').forEach(li => {
 
         // Запоминаем выбранный сервер
         SELECTED_SERVER = li.dataset.ip;
-        updatePassFieldForServer(SELECTED_SERVER);
         // Обновляем hash без дергания страницы
         history.replaceState(null, '', '#' + li.id);
 titleEl.textContent = `Статистика ${li.id}`;
@@ -372,7 +299,6 @@ function initServers() {
 
     CONNECTION_URL = SERVERS[serverKey];
     SELECTED_SERVER = CONNECTION_URL;
-    updatePassFieldForServer(SELECTED_SERVER);
 
     document.querySelectorAll('.gamemode li').forEach(li => li.classList.remove('active'));
     const activeLi = document.getElementById(serverKey);
@@ -753,11 +679,16 @@ let stickerCooldownTimer = null;
     ctx = mainCanvas.getContext("2d");
 
     mainCanvas.onmousemove = function (event) {
-        const dpr = window.devicePixelRatio;
+        syncMouseFromEvent(event);
+    };
+    document.addEventListener('mousemove', syncMouseFromEvent, { passive: true });
+
+    function syncMouseFromEvent(event) {
+        const dpr = window.devicePixelRatio || 1;
         rawMouseX = event.clientX * dpr;
         rawMouseY = event.clientY * dpr;
-        mouseCoordinateChange()
-    };
+        mouseCoordinateChange();
+    }
 
     const updateMouseAim = () => {
         let x = X < rightPos ? X : rightPos;
@@ -1843,43 +1774,32 @@ async function wsConnect(wsUrlArg) {
     leaderBoard = [];
 
     let connectToken = null;
-    if (!isNickOnlyServer(c)) {
-        try {
-            connectToken = await fetchConnectToken(c);
-        } catch (err) {
-            console.error("Connect token error:", err);
-            connectInProgress = false;
-            if (isSpectMode()) {
-                scheduleSpectReconnect();
-                return;
-            }
-            setConnectVerifyText("Ошибка подключения, повтор…");
+    try {
+        connectToken = await fetchConnectToken(c);
+    } catch (err) {
+        console.error("Connect token error:", err);
+        connectInProgress = false;
+        if (isSpectMode()) {
+            scheduleSpectReconnect();
             return;
         }
+        setConnectVerifyText("Ошибка подключения, повтор…");
+        return;
     }
 
-    if (connectToken === null && !isNickOnlyServer(c)) {
-        hideConnectVerifyOverlay();
-    } else if (isNickOnlyServer(c)) {
+    if (connectToken === null) {
         hideConnectVerifyOverlay();
     }
 
     const qs = new URLSearchParams();
-    const nickOnly = isNickOnlyServer(c);
-    if (!nickOnly && localStorage.accountToken) {
+    if (localStorage.accountToken) {
         qs.set("accountToken", localStorage.accountToken);
     }
     if (connectToken) {
         qs.set("connectToken", connectToken);
     }
 
-    const query = qs.toString();
-    const wsTarget = query ? `${wsUrl}?${query}` : wsUrl;
-    if (nickOnly) {
-        ws = new WebSocket(wsTarget);
-    } else {
-        ws = new WebSocket(wsTarget, "eSejeKSVdysQvZs0ES1H");
-    }
+    ws = new WebSocket(wsUrl + "?" + qs.toString(), "eSejeKSVdysQvZs0ES1H");
     ws.binaryType = "arraybuffer";
     ws.onopen = onWsOpen;
     ws.onmessage = onWsMessage;
@@ -3316,7 +3236,6 @@ function sendMouseMove() {
 	
 
     const sendAccountToken = () => {
-        if (isNickOnlyServer()) return;
         const token = localStorage.accountToken;
         if (wsIsOpen() && token) {
             const msg = prepareData(1 + 2 * token.length);
@@ -4486,9 +4405,6 @@ function drawLeaderBoard() {
 wHandle.setNick = function (arg) {
     setserver(SELECTED_SERVER); 
     hideOverlays(); 
-    if (isNickOnlyServer()) {
-        arg = String(arg || "").split("#")[0].trim();
-    }
     userNickName = arg; 
     sendNickName(); 
     wjQuery("#statics").hide(); 
@@ -5701,18 +5617,11 @@ function renderCard(list, fullNick, perks) {
   name.className = 'nick';
   name.textContent = label;
   name.onclick = () => {
-    const nickOnly = isNickOnlyServer();
-    const playNick = nickOnly ? nickPart : str;
-    try { if (typeof setNick === 'function') setNick(playNick); } catch (e) {}
+    try { if (typeof setNick === 'function') setNick(str); } catch (e) {}
     document.getElementById('nick').value = nickPart;
-    if (nickOnly) {
-      document.getElementById('pass').value = '';
-      document.getElementById('pass').style.display = 'none';
-    } else {
-      document.getElementById('pass').value = pass;
-      setCookie('userPass', pass, 7);
-      document.getElementById('pass').style.display = pass ? 'block' : 'none';
-    }
+    document.getElementById('pass').value = pass;
+    setCookie('userPass', pass, 7);
+    document.getElementById('pass').style.display = pass ? 'block' : 'none';
     selectSkin(nickPart);
   };
 
@@ -6116,7 +6025,7 @@ wHandle.onAccountLoggedIn = token => {
     }
     loadAccountUserData();
 	loadMyNicknames();
-    if (!isNickOnlyServer()) sendAccountToken();
+    sendAccountToken();
 };
 
 wHandle.logoutAccount = async () => {
