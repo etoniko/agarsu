@@ -1989,7 +1989,7 @@ input{font-size:16px;}
 .chat-coord{height:22px;}
 #chat_textbox::placeholder{color:#606060;}
 .chatX_alert{position:absolute;top:30px;right:10px;background:#ff4e3e;color:#fff;font-size:13px;padding:4px 8px;border-radius:12px;display:none;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.3);}
-.nresize{cursor:n-resize !important;}
+.nresize{cursor:all-scroll !important}
 ::-webkit-scrollbar{width:2px;height:0;}
 ::-webkit-scrollbar-thumb{background-color:#6c6c6c;border-radius:10px;}
 ::-webkit-scrollbar-track{background:transparent;}
