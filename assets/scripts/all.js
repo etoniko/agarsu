@@ -20,16 +20,13 @@ function showLogoutNotification() {
 
     notif.style.display = 'block';
 
-    // Чтобы сработал transition, добавляем класс с задержкой
     setTimeout(() => {
       notif.classList.add('show');
     }, 10);
 
-    // Через 3 секунды скрываем
     setTimeout(() => {
       notif.classList.remove('show');
 
-      // После анимации прячем полностью
       notif.addEventListener('transitionend', () => {
           notif.style.display = 'none';
       }, { once: true });
@@ -38,73 +35,115 @@ function showLogoutNotification() {
 }
 
 const chatWindow = document.getElementById('chatX_window');
-const feed = document.getElementById('chatX_feed');
-const burger = document.getElementById('chatX_burger');
+const chatContainer = document.getElementById('chatX_container');
+const chatResize = document.getElementById('chatX_resize');
+const CHAT_SIZE_KEY = 'chatX_size_v1';
+const CHAT_MIN_W = 220;
+const CHAT_MAX_W = 520;
+const CHAT_MIN_H = 120;
 
-let startY = 0;
-let startHeight = 0;
-let startTop = 0;
-let resizing = false;
+function chatMaxHeight() {
+    return Math.min(720, Math.floor(window.innerHeight * 0.85));
+}
 
-// ===== drag & touch для burger =====
-function startResize(e) {
-    resizing = true;
-    startY = e.touches ? e.touches[0].clientY : e.clientY;
-    startHeight = chatWindow.offsetHeight;
-    startTop = chatWindow.offsetTop;
+function applyChatSize(width, height, save) {
+    if (!chatWindow) return;
+    const w = Math.max(CHAT_MIN_W, Math.min(CHAT_MAX_W, width));
+    const h = Math.max(CHAT_MIN_H, Math.min(chatMaxHeight(), height));
+    chatWindow.style.width = w + 'px';
+    chatWindow.style.height = h + 'px';
+    if (save !== false) {
+        localStorage.setItem(CHAT_SIZE_KEY, JSON.stringify({ w, h }));
+    }
+}
+
+function loadChatSize() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(CHAT_SIZE_KEY));
+        if (saved && saved.w && saved.h) {
+            applyChatSize(saved.w, saved.h, false);
+        }
+    } catch (e) {}
+}
+
+function isPointerOverChat(clientX, clientY) {
+    if (!chatWindow || chatWindow.style.display === 'none') return false;
+    const rect = chatWindow.getBoundingClientRect();
+    return clientX >= rect.left && clientX <= rect.right &&
+        clientY >= rect.top && clientY <= rect.bottom;
+}
+
+let chatResizing = false;
+let chatResizeStartX = 0;
+let chatResizeStartY = 0;
+let chatResizeStartW = 0;
+let chatResizeStartH = 0;
+
+function startChatResize(e) {
+    if (!chatResize || !chatWindow) return;
+    e.preventDefault();
+    e.stopPropagation();
+    chatResizing = true;
+    chatResizeStartX = e.touches ? e.touches[0].clientX : e.clientX;
+    chatResizeStartY = e.touches ? e.touches[0].clientY : e.clientY;
+    chatResizeStartW = chatWindow.offsetWidth;
+    chatResizeStartH = chatWindow.offsetHeight;
     document.body.style.userSelect = 'none';
 }
 
-function doResize(e) {
-    if (!resizing) return;
+function doChatResize(e) {
+    if (!chatResizing) return;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    const dy = clientY - startY;
-    let newHeight = startHeight - dy;
-    let newTop = startTop + dy;
-
-    if (newHeight < 100) { newTop -= (100-newHeight); newHeight = 100; }
-    if (newHeight > 700) { newTop += (newHeight-700); newHeight = 700; }
-
-    chatWindow.style.height = newHeight + 'px';
-    chatWindow.style.top = newTop + 'px';
+    const newW = chatResizeStartW + (clientX - chatResizeStartX);
+    const newH = chatResizeStartH - (clientY - chatResizeStartY);
+    applyChatSize(newW, newH);
 }
 
-function stopResize() {
-    resizing = false;
+function stopChatResize() {
+    chatResizing = false;
     document.body.style.userSelect = '';
 }
 
-burger.addEventListener('mousedown', startResize);
-burger.addEventListener('touchstart', startResize, {passive: true});
-document.addEventListener('mousemove', doResize);
-document.addEventListener('touchmove', doResize, {passive: false});
-document.addEventListener('mouseup', stopResize);
-document.addEventListener('touchend', stopResize);
+if (chatResize) {
+    chatResize.addEventListener('mousedown', startChatResize);
+    chatResize.addEventListener('touchstart', startChatResize, { passive: false });
+}
+document.addEventListener('mousemove', doChatResize);
+document.addEventListener('touchmove', doChatResize, { passive: false });
+document.addEventListener('mouseup', stopChatResize);
+document.addEventListener('touchend', stopChatResize);
 
+document.addEventListener('wheel', (e) => {
+    if (!isPointerOverChat(e.clientX, e.clientY) || !chatContainer) return;
+    if (chatContainer.scrollHeight <= chatContainer.clientHeight) return;
+    chatContainer.scrollTop += e.deltaY;
+    e.preventDefault();
+}, { passive: false });
+
+loadChatSize();
 
 document.addEventListener('DOMContentLoaded', () => {
   updateAccountMenuLabel();
-  // Кнопка чата
+  loadChatSize();
+
   document.getElementById('onchat').addEventListener('click', () => {
     document.getElementById('chatX_window').style.display = 'flex';
     document.getElementById('onchat').style.display = 'none';
   });
 
-  // Кнопка карты
   document.getElementById('onmap').addEventListener('click', () => {
     document.getElementById('map').style.display = 'block';
     document.getElementById('onmap').style.display = 'none';
   });
 
-    // Кнопка топ лист
   document.getElementById('onleaderboard').addEventListener('click', () => {
     document.getElementById('leaderboard').style.display = 'block';
     document.getElementById('onleaderboard').style.display = 'none';
   });
 
-  // Кнопка "Pause"
   document.getElementById('freeze').addEventListener('click', function () {
-    freeze = false; // предполагаю, это глобальная переменная
+    freeze = false;
     this.style.display = 'none';
   });
   $('.homemenu').on('click', function () {
@@ -112,17 +151,13 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-        // Получаем элементы канваса и div-элемента overlays
         var canvas = document.getElementById('canvas');
         var overlays = document.getElementById('overlays');
 
-        // Добавляем слушатель события мыши на div-элемент overlays
         overlays.addEventListener('mousemove', function (event) {
-            // Получаем позицию курсора относительно overlays
             var x = event.clientX - overlays.offsetLeft;
             var y = event.clientY - overlays.offsetTop;
 
-            // Создаем событие мыши для канваса
             var canvasEvent = new MouseEvent('mousemove', {
                 bubbles: true,
                 cancelable: true,
@@ -130,29 +165,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 clientY: y
             });
 
-            // Передаем событие канвасу
             canvas.dispatchEvent(canvasEvent);
         });
 
 $('#closeStats').on('click', function() {
    document.getElementById('statics').style.display = 'none';
-    $('#overlays').show();    // показать overlays
+    $('#overlays').show();
 });
 
 const chatFeed = document.getElementById('chatX_feed');
 const leaderboard = document.getElementById('leaderboard');
 const chatInput = document.getElementById('chat_textbox');
 
-// Функция для вставки ника в чат
 function insertNick(nick) {
-  nick = nick.trim().replace(/\s+/g, '\u00A0'); // NBSP
+  nick = nick.trim().replace(/\s+/g, '\u00A0');
   if (nick.endsWith(':')) nick = nick.slice(0, -1);
   chatInput.value = '@' + nick + ' ';
   chatInput.focus();
   chatInput.setSelectionRange(chatInput.value.length, chatInput.value.length);
 }
 
-// ЛКМ по сообщению в чате
 chatFeed.addEventListener('click', (e) => {
     if (e.button !== 0) return;
     const msgElem = e.target.closest('.chatX_msg');
@@ -162,7 +194,6 @@ chatFeed.addEventListener('click', (e) => {
     insertNick(nickElem.textContent);
 });
 
-// ЛКМ по нику в лидерборде
 leaderboard.addEventListener('click', (e) => {
     if (e.button !== 0) return;
     const nickElem = e.target.closest('.Lednick span');
@@ -170,15 +201,11 @@ leaderboard.addEventListener('click', (e) => {
     insertNick(nickElem.textContent);
 });
 
-
-
-// === Переключение отображения эмодзи-листа ===
 document.getElementById('emoji_toggle').addEventListener('click', () => {
   const list = document.querySelector('#chatX_window .emoji-list');
   list.style.display = (list.style.display === 'flex') ? 'none' : 'flex';
 });
 
-// === Вставка эмодзи ===
 document.querySelector('#chatX_window .emoji-list').addEventListener('click', (e) => {
   const emojiItem = e.target.closest('.emoji-item');
   if (!emojiItem) return;
@@ -186,6 +213,5 @@ document.querySelector('#chatX_window .emoji-list').addEventListener('click', (e
   const emojiCode = emojiItem.dataset.code;
   const chatBox = document.getElementById('chat_textbox');
 
-  // Вставляем эмодзи в конец текста
   chatBox.value += emojiCode;
 });
