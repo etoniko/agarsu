@@ -1937,7 +1937,7 @@ input{font-size:16px;}
 .chatX_window .chatX_resize,
 .chatX_window .chatX_msg,
 .chatX_window .chatX_top_avatar {pointer-events: auto;}
-.chatX_resize{position:absolute;top:4px;right:4px;width:18px;height:18px;cursor:nwse-resize;z-index:5;border-radius:4px;opacity:.55;}
+.chatX_resize{position:absolute;top:4px;right:4px;width:18px;height:18px;cursor:ne-resize;z-index:5;border-radius:4px;opacity:.55;}
 .chatX_resize::before,
 .chatX_resize::after{content:"";position:absolute;background:rgba(255,255,255,.85);border-radius:1px;}
 .chatX_resize::before{right:3px;top:3px;width:10px;height:2px;transform:rotate(-45deg);transform-origin:right top;}
