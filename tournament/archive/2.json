@@ -2,7 +2,7 @@
   "id": 2,
   "name": "TOURNAMENT JUNE 2026",
   "date": "2026-07-03T16:28:00.000Z",
-  "archivedAt": "2026-07-09T20:42:15.159Z",
+  "archivedAt": "2026-07-11T17:56:03.973Z",
   "totalTeams": 24,
   "format": "1x1",
   "mode": "Classic",
@@ -160,19 +160,23 @@
         21
       ]
     ],
-    "final": null,
+    "final": 1,
     "finalCross": [
       1,
       17,
       21
     ],
     "finalRR": [
-      null,
-      null,
-      null
+      1,
+      1,
+      17
     ]
   },
   "status": "archived",
-  "winnerTeam": null,
+  "winnerTeam": {
+    "players": [
+      "Оbladait"
+    ]
+  },
   "num": 2
 }
