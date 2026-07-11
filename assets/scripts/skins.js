@@ -147,7 +147,7 @@ function renderSkinsGalleryPage(page) {
         card.type = 'button';
         card.className = 'skins-gallery-card';
         card.innerHTML = `
-            <img src="/skins/${skin.code}.png" alt="" loading="lazy">
+            <img src="https://api.agar.su/skins/${skin.code}.png" alt="" loading="lazy">
             <h4>${escapeHtml(skin.nick)}</h4>
         `;
         card.addEventListener('click', async () => {
