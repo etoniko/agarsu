@@ -272,9 +272,10 @@ document.querySelectorAll('.gamemode li').forEach(li => {
         // Обновляем hash без дергания страницы
         history.replaceState(null, '', '#' + li.id);
 titleEl.textContent = `Статистика ${li.id}`;
-        // ✅ Если сервер уже был активным — сразу стартуем игру
-        if(isAlreadyActive) {
+        if (isAlreadyActive) {
             wHandle.startGame();
+        } else if (ma) {
+            setserver(SELECTED_SERVER);
         }
     });
 });
@@ -442,19 +443,23 @@ wHandle.setserver = function(arg) {
         return;
     }
 
+    const wsUrl = getGameServerWssUrl(arg);
+    const alreadyConnected = ws && ws.readyState === WebSocket.OPEN && currentWebSocketUrl === wsUrl;
+
     if (arg !== CONNECTION_URL) {
         CONNECTION_URL = arg;
 
         const foundHash = Object.keys(SERVERS).find(key => SERVERS[key] === arg);
         if (foundHash) {
-            // вместо location.hash → history.replaceState
             history.replaceState(null, "", `#${foundHash}`);
-            setActiveFromHash(); // подсветим активный сервер
+            setActiveFromHash();
         } else {
             console.warn("Неизвестный сервер URL:", arg);
             history.replaceState(null, "", " ");
         }
+    }
 
+    if (!alreadyConnected) {
         showConnecting();
         updateOnlineCount();
     }
@@ -1430,6 +1435,7 @@ function isMouseOverElement(element) {
 
 let currentWebSocketUrl = null;
 let connectInProgress = false;
+let connectAttemptId = 0;
 const HIDDEN_TAB_DISCONNECT_MS = 600000;
 let hiddenTabDisconnectTimer = null;
 let wsClosedByHiddenTab = false;
@@ -1706,12 +1712,13 @@ async function fetchConnectToken(gameHost) {
     try {
         res = await fetch(apiBase + "/challenge", { cache: "no-store" });
     } catch (err) {
-        serverPowSupportCache.set(apiBase, false);
         return null;
     }
 
     if (!res.ok) {
-        serverPowSupportCache.set(apiBase, false);
+        if (res.status === 404) {
+            serverPowSupportCache.set(apiBase, false);
+        }
         return null;
     }
 
@@ -1719,12 +1726,10 @@ async function fetchConnectToken(gameHost) {
     try {
         challenge = await res.json();
     } catch (err) {
-        serverPowSupportCache.set(apiBase, false);
         return null;
     }
 
     if (!challenge || !challenge.challengeId || challenge.prefix == null || challenge.difficulty == null) {
-        serverPowSupportCache.set(apiBase, false);
         return null;
     }
 
@@ -1743,13 +1748,14 @@ function showConnecting() {
     }
 
     if (ma) {
+        connectAttemptId++;
         currentWebSocketUrl = wsUrl;
         wsConnect(wsUrl);
     }
 }
 
 async function wsConnect(wsUrlArg) {
-    if (connectInProgress) return;
+    const attemptId = connectAttemptId;
     connectInProgress = true;
     hideBanBanner();
     hideReconnectPanel();
@@ -1772,38 +1778,53 @@ async function wsConnect(wsUrlArg) {
     Cells = [];
     leaderBoard = [];
 
-    let connectToken = null;
     try {
-        connectToken = await fetchConnectToken(c);
-    } catch (err) {
-        console.error("Connect token error:", err);
-        connectInProgress = false;
-        if (isSpectMode()) {
-            scheduleSpectReconnect();
+        let connectToken = null;
+        try {
+            connectToken = await fetchConnectToken(c);
+        } catch (err) {
+            if (attemptId !== connectAttemptId) return;
+            console.error("Connect token error:", err);
+            if (isSpectMode()) {
+                scheduleSpectReconnect();
+            } else {
+                showReconnectPanel("Ошибка подключения. Нажмите, чтобы повторить.");
+            }
             return;
         }
-        setConnectVerifyText("Ошибка подключения, повтор…");
-        return;
-    }
 
-    if (connectToken === null) {
-        hideConnectVerifyOverlay();
-    }
+        if (attemptId !== connectAttemptId) return;
 
-    const qs = new URLSearchParams();
-    if (localStorage.accountToken) {
-        qs.set("accountToken", localStorage.accountToken);
-    }
-    if (connectToken) {
-        qs.set("connectToken", connectToken);
-    }
+        if (connectToken === null) {
+            hideConnectVerifyOverlay();
+        }
 
-    ws = new WebSocket(wsUrl + "?" + qs.toString(), "eSejeKSVdysQvZs0ES1H");
-    ws.binaryType = "arraybuffer";
-    ws.onopen = onWsOpen;
-    ws.onmessage = onWsMessage;
-    ws.onclose = onWsClose;
-    connectInProgress = false;
+        const qs = new URLSearchParams();
+        if (localStorage.accountToken) {
+            qs.set("accountToken", localStorage.accountToken);
+        }
+        if (connectToken) {
+            qs.set("connectToken", connectToken);
+        }
+
+        ws = new WebSocket(wsUrl + "?" + qs.toString(), "eSejeKSVdysQvZs0ES1H");
+        ws.binaryType = "arraybuffer";
+        ws.onopen = onWsOpen;
+        ws.onmessage = onWsMessage;
+        ws.onclose = onWsClose;
+    } catch (err) {
+        if (attemptId !== connectAttemptId) return;
+        console.error("WebSocket connect error:", err);
+        if (isSpectMode()) {
+            scheduleSpectReconnect();
+        } else {
+            showReconnectPanel("Ошибка подключения. Нажмите, чтобы повторить.");
+        }
+    } finally {
+        if (attemptId === connectAttemptId) {
+            connectInProgress = false;
+        }
+    }
 }
 
     function prepareData(a) {
@@ -4399,25 +4420,16 @@ function drawLeaderBoard() {
     splitIcon.src = "assets/photo/split.png";
     ejectIcon.src = "assets/photo/eject.png";
     wHandle.connect = wsConnect;
-	let showConnect = false;
 
 wHandle.setNick = function (arg) {
-    setserver(SELECTED_SERVER); 
-    hideOverlays(); 
-    userNickName = arg; 
-    sendNickName(); 
-    wjQuery("#statics").hide(); 
-    maxScore = 0; 
-    
-    if (!showConnect) {
-        showConnecting();
-        showConnect = true;
-    }
+    setserver(SELECTED_SERVER);
+    hideOverlays();
+    userNickName = arg;
+    sendNickName();
+    wjQuery("#statics").hide();
+    maxScore = 0;
 };
-    wHandle.spectate = function () { setserver(SELECTED_SERVER);  userNickName = null; hideOverlays(); wjQuery("#statics").hide(); wHandle.chekstats();    if (!showConnect) {
-        showConnecting();
-        showConnect = true;
-    }};
+    wHandle.spectate = function () { setserver(SELECTED_SERVER);  userNickName = null; hideOverlays(); wjQuery("#statics").hide(); wHandle.chekstats(); };
 	
 // === Настройки по умолчанию ===
 let showSkin = true,
