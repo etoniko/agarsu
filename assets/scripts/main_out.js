@@ -4147,7 +4147,9 @@ function createLeaderboardEntry(name, level, isMe, isSystemLine, b) {
   
   // Сравниваем в нижнем регистре
   const isTournamentPlayer = tournament.some(tourneyName => tourneyName.toLowerCase() === cleanNameLower);
-  const isWinner = (tournamentWinner.toLowerCase() === cleanNameLower);
+  const isWinner = tournamentWinner.some(function (w) {
+    return w.toLowerCase() === cleanNameLower;
+  });
 
   // Определяем класс: админ, модер, ютубер или обычный
   if (!isSystemLine && admins.includes(lowerName)) {
