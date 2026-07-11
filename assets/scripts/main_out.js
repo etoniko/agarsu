@@ -4132,10 +4132,10 @@ wHandle.coord = function () {
         return score;
     }
 
-const tournament = ["Vaas"];
+const tournament = ["khirad","Оbladаit","Всекончал","bl1ck","newlightchild","morcov","☼K☼","ау","v_potoke","Папа","deffka","прошка","griffin","some no mai","АЛИК ))))","Jeff","PULIK","salruz","vaas","aeris","sorry","курага","𝓙𝓲𝓷𝔁","ʟᴇɢᴇɴᴅ","ᴋɪᴘʟᴇɴᴋᴀ🪐","𝓙𝓲𝓷𝔁"];
 
 // Победитель турнира (для сравнения используем toLowerCase)
-const tournamentWinner = "Vaas";
+const tournamentWinner = ["Vaas","Оbladаit"];
 
 function createLeaderboardEntry(name, level, isMe, isSystemLine, b) {
   const entryDiv = document.createElement("div");
