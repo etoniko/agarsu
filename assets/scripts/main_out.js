@@ -235,7 +235,6 @@ wHandle.startGame = function () {
 // host — для wss, api — HTTPS того же игрового сервера (клиент может быть на GitHub)
 const GAME_SERVERS = {
 	    "ffa":        { host: "ffa.agar.su",           api: "https://ffa.agar.su" },
-	    "ffa2":        { host: "ffa.agar.su",           api: "https://ffa.agar.su:6003" },
         "ms":         { host: "ffa.agar.su:6002",      api: "https://ffa.agar.su:6002" },
         "pvp2":       { host: "ffa.agar.su:6005",      api: "https://ffa.agar.su:6005" },
         "tournament": { host: "ffa.agar.su:6006",      api: "https://ffa.agar.su:6006" },
