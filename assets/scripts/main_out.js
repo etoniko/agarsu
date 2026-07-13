@@ -267,15 +267,14 @@ document.querySelectorAll('.gamemode li').forEach(li => {
         document.querySelectorAll('.gamemode li').forEach(l => l.classList.remove('active'));
         li.classList.add('active');
 
-        // Запоминаем выбранный сервер
+        // Запоминаем выбранный сервер (коннект только по Play/Spectate или 2-му клику)
         SELECTED_SERVER = li.dataset.ip;
         // Обновляем hash без дергания страницы
         history.replaceState(null, '', '#' + li.id);
-titleEl.textContent = `Статистика ${li.id}`;
+        titleEl.textContent = `Статистика ${li.id}`;
+        // Как в mainold.js: второй клик по уже выбранному — старт игры
         if (isAlreadyActive) {
             wHandle.startGame();
-        } else if (ma) {
-            setserver(SELECTED_SERVER);
         }
     });
 });
