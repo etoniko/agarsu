@@ -236,6 +236,7 @@ wHandle.startGame = function () {
 const GAME_SERVERS = {
 	    "ffa":        { host: "ffa.agar.su",           api: "https://ffa.agar.su" },
         "ms":         { host: "ffa.agar.su:6002",      api: "https://ffa.agar.su:6002" },
+	    "pvp1":       { host: "ffa.agar.su:6004",      api: "https://ffa.agar.su:6004" },
         "pvp2":       { host: "ffa.agar.su:6005",      api: "https://ffa.agar.su:6005" },
         "tournament": { host: "ffa.agar.su:6006",      api: "https://ffa.agar.su:6006" },
 	    "tournament2": { host: "ffa.agar.su:6007",      api: "https://ffa.agar.su:6007" }
@@ -2540,7 +2541,6 @@ function openPvPModal(targetId, targetName) {
        const servers = [
         { name: "FFA 1vs1", address: "ffa.agar.su:6004" },
         { name: "MS 2vs2", address: "ffa.agar.su:6005" },
-		{ name: "Tournament", address: "ffa.agar.su:6006" }
     ];
     servers.forEach(server => {
         const btn = document.createElement('button');
