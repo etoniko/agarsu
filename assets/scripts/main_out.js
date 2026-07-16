@@ -363,9 +363,17 @@ function loadCachedImage(url) {
         return loadCachedImage(SKIN_FALLBACK_URL);
     }
     const img = new Image();
-    img.decoding = 'async';
+    // GIF: async decoding + crop-drawImage часто даёт пустую клетку на canvas
+    if (!/\.gif($|\?)/i.test(url)) img.decoding = 'async';
     skinImageCache.set(url, img);
-    img.onload = () => skinImageCache.set(url, img);
+    img.onload = () => {
+        skinImageCache.set(url, img);
+        // Чтобы GIF крутился в canvas — Image должен быть в DOM
+        if (/\.gif($|\?)/i.test(url) && !img.isConnected && document.body) {
+            img.style.cssText = 'position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none';
+            document.body.appendChild(img);
+        }
+    };
     img.onerror = () => {
         skinImageCache.set(url, 'error');
         if (url !== SKIN_FALLBACK_URL) loadCachedImage(SKIN_FALLBACK_URL);
@@ -4949,12 +4957,21 @@ if (showSkin && !this.isVirus) {
 
             const fw = skinImg.naturalWidth || skinImg.width;
             const fh = skinImg.naturalHeight || skinImg.height;
-            // Широкий PNG/WebP — горизонтальный спрайт-лист.
-            // Квадратный GIF/WebP браузер анимирует сам.
-            const frameCount = fw > fh ? Math.floor(fw / fh) : 1;
+            // Широкий PNG — спрайт-лист. GIF (anim*) рисуем целиком:
+            // 9-arg drawImage с crop на GIF в canvas часто даёт пустой кадр.
+            const isGifSkin = /anim/i.test(String(skinId)) || /\.gif($|\?)/i.test(skinImg.src || '');
+            const frameCount = (!isGifSkin && fw > fh) ? Math.floor(fw / fh) : 1;
             const frame = frameCount > 1 ? Math.floor(Date.now() / 100) % frameCount : 0;
             const sourceX = frame * fh;
             const sz = simpleRender ? this.size * this.skinZoom : (bigPointSize * this.skinZoom);
+
+            const drawSkin = (dx, dy) => {
+                if (frameCount > 1) {
+                    ctx.drawImage(skinImg, sourceX, 0, fh, fh, dx, dy, sz * 2, sz * 2);
+                } else {
+                    ctx.drawImage(skinImg, dx, dy, sz * 2, sz * 2);
+                }
+            };
 
 if (rotation.has(skinName)) {
     if (!this._rot) {
@@ -4998,17 +5015,9 @@ if (rotation.has(skinName)) {
 
     ctx.translate(this.x, this.y);
     ctx.rotate(this._rot.current);
-    ctx.drawImage(
-        skinImg,
-        sourceX, 0, frameCount > 1 ? fh : fw, fh,
-        -sz, -sz, sz * 2, sz * 2
-    );
+    drawSkin(-sz, -sz);
 } else {
-    ctx.drawImage(
-        skinImg,
-        sourceX, 0, frameCount > 1 ? fh : fw, fh,
-        this.x - sz, this.y - sz, sz * 2, sz * 2
-    );
+    drawSkin(this.x - sz, this.y - sz);
 }
 
 
