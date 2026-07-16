@@ -129,10 +129,6 @@ export default class Application {
         return servers.ffa ? "ffa" : Object.keys(servers)[0] || null
     }
 
-    static skinExt(id) {
-        return /anim/i.test(String(id || "")) ? "gif" : "png"
-    }
-
     static normalizeNick(nick) {
         if (!nick) return ""
 
@@ -180,7 +176,7 @@ export default class Application {
 
     getSkinUrl(nick) {
         const skinId = this.getSkinId(nick)
-        return skinId ? `${Application.SKIN_ORIGIN}/skins/${skinId}.${Application.skinExt(skinId)}` : null
+        return skinId ? `${Application.SKIN_ORIGIN}/skins/${skinId}.png` : null
     }
 
     getSkinUrlForCell(rawName) {
@@ -195,7 +191,7 @@ export default class Application {
         return [...skins.entries()].map(([id, nick]) => ({
             id,
             nick,
-            src: `${Application.SKIN_ORIGIN}/skins/${id}.${Application.skinExt(id)}`
+            src: `${Application.SKIN_ORIGIN}/skins/${id}.png`
         }))
     }
 
