@@ -18,8 +18,12 @@ let cachedSkinsMap = null;
 let cachedSkinsMapAt = 0;
 const SKINS_MAP_TTL = 60000;
 
+function getSkinExt(skinId) {
+    return /anim/i.test(String(skinId || '')) ? 'gif' : 'png';
+}
+
 function getSkinPreviewUrl(skinId) {
-    return skinId ? `https://api.agar.su/skins/${skinId}.png` : '';
+    return skinId ? `https://api.agar.su/skins/${skinId}.${getSkinExt(skinId)}` : '';
 }
 
 function setBackgroundImageIfChanged(el, skinId) {
@@ -147,7 +151,7 @@ function renderSkinsGalleryPage(page) {
         card.type = 'button';
         card.className = 'skins-gallery-card';
         card.innerHTML = `
-            <img src="https://api.agar.su/skins/${skin.code}.png" alt="" loading="lazy">
+            <img src="https://api.agar.su/skins/${skin.code}.${getSkinExt(skin.code)}" alt="" loading="lazy">
             <h4>${escapeHtml(skin.nick)}</h4>
         `;
         card.addEventListener('click', async () => {
