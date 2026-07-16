@@ -236,7 +236,6 @@ wHandle.startGame = function () {
 const GAME_SERVERS = {
 	    "ffa":        { host: "ffa.agar.su",           api: "https://ffa.agar.su" },
         "ms":         { host: "ffa.agar.su:6002",      api: "https://ffa.agar.su:6002" },
-	    "pvp1":       { host: "ffa.agar.su:6004",      api: "https://ffa.agar.su:6004" },
         "pvp2":       { host: "ffa.agar.su:6005",      api: "https://ffa.agar.su:6005" },
         "tournament": { host: "ffa.agar.su:6006",      api: "https://ffa.agar.su:6006" },
 	    "tournament2": { host: "ffa.agar.su:6007",      api: "https://ffa.agar.su:6007" }
@@ -268,14 +267,15 @@ document.querySelectorAll('.gamemode li').forEach(li => {
         document.querySelectorAll('.gamemode li').forEach(l => l.classList.remove('active'));
         li.classList.add('active');
 
-        // Запоминаем выбранный сервер (коннект только по Play/Spectate или 2-му клику)
+        // Запоминаем выбранный сервер
         SELECTED_SERVER = li.dataset.ip;
         // Обновляем hash без дергания страницы
         history.replaceState(null, '', '#' + li.id);
-        titleEl.textContent = `Статистика ${li.id}`;
-        // Как в mainold.js: второй клик по уже выбранному — старт игры
+titleEl.textContent = `Статистика ${li.id}`;
         if (isAlreadyActive) {
             wHandle.startGame();
+        } else if (ma) {
+            setserver(SELECTED_SERVER);
         }
     });
 });
@@ -2541,6 +2541,7 @@ function openPvPModal(targetId, targetName) {
        const servers = [
         { name: "FFA 1vs1", address: "ffa.agar.su:6004" },
         { name: "MS 2vs2", address: "ffa.agar.su:6005" },
+		{ name: "Tournament", address: "ffa.agar.su:6006" }
     ];
     servers.forEach(server => {
         const btn = document.createElement('button');
@@ -5833,9 +5834,10 @@ accountData = null;
   const accountIDElement = document.getElementById("accountID");
   if (accountIDElement) accountIDElement.textContent = "ID: 0000";
 
-  const authlog = document.getElementById("authlog");
-  const logoutButton = document.getElementById("logoutButton");
-  if (authlog) authlog.style.display = "flex";
+  const authlogEl = document.getElementById("authlog");
+  if (authlogEl) authlogEl.style.display = "flex";
+  const logoutBtn = document.getElementById("logoutButton");
+  if (logoutBtn) logoutBtn.style.display = "none";
 
   showAuthButtons();
   if (typeof window.updateAccountMenuLabel === "function") {
@@ -6072,8 +6074,10 @@ const setAccountData = data => {
         window.updateAccountMenuLabel();
     }
     document.querySelectorAll(".menu-item")[2].click();
-    logoutButton.style.display = "";
-    authlog.style.display = "none";
+    const logoutBtn = document.getElementById("logoutButton");
+    const authlogEl = document.getElementById("authlog");
+    if (logoutBtn) logoutBtn.style.display = "";
+    if (authlogEl) authlogEl.style.display = "none";
 };
 
 const loadAccountUserData = async () => {
