@@ -980,109 +980,6 @@ let stickerCooldownTimer = null;
         colorList.appendChild(d);
     });
 
-    const adminPanel = document.querySelector('.admin-panel');
-    adminPanel.style.display = '';
-
-    const updatePlayerList = (players) => {
-        const playerList = document.getElementById("playerList");
-        playerList.innerHTML = "";
-        const header = document.createElement("div");
-        header.className = "infoApanel";
-        ["IP", "ID", "Имя", "Клеток", "X", "Y", "Масса", "Kick", "Ban", "Kill", "Mute"].forEach(text => {
-            const div = document.createElement("div");
-            div.textContent = text;
-            header.appendChild(div);
-        });
-        playerList.appendChild(header);
-        players.forEach(player => {
-            const row = document.createElement("div");
-            row.className = "infoAplayer";
-            const fields = [
-                player.ip,
-                player.id,
-                player.name,
-                player.cellCount,
-                Math.round(player.x || 0),
-                Math.round(player.y || 0),
-                player.mass
-            ];
-            fields.forEach((value, i) => {
-                const cell = document.createElement("div");
-                cell.className = "player-cell";
-                cell.textContent = value;
-                if (i === 2) {
-                    cell.className += " name-cell";
-                    cell.title = "Клик — изменить ник";
-                    cell.onclick = () => {
-                        if (player.kick || player.ban) {
-                            alert("Нельзя менять ник кикнутому/забаненному игроку");
-                            return;
-                        }
-                        const newName = prompt("Новое имя:", player.name.trim());
-                        if (newName && newName.trim() && newName.trim() !== player.name) {
-                            sendChat(`/name ${player.id} ${newName.trim()}`);
-                            cell.textContent = newName.trim();
-                        }
-                    };
-                }
-                if (i === 6) {
-                    cell.className += " mass-cell";
-                    if (!player.kick) {
-                        cell.title = "Клик — изменить массу";
-                        cell.onclick = () => {
-                            const mass = prompt("Новая масса (положительное число):", player.mass);
-                            if (mass && !isNaN(mass) && +mass > 0) {
-                                sendChat(`/mass ${player.id} ${mass}`);
-                                cell.textContent = mass;
-                            }
-                        };
-                    } else {
-                        cell.style.cursor = "default";
-                        cell.title = "Кикнут — нельзя менять";
-                    }
-                }
-                row.appendChild(cell);
-            });
-            const actions = [
-                { prop: "kick", cmd: `/kick ${player.id}`, text: "Кик" },
-                { prop: "ban",  cmd: `/ban ${player.ip}`,  text: "Бан"  },
-                { prop: "kill", cmd: `/kill ${player.id}`, text: "Убить" },
-                { prop: "mute", cmd: `/mute ${player.id}`, text: "Mute" },
-                { prop: "unmute", cmd: `/unmute ${player.id}`, text: "unMute" }
-            ];
-            actions.forEach(action => {
-                const cell = document.createElement("div");
-                cell.className = "player-cell";
-                if (player[action.prop]) {
-                    cell.textContent = "—";
-                    cell.className += " inactive";
-                } else {
-                    const btn = document.createElement("button");
-                    btn.textContent = action.text;
-                    btn.onclick = () => sendChat(action.cmd);
-                    cell.appendChild(btn);
-                }
-                row.appendChild(cell);
-            });
-            playerList.appendChild(row);
-        });
-    };
-
-    const openAdminPanel = () => {
-        if (adminPanel.style.display === 'block') {
-            adminPanel.style.display = '';
-            delete window._updatePlayerList;
-        } else {
-            adminPanel.style.display = 'block';
-            const msg = prepareData(1);
-            msg.setUint8(0, 169);
-            wsSend(msg);
-            window._updatePlayerList = updatePlayerList;
-        }
-    };
-
-    wHandle.openAdminPanel = openAdminPanel;
-
     wHandle.onblur = function () {
         sendUint8(19);
         clearInterval(ejectKeyInterval);
@@ -2166,42 +2063,6 @@ if (!showStickers) break;
         }
     }
     break;
-			case 169:
-                const players = [];
-
-                const playerReader = new BinaryReader(msg);
-                playerReader.offset++; // skip messageType
-
-                players.push({
-                    ip: "IP",
-                    id: "ID",
-                    name: "NAME",
-                    cellCount: "CELLS",
-                    x: "X",
-                    y: "Y",
-                    mass: "MASS",
-                    kick: true,
-                    ban: true,
-                    kill: true,
-					mute: true,
-					unmute: true
-                });
-
-                while (playerReader.canRead) {
-                    players.push({
-                        ip: playerReader.utf8(),
-                        id: playerReader.uint32(),
-                        name: playerReader.utf8(),
-                        cellCount: playerReader.uint32(),
-                        x: playerReader.int32(),
-                        y: playerReader.int32(),
-                        mass: playerReader.uint32()
-                    });
-                }
-
-                if (window._updatePlayerList)
-                    window._updatePlayerList(players);
-                break;
         }
     }
 
@@ -2222,14 +2083,6 @@ function addChat(view, offset) {
 
         if (flags & 0x80) {
             // SERVER Message
-        }
-
-        if (flags & 0x40) {
-            // ADMIN Message
-        }
-
-        if (flags & 0x20) {
-            // MOD Message
         }
 
         var r = view.getUint8(offset++),
@@ -2303,11 +2156,7 @@ function censorMessage(message) {
     return censoredMessage;
 }
 
-let currentUserRole = 'user';
-const admins = ["нико","^iStack","banshee"];
-const moderator = ["rizwer","pulik","могучий жидяра","salruz","morcov","khirad"];
-const moders = ["cosmos","rizwer","bambule","☼k☼","pulik","могучий жидяра","salruz","morcov"];
-const mod = ["☼k☼"];
+const donators = ["bambule", "☼k☼"];
 const youtubers = ["salruz", "morcov","sealand"];
 const url_youtubers = ["https://youtube.com/@SalRuzO", "https://www.youtube.com/@MORCCVA","https://www.youtube.com/@sealandv"];
 
@@ -2629,45 +2478,7 @@ function drawChatBoard() {
     if (hideChat) return;
     const lastMessage = chatBoard[chatBoard.length - 1];
     if (!lastMessage) return;
-	
-// ПРОВЕРКА НА КОМАНДУ УДАЛЕНИЯ
-if (lastMessage.message && lastMessage.message.startsWith('!delet')) {
-    const match = lastMessage.message.match(/!delet\s+(\d+)/);
-    if (match) {
-        const targetId = match[1];
-        const senderName = lastMessage.name.toLowerCase();
-        const senderOriginal = lastMessage.name;
-        
-        const isAdmin = admins.includes(senderName);
-        const isModer = moders.includes(senderName);
-        
-        if (isAdmin || isModer) {
-            // НАХОДИМ ВСЕ СООБЩЕНИЯ С ТАКИМ DATA-ID
-            const targetMessages = document.querySelectorAll(`[data-id="${targetId}"]`);
-            
-            if (targetMessages.length > 0) {
-                const role = isAdmin ? 'админом' : 'модератором';
-                
-                // ДЛЯ КАЖДОГО СООБЩЕНИЯ
-                targetMessages.forEach(targetMsg => {
-                    const notify = document.createElement('div');
-                    notify.style.background = '#80808057';
-                    notify.style.color = '#ff9999';
-                    notify.style.fontSize = '12px';
-                    notify.style.padding = '4px 8px';
-                    notify.innerHTML = `[ Сообщение было удалено ${role}: ${senderOriginal} ]`;
-                    
-                    targetMsg.parentNode.insertBefore(notify, targetMsg);
-                    targetMsg.remove();
-                });
-                
-                console.log(`[УДАЛЕНИЕ] Удалено ${targetMessages.length} сообщений с ID ${targetId}`);
-            }
-        }
-    }
-    return;
-}
-	
+
 if (lastMessage.message && lastMessage.message.toLowerCase().includes("вoшёл в игру")) {
     const simpleDiv = document.createElement('div');
     simpleDiv.className = 'chatexit';
@@ -2693,8 +2504,7 @@ if (lastMessage.message && lastMessage.message.toLowerCase().includes("вoшёл
 	msgDiv.setAttribute('data-id', lastMessage.pId);
     const lowerName = lastMessage.name.toLowerCase();
 
-    if (admins.includes(lowerName)) msgDiv.className = 'chatX_msg admins';
-    else if (moders.includes(lowerName)) msgDiv.className = 'chatX_msg ' + lowerName;
+    if (donators.includes(lowerName)) msgDiv.className = 'chatX_msg ' + lowerName;
     else msgDiv.className = 'chatX_msg';
 
     const normalizedName = normalizeNick(lastMessage.name || '');
@@ -2726,15 +2536,9 @@ if (privateMatch) {
     // --- Аватарка ---
     const avatarContainer = document.createElement('div');
     avatarContainer.className = 'avatarXcontainer';
-    // Добавляем класс для роли
-if (admins.includes(lowerName)) {
-    avatarContainer.classList.add('admin');
-} else if (moderator.includes(lowerName)) {
-    avatarContainer.classList.add('moderator');
-} else if (passUsers.includes(normalizedName)) {
-    // Только для обычных игроков из pass.txt
-    avatarContainer.style.setProperty('--after-display', 'block');
-}
+    if (passUsers.includes(normalizedName)) {
+        avatarContainer.style.setProperty('--after-display', 'block');
+    }
 
     const avatar = document.createElement('img');
     avatar.className = 'chatX_avatar';
@@ -2784,17 +2588,17 @@ if (ytIndex !== -1 && url_youtubers[ytIndex]) {
     nameContainer.appendChild(ytLink);
 }
 
-// --- MOD иконка ---
-if (mod.includes(lowerName)) {
-    const modIcon = document.createElement('div');
-    modIcon.title = 'Данный игрок является спонсором Agar.su';
-    modIcon.style.width = '19px';
-    modIcon.style.height = '19px';
-    modIcon.style.backgroundImage = 'url(./assets/photo/mod.png)';
-    modIcon.style.backgroundSize = 'cover';
-    modIcon.style.display = 'inline-block';
+// --- Иконка донатера ---
+if (donators.includes(lowerName)) {
+    const donateIcon = document.createElement('div');
+    donateIcon.title = 'Данный игрок является спонсором Agar.su';
+    donateIcon.style.width = '19px';
+    donateIcon.style.height = '19px';
+    donateIcon.style.backgroundImage = 'url(./assets/photo/mod.png)';
+    donateIcon.style.backgroundSize = 'cover';
+    donateIcon.style.display = 'inline-block';
 
-    nameContainer.appendChild(modIcon);
+    nameContainer.appendChild(donateIcon);
 }
 
     const nameDiv = document.createElement('div');
@@ -2802,20 +2606,16 @@ if (mod.includes(lowerName)) {
     const safeName = censorMessage(lastMessage.name);
     nameDiv.textContent = safeName + ':';
 
-    if (admins.includes(lowerName)) {
-        nameDiv.style.color = 'gold';
-        nameDiv.title = `${lastMessage.pId} (Администратор)`;
-    } else if (moders.includes(lowerName)) {
-        nameDiv.style.color = lastMessage.color || '#b8c0cc';
-        nameDiv.title = `${lastMessage.pId} (Модератор)`;
-    } else if (targetDialogId) {
+    if (targetDialogId) {
         nameDiv.style.color = lastMessage.color || '#b8c0cc';
         nameDiv.title = 'Личное сообщение';
     } else {
         nameDiv.style.color = lastMessage.color || '#b8c0cc';
         avatar.style.border = `2px solid ${lastMessage.color}`;
 		avatar.style.background = `${lastMessage.color}`;
-        nameDiv.title = `${lastMessage.pId || 0}`;
+        nameDiv.title = donators.includes(lowerName)
+            ? `${lastMessage.pId} (Донатер)`
+            : `${lastMessage.pId || 0}`;
     }
 
     nameContainer.appendChild(nameDiv);
@@ -2922,59 +2722,6 @@ pmBtn.onclick = () => {
             });
             menu.remove();
         };
-if (currentUserRole === 'admin' || currentUserRole === 'moderator') {
-    const muteBtn = document.createElement('div');
-    muteBtn.textContent = 'Мут';
-    muteBtn.style.cursor = 'pointer';
-    muteBtn.style.color = '#ff6b6b';
-    muteBtn.onclick = () => {
-        sendChat(`/mute ${lastMessage.pId}`);
-        menu.remove();
-    };
-    
-    const unmuteBtn = document.createElement('div');
-    unmuteBtn.textContent = 'Убрать мут';
-    unmuteBtn.style.cursor = 'pointer';
-    unmuteBtn.style.color = '#6bff6b';
-    unmuteBtn.onclick = () => {
-        sendChat(`/unmute ${lastMessage.pId}`);
-        menu.remove();
-    };
-	
-	    const deleteBtn = document.createElement('div');
-    deleteBtn.textContent = 'Удалить сообщения';
-    deleteBtn.style.cursor = 'pointer';
-    deleteBtn.style.color = '#ff6b6b';
-    deleteBtn.onclick = () => {
-        sendChat(`!delet ${lastMessage.pId}`);
-        menu.remove();
-    };
-	
-		    const chatlock = document.createElement('div');
-    chatlock.textContent = 'Ограничение чата XP 1000';
-    chatlock.style.cursor = 'pointer';
-    chatlock.style.color = '#ff6b6b';
-    chatlock.onclick = () => {
-        sendChat(`/chatlock 1000`);
-        menu.remove();
-    };
-	
-			    const chatlockoff = document.createElement('div');
-    chatlockoff.textContent = 'Снять ограничение чата XP';
-    chatlockoff.style.cursor = 'pointer';
-    chatlockoff.style.color = '#6bff6b';
-    chatlockoff.onclick = () => {
-        sendChat(`/chatlock off`);
-        menu.remove();
-    };
-    
-    menu.appendChild(muteBtn);
-    menu.appendChild(unmuteBtn);
-	menu.appendChild(deleteBtn);
-	menu.appendChild(chatlock);
-	menu.appendChild(chatlockoff);
-}
-
 		const pvpBtn = document.createElement('div');
 pvpBtn.textContent = 'Позвать на PvP';
 pvpBtn.style.cursor = 'pointer';
@@ -3160,40 +2907,6 @@ if (stickerData) {
             node.flag = spiked;
 
             if (name) node.setName(name);
-			
-			// ←←← ВОТ СЮДА! СРАЗУ ПОСЛЕ node.setName(name) ←←←
-if (name && playerId === ownerPlayerId) {
-    const lowerName = name.toLowerCase().trim();
-
-    const isAdmin = admins.some(admin => lowerName.includes(admin.toLowerCase()));
-    const isModer = moderator.some(moder => lowerName.includes(moder.toLowerCase()));
-
-    // СОХРАНЯЕМ РОЛЬ ГЛОБАЛЬНО
-    if (isAdmin) {
-        currentUserRole = 'admin';
-    } else if (isModer) {
-        currentUserRole = 'moderator';
-    } else {
-        currentUserRole = 'user';
-    }
-
-    const panel = document.querySelector('.adminpanel');
-    if (!panel) return;
-
-    panel.style.display = 'none';
-
-    if (isAdmin) {
-        panel.style.display = 'flex';
-        panel.style.background = 'rgb(146, 15, 15)';
-        panel.textContent = 'ADMINKA';
-    }
-    else if (isModer) {
-        panel.style.display = 'flex';
-        panel.style.background = 'rgb(2, 89, 255)';
-        panel.textContent = 'MODERKA';
-    }
-}
-
 
         }
 
@@ -4151,10 +3864,7 @@ function createLeaderboardEntry(name, level, isMe, isSystemLine, b) {
     return w.toLowerCase() === cleanNameLower;
   });
 
-  // Определяем класс: админ, модер, ютубер или обычный
-  if (!isSystemLine && admins.includes(lowerName)) {
-    entryDiv.className = "Lednick admins";
-  } else if (!isSystemLine && moders.includes(lowerName)) {
+  if (!isSystemLine && donators.includes(lowerName)) {
     entryDiv.className = "Lednick " + lowerName;
   } else {
     entryDiv.className = "Lednick";
@@ -4229,16 +3939,16 @@ function createLeaderboardEntry(name, level, isMe, isSystemLine, b) {
     iconsContainer.appendChild(ytLink);
   }
   
-  // Иконка MOD (спонсор)
-  if (!isSystemLine && mod.includes(lowerName)) {
-    const modIcon = document.createElement("div");
-    modIcon.title = "Данный игрок является спонсором Agar.su";
-    modIcon.style.width = "19px";
-    modIcon.style.height = "19px";
-    modIcon.style.backgroundImage = "url(./assets/photo/mod.png)";
-    modIcon.style.backgroundSize = "cover";
-    modIcon.style.display = "inline-block";
-    iconsContainer.appendChild(modIcon);
+  // Иконка донатера
+  if (!isSystemLine && donators.includes(lowerName)) {
+    const donateIcon = document.createElement("div");
+    donateIcon.title = "Данный игрок является спонсором Agar.su";
+    donateIcon.style.width = "19px";
+    donateIcon.style.height = "19px";
+    donateIcon.style.backgroundImage = "url(./assets/photo/mod.png)";
+    donateIcon.style.backgroundSize = "cover";
+    donateIcon.style.display = "inline-block";
+    iconsContainer.appendChild(donateIcon);
   }
   
   // Иконка ПОБЕДИТЕЛЯ для Vaas (сравниваем без учёта регистра)
@@ -4648,7 +4358,6 @@ fetch("https://api.agar.su/invisible.txt")
       if (line) invisible.add(line);
     });
   });
-const invisible2 = new Set(["нико"]); // невидимая масса
 const rotation = new Set(); //поворот скина
 fetch("https://api.agar.su/rotation.txt")
   .then(r => r.text())
@@ -5071,13 +4780,8 @@ if (this.id !== 0) {
     const zoomRatio = Math.ceil(10 * viewZoom) * 0.1;
     const invZoom = 1 / zoomRatio;
 
-    // ---- Проверяем, принадлежит ли ник invisible2 ----
-    const lowerName = this.name?.toLowerCase() || "";
-    const isInvisible2 = invisible2.has(lowerName);
-
     // === ИМЯ ===
-// === ИМЯ ===
-if (showName && this.name && this.nameCache && this.size > 10 && !isInvisible2) {
+if (showName && this.name && this.nameCache && this.size > 10) {
     let displayName = this.name;  // берём оригинал
 
     const lowerName = this.name.toLowerCase();
@@ -5113,7 +4817,7 @@ if (showName && this.name && this.nameCache && this.size > 10 && !isInvisible2) 
 }
 
     // === МАССА ===
-    if (showMass && !this.isVirus && !this.isEjected && !this.isAgitated && this.size > 100 && !isInvisible2) {
+    if (showMass && !this.isVirus && !this.isEjected && !this.isAgitated && this.size > 100) {
         const mass = Math.floor(this.size * this.size * 0.01);
         this.sizeCache.setValue(mass);
         this.sizeCache.setScale(zoomRatio);
