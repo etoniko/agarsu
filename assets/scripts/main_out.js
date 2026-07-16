@@ -83,7 +83,7 @@ stats.forEach((player, index) => {
         <div>${index + 1}</div>
         <div>${player.nick}</div>
         <div>${player.score}</div>
-        <div class="skinswraper"style="background-image: url('${getSkinImageUrl(player.skin)}');"></div>
+        <div class="skinswraper"style="background-image: url('https://api.agar.su/skins/${player.skin}.png');"></div>
     `;
     container.appendChild(playerDiv);
 });
@@ -334,14 +334,8 @@ const SKIN_FALLBACK_URL = 'https://api.agar.su/skins/4.png';
 const skinImageCache = new Map();
 
 function getSkinImageUrl(skinId, fallbackId = '4') {
-    const value = (skinId && String(skinId).trim()) || fallbackId;
-    const match = value.match(/^(.+?)\.(png|gif|webp)$/i);
-    const id = match ? match[1] : value;
-    // skinlist: nick:id → png; nick:anim1 → skins/anim1.gif (id содержит "anim")
-    const extension = match
-        ? match[2].toLowerCase()
-        : (/anim/i.test(id) ? 'gif' : 'png');
-    return `https://api.agar.su/skins/${id}.${extension}`;
+    const id = (skinId && String(skinId).trim()) || fallbackId;
+    return `https://api.agar.su/skins/${id}.png`;
 }
 
 function resolveAssetUrl(url) {
@@ -363,17 +357,9 @@ function loadCachedImage(url) {
         return loadCachedImage(SKIN_FALLBACK_URL);
     }
     const img = new Image();
-    // GIF: async decoding + crop-drawImage часто даёт пустую клетку на canvas
-    if (!/\.gif($|\?)/i.test(url)) img.decoding = 'async';
+    img.decoding = 'async';
     skinImageCache.set(url, img);
-    img.onload = () => {
-        skinImageCache.set(url, img);
-        // Чтобы GIF крутился в canvas — Image должен быть в DOM
-        if (/\.gif($|\?)/i.test(url) && !img.isConnected && document.body) {
-            img.style.cssText = 'position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none';
-            document.body.appendChild(img);
-        }
-    };
+    img.onload = () => skinImageCache.set(url, img);
     img.onerror = () => {
         skinImageCache.set(url, 'error');
         if (url !== SKIN_FALLBACK_URL) loadCachedImage(SKIN_FALLBACK_URL);
@@ -2728,7 +2714,8 @@ if (privateMatch) {
     // Игнорируем PvP-сообщения
     if (!messageContent.startsWith('PvPInvite;')) {
         targetDialogId = `!ls${number}`;
-        createDialog(number, lastMessage.name, getSkinImageUrl(skinList[normalizedName]));
+        createDialog(number, lastMessage.name, skinList[normalizedName] ? 
+            `https://api.agar.su/skins/${skinList[normalizedName]}.png` : 'https://api.agar.su/skins/4.png');
     }
 }
 
@@ -2904,7 +2891,8 @@ pmBtn.textContent = 'Личное сообщение';
 pmBtn.style.cursor = 'pointer';
 pmBtn.onclick = () => {
     // Создаём ЛС диалог
-    createDialog(playerId, lastMessage.name, getSkinImageUrl(skinList[normalizeNick(lastMessage.name)]));
+    createDialog(playerId, lastMessage.name, skinList[normalizeNick(lastMessage.name)] ? 
+        `https://api.agar.su/skins/${skinList[normalizeNick(lastMessage.name)]}.png` : 'https://api.agar.su/skins/4.png');
     switchToDialog(`!ls${playerId}`);
     menu.remove();
 };
@@ -4955,23 +4943,9 @@ if (showSkin && !this.isVirus) {
                 this.skinPhase = 0;
             }
 
-            const fw = skinImg.naturalWidth || skinImg.width;
-            const fh = skinImg.naturalHeight || skinImg.height;
-            // Широкий PNG — спрайт-лист. GIF (anim*) рисуем целиком:
-            // 9-arg drawImage с crop на GIF в canvas часто даёт пустой кадр.
-            const isGifSkin = /anim/i.test(String(skinId)) || /\.gif($|\?)/i.test(skinImg.src || '');
-            const frameCount = (!isGifSkin && fw > fh) ? Math.floor(fw / fh) : 1;
-            const frame = frameCount > 1 ? Math.floor(Date.now() / 100) % frameCount : 0;
-            const sourceX = frame * fh;
+            const fw = skinImg.width, fh = skinImg.height;
+            const frame = (fw > fh) ? Math.floor(Date.now() / 100 % Math.floor(fw / fh)) : 0;
             const sz = simpleRender ? this.size * this.skinZoom : (bigPointSize * this.skinZoom);
-
-            const drawSkin = (dx, dy) => {
-                if (frameCount > 1) {
-                    ctx.drawImage(skinImg, sourceX, 0, fh, fh, dx, dy, sz * 2, sz * 2);
-                } else {
-                    ctx.drawImage(skinImg, dx, dy, sz * 2, sz * 2);
-                }
-            };
 
 if (rotation.has(skinName)) {
     if (!this._rot) {
@@ -5015,9 +4989,17 @@ if (rotation.has(skinName)) {
 
     ctx.translate(this.x, this.y);
     ctx.rotate(this._rot.current);
-    drawSkin(-sz, -sz);
+    ctx.drawImage(
+        skinImg,
+        fw > fh ? frame * fh : 0, 0, fh, fh,
+        -sz, -sz, sz * 2, sz * 2
+    );
 } else {
-    drawSkin(this.x - sz, this.y - sz);
+    ctx.drawImage(
+        skinImg,
+        fw > fh ? frame * fh : 0, 0, fh, fh,
+        this.x - sz, this.y - sz, sz * 2, sz * 2
+    );
 }
 
 
@@ -5360,7 +5342,7 @@ function refreshGlobalRatingHome(data) {
         const medal = index === 0 ? 'gold' : index === 1 ? 'silver' : 'bronze';
         const normalizedNick = normalizeNick(String(name || '').replace(/<[^>]*>/g, ''));
         const skinCode = skinList?.[normalizedNick];
-        const skinUrl = getSkinImageUrl(skinCode);
+        const skinUrl = skinCode ? `https://api.agar.su/skins/${skinCode}.png` : 'https://api.agar.su/skins/4.png';
 
         const pts = Number(points) || 0;
         const row = document.createElement('div');
@@ -5586,13 +5568,13 @@ function getSkinUrlForNick(nickname) {
     // Ищем в skinList
     const code = skinList[cleanKey];
     if (code) {
-      return getSkinImageUrl(code);
+      return `https://api.agar.su/skins/${code}.png`;
     }
 
     // Если не нашли — пробуем с []
     const withBrackets = `[${cleanKey}]`;
     const code2 = skinList[withBrackets];
-    return code2 ? getSkinImageUrl(code2) : null;
+    return code2 ? `https://api.agar.su/skins/${code2}.png` : null;
 
   } catch (e) {
     console.error('Skin error:', e);
