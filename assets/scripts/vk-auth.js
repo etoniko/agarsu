@@ -41,6 +41,16 @@
     const container = document.getElementById("VkIdSdkOneTap");
     if (!container) return;
 
+    // Redirect fallback: обработать code ДО генерации нового PKCE
+    const urlParams = new URLSearchParams(window.location.search);
+    const codeFromUrl = urlParams.get("code");
+    const deviceFromUrl = urlParams.get("device_id");
+    if (codeFromUrl && deviceFromUrl) {
+      sendCodeToServer(codeFromUrl, deviceFromUrl);
+      window.history.replaceState({}, "", window.location.pathname + window.location.hash);
+      return;
+    }
+
     // PKCE: code_verifier генерируем сами → обмен на бэкенде (id.vk.ru/oauth2/auth)
     const codeVerifier = randomString(64);
     const state = randomString(32);
@@ -57,16 +67,6 @@
       source: VKID.ConfigSource.LOWCODE,
       scope: "",
     });
-
-    // Redirect fallback: ?code= &device_id= в URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const codeFromUrl = urlParams.get("code");
-    const deviceFromUrl = urlParams.get("device_id");
-    if (codeFromUrl && deviceFromUrl) {
-      sendCodeToServer(codeFromUrl, deviceFromUrl);
-      window.history.replaceState({}, "", window.location.pathname + window.location.hash);
-      return;
-    }
 
     const oneTap = new VKID.OneTap();
     oneTap
