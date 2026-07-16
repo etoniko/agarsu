@@ -1,41 +1,9 @@
 :root{--vs-primary:29 92 255;-webkit-touch-callout:none;-webkit-user-select:none;-khtml-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;}
-.admins{background:#ff00008f !important;}
 .bambule {
     background: linear-gradient(rgb(0 0 0 / 33%), rgb(0 0 0 / 50%)), url(/assets/photo/8869.png) !important;
     background-size: cover !important;
     color: #ffffff !important;
     font-weight: lighter;
-}
-.pulik {
-    background: #0044c566 !important;
-    border-radius: 10px;
-    padding: 5px;
-}
-
-.chatX_msg[class*="могучий жидяра"]{
-    background: #0044c566 !important;
-    border-radius: 10px;
-    padding: 5px;
-}
-.Lednick[class*="могучий жидяра"]{
-    background: #0044c566 !important;
-    border-radius: 10px;
-    padding: 5px;
-}
-.salruz {
-    background: #0044c566 !important;
-    border-radius: 10px;
-    padding: 5px;
-}
-.morcov {
-    background: #0044c566 !important;
-    border-radius: 10px;
-    padding: 5px;
-}
-.khirad {
-    background: #0044c566 !important;
-    border-radius: 10px;
-    padding: 5px;
 }
 .chatX_msg[class*="☼k☼"]{
     background: linear-gradient(rgb(0 0 0 / 33%), rgb(0 0 0 / 50%)), url(/assets/photo/778.jpg?3) !important;
@@ -233,8 +201,6 @@
     .rating-home{display: none;}
 	.add-yandex{display: none;}
 }
-.cosmos{background:url(/assets/photo/cosmos.png) !important; font-weight:lighter;}
-.rizwer{background: linear-gradient(90deg,rgba(2, 0, 36, 1) 0%, rgba(9, 9, 121, 1) 35%, rgba(0, 212, 255, 1) 100%) !important;}
 #captcha-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background-color:rgba(0, 0, 0, 0.5);display:flex;justify-content:center;align-items:center;z-index:9999;}
 #captcha-container{z-index:10;}
 .ban-banner {display: none;position: fixed;top: 50%;left: 50%;transform: translate(-50%, -50%);width: auto;box-sizing: border-box;padding: 14px 20px;background: red;border-radius: 12px;color: white;}.ban-banner-inner{display:flex;align-items:flex-start;gap:14px;max-width:720px;margin:0 auto;}
@@ -1125,24 +1091,6 @@ input{font-size:16px;}
   }
 }
 .homemenu{position:absolute;left:10px;top:10px;border:solid #ffffff26 1px;border-radius:25px;background:rgba(0, 0, 0, .3);width:40px;height:40px;padding:5px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;}
-.adminpanel{position: absolute;right: 200px;top: 10px;border: solid #ffffff26 1px;border-radius: 25px;height: 40px;display: none;align-items: center;justify-content: center;cursor: pointer;font-size: 14px;padding: 5px 20px 5px 20px;}
-.admin-panel{display:none;position: absolute;right: 200px;top: 53px;border: solid #ffffff26 1px;border-radius: 10px;height: 300px;font-size: 14px;padding: 5px 20px 5px 20px;background: rgb(0 0 0 / 49%);}
-.player-list{overflow: auto;height: 280px;}
-.infoApanel{display:flex;gap: 10px;justify-content: space-evenly;}
-.infoAplayer{display: flex;gap: 10px;justify-content: space-evenly;padding-top:2px}
-.infoAplayer:hover{background:#ffffff30;}
-.player-cell:nth-child(1) { width: 110px;  }  /* BOT / Human */
-.player-cell:nth-child(2) { width: 40px;  }  /* № (1,2,3...) */
-.player-cell:nth-child(3) {width: 100px;text-align: left;white-space: nowrap;overflow: hidden;} /* Ник */
-.player-cell:nth-child(4) { width: 20px;  }  /* cell */
-.player-cell:nth-child(5) { width: 40px;  }  /* x */
-.player-cell:nth-child(6) { width: 40px;  }  /* y */
-.player-cell:nth-child(7) { width: 40px;  }  /* масса */
-.player-cell:nth-child(8) { width: 30px;  }  /* Kick */
-.player-cell:nth-child(9) { width: 30px;  }  /* Ban */
-.player-cell:nth-child(10) { width: 30px;  }  /* Kill */
-
-
 .score-info{position:absolute;font-size:12px;display:flex;transform:translate(-50%);top:10px;gap:5px;}
 .scorr{padding:5px 10px 5px 10px;border-radius:20px 20px 20px 20px;border:solid #ffffff26 1px;background:rgba(0, 0, 0, .3);}
 .cell-length{background:#1a73e8;padding: 0px 4px 0px 4px;height: 11px;border-radius:10px 10px 10px 10px;font-size: 9px;margin-left:-13px;}
@@ -2603,26 +2551,6 @@ input{font-size:16px;}
     100% {
         color: #ff3366;
     }
-}
-
-.avatarXcontainer.admin::after {
-    content: "hdr_auto";
-    font-family: 'Material Icons';
-    font-size: 19px;
-    color: #ff0000;
-    display: block;
-    background: radial-gradient(#ffe100 4px, #1e90ff00 50%);
-}
-
-.avatarXcontainer.moderator::after {
-    content: "M";
-    font-family: 'roboto';
-    font-size: 12px;
-    display: block;
-color: #54ff00;
-    background: #009aff;
-padding: 1px 3px 1px 3px;
-border-radius: 100%
 }
 
 .agario{background: url(/assets/photo/q9JcEjm.gif);width: 17px;height: 17px;background-size: 20px;}
