@@ -38,7 +38,9 @@
     if (!("VKIDSDK" in window)) return;
 
     const VKID = window.VKIDSDK;
-    const container = document.getElementById("VkIdSdkOneTap");
+    const container =
+      document.getElementById("VkIdSdkOAuthList") ||
+      document.getElementById("VkIdSdkOneTap");
     if (!container) return;
 
     // Redirect fallback: обработать code ДО генерации нового PKCE
@@ -57,7 +59,6 @@
     sessionStorage.setItem("vk_code_verifier", codeVerifier);
     sessionStorage.setItem("vk_state", state);
 
-    // Как в кабинете VK ID (Low-code One Tap) + codeVerifier для backend exchange
     VKID.Config.init({
       app: 54069355,
       redirectUrl: "https://agar.su",
@@ -68,19 +69,23 @@
       scope: "",
     });
 
-    const oneTap = new VKID.OneTap();
-    oneTap
+    // Виджет 3 в 1: чистые кнопки VK / Mail / OK
+    const oauthListNames = [
+      VKID.OAuthName.VK,
+      VKID.OAuthName.MAIL,
+      VKID.OAuthName.OK,
+    ];
+
+    new VKID.OAuthList()
       .render({
         container,
-        showAlternativeLogin: true,
-        oauthList: ["mail_ru", "ok_ru"],
-        styles: { width: 360, height: 44, borderRadius: 8 },
-        skin: VKID.OneTapSkin.Primary,
+        oauthList: oauthListNames,
         scheme: VKID.Scheme.LIGHT,
         lang: VKID.Languages.RUS,
+        styles: { height: 44, borderRadius: 8 },
       })
       .on(VKID.WidgetEvents.ERROR, vkidOnError)
-      .on(VKID.OneTapInternalEvents.LOGIN_SUCCESS, function (payload) {
+      .on(VKID.OAuthListInternalEvents.LOGIN_SUCCESS, function (payload) {
         sendCodeToServer(payload.code, payload.device_id);
       });
   }
@@ -88,6 +93,6 @@
   if ("VKIDSDK" in window) {
     initVkAuth();
   } else {
-    document.querySelector('script[src*="@vkid/sdk"]')?.addEventListener("load", initVkAuth);
+    document.querySelector('script[src*="vkid-sdk"]')?.addEventListener("load", initVkAuth);
   }
 })();
