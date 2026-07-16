@@ -260,14 +260,18 @@ function getGameServerWssUrl(host) {
 wjQuery(document).ready(() => {
 document.querySelectorAll('.gamemode li').forEach(li => {
     li.addEventListener('click', () => {
+        const isAlreadyActive = li.classList.contains('active');
 		const titleEl = document.getElementById('serverTitle');
 
+        // Снимаем актив со всех и ставим новый
         document.querySelectorAll('.gamemode li').forEach(l => l.classList.remove('active'));
         li.classList.add('active');
 
+        // Запоминаем выбранный сервер
         SELECTED_SERVER = li.dataset.ip;
+        // Обновляем hash без дергания страницы
         history.replaceState(null, '', '#' + li.id);
-        if (titleEl) titleEl.textContent = `Статистика ${li.id}`;
+titleEl.textContent = `Статистика ${li.id}`;
     });
 });
 });
@@ -2908,10 +2912,7 @@ if (stickerData) {
 
         if (ua && playerCells.length === 0) {
     wjQuery("#statics").css("display", "flex");
-    updateShareText();
-    if (window.AgarAds && typeof window.AgarAds.onDeath === "function") {
-        window.AgarAds.onDeath();
-    }
+    updateShareText();    // текст шаринга
         }
     }
 
@@ -4133,31 +4134,9 @@ wHandle.setNick = function (arg) {
     userNickName = arg;
     sendNickName();
     wjQuery("#statics").hide();
-    if (window.AgarAds) {
-        if (typeof window.AgarAds.hideDeathFsOverlay === "function") {
-            window.AgarAds.hideDeathFsOverlay();
-        }
-        if (typeof window.AgarAds.unlockPlay === "function") {
-            window.AgarAds.unlockPlay();
-        }
-    }
     maxScore = 0;
 };
-    wHandle.spectate = function () {
-        setserver(SELECTED_SERVER);
-        userNickName = null;
-        hideOverlays();
-        wjQuery("#statics").hide();
-        if (window.AgarAds) {
-            if (typeof window.AgarAds.hideDeathFsOverlay === "function") {
-                window.AgarAds.hideDeathFsOverlay();
-            }
-            if (typeof window.AgarAds.unlockPlay === "function") {
-                window.AgarAds.unlockPlay();
-            }
-        }
-        wHandle.chekstats();
-    };
+    wHandle.spectate = function () { setserver(SELECTED_SERVER);  userNickName = null; hideOverlays(); wjQuery("#statics").hide(); wHandle.chekstats(); };
 	
 // === Настройки по умолчанию ===
 let showSkin = true,
