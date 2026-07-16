@@ -2004,7 +2004,7 @@ input{font-size:16px;}
 .auth-telegram-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:auto;height:35px;padding:0 14px;border:1px solid #ffffff20;border-radius:6px;background:#88888859;color:#ffffffbf;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;opacity:0.85;}
 .auth-telegram-btn:hover{background:#99999973;color:#ffffffd9;opacity:1;}
 .auth-telegram-btn i{font-size:17px;opacity:0.9;}
-#VkIdSdkOneTap{display:flex;justify-content:center;width:100%;max-width:360px;overflow:hidden;}
+#VkIdSdkOneTap,#VkIdSdkOAuthList{display:flex;justify-content:center;width:100%;max-width:360px;overflow:hidden;}
 .restore-progress-block{margin-top:12px;padding-top:12px;border-top:1px solid #2b3242;text-align:left;}
 .restore-toggle{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:10px 12px;border:1px dashed #3d4d6a;border-radius:10px;background:#101625;color:#9fb3d9;font-size:13px;cursor:pointer;transition:background .15s,border-color .15s,color .15s;}
 .restore-toggle:hover{background:#121a2b;border-color:#016bef88;color:#dbe5ff;}
