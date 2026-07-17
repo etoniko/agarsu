@@ -26,12 +26,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=new_releases" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="/assets/style.css?794" rel="stylesheet">
+    <link href="/assets/style.css?795" rel="stylesheet">
     <!-- Скрипты -->
     <script src="/assets/scripts/jquery.js?0.0.2"></script>
     <script src="/assets/scripts/log.js?0.0.2"></script>
     <script src="/assets/scripts/vector.js?0.0.2"></script>
-    <script src="/assets/scripts/main_out.js?0108"></script>
+    <script src="/assets/scripts/main_out.js?0109"></script>
 	<script src="/assets/scripts/shop.js?26" defer></script>
 	<script src="/assets/scripts/all.js?0.0.5" defer></script>
 	<script src="/assets/scripts/pass.js?0.0.5" defer></script>
@@ -41,16 +41,40 @@
 <script>window.yaContextCb=window.yaContextCb||[]</script>
 <script src="https://yandex.ru/ads/system/context.js" async></script>
 <script>
-window.yaContextCb.push(() => {
-    Ya.Context.AdvManager.render({
-        "blockId": "R-A-15699059-13",
-        "renderTo": "yandex_rtb_R-A-15699059-13"
+(function () {
+    var MENU_BLOCK = "R-A-15699059-13";
+    var MENU_EL = "yandex_rtb_R-A-15699059-13";
+    var DEATH_BLOCK = "R-A-15699059-14";
+    var DEATH_EL = "yandex_rtb_R-A-15699059-14";
+    var lastDeathAdAt = 0;
+    var DEATH_AD_COOLDOWN_MS = 30000;
+
+    /** Death-screen ad: only when #statics is visible, refresh ≥30s */
+    window.renderDeathAd = function () {
+        var el = document.getElementById(DEATH_EL);
+        if (!el) return;
+        var now = Date.now();
+        if (now - lastDeathAdAt < DEATH_AD_COOLDOWN_MS && el.getAttribute("data-ad-ready") === "1") {
+            return;
+        }
+        lastDeathAdAt = now;
+        el.setAttribute("data-ad-ready", "1");
+        window.yaContextCb.push(function () {
+            Ya.Context.AdvManager.render({
+                blockId: DEATH_BLOCK,
+                renderTo: DEATH_EL
+            });
+        });
+    };
+
+    // Menu ad only on load — death block must not request while #statics is hidden
+    window.yaContextCb.push(function () {
+        Ya.Context.AdvManager.render({
+            blockId: MENU_BLOCK,
+            renderTo: MENU_EL
+        });
     });
-	    Ya.Context.AdvManager.render({
-        "blockId": "R-A-15699059-14",
-        "renderTo": "yandex_rtb_R-A-15699059-14"
-    })
-});
+})();
 </script>
 <!-- Top.Mail.Ru counter -->
 <script type="text/javascript">
