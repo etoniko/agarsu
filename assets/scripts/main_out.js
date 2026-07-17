@@ -3682,8 +3682,15 @@ function drawWhiteGrid() {
         drawCenterBackground();
     };
 
+    if (centerBackground.complete && centerBackground.naturalWidth) {
+        isBackgroundLoaded = true;
+    }
+    if (innerImage.complete && innerImage.naturalWidth) {
+        isInnerImageLoaded = true;
+    }
+
     function drawCenterBackground() {
-        if (!isBackgroundLoaded) {
+        if (!ctx || !isBackgroundLoaded) {
             return;
         }
 
