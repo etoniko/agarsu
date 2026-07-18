@@ -2913,7 +2913,6 @@ if (stickerData) {
         if (ua && playerCells.length === 0) {
     wjQuery("#statics").css("display", "flex");
     updateShareText();    // текст шаринга
-    if (typeof window.renderDeathAd === "function") window.renderDeathAd();
         }
     }
 
@@ -3682,15 +3681,8 @@ function drawWhiteGrid() {
         drawCenterBackground();
     };
 
-    if (centerBackground.complete && centerBackground.naturalWidth) {
-        isBackgroundLoaded = true;
-    }
-    if (innerImage.complete && innerImage.naturalWidth) {
-        isInnerImageLoaded = true;
-    }
-
     function drawCenterBackground() {
-        if (!ctx || !isBackgroundLoaded) {
+        if (!isBackgroundLoaded) {
             return;
         }
 
