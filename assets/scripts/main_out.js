@@ -2913,6 +2913,7 @@ if (stickerData) {
         if (ua && playerCells.length === 0) {
     wjQuery("#statics").css("display", "flex");
     updateShareText();    // текст шаринга
+    if (typeof window.renderDeathBanner === "function") window.renderDeathBanner();
         }
     }
 
