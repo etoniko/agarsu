@@ -26,12 +26,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=new_releases" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="/assets/style.css?795" rel="stylesheet">
+    <link href="/assets/style.css?797" rel="stylesheet">
     <!-- Скрипты -->
     <script src="/assets/scripts/jquery.js?0.0.2"></script>
     <script src="/assets/scripts/log.js?0.0.2"></script>
     <script src="/assets/scripts/vector.js?0.0.2"></script>
-    <script src="/assets/scripts/main_out.js?0109"></script>
+    <script src="/assets/scripts/main_out.js?0111"></script>
 	<script src="/assets/scripts/shop.js?26" defer></script>
 	<script src="/assets/scripts/all.js?0.0.5" defer></script>
 	<script src="/assets/scripts/pass.js?0.0.5" defer></script>
@@ -46,11 +46,24 @@ window.yaContextCb.push(() => {
         "blockId": "R-A-15699059-13",
         "renderTo": "yandex_rtb_R-A-15699059-13"
     });
-	    Ya.Context.AdvManager.render({
-        "blockId": "R-A-15699059-14",
-        "renderTo": "yandex_rtb_R-A-15699059-14"
-    })
 });
+window.renderDeathBanner = function () {
+    var el = document.getElementById("yandex_rtb_R-A-15699059-14");
+    if (!el) return;
+    var doRender = function () {
+        el.innerHTML = "";
+        Ya.Context.AdvManager.render({
+            "blockId": "R-A-15699059-14",
+            "renderTo": "yandex_rtb_R-A-15699059-14"
+        });
+    };
+    if (window.Ya && Ya.Context && Ya.Context.AdvManager) {
+        doRender();
+    } else {
+        window.yaContextCb = window.yaContextCb || [];
+        window.yaContextCb.push(doRender);
+    }
+};
 </script>
 <!-- Top.Mail.Ru counter -->
 <script type="text/javascript">
