@@ -1929,6 +1929,18 @@ input{font-size:16px;}
   flex-shrink:0;
 }
 .mention {color: #00ff4f;text-shadow: #00ff4f 1px 0 10px;}
+.chatX_msg.chatX_mention_me {
+  outline: 1px solid rgba(0, 255, 79, 0.55);
+  box-shadow: 0 0 12px rgba(0, 255, 79, 0.25);
+}
+.chatX_ping {
+  animation: chatXMentionPulse 0.9s ease;
+}
+@keyframes chatXMentionPulse {
+  0% { filter: brightness(1); }
+  35% { filter: brightness(1.25); }
+  100% { filter: brightness(1); }
+}
 .chatX_time{position:absolute;right:8px;top:6px;font-size:11px;color:#dadada;}
 .chatX_name_container{display:flex;gap:3px;padding-bottom:2px;align-items:baseline;}
 .chatX_emch{margin-top: 8px;display: flex;align-items: center;gap: 8px;}
