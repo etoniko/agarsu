@@ -729,21 +729,6 @@ let stickerCooldownTimer = null;
         elem.onfocus = () => { isTyping = true; };
     });
 
-    // Живая фильтрация чата: только abc/абв/123/пробел/:!. + @ник (символьный тоже)
-    const bindChatCharFilter = (el) => {
-        if (!el) return;
-        el.addEventListener('input', () => {
-            const cleaned = sanitizeChatText(el.value);
-            if (cleaned === el.value) return;
-            const pos = el.selectionStart;
-            el.value = cleaned;
-            const next = Math.min(pos - 1, cleaned.length);
-            try { el.setSelectionRange(Math.max(0, next), Math.max(0, next)); } catch (_) {}
-        });
-    };
-    bindChatCharFilter(document.getElementById('chat_textbox'));
-    bindChatCharFilter(document.getElementById('ls'));
-
     const keyPressed = {};
     freeze = false;
     
@@ -2130,303 +2115,40 @@ function addChat(view, offset) {
 
 
 
-// ===== Антимат: мягкие замены (makeItCultural) + обходы х_у_й / внутри слова =====
+let badWordsSet; // Используем Set вместо массива
 
-function randomWord(words) {
-    return words[Math.floor(Math.random() * words.length)];
-}
+fetch('/word.txt')
+    .then(response => response.text())
+    .then(text => {
+        const words = text.split('\n').map(word => word.trim().toLowerCase());
+        badWordsSet = new Set(words); // Создаем Set из массива
+    })
+    .catch(error => console.error('Ошибка загрузки списка матерных слов:', error));
 
-// Латиница/кириллица вперемешку: хyй, xуй, xyй, xyu, pizda, blyat…
-function foldMatLookalikes(text) {
-    text = String(text || '');
-
-    // «хуй» любыми буквами лат+кир (х/x + у/y/u + й/и/i/y/u)
-    text = text.replace(/[хxХX][уyУYuU][йЙиИiIуuУUyY]/g, 'хуй');
-
-    // частые транслит-слоги
-    text = text.replace(/yo/gi, 'ё').replace(/yu/gi, 'ю').replace(/ya/gi, 'я').replace(/ye/gi, 'е');
-
-    // пизд* / blya*
-    text = text.replace(/[пПpP][иИiI1][зЗzZ3][дДdD]/g, 'пизд');
-    text = text.replace(/[бБbB][лЛlL][яЯyYaA]/g, 'бля');
-
-    // оставшиеся одиночные подмены
-    const map = {
-        'x': 'х', 'X': 'Х', 'y': 'й', 'Y': 'Й',
-        'a': 'а', 'A': 'А', 'e': 'е', 'E': 'Е', 'o': 'о', 'O': 'О',
-        'p': 'п', 'P': 'П', 'c': 'с', 'C': 'С', 'k': 'к', 'K': 'К',
-        'b': 'б', 'B': 'Б', 'u': 'у', 'U': 'У', 'i': 'и', 'I': 'И',
-        'z': 'з', 'Z': 'З', 'd': 'д', 'D': 'Д', 'm': 'м', 'M': 'М',
-        'h': 'х', 'H': 'Х', 't': 'т', 'T': 'Т', 'n': 'н', 'N': 'Н',
-        'r': 'р', 'R': 'Р', 's': 'с', 'S': 'С', 'j': 'й', 'J': 'Й',
-        'l': 'л', 'L': 'Л', 'v': 'в', 'V': 'В', 'w': 'в', 'W': 'В',
-        'f': 'ф', 'F': 'Ф', 'g': 'г', 'G': 'Г'
-    };
-    let out = '';
-    for (let i = 0; i < text.length; i++) {
-        const ch = text[i];
-        out += map[ch] || ch;
-    }
-    return out;
-}
-
-// Мягкая замена мата (как в старом makeItCultural)
-function makeItCultural(textNode) {
-    var text = String(textNode || '');
-
-    // Х*й и производные
-    text = text.replace(/(\s|^)Ху(й|я|ю|и|е)/g, () => randomWord([" Пенис", " Член", " Детородный орган"]));
-    text = text.replace(/(\s|^)ху(й|я|ю|и|е)/gi, () => randomWord([" пенис", " член", " детородный орган"]));
-    text = text.replace(/Хуяр/g, "Фигар");
-    text = text.replace(/хуяр/gi, "фигар");
-    text = text.replace(/(По(\s|)ху(й|я|ям|ю)($|.|\s|,|\?|!)|До пизды)/g, () => randomWord(["Неважно", "Индифферентно", "Безразлично"]));
-    text = text.replace(/(по(\s|)ху(й|я|ям|ю)($|.|\s|,|\?|!)|до пизды)/gi, () => randomWord(["неважно", "индифферентно", "безразлично"]));
-    text = text.replace(/(На(\s|)ху(й|ю)($|.|\s|,|\?|!)|(В|Ф)(\s|)п(из|ес)ду)/g, () => randomWord(["К чёрту", "К чертям собачьим"]));
-    text = text.replace(/(на(\s|)ху(й|ю)($|.|\s|,|\?|!)|(в|ф)(\s|)п(из|ес)ду)/gi, () => randomWord(["к чёрту", "к чертям собачьим"]));
-    text = text.replace(/(На(\s|)хуя($|.|\s|,|\?|!))/g, () => randomWord(["Зачем", "Для чего", ""]));
-    text = text.replace(/(на(\s|)хуя($|.|\s|,|\?|!))/gi, () => randomWord(["зачем", "для чего", ""]));
-    text = text.replace(/Ху(ё|е)в(аст|)(еньк|)(ы(й|х|е|м)|о(е|го|й|му)|ая|ий)/g, "Низкого качества");
-    text = text.replace(/ху(ё|е)в(аст|)(еньк|)(ый|ая|ое|ого|ой|ий|ому|ых|ые|ым)/gi, "низкого качества");
-    text = text.replace(/Ху(ё|е)в(аст|)(еньк|)о/g, () => randomWord(["Плохо", "Печально", "Ужасно", "Кошмарно", "Уныло"]));
-    text = text.replace(/ху(ё|е)в(аст|)(еньк|)о/gi, () => randomWord(["плохо", "печально", "ужасно", "кошмарно", "уныло"]));
-    text = text.replace(/(О|А)ху(ен|(ет|)итель)н/g, () => randomWord(["Замечетельн", "Превосходн", "Шикарн", "Отличн"]));
-    text = text.replace(/(о|а)ху(ен|(ет|)итель)н/gi, () => randomWord(["замечетельн", "превосходн", "шикарн", "отличн"]));
-    text = text.replace(/(О|А|При)хуеть/g, "С ума сойти");
-    text = text.replace(/(о|а|при)хуеть/gi, "с ума сойти");
-    text = text.replace(/(О|А|При)хуе(л(а|)|ю|ешь|вае(шь|те|т))/g, () => randomWord(["Не в себе", "В шоке"]));
-    text = text.replace(/(о|а|при)хуе(л(а|)|ю|ешь|вае(шь|те|т))/gi, () => randomWord(["не в себе", "в шоке"]));
-    text = text.replace(/Ху(е|и)(пл(ё|е)т|л(а|о))/g, "Дурак");
-    text = text.replace(/ху(е|и)(пл(ё|е)т|л(а|о))/gi, "дурак");
-
-    // П*зда
-    text = text.replace(/Пиздец/g, () => randomWord(["Ужас", "Кошмар"]));
-    text = text.replace(/пиздец/gi, () => randomWord(["ужас", "кошмар"]));
-    text = text.replace(/Отпизди$/g, () => randomWord(["Избей", "Побей"]));
-    text = text.replace(/отпизди$/gi, () => randomWord(["избей", "побей"]));
-    text = text.replace(/Отпиздят/g, () => randomWord(["Изобьют", "Побьют"]));
-    text = text.replace(/отпиздят/gi, () => randomWord(["изобьют", "побьют"]));
-    text = text.replace(/Отпизд/g, () => randomWord(["Изб", "Поб"]));
-    text = text.replace(/отпизд/gi, () => randomWord(["изб", "поб"]));
-    text = text.replace(/Отпизжен(н|)/g, () => randomWord(["Избит", "Побит"]));
-    text = text.replace(/отпизжен(н|)/gi, () => randomWord(["избит", "побит"]));
-    text = text.replace(/Отпизжу/g, () => randomWord(["Изобью", "Побью"]));
-    text = text.replace(/отпизжу/gi, () => randomWord(["изобью", "побью"]));
-    text = text.replace(/Распиздя/g, "Лентя");
-    text = text.replace(/распиздя/gi, "лентя");
-    text = text.replace(/Спиз(д|ж)/g, () => randomWord(["Стащ", "Утащ"]));
-    text = text.replace(/спиз(д|ж)/gi, () => randomWord(["стащ", "утащ"]));
-    text = text.replace(/Пиздат$/g, () => randomWord(["Прекрасен", "Великолепен", "Хорош"]));
-    text = text.replace(/пиздат$/gi, () => randomWord(["прекрасен", "великолепен", "хорош"]));
-    text = text.replace(/Пиздат/g, () => randomWord(["Замечетельн", "Превосходн", "Шикарн", "Отличн"]));
-    text = text.replace(/пиздат/gi, () => randomWord(["замечетельн", "превосходн", "шикарн", "отличн"]));
-    text = text.replace(/Пизд/g, "Вагин");
-    text = text.replace(/пизд/gi, "вагин");
-
-    // Е*ать и производные
-    text = text.replace(/Ебаться/g, () => randomWord(["Заниматься любовью", "Заниматься сексом"]));
-    text = text.replace(/ебаться/gi, () => randomWord(["заниматься любовью", "заниматься сексом"]));
-    text = text.replace(/Ебануться/g, "С ума сойти");
-    text = text.replace(/ебануться/gi, "с ума сойти");
-    text = text.replace(/(Еба|Ёб)нул/g, () => randomWord(["Помешал", ""]));
-    text = text.replace(/(еба|ёб)нул/gi, () => randomWord(["помешал", ""]));
-    text = text.replace(/(Заеб(ись|ок|ато|ово)|Охуенчик)/g, () => randomWord(["Хорошо", "Замечательно", "Великолепно", "Прекрасно", "Восхитительно", "Отлично", "Превосходно"]));
-    text = text.replace(/(заеб(ись|ок|ато|ово)|охуенчик)/gi, () => randomWord(["хорошо", "замечательно", "великолепно", "прекрасно", "восхитительно", "отлично", "превосходно"]));
-    text = text.replace(/Заеба/g, () => randomWord(["Надое", "Доста"]));
-    text = text.replace(/заеба/gi, () => randomWord(["надое", "доста"]));
-    text = text.replace(/На(е|ё)б/g, "Обман");
-    text = text.replace(/на(е|ё)б/gi, "обман");
-    text = text.replace(/(Вы|От(ъ|))еба/g, "Поиме");
-    text = text.replace(/(вы|от(ъ|))еба/gi, "поиме");
-    text = text.replace(/От(ъ|)ебись/g, "Отстань");
-    text = text.replace(/от(ъ|)ебись/gi, "отстань");
-    text = text.replace(/От(ъ|)ебитесь/g, "Отстаньте");
-    text = text.replace(/от(ъ|)ебитесь/gi, "отстаньте");
-    text = text.replace(/Разъеба/g, () => randomWord(["Разруши", "Уничтожи"]));
-    text = text.replace(/разъеба/gi, () => randomWord(["разруши", "уничтожи"]));
-    text = text.replace(/Разъ(е|ё)быва/g, () => randomWord(["Разруша", "Уничтожа"]));
-    text = text.replace(/разъ(е|ё)быва/gi, () => randomWord(["разруша", "уничтожа"]));
-    text = text.replace(/((Д(о|а)лб(о|а)|У)((ё|е)|йо)(б|п)(ик|ок|ище|ан|))/g, "Дурак");
-    text = text.replace(/((д(о|а)лб(о|а)|у)((ё|е)|йо)(б|п)(ик|ок|ище|ан|))/gi, "дурак");
-    text = text.replace(/(Въ|У|Пере)еб(а|о|ну)(ши|)/g, () => randomWord(["Удари", "Стукну"]));
-    text = text.replace(/(въ|у|пере)еб(а|о|ну)(ши|)/gi, () => randomWord(["удари", "стукну"]));
-    text = text.replace(/(Въ|У)(е|ё)б/g, "Стукн");
-    text = text.replace(/(въ|у)(е|ё)б/gi, "стукн");
-    text = text.replace(/Еб(а|)л(о|ище|ет)/g, "Лицо");
-    text = text.replace(/еб(а|)л(о|ище|ет)/gi, "лицо");
-    text = text.replace(/(Е|Ё)бл(а|ища|еты)/g, "Лица");
-    text = text.replace(/(е|ё)бл(а|ища|еты)/gi, "лица");
-    text = text.replace(/(^|\s)(Е|Ё)ба/g, " Сноша");
-    text = text.replace(/(^|\s)(е|ё)ба/gi, " сноша");
-    text = text.replace(/(^|\s)Еб(е|ё)/g, " сношае");
-    text = text.replace(/(^|\s)еб(е|ё)/gi, " сношае");
-
-    // Ещё
-    text = text.replace(/Пид(о|а)р(|ас|ок)/g, () => randomWord(["Гей", "Гомосексуалист"]));
-    text = text.replace(/пид(о|а)р(|ас|ок)/gi, () => randomWord(["гей", "гомосексуалист"]));
-    text = text.replace(/(^|\s)Муд(а(ч(о|ё|и)|)к|ил(а|о)|озвон)/g, " Подлец");
-    text = text.replace(/(^|\s)муд(а(ч(о|ё|и)|)к|ил(а|о)|озвон)/gi, " подлец");
-    text = text.replace(/Говн/g, "Дерьм");
-    text = text.replace(/говн/gi, "дерьм");
-    text = text.replace(/Бля/g, "Ой");
-    text = text.replace(/бля/gi, "ой");
-
-    return text;
-}
-
-// Корни для обходов: х_у_й, ыфвхуйфв (после makeItCultural)
-const PROFANITY_ROOTS = [
-    'хуй', 'хуя', 'хую', 'хуе', 'хуи', 'хуйло', 'хуйня',
-    'пиздец', 'пизда', 'пизду', 'пизды', 'пизде', 'пизд',
-    'блять', 'блядь', 'бляд', 'бля',
-    'ебать', 'ебат', 'ебан', 'ебал', 'ебло', 'ебля', 'ебн',
-    'заеб', 'наеб', 'ъеб', 'уеб', 'выеб',
-    'мудак', 'мудил', 'мудо',
-    'пидорас', 'пидор', 'пидар', 'педик',
-    'говно', 'говн',
-    'жопа', 'жоп',
-];
-
-const PROFANITY_LOOKALIKE = {
-    // визуальные (хyй, xуй) + транслит (pizda, blyat, xyu)
-    'a': 'а', 'e': 'е', 'o': 'о', 'p': 'п', 'c': 'с', 'x': 'х',
-    'y': 'у', 'k': 'к', 'm': 'м', 'h': 'х', 't': 'т', 'b': 'б',
-    'u': 'у', 'n': 'н', 'i': 'и', 'z': 'з', 'd': 'д', 'r': 'р',
-    's': 'с', 'f': 'ф', 'g': 'г', 'l': 'л', 'v': 'в', 'w': 'в', 'j': 'й'
-};
-
-function collapseForProfanity(str) {
-    let out = '';
-    const s = String(str || '').toLowerCase().replace(/ё/g, 'е');
-    for (let i = 0; i < s.length; i++) {
-        let ch = s[i];
-        if (PROFANITY_LOOKALIKE[ch]) ch = PROFANITY_LOOKALIKE[ch];
-        if (/[a-zа-я0-9]/i.test(ch)) out += ch;
-    }
-    return out;
-}
-
-const PROFANITY_ROOTS_NORM = PROFANITY_ROOTS
-    .map(collapseForProfanity)
-    .filter(r => r.length >= 3)
-    .sort((a, b) => b.length - a.length);
-
-function softWordForRoot(root) {
-    const r = root.replace(/ё/g, 'е');
-    if (r.startsWith('пиздец')) return randomWord(['ужас', 'кошмар']);
-    if (r.startsWith('пизд')) return 'вагин';
-    if (r.startsWith('бля')) return 'ой';
-    if (r.startsWith('хуй') || r.startsWith('хуя') || r.startsWith('хую') || r.startsWith('хуе') || r.startsWith('хуи')) {
-        return randomWord(['пенис', 'член', 'детородный орган']);
-    }
-    if (r.startsWith('заеб')) return randomWord(['хорошо', 'отлично']);
-    if (r.startsWith('наеб') || r.startsWith('ъеб') || r.startsWith('уеб') || r.startsWith('выеб')) return 'обман';
-    if (r.startsWith('еб')) return randomWord(['сноша', 'лицо']);
-    if (r.startsWith('муд')) return 'подлец';
-    if (r.startsWith('пидор') || r.startsWith('пидар') || r.startsWith('педик')) return randomWord(['гей', 'гомосексуалист']);
-    if (r.startsWith('говн')) return 'дерьм';
-    if (r.startsWith('жоп')) return 'попа';
-    return randomWord(['ой', 'упс']);
-}
-
-function findProfanityHits(message) {
-    const chars = [...String(message || '')];
-    let collapsed = '';
-    const indexMap = [];
-    for (let i = 0; i < chars.length; i++) {
-        const key = collapseForProfanity(chars[i]);
-        if (!key) continue;
-        indexMap.push(i);
-        collapsed += key;
-    }
-
-    const marked = new Array(chars.length).fill(null); // root or null
-    for (const root of PROFANITY_ROOTS_NORM) {
-        let pos = 0;
-        while ((pos = collapsed.indexOf(root, pos)) !== -1) {
-            const from = indexMap[pos];
-            const to = indexMap[pos + root.length - 1];
-            for (let k = from; k <= to; k++) {
-                if (!marked[k] || root.length > marked[k].length) marked[k] = root;
-            }
-            pos += 1;
-        }
-    }
-
-    const hits = [];
-    for (let i = 0; i < marked.length; i++) {
-        if (!marked[i]) continue;
-        const start = i;
-        const root = marked[i];
-        while (i < marked.length && marked[i]) i++;
-        hits.push({ from: start, to: i, root });
-    }
-    return hits;
-}
-
-function findProfanityRanges(message) {
-    return findProfanityHits(message).map(h => [h.from, h.to]);
-}
-
-function softenBypassProfanity(message) {
-    const hits = findProfanityHits(message);
-    if (!hits.length) return message;
-
-    let out = '';
-    let last = 0;
-    for (const { from, to, root } of hits) {
-        out += message.slice(last, from);
-        out += softWordForRoot(root);
-        last = to;
-    }
-    out += message.slice(last);
-    return out;
-}
 
 function censorMessage(message) {
-    if (message == null) return message;
-    // 0) хyй / xуй / xyй / pizda → кириллица
-    let text = foldMatLookalikes(String(message));
-    // 1) мягкие regex-замены
-    text = makeItCultural(text);
-    // 2) обходы: х_у_й, ыфвхуйфв, остатки смеси алфавитов
-    text = softenBypassProfanity(text);
-    return text;
-}
-
-// Чат: только латиница/кириллица/цифры/пробел/:!.
-// Исключение: @ник — можно уведомлять игроков с любыми символами в нике
-const CHAT_ALLOWED_CHAR = /[a-zA-Zа-яА-ЯёЁ0-9 :!.]/;
-
-function sanitizeChatText(text) {
-    text = String(text || '');
-    let prefix = '';
-    const lsMatch = text.match(/^(!ls\d+\s+)/i);
-    if (lsMatch) {
-        prefix = lsMatch[1];
-        text = text.slice(prefix.length);
+    if (!badWordsSet) {
+        console.warn("Список матерных слов не загружен. Антимат не работает.");
+        return message;
     }
 
-    let result = '';
-    for (let i = 0; i < text.length; ) {
-        const ch = text[i];
-        if (ch === '@') {
-            result += '@';
-            i++;
-            while (i < text.length && text[i] !== ' ' && text[i] !== '\n' && text[i] !== '\r') {
-                const nickCh = text[i];
-                if (nickCh !== '@' && !forbiddenChars.includes(nickCh) && nickCh.trim() !== '') {
-                    result += nickCh;
-                } else if (nickCh === '@') {
-                    break;
-                }
-                i++;
-            }
-            continue;
+    const words = message.split(' ').filter(word => word !== "");
+    let censoredMessage = "";  // Собираем результат в строку
+    for (let i = 0; i < words.length; i++) {
+        const word = words[i];
+        const lowerCaseWord = word.toLowerCase();
+
+        if (badWordsSet.has(lowerCaseWord)) {
+            censoredMessage += "***";
+        } else {
+            censoredMessage += word;
         }
-        if (CHAT_ALLOWED_CHAR.test(ch)) result += ch;
-        i++;
+
+        if (i < words.length - 1) {
+            censoredMessage += " "; // Добавляем пробел, если это не последнее слово
+        }
     }
-    return prefix + result;
+    return censoredMessage;
 }
 
 const donators = ["bambule", "☼k☼"];
@@ -2518,31 +2240,6 @@ function highlightMentions(text) {
   );
 }
 
-function getMyChatNick() {
-  const fromCells = playerCells[0]?.name;
-  if (fromCells) return String(fromCells).replace(/<[^>]*>/g, '').trim();
-  if (userNickName) return String(userNickName).split('#')[0].trim();
-  const fromInput = document.getElementById('nick')?.value?.trim();
-  return fromInput || '';
-}
-
-// Проверка, упомянули ли меня через @ник (в т.ч. символьный ник)
-function messageMentionsMe(text) {
-  const me = getMyChatNick();
-  if (!me || !text) return false;
-  const meLower = me.toLowerCase();
-  const meNorm = normalizeNick(me);
-  const re = /@((?:[^\s@]|\u00A0)+)/g;
-  let m;
-  while ((m = re.exec(String(text)))) {
-    const mentioned = m[1].replace(/\u00A0/g, ' ');
-    const mentionedLower = mentioned.toLowerCase();
-    if (mentionedLower === meLower) return true;
-    if (meNorm && normalizeNick(mentioned) === meNorm) return true;
-  }
-  return false;
-}
-
 
 // ==========================
 // Создание личного диалога
@@ -2622,7 +2319,11 @@ const RESET_TIME = 10000; // 10 секунд
 
 // Функция подсчёта ругательств в сообщении
 function countProfanity(message) {
-    return findProfanityRanges(message).length;
+    if (!badWordsSet) return 0;
+    return message
+        .split(/\s+/)
+        .filter(Boolean)
+        .reduce((n, w) => n + (badWordsSet.has(w.toLowerCase()) ? 1 : 0), 0);
 }
 
 // Проверка, нужно ли блюрить сообщение, и запись подсчёта
@@ -2937,21 +2638,6 @@ if (messageContent.startsWith('PvPInvite;') && messageContent.endsWith(';accept'
 // сначала цензурим, как у вас
 const safeHtml = replaceEmojis(highlightMentions(censorMessage(messageContent)));
 textDiv.innerHTML = safeHtml;
-
-// Уведомление, если меня упомянули через @
-if (messageMentionsMe(messageContent)) {
-    msgDiv.classList.add('chatX_mention_me');
-    msgDiv.title = (msgDiv.title ? msgDiv.title + ' · ' : '') + 'Вас упомянули';
-    try {
-        const feed = document.getElementById('chatX_container') || targetDiv;
-        if (feed) {
-            feed.classList.remove('chatX_ping');
-            void feed.offsetWidth;
-            feed.classList.add('chatX_ping');
-            setTimeout(() => feed.classList.remove('chatX_ping'), 1200);
-        }
-    } catch (_) {}
-}
 
 
 if (shouldBlurAndRecord(lastMessage.pId, messageContent)) {
@@ -3306,7 +2992,6 @@ const getColorId = (hex) => {
 
 
      function sendChat(str) {
-        str = sanitizeChatText(str);
         if (wsIsOpen() && (str.length < 200) && (str.length > 0) && !hideChat) {
             var msg = prepareData(2 + 2 * str.length);
             var offset = 0;
