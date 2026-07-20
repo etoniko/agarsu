@@ -729,6 +729,21 @@ let stickerCooldownTimer = null;
         elem.onfocus = () => { isTyping = true; };
     });
 
+    // Живая фильтрация чата: только abc/абв/123/пробел/:!. + @ник (символьный тоже)
+    const bindChatCharFilter = (el) => {
+        if (!el) return;
+        el.addEventListener('input', () => {
+            const cleaned = sanitizeChatText(el.value);
+            if (cleaned === el.value) return;
+            const pos = el.selectionStart;
+            el.value = cleaned;
+            const next = Math.min(pos - 1, cleaned.length);
+            try { el.setSelectionRange(Math.max(0, next), Math.max(0, next)); } catch (_) {}
+        });
+    };
+    bindChatCharFilter(document.getElementById('chat_textbox'));
+    bindChatCharFilter(document.getElementById('ls'));
+
     const keyPressed = {};
     freeze = false;
     
@@ -2115,40 +2130,181 @@ function addChat(view, offset) {
 
 
 
-let badWordsSet; // Используем Set вместо массива
+let badWordsSet; // точные слова/фразы (lowercase)
+let badWordsCollapsed; // слова без разделителей: "мат", "хуй" и т.п.
+let badPhrasesCollapsed; // многословные фразы без разделителей
+
+// Латиница ↔ кириллица (обход мата через похожие буквы: маTь, xyй)
+const PROFANITY_LOOKALIKE = {
+    'a': 'а', 'e': 'е', 'o': 'о', 'p': 'р', 'c': 'с', 'x': 'х',
+    'y': 'у', 'k': 'к', 'm': 'м', 'h': 'н', 't': 'т', 'b': 'в',
+    'u': 'и', 'n': 'п', 'r': 'г'
+};
+
+function collapseProfanityKey(str) {
+    let out = '';
+    const s = String(str || '').toLowerCase().replace(/ё/g, 'е');
+    for (let i = 0; i < s.length; i++) {
+        let ch = s[i];
+        if (PROFANITY_LOOKALIKE[ch]) ch = PROFANITY_LOOKALIKE[ch];
+        if (/[a-zа-я0-9]/i.test(ch)) out += ch;
+    }
+    return out;
+}
 
 fetch('/word.txt')
     .then(response => response.text())
     .then(text => {
-        const words = text.split('\n').map(word => word.trim().toLowerCase());
-        badWordsSet = new Set(words); // Создаем Set из массива
+        const words = text.split('\n').map(word => word.trim().toLowerCase()).filter(Boolean);
+        badWordsSet = new Set(words);
+        badWordsCollapsed = new Set();
+        badPhrasesCollapsed = new Set();
+        for (const word of words) {
+            const collapsed = collapseProfanityKey(word);
+            if (!collapsed || collapsed.length < 2) continue;
+            if (/\s/.test(word)) badPhrasesCollapsed.add(collapsed);
+            else badWordsCollapsed.add(collapsed);
+        }
     })
     .catch(error => console.error('Ошибка загрузки списка матерных слов:', error));
 
+// Чат: только латиница/кириллица/цифры/пробел/:!.
+// Исключение: @ник — можно уведомлять игроков с любыми символами в нике
+const CHAT_ALLOWED_CHAR = /[a-zA-Zа-яА-ЯёЁ0-9 :!.]/;
+
+function sanitizeChatText(text) {
+    text = String(text || '');
+    let prefix = '';
+    const lsMatch = text.match(/^(!ls\d+\s+)/i);
+    if (lsMatch) {
+        prefix = lsMatch[1];
+        text = text.slice(prefix.length);
+    }
+
+    let result = '';
+    for (let i = 0; i < text.length; ) {
+        const ch = text[i];
+        if (ch === '@') {
+            result += '@';
+            i++;
+            // Ник после @ — любые видимые символы до пробела (в т.ч. ☼★ и т.п.)
+            while (i < text.length && text[i] !== ' ' && text[i] !== '\n' && text[i] !== '\r') {
+                const nickCh = text[i];
+                if (nickCh !== '@' && !forbiddenChars.includes(nickCh) && nickCh.trim() !== '') {
+                    result += nickCh;
+                } else if (nickCh === '@') {
+                    break;
+                }
+                i++;
+            }
+            continue;
+        }
+        if (CHAT_ALLOWED_CHAR.test(ch)) result += ch;
+        i++;
+    }
+    return prefix + result;
+}
 
 function censorMessage(message) {
-    if (!badWordsSet) {
+    if (message == null) return message;
+    message = String(message);
+
+    if (!badWordsSet || !badWordsCollapsed) {
         console.warn("Список матерных слов не загружен. Антимат не работает.");
         return message;
     }
 
-    const words = message.split(' ').filter(word => word !== "");
-    let censoredMessage = "";  // Собираем результат в строку
-    for (let i = 0; i < words.length; i++) {
-        const word = words[i];
-        const lowerCaseWord = word.toLowerCase();
+    const chars = [...message];
+    const mask = new Array(chars.length).fill(false);
 
-        if (badWordsSet.has(lowerCaseWord)) {
-            censoredMessage += "***";
-        } else {
-            censoredMessage += word;
-        }
+    // Индексная карта: позиция в «схлопнутой» строке → индекс символа в оригинале
+    let collapsed = '';
+    const indexMap = [];
+    for (let i = 0; i < chars.length; i++) {
+        const key = collapseProfanityKey(chars[i]);
+        if (!key) continue;
+        indexMap.push(i);
+        collapsed += key;
+    }
 
-        if (i < words.length - 1) {
-            censoredMessage += " "; // Добавляем пробел, если это не последнее слово
+    const markRange = (normStart, normLen) => {
+        if (normLen <= 0 || normStart < 0 || normStart >= indexMap.length) return;
+        const endIdx = Math.min(normStart + normLen - 1, indexMap.length - 1);
+        let from = indexMap[normStart];
+        let to = indexMap[endIdx];
+        // Захватываем прилипшую пунктуацию: «хуй,» → ***
+        while (from > 0 && /[.,!?;:_\-'"`«»]/.test(chars[from - 1])) from--;
+        while (to < chars.length - 1 && /[.,!?;:_\-'"`«»]/.test(chars[to + 1])) to++;
+        for (let k = from; k <= to; k++) mask[k] = true;
+    };
+
+    const isLetter = (ch) => /[a-zA-Zа-яА-ЯёЁ0-9]/.test(ch);
+
+    // true, если мат написан через пробел/точку («ма т», «м.ат»)
+    // или занимает целое слово (не кусок внутри «плохой»)
+    const shouldMark = (normStart, normLen) => {
+        const from = indexMap[normStart];
+        const to = indexMap[normStart + normLen - 1];
+        const spanLen = to - from + 1;
+        if (spanLen > normLen) return true; // внутри есть разделители
+        const beforeOk = from === 0 || !isLetter(chars[from - 1]);
+        const afterOk = to >= chars.length - 1 || !isLetter(chars[to + 1]);
+        return beforeOk && afterOk;
+    };
+
+    // 1) Точные токены/фразы (как раньше — целое слово, не подстрока)
+    const lower = message.toLowerCase();
+    const tokenRe = /\S+/g;
+    let tokenMatch;
+    while ((tokenMatch = tokenRe.exec(message))) {
+        if (badWordsSet.has(tokenMatch[0].toLowerCase())) {
+            for (let k = tokenMatch.index; k < tokenMatch.index + tokenMatch[0].length; k++) {
+                mask[k] = true;
+            }
         }
     }
-    return censoredMessage;
+    for (const phrase of badWordsSet) {
+        if (!phrase || !/\s/.test(phrase)) continue;
+        let pos = 0;
+        while ((pos = lower.indexOf(phrase, pos)) !== -1) {
+            const before = pos === 0 || !isLetter(message[pos - 1]);
+            const afterPos = pos + phrase.length;
+            const after = afterPos >= message.length || !isLetter(message[afterPos]);
+            if (before && after) {
+                for (let k = pos; k < afterPos; k++) mask[k] = true;
+            }
+            pos += Math.max(1, phrase.length);
+        }
+    }
+
+    // 2) Слова без разделителей: «ма т», «м.ат», «х_у_й» → мат
+    const tryMatchSet = (set) => {
+        if (!set) return;
+        for (const bad of set) {
+            if (bad.length < 2) continue;
+            let pos = 0;
+            while ((pos = collapsed.indexOf(bad, pos)) !== -1) {
+                if (shouldMark(pos, bad.length)) markRange(pos, bad.length);
+                pos += 1;
+            }
+        }
+    };
+    tryMatchSet(badWordsCollapsed);
+    tryMatchSet(badPhrasesCollapsed);
+
+    if (!mask.some(Boolean)) return message;
+
+    let out = '';
+    let i = 0;
+    while (i < chars.length) {
+        if (!mask[i]) {
+            out += chars[i++];
+            continue;
+        }
+        while (i < chars.length && mask[i]) i++;
+        out += '***';
+    }
+    return out;
 }
 
 const donators = ["bambule", "☼k☼"];
@@ -2240,6 +2396,31 @@ function highlightMentions(text) {
   );
 }
 
+function getMyChatNick() {
+  const fromCells = playerCells[0]?.name;
+  if (fromCells) return String(fromCells).replace(/<[^>]*>/g, '').trim();
+  if (userNickName) return String(userNickName).split('#')[0].trim();
+  const fromInput = document.getElementById('nick')?.value?.trim();
+  return fromInput || '';
+}
+
+// Проверка, упомянули ли меня через @ник (в т.ч. символьный ник)
+function messageMentionsMe(text) {
+  const me = getMyChatNick();
+  if (!me || !text) return false;
+  const meLower = me.toLowerCase();
+  const meNorm = normalizeNick(me);
+  const re = /@((?:[^\s@]|\u00A0)+)/g;
+  let m;
+  while ((m = re.exec(String(text)))) {
+    const mentioned = m[1].replace(/\u00A0/g, ' ');
+    const mentionedLower = mentioned.toLowerCase();
+    if (mentionedLower === meLower) return true;
+    if (meNorm && normalizeNick(mentioned) === meNorm) return true;
+  }
+  return false;
+}
+
 
 // ==========================
 // Создание личного диалога
@@ -2317,13 +2498,52 @@ const profanityCountByPlayer = new Map();
 const BLUR_THRESHOLD = 3; // после N ругательных слов начинаем блюрить
 const RESET_TIME = 10000; // 10 секунд
 
-// Функция подсчёта ругательств в сообщении
+// Функция подсчёта ругательств в сообщении (с учётом «ма т» / «м.ат»)
 function countProfanity(message) {
-    if (!badWordsSet) return 0;
-    return message
-        .split(/\s+/)
-        .filter(Boolean)
-        .reduce((n, w) => n + (badWordsSet.has(w.toLowerCase()) ? 1 : 0), 0);
+    if (!badWordsCollapsed) return 0;
+    const chars = [...String(message || '')];
+    let collapsed = '';
+    const indexMap = [];
+    for (let i = 0; i < chars.length; i++) {
+        const key = collapseProfanityKey(chars[i]);
+        if (!key) continue;
+        indexMap.push(i);
+        collapsed += key;
+    }
+    if (!collapsed) return 0;
+
+    const isLetter = (ch) => /[a-zA-Zа-яА-ЯёЁ0-9]/.test(ch);
+    const shouldMark = (normStart, normLen) => {
+        const from = indexMap[normStart];
+        const to = indexMap[normStart + normLen - 1];
+        if (to - from + 1 > normLen) return true;
+        const beforeOk = from === 0 || !isLetter(chars[from - 1]);
+        const afterOk = to >= chars.length - 1 || !isLetter(chars[to + 1]);
+        return beforeOk && afterOk;
+    };
+
+    const marked = new Array(collapsed.length).fill(false);
+    const markSet = (set) => {
+        if (!set) return;
+        for (const bad of set) {
+            if (bad.length < 2) continue;
+            let pos = 0;
+            while ((pos = collapsed.indexOf(bad, pos)) !== -1) {
+                if (shouldMark(pos, bad.length)) {
+                    for (let i = pos; i < pos + bad.length; i++) marked[i] = true;
+                }
+                pos += 1;
+            }
+        }
+    };
+    markSet(badWordsCollapsed);
+    markSet(badPhrasesCollapsed);
+
+    let hits = 0;
+    for (let i = 0; i < marked.length; i++) {
+        if (marked[i] && (i === 0 || !marked[i - 1])) hits++;
+    }
+    return hits;
 }
 
 // Проверка, нужно ли блюрить сообщение, и запись подсчёта
@@ -2638,6 +2858,21 @@ if (messageContent.startsWith('PvPInvite;') && messageContent.endsWith(';accept'
 // сначала цензурим, как у вас
 const safeHtml = replaceEmojis(highlightMentions(censorMessage(messageContent)));
 textDiv.innerHTML = safeHtml;
+
+// Уведомление, если меня упомянули через @
+if (messageMentionsMe(messageContent)) {
+    msgDiv.classList.add('chatX_mention_me');
+    msgDiv.title = (msgDiv.title ? msgDiv.title + ' · ' : '') + 'Вас упомянули';
+    try {
+        const feed = document.getElementById('chatX_container') || targetDiv;
+        if (feed) {
+            feed.classList.remove('chatX_ping');
+            void feed.offsetWidth;
+            feed.classList.add('chatX_ping');
+            setTimeout(() => feed.classList.remove('chatX_ping'), 1200);
+        }
+    } catch (_) {}
+}
 
 
 if (shouldBlurAndRecord(lastMessage.pId, messageContent)) {
@@ -2992,6 +3227,7 @@ const getColorId = (hex) => {
 
 
      function sendChat(str) {
+        str = sanitizeChatText(str);
         if (wsIsOpen() && (str.length < 200) && (str.length > 0) && !hideChat) {
             var msg = prepareData(2 + 2 * str.length);
             var offset = 0;
