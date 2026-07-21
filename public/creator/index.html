@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creator — создание личности | Agar.su</title>
+	<link rel="icon" href="https://agar.su/icon.svg" type="image/x-icon">
+	<meta name="description" content="Creator — платная услуга для создания уникальной личности в Agar.su. Персональный скин, защита ника паролем и возможность сделать ник невидимым.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+	<meta name="selfwork.ru" content="YCO1OBkuI4MJNlnWL2VsXbRyuXLFJQCJS68rj8Jq2fYQSR4QLT" />
+    <style>
+        :root {
+            --primary: #0066ff;
+            --primary-light: #eef4ff;
+            --yellow: #f59e0b;
+            --yellow-light: #fffbeb;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --border: #e2e8f0;
+            --radius: 16px;
+            --shadow: 0 8px 25px rgba(0,0,0,0.08);
+            --gray-btn: #f1f5f9;
+            --gray-hover: #e2e8f0;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0;text-decoration: none; }
+		a{    color: #cbd5e1;}
+        html, body { height: 100%; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+        }
+        .main-content { flex: 1 0 auto; }
+        header {
+            text-align: center;
+            padding: 40px 20px 30px;
+            background: var(--card-bg);
+        }
+        #pageTitle {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        header p {
+            font-size: 1rem;
+            color: var(--text-light);
+            margin-bottom: 20px;
+        }
+        .yooukassa-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+    background: #eefff3;
+    padding: 10px 20px;
+    border-radius: 40px;
+    font-weight: 500;
+    color: #00cf25;
+            font-size: 0.9rem;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #backBtn {
+    display: none;
+    background: var(--gray-btn);
+    color: var(--text-light);
+    border: none;
+    padding: 8px 12px;
+    border-radius: 100%;
+    font-weight: 500;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    position: absolute;
+    right: 8px;
+    top: 8px;
+        }
+        #backBtn:hover {
+            background: var(--gray-hover);
+        }
+        .prices-title {
+            text-align: center;
+            font-size: 1.5rem;
+            margin: 30px 0 20px;
+        }
+        .prices-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 24px;
+            margin-bottom: 50px;
+        }
+        .price-card {
+            position: relative;
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 28px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .price-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 16px 40px rgba(0,0,0,0.12);
+        }
+        .price-card .front,
+        .price-card .back {
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+        .price-card .front { opacity: 1; transform: translateY(0); }
+        .price-card .back {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(145deg, #f0f5ff 0%, var(--primary-light) 100%);
+            border-radius: var(--radius); padding: 28px;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            opacity: 0; transform: translateY(20px);
+        }
+        .price-card:hover .front { opacity: 0; transform: translateY(-20px); }
+        .price-card:hover .back { opacity: 1; transform: translateY(0); }
+        .price-card .icon { font-size: 48px; color: var(--primary); margin-bottom: 16px; }
+        .price-card h3 { font-size: 1.3rem; font-weight: 600; margin-bottom: 12px; }
+        .price-card .price { font-size: 1.8rem; font-weight: 700; color: var(--primary); margin: 16px 0; }
+        .price-card .clan-price { font-size: 0.95rem; color: var(--text-light); }
+        .price-card .back img {max-width: 90%;max-height: 160px;box-shadow: 0 8px 20px rgba(0,0,0,0.1);border: solid white;border-radius: 100%;width: 100px;}
+        .price-card .back p { font-size: 0.95rem; color: var(--text); line-height: 1.5; text-align: center; }
+        .start-button-wrapper {
+            text-align: center;
+            margin: 40px 0 60px;
+			    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+        }
+.btn {
+    width: 90%;
+    max-width: 400px;
+    padding: 18px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    border-radius: 14px;
+    cursor: pointer;
+    border: 2px solid var(--primary);
+    transition: all 0.25s ease;
+}
+
+/* по умолчанию */
+.btn-start {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-gallery {
+    background: white;
+    color: var(--primary);
+}
+
+/* hover на галерее */
+.btn-gallery:hover {
+    background: var(--primary);
+    color: white;
+}
+.start-button-wrapper:has(.btn-gallery:hover) .btn-start {
+    background: white;
+    color: var(--primary);
+}
+
+
+				#payBtn:hover {
+		background:#0c59cb;
+		}
+        #builder {
+			position: relative;
+            display: none;
+            max-width: 500px;
+            margin: 0 auto 80px;
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 30px 20px;
+            box-shadow: var(--shadow);
+        }
+        #builder h2 {
+            font-size: 1.5rem;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        #previewContainer {
+            width: 250px;
+            height: 250px;
+            border: 3px dashed var(--border);
+            margin: 20px auto;
+            background: #f1f5f9;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            color: var(--text-light);
+            position: relative;
+            overflow: hidden;
+			border-radius: 100%;
+        }
+        #previewContainer:hover { border-color: var(--primary); }
+        #previewCanvas, #previewGif, #previewImg {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            object-fit: contain; display: none;
+        }
+        .type-selection { display: flex; gap: 16px; margin: 30px 0; justify-content: center; }
+.type-selection label {
+    flex: 1;
+    max-width: 200px;
+    background: var(--primary-light);
+    border-radius: 12px;
+    text-align: center;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: block;
+    align-content: center;
+}
+        .type-selection input[type="radio"] { display: none; }
+        .type-selection input[type="radio"]:checked + span { background: var(--primary); color: white; display: block; width: 100%; height: 100%; border-radius: 12px;padding: 10px; }
+        .form-group { margin-bottom: 24px; }
+        .form-group label { font-weight: 500; margin-bottom: 8px; display: block; }
+        input[type="text"], input[type="password"], input[type="email"] {
+            width: 100%; padding: 16px; border: 1px solid var(--border);
+            border-radius: 12px; font-size: 1rem;
+        }
+        input:focus { border-color: var(--primary); outline: none; }
+        #nicknameWrapper { position: relative; }
+        #charCount { position: absolute; right: 16px; top: 16px; color: var(--text-light); font-size: 0.9rem; }
+        .password-wrapper { position: relative; }
+        #togglePassword { position: absolute; right: 16px; top: 16px; cursor: pointer; font-size: 1.3rem; color: var(--text-light); }
+        #calculator {
+            display: none;
+            text-align: center;
+            margin: 30px 0;
+            padding: 20px;
+            background: var(--primary-light);
+            border-radius: 12px;
+        }
+        #calculator p { margin: 8px 0; font-size: 1rem; }
+        #totalAmount { font-size: 2rem; font-weight: 700; color: var(--primary); margin-top: 16px; }
+        .legal-notice {
+            background: var(--yellow-light);
+            border-left: 4px solid var(--yellow);
+            border-radius: 0 12px 12px 0;
+            padding: 18px;
+            margin: 30px 0;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .agreement {
+            background: var(--primary-light);
+            padding: 20px;
+            border-radius: 12px;
+            margin: 30px 0;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .agreement a { color: var(--primary); font-weight: 500; }
+        #payBtn {
+            width: 100%;
+            padding: 18px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        #payBtn:disabled { background: var(--gray-hover); cursor: not-allowed; }
+        .error { color: red; font-size: 0.9rem; margin-top: 4px; display: none; }
+        footer {
+            flex-shrink: 0;
+            background: #0f172a;
+            color: #cbd5e1;
+            padding: 40px 20px;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+		
+		
+		/* Новые стили для галереи */
+        #gallery {
+            display: none;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .gallery-title {
+            text-align: center;
+            font-size: 1.5rem;
+            margin: 30px 0 20px;
+        }
+        .gallery-grid {
+            display: grid;
+            gap: 24px;
+            margin-bottom: 50px;
+        }
+@media (max-width: 767px) {
+    .gallery-grid {
+        grid-template-columns: repeat(1, 1fr);
+    }
+}
+
+@media (min-width: 768px) {
+    .gallery-grid {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+        .skin-card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 20px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .skin-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 16px 40px rgba(0,0,0,0.12);
+        }
+        .skin-card img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .skin-card h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+        }
+        .skin-card .password-icon {
+            font-size: 1.2rem;
+            color: var(--primary);
+        }
+        .pagination {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .pagination button {
+            background: var(--gray-btn);
+            color: var(--text);
+            border: none;
+            padding: 8px 16px;
+            margin: 0 4px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .pagination button:hover {
+            background: var(--primary);
+            color: white;
+        }
+        .pagination button.active {
+            background: var(--primary);
+            color: white;
+        }
+        #galleryBtn {
+            width: 90%;
+            max-width: 400px;
+            padding: 18px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            background: var(--yellow);
+            color: var(--text);
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            margin: 20px auto;
+            display: block;
+        }
+        #galleryBtn:hover {
+            background: #d97706;
+        }
+        #backToMainBtn {
+            display: block;
+            background: var(--gray-btn);
+            color: var(--text-light);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 500;
+            font-size: 1rem;
+            cursor: pointer;
+            margin: 20px auto;
+        }
+        #backToMainBtn:hover {
+            background: var(--gray-hover);
+        }
+		/* Стили для селекта сортировки */
+#sortSelect {
+    display: block;
+    margin: 20px auto; /* Центрирование и отступы */
+    padding: 12px 20px; /* Внутренние отступы для удобства */
+    border-radius: 12px; /* Скругление углов в стиле страницы */
+    border: 1px solid var(--border); /* Граница в стиле переменных */
+    background: var(--primary-light); /* Фон в стиле primary-light */
+    font-size: 1rem; /* Размер шрифта */
+    font-weight: 500; /* Вес шрифта */
+    color: var(--text); /* Цвет текста */
+    cursor: pointer; /* Курсор указателя */
+    width: 200px; /* Фиксированная ширина для аккуратности */
+    transition: background 0.3s ease, border-color 0.3s ease; /* Плавные переходы */
+}
+
+#sortSelect:focus {
+    outline: none; /* Убрать outline */
+    border-color: var(--primary); /* Подсветка при фокусе */
+}
+
+		.tooltip-icon {
+    position: relative;
+    cursor: pointer;
+    font-size: 1.2rem;
+    margin-left: 6px;
+    vertical-align: middle;
+    color: var(--primary);
+}
+
+.tooltip-text {
+    visibility: hidden;
+    width: 220px;
+    background-color: var(--primary);
+    color: #fff;
+    text-align: center;
+    border-radius: 8px;
+    padding: 8px;
+    position: absolute;
+    z-index: 10;
+    top: -5px;
+    left: 110%;
+    font-size: 0.85rem;
+    line-height: 1.2;
+}
+
+.tooltip-icon:hover .tooltip-text {
+    visibility: visible;
+}
+
+    </style>
+</head>
+<body>
+    <div class="main-content">
+        <header>
+            <h1 id="pageTitle">Creator Agar.su</h1>
+            <p>Создайте свою личность по своему вкусу</p>
+            <div class="yooukassa-badge">
+                <i class="material-icons">lock</i>
+                Оплата через Юkassa
+            </div>
+        </header>
+        <div class="container">
+            <h2 class="prices-title">Цены на функции</h2>
+            <div class="prices-grid">
+                <div class="price-card">
+                    <div class="front">
+                        <i class="material-icons icon">image</i>
+                        <h3>Обычный скин</h3>
+                        <div class="price">100 ₽</div>
+                        <div class="clan-price">для клана: 200 ₽</div>
+                    </div>
+                    <div class="back">
+                        <img src="https://api.agar.su/skins/3.png" alt="Пример">
+                        <p>Кастомное статичное изображение в формате PNG или JPG</p>
+                    </div>
+                </div>
+                <div class="price-card">
+                    <div class="front">
+                        <i class="material-icons icon">vpn_key</i>
+                        <h3>Пароль</h3>
+                        <div class="price">100 ₽</div>
+                        <div class="clan-price">для клана: 200 ₽</div>
+                    </div>
+                    <div class="back">
+                        <p>Защита ника.<br>Никто не сможет войти под вашим ником без пароля (до 5 символов).</p>
+                    </div>
+                </div>
+                <div class="price-card">
+                    <div class="front">
+                        <i class="material-icons icon">animation</i>
+                        <h3>GIF скин</h3>
+                        <div class="price">10 000 ₽</div>
+                        <div class="clan-price">для клана: 20 000 ₽</div>
+                    </div>
+                    <div class="back">
+                        <img src="https://agar.su/assets/photo/console.gif" alt="Анимированный GIF">
+                        <p>Живая анимация скина — редкая премиум-функция!</p>
+                    </div>
+                </div>
+                <div class="price-card">
+                    <div class="front">
+                        <i class="material-icons icon">visibility_off</i>
+                        <h3>Невидимый ник</h3>
+                        <div class="price">500 ₽</div>
+                        <div class="clan-price">для клана: 1 000 ₽</div>
+                    </div>
+                    <div class="back">
+                        <img src="https://agar.su/assets/photo/invisible.png" alt="Невидимый ник" style="border-radius: 0px;width: 100%;">
+                        <p>Ваш ник не отображается в внутри клеток.</p>
+                    </div>
+                </div>
+				
+            </div>
+			                    <div class="legal-notice">
+                        <strong>Важно:</strong> Это цифровая услуга. Функции активируются автоматически после оплаты.<br>
+                        Возврат после активации невозможен (ст. 26.1 Закона «О защите прав потребителей»).
+                    </div>
+<div class="start-button-wrapper">
+
+    <button class="btn btn-start" onclick="
+        document.querySelector('.prices-title').style.display = 'none';
+        document.querySelector('.prices-grid').style.display = 'none';
+        document.querySelector('.legal-notice').style.display = 'none';
+        document.querySelector('.start-button-wrapper').style.display = 'none';
+        document.getElementById('builder').style.display = 'block';
+        document.getElementById('backBtn').style.display = 'block';
+    ">
+        Начать оформление
+    </button>
+
+     <button class="btn btn-gallery" onclick="showGallery();">
+        Галерея скинов
+    </button>
+
+</div>
+
+            <div id="builder">
+			<button id="backBtn"
+                onclick="
+                    document.querySelector('.prices-title').style.display = 'block';
+					document.querySelector('.legal-notice').style.display = 'block';
+                    document.querySelector('.prices-grid').style.display = 'grid';
+                    document.querySelector('.start-button-wrapper').style.display = 'flex';
+                    document.getElementById('builder').style.display = 'none';
+                    this.style.display = 'none';
+                ">
+                <i class="fa-solid fa-close"></i></button>
+                <form id="paymentForm">
+                    <h2>Создание Лички</h2>
+                    <label id="previewContainer" for="fileInput">
+                        <span id="uploadText">Загрузить изображение</span>
+                        <canvas id="previewCanvas" width="512" height="512"></canvas>
+                        <img id="previewGif" alt="Предпросмотр GIF">
+                        <img id="previewImg" alt="Предпросмотр изображения">
+                    </label>
+                    <input type="file" id="fileInput" accept=".png,.jpg,.jpeg,.gif" style="display:none;">
+                    <p id="fileError" class="error"></p>
+                    <div class="type-selection">
+                        <label>
+                            <input type="radio" name="serviceType" value="personal" checked>
+                            <span>Для себя</span>
+                        </label>
+                        <label>
+                            <input type="radio" name="serviceType" value="clan" id="clan">
+                            <span>Для клана (×2)</span>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label for="nickname">Ник (обязательно)</label>
+                        <div id="nicknameWrapper">
+                            <input type="text" id="nickname" placeholder="До 16 символов" maxlength="16">
+                            <span id="charCount">0/16</span>
+                        </div>
+                        <p id="nicknameError" class="error"></p>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Пароль (если нужна защита)</label>
+                        <div class="password-wrapper">
+                            <input type="password" id="password" placeholder="До 5 символов" maxlength="5">
+                            <i id="togglePassword" class="fa-solid fa-eye"></i>
+                        </div>
+                        <p id="passwordError" class="error"></p>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="invisibleNick">
+                            Невидимый ник (500 ₽)
+                        </label>
+                    </div>
+                    <div id="calculator" style="display:none;">
+                        <p id="multiplierText"></p>
+                        <p id="passwordCost"></p>
+                        <p id="skinCost"></p>
+                        <p id="invisibleCost"></p>
+                        <p id="totalAmount">Итого: 0 ₽</p>
+                    </div>
+                    <div class="agreement">
+                        <label style="display:flex; align-items:flex-start; gap:12px;">
+                            <input type="checkbox" id="agreement" required style="width:22px; height:22px; margin-top:2px;">
+                            <span>Согласен с <a href="https://agar.su/rules" target="_blank">правилами пользования,<a href="https://agar.su/offer" target="_blank"> публичной офертой</a> и <a href="https://agar.su/privacy" target="_blank">политикой конфиденциальности</a></span>
+                        </label>
+                    </div>
+					<div class="form-group">
+    <label for="email">
+        Email (обязательно)
+        <span class="tooltip-icon">
+            <i class="material-icons">help_outline</i>
+            <span class="tooltip-text">Почта нужна для отправки чека после оплаты.</span>
+        </span>
+    </label>
+    <input type="email" id="email" placeholder="example@mail.com" required>
+    <p id="emailError" class="error"></p>
+</div>
+
+                    <button id="payBtn" type="submit" disabled>Оплатить</button>
+                    <p id="formError" class="error"></p>
+                </form>
+            </div>
+        </div>
+    </div>
+				<!-- Секция галереи (третий лист) -->
+<!-- Секция галереи (третий лист) -->
+<div id="gallery" style="display: none;">
+    <!-- Добавленный селект для сортировки -->
+    <select id="sortSelect" onchange="sortGallery()">
+        <option value="all">Все</option>
+        <option value="password">С паролем</option>
+        <option value="no-password">Без пароля</option>
+    </select>
+    <div class="gallery-grid" id="galleryGrid"></div>
+    <div class="pagination" id="pagination"></div>
+    <button id="backToMainBtn" onclick="hideGallery()"><i class="fa-solid fa-arrow-left"></i> Назад к магазину</button>
+</div>
+    <footer>
+        <p><strong>НПД: Дараселиа Николоз Ираклиевич</strong> · ИНН 503830093674</p>
+        <p>ikometai@ya.ru · +7 (999) 996-03-09</p>
+		<a href="https://agar.su/rules" target="_blank"><strong>правила сервиса</strong></a><a href="https://agar.su/offer" target="_blank"><strong> · публичная оферта · </strong></a><a href="https://agar.su/privacy" target="_blank"><strong>политика конфиденциальности</strong></a>
+    </footer>
+    <script>
+       const forbiddenRegex = /[`'";:ㅤ⁣]/g;
+const yookassaRules = { maxFileSize: 5 * 1024 * 1024 };
+let isNicknameTaken = false;
+
+function showError(elementId, message) {
+  const errorEl = document.getElementById(elementId);
+  errorEl.textContent = message;
+  errorEl.style.display = 'block';
+  setTimeout(() => hideError(elementId), 5000);
+}
+function hideError(elementId) {
+  document.getElementById(elementId).style.display = 'none';
+}
+function showWarning(id, show) {
+  document.getElementById(id).style.display = show ? 'block' : 'none';
+}
+
+function updateCharCount() {
+  const input = document.getElementById("nickname");
+  const max = document.getElementById('clan').checked ? 6 : 16;
+  const length = input.value.length;
+  document.getElementById("charCount").textContent = `${length}/${max}`;
+}
+function updateNicknameDisplay() {
+  const isClan = document.getElementById('clan').checked;
+  const input = document.getElementById('nickname');
+  input.value = '';
+  if (isClan) {
+    input.placeholder = '[клан]';
+    input.maxLength = 6;
+  } else {
+    input.placeholder = 'ник';
+    input.maxLength = 16;
+  }
+  updateCharCount();
+}
+function blockForbiddenChars(input) {
+  input.addEventListener("input", () => {
+    if (forbiddenRegex.test(input.value)) {
+      input.value = input.value.replace(forbiddenRegex, "");
+      showError(input.id + 'Error', 'Запрещённые символы удалены');
+    }
+    if (input.id === 'nickname') {
+      const isClan = document.getElementById('clan').checked;
+      if (!isClan && /[\[\]]/.test(input.value)) {
+        input.value = input.value.replace(/[\[\]]/g, "");
+        showError('nicknameError', 'Скобки [] запрещены для личного ника');
+      }
+      updateCharCount();
+    }
+  });
+}
+
+const emailInput = document.getElementById("email");
+emailInput.addEventListener("input", () => {
+  hideError('emailError');
+  calculateCost(); // чтобы кнопка не активировалась без валидного email
+});
+
+emailInput.addEventListener("blur", () => {
+  const email = emailInput.value.trim();
+  if (!email) {
+    showError('emailError', 'Email обязателен');
+    return;
+  }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    showError('emailError', 'Некорректный email');
+  } else {
+    hideError('emailError');
+  }
+});
+		
+const nicknameInput = document.getElementById("nickname");
+blockForbiddenChars(nicknameInput);
+blockForbiddenChars(document.getElementById("password"));
+
+nicknameInput.addEventListener("blur", async () => {
+  const isClan = document.getElementById('clan').checked;
+  let value = nicknameInput.value.trim();
+  if (isClan) {
+    const maxTextLength = 4;
+    value = value.replace(/[\[\]]/g, '');
+    if (value.length > maxTextLength) {
+      value = value.substring(0, maxTextLength);
+      setTimeout(() => {
+        showError('nicknameError', 'Текст обрезан до допустимой длины, для клана должны быть квадратные скобки [ ]');
+      }, 100);
+    }
+    nicknameInput.value = `[${value}]`;
+  } else {
+    const maxPersonalLength = 16;
+    if (/[\[\]]/.test(value)) {
+      value = value.replace(/[\[\]]/g, '');
+      showError('nicknameError', 'Скобки [] запрещены для личного ника');
+    } else if (value.length > maxPersonalLength) {
+      value = value.substring(0, maxPersonalLength);
+      setTimeout(() => {
+        showError('nicknameError', `Личный ник обрезан до ${maxPersonalLength} символов`);
+      }, 100);
+    } else {
+      hideError('nicknameError');
+    }
+    nicknameInput.value = value;
+  }
+  updateCharCount();
+
+  // === ПРОВЕРКА НИКА С УЧЁТОМ АВТОРИЗАЦИИ ===
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    if (localStorage.accountToken) {
+      headers['Authorization'] = `Game ${localStorage.accountToken}`;
+    }
+    const res = await fetch('https://api.agar.su/check-nickname', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ nickname: nicknameInput.value.trim() })
+    });
+    const data = await res.json();
+
+    // Если авторизован — проверим, наш ли это ник
+    if (localStorage.accountToken && data.taken) {
+      // Запросим список своих ников
+      const meRes = await fetch('https://api.agar.su/api/me/nicknames', {
+        headers: { 'Authorization': `Game ${localStorage.accountToken}` }
+      });
+      if (meRes.ok) {
+        const meData = await meRes.json();
+        const myNicks = (meData.nicknames || []).map(n => n.nickname.toLowerCase());
+        const currentNick = nicknameInput.value.trim().toLowerCase();
+        if (myNicks.includes(currentNick)) {
+          // Это НАШ НИК — разрешаем!
+          hideError('nicknameError');
+          nicknameInput.setCustomValidity('');
+          isNicknameTaken = false;
+          calculateCost();
+          return;
+        }
+      }
+    }
+
+    // Если не наш — обычная логика
+    if (data.taken) {
+      showError('nicknameError', data.error || 'Ник занят');
+      nicknameInput.setCustomValidity('Ник занят');
+      isNicknameTaken = true;
+    } else {
+      hideError('nicknameError');
+      nicknameInput.setCustomValidity('');
+      isNicknameTaken = false;
+    }
+  } catch (err) {
+    console.error('Ошибка проверки ника:', err);
+    isNicknameTaken = false;
+    hideError('nicknameError');
+  }
+  calculateCost();
+});
+
+nicknameInput.addEventListener("input", () => {
+  updateCharCount();
+  calculateCost();
+});
+
+const passwordInput = document.getElementById("password");
+const invisibleNickCheckbox = document.getElementById("invisibleNick");
+passwordInput.addEventListener("input", () => {
+  if (passwordInput.value.length > 5) {
+    passwordInput.value = passwordInput.value.substring(0, 5);
+    showError('passwordError', 'Пароль не может быть длиннее 5 символов');
+  } else {
+    hideError('passwordError');
+  }
+  calculateCost();
+});
+
+const previewContainer = document.getElementById("previewContainer");
+const fileInput = document.getElementById("fileInput");
+const skinCanvas = document.getElementById("previewCanvas");
+const skinCtx = skinCanvas.getContext("2d");
+const gifPreview = document.getElementById("previewGif");
+
+fileInput.addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > yookassaRules.maxFileSize) {
+    fileInput.value = '';
+    showError('fileError', 'Файл слишком большой (макс. 5MB)');
+    return;
+  }
+  if (!['image/png', 'image/jpeg', 'image/gif'].includes(file.type)) {
+    fileInput.value = '';
+    showError('fileError', 'Неподдерживаемый формат. Только PNG, JPG, GIF');
+    return;
+  }
+  previewSkin(file);
+  previewContainer.classList.add('has-image');
+  calculateCost();
+});
+
+function previewSkin(file) {
+  const url = URL.createObjectURL(file);
+  const isGif = file.type === "image/gif";
+  if (isGif) {
+    skinCanvas.style.display = "none";
+    gifPreview.style.display = "block";
+    gifPreview.src = url;
+  } else {
+    gifPreview.style.display = "none";
+    skinCanvas.style.display = "block";
+    const img = new Image();
+    img.onload = () => {
+      skinCtx.clearRect(0, 0, skinCanvas.width, skinCanvas.height);
+      skinCtx.save();
+      skinCtx.beginPath();
+      skinCtx.arc(skinCanvas.width/2, skinCanvas.height/2, skinCanvas.width/2, 0, Math.PI*2);
+      skinCtx.closePath();
+      skinCtx.clip();
+      const scale = Math.max(512 / img.width, 512 / img.height);
+      const x = (512 - img.width * scale) / 2;
+      const y = (512 - img.height * scale) / 2;
+      skinCtx.drawImage(img, x, y, img.width * scale, img.height * scale);
+      skinCtx.restore();
+    };
+    img.onerror = () => {
+      skinCtx.fillStyle = '#ccc';
+      skinCtx.fillRect(0, 0, skinCanvas.width, skinCanvas.height);
+      skinCtx.fillStyle = '#666';
+      skinCtx.font = '20px Arial';
+      skinCtx.textAlign = 'center';
+      skinCtx.fillText('Ошибка загрузки', 256, 256);
+    };
+    img.src = url;
+  }
+}
+
+function getMultiplier() {
+  return document.getElementById('clan').checked ? 2 : 1;
+}
+
+function calculateCost() {
+  const nickname = nicknameInput.value.trim();
+  const password = passwordInput.value.trim();
+  const file = fileInput.files[0];
+  const multiplier = getMultiplier();
+
+  if (!nickname || isNicknameTaken) {
+    document.getElementById('calculator').style.display = 'none';
+    document.getElementById('payBtn').disabled = true;
+    return;
+  }
+
+  let passwordCost = password ? 100 : 0;
+  let invisibleCost = invisibleNickCheckbox.checked ? 500 : 0;
+  let skinCost = 0;
+  let skinText = 'Скин: 0 ₽';
+  if (file) {
+    skinCost = file.type === 'image/gif' ? 10000 : 100;
+    skinText = `Скин: ${skinCost * multiplier} ₽ (${file.type === 'image/gif' ? 'GIF' : 'PNG/JPG'})`;
+  }
+    const total = (passwordCost + skinCost + invisibleCost) * multiplier;
+
+  
+  // === Невидимый ник — строка цены ===
+  let invisibleText = document.getElementById('invisibleCost');
+  if (invisibleNickCheckbox.checked) {
+    invisibleText.textContent = `Невидимый ник: ${invisibleCost * multiplier} ₽`;
+    invisibleText.style.display = 'block';
+  } else {
+    invisibleText.style.display = 'none';
+  }
+
+  const calculator = document.getElementById('calculator');
+  const buyButton = document.getElementById('payBtn');
+  const email = emailInput.value.trim();
+  const emailValid = email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+	
+    if (total > 0 && (password || file || invisibleNickCheckbox.checked)) {
+    buyButton.textContent = `КУПИТЬ ЗА ${total} РУБЛЕЙ`;
+    buyButton.disabled = false;
+  } else {
+    buyButton.disabled = true;
+  }
+}
+
+document.querySelectorAll('input[name="serviceType"]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    updateNicknameDisplay();
+    calculateCost();
+  });
+});
+
+updateNicknameDisplay();
+calculateCost();
+
+document.getElementById("paymentForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const rawNickname = nicknameInput.value.trim();
+  const nickname = rawNickname;
+  const password = passwordInput.value.trim();
+  const file = fileInput.files[0];
+  const serviceType = document.querySelector('input[name="serviceType"]:checked')?.value || '';
+  const email = emailInput.value.trim();
+  
+  if (!email) {
+    showError('formError', 'Введите email для получения чека');
+    return;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showError('formError', 'Некорректный email');
+    return;
+  }
+
+  if (!nickname) {
+    showError('formError', 'Введите ник/клан.');
+    return;
+  }
+    if (!password && !file && !invisibleNickCheckbox.checked) {
+    showError('formError', 'Выберите хотя бы пароль или скин для оплаты');
+    return;
+  }
+
+  const multiplier = getMultiplier();
+  const passwordCost = password ? 1 : 0;
+  const skinCost = file ? (file.type === 'image/gif' ? 2 : 1) : 0;
+  const amount = (passwordCost + skinCost) * multiplier;
+
+  const formData = new FormData();
+  formData.append("name", nickname);
+  formData.append("amount", amount);
+  formData.append("serviceType", serviceType);
+  formData.append("email", email);
+  if (password) formData.append("password", password);
+  if (invisibleNickCheckbox.checked) formData.append("invisible", "1");
+
+  const headers = {};
+  if (localStorage.accountToken) {
+    headers['Authorization'] = `Game ${localStorage.accountToken}`;
+  }
+
+  if (file) {
+    if (file.type === "image/gif") {
+      formData.append("image", file, file.name);
+      await sendForm(formData, headers);
+    } else {
+      skinCanvas.toBlob(async (blob) => {
+        if (!blob) {
+          showError('formError', 'Не удалось обработать изображение. Попробуйте другой файл.');
+          return;
+        }
+        formData.append("image", blob, "skin.png");
+        await sendForm(formData, headers);
+      }, "image/png");
+    }
+  } else {
+    await sendForm(formData, headers);
+  }
+});
+
+async function sendForm(formData, headers = {}) {
+  try {
+    const res = await fetch("https://api.agar.su/create-payment", {
+      method: "POST",
+      headers,
+      body: formData
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    const data = await res.json();
+
+    if (data.warning) {
+      showError('formError', data.warning);
+      setTimeout(() => hideError('formError'), 8000);
+    }
+
+    if (data?.confirmation?.confirmation_url) {
+      window.location.href = data.confirmation.confirmation_url;
+    } else if (data?.error) {
+      showError('formError', `Ошибка: ${data.error.description || data.error}`);
+    } else {
+      showError('formError', "Неизвестная ошибка платежа.");
+    }
+  } catch (err) {
+    console.error(err);
+    showError('formError', "Ошибка соединения. Попробуйте позже.");
+  }
+}
+
+const togglePassword = document.getElementById("togglePassword");
+togglePassword.addEventListener("click", () => {
+  const type = passwordInput.type === "password" ? "text" : "password";
+  passwordInput.type = type;
+  togglePassword.classList.toggle("fa-eye");
+  togglePassword.classList.toggle("fa-eye-slash");
+});
+
+
+invisibleNickCheckbox.addEventListener("change", calculateCost);
+    </script>
+	<script>
+// Существующий скрипт (если есть, например, для формы builder) можно добавить сюда
+
+// Полный скрипт для галереи (без модального окна)
+let skins = []; // Массив {nick: '', code: ''}
+let passwords = new Set(); // Сет ников с паролями
+let filteredSkins = []; // Для фильтрованных скинов
+const itemsPerPage = 25;
+let currentPage = 1;
+
+// Функция загрузки данных
+async function loadData() {
+    try {
+        // Fetch skinlist.txt
+        const skinResponse = await fetch('https://api.agar.su/skinlist.txt');
+        const skinText = await skinResponse.text();
+        const skinLines = skinText.trim().split('\n');
+        skins = skinLines.map(line => {
+            const [nick, code] = line.split(':');
+            return { nick: nick.trim(), code: code.trim() };
+        }).reverse(); // Реверс: новые (последние строки) сначала
+
+        // Fetch pass.txt
+        const passResponse = await fetch('https://api.agar.su/pass.txt');
+        const passText = await passResponse.text();
+        const passLines = passText.trim().split('\n');
+        passLines.forEach(nick => passwords.add(nick.trim()));
+
+        filteredSkins = skins; // Изначально все
+        renderGallery(currentPage);
+    } catch (error) {
+        console.error('Ошибка загрузки данных:', error);
+        document.getElementById('galleryGrid').innerHTML = '<p>Ошибка загрузки галереи. Попробуйте позже.</p>';
+    }
+}
+
+// Функция рендеринга галереи
+function renderGallery(page) {
+    const grid = document.getElementById('galleryGrid');
+    grid.innerHTML = '';
+
+    const start = (page - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    const pageSkins = filteredSkins.slice(start, end);
+
+    pageSkins.forEach(skin => {
+        const card = document.createElement('div');
+        card.className = 'skin-card';
+        card.innerHTML = `
+            <img src="https://api.agar.su/skins/${skin.code}.png" alt="Скин ${skin.nick}">
+            <h4>${skin.nick}            <span class="password-icon material-icons">
+                ${passwords.has(skin.nick) ? 'lock' : 'lock_open'}
+            </span></h4>
+            <p>ID: ${skin.code}</p> <!-- Улучшение: отображение code как ID -->
+        `;
+        grid.appendChild(card);
+    });
+
+    renderPagination();
+}
+
+// Функция рендеринга пагинации
+function renderPagination() {
+    const pagination = document.getElementById('pagination');
+    pagination.innerHTML = '';
+    const totalPages = Math.ceil(filteredSkins.length / itemsPerPage);
+
+    const createButton = (text, page) => {
+        const btn = document.createElement('button');
+        btn.textContent = text;
+        if (page === currentPage) btn.classList.add('active');
+        btn.onclick = () => {
+            currentPage = page;
+            renderGallery(currentPage);
+        };
+        return btn;
+    };
+
+    let pages = [];
+
+    // Левая, середина, правая
+    let left = currentPage - 1;
+    let middle = currentPage;
+    let right = currentPage + 1;
+
+    if (left < 1) left = 1;
+    if (right > totalPages) right = totalPages;
+
+    // Добавляем 1, если диапазон не начинается с 1
+    if (left > 1) {
+        pages.push(1);
+    }
+
+    // Добавляем диапазон (левая, средина, правая)
+    for (let i = left; i <= right; i++) {
+        pages.push(i);
+    }
+
+    // Добавляем последнюю страницу, если диапазон не доходит до конца
+    if (right < totalPages) {
+        pages.push(totalPages);
+    }
+
+    // Отрисовка
+    pages.forEach(p => pagination.appendChild(createButton(p, p)));
+}
+
+
+
+
+
+// Функция сортировки
+function sortGallery() {
+    const sortValue = document.getElementById('sortSelect').value;
+    if (sortValue === 'password') {
+        filteredSkins = skins.filter(skin => passwords.has(skin.nick));
+    } else if (sortValue === 'no-password') {
+        filteredSkins = skins.filter(skin => !passwords.has(skin.nick));
+    } else {
+        filteredSkins = skins;
+    }
+    currentPage = 1; // Сброс страницы
+    renderGallery(currentPage);
+}
+
+// Показ галереи (скрывает основной контент, показывает галерею, меняет заголовок)
+function showGallery() {
+    document.querySelector('.container').style.display = 'none'; // Скрыть основной контент
+    document.getElementById('gallery').style.display = 'block';
+    
+    // Изменение заголовка
+    const header = document.querySelector('header');
+    const originalTitle = document.getElementById('pageTitle').textContent;
+    const originalP = header.querySelector('p').textContent;
+    const originalBadge = header.querySelector('.yooukassa-badge').outerHTML;
+
+    // Сохраняем оригиналы в data-атрибуты для восстановления
+    header.setAttribute('data-original-title', originalTitle);
+    header.setAttribute('data-original-p', originalP);
+    header.setAttribute('data-original-badge', originalBadge);
+
+    document.getElementById('pageTitle').textContent = 'Галерея Скинов';
+    header.querySelector('p').style.display = 'none'; // Скрываем описание
+    header.querySelector('.yooukassa-badge').style.display = 'none'; // Скрываем бейдж
+
+    loadData(); // Загрузка данных при показе
+}
+
+// Скрытие галереи и восстановление
+function hideGallery() {
+    document.getElementById('gallery').style.display = 'none';
+    document.querySelector('.container').style.display = 'block';
+    
+    // Восстановление заголовка
+    const header = document.querySelector('header');
+    document.getElementById('pageTitle').textContent = header.getAttribute('data-original-title');
+    header.querySelector('p').textContent = header.getAttribute('data-original-p');
+    header.querySelector('p').style.display = 'block';
+    const badgeContainer = header.querySelector('.yooukassa-badge');
+    if (badgeContainer) {
+        badgeContainer.outerHTML = header.getAttribute('data-original-badge');
+        header.querySelector('.yooukassa-badge').style.display = 'inline-flex'; // Восстанавливаем видимость
+    }
+}
+
+// Автоматический показ галереи если ?gallery в URL
+if (window.location.search.includes('?gallery')) {
+    showGallery();
+}
+	</script>
+</body>
+</html>
