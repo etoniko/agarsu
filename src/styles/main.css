@@ -1831,6 +1831,28 @@ input{font-size:16px;}
 .chat-context-menu {position: absolute;background: rgb(0 0 0 / 74%);color: rgb(255, 255, 255);padding: 5px;border-radius: 5px;z-index: 1000;}
 .chat-context-menu div {padding: 3px 8px;cursor: pointer;user-select: none;}
 .chat-context-menu div:hover {background: rgb(194 13 13 / 74%);}
+.avatar-context-menu {
+  position: fixed;
+  min-width: 160px;
+  background: rgba(14, 23, 44, 0.96);
+  color: #fff;
+  padding: 6px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  z-index: 2000;
+  font-size: 13px;
+}
+.avatar-context-menu div {
+  padding: 8px 10px;
+  cursor: pointer;
+  user-select: none;
+  border-radius: 7px;
+  white-space: nowrap;
+}
+.avatar-context-menu div:hover {
+  background: rgba(194, 13, 13, 0.74);
+}
 .chatX_window {width: 300px;height: 360px;background: rgba(0, 0, 0, .3);border-radius: 25px;padding: 8px 3px 8px 8px;position: absolute;left: 10px;bottom: 10px;display: flex;flex-direction: column;overflow: hidden;min-width: 220px;max-width: 520px;min-height: 120px;max-height: min(720px, 85vh);color: white;box-sizing: border-box;border: solid #ffffff26 1px;pointer-events: none;}
 .chatX_window .chatX_top,
 .chatX_window .chatX_emch,
