@@ -123,8 +123,9 @@ function getStickerUrl(stickerSource, nick, stickerId) {
   const id = Number(stickerId);
   if (!Number.isFinite(id) || id < 1 || id > 9) return "";
   const code = getStickerPackCode(stickerSource, nick);
-  if (!code) return "";
-  return `${STICKER_CDN}/${encodeURIComponent(code)}/${id}.png`;
+  // Custom pack: /stickers/{code}/1.png — default for everyone else: /stickers/1.png
+  if (code) return `${STICKER_CDN}/${encodeURIComponent(code)}/${id}.png`;
+  return `${STICKER_CDN}/${id}.png`;
 }
 function getSkinIdForNick(skinSource, nick, fallback = "PPFtwqH") {
   const key = normalizeNick(String(nick || "").replace(/<[^>]*>/g, ""));
