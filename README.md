@@ -1,13 +1,11 @@
-# Agar.su client (`agarsu`)
+# Agar.su client
 
 Клиент https://agar.su — Vite + ES modules.
 
-> Папка называется **`agarsu`** латиницей: Vite 6 ломает `build` на кириллическом пути (`агарсу`).
-
 ## Структура
 
-```
-agarsu/
+```text
+repo-root/
   index.html
   public/photo/      # игровые изображения
   src/
@@ -15,21 +13,21 @@ agarsu/
     config/          # servers, endpoints, keybinds
     protocol/        # BinaryReader, opcodes
     net/             # PoW challenge, WebSocket
-    game/            # engine (логика игры)
-    render/          # skins, hud
-    ui/              # lobby, shop, skins, account, ratings
+    game/            # логика игры
+    render/          # canvas, hud, skins, leaderboard
+    ui/              # lobby, shop, chat, account
     api/ storage/ lib/
     styles/main.css
-  dist/              # npm run build → деплой на GitHub Pages / agar.su
+  .github/workflows/deploy.yml
+  CNAME
 ```
 
 ## Команды
 
 ```bash
-cd agarsu
 npm install
-npm run dev      # http://localhost:5174
-npm run build    # → dist/
+npm run dev
+npm run build
 ```
 
 ## Проверено
