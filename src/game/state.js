@@ -70,6 +70,7 @@ function createGameState() {
     leftTouchStartPos: null,
     leftVector: null,
     skinList: {},
+    stickerList: {},
     badWordsSet: null,
     transparent: null,
     invisible: null,

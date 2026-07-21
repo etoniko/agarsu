@@ -1,6 +1,6 @@
 import { getSkinImage as defaultGetSkinImage, loadCachedImage as defaultLoadCachedImage } from "../render/skins.js";
 import { normalizeNick as defaultNormalizeNick } from "../lib/nick.js";
-import { loadInvisibleSet, loadRotationSet } from "../storage/staticLists.js";
+import { loadInvisibleSet, loadRotationSet, getStickerUrl } from "../storage/staticLists.js";
 let deps = {
   S: null,
   getSkinImage: defaultGetSkinImage,
@@ -479,16 +479,18 @@ Cell.prototype = {
       }
     }
     if (S.showStickers && this.stickerActive && this.currentSticker) {
-      const stickerUrl = `https://agar.su/sticker/${this.currentSticker}.png`;
-      const stickerImg = loadCachedImage(stickerUrl);
-      if (stickerImg && stickerImg.complete && stickerImg.width > 0) {
-        ctx.save();
-        ctx.clip();
-        const fw = stickerImg.width;
-        const fh = stickerImg.height;
-        const sz = this.size;
-        ctx.drawImage(stickerImg, 0, 0, fw, fh, this.x - sz, this.y - sz, sz * 2, sz * 2);
-        ctx.restore();
+      const stickerUrl = getStickerUrl(S.stickerList, this.name, this.currentSticker);
+      if (stickerUrl) {
+        const stickerImg = loadCachedImage(stickerUrl);
+        if (stickerImg && stickerImg.complete && stickerImg.width > 0) {
+          ctx.save();
+          ctx.clip();
+          const fw = stickerImg.width;
+          const fh = stickerImg.height;
+          const sz = this.size;
+          ctx.drawImage(stickerImg, 0, 0, fw, fh, this.x - sz, this.y - sz, sz * 2, sz * 2);
+          ctx.restore();
+        }
       }
     }
     if (this.id !== 0) {

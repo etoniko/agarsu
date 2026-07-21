@@ -3,6 +3,7 @@ import { getCookie, setCookie } from "../storage/cookies.js";
 import { lsGetJson, lsSetJson } from "../storage/local.js";
 import { hideOverlays, hideStatics, isOverlaysVisible, isPointerOverElement, onReady, showOverlays } from "../lib/dom.js";
 import { mouseCoordinateChange, canvasResize } from "./camera.js";
+import { getStickerPackCode } from "../storage/staticLists.js";
 const KEYBINDS_KEY = "keybinds_v1";
 const CELL_COLORS = [
   "#003366",
@@ -379,6 +380,14 @@ function attachInput(S, hooks) {
       isTyping = true;
     };
   });
+  function getLocalStickerNick() {
+    const fromCell = S.playerCells?.[0]?.name;
+    if (fromCell) return fromCell;
+    return document.getElementById("nick")?.value?.trim() || "";
+  }
+  function localHasStickerPack() {
+    return !!getStickerPackCode(S.stickerList, getLocalStickerNick());
+  }
   function sendSticker(stickerId, action) {
     if (hooks.wsIsOpen()) {
       const msg = hooks.prepareData(6);
@@ -403,6 +412,7 @@ function attachInput(S, hooks) {
   }
   function pressStickerKey(stickerId) {
     if (!S.showStickers || isTyping || S.stickerCooldown || currentSticker === stickerId) return;
+    if (!localHasStickerPack()) return;
     if (currentSticker !== null) {
       sendSticker(currentSticker, false);
       hideSticker();

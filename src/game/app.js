@@ -6,6 +6,7 @@ import { normalizeNick } from "../lib/nick.js";
 import {
   preloadStaticLists,
   applySkinListToState,
+  applyStickerListToState,
   invalidateStatsRenderCaches,
   TTL_MS
 } from "../storage/staticLists.js";
@@ -94,8 +95,9 @@ function initGame(wHandle) {
     loadCachedImage,
     normalizeNick
   });
-  const listsPromise = preloadStaticLists().then(({ skin, pass, invisible, rotation, words }) => {
+  const listsPromise = preloadStaticLists().then(({ skin, sticker, pass, invisible, rotation, words }) => {
     applySkinListToState(S, skin);
+    applyStickerListToState(S, sticker);
     S.passUsers = pass.passUsers;
     S.passPlayerNickToId = pass.passPlayerNickToId;
     S.passClanNickToId = pass.passClanNickToId;
@@ -104,7 +106,7 @@ function initGame(wHandle) {
     S.badWordsSet = words;
     ensureNameSets(S);
     invalidateStatsRenderCaches(S);
-    return { skin, pass, invisible, rotation, words };
+    return { skin, sticker, pass, invisible, rotation, words };
   }).catch(() => {
     ensureNameSets(S);
     return null;
@@ -243,6 +245,7 @@ function initGame(wHandle) {
   setInterval(async () => {
     const data = await preloadStaticLists(true);
     applySkinListToState(S, data.skin);
+    applyStickerListToState(S, data.sticker);
     S.passUsers = data.pass.passUsers;
     S.passPlayerNickToId = data.pass.passPlayerNickToId;
     S.passClanNickToId = data.pass.passClanNickToId;

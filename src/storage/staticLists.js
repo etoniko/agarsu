@@ -1,8 +1,9 @@
-import { SKINLIST_URL } from "../config/endpoints.js";
+import { SKINLIST_URL, STICKERLIST_URL, STICKER_CDN } from "../config/endpoints.js";
 import { normalizeNick } from "../lib/nick.js";
 const TTL_MS = 3e5;
 const STATIC_URLS = {
   skinlist: SKINLIST_URL,
+  stickerlist: STICKERLIST_URL,
   pass: "https://api.agar.su/pass.txt",
   invisible: "https://api.agar.su/invisible.txt",
   rotation: "https://api.agar.su/rotation.txt",
@@ -86,8 +87,44 @@ async function loadSkinListMap(force = false) {
   const text = await fetchStaticText(STATIC_URLS.skinlist, force);
   return parseSkinListText(text);
 }
+function parseStickerListText(data) {
+  const map = new Map();
+  const obj = {};
+  String(data || "").split("\n").forEach((line) => {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) return;
+    const idx = trimmed.indexOf(":");
+    if (idx < 0) return;
+    const name = normalizeNick(trimmed.slice(0, idx).trim());
+    const code = trimmed.slice(idx + 1).trim();
+    if (!name || !code) return;
+    map.set(name, code);
+    obj[name] = code;
+  });
+  return { map, obj };
+}
+async function loadStickerListMap(force = false) {
+  const text = await fetchStaticText(STATIC_URLS.stickerlist, force);
+  return parseStickerListText(text);
+}
 function applySkinListToState(S, bundle) {
   if (S && bundle?.obj) S.skinList = bundle.obj;
+}
+function applyStickerListToState(S, bundle) {
+  if (S && bundle?.obj) S.stickerList = bundle.obj;
+}
+function getStickerPackCode(stickerSource, nick) {
+  const key = normalizeNick(String(nick || "").replace(/<[^>]*>/g, ""));
+  if (!key) return "";
+  if (stickerSource instanceof Map) return stickerSource.get(key) || "";
+  return stickerSource?.[key] || "";
+}
+function getStickerUrl(stickerSource, nick, stickerId) {
+  const id = Number(stickerId);
+  if (!Number.isFinite(id) || id < 1 || id > 9) return "";
+  const code = getStickerPackCode(stickerSource, nick);
+  if (!code) return "";
+  return `${STICKER_CDN}/${encodeURIComponent(code)}/${id}.png`;
 }
 function getSkinIdForNick(skinSource, nick, fallback = "PPFtwqH") {
   const key = normalizeNick(String(nick || "").replace(/<[^>]*>/g, ""));
@@ -139,28 +176,34 @@ async function loadBadWordsSet(force = false) {
   return toLowerSet(await fetchStaticText(STATIC_URLS.word, force));
 }
 async function preloadStaticLists(force = false) {
-  const [skin, pass, invisible, rotation, words] = await Promise.all([
+  const [skin, sticker, pass, invisible, rotation, words] = await Promise.all([
     loadSkinListMap(force),
+    loadStickerListMap(force),
     loadPassData(force),
     loadInvisibleSet(force),
     loadRotationSet(force),
     loadBadWordsSet(force)
   ]);
-  return { skin, pass, invisible, rotation, words };
+  return { skin, sticker, pass, invisible, rotation, words };
 }
 export {
   STATIC_URLS,
   TTL_MS,
   applySkinListToState,
+  applyStickerListToState,
   fetchStaticText,
   getSkinIdForNick,
   getSkinUrlForNick,
+  getStickerPackCode,
+  getStickerUrl,
   invalidateStatsRenderCaches,
   loadBadWordsSet,
   loadInvisibleSet,
   loadPassData,
   loadRotationSet,
   loadSkinListMap,
+  loadStickerListMap,
   parseSkinListText,
+  parseStickerListText,
   preloadStaticLists
 };
