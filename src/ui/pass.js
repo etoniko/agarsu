@@ -3,6 +3,7 @@ import { loadPassData } from "../storage/staticLists.js";
 onReady(() => {
   const nickInput = document.getElementById("nick");
   const passInput = document.getElementById("pass");
+  if (!nickInput || !passInput) return;
   let allowedNicks = [];
   function normalizeNick(nick) {
     if (!nick) return "";
@@ -40,8 +41,30 @@ onReady(() => {
     }
     return null;
   }
+  function syncNickPassCookies(nick, pass) {
+    if (nick) setCookie("userNick", nick, 7);
+    else setCookie("userNick", "", -1);
+    if (pass) setCookie("userPass", pass, 7);
+    else setCookie("userPass", "", -1);
+  }
+  function checkNickStatus(nick) {
+    const normalized = normalizeNick(nick);
+    if (allowedNicks.includes(normalized)) {
+      passInput.style.display = "block";
+    } else {
+      passInput.style.display = "none";
+    }
+  }
+  window.__agarsuCheckNickStatus = checkNickStatus;
+  window.__agarsuSyncNickPassCookies = syncNickPassCookies;
   loadPassData().then((data) => {
     allowedNicks = data.passUsers || [];
+    const players = typeof window.__agarsuGetPlayers === "function" ? window.__agarsuGetPlayers() : [];
+    if (players.length > 0) {
+      // Slot list owns nick/pass; only refresh pass field visibility.
+      checkNickStatus(nickInput.value.trim());
+      return;
+    }
     const savedNick = getCookie("userNick");
     const savedPass = getCookie("userPass");
     if (savedNick) {
@@ -54,14 +77,6 @@ onReady(() => {
   }).catch((error) => {
     console.error("\u041E\u0448\u0438\u0431\u043A\u0430 \u043F\u0440\u0438 \u0437\u0430\u0433\u0440\u0443\u0437\u043A\u0435 pass.txt:", error);
   });
-  function checkNickStatus(nick) {
-    const normalized = normalizeNick(nick);
-    if (allowedNicks.includes(normalized)) {
-      passInput.style.display = "block";
-    } else {
-      passInput.style.display = "none";
-    }
-  }
   nickInput.addEventListener("input", () => {
     const currentNick = nickInput.value.trim();
     if (currentNick) {
@@ -78,6 +93,9 @@ onReady(() => {
       setCookie("userPass", currentPass, 7);
     } else {
       setCookie("userPass", "", -1);
+    }
+    if (typeof window.__agarsuUpdatePlayerPass === "function") {
+      window.__agarsuUpdatePlayerPass(currentPass);
     }
   });
 });

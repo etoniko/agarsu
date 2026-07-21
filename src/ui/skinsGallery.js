@@ -8,6 +8,8 @@ let currentIndex = 0;
 const MANUAL_SKINS_NICKS = ["\u041B\u0435\u043D\u0438\u043D", "\u0421\u0442\u0430\u043B\u0438\u043D", "\u0413\u0430\u0433\u0430\u0440\u0438\u043D", "\u0416\u0443\u043A\u043E\u0432", "\u0425\u0440\u0443\u0449\u0451\u0432", "C\u0421\u0421\u0420", "\u041F\u0443\u0442\u0438\u043D", "\u0420\u043E\u0441\u0441\u0438\u044F"];
 const SKINS_PER_PAGE_MOBILE = 8;
 const SKINS_PER_PAGE_DESKTOP = 15;
+const PLAYERS_KEY = "players";
+const MAX_PLAYERS = 3;
 let skinsGalleryItems = [];
 let skinsGalleryPage = 1;
 let skinsGalleryPerPage = SKINS_PER_PAGE_DESKTOP;
@@ -17,6 +19,7 @@ let skinsGalleryResizeBound = false;
 let cachedSkinsMap = null;
 let cachedSkinsMapAt = 0;
 const SKINS_MAP_TTL = 6e4;
+let avatarCtxMenu = null;
 function getSkinPreviewUrl(skinId) {
   return skinId ? `https://api.agar.su/skins/${skinId}.png` : "";
 }
@@ -27,6 +30,35 @@ function setBackgroundImageIfChanged(el, skinId) {
   if (el.dataset.bgSrc === next) return;
   el.dataset.bgSrc = next;
   el.style.backgroundImage = next;
+}
+function getPlayers() {
+  try {
+    const players = JSON.parse(localStorage.getItem(PLAYERS_KEY) || "[]");
+    return Array.isArray(players) ? players : [];
+  } catch {
+    return [];
+  }
+}
+function setPlayers(players) {
+  localStorage.setItem(PLAYERS_KEY, JSON.stringify(players));
+}
+function getPassInputValue() {
+  const passInput = document.getElementById("pass");
+  return passInput ? String(passInput.value || "").trim() : "";
+}
+function setFormNickPass(nick, pass) {
+  const nickInput = document.getElementById("nick");
+  const passInput = document.getElementById("pass");
+  if (nickInput && nick != null) nickInput.value = nick;
+  if (passInput) {
+    passInput.value = pass || "";
+    if (typeof window.__agarsuCheckNickStatus === "function") {
+      window.__agarsuCheckNickStatus(nick || "");
+    }
+  }
+  if (typeof window.__agarsuSyncNickPassCookies === "function") {
+    window.__agarsuSyncNickPassCookies(nick || "", pass || "");
+  }
 }
 function getSkinsGalleryPerPage() {
   return window.matchMedia("(max-width: 599px)").matches ? SKINS_PER_PAGE_MOBILE : SKINS_PER_PAGE_DESKTOP;
@@ -165,7 +197,7 @@ async function selectSkin(nick) {
   const normalizedNick = normalizeNick(nick);
   if (skinsMap.has(normalizedNick)) {
     const id = skinsMap.get(normalizedNick);
-    savePlayerData(nick, id);
+    savePlayerData(nick, id, getPassInputValue());
     currentIndex = getCurrentPlayerIndex(nick);
     updateAvatarDisplay();
   } else {
@@ -174,37 +206,53 @@ async function selectSkin(nick) {
   }
 }
 function getCurrentPlayerIndex(nick) {
-  const players = JSON.parse(localStorage.getItem("players") || "[]");
+  const players = getPlayers();
   return players.findIndex((player) => normalizeNick(player.nick) === normalizeNick(nick));
 }
-function savePlayerData(nick, id) {
-  const players = JSON.parse(localStorage.getItem("players") || "[]");
-  const playerData = { nick, id };
+/** Saves slot as nick + skin id + optional pass. Max 3 slots. */
+function savePlayerData(nick, id, pass) {
+  const players = getPlayers();
+  const passValue = pass != null ? String(pass).trim() : getPassInputValue();
+  const playerData = { nick, id, pass: passValue || "" };
   const index = players.findIndex((player) => normalizeNick(player.nick) === normalizeNick(nick));
-  if (index !== -1) players.splice(index, 1);
+  if (index !== -1) {
+    const prevPass = players[index].pass || "";
+    if (!playerData.pass && prevPass) playerData.pass = prevPass;
+    players.splice(index, 1);
+  }
   players.unshift(playerData);
-  if (players.length > 3) players.pop();
-  localStorage.setItem("players", JSON.stringify(players));
+  if (players.length > MAX_PLAYERS) players.pop();
+  setPlayers(players);
+  currentIndex = 0;
+}
+function updateCurrentPlayerPass(pass) {
+  const players = getPlayers();
+  if (!players.length || currentIndex < 0 || currentIndex >= players.length) return;
+  players[currentIndex] = {
+    ...players[currentIndex],
+    pass: String(pass || "").trim()
+  };
+  setPlayers(players);
 }
 function updateAvatarDisplay() {
-  const players = JSON.parse(localStorage.getItem("players") || "[]");
+  const players = getPlayers();
   const mainSkin = document.querySelector("#skinss");
   const previousSkin = document.querySelector("#prevSkin");
   const nextSkin = document.querySelector("#nextSkin");
   if (!mainSkin) return;
   if (players.length > 0) {
+    if (currentIndex < 0 || currentIndex >= players.length) currentIndex = 0;
     const currentPlayer = players[currentIndex];
     setBackgroundImageIfChanged(mainSkin, currentPlayer.id);
-    const nickInput = document.getElementById("nick");
-    if (nickInput) nickInput.value = currentPlayer.nick;
+    setFormNickPass(currentPlayer.nick, currentPlayer.pass || "");
     const prevIndex = (currentIndex - 1 + players.length) % players.length;
-    if (previousSkin && players[prevIndex]) {
+    if (previousSkin && players[prevIndex] && players.length > 1) {
       setBackgroundImageIfChanged(previousSkin, players[prevIndex].id);
     } else if (previousSkin) {
       setBackgroundImageIfChanged(previousSkin, "");
     }
     const nextIndex = (currentIndex + 1) % players.length;
-    if (nextSkin && players[nextIndex]) {
+    if (nextSkin && players[nextIndex] && players.length > 1) {
       setBackgroundImageIfChanged(nextSkin, players[nextIndex].id);
     } else if (nextSkin) {
       setBackgroundImageIfChanged(nextSkin, "");
@@ -216,14 +264,14 @@ function updateAvatarDisplay() {
   }
 }
 function showNext() {
-  const players = JSON.parse(localStorage.getItem("players") || "[]");
+  const players = getPlayers();
   if (players.length > 0) {
     currentIndex = (currentIndex + 1) % players.length;
     changeSkin();
   }
 }
 function showPrevious() {
-  const players = JSON.parse(localStorage.getItem("players") || "[]");
+  const players = getPlayers();
   if (players.length > 0) {
     currentIndex = (currentIndex - 1 + players.length) % players.length;
     changeSkin();
@@ -238,8 +286,96 @@ function changeSkin() {
     mainSkin.classList.remove("scale-down");
   }, 50);
 }
+function resolveSlotIndexFromTarget(target) {
+  const players = getPlayers();
+  if (!players.length) return -1;
+  if (target.closest("#skinss")) return currentIndex;
+  if (target.closest("#prevSkin") || target.closest("#previous")) {
+    return players.length > 1 ? (currentIndex - 1 + players.length) % players.length : currentIndex;
+  }
+  if (target.closest("#nextSkin") || target.closest("#next")) {
+    return players.length > 1 ? (currentIndex + 1) % players.length : currentIndex;
+  }
+  return currentIndex;
+}
+function hideAvatarContextMenu() {
+  if (avatarCtxMenu) {
+    avatarCtxMenu.remove();
+    avatarCtxMenu = null;
+  }
+}
+function deletePlayerAt(index) {
+  const players = getPlayers();
+  if (index < 0 || index >= players.length) return;
+  const removed = players.splice(index, 1)[0];
+  setPlayers(players);
+  if (!players.length) {
+    currentIndex = 0;
+    setFormNickPass("", "");
+    updateAvatarDisplay();
+    return;
+  }
+  if (index < currentIndex) currentIndex -= 1;
+  else if (index === currentIndex) currentIndex = Math.min(currentIndex, players.length - 1);
+  updateAvatarDisplay();
+  return removed;
+}
+function clearAllPlayers() {
+  setPlayers([]);
+  currentIndex = 0;
+  setFormNickPass("", "");
+  updateAvatarDisplay();
+}
+function showAvatarContextMenu(e, slotIndex) {
+  hideAvatarContextMenu();
+  const players = getPlayers();
+  if (!players.length) return;
+  const menu = document.createElement("div");
+  menu.className = "avatar-context-menu";
+  const slot = players[slotIndex];
+  const nickLabel = slot?.nick ? ` \u00AB${slot.nick}\u00BB` : "";
+  const delBtn = document.createElement("div");
+  delBtn.textContent = `\u0423\u0434\u0430\u043B\u0438\u0442\u044C${nickLabel}`;
+  delBtn.addEventListener("click", (ev) => {
+    ev.stopPropagation();
+    deletePlayerAt(slotIndex);
+    hideAvatarContextMenu();
+  });
+  const clearBtn = document.createElement("div");
+  clearBtn.textContent = "\u041E\u0447\u0438\u0441\u0442\u0438\u0442\u044C \u0432\u0441\u0451";
+  clearBtn.addEventListener("click", (ev) => {
+    ev.stopPropagation();
+    clearAllPlayers();
+    hideAvatarContextMenu();
+  });
+  menu.appendChild(delBtn);
+  menu.appendChild(clearBtn);
+  document.body.appendChild(menu);
+  avatarCtxMenu = menu;
+  const x = Math.min(e.clientX, window.innerWidth - menu.offsetWidth - 8);
+  const y = Math.min(e.clientY, window.innerHeight - menu.offsetHeight - 8);
+  menu.style.left = `${Math.max(8, x)}px`;
+  menu.style.top = `${Math.max(8, y)}px`;
+}
+function bindAvatarContextMenu() {
+  const root = document.querySelector(".avatar-containers");
+  if (!root || root.dataset.ctxBound === "1") return;
+  root.dataset.ctxBound = "1";
+  root.addEventListener("contextmenu", (e) => {
+    if (!e.target.closest("#skinss, #prevSkin, #nextSkin, #previous, #next")) return;
+    e.preventDefault();
+    const slotIndex = resolveSlotIndexFromTarget(e.target);
+    if (slotIndex < 0) return;
+    showAvatarContextMenu(e, slotIndex);
+  });
+  document.addEventListener("click", hideAvatarContextMenu);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") hideAvatarContextMenu();
+  });
+}
 onReady(() => {
   const nickInput = document.getElementById("nick");
+  const passInput = document.getElementById("pass");
   if (nickInput) {
     nickInput.addEventListener("input", function() {
       const nickname = this.value;
@@ -249,14 +385,32 @@ onReady(() => {
       }, actionInterval);
     });
   }
-  const players = JSON.parse(localStorage.getItem("players") || "[]");
+  if (passInput) {
+    passInput.addEventListener("input", function() {
+      updateCurrentPlayerPass(this.value);
+    });
+  }
+  bindAvatarContextMenu();
+  const players = getPlayers();
   if (players.length > 0) {
     currentIndex = 0;
     updateAvatarDisplay();
   }
 });
 window.initSkinsGallery = initSkinsGallery;
+window.showNext = showNext;
+window.showPrevious = showPrevious;
+window.savePlayerData = savePlayerData;
+window.updateAvatarDisplay = updateAvatarDisplay;
+window.__agarsuUpdatePlayerPass = updateCurrentPlayerPass;
+window.__agarsuGetPlayers = getPlayers;
 if (typeof loadSkinsList === "function") window.loadSkinsList = loadSkinsList;
 export {
-  initSkinsGallery
+  initSkinsGallery,
+  showNext,
+  showPrevious,
+  savePlayerData,
+  updateAvatarDisplay,
+  updateCurrentPlayerPass,
+  getPlayers
 };
