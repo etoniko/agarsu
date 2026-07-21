@@ -1,27 +1,35 @@
-const ALLOWTXT_STATS = "allowtxt.txt";
-const ALLOWTXT_SERVER = "/allowtxt.txt";
-function resolveAllowTxtUrl() {
-  const host = location.hostname;
-  if (host.includes("github.io")) return ALLOWTXT_STATS;
-  return ALLOWTXT_SERVER;
-}
+const ALLOWTXT_LOCAL = "/allowtxt.txt";
+const ALLOWTXT_API = "https://api.agar.su/allowtxt.txt";
 const ALLOWED_CHARS = new Set();
 let allowTxtReady = null;
-function loadAllowTxt(url) {
+function parseAllowTxt(text) {
+  ALLOWED_CHARS.clear();
+  for (const line of String(text || "").split(/\r?\n/)) {
+    // One allowed character per line (ignore blank / HTML garbage lines)
+    if (line.length === 1) ALLOWED_CHARS.add(line);
+  }
+  return ALLOWED_CHARS.size > 0;
+}
+function loadAllowTxt() {
   if (!allowTxtReady) {
-    allowTxtReady = fetch(url || resolveAllowTxtUrl()).then((r) => {
-      if (!r.ok) throw new Error("allowtxt.txt");
+    allowTxtReady = fetch(ALLOWTXT_LOCAL).then((r) => {
+      if (!r.ok) throw new Error("local allowtxt");
       return r.text();
     }).then((text) => {
-      for (const line of text.split(/\r?\n/)) {
-        if (line.length > 0) ALLOWED_CHARS.add(line);
-      }
-    });
+      if (!parseAllowTxt(text)) throw new Error("empty allowtxt");
+    }).catch(() => fetch(ALLOWTXT_API).then((r) => {
+      if (!r.ok) throw new Error("api allowtxt");
+      return r.text();
+    }).then((text) => {
+      if (!parseAllowTxt(text)) throw new Error("empty api allowtxt");
+    }));
   }
   return allowTxtReady;
 }
 function isNicknameCharAllowed(char, allowBrackets) {
   if (!allowBrackets && (char === "[" || char === "]")) return false;
+  // Until the list loads (or if load failed), do not wipe the nickname
+  if (ALLOWED_CHARS.size === 0) return true;
   return ALLOWED_CHARS.has(char);
 }
 function isAllowedNickname(value, allowBrackets) {
@@ -32,6 +40,7 @@ function isAllowedNickname(value, allowBrackets) {
   return true;
 }
 function stripInvalidNicknameChars(value, allowBrackets) {
+  if (ALLOWED_CHARS.size === 0) return value;
   return [...value].filter((char) => isNicknameCharAllowed(char, allowBrackets)).join("");
 }
 const allowedPattern = { test: (v) => isAllowedNickname(v, false) };
@@ -168,6 +177,9 @@ loadAllowTxt().then(() => {
   blockForbiddenChars(nicknameInput);
   blockForbiddenChars(passwordInput);
 }).catch(() => {
+  // Still bind input handlers; without a char list we won't strip nicknames
+  blockForbiddenChars(nicknameInput);
+  blockForbiddenChars(passwordInput);
   showToast("\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044C allowtxt.txt", "error");
 });
 nicknameInput.addEventListener("blur", async () => {

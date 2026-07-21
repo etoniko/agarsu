@@ -35,7 +35,9 @@ jobs:
         run: npm run build
 
       - name: Copy CNAME
-        run: cp CNAME dist/CNAME
+        run: |
+          cp CNAME dist/CNAME
+          cp -f allowtxt.txt dist/allowtxt.txt 2>/dev/null || cp -f public/allowtxt.txt dist/allowtxt.txt
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
