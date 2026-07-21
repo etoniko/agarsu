@@ -7,45 +7,40 @@
     <meta name="keywords" content="agario, агарио, blob, шарики, cell, клетки, io game, онлайн игры, online games, petri dish" />
     <meta name="author" content="Agarsu Team">
     <meta name="robots" content="index">
-    <!-- Open Graph для социальных сетей -->
     <meta property="og:title" content="Agar.su - Онлайн игра!">
     <meta property="og:description" content="absorb cells, compete with other players, and become the leader among all agar and agario clones.">
-    <meta property="og:image" content="https://agar.su/assets/photo/og.png?1">
+    <meta property="og:image" content="https://agar.su/photo/og.png?1">
     <meta property="og:url" content="https://agar.su">
     <meta property="og:type" content="website">
 	<meta name="yandex-verification" content="a454c4468218ca1c" />
     <title>Agar.su - Игра Онлайн</title>
-    <!-- Favicon и иконки для Apple устройств -->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="icon" href="/icon.svg" type="image/x-icon">
-    <!-- Canonical URL -->
     <link rel="canonical" href="https://agar.su">
-    <!-- Шрифты и стили -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flag-icons/css/flag-icons.min.css">
     <link href="https://fonts.googleapis.com/css?family=Ubuntu:700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=new_releases" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="/assets/style.css?802" rel="stylesheet">
-    <!-- Скрипты -->
-    <script src="/assets/scripts/jquery.js?0.0.2"></script>
-    <script src="/assets/scripts/log.js?0.0.2"></script>
-    <script src="/assets/scripts/vector.js?0.0.2"></script>
-    <script src="/assets/scripts/main_out.js?0115"></script>
-	<script src="/assets/scripts/shop.js?26" defer></script>
-	<script src="/assets/scripts/all.js?0.0.5" defer></script>
-	<script src="/assets/scripts/pass.js?0.0.5" defer></script>
-	<script src="/assets/scripts/skins.js?1.0.6" defer></script>
-	<script src="/assets/scripts/rating.js?0.0.4" defer></script>
-		<!-- Yandex.RTB -->
+    <script type="module" src="/src/main.js"></script>
 <script>window.yaContextCb=window.yaContextCb||[]</script>
 <script src="https://yandex.ru/ads/system/context.js" async></script>
 <script>
-window.yaContextCb.push(() => {
-    Ya.Context.AdvManager.render({
-        "blockId": "R-A-15699059-13",
-        "renderTo": "yandex_rtb_R-A-15699059-13"
-    });
+window.yaContextCb = window.yaContextCb || [];
+window.yaContextCb.push(function () {
+    function renderHomeBanner() {
+        if (!document.getElementById("yandex_rtb_R-A-15699059-13")) {
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", renderHomeBanner, { once: true });
+            }
+            return;
+        }
+        Ya.Context.AdvManager.render({
+            "blockId": "R-A-15699059-13",
+            "renderTo": "yandex_rtb_R-A-15699059-13"
+        });
+    }
+    renderHomeBanner();
 });
 window.renderDeathBanner = function () {
     var el = document.getElementById("yandex_rtb_R-A-15699059-14");
@@ -65,7 +60,6 @@ window.renderDeathBanner = function () {
     }
 };
 </script>
-<!-- Top.Mail.Ru counter -->
 <script type="text/javascript">
 var _tmr = window._tmr || (window._tmr = []);
 _tmr.push({id: "3773988", type: "pageView", start: (new Date()).getTime()});
@@ -77,20 +71,16 @@ _tmr.push({id: "3773988", type: "pageView", start: (new Date()).getTime()});
   if (w.opera == "[object Opera]") { d.addEventListener("DOMContentLoaded", f, false); } else { f(); }
 })(document, window, "tmr-code");
 </script>
-<noscript><div><img src="https://top-fwz1.mail.ru/counter?id=3773988;js=na" style="position:absolute;left:-9999px;" alt="Top.Mail.Ru" /></div></noscript>
-<!-- /Top.Mail.Ru counter -->
-
 <meta name="selfwork.ru" content="YCO1OBkuI4MJNlnWL2VsXbRyuXLFJQCJS68rj8Jq2fYQSR4QLT"/>
 </head>
 <body>
+  <noscript><div><img src="https://top-fwz1.mail.ru/counter?id=3773988;js=na" class="inl-0" alt="Top.Mail.Ru" /></div></noscript>
   <div id="overlays" class="overlays">
-    <div class="social"><a href="https://t.me/agarsu" target="_blank" class="tg"><i style="background: radial-gradient(white 9px, #1e90ff00 50%);border-radius: 50%;" class="fab fa-telegram"></i></a><a href="https://vk.com/club233723574" target="_blank" class="soc"><i class="fab fa-vk"></i></a><a href="#" class="soc"><i style="cursor: not-allowed;" class="fab fa-discord"></i></a></div>
+    <div class="social"><a href="https://t.me/agarsu" target="_blank" class="tg"><i class="fab fa-telegram tg-icon"></i></a><a href="https://vk.com/club233723574" target="_blank" class="soc"><i class="fab fa-vk"></i></a><a href="#" class="soc"><i class="fab fa-discord discord-disabled"></i></a></div>
     <div class="add-yandex" id="ratinghome"><div id="yandex_rtb_R-A-15699059-13"></div></div>
 	  <div class="center">
       <div class="sidebar">
-        <div class="menu-item" onclick="showContent('shop')" style="
-    position: relative;
-">
+        <div class="menu-item inl-1" onclick="showContent('shop')">
   <i class="fas fa-shop"></i>
   <span class="label">Магазин</span>
   <span class="badge-text">NEW</span>
@@ -101,8 +91,6 @@ _tmr.push({id: "3773988", type: "pageView", start: (new Date()).getTime()});
         <div class="menu-item" onclick="showContent('store')"><i class="fas fa-user"></i><span class="label" id="accountMenuLabel">Войти</span></div>
       </div>
       <div class="main-content">
-
-
 <div id="shop" class="content">
   <div id="shopInfo" class="shop-info-layer" aria-live="polite">
     <div id="shopAuthNotice" class="shop-float-alert shop-float-alert--warn" role="status" hidden></div>
@@ -111,11 +99,8 @@ _tmr.push({id: "3773988", type: "pageView", start: (new Date()).getTime()});
     <div id="passwordError" class="shop-float-alert shop-float-alert--error"></div>
     <div id="formError" class="shop-float-alert shop-float-alert--error"></div>
   </div>
-
   <div class="top-info"><div><span>Магазин лички</span></div></div>
-
   <div id="shopToastContainer" class="shop-toast-container" aria-live="polite"></div>
-
   <div class="shop-container">
     <div class="shop-grid">
       <div class="shop-form-side">
@@ -129,7 +114,6 @@ _tmr.push({id: "3773988", type: "pageView", start: (new Date()).getTime()});
                 </label>
                 <input type="file" id="fileInput" accept=".png,.jpg,.gif" autocomplete="off">
               </div>
-
               <div class="shop-form-fields">
                 <div class="shop-inputs">
                   <div class="shop-field">
@@ -147,7 +131,6 @@ _tmr.push({id: "3773988", type: "pageView", start: (new Date()).getTime()});
                     </div>
                   </div>
                 </div>
-
                 <div class="shop-options-bar">
                   <div class="radio-group" role="tablist" aria-label="Тип покупки">
                     <label class="radio-pill"><input type="radio" name="serviceType" value="personal" id="personal" checked autocomplete="off"><span>Себе</span></label>
@@ -169,7 +152,6 @@ _tmr.push({id: "3773988", type: "pageView", start: (new Date()).getTime()});
           </div>
         </form>
       </div>
-
       <aside class="shop-checkout">
         <div id="calculator" class="shop-receipt" hidden>
           <div class="shop-receipt-head">Ваш заказ</div>
@@ -177,8 +159,8 @@ _tmr.push({id: "3773988", type: "pageView", start: (new Date()).getTime()});
             <li id="clanMultiplier"><span>Множитель</span><strong id="multiplierText">1x</strong></li>
             <li id="passwordCost"><span>Пароль</span><strong>0 ₽</strong></li>
             <li id="skinCost"><span>Скин</span><strong>0 ₽</strong></li>
-            <li id="invisibleCost" style="display:none;"><span>Невидимый ник</span><strong>0 ₽</strong></li>
-            <li id="rotationCost" style="display:none;"><span>Поворот скина</span><strong>0 ₽</strong></li>
+            <li id="invisibleCost" class="inl-2"><span>Невидимый ник</span><strong>0 ₽</strong></li>
+            <li id="rotationCost" class="inl-3"><span>Поворот скина</span><strong>0 ₽</strong></li>
           </ul>
           <div class="shop-receipt-total">
             <span>К оплате</span>
@@ -193,11 +175,8 @@ _tmr.push({id: "3773988", type: "pageView", start: (new Date()).getTime()});
         </p>
       </aside>
     </div>
-
   </div>
 </div>
-
-		  
         <div id="settings" class="content">
           <div class="top-info">
             <div><span>Настройки</span></div>
@@ -223,17 +202,16 @@ _tmr.push({id: "3773988", type: "pageView", start: (new Date()).getTime()});
             <div class="settings-panels checkbox-container">
               <section class="settings-panel active" data-panel="graphics">
                 <h3 class="settings-panel-title">Отображение в игре</h3>
-                <label><input type="checkbox" class="save" data-box-id="1" onchange="setSkins($(this).is(':checked'));">Видеть скины</label>
-                <label><input type="checkbox" class="save" data-box-id="2" onchange="setNames($(this).is(':checked'));">Видеть имена</label>
-                <label><input type="checkbox" class="save" data-box-id="3" onchange="setColors($(this).is(':checked'));">Цвета с сервера</label>
-                <label><input type="checkbox" class="save" data-box-id="5" onchange="setShowMass($(this).is(':checked'));" checked>Показать массу</label>
-                <label><input type="checkbox" class="save" data-box-id="6" onchange="setSmooth($(this).is(':checked'));">Простой рендер</label>
-                <label><input type="checkbox" class="save" data-box-id="7" onchange="setNoBorder($(this).is(':checked'));">Отключить обводку</label>
-                <label><input type="checkbox" class="save" data-box-id="9" onchange="setGlow($(this).is(':checked'));" checked>Эффект лимита</label>
-                <label><input type="checkbox" class="save" data-box-id="12" onchange="setFixedCell($(this).is(':checked'));">Фиксированная клетка</label>
-                <label><input type="checkbox" class="save" data-box-id="13" onchange="setShowStickers($(this).is(':checked'));">Показывать стикеры</label>
+                <label><input type="checkbox" class="save" data-box-id="1" onchange="setSkins(this.checked);">Видеть скины</label>
+                <label><input type="checkbox" class="save" data-box-id="2" onchange="setNames(this.checked);">Видеть имена</label>
+                <label><input type="checkbox" class="save" data-box-id="3" onchange="setColors(this.checked);">Цвета с сервера</label>
+                <label><input type="checkbox" class="save" data-box-id="5" onchange="setShowMass(this.checked);" checked>Показать массу</label>
+                <label><input type="checkbox" class="save" data-box-id="6" onchange="setSmooth(this.checked);">Простой рендер</label>
+                <label><input type="checkbox" class="save" data-box-id="7" onchange="setNoBorder(this.checked);">Отключить обводку</label>
+                <label><input type="checkbox" class="save" data-box-id="9" onchange="setGlow(this.checked);" checked>Эффект лимита</label>
+                <label><input type="checkbox" class="save" data-box-id="12" onchange="setFixedCell(this.checked);">Фиксированная клетка</label>
+                <label><input type="checkbox" class="save" data-box-id="13" onchange="setShowStickers(this.checked);">Показывать стикеры</label>
               </section>
-
               <section class="settings-panel" data-panel="backgrounds">
                 <h3 class="settings-panel-title">Фон карты</h3>
                 <div id="theme-selector" class="settings-field">
@@ -255,7 +233,7 @@ _tmr.push({id: "3773988", type: "pageView", start: (new Date()).getTime()});
                   </div>
                 </div>
                 <div id="custom-bg-settings" class="settings-subsection">
-                  <label><input type="checkbox" class="save" data-box-id="15" onchange="setCustomMapBg($(this).is(':checked'));">Свой фон карты (внутри границ сервера)</label>
+                  <label><input type="checkbox" class="save" data-box-id="15" onchange="setCustomMapBg(this.checked);">Свой фон карты (внутри границ сервера)</label>
                   <div class="custom-bg-block">
                     <label class="custom-bg-file"><span>Картинка:</span><input type="file" id="map-bg-file" accept="image/*"></label>
                     <button type="button" class="custom-bg-clear" id="map-bg-clear">Убрать</button>
@@ -272,7 +250,7 @@ _tmr.push({id: "3773988", type: "pageView", start: (new Date()).getTime()});
                     </div>
                     <div class="custom-bg-preview" id="map-bg-preview"></div>
                   </div>
-                  <label><input type="checkbox" class="save" data-box-id="16" onchange="setCustomVirusBg($(this).is(':checked'));">Своя картинка вместо цвета вируса</label>
+                  <label><input type="checkbox" class="save" data-box-id="16" onchange="setCustomVirusBg(this.checked);">Своя картинка вместо цвета вируса</label>
                   <div class="custom-bg-block">
                     <label class="custom-bg-file"><span>Изображение вируса:</span><input type="file" id="virus-bg-file" accept="image/*"></label>
                     <button type="button" class="custom-bg-clear" id="virus-bg-clear">Убрать</button>
@@ -280,10 +258,9 @@ _tmr.push({id: "3773988", type: "pageView", start: (new Date()).getTime()});
                   </div>
                 </div>
               </section>
-
               <section class="settings-panel" data-panel="colors">
                 <h3 class="settings-panel-title">Свои цвета (только у вас)</h3>
-                <label><input type="checkbox" class="save" data-box-id="14" onchange="setCustomClientColors($(this).is(':checked'));">Включить свои цвета клеток</label>
+                <label><input type="checkbox" class="save" data-box-id="14" onchange="setCustomClientColors(this.checked);">Включить свои цвета клеток</label>
                 <div id="client-color-settings">
                   <div class="color-picker">
                     <span>Вирус:</span>
@@ -307,10 +284,9 @@ _tmr.push({id: "3773988", type: "pageView", start: (new Date()).getTime()});
                   </div>
                 </div>
               </section>
-
               <section class="settings-panel" data-panel="controls">
                 <h3 class="settings-panel-title">Клавиши и мышь</h3>
-                <label><input type="checkbox" class="save" data-box-id="4" onchange="setMouseClicks($(this).is(':checked'));">Поддержка клика мышки</label>
+                <label><input type="checkbox" class="save" data-box-id="4" onchange="setMouseClicks(this.checked);">Поддержка клика мышки</label>
                 <div id="keybind-settings" class="custom-bg-block">
                   <p class="keybind-hint">Нажмите кнопку действия → новая клавиша. Esc — отмена.</p>
                   <div id="mouse-bind-settings" class="mouse-bind-in-keybind">
@@ -335,12 +311,11 @@ _tmr.push({id: "3773988", type: "pageView", start: (new Date()).getTime()});
                   <button type="button" id="keybind-reset" class="custom-bg-clear">Сбросить все клавиши</button>
                 </div>
               </section>
-
               <section class="settings-panel" data-panel="system">
                 <h3 class="settings-panel-title">Интерфейс и прочее</h3>
-                <label><input type="checkbox" class="save" data-box-id="8" onchange="setChatHide($(this).is(':checked'));">Отключить чат</label>
-                <label><input type="checkbox" class="save" data-box-id="10" onchange="setAdultContent($(this).is(':checked'));">+18 (убрать антимат и блюр)</label>
-                <label><input type="checkbox" class="save" data-box-id="11" onchange="setConfirmCloseTab($(this).is(':checked'));">Подтверждение выхода из игры</label>
+                <label><input type="checkbox" class="save" data-box-id="8" onchange="setChatHide(this.checked);">Отключить чат</label>
+                <label><input type="checkbox" class="save" data-box-id="10" onchange="setAdultContent(this.checked);">+18 (убрать антимат и блюр)</label>
+                <label><input type="checkbox" class="save" data-box-id="11" onchange="setConfirmCloseTab(this.checked);">Подтверждение выхода из игры</label>
               </section>
             </div>
           </div>
@@ -356,7 +331,6 @@ _tmr.push({id: "3773988", type: "pageView", start: (new Date()).getTime()});
             <p id="skinsGalleryStatus" class="skins-gallery-status"></p>
           </div>
         </div>
-        <!-- Home Content -->
         <div id="home" class="content active">
           <div class="home-header-bar">
             <div class="home-header-left">
@@ -388,7 +362,7 @@ _tmr.push({id: "3773988", type: "pageView", start: (new Date()).getTime()});
             </div>
      <div class="from-send">
      <input type="text" placeholder="Ник" name="name" maxlength="16" class="noPress" id="nick" required="" autocomplete="username">
-     <input type="password" placeholder="Пасс" name="pass" maxlength="6" class="noPress" id="pass" required="" autocomplete="current-password" style="display: block;">
+     <input type="password" placeholder="Пасс" name="pass" maxlength="6" class="noPress" id="pass" required="" autocomplete="current-password" class="inl-4">
 	<div class="selectedIcon">
 		<div id="selectedColor"></div>
 	</div>
@@ -403,7 +377,7 @@ _tmr.push({id: "3773988", type: "pageView", start: (new Date()).getTime()});
 	<li data-ip="ffa.agar.su:6005" id="pvp2"><span class="fi fi-ru"></span>pvp2: 2x2 ms 1k<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/50</span></li>
 	<li data-ip="ffa.agar.su:6007" id="tournament2"><span class="fi fi-ru"></span>Tournament 2x2<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/50</span></li>
 	<li data-ip="ffa.agar.su:6006" id="tournament"><span class="fi fi-ru"></span>Tournament 3x3<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/50</span></li>
-</ul> 
+</ul>
 </div>
           <div class="nav-buttons">
             <button onclick="spectate();" class="nav-button serv-button"><i class="fas fa-eye"></i> НАБЛЮДАТЬ </button>
@@ -427,14 +401,14 @@ _tmr.push({id: "3773988", type: "pageView", start: (new Date()).getTime()});
             <div><span>Кабинет</span></div>
           </div>
           <div>
-<div id="myNicknamesBlock" style="display:none;">
+<div id="myNicknamesBlock" class="inl-5">
   <div class="tabs" id="myNickClanTabs" data-ready="1">
     <button id="tabNicknames" type="button" class="tab active">Ваши ники <span class="badge" id="badgeNick">0</span></button>
     <button id="tabClans" type="button" class="tab">Ваши кланы <span class="badge" id="badgeClan">0</span></button>
 	<button id="logoutButton" class="tab" onclick="logoutAccount()">Выход</button>
   </div>
   <div class="list-wrap" id="nickWrap"><ul id="myNickList" class="list"></ul></div>
-  <div class="list-wrap" id="clanWrap" style="display:none;"><ul id="myClanList" class="list"></ul></div>
+  <div class="list-wrap" id="clanWrap" class="inl-6"><ul id="myClanList" class="list"></ul></div>
   <div id="restoreProgressBlock" class="restore-progress-block">
     <button type="button" id="restoreToggle" class="restore-toggle" aria-expanded="false">
       <i class="fas fa-link"></i> Восстановить прогресс с Google / Telegram
@@ -456,80 +430,58 @@ _tmr.push({id: "3773988", type: "pageView", start: (new Date()).getTime()});
     <div id="VkIdSdkOAuthList"></div>
   </div>
 </div>
-<script src="/assets/scripts/vkid-sdk.js?2.6.1"></script>
-<script src="/assets/scripts/vk-auth.js?8"></script>
-
           </div>
         </div>
       </div>
     </div>
 	  <div class="rating-home" id="ratinghome">
-
     <div class="rating-header">Статистика</div>
-
     <div class="rating-content" id="topswindow">
-
         <div class="section-title">Top players</div>
-
         <div class="rating-row gold" title="19:34 19.02">
             <div>1</div>
             <div>-</div>
             <div>-</div>
-            <div class="avatar" style="background-image: url('https://api.agar.su/skins/PPFtwqH.png');"></div>
+            <div class="avatar inl-7"></div>
         </div>
-
         <div class="rating-row silver" title="0:53 25.01">
             <div>2</div>
             <div>-</div>
             <div>-</div>
-            <div class="avatar" style="background-image: url('https://api.agar.su/skins/PPFtwqH.png');"></div>
+            <div class="avatar inl-8"></div>
         </div>
-
         <div class="rating-row bronze" title="14:33 16.12">
             <div>3</div>
             <div>-</div>
             <div>-</div>
-            <div class="avatar" style="background-image: url('https://api.agar.su/skins/PPFtwqH.png');"></div>
+            <div class="avatar inl-9"></div>
         </div>
-
         <div class="section-title">Top Clans</div>
-
         <div class="rating-row gold" title="0:19 08.02">
             <div>1</div>
             <div>-</div>
             <div>-</div>
-            <div class="avatar" style="background-image: url('https://api.agar.su/skins/PPFtwqH.png');"></div>
+            <div class="avatar inl-10"></div>
         </div>
-
         <div class="rating-row silver" title="0:19 08.02">
             <div>2</div>
             <div>-</div>
             <div>-</div>
-            <div class="avatar" style="background-image: url('https://api.agar.su/skins/PPFtwqH.png');"></div>
+            <div class="avatar inl-11"></div>
         </div>
-
         <div class="rating-row bronze" title="0:19 08.02">
             <div>3</div>
             <div>-</div>
             <div>-</div>
-            <div class="avatar" style="background-image: url('https://api.agar.su/skins/PPFtwqH.png');"></div>
+            <div class="avatar inl-12"></div>
         </div>
-
     </div>
 </div>
 	  <footer class="footer"><a href="privacy.html">Политика конфиденциальности</a> ·<a href="rules.html">Правила сайта</a>· <a href="offer.html">Публичная оферта</a></footer>
-
-
-
-	  
   </div>
-
-
-
-	
   <div id="canvas-stage" class="canvas-stage">
   <canvas id="canvas"></canvas>
-  <div id="connect-verify-overlay" style="display:none;">
+  <div id="connect-verify-overlay" class="inl-13">
     <div id="connect-verify">
       <i id="connect-verify-icon" class="fas fa-shield-halved connect-verify-icon" aria-hidden="true"></i>
       <div id="connect-verify-title">Проверка безопасности</div>
@@ -580,7 +532,7 @@ _tmr.push({id: "3773988", type: "pageView", start: (new Date()).getTime()});
 </div>
     <div class="chatX_emch">
       <div class="coord" id="emoji_toggle"><i class="fa-solid fa-face-grin-squint"></i></div>
-	 <input style="display:none;" id="ls"></input>
+	 <input class="inl-14" id="ls"></input>
       <input class="noPress" id="chat_textbox" maxlength="120" placeholder="Напишите сообщение..." autocomplete="off"></input>
     </div>
   </div>
@@ -593,7 +545,7 @@ _tmr.push({id: "3773988", type: "pageView", start: (new Date()).getTime()});
   </div>
   <div id="leaderboard"><div class="topclose" onclick="document.getElementById('leaderboard').style.display = 'none'; document.getElementById('onleaderboard').style.display = 'flex';"><i class="fa fa-close"></i></div><h4>Топ Сейчас</h4><div id="toplistnow"></div></div>
 <div id="onleaderboard"><i class="fa fa-bar-chart"></i></div>
-  <div id="ban-banner" class="ban-banner" style="display:none;" role="alert">
+  <div id="ban-banner" class="ban-banner inl-15" role="alert">
     <div class="ban-banner-inner">
       <i class="fas fa-ban ban-banner-icon"></i>
       <div class="ban-banner-text">
@@ -607,7 +559,6 @@ _tmr.push({id: "3773988", type: "pageView", start: (new Date()).getTime()});
       <div class="ping-container">
     ping: <span id="ping">0</span> | fps: <span id="fps">0</span>
 </div>
-
       <div class="mapclose" onclick="document.getElementById('map').style.display = 'none'; document.getElementById('onmap').style.display = 'flex';"><i class="fa fa-close"></i></div>
     </div>
     <div class="map-container"><span id="mapposition"></span>
@@ -646,7 +597,6 @@ _tmr.push({id: "3773988", type: "pageView", start: (new Date()).getTime()});
       <div class="statYout">
         <a href="https://youtu.be/R13lgNxyp78" target="_blank" class="statYoutt"></a>
       </div>
-      
       <div class="card-description">
     <div class="step">
       <span class="step-number">1</span>
@@ -658,7 +608,7 @@ _tmr.push({id: "3773988", type: "pageView", start: (new Date()).getTime()});
     </div>
     <div class="step">
       <span class="step-number">3</span>
-      <p>Отправьте ссылку на видео в группу Telegram: 
+      <p>Отправьте ссылку на видео в группу Telegram:
         <a href="https://t.me/agarsu?direct" target="_blank" class="telegram-link">tg@agarsu</a>
       </p>
     </div>
@@ -692,7 +642,7 @@ _tmr.push({id: "3773988", type: "pageView", start: (new Date()).getTime()});
       <div id="table-containerwraper"></div>
     </div>
   </div>
-  <div id="freeze">Pause <i style="color:red;" class="fa fa-pause"></i></div>
+  <div id="freeze">Pause <i class="inl-16 fa fa-pause"></i></div>
   <div id="notification-container">
     <div id="logout-notification" class="notification">Login close</div>
   </div>

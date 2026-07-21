@@ -1,0 +1,15 @@
+{
+  "name": "agarsu-client",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "playwright": "^1.52.0",
+    "vite": "^6.3.5"
+  }
+}
