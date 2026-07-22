@@ -4,30 +4,44 @@ import { loadMyNicknames } from "./shopPerks.js";
 const GOOGLE_RESTORE_CLIENT_ID = "157257230972-4vh698jtf46c76sc7607oe1k9tr782je.apps.googleusercontent.com";
 function updateRestoreBlockVisibility(S) {
   const block = document.getElementById("restoreProgressBlock");
+  const available = document.getElementById("restoreAvailableBlock");
+  const done = document.getElementById("restoreDoneBlock");
+  const badge = document.getElementById("restoreStateBadge");
   if (!block) return;
   const restored = Boolean(S.accountData?.restored_at);
-  const onClansTab = document.getElementById("tabClans")?.classList.contains("active");
-  block.style.display = restored || onClansTab ? "none" : "";
+  if (badge) {
+    badge.textContent = restored ? "Восстановлен" : "Не восстановлен";
+    badge.className = "restore-state-badge" + (restored ? " restore-state-badge--done" : "");
+  }
+  if (available) available.style.display = restored ? "none" : "";
+  if (done) done.style.display = restored ? "" : "none";
+  block.style.display = "";
 }
 function showNickClanTab(S, which) {
   const tabN = document.getElementById("tabNicknames");
   const tabC = document.getElementById("tabClans");
+  const tabS = document.getElementById("tabSettings");
   const nick = document.getElementById("nickWrap");
   const clan = document.getElementById("clanWrap");
-  if (!tabN || !tabC || !nick || !clan) return;
+  const settings = document.getElementById("settingsWrap");
+  if (!tabN || !tabC || !tabS || !nick || !clan || !settings) return;
   tabN.classList.toggle("active", which === "nicks");
   tabC.classList.toggle("active", which === "clans");
+  tabS.classList.toggle("active", which === "settings");
   nick.style.display = which === "nicks" ? "" : "none";
   clan.style.display = which === "clans" ? "" : "none";
+  settings.style.display = which === "settings" ? "" : "none";
   updateRestoreBlockVisibility(S);
 }
 function wireTabsOnce(S) {
   const wrap = document.getElementById("myNickClanTabs");
   const tabN = document.getElementById("tabNicknames");
   const tabC = document.getElementById("tabClans");
-  if (!wrap || !tabN || !tabC || wrap.dataset.wired) return;
+  const tabS = document.getElementById("tabSettings");
+  if (!wrap || !tabN || !tabC || !tabS || wrap.dataset.wired) return;
   tabN.onclick = () => showNickClanTab(S, "nicks");
   tabC.onclick = () => showNickClanTab(S, "clans");
+  tabS.onclick = () => showNickClanTab(S, "settings");
   wrap.dataset.wired = "1";
 }
 function hideAuthButtons() {
@@ -98,8 +112,10 @@ function attachAccountHooks(S, hooks) {
     if (block) block.style.display = "none";
     const restorePanel = document.getElementById("restorePanel");
     const restoreToggle = document.getElementById("restoreToggle");
+    const settingsWrap = document.getElementById("settingsWrap");
     if (restorePanel) restorePanel.hidden = true;
     if (restoreToggle) restoreToggle.setAttribute("aria-expanded", "false");
+    if (settingsWrap) settingsWrap.style.display = "none";
     setRestoreStatus("");
     const nickList = document.getElementById("myNickList");
     const clanList = document.getElementById("myClanList");

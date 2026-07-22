@@ -282,7 +282,7 @@ i:hover{cursor:pointer;}
       padding: 9px 14px;
       border: 1px solid rgba(255,255,255,0.08);
       border-radius: 12px;
-      background: linear-gradient(180deg, #141c2f 0%, #0f1626 100%);
+      background: #101625;
       color: #b8c7e6;
       cursor: pointer;
       display: inline-flex;
@@ -302,7 +302,7 @@ i:hover{cursor:pointer;}
       border-color: rgba(1,107,239,0.35);
     }
     #myNicknamesBlock .tab.active {
-      background: linear-gradient(180deg, #1a7cff 0%, #016bef 100%);
+      background: #016bef;
       border-color: #016bef;
       color: #fff;
       font-weight: 600;
@@ -342,9 +342,7 @@ i:hover{cursor:pointer;}
       border-radius: 16px;
       max-height: 290px;
       overflow: auto;
-      background:
-        radial-gradient(120% 80% at 0% 0%, rgba(1,107,239,0.08), transparent 55%),
-        linear-gradient(180deg, #101827 0%, #0c1320 100%);
+      background: #0f1624;
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
     }
     #myNicknamesBlock .list { margin: 0; padding: 6px; list-style: none; }
@@ -385,7 +383,7 @@ i:hover{cursor:pointer;}
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(145deg, #283044, #1a2236);
+      background: #283044;
       color: #9fb3d9;
       font-size: 13px;
       font-weight: 700;
@@ -454,13 +452,14 @@ i:hover{cursor:pointer;}
       flex-wrap: wrap;
       gap: 5px;
       margin-top: 8px;
+      align-items: stretch;
     }
     #myNicknamesBlock .nick-perk {
       position: relative;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-height: 22px;
+      min-height: 24px;
       padding: 0 10px;
       border-radius: 999px;
       font-size: 10px;
@@ -472,6 +471,9 @@ i:hover{cursor:pointer;}
       background: transparent;
       user-select: none;
       transition: border-color .22s ease, color .22s ease, background .22s ease;
+      max-width: 100%;
+      text-align: center;
+      overflow: hidden;
     }
     #myNicknamesBlock .nick-perk--on {
       border-color: rgba(129,199,132,0.45);
@@ -505,7 +507,9 @@ i:hover{cursor:pointer;}
     }
     #myNicknamesBlock .nick-perk-face {
       display: block;
-      white-space: nowrap;
+      white-space: normal;
+      word-break: break-word;
+      padding: 4px 0;
       transition: opacity .2s ease, transform .2s ease;
     }
     #myNicknamesBlock .nick-perk--action .nick-perk-face--default {
@@ -520,6 +524,7 @@ i:hover{cursor:pointer;}
       opacity: 0;
       transform: translateY(3px);
       pointer-events: none;
+      padding-inline: 8px;
     }
     #myNicknamesBlock .nick-perk--action:hover .nick-perk-face--default,
     #myNicknamesBlock .nick-perk--action:focus-visible .nick-perk-face--default {
@@ -541,6 +546,12 @@ i:hover{cursor:pointer;}
     #myNicknamesBlock .nick-perk--action.nick-perk--on:focus-visible::before {
       opacity: 0;
       width: 0;
+    }
+    #myNicknamesBlock .store-settings-panel {
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px;
+      background: #0f1624;
+      padding: 14px;
     }
     @media (max-width:599px){
       #myNicknamesBlock .nick-card-body { min-width: 100px; }
@@ -2093,9 +2104,7 @@ input{font-size:16px;}
   padding: 22px 18px 18px;
   border-radius: 18px;
   border: 1px solid rgba(255,255,255,0.08);
-  background:
-    radial-gradient(120% 90% at 50% 0%, rgba(1,107,239,0.18), transparent 60%),
-    linear-gradient(180deg, #121a2d 0%, #0d1422 100%);
+  background: #101625;
   box-shadow: 0 12px 28px rgba(0,0,0,0.28);
   display: flex;
   flex-direction: column;
@@ -2178,6 +2187,38 @@ input{font-size:16px;}
   border-top: 1px solid rgba(255,255,255,0.06);
   text-align: left;
 }
+.restore-head {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.restore-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #eef4ff;
+  margin-bottom: 4px;
+}
+.restore-state-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: #151d30;
+  color: #ffcf99;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.restore-state-badge--done {
+  background: rgba(76,175,80,0.18);
+  border-color: rgba(129,199,132,0.35);
+  color: #b9e6bb;
+}
 .restore-toggle {
   display: flex;
   align-items: center;
@@ -2204,7 +2245,7 @@ input{font-size:16px;}
   padding: 14px;
   border: 1px solid rgba(255,255,255,0.07);
   border-radius: 14px;
-  background: linear-gradient(180deg, #101827 0%, #0c1320 100%);
+  background: #0c1320;
   animation: storePanelIn .22s ease;
 }
 .restore-panel[hidden] { display: none !important; }
@@ -2251,11 +2292,22 @@ input{font-size:16px;}
   color: #fecaca;
   border: 1px solid #991b1b66;
 }
+.restore-done-block {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(129,199,132,0.22);
+  background: rgba(76,175,80,0.1);
+  color: #bfe6c1;
+  font-size: 13px;
+  line-height: 1.45;
+}
 @media (max-width:520px) {
   #authlog,
   #authlog.store-auth { padding: 12px 8px; min-height: 180px; }
   .store-auth-card { padding: 18px 14px 14px; }
   .restore-actions { flex-direction: column; }
+  .restore-head { flex-direction: column; }
+  .restore-state-badge { white-space: normal; }
 }
 .headerstats{width:100%;display:flex;align-items:center;justify-content:center;margin-bottom:10px;position:relative;}
 .headerstats h1{margin:0;text-align:center;flex:1;}

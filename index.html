@@ -414,6 +414,10 @@ _tmr.push({id: "3773988", type: "pageView", start: (new Date()).getTime()});
                     <span>Кланы</span>
                     <span class="badge" id="badgeClan">0</span>
                   </button>
+                  <button id="tabSettings" type="button" class="tab">
+                    <i class="fas fa-gear"></i>
+                    <span>Настройки</span>
+                  </button>
                 </div>
                 <button id="logoutButton" class="tab store-logout" onclick="logoutAccount()">
                   <i class="fas fa-right-from-bracket"></i>
@@ -422,18 +426,31 @@ _tmr.push({id: "3773988", type: "pageView", start: (new Date()).getTime()});
               </div>
               <div class="list-wrap store-list" id="nickWrap"><ul id="myNickList" class="list"></ul></div>
               <div class="list-wrap store-list" id="clanWrap" style="display:none;"><ul id="myClanList" class="list"></ul></div>
-              <div id="restoreProgressBlock" class="restore-progress-block">
-                <button type="button" id="restoreToggle" class="restore-toggle" aria-expanded="false">
-                  <i class="fas fa-link"></i>
-                  <span>Восстановить прогресс с Google / Telegram</span>
-                </button>
-                <div id="restorePanel" class="restore-panel" hidden>
-                  <p class="restore-note">Если вы играли через Google или Telegram — подтвердите старый аккаунт. Ваш прежний ID, опыт и ники останутся, вход будет через VK. Для Google и Telegram может понадобиться VPN.</p>
-                  <div class="restore-actions">
-                    <div id="restoreGoogleContainer" class="restore-google-wrap"></div>
-                    <button type="button" class="auth-telegram-btn restore-telegram-btn" id="restoreTelegramBtn">
-                      <i class="fab fa-telegram"></i> Восстановить через Telegram
+              <div id="settingsWrap" class="store-settings-panel" style="display:none;">
+                <div id="restoreProgressBlock" class="restore-progress-block">
+                  <div class="restore-head">
+                    <div>
+                      <div class="restore-title">Восстановление аккаунта</div>
+                      <p class="restore-note">Если вы играли через Google или Telegram — подтвердите старый аккаунт. Ваш прежний ID, опыт и ники останутся, вход будет через VK.</p>
+                    </div>
+                    <span id="restoreStateBadge" class="restore-state-badge">Не восстановлен</span>
+                  </div>
+                  <div id="restoreAvailableBlock">
+                    <button type="button" id="restoreToggle" class="restore-toggle" aria-expanded="false">
+                      <i class="fas fa-link"></i>
+                      <span>Восстановить прогресс с Google / Telegram</span>
                     </button>
+                    <div id="restorePanel" class="restore-panel" hidden>
+                      <div class="restore-actions">
+                        <div id="restoreGoogleContainer" class="restore-google-wrap"></div>
+                        <button type="button" class="auth-telegram-btn restore-telegram-btn" id="restoreTelegramBtn">
+                          <i class="fab fa-telegram"></i> Восстановить через Telegram
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div id="restoreDoneBlock" class="restore-done-block" style="display:none;">
+                    Этот аккаунт уже был восстановлен. Повторное восстановление не требуется.
                   </div>
                   <div id="restoreStatus" class="restore-status" role="status" hidden></div>
                 </div>
