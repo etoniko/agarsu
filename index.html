@@ -324,11 +324,13 @@ _tmr.push({id: "3773988", type: "pageView", start: (new Date()).getTime()});
           <div class="skins-gallery-wrap">
             <div class="skins-gallery-header">
               <span class="skins-gallery-title">Галерея бесплатных скинов</span>
-              <button type="button" class="skins-gallery-shop-btn" onclick="showContent('shop')">Создать скин</button>
             </div>
             <div id="skinsGalleryGrid" class="skins-gallery-grid"></div>
             <div id="skinsGalleryPagination" class="skins-gallery-pagination"></div>
-            <p id="skinsGalleryStatus" class="skins-gallery-status"></p>
+            <p id="skinsGalleryStatus" class="skins-gallery-status">
+              <span class="skins-gallery-status-text"></span>
+              <button type="button" class="skins-gallery-shop-btn" onclick="showContent('shop')">Создать скин</button>
+            </p>
           </div>
         </div>
         <div id="home" class="content active">
@@ -513,7 +515,7 @@ _tmr.push({id: "3773988", type: "pageView", start: (new Date()).getTime()});
         </div>
     </div>
 </div>
-	  <footer class="footer"><a href="privacy.html">Политика конфиденциальности</a> ·<a href="rules.html">Правила сайта</a>· <a href="offer.html">Публичная оферта</a></footer>
+	  <footer class="footer"><a href="privacy.html">Политика конфиденциальности</a><a href="rules.html"> | Правила сайта | </a><a href="offer.html">Публичная оферта</a></footer>
   </div>
   <div id="canvas-stage" class="canvas-stage">
   <canvas id="canvas"></canvas>
