@@ -76,15 +76,39 @@ function getNickPerks(S, nickname, password, lists) {
 function makePerkBadge(label, active, hoverText, onBuy) {
   const span = document.createElement("span");
   span.className = "nick-perk" + (active ? " nick-perk--on" : "");
-  if (hoverText && onBuy) span.classList.add("nick-perk--action");
   const def = document.createElement("span");
   def.className = "nick-perk-face nick-perk-face--default";
   def.textContent = label;
   span.appendChild(def);
+
+  const setWidthToContent = () => {
+    span.style.width = "auto";
+    const width = Math.ceil(span.getBoundingClientRect().width);
+    span.style.width = `${width}px`;
+    return width;
+  };
+
+  const showFace = (useHover) => {
+    const hover = span.querySelector(".nick-perk-face--hover");
+    if (!hover) return;
+    const from = span.getBoundingClientRect().width;
+    span.style.width = `${Math.ceil(from)}px`;
+    def.hidden = !!useHover;
+    hover.hidden = !useHover;
+    span.style.width = "auto";
+    const to = Math.ceil(span.getBoundingClientRect().width);
+    span.style.width = `${Math.ceil(from)}px`;
+    requestAnimationFrame(() => {
+      span.style.width = `${to}px`;
+    });
+  };
+
   if (hoverText && onBuy) {
+    span.classList.add("nick-perk--action");
     const hover = document.createElement("span");
     hover.className = "nick-perk-face nick-perk-face--hover";
     hover.textContent = hoverText;
+    hover.hidden = true;
     hover.setAttribute("aria-hidden", "true");
     span.appendChild(hover);
     span.setAttribute("role", "button");
@@ -101,6 +125,11 @@ function makePerkBadge(label, active, hoverText, onBuy) {
         go(e);
       }
     };
+    span.addEventListener("mouseenter", () => showFace(true));
+    span.addEventListener("mouseleave", () => showFace(false));
+    span.addEventListener("focus", () => showFace(true));
+    span.addEventListener("blur", () => showFace(false));
+    requestAnimationFrame(setWidthToContent);
   } else if (active) {
     span.title = "\u041A\u0443\u043F\u043B\u0435\u043D\u043E";
   }
@@ -177,13 +206,13 @@ function renderNickCard(S, list, fullNick, perks, hooks) {
     makePerkBadge(
       "\u041F\u0430\u0440\u043E\u043B\u044C",
       p.hasSkinPass,
-      p.hasSkinPass ? "\u0421\u043C\u0435\u043D\u0438\u0442\u044C" : "\u041A\u0443\u043F\u0438\u0442\u044C",
+      p.hasSkinPass ? "\u0421\u043C\u0435\u043D\u0438\u0442\u044C \u043F\u0430\u0441\u0441" : "\u041A\u0443\u043F\u0438\u0442\u044C \u043F\u0430\u0441\u0441",
       shop({ focusPassword: true })
     ),
     makePerkBadge(
       "\u0421\u043A\u0438\u043D",
       p.hasSkin,
-      p.hasSkin ? "\u0421\u043C\u0435\u043D\u0438\u0442\u044C" : "\u041A\u0443\u043F\u0438\u0442\u044C",
+      p.hasSkin ? "\u0421\u043C\u0435\u043D\u0438\u0442\u044C \u0441\u043A\u0438\u043D" : "\u041A\u0443\u043F\u0438\u0442\u044C \u0441\u043A\u0438\u043D",
       shop({ focusSkin: true })
     ),
     makePerkBadge(

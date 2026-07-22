@@ -472,11 +472,17 @@ i:hover{cursor:pointer;}
       color: rgba(219,229,255,0.5);
       background: transparent;
       user-select: none;
-      transition: border-color .18s ease, color .18s ease, background .18s ease, padding .18s ease;
+      transition:
+        width .2s ease,
+        border-color .18s ease,
+        color .18s ease,
+        background .18s ease,
+        padding .18s ease;
       text-align: center;
       overflow: hidden;
       box-sizing: border-box;
       flex: 0 0 auto;
+      white-space: nowrap;
     }
     #myNicknamesBlock .nick-perk--on {
       border-color: rgba(129,199,132,0.45);
@@ -512,40 +518,12 @@ i:hover{cursor:pointer;}
       outline: none;
     }
     #myNicknamesBlock .nick-perk-face {
-      display: block;
+      display: inline-block;
       white-space: nowrap;
       line-height: 1.2;
-      transition: opacity .18s ease, transform .18s ease;
     }
-    #myNicknamesBlock .nick-perk--action .nick-perk-face--default {
-      position: relative;
-      opacity: 1;
-      transform: translateY(0);
-    }
-    #myNicknamesBlock .nick-perk--action .nick-perk-face--hover {
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: 0;
-      bottom: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0 8px;
-      opacity: 0;
-      transform: translateY(2px);
-      pointer-events: none;
-      white-space: nowrap;
-    }
-    #myNicknamesBlock .nick-perk--action:hover .nick-perk-face--default,
-    #myNicknamesBlock .nick-perk--action:focus-visible .nick-perk-face--default {
-      opacity: 0;
-      transform: translateY(-2px);
-    }
-    #myNicknamesBlock .nick-perk--action:hover .nick-perk-face--hover,
-    #myNicknamesBlock .nick-perk--action:focus-visible .nick-perk-face--hover {
-      opacity: 1;
-      transform: translateY(0);
+    #myNicknamesBlock .nick-perk-face[hidden] {
+      display: none !important;
     }
     #myNicknamesBlock .nick-perk--action.nick-perk--on::before {
       opacity: 0;
