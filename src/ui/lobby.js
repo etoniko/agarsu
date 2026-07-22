@@ -1,91 +1,39 @@
 import { bus, Events } from "../lib/events.js";
-import { showOverlays } from "../lib/dom.js";
+import { hideStatics, showOverlays } from "../lib/dom.js";
 import { getAccountToken } from "../storage/local.js";
-import { unmountPanel } from "./panels/mount.js";
-
-const MENU_PANELS = ["home", "shop", "settings", "skinslist", "rating", "store"];
-let showGen = 0;
-
-async function resetPanelModule(id) {
-  switch (id) {
-    case "home":
-      return (await import("./homePanel.js")).resetHomePanel();
-    case "shop":
-      return (await import("./shop.js")).resetShopPanel();
-    case "settings":
-      return (await import("./settings.js")).resetSettingsPanel();
-    case "skinslist":
-      return (await import("./skinsGallery.js")).resetSkinsGalleryPanel();
-    case "rating":
-      return (await import("./ratings.js")).resetRatingPanel();
-    case "store":
-      return (await import("./storePanel.js")).resetStorePanel();
-    default:
-      unmountPanel(id);
-  }
-}
-
-async function unloadOtherPanels(activeId) {
-  await Promise.all(
-    MENU_PANELS.filter((id) => id !== activeId).map((id) => resetPanelModule(id))
-  );
-}
-
-async function ensureActivePanel(id) {
-  if (id === "home") {
-    await (await import("./homePanel.js")).ensureHomePanel();
-    return;
-  }
-  if (id === "skinslist") {
-    await (await import("./skinsGallery.js")).initSkinsGallery();
-    return;
-  }
-  if (id === "rating") {
-    await (await import("./ratings.js")).ensureRatingPanel();
-    return;
-  }
-  if (id === "shop") {
-    await (await import("./shop.js")).ensureShopPanel();
-    return;
-  }
-  if (id === "settings") {
-    await (await import("./settings.js")).ensureSettingsPanel();
-    return;
-  }
-  if (id === "store") {
-    await (await import("./storePanel.js")).ensureStorePanel();
-    return;
-  }
-}
-
-async function showContent(id) {
-  const gen = ++showGen;
+function showContent(id) {
   document.querySelectorAll(".menu-item").forEach((item) => item.classList.remove("active"));
   document.querySelectorAll(".content").forEach((content) => content.classList.remove("active"));
   const menuItem = document.querySelector(`.menu-item[onclick="showContent('${id}')"]`);
   if (menuItem) menuItem.classList.add("active");
-
-  await unloadOtherPanels(id);
-  if (gen !== showGen) return;
-
   const panel = document.getElementById(id);
   if (panel) panel.classList.add("active");
-
-  try {
-    await ensureActivePanel(id);
-  } catch (err) {
-    console.error(id + " panel:", err);
-  }
-  if (gen !== showGen) return;
-
   if (typeof window.updateShopAuthNotice === "function") window.updateShopAuthNotice();
+  if (id === "skinslist" && typeof window.initSkinsGallery === "function") window.initSkinsGallery();
   bus.emit(Events.SHOW_CONTENT, { id });
 }
-
 function updateAccountMenuLabel() {
   const label = document.getElementById("accountMenuLabel");
   if (!label) return;
   label.textContent = getAccountToken() ? "\u041B\u041A" : "\u0412\u043E\u0439\u0442\u0438";
+}
+function showLogoutNotification() {
+  const notif = document.getElementById("logout-notification");
+  if (!notif) return;
+  notif.style.display = "block";
+  setTimeout(() => {
+    notif.classList.add("show");
+  }, 10);
+  setTimeout(() => {
+    notif.classList.remove("show");
+    notif.addEventListener(
+      "transitionend",
+      () => {
+        notif.style.display = "none";
+      },
+      { once: true }
+    );
+  }, 3e3);
 }
 function initChatResize() {
   const chatWindow = document.getElementById("chatX_window");
@@ -172,11 +120,46 @@ function initChatResize() {
   return { loadChatSize };
 }
 function initHudToggles() {
+  const onchat = document.getElementById("onchat");
+  if (onchat) {
+    onchat.addEventListener("click", () => {
+      document.getElementById("chatX_window").style.display = "flex";
+      onchat.style.display = "none";
+    });
+  }
+  const onmap = document.getElementById("onmap");
+  if (onmap) {
+    onmap.addEventListener("click", () => {
+      document.getElementById("map").style.display = "block";
+      onmap.style.display = "none";
+    });
+  }
+  const onleaderboard = document.getElementById("onleaderboard");
+  if (onleaderboard) {
+    onleaderboard.addEventListener("click", () => {
+      document.getElementById("leaderboard").style.display = "block";
+      onleaderboard.style.display = "none";
+    });
+  }
+  const freezeBtn = document.getElementById("freeze");
+  if (freezeBtn) {
+    freezeBtn.addEventListener("click", function() {
+      window.freeze = false;
+      this.style.display = "none";
+    });
+  }
   document.querySelectorAll(".homemenu").forEach((el) => {
     el.addEventListener("click", () => {
       showOverlays();
     });
   });
+  const closeStats = document.getElementById("closeStats");
+  if (closeStats) {
+    closeStats.addEventListener("click", () => {
+      hideStatics();
+      showOverlays();
+    });
+  }
 }
 function initOverlayMouseBridge() {
   const canvas = document.getElementById("canvas");
@@ -221,30 +204,38 @@ function initChatNickInsert() {
     insertNick(nickElem.textContent);
   });
   const emojiToggle = document.getElementById("emoji_toggle");
-  if (emojiToggle && emojiToggle.dataset.wired !== "1") {
-    emojiToggle.dataset.wired = "1";
+  if (emojiToggle) {
     emojiToggle.addEventListener("click", () => {
-      if (typeof window.toggleEmojiList === "function") window.toggleEmojiList();
-      else import("./hudLazy.js").then((m) => m.toggleEmojiList());
+      const list = document.querySelector("#chatX_window .emoji-list");
+      if (!list) return;
+      list.style.display = list.style.display === "flex" ? "none" : "flex";
+    });
+  }
+  const emojiList = document.querySelector("#chatX_window .emoji-list");
+  if (emojiList) {
+    emojiList.addEventListener("click", (e) => {
+      const emojiItem = e.target.closest(".emoji-item");
+      if (!emojiItem) return;
+      const emojiCode = emojiItem.dataset.code;
+      const chatBox = document.getElementById("chat_textbox");
+      if (chatBox) chatBox.value += emojiCode;
     });
   }
 }
-async function initLobbyUi() {
+function initLobbyUi() {
   const { loadChatSize } = initChatResize();
   updateAccountMenuLabel();
   loadChatSize();
   initHudToggles();
   initOverlayMouseBridge();
   initChatNickInsert();
-  const { initCenterShell } = await import("./centerShell.js");
-  initCenterShell();
-  const { initHudLazyGlobals } = await import("./hudLazy.js");
-  initHudLazyGlobals();
 }
 window.showContent = showContent;
 window.updateAccountMenuLabel = updateAccountMenuLabel;
+window.showLogoutNotification = showLogoutNotification;
 export {
   initLobbyUi,
   showContent,
+  showLogoutNotification,
   updateAccountMenuLabel
 };

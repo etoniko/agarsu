@@ -1,6 +1,7 @@
 import "./styles/main.css";
 import { log } from "./lib/log.js";
 import "./lib/vector.js";
+import { bus, Events } from "./lib/events.js";
 function loadScript(src) {
   return new Promise((resolve, reject) => {
     const existing = document.querySelector(`script[src="${src}"]`);
@@ -39,19 +40,20 @@ async function boot() {
   const { hydrateAccountToken } = await import("./storage/local.js");
   hydrateAccountToken();
   const vkOk = await ensureVkSdk();
-  const { initLobbyUi, showContent } = await import("./ui/lobby.js");
   const { initGame } = await import("./game/app.js");
-  await initLobbyUi();
+  const { initLobbyUi } = await import("./ui/lobby.js");
+  await import("./ui/shop.js");
+  await import("./ui/skinsGallery.js");
+  await import("./ui/pass.js");
+  await import("./ui/ratings.js");
+  await import("./ui/settings.js");
   initGame(window);
-  await showContent("home");
-  // Handle VK OAuth redirect callback even before cabinet is opened
+  initLobbyUi();
   if (vkOk) {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("code") && params.get("device_id")) {
-      const { initVkAuthModule } = await import("./ui/account.js");
-      initVkAuthModule();
-    }
+    const { initVkAuthModule } = await import("./ui/account.js");
+    initVkAuthModule();
   }
+  bus.emit(Events.SHOW_CONTENT, { id: "home" });
   log.info("Agar.su ready");
 }
 boot().catch((err) => {

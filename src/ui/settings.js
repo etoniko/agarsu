@@ -1,15 +1,14 @@
 import { getCookie, setCookie } from "../storage/cookies.js";
+import { onReady } from "../lib/dom.js";
 import {
   cancelKeybindCapture,
   initKeybindSettings,
-  initMouseButtonSettings,
   initSettingsNav,
   loadKeybinds,
   loadMouseButtonSettings,
   renderKeybindUI,
   syncMouseBindSettingsVisibility
 } from "../game/input.js";
-let settingsState = null;
 const CUSTOM_BG_STORAGE_MAX = 9e5;
 function loadBgImageFromDataUrl(dataUrl, onReady) {
   if (!dataUrl) {
@@ -79,27 +78,28 @@ function drawVirusFillBackground(S, ctx, cell, renderSize, simpleRender, bigPoin
 function updateBgPreview(previewId, dataUrl) {
   const el = document.getElementById(previewId);
   if (!el) return;
-  const clearId = previewId === "map-bg-preview" ? "map-bg-clear" : previewId === "virus-bg-preview" ? "virus-bg-clear" : null;
-  const clearBtn = clearId ? document.getElementById(clearId) : null;
   if (dataUrl) {
     el.style.backgroundImage = `url("${dataUrl}")`;
     el.classList.add("has-image");
-    if (clearBtn) clearBtn.hidden = false;
   } else {
     el.style.backgroundImage = "";
     el.classList.remove("has-image");
-    if (clearBtn) clearBtn.hidden = true;
   }
 }
 function syncBgTileRows(S) {
   const mapRow = document.getElementById("map-bg-tile-row");
   if (mapRow) mapRow.style.display = S.customMapBgMode === "repeat" ? "flex" : "none";
 }
-function loadCustomBgState(S) {
-  if (S.customBgStateLoaded) return;
-  S.customBgStateLoaded = true;
+function initCustomBgSettings(S) {
+  if (S.customBgSettingsInitialized) return;
+  S.customBgSettingsInitialized = true;
   S.customMapBgMode = getCookie("custom_map_bg_mode") || "stretch";
   S.customMapBgTileSize = parseInt(getCookie("custom_map_bg_tile"), 10) || 512;
+  const mapMode = document.getElementById("map-bg-mode");
+  const mapTile = document.getElementById("map-bg-tile");
+  if (mapMode) mapMode.value = S.customMapBgMode;
+  if (mapTile) mapTile.value = S.customMapBgTileSize;
+  syncBgTileRows(S);
   const enabledMap = getCookie("checkbox-15");
   if (enabledMap !== void 0 && enabledMap !== null) S.customMapBgEnabled = enabledMap === "true";
   const enabledVirus = getCookie("checkbox-16");
@@ -112,19 +112,6 @@ function loadCustomBgState(S) {
     S.virusBgImage = img;
     updateBgPreview("virus-bg-preview", img ? localStorage.getItem("custom_virus_bg_image") : null);
   });
-}
-function initCustomBgSettings(S) {
-  loadCustomBgState(S);
-  if (S.customBgSettingsInitialized) return;
-  const mapMode = document.getElementById("map-bg-mode");
-  const mapTile = document.getElementById("map-bg-tile");
-  if (!mapMode && !document.getElementById("map-bg-file")) return;
-  S.customBgSettingsInitialized = true;
-  if (mapMode) mapMode.value = S.customMapBgMode;
-  if (mapTile) mapTile.value = S.customMapBgTileSize;
-  syncBgTileRows(S);
-  updateBgPreview("map-bg-preview", S.mapBgImage ? localStorage.getItem("custom_map_bg_image") : null);
-  updateBgPreview("virus-bg-preview", S.virusBgImage ? localStorage.getItem("custom_virus_bg_image") : null);
   function bindBgFile(fileId, storageKey, previewId, setImage) {
     const input = document.getElementById(fileId);
     if (!input) return;
@@ -237,8 +224,6 @@ function wireClientColorInputs(S) {
     const input = document.getElementById(id);
     if (!input) return;
     input.value = getCookie(cookieKey) || getter();
-    if (input.dataset.wired === "1") return;
-    input.dataset.wired = "1";
     input.addEventListener("input", function() {
       setter(input.value);
       saveClientColorSetting(cookieKey, input.value);
@@ -266,86 +251,35 @@ function getCheckboxDefaultValue(S, id) {
     default: return false;
   }
 }
-function applyCheckboxCookiesToState(S) {
-  const w = S.wHandle;
-  const apply = {
-    1: (v) => w.setSkins(v),
-    2: (v) => w.setNames(v),
-    3: (v) => w.setColors(v),
-    4: (v) => w.setMouseClicks(v),
-    5: (v) => w.setShowMass(v),
-    6: (v) => w.setSmooth(v),
-    7: (v) => w.setNoBorder(v),
-    8: (v) => w.setChatHide(v),
-    9: (v) => w.setGlow(v),
-    10: (v) => w.setAdultContent(v),
-    11: (v) => w.setConfirmCloseTab(v),
-    12: (v) => w.setFixedCell(v),
-    13: (v) => w.setShowStickers(v),
-    14: (v) => w.setCustomClientColors(v),
-    15: (v) => w.setCustomMapBg(v),
-    16: (v) => w.setCustomVirusBg(v)
-  };
-  for (let id = 1; id <= 16; id++) {
-    const raw = getCookie("checkbox-" + id);
-    const value = raw !== void 0 && raw !== null ? raw === "true" : getCheckboxDefaultValue(S, id);
-    if (apply[id]) apply[id](value);
-  }
-}
-function wireSettingsPanelDom(S) {
-  const root = document.getElementById("settings");
-  if (!root || root.dataset.settingsWired === "1") return;
-  if (!root.querySelector(".save")) return;
-  root.dataset.settingsWired = "1";
-  const checkboxes = Array.from(root.querySelectorAll(".save"));
-  checkboxes.forEach((input) => {
-    const id = Number(input.dataset.boxId);
-    const value = getCookie("checkbox-" + id);
-    input.checked = value !== void 0 && value !== null ? value === "true" : getCheckboxDefaultValue(S, id);
-  });
-  loadClientColorSettings(S);
-  loadMouseButtonSettings(S);
-  S.keyBinds = loadKeybinds();
-  S.keybindUiInitialized = false;
-  S.customBgSettingsInitialized = false;
-  wireClientColorInputs(S);
-  initCustomBgSettings(S);
-  initKeybindSettings(S);
-  initSettingsNav();
-  initMouseButtonSettings(S);
-  renderKeybindUI(S);
-  checkboxes.forEach((input) => {
-    input.dispatchEvent(new Event("change", { bubbles: true }));
-    input.addEventListener("change", function() {
+function restoreCheckboxCookies(S) {
+  window.addEventListener("load", function() {
+    const checkboxes = Array.from(document.querySelectorAll(".save"));
+    checkboxes.forEach((input) => {
       const id = Number(input.dataset.boxId);
-      const value = input.checked;
-      setCookie("checkbox-" + id, value, 365);
-      if (id == 10) S.wHandle.setAdultContent(value);
-      if (id == 11) S.wHandle.setConfirmCloseTab(value);
-      if (id == 13) S.wHandle.setShowStickers(value);
-      if (id == 14) S.wHandle.setCustomClientColors(value);
-      if (id == 15) S.wHandle.setCustomMapBg(value);
-      if (id == 16) S.wHandle.setCustomVirusBg(value);
+      const value = getCookie("checkbox-" + id);
+      input.checked = value !== void 0 && value !== null ? value === "true" : getCheckboxDefaultValue(S, id);
+    });
+    loadClientColorSettings(S);
+    loadMouseButtonSettings(S);
+    S.keyBinds = loadKeybinds();
+    renderKeybindUI(S);
+    checkboxes.forEach((input) => {
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+      input.addEventListener("change", function() {
+        const id = Number(input.dataset.boxId);
+        const value = input.checked;
+        setCookie("checkbox-" + id, value, 365);
+        if (id == 10) S.wHandle.setAdultContent(value);
+        if (id == 11) S.wHandle.setConfirmCloseTab(value);
+        if (id == 13) S.wHandle.setShowStickers(value);
+        if (id == 14) S.wHandle.setCustomClientColors(value);
+        if (id == 15) S.wHandle.setCustomMapBg(value);
+        if (id == 16) S.wHandle.setCustomVirusBg(value);
+      });
     });
   });
 }
-async function ensureSettingsPanel() {
-  const { mountPanel } = await import("./panels/mount.js");
-  const settingsHtml = (await import("./panels/settings.html?raw")).default;
-  mountPanel("settings", settingsHtml);
-  if (settingsState) wireSettingsPanelDom(settingsState);
-}
-function resetSettingsPanel() {
-  const root = document.getElementById("settings");
-  if (root) delete root.dataset.settingsWired;
-  if (settingsState) {
-    settingsState.keybindUiInitialized = false;
-    settingsState.customBgSettingsInitialized = false;
-  }
-  return import("./panels/mount.js").then(({ unmountPanel }) => unmountPanel("settings"));
-}
 function attachSettings(S, hooks = {}) {
-  settingsState = S;
   const wHandle = S.wHandle;
   wHandle.setSkins = function(arg) {
     S.showSkin = arg;
@@ -414,11 +348,13 @@ function attachSettings(S, hooks = {}) {
       e.returnValue = "";
     }
   });
-  applyCheckboxCookiesToState(S);
-  loadClientColorSettings(S);
-  loadMouseButtonSettings(S);
-  loadCustomBgState(S);
-  S.keyBinds = loadKeybinds();
+  restoreCheckboxCookies(S);
+  onReady(function() {
+    wireClientColorInputs(S);
+    initCustomBgSettings(S);
+    initKeybindSettings(S);
+    initSettingsNav();
+  });
   return {
     drawCustomMapBackground: (ctx) => drawCustomMapBackground(S, ctx),
     drawVirusFillBackground: (ctx, cell, renderSize, simpleRender, bigPointSize) => drawVirusFillBackground(S, ctx, cell, renderSize, simpleRender, bigPointSize),
@@ -431,11 +367,9 @@ export {
   attachSettings,
   drawCustomMapBackground,
   drawVirusFillBackground,
-  ensureSettingsPanel,
   getClientCellColor,
   initCustomBgSettings,
   initKeybindSettings,
   initSettingsNav,
-  isEjectedMass,
-  resetSettingsPanel
+  isEjectedMass
 };

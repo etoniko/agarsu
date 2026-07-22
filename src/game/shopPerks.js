@@ -125,12 +125,11 @@ function makePerkBadge(label, active, hoverText, onBuy) {
   return btn;
 }
 function openShopForNick(nickPart, hasClan, options) {
-  import("../ui/shop.js").then((m) => {
-    m.openShopPurchase(nickPart, { clan: hasClan, ...options });
-  }).catch((err) => {
-    console.error("shop panel:", err);
-    if (typeof showContent === "function") showContent("shop");
-  });
+  if (typeof window.openShopPurchase === "function") {
+    window.openShopPurchase(nickPart, { clan: hasClan, ...options });
+  } else if (typeof showContent === "function") {
+    showContent("shop");
+  }
 }
 function parseFullNick(full) {
   const str = String(full || "").trim();
@@ -183,22 +182,11 @@ function renderNickCard(S, list, fullNick, perks, hooks) {
       if (typeof hooks.setNick === "function") hooks.setNick(str);
     } catch (e) {
     }
-    setCookie("userNick", nickPart, 7);
+    document.getElementById("nick").value = nickPart;
+    document.getElementById("pass").value = pass;
     setCookie("userPass", pass, 7);
-    const goHome = typeof window.showContent === "function"
-      ? window.showContent("home")
-      : Promise.resolve();
-    Promise.resolve(goHome).then(() => {
-      const nickEl = document.getElementById("nick");
-      const passEl = document.getElementById("pass");
-      if (nickEl) nickEl.value = nickPart;
-      if (passEl) {
-        passEl.value = pass;
-        passEl.style.display = pass ? "block" : "none";
-      }
-      if (typeof hooks.selectSkin === "function") hooks.selectSkin(nickPart);
-      else if (typeof window.updateAvatarDisplay === "function") window.updateAvatarDisplay();
-    });
+    document.getElementById("pass").style.display = pass ? "block" : "none";
+    if (typeof hooks.selectSkin === "function") hooks.selectSkin(nickPart);
   };
   const perksRow = document.createElement("div");
   perksRow.className = "nick-perks";

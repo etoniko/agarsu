@@ -3,14 +3,6 @@ import { getLevel, getXp } from "./stats.js";
 import { loadMyNicknames } from "./shopPerks.js";
 const GOOGLE_RESTORE_CLIENT_ID = "157257230972-4vh698jtf46c76sc7607oe1k9tr782je.apps.googleusercontent.com";
 const RESTORED_AT_KEY = "accountRestoredAt";
-
-/** Compact XP for progress bar: 999 → 999, 1000 → 1k, 999999 → 999k, 1000000 → 1m */
-function formatCompactXp(value) {
-  const n = Math.max(0, Math.floor(Number(value) || 0));
-  if (n < 1_000) return String(n);
-  if (n < 1_000_000) return `${Math.floor(n / 1_000)}k`;
-  return `${Math.floor(n / 1_000_000)}m`;
-}
 function isTruthyRestoreValue(value) {
   return value !== null && value !== undefined && value !== "" && value !== false && value !== 0 && value !== "0" && value !== "false";
 }
@@ -139,16 +131,10 @@ function attachAccountHooks(S, hooks) {
     const levelCircle = document.getElementById("levelCircle");
     if (levelCircle) levelCircle.textContent = currLevel;
     const progressText = document.getElementById("progressText");
-    if (progressText) {
-      const xp = Number(S.accountData.xp) || 0;
-      const need = Number(nextXp) || 0;
-      progressText.textContent = `${Math.round(progressPercent)}% (${formatCompactXp(xp)}/${formatCompactXp(need)})`;
-      progressText.title = `${xp.toLocaleString("ru-RU")} / ${need.toLocaleString("ru-RU")}`;
-    }
+    if (progressText) progressText.textContent = `${Math.round(progressPercent)}% (${S.accountData.xp}/${nextXp})`;
     const accountIDElement = document.getElementById("accountID");
     if (accountIDElement) accountIDElement.textContent = `ID: ${S.accountData.uid}`;
   };
-  window.__agarsuRefreshHomeAccount = displayAccountData;
   const nickHooks = {
     accountApiGet,
     clearAccountToken,
@@ -199,10 +185,7 @@ function attachAccountHooks(S, hooks) {
     const levelCircle = document.getElementById("levelCircle");
     if (levelCircle) levelCircle.textContent = "0";
     const progressText = document.getElementById("progressText");
-    if (progressText) {
-      progressText.textContent = "0% (0/0)";
-      progressText.removeAttribute("title");
-    }
+    if (progressText) progressText.textContent = "0% (0/0)";
     const accountIDElement = document.getElementById("accountID");
     if (accountIDElement) accountIDElement.textContent = "ID: 0000";
     const authlogEl = document.getElementById("authlog");
@@ -377,26 +360,6 @@ function attachAccountHooks(S, hooks) {
   } else {
     initRestoreProgressUI();
   }
-  const refreshStoreUi = () => {
-    wireTabsOnce(S);
-    wireRestoreProgressUI();
-    if (getAccountToken()) {
-      if (S.accountData) displayAccountData();
-      const logoutBtn = document.getElementById("logoutButton");
-      const authlogEl = document.getElementById("authlog");
-      if (logoutBtn) logoutBtn.style.display = "";
-      if (authlogEl) authlogEl.style.display = "none";
-      hideAuthButtons();
-      loadMyNicknames(S, nickHooks);
-    } else {
-      const block = document.getElementById("myNicknamesBlock");
-      const authlogEl = document.getElementById("authlog");
-      if (block) block.style.display = "none";
-      if (authlogEl) authlogEl.style.display = "flex";
-      showAuthButtons();
-    }
-  };
-  window.__agarsuRefreshStoreUi = refreshStoreUi;
   wHandle.onAccountLoggedIn = (token) => {
     setAccountToken(token);
     if (typeof window.updateAccountMenuLabel === "function") {

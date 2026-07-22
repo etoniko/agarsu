@@ -132,7 +132,6 @@ function createGameState() {
     stickerCooldown: false,
     stickerCooldownTimer: null,
     lastStatsRenderKey: "",
-    lastFetchedStats: null,
     pointsLabel: null,
     Quad: null,
     donators: null,

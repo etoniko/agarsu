@@ -155,7 +155,7 @@ function keyCodeToLabel(code) {
     18: "Alt",
     20: "CapsLock",
     27: "Esc",
-    32: "Пробел",
+    32: "Space",
     37: "\u2190",
     38: "\u2191",
     39: "\u2192",
@@ -164,8 +164,8 @@ function keyCodeToLabel(code) {
   if (named[code]) return named[code];
   if (code >= 65 && code <= 90) return String.fromCharCode(code);
   if (code >= 48 && code <= 57) return String.fromCharCode(code);
-  if (code >= 96 && code <= 105) return "Num " + (code - 96);
-  return "Код " + code;
+  if (code >= 96 && code <= 105) return "Numpad " + (code - 96);
+  return "\u041A\u043E\u0434 " + code;
 }
 function getBind(S, action) {
   const code = S.keyBinds[action];
@@ -234,13 +234,6 @@ function initMouseButtonSettings(S) {
   const splitSel = document.getElementById("mouse-split-btn");
   const ejectSel = document.getElementById("mouse-eject-btn");
   if (!splitSel || !ejectSel) return;
-  if (splitSel.dataset.wired === "1") {
-    splitSel.value = String(S.mouseSplitButton);
-    ejectSel.value = String(S.mouseEjectButton);
-    return;
-  }
-  splitSel.dataset.wired = "1";
-  ejectSel.dataset.wired = "1";
   splitSel.addEventListener("change", function() {
     S.mouseSplitButton = normalizeMouseButton(parseInt(this.value, 10));
     if (S.mouseSplitButton !== 0 && S.mouseSplitButton === S.mouseEjectButton) {
@@ -289,8 +282,7 @@ function initKeybindSettings(S) {
 }
 function initSettingsNav() {
   const layout = document.querySelector(".settings-layout");
-  if (!layout || layout.dataset.navWired === "1") return;
-  layout.dataset.navWired = "1";
+  if (!layout) return;
   const navItems = layout.querySelectorAll(".settings-nav-item");
   const panels = layout.querySelectorAll(".settings-panel");
   if (!navItems.length || !panels.length) return;
@@ -315,44 +307,6 @@ function initSettingsNav() {
   }
   showSettingsPanel(initial);
 }
-function bindHomeColorPicker(S) {
-  const colorSelected = document.getElementById("selectedColor");
-  const colorList = document.getElementById("colorList");
-  const skinss = document.getElementById("skinss");
-  if (!colorSelected || !colorList) return;
-  const colorSaved = localStorage.getItem("selectedColor");
-  if (colorSaved) {
-    colorSelected.style.background = colorSaved;
-    if (skinss) {
-      skinss.style.borderColor = colorSaved;
-      skinss.style.backgroundColor = colorSaved;
-      skinss.style.boxShadow = `0 0 10px ${colorSaved}`;
-    }
-  }
-  colorSelected.onclick = () => {
-    colorList.style.display = colorList.style.display === "none" || colorList.style.display === "" ? "flex" : "none";
-  };
-  colorList.onclick = (evt) => {
-    const hex = evt.target._cellColorHex;
-    if (!hex) return;
-    colorSelected.style.background = hex;
-    localStorage.setItem("selectedColor", hex);
-    if (skinss) {
-      skinss.style.borderColor = hex;
-      skinss.style.backgroundColor = hex;
-      skinss.style.boxShadow = `0 0 10px ${hex}`;
-    }
-    colorList.style.display = "none";
-  };
-  colorList.innerHTML = "";
-  (S.cellColors || CELL_COLORS).forEach((hex) => {
-    const d = document.createElement("div");
-    d.className = "item";
-    d.style.background = hex;
-    d._cellColorHex = hex;
-    colorList.appendChild(d);
-  });
-}
 function attachInput(S, hooks) {
   const wHandle = S.wHandle;
   if (!S.keyBinds) S.keyBinds = loadKeybinds();
@@ -365,9 +319,11 @@ function attachInput(S, hooks) {
   S.ma = true;
   S.freeze = false;
   S.stickerCooldown = false;
-  import("../ui/overlays.js").then((m) => {
-    m.setConnectVerifyReconnectHandler(hooks.reconnectToServer);
-  }).catch((err) => console.error(err));
+  const reconnectBtn = document.getElementById("connect-verify-reconnect-btn");
+  if (reconnectBtn && !reconnectBtn.dataset.bound) {
+    reconnectBtn.dataset.bound = "1";
+    reconnectBtn.addEventListener("click", hooks.reconnectToServer);
+  }
   S.mainCanvas = S.nCanvas = document.getElementById("canvas");
   S.ctx = S.mainCanvas.getContext("2d");
   function syncMouseFromEvent(event2) {
@@ -508,9 +464,9 @@ function attachInput(S, hooks) {
         if (S.freeze) {
           S.posX = S.X;
           S.posY = S.Y;
-          import("../ui/hudLazy.js").then((m) => m.showFreezeHud());
+          document.querySelector("#freeze").style.display = "flex";
         } else {
-          import("../ui/hudLazy.js").then((m) => m.hideFreezeHud());
+          document.querySelector("#freeze").style.display = "none";
         }
         keyPressed.freeze = true;
       }
@@ -614,7 +570,42 @@ function attachInput(S, hooks) {
       if (code === getBind(S, "sticker" + s)) releaseStickerKey(s);
     }
   };
-  bindHomeColorPicker(S);
+  const colorSelected = document.getElementById("selectedColor");
+  const colorList = document.getElementById("colorList");
+  const skinss = document.getElementById("skinss");
+  const colorSaved = localStorage.getItem("selectedColor");
+  if (colorSaved && colorSelected) {
+    colorSelected.style.background = colorSaved;
+    if (skinss) {
+      skinss.style.borderColor = colorSaved;
+      skinss.style.backgroundColor = colorSaved;
+      skinss.style.boxShadow = `0 0 10px ${colorSaved}`;
+    }
+  }
+  if (colorSelected) {
+    colorSelected.onclick = () => {
+      colorList.style.display = colorList.style.display === "none" || colorList.style.display === "" ? "flex" : "none";
+    };
+  }
+  if (colorList) {
+    colorList.onclick = (evt) => {
+      const hex = evt.target._cellColorHex;
+      if (!hex) return;
+      colorSelected.style.background = hex;
+      localStorage.setItem("selectedColor", hex);
+      skinss.style.borderColor = hex;
+      skinss.style.backgroundColor = hex;
+      skinss.style.boxShadow = `0 0 10px ${hex}`;
+      colorList.style.display = "none";
+    };
+    S.cellColors.forEach((hex) => {
+      const d = document.createElement("div");
+      d.className = "item";
+      d.style.background = hex;
+      d._cellColorHex = hex;
+      colorList.appendChild(d);
+    });
+  }
   wHandle.onblur = function() {
     hooks.sendUint8(19);
     clearInterval(S.ejectKeyInterval);
@@ -816,7 +807,6 @@ function attachInput(S, hooks) {
 export {
   CELL_COLORS,
   attachInput,
-  bindHomeColorPicker,
   cancelKeybindCapture,
   initKeybindSettings,
   initMouseButtonSettings,

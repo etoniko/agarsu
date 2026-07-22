@@ -1,6 +1,5 @@
-let onOverlaysShowHooks = [];
-let onOverlaysHideHooks = [];
-import { hideStaticsHud, showStaticsHud } from "../ui/hudLazy.js";
+let onOverlaysShow = null;
+let onOverlaysHide = null;
 function onReady(fn) {
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", fn, { once: true });
@@ -42,47 +41,30 @@ function isPointerOverElement(el, clientX, clientY) {
   const rect = el.getBoundingClientRect();
   return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
 }
-function addOverlaysLifecycleHooks({ onShow, onHide } = {}) {
-  if (typeof onShow === "function") onOverlaysShowHooks.push(onShow);
-  if (typeof onHide === "function") onOverlaysHideHooks.push(onHide);
-}
 function setOverlaysLifecycleHooks({ onShow, onHide } = {}) {
-  onOverlaysShowHooks = [];
-  onOverlaysHideHooks = [];
-  addOverlaysLifecycleHooks({ onShow, onHide });
+  onOverlaysShow = onShow ?? null;
+  onOverlaysHide = onHide ?? null;
 }
 function showOverlays() {
-  onOverlaysShowHooks.forEach((fn) => {
-    try {
-      fn();
-    } catch (err) {
-      console.error(err);
-    }
-  });
-  showElement(byId("overlays"));
+  const el = byId("overlays");
+  showElement(el);
+  onOverlaysShow?.();
 }
 function hideOverlays() {
-  onOverlaysHideHooks.forEach((fn) => {
-    try {
-      fn();
-    } catch (err) {
-      console.error(err);
-    }
-  });
   const el = byId("overlays");
-  if (el) hideElement(el);
+  hideElement(el);
+  onOverlaysHide?.();
 }
 function isOverlaysVisible() {
-  return !!byId("overlays") && isVisible(byId("overlays"));
+  return isVisible(byId("overlays"));
 }
 function showStatics() {
-  showStaticsHud();
+  setElementDisplay(byId("statics"), "flex");
 }
 function hideStatics() {
-  hideStaticsHud();
+  hideElement(byId("statics"));
 }
 export {
-  addOverlaysLifecycleHooks,
   byId,
   hideElement,
   hideOverlays,
@@ -97,7 +79,3 @@ export {
   showOverlays,
   showStatics
 };
-if (typeof window !== "undefined") {
-  window.showOverlays = showOverlays;
-  window.hideOverlays = hideOverlays;
-}

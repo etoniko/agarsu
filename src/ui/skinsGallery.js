@@ -1,13 +1,13 @@
+import { onReady } from "../lib/dom.js";
 import { loadSkinListMap } from "../storage/staticLists.js";
 import { normalizeNick } from "../lib/nick.js";
-import { unmountPanel } from "./panels/mount.js";
 let lastActionTime = 0;
 const actionInterval = 500;
 let actionTimeout;
 let currentIndex = 0;
 const MANUAL_SKINS_NICKS = ["\u041B\u0435\u043D\u0438\u043D", "\u0421\u0442\u0430\u043B\u0438\u043D", "\u0413\u0430\u0433\u0430\u0440\u0438\u043D", "\u0416\u0443\u043A\u043E\u0432", "\u0425\u0440\u0443\u0449\u0451\u0432", "C\u0421\u0421\u0420", "\u041F\u0443\u0442\u0438\u043D", "\u0420\u043E\u0441\u0441\u0438\u044F"];
 const SKINS_PER_PAGE_MOBILE = 8;
-const SKINS_PER_PAGE_DESKTOP = 14;
+const SKINS_PER_PAGE_DESKTOP = 15;
 const PLAYERS_KEY = "players";
 const MAX_PLAYERS = 3;
 let skinsGalleryItems = [];
@@ -92,30 +92,8 @@ async function loadSkinsGalleryData() {
 function setSkinsGalleryStatus(text, isError) {
   const el = document.getElementById("skinsGalleryStatus");
   if (!el) return;
-  const textEl = el.querySelector(".skins-gallery-status-text");
-  if (textEl) textEl.textContent = text || "";
-  else el.textContent = text || "";
+  el.textContent = text || "";
   el.classList.toggle("is-error", !!isError);
-  const createBtn = el.querySelector(".skins-gallery-shop-btn");
-  if (createBtn) createBtn.hidden = !!isError;
-}
-function mountSkinsGalleryPanel() {
-  const panel = document.getElementById("skinslist");
-  if (!panel || panel.dataset.mounted === "1") return panel;
-  panel.innerHTML = `
-          <div class="skins-gallery-wrap">
-            <div class="skins-gallery-header">
-              <span class="skins-gallery-title">\u0413\u0430\u043B\u0435\u0440\u0435\u044F \u0431\u0435\u0441\u043F\u043B\u0430\u0442\u043D\u044B\u0445 \u0441\u043A\u0438\u043D\u043E\u0432</span>
-            </div>
-            <div id="skinsGalleryGrid" class="skins-gallery-grid"></div>
-            <div id="skinsGalleryPagination" class="skins-gallery-pagination"></div>
-            <p id="skinsGalleryStatus" class="skins-gallery-status">
-              <span class="skins-gallery-status-text"></span>
-              <button type="button" class="skins-gallery-shop-btn" onclick="showContent('shop')">\u0421\u043E\u0437\u0434\u0430\u0442\u044C \u0441\u043A\u0438\u043D</button>
-            </p>
-          </div>`;
-  panel.dataset.mounted = "1";
-  return panel;
 }
 function renderSkinsGalleryPagination(totalPages, pagination) {
   pagination.innerHTML = "";
@@ -189,7 +167,6 @@ function escapeHtml(str) {
   return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 async function initSkinsGallery() {
-  mountSkinsGalleryPanel();
   const grid = document.getElementById("skinsGalleryGrid");
   if (!grid || skinsGalleryLoading) return;
   if (skinsGalleryLoaded && skinsGalleryItems.length) {
@@ -391,19 +368,15 @@ function bindAvatarContextMenu() {
     if (slotIndex < 0) return;
     showAvatarContextMenu(e, slotIndex);
   });
-  if (!window.__agarsuAvatarDocBound) {
-    window.__agarsuAvatarDocBound = true;
-    document.addEventListener("click", hideAvatarContextMenu);
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") hideAvatarContextMenu();
-    });
-  }
+  document.addEventListener("click", hideAvatarContextMenu);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") hideAvatarContextMenu();
+  });
 }
-function bindHomeAvatarUi() {
+onReady(() => {
   const nickInput = document.getElementById("nick");
   const passInput = document.getElementById("pass");
-  if (nickInput && nickInput.dataset.homeWired !== "1") {
-    nickInput.dataset.homeWired = "1";
+  if (nickInput) {
     nickInput.addEventListener("input", function() {
       const nickname = this.value;
       clearTimeout(actionTimeout);
@@ -412,8 +385,7 @@ function bindHomeAvatarUi() {
       }, actionInterval);
     });
   }
-  if (passInput && passInput.dataset.homeWired !== "1") {
-    passInput.dataset.homeWired = "1";
+  if (passInput) {
     passInput.addEventListener("input", function() {
       updateCurrentPlayerPass(this.value);
     });
@@ -421,13 +393,10 @@ function bindHomeAvatarUi() {
   bindAvatarContextMenu();
   const players = getPlayers();
   if (players.length > 0) {
-    if (currentIndex < 0 || currentIndex >= players.length) currentIndex = 0;
+    currentIndex = 0;
     updateAvatarDisplay();
   }
-}
-function resetSkinsGalleryPanel() {
-  unmountPanel("skinslist");
-}
+});
 window.initSkinsGallery = initSkinsGallery;
 window.showNext = showNext;
 window.showPrevious = showPrevious;
@@ -437,10 +406,7 @@ window.__agarsuUpdatePlayerPass = updateCurrentPlayerPass;
 window.__agarsuGetPlayers = getPlayers;
 if (typeof loadSkinsList === "function") window.loadSkinsList = loadSkinsList;
 export {
-  bindHomeAvatarUi,
   initSkinsGallery,
-  mountSkinsGalleryPanel,
-  resetSkinsGalleryPanel,
   showNext,
   showPrevious,
   savePlayerData,

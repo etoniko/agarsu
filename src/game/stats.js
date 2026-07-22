@@ -1,9 +1,8 @@
 import { ONLINE_HUB_URL, SKIN_FALLBACK_URL } from "../config/endpoints.js";
 import { getGameServerApiBase } from "../config/servers.js";
-import { isOverlaysVisible, onReady, addOverlaysLifecycleHooks } from "../lib/dom.js";
+import { isOverlaysVisible, onReady, setOverlaysLifecycleHooks } from "../lib/dom.js";
 import { normalizeNick } from "../lib/nick.js";
 import { setImgSrc } from "../render/skins.js";
-import { getCookie } from "../storage/cookies.js";
 import {
   loadSkinListMap,
   applySkinListToState,
@@ -85,15 +84,13 @@ function pointsLabel(n) {
   return n + " \u043E\u0447\u043A\u043E\u0432";
 }
 function displayStats(S, stats) {
+  const renderKey = JSON.stringify(stats);
+  if (renderKey === S.lastStatsRenderKey) return;
+  S.lastStatsRenderKey = renderKey;
   const container = document.getElementById("table-containerwraper");
   if (!container) return;
-  const list = Array.isArray(stats) ? stats : [];
-  const renderKey = JSON.stringify(list);
-  if (renderKey === S.lastStatsRenderKey && container.childElementCount) return;
-  S.lastStatsRenderKey = renderKey;
-  S.lastFetchedStats = list;
   container.innerHTML = "";
-  list.forEach((player, index) => {
+  stats.forEach((player, index) => {
     const playerDiv = document.createElement("div");
     playerDiv.classList.add("top-playerwraper");
     playerDiv.setAttribute("title", player.time);
@@ -116,16 +113,9 @@ async function fetchStats(S, stats) {
     stats.forEach((player) => {
       player.skin = getSkinIdForNick(map, player.nick);
     });
-    S.lastFetchedStats = stats;
     displayStats(S, stats);
   } catch (error) {
     console.error("There was a problem with the fetch operation:", error);
-  }
-}
-function repaintCachedStats(S) {
-  if (Array.isArray(S.lastFetchedStats) && S.lastFetchedStats.length) {
-    S.lastStatsRenderKey = "";
-    displayStats(S, S.lastFetchedStats);
   }
 }
 function loadTopPlayerData(S, stat, hooks) {
@@ -311,39 +301,39 @@ async function refreshGlobalRatingHome(S, data) {
   }
 }
 function installGlobalRatingHome(S) {
+  let loadGlobalRatingTimer = null;
   let lastGlobalRatingKey = "";
-  function bindRatingHeader() {
-    const ratingHome = document.querySelector(".rating-home");
-    const ratingHeader = ratingHome?.querySelector(".rating-header");
-    if (!ratingHeader || ratingHeader.dataset.bound === "1") return;
-    ratingHeader.dataset.bound = "1";
+  const ratingHome = document.getElementById("ratinghome");
+  const ratingHeader = ratingHome && ratingHome.querySelector(".rating-header");
+  if (ratingHeader) {
     ratingHeader.addEventListener("click", () => window.open(STATS_PAGE_URL, "_blank"));
   }
-  function loadGlobalRatingHome(force = false) {
-    if (!document.getElementById("topswindow")) return;
+  function loadGlobalRatingHome() {
     fetch(STATS_API + "/api/rankings?limit=3", { cache: "no-store" }).then((res) => res.ok ? res.json() : Promise.reject()).then((data) => {
       const key = JSON.stringify({ p: data.players, c: data.clans, u: data.updatedAt });
-      const container = document.getElementById("topswindow");
-      const needsPaint = force || !container || !container.querySelector(".rating-row");
-      if (!needsPaint && key === lastGlobalRatingKey) return;
+      if (key === lastGlobalRatingKey) return;
       lastGlobalRatingKey = key;
       return refreshGlobalRatingHome(S, data);
     }).catch((e) => console.error("Global rating load error:", e));
   }
-  function onOverlaysShown() {
-    bindRatingHeader();
-    loadGlobalRatingHome(true);
+  function scheduleLoadGlobalRatingHome() {
+    clearTimeout(loadGlobalRatingTimer);
+    loadGlobalRatingTimer = setTimeout(() => {
+      loadGlobalRatingTimer = null;
+      if (isOverlaysVisible()) loadGlobalRatingHome();
+    }, 300);
   }
-  bindRatingHeader();
-  loadGlobalRatingHome(true);
-  addOverlaysLifecycleHooks({
-    onShow: onOverlaysShown
-  });
+  if (isOverlaysVisible()) {
+    loadGlobalRatingHome();
+  }
+  const overlayEl = document.getElementById("overlays");
+  if (overlayEl) {
+    const observer = new MutationObserver(() => scheduleLoadGlobalRatingHome());
+    observer.observe(overlayEl, { attributes: true, attributeFilter: ["style"] });
+  }
   setInterval(() => {
-    if (document.getElementById("topswindow")) loadGlobalRatingHome();
+    if (isOverlaysVisible()) loadGlobalRatingHome();
   }, 3e5);
-  window.__agarsuRefreshHomeStats = () => loadGlobalRatingHome(true);
-  window.__agarsuRepaintDeathStats = () => repaintCachedStats(S);
 }
 function setActiveFromHash(S) {
   const hash = location.hash.replace("#", "") || "ffa";
@@ -364,7 +354,7 @@ function setActiveFromHash(S) {
 }
 function attachStats(S, hooks) {
   const wHandle = S.wHandle;
-  addOverlaysLifecycleHooks({
+  setOverlaysLifecycleHooks({
     onShow: startOnlineCountPolling,
     onHide: stopOnlineCountPolling
   });
@@ -391,22 +381,8 @@ function attachStats(S, hooks) {
     }
   };
   wHandle.startGame = function() {
-    const nickEl = document.getElementById("nick");
-    const passEl = document.getElementById("pass");
-    let nickInput = "";
-    let passInput = "";
-    if (nickEl) {
-      nickInput = nickEl.value.trim();
-      passInput = passEl ? passEl.value : "";
-    } else {
-      nickInput = (getCookie("userNick") || "").trim();
-      passInput = getCookie("userPass") || "";
-      if (!nickInput && S.userNickName) {
-        const parts = String(S.userNickName).split("#");
-        nickInput = (parts[0] || "").trim();
-        passInput = parts[1] || "";
-      }
-    }
+    let nickInput = document.getElementById("nick").value.trim();
+    let passInput = document.getElementById("pass").value;
     const forbiddenRegex = new RegExp(FORBIDDEN_NICK_CHARS.join("|"), "g");
     nickInput = nickInput.replace(forbiddenRegex, "");
     nickInput = hooks.censorMessage(nickInput);
@@ -461,7 +437,6 @@ export {
   loadTopPlayerData,
   pointsLabel,
   refreshGlobalRatingHome,
-  repaintCachedStats,
   setActiveFromHash,
   shareStats,
   updateOnlineCount,

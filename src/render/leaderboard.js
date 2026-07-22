@@ -63,18 +63,14 @@ function createLeaderboardEntry(name, level, isMe, isSystemLine, b) {
   const numberHtml = isSystemLine ? "" : `${b + 1}. `;
   if (isSystemLine) entryDiv.style.textAlign = "center";
   if (isMe) {
-    entryDiv.classList.add("Lednick--me");
+    entryDiv.style.color = "#FFAAAA";
   } else if (!isSystemLine && isTournamentPlayer) {
     entryDiv.style.color = "#FFD700";
-  } else if (!isSystemLine) {
+  } else {
     entryDiv.style.color = "#FFFFFF";
   }
   const nameSpan = document.createElement("span");
-  nameSpan.className = "Lednick-name";
-  nameSpan.style.fontWeight = "400";
-  nameSpan.innerHTML = String(name || "")
-    .replace(/font-weight\s*:\s*[^;"']+;?/gi, "")
-    .replace(/<\/?(?:b|strong)(?:\s[^>]*)?>/gi, "");
+  nameSpan.innerHTML = name;
   if (!isSystemLine && isTournamentPlayer && !isWinner) {
     nameSpan.title = "\u0423\u0447\u0430\u0441\u0442\u043D\u0438\u043A \u0442\u0443\u0440\u043D\u0438\u0440\u0430";
   }
@@ -217,9 +213,11 @@ function drawLeaderBoard() {
       }
     }
     if (isMe) {
-      myRank = b + 1;
       const myCell = S.playerCells.find((cell) => cell.id === S.leaderBoard[b].id);
-      if (myCell?.name) name = myCell.name;
+      if (myCell?.name) {
+        name = myCell.name;
+        myRank = b + 1;
+      }
     }
     if (b < displayedPlayers) {
       const entryDiv = createLeaderboardEntry(name, level, isMe, isSystemLine, b);
@@ -228,9 +226,12 @@ function drawLeaderBoard() {
   }
   if (myRank && myRank > displayedPlayers) {
     const level = S.accountData && hooks.getLevel ? hooks.getLevel(S.accountData.xp) : -1;
-    const myName = S.playerCells[0]?.name || "\u0418\u0433\u0440\u043E\u043A";
-    const myRankDiv = createLeaderboardEntry(myName, level, true, false, myRank - 1);
-    toplistDiv.appendChild(myRankDiv);
+    const myName = S.playerCells[0]?.name;
+    if (myName) {
+      const myRankDiv = createLeaderboardEntry(myName, level, true, false, myRank - 1);
+      myRankDiv.style.color = "#FFAAAA";
+      toplistDiv.appendChild(myRankDiv);
+    }
   }
 }
 export {
