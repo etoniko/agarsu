@@ -1,0 +1,84 @@
+  <div id="shopInfo" class="shop-info-layer" aria-live="polite">
+    <div id="shopAuthNotice" class="shop-float-alert shop-float-alert--warn" role="status" hidden></div>
+    <div id="fileError" class="shop-float-alert shop-float-alert--error"></div>
+    <div id="nicknameError" class="shop-float-alert shop-float-alert--error"></div>
+    <div id="passwordError" class="shop-float-alert shop-float-alert--error"></div>
+    <div id="formError" class="shop-float-alert shop-float-alert--error"></div>
+  </div>
+  <div class="top-info"><div><span>Магазин лички</span></div></div>
+  <div id="shopToastContainer" class="shop-toast-container" aria-live="polite"></div>
+  <div class="shop-container">
+    <div class="shop-grid">
+      <div class="shop-form-side">
+        <form id="paymentForm" class="shop-form" autocomplete="off">
+          <div class="shop-form-stack">
+            <div class="shop-form-main">
+              <div class="shop-avatar-block">
+                <label id="previewContainer" for="fileInput" title="Загрузить скин PNG, JPG или GIF">
+                  <canvas id="previewCanvas" width="512" height="512"></canvas>
+                  <img id="previewGif" alt="GIF preview">
+                </label>
+                <input type="file" id="fileInput" accept=".png,.jpg,.gif" autocomplete="off">
+              </div>
+              <div class="shop-form-fields">
+                <div class="shop-inputs">
+                  <div class="shop-field">
+                    <label for="nickname">Никнейм</label>
+                    <div id="nicknameWrapper" class="shop-input-wrap">
+                      <input type="text" id="nickname" placeholder="Ваш ник" required maxlength="16" autocomplete="off">
+                      <span id="charCount" class="shop-counter">0/16</span>
+                    </div>
+                  </div>
+                  <div class="shop-field">
+                    <label for="password">Пароль на ник</label>
+                    <div class="password-wrapper shop-input-wrap">
+                      <input type="password" id="password" placeholder="Необязательно" maxlength="5" autocomplete="off">
+                      <button type="button" id="togglePassword" class="shop-eye" aria-label="Показать пароль"><i class="fa-solid fa-eye"></i></button>
+                    </div>
+                  </div>
+                </div>
+                <div class="shop-options-bar">
+                  <div class="radio-group" role="tablist" aria-label="Тип покупки">
+                    <label class="radio-pill"><input type="radio" name="serviceType" value="personal" id="personal" checked autocomplete="off"><span>Себе</span></label>
+                    <label class="radio-pill"><input type="radio" name="serviceType" value="clan" id="clan" autocomplete="off"><span>Клан</span></label>
+                  </div>
+                  <div class="shop-addon-toggles" role="group" aria-label="Дополнения">
+                    <label class="shop-addon-toggle" title="Невидимый ник — 500 ₽">
+                      <input type="checkbox" id="invisibleNick" autocomplete="off">
+                      <span class="material-icons" aria-hidden="true">visibility_off</span>
+                    </label>
+                    <label class="shop-addon-toggle" title="Поворотный скин — 500 ₽">
+                      <input type="checkbox" id="rotationNick" autocomplete="off">
+                      <span class="material-icons" aria-hidden="true">3d_rotation</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <aside class="shop-checkout">
+        <div id="calculator" class="shop-receipt" hidden>
+          <div class="shop-receipt-head">Ваш заказ</div>
+          <ul class="shop-price-list">
+            <li id="clanMultiplier"><span>Множитель</span><strong id="multiplierText">1x</strong></li>
+            <li id="passwordCost"><span>Пароль</span><strong>0 ₽</strong></li>
+            <li id="skinCost"><span>Скин</span><strong>0 ₽</strong></li>
+            <li id="invisibleCost" class="inl-2"><span>Невидимый ник</span><strong>0 ₽</strong></li>
+            <li id="rotationCost" class="inl-3"><span>Поворот скина</span><strong>0 ₽</strong></li>
+          </ul>
+          <div class="shop-receipt-total">
+            <span>К оплате</span>
+            <strong id="totalAmount">0 ₽</strong>
+          </div>
+        </div>
+        <button type="submit" id="buyButton" class="shop-buy-btn" form="paymentForm" disabled>КУПИТЬ</button>
+        <p class="shop-support">
+          Поддержка: <a href="https://t.me/nikkkkkysha" target="_blank">@nikkkkkysha</a>
+          <span>·</span>
+          <a href="mailto:ikometai@yandex.ru">ikometai@ya.ru</a>
+        </p>
+      </aside>
+    </div>
+  </div>

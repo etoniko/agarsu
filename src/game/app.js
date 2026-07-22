@@ -27,7 +27,7 @@ import { createGameState, resetWorldContainers } from "./state.js";
 import { Cell, bindCellDeps, ensureNameSets } from "./Cell.js";
 import { Quad } from "./quadtree.js";
 import { updateNodes, fixDead, clearWorld } from "./world.js";
-import { attachInput, initKeybindSettings, initSettingsNav, initMouseButtonSettings, CELL_COLORS, loadKeybinds } from "./input.js";
+import { attachInput, CELL_COLORS, loadKeybinds, bindHomeColorPicker } from "./input.js";
 import {
   attachStats,
   getLevel,
@@ -39,11 +39,27 @@ import {
   STATS_CLAN_PROFILE_BASE
 } from "./stats.js";
 import { attachAccountHooks } from "./accountHooks.js";
-import { fetchNickPerksLists, loadMyNicknames } from "./shopPerks.js";
+import { fetchNickPerksLists } from "./shopPerks.js";
 import { attachChat, resolveClanPassIdFromName, resolvePlayerPassIdFromName } from "../ui/chat.js";
-import { attachSettings, initCustomBgSettings } from "../ui/settings.js";
+import { attachSettings } from "../ui/settings.js";
 import { hideOverlays as hideLobbyOverlays, hideStatics, onReady, showStatics } from "../lib/dom.js";
 import { hideReconnectPanel } from "../ui/overlays.js";
+
+function bindGamemodeList(S) {
+  document.querySelectorAll(".gamemode li").forEach((li) => {
+    if (li.dataset.wired === "1") return;
+    li.dataset.wired = "1";
+    li.addEventListener("click", () => {
+      document.querySelectorAll(".gamemode li").forEach((l) => l.classList.remove("active"));
+      li.classList.add("active");
+      S.SELECTED_SERVER = li.dataset.ip;
+      history.replaceState(null, "", "#" + li.id);
+      const titleEl = document.getElementById("serverTitle");
+      if (titleEl) titleEl.textContent = `\u0421\u0442\u0430\u0442\u0438\u0441\u0442\u0438\u043A\u0430 ${li.id}`;
+    });
+  });
+  setActiveFromHash(S);
+}
 function initServers(S) {
   let serverKey = "ffa";
   const hash = S.wHandle.location.hash.slice(1);
@@ -173,17 +189,6 @@ function initGame(wHandle) {
   attachSettings(S, {
     fixDead: () => fixDead(S)
   });
-  const bootSettingsUi = () => {
-    initKeybindSettings(S);
-    initSettingsNav();
-    initMouseButtonSettings(S);
-    initCustomBgSettings(S);
-  };
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", bootSettingsUi);
-  } else {
-    bootSettingsUi();
-  }
   wHandle.setserver = function(arg) {
     if (!SERVERS || Object.keys(SERVERS).length === 0) {
       console.warn("\u0421\u0435\u0440\u0432\u0435\u0440\u044B \u0435\u0449\u0451 \u043D\u0435 \u0437\u0430\u0433\u0440\u0443\u0436\u0435\u043D\u044B. \u041F\u043E\u0434\u043E\u0436\u0434\u0438\u0442\u0435...");
@@ -223,17 +228,17 @@ function initGame(wHandle) {
     if (typeof wHandle.chekstats === "function") wHandle.chekstats();
   };
   wHandle.connect = connection.wsConnect;
+  window.__agarsuOnHomeMounted = () => {
+    bindGamemodeList(S);
+    bindHomeColorPicker(S);
+    setActiveFromHash(S);
+    updateOnlineCount();
+    if (S.accountData && typeof window.__agarsuRefreshHomeAccount === "function") {
+      window.__agarsuRefreshHomeAccount();
+    }
+  };
   onReady(() => {
-    document.querySelectorAll(".gamemode li").forEach((li) => {
-      li.addEventListener("click", () => {
-        document.querySelectorAll(".gamemode li").forEach((l) => l.classList.remove("active"));
-        li.classList.add("active");
-        S.SELECTED_SERVER = li.dataset.ip;
-        history.replaceState(null, "", "#" + li.id);
-        const titleEl = document.getElementById("serverTitle");
-        if (titleEl) titleEl.textContent = `\u0421\u0442\u0430\u0442\u0438\u0441\u0442\u0438\u043A\u0430 ${li.id}`;
-      });
-    });
+    bindGamemodeList(S);
   });
   listsPromise.then(() => fetchNickPerksLists(S)).catch(() => {
   });
@@ -258,6 +263,7 @@ function initGame(wHandle) {
     selectSkin: null
   });
   initShareHandlers(S);
+  window.__agarsuOnStaticsMounted = () => initShareHandlers(S);
   connection.bindVisibilityHandlers();
   hideReconnectPanel();
   function startGameLoop() {

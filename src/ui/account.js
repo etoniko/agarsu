@@ -91,8 +91,6 @@ function initVkAuthModule() {
   function initVkAuth() {
     if (!("VKIDSDK" in window)) return;
     const VKID = window.VKIDSDK;
-    const container = document.getElementById("VkIdSdkOAuthList") || document.getElementById("VkIdSdkOneTap");
-    if (!container) return;
     const urlParams = new URLSearchParams(window.location.search);
     const codeFromUrl = urlParams.get("code");
     const deviceFromUrl = urlParams.get("device_id");
@@ -101,6 +99,10 @@ function initVkAuthModule() {
       window.history.replaceState({}, "", window.location.pathname + window.location.hash);
       return;
     }
+    const container = document.getElementById("VkIdSdkOAuthList") || document.getElementById("VkIdSdkOneTap");
+    if (!container) return;
+    if (container.dataset.vkWired === "1") return;
+    container.dataset.vkWired = "1";
     const codeVerifier = randomString(64);
     const state = randomString(32);
     persistPkce(codeVerifier, state);

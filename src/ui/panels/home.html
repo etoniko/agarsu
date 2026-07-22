@@ -1,0 +1,51 @@
+<div class="home-header-bar">
+            <div class="home-header-left">
+              <div class="progress-container">
+                <div class="progress-bar">
+                  <div class="level-circle" id="levelCircle">0</div>
+                  <div class="progress-fill"></div>
+                  <div class="progress-text" id="progressText">0% (0/0)</div>
+                </div>
+              </div>
+            </div>
+            <div class="home-header-center">
+              <span id="online" class="home-header-chip">Онлайн: </span>
+            </div>
+            <div class="home-header-right">
+              <span id="accountID" class="home-header-chip">ID: 0000</span>
+              <div onclick="showContent('settings')" class="setting menu-item home-header-chip"><i class="fas fa-gear"></i></div>
+            </div>
+          </div>
+          <div>
+            <div class="line"></div></div>
+          <div class="avatar-containers">
+            <div class="avatar-container">
+              <div class="previous-skin" id="prevSkin" onclick="showPrevious()"></div>
+              <div class="arrow" id="previous" onclick="showPrevious()">&#10094;</div>
+              <div onclick="showContent('skinslist')" id="skinss" class="main-skin anims"></div>
+              <div class="arrow" id="next" onclick="showNext()">&#10095;</div>
+              <div class="next-skin" id="nextSkin" onclick="showNext()"></div>
+            </div>
+     <div class="from-send">
+     <input type="text" placeholder="Ник" name="name" maxlength="16" class="noPress" id="nick" required="" autocomplete="username">
+     <input type="password" placeholder="Пасс" name="pass" maxlength="6" class="noPress" id="pass" required="" autocomplete="current-password" class="inl-4">
+	<div class="selectedIcon">
+		<div id="selectedColor"></div>
+	</div>
+                            <div id="colorList"></div>
+</div>
+          </div>
+		  <div class="servers">
+<ul class="gamemode">
+    <li data-ip="ffa.agar.su" id="ffa"><span class="fi fi-ru"></span>FFA - Москва<i class="fas fa-eye"></i><span class="online-count">10</span><i class="fas fa-user"></i><span class="online-count">40/500</span></li>
+    <li data-ip="ffa.agar.su:6002" id="ms"><span class="fi fi-ru"></span>MegaSplit<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/120</span></li>
+	<li data-ip="ffa.agar.su:6004" id="pvp1"><span class="fi fi-ru"></span>pvp1: 1x1 ffa 1k<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/50</span></li>
+	<li data-ip="ffa.agar.su:6005" id="pvp2"><span class="fi fi-ru"></span>pvp2: 2x2 ms 1k<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/50</span></li>
+	<li data-ip="ffa.agar.su:6007" id="tournament2"><span class="fi fi-ru"></span>Tournament 2x2<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/50</span></li>
+	<li data-ip="ffa.agar.su:6006" id="tournament"><span class="fi fi-ru"></span>Tournament 3x3<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/50</span></li>
+</ul>
+</div>
+          <div class="nav-buttons">
+            <button onclick="spectate();" class="nav-button serv-button"><i class="fas fa-eye"></i> НАБЛЮДАТЬ </button>
+            <button onclick="startGame();" class="nav-button play-button"><i class="fas fa-play"></i> ИГРАТЬ </button>
+          </div>

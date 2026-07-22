@@ -1,4 +1,6 @@
 import { getAccountToken } from "../storage/local.js";
+import { mountPanel, unmountPanel } from "./panels/mount.js";
+import shopHtml from "./panels/shop.html?raw";
 const ALLOWTXT_LOCAL = "/allowtxt.txt";
 const ALLOWTXT_API = "https://api.agar.su/allowtxt.txt";
 const ALLOWED_CHARS = new Set();
@@ -135,13 +137,18 @@ function updateShopAuthNotice() {
 }
 function updateCharCount() {
   const input = document.getElementById("nickname");
-  const max = document.getElementById("clan").checked ? 6 : 16;
+  const clan = document.getElementById("clan");
+  const counter = document.getElementById("charCount");
+  if (!input || !clan || !counter) return;
+  const max = clan.checked ? 6 : 16;
   const length = input.value.length;
-  document.getElementById("charCount").textContent = `${length}/${max}`;
+  counter.textContent = `${length}/${max}`;
 }
 function updateNicknameDisplay() {
-  const isClan = document.getElementById("clan").checked;
+  const clan = document.getElementById("clan");
   const input = document.getElementById("nickname");
+  if (!clan || !input) return;
+  const isClan = clan.checked;
   input.value = "";
   if (isClan) {
     input.placeholder = "[\u043A\u043B\u0430\u043D]";
@@ -172,129 +179,11 @@ function blockForbiddenChars(input) {
     }
   });
 }
-const nicknameInput = document.getElementById("nickname");
-const passwordInput = document.getElementById("password");
-loadAllowTxt().then(() => {
-  blockForbiddenChars(nicknameInput);
-  blockForbiddenChars(passwordInput);
-}).catch(() => {
-  // Still bind input handlers; without a char list we won't strip nicknames
-  blockForbiddenChars(nicknameInput);
-  blockForbiddenChars(passwordInput);
-  showToast("\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044C allowtxt.txt", "error");
-});
-nicknameInput.addEventListener("blur", async () => {
-  const isClan = document.getElementById("clan").checked;
-  let value = nicknameInput.value.trim();
-  if (isClan) {
-    let innerText = value.replace(/^\[|\]$/g, "");
-    innerText = innerText.replace(/[\[\]]/g, "");
-    if (innerText.length > 4) {
-      innerText = innerText.substring(0, 4);
-      setTimeout(() => {
-        showError("nicknameError", "\u0422\u0435\u043A\u0441\u0442 \u043E\u0431\u0440\u0435\u0437\u0430\u043D \u0434\u043E 4 \u0441\u0438\u043C\u0432\u043E\u043B\u043E\u0432");
-      }, 100);
-    }
-    nicknameInput.value = `[${innerText}]`;
-  } else {
-    if (value && !allowedPattern.test(value)) {
-      value = stripInvalidNicknameChars(value);
-      showError("nicknameError", "\u041D\u0435\u0434\u043E\u043F\u0443\u0441\u0442\u0438\u043C\u044B\u0435 \u0441\u0438\u043C\u0432\u043E\u043B\u044B \u0432 \u043D\u0438\u043A\u0435");
-    }
-    if (/[\[\]]/.test(value)) {
-      value = value.replace(/[\[\]]/g, "");
-      showError("nicknameError", "\u0421\u043A\u043E\u0431\u043A\u0438 [] \u0437\u0430\u043F\u0440\u0435\u0449\u0435\u043D\u044B \u0434\u043B\u044F \u043B\u0438\u0447\u043D\u043E\u0433\u043E \u043D\u0438\u043A\u0430");
-    }
-    if (value.length > 16) {
-      value = value.substring(0, 16);
-      setTimeout(() => {
-        showError("nicknameError", `\u041B\u0438\u0447\u043D\u044B\u0439 \u043D\u0438\u043A \u043E\u0431\u0440\u0435\u0437\u0430\u043D \u0434\u043E 16 \u0441\u0438\u043C\u0432\u043E\u043B\u043E\u0432`);
-      }, 100);
-    }
-    nicknameInput.value = value;
-  }
-  updateCharCount();
-  try {
-    const headers = { "Content-Type": "application/json" };
-    if (getAccountToken()) {
-      headers["Authorization"] = `Game ${getAccountToken()}`;
-    }
-    const res = await fetch("https://api.agar.su/check-nickname", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ nickname: nicknameInput.value.trim() })
-    });
-    const data = await res.json();
-    if (getAccountToken() && data.taken) {
-      const meRes = await fetch("https://api.agar.su/api/me/nicknames", {
-        headers: { "Authorization": `Game ${getAccountToken()}` }
-      });
-      if (meRes.ok) {
-        const meData = await meRes.json();
-        const myNicks = (meData.nicknames || []).map((n) => n.nickname.toLowerCase());
-        const currentNick = nicknameInput.value.trim().toLowerCase();
-        if (myNicks.includes(currentNick)) {
-          hideError("nicknameError");
-          nicknameInput.setCustomValidity("");
-          isNicknameTaken = false;
-          calculateCost();
-          return;
-        }
-      }
-    }
-    if (data.taken) {
-      showError("nicknameError", data.error || "\u041D\u0438\u043A \u0437\u0430\u043D\u044F\u0442");
-      nicknameInput.setCustomValidity("\u041D\u0438\u043A \u0437\u0430\u043D\u044F\u0442");
-      isNicknameTaken = true;
-    } else {
-      hideError("nicknameError");
-      nicknameInput.setCustomValidity("");
-      isNicknameTaken = false;
-    }
-  } catch (err) {
-    console.error("\u041E\u0448\u0438\u0431\u043A\u0430 \u043F\u0440\u043E\u0432\u0435\u0440\u043A\u0438 \u043D\u0438\u043A\u0430:", err);
-    isNicknameTaken = false;
-    hideError("nicknameError");
-  }
-  calculateCost();
-});
-nicknameInput.addEventListener("input", () => {
-  updateCharCount();
-  calculateCost();
-});
-const invisibleNickCheckbox = document.getElementById("invisibleNick");
-const rotationNickCheckbox = document.getElementById("rotationNick");
-passwordInput.addEventListener("input", () => {
-  if (passwordInput.value.length > 5) {
-    passwordInput.value = passwordInput.value.substring(0, 5);
-    showError("passwordError", "\u041F\u0430\u0440\u043E\u043B\u044C \u043D\u0435 \u043C\u043E\u0436\u0435\u0442 \u0431\u044B\u0442\u044C \u0434\u043B\u0438\u043D\u043D\u0435\u0435 5 \u0441\u0438\u043C\u0432\u043E\u043B\u043E\u0432");
-  } else {
-    hideError("passwordError");
-  }
-  calculateCost();
-});
-const previewContainer = document.getElementById("previewContainer");
-const fileInput = document.getElementById("fileInput");
-const skinCanvas = document.getElementById("previewCanvas");
-const skinCtx = skinCanvas.getContext("2d");
-const gifPreview = document.getElementById("previewGif");
-fileInput.addEventListener("change", (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  if (file.size > paymentRules.maxFileSize) {
-    fileInput.value = "";
-    showError("fileError", "\u0424\u0430\u0439\u043B \u0441\u043B\u0438\u0448\u043A\u043E\u043C \u0431\u043E\u043B\u044C\u0448\u043E\u0439 (\u043C\u0430\u043A\u0441. 5MB)");
-    return;
-  }
-  if (!["image/png", "image/jpeg", "image/gif"].includes(file.type)) {
-    fileInput.value = "";
-    showError("fileError", "\u041D\u0435\u043F\u043E\u0434\u0434\u0435\u0440\u0436\u0438\u0432\u0430\u0435\u043C\u044B\u0439 \u0444\u043E\u0440\u043C\u0430\u0442. \u0422\u043E\u043B\u044C\u043A\u043E PNG, JPG, GIF");
-    return;
-  }
-  previewSkin(file);
-  previewContainer.classList.add("has-image");
-  calculateCost();
-});
+
+let shopBound = false;
+let nicknameInput, passwordInput, invisibleNickCheckbox, rotationNickCheckbox;
+let previewContainer, fileInput, skinCanvas, skinCtx, gifPreview;
+
 function previewSkin(file) {
   const url = URL.createObjectURL(file);
   const isGif = file.type === "image/gif";
@@ -346,12 +235,14 @@ function setReceiptVisible(show) {
   if (calculator) calculator.hidden = !show;
 }
 function calculateCost() {
+  if (!nicknameInput || !passwordInput || !fileInput || !invisibleNickCheckbox || !rotationNickCheckbox) return;
   const nickname = nicknameInput.value.trim();
   const password = passwordInput.value.trim();
   const file = fileInput.files[0];
   const multiplier = getMultiplier();
   const buyButton = document.getElementById("buyButton");
   const totalEl = document.getElementById("totalAmount");
+  if (!buyButton || !totalEl) return;
   const hasOrderItem = !!(password || file || invisibleNickCheckbox.checked || rotationNickCheckbox.checked);
   if (!nickname || isNicknameTaken || !hasOrderItem) {
     setReceiptVisible(false);
@@ -394,63 +285,6 @@ function calculateCost() {
     buyButton.disabled = true;
   }
 }
-document.querySelectorAll('input[name="serviceType"]').forEach((radio) => {
-  radio.addEventListener("change", () => {
-    updateNicknameDisplay();
-    calculateCost();
-  });
-});
-updateNicknameDisplay();
-calculateCost();
-updateShopAuthNotice();
-document.getElementById("paymentForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const rawNickname = nicknameInput.value.trim();
-  const nickname = rawNickname.toLowerCase();
-  const password = passwordInput.value.trim().toLowerCase();
-  const file = fileInput.files[0];
-  const serviceType = document.querySelector('input[name="serviceType"]:checked')?.value || "";
-  if (!nickname) {
-    showError("formError", "\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u043D\u0438\u043A/\u043A\u043B\u0430\u043D.");
-    return;
-  }
-  if (!password && !file && !invisibleNickCheckbox.checked && !rotationNickCheckbox.checked) {
-    showError("formError", "\u0412\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u0445\u043E\u0442\u044F \u0431\u044B \u043F\u0430\u0440\u043E\u043B\u044C \u0438\u043B\u0438 \u0441\u043A\u0438\u043D \u0434\u043B\u044F \u043E\u043F\u043B\u0430\u0442\u044B");
-    return;
-  }
-  const multiplier = getMultiplier();
-  const passwordCost = password ? 1 : 0;
-  const skinCost = file ? file.type === "image/gif" ? 2 : 1 : 0;
-  const amount = (passwordCost + skinCost) * multiplier;
-  const formData = new FormData();
-  formData.append("name", nickname);
-  formData.append("amount", amount);
-  formData.append("serviceType", serviceType);
-  if (password) formData.append("password", password);
-  if (invisibleNickCheckbox.checked) formData.append("invisible", "1");
-  if (rotationNickCheckbox.checked) formData.append("rotation", "1");
-  const headers = {};
-  if (getAccountToken()) {
-    headers["Authorization"] = `Game ${getAccountToken()}`;
-  }
-  if (file) {
-    if (file.type === "image/gif") {
-      formData.append("image", file, file.name);
-      await sendForm(formData, headers);
-    } else {
-      skinCanvas.toBlob(async (blob) => {
-        if (!blob) {
-          showError("formError", "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043E\u0431\u0440\u0430\u0431\u043E\u0442\u0430\u0442\u044C \u0438\u0437\u043E\u0431\u0440\u0430\u0436\u0435\u043D\u0438\u0435. \u041F\u043E\u043F\u0440\u043E\u0431\u0443\u0439\u0442\u0435 \u0434\u0440\u0443\u0433\u043E\u0439 \u0444\u0430\u0439\u043B.");
-          return;
-        }
-        formData.append("image", blob, "skin.png");
-        await sendForm(formData, headers);
-      }, "image/png");
-    }
-  } else {
-    await sendForm(formData, headers);
-  }
-});
 async function sendForm(formData, headers = {}) {
   try {
     const res = await fetch("https://api.agar.su/create-payment", {
@@ -480,20 +314,220 @@ async function sendForm(formData, headers = {}) {
     showError("formError", "\u041E\u0448\u0438\u0431\u043A\u0430 \u0441\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u044F. \u041F\u043E\u043F\u0440\u043E\u0431\u0443\u0439\u0442\u0435 \u043F\u043E\u0437\u0436\u0435.", true);
   }
 }
-const togglePassword = document.getElementById("togglePassword");
-const togglePasswordIcon = togglePassword?.querySelector("i");
-togglePassword?.addEventListener("click", () => {
-  const type = passwordInput.type === "password" ? "text" : "password";
-  passwordInput.type = type;
-  togglePasswordIcon?.classList.toggle("fa-eye");
-  togglePasswordIcon?.classList.toggle("fa-eye-slash");
-});
-invisibleNickCheckbox.addEventListener("change", calculateCost);
-rotationNickCheckbox.addEventListener("change", calculateCost);
-window.addEventListener("storage", (event) => {
-  if (event.key === "accountToken") updateShopAuthNotice();
-});
-function openShopPurchase(nickname, options = {}) {
+
+function bindShopDom() {
+  if (shopBound) return;
+  if (!document.getElementById("nickname")) return;
+  shopBound = true;
+  nicknameInput = document.getElementById("nickname");
+  passwordInput = document.getElementById("password");
+  document.querySelectorAll('input[name="serviceType"]').forEach((radio) => {
+    radio.addEventListener("change", () => {
+      updateNicknameDisplay();
+      calculateCost();
+    });
+  });
+  document.getElementById("paymentForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const rawNickname = nicknameInput.value.trim();
+    const nickname = rawNickname.toLowerCase();
+    const password = passwordInput.value.trim().toLowerCase();
+    const file = fileInput.files[0];
+    const serviceType = document.querySelector('input[name="serviceType"]:checked')?.value || "";
+    if (!nickname) {
+      showError("formError", "\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u043D\u0438\u043A/\u043A\u043B\u0430\u043D.");
+      return;
+    }
+    if (!password && !file && !invisibleNickCheckbox.checked && !rotationNickCheckbox.checked) {
+      showError("formError", "\u0412\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u0445\u043E\u0442\u044F \u0431\u044B \u043F\u0430\u0440\u043E\u043B\u044C \u0438\u043B\u0438 \u0441\u043A\u0438\u043D \u0434\u043B\u044F \u043E\u043F\u043B\u0430\u0442\u044B");
+      return;
+    }
+    const multiplier = getMultiplier();
+    const passwordCost = password ? 1 : 0;
+    const skinCost = file ? file.type === "image/gif" ? 2 : 1 : 0;
+    const amount = (passwordCost + skinCost) * multiplier;
+    const formData = new FormData();
+    formData.append("name", nickname);
+    formData.append("amount", amount);
+    formData.append("serviceType", serviceType);
+    if (password) formData.append("password", password);
+    if (invisibleNickCheckbox.checked) formData.append("invisible", "1");
+    if (rotationNickCheckbox.checked) formData.append("rotation", "1");
+    const headers = {};
+    if (getAccountToken()) {
+      headers["Authorization"] = `Game ${getAccountToken()}`;
+    }
+    if (file) {
+      if (file.type === "image/gif") {
+        formData.append("image", file, file.name);
+        await sendForm(formData, headers);
+      } else {
+        skinCanvas.toBlob(async (blob) => {
+          if (!blob) {
+            showError("formError", "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043E\u0431\u0440\u0430\u0431\u043E\u0442\u0430\u0442\u044C \u0438\u0437\u043E\u0431\u0440\u0430\u0436\u0435\u043D\u0438\u0435. \u041F\u043E\u043F\u0440\u043E\u0431\u0443\u0439\u0442\u0435 \u0434\u0440\u0443\u0433\u043E\u0439 \u0444\u0430\u0439\u043B.");
+            return;
+          }
+          formData.append("image", blob, "skin.png");
+          await sendForm(formData, headers);
+        }, "image/png");
+      }
+    } else {
+      await sendForm(formData, headers);
+    }
+  });
+  loadAllowTxt().then(() => {
+    blockForbiddenChars(nicknameInput);
+    blockForbiddenChars(passwordInput);
+  }).catch(() => {
+    // Still bind input handlers; without a char list we won't strip nicknames
+    blockForbiddenChars(nicknameInput);
+    blockForbiddenChars(passwordInput);
+    showToast("\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044C allowtxt.txt", "error");
+  });
+  nicknameInput.addEventListener("blur", async () => {
+    const isClan = document.getElementById("clan").checked;
+    let value = nicknameInput.value.trim();
+    if (isClan) {
+      let innerText = value.replace(/^\[|\]$/g, "");
+      innerText = innerText.replace(/[\[\]]/g, "");
+      if (innerText.length > 4) {
+        innerText = innerText.substring(0, 4);
+        setTimeout(() => {
+          showError("nicknameError", "\u0422\u0435\u043A\u0441\u0442 \u043E\u0431\u0440\u0435\u0437\u0430\u043D \u0434\u043E 4 \u0441\u0438\u043C\u0432\u043E\u043B\u043E\u0432");
+        }, 100);
+      }
+      nicknameInput.value = `[${innerText}]`;
+    } else {
+      if (value && !allowedPattern.test(value)) {
+        value = stripInvalidNicknameChars(value);
+        showError("nicknameError", "\u041D\u0435\u0434\u043E\u043F\u0443\u0441\u0442\u0438\u043C\u044B\u0435 \u0441\u0438\u043C\u0432\u043E\u043B\u044B \u0432 \u043D\u0438\u043A\u0435");
+      }
+      if (/[\[\]]/.test(value)) {
+        value = value.replace(/[\[\]]/g, "");
+        showError("nicknameError", "\u0421\u043A\u043E\u0431\u043A\u0438 [] \u0437\u0430\u043F\u0440\u0435\u0449\u0435\u043D\u044B \u0434\u043B\u044F \u043B\u0438\u0447\u043D\u043E\u0433\u043E \u043D\u0438\u043A\u0430");
+      }
+      if (value.length > 16) {
+        value = value.substring(0, 16);
+        setTimeout(() => {
+          showError("nicknameError", `\u041B\u0438\u0447\u043D\u044B\u0439 \u043D\u0438\u043A \u043E\u0431\u0440\u0435\u0437\u0430\u043D \u0434\u043E 16 \u0441\u0438\u043C\u0432\u043E\u043B\u043E\u0432`);
+        }, 100);
+      }
+      nicknameInput.value = value;
+    }
+    updateCharCount();
+    try {
+      const headers = { "Content-Type": "application/json" };
+      if (getAccountToken()) {
+        headers["Authorization"] = `Game ${getAccountToken()}`;
+      }
+      const res = await fetch("https://api.agar.su/check-nickname", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ nickname: nicknameInput.value.trim() })
+      });
+      const data = await res.json();
+      if (getAccountToken() && data.taken) {
+        const meRes = await fetch("https://api.agar.su/api/me/nicknames", {
+          headers: { "Authorization": `Game ${getAccountToken()}` }
+        });
+        if (meRes.ok) {
+          const meData = await meRes.json();
+          const myNicks = (meData.nicknames || []).map((n) => n.nickname.toLowerCase());
+          const currentNick = nicknameInput.value.trim().toLowerCase();
+          if (myNicks.includes(currentNick)) {
+            hideError("nicknameError");
+            nicknameInput.setCustomValidity("");
+            isNicknameTaken = false;
+            calculateCost();
+            return;
+          }
+        }
+      }
+      if (data.taken) {
+        showError("nicknameError", data.error || "\u041D\u0438\u043A \u0437\u0430\u043D\u044F\u0442");
+        nicknameInput.setCustomValidity("\u041D\u0438\u043A \u0437\u0430\u043D\u044F\u0442");
+        isNicknameTaken = true;
+      } else {
+        hideError("nicknameError");
+        nicknameInput.setCustomValidity("");
+        isNicknameTaken = false;
+      }
+    } catch (err) {
+      console.error("\u041E\u0448\u0438\u0431\u043A\u0430 \u043F\u0440\u043E\u0432\u0435\u0440\u043A\u0438 \u043D\u0438\u043A\u0430:", err);
+      isNicknameTaken = false;
+      hideError("nicknameError");
+    }
+    calculateCost();
+  });
+  nicknameInput.addEventListener("input", () => {
+    updateCharCount();
+    calculateCost();
+  });
+  invisibleNickCheckbox = document.getElementById("invisibleNick");
+  rotationNickCheckbox = document.getElementById("rotationNick");
+  passwordInput.addEventListener("input", () => {
+    if (passwordInput.value.length > 5) {
+      passwordInput.value = passwordInput.value.substring(0, 5);
+      showError("passwordError", "\u041F\u0430\u0440\u043E\u043B\u044C \u043D\u0435 \u043C\u043E\u0436\u0435\u0442 \u0431\u044B\u0442\u044C \u0434\u043B\u0438\u043D\u043D\u0435\u0435 5 \u0441\u0438\u043C\u0432\u043E\u043B\u043E\u0432");
+    } else {
+      hideError("passwordError");
+    }
+    calculateCost();
+  });
+  previewContainer = document.getElementById("previewContainer");
+  fileInput = document.getElementById("fileInput");
+  skinCanvas = document.getElementById("previewCanvas");
+  skinCtx = skinCanvas.getContext("2d");
+  gifPreview = document.getElementById("previewGif");
+  fileInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > paymentRules.maxFileSize) {
+      fileInput.value = "";
+      showError("fileError", "\u0424\u0430\u0439\u043B \u0441\u043B\u0438\u0448\u043A\u043E\u043C \u0431\u043E\u043B\u044C\u0448\u043E\u0439 (\u043C\u0430\u043A\u0441. 5MB)");
+      return;
+    }
+    if (!["image/png", "image/jpeg", "image/gif"].includes(file.type)) {
+      fileInput.value = "";
+      showError("fileError", "\u041D\u0435\u043F\u043E\u0434\u0434\u0435\u0440\u0436\u0438\u0432\u0430\u0435\u043C\u044B\u0439 \u0444\u043E\u0440\u043C\u0430\u0442. \u0422\u043E\u043B\u044C\u043A\u043E PNG, JPG, GIF");
+      return;
+    }
+    previewSkin(file);
+    previewContainer.classList.add("has-image");
+    calculateCost();
+  });
+  const togglePassword = document.getElementById("togglePassword");
+    const togglePasswordIcon = togglePassword?.querySelector("i");
+  togglePassword?.addEventListener("click", () => {
+    const type = passwordInput.type === "password" ? "text" : "password";
+    passwordInput.type = type;
+    togglePasswordIcon?.classList.toggle("fa-eye");
+    togglePasswordIcon?.classList.toggle("fa-eye-slash");
+  });
+  invisibleNickCheckbox.addEventListener("change", calculateCost);
+  rotationNickCheckbox.addEventListener("change", calculateCost);
+  window.addEventListener("storage", (event) => {
+    if (event.key === "accountToken") updateShopAuthNotice();
+  });
+  updateNicknameDisplay();
+  calculateCost();
+}
+
+function resetShopPanel() {
+  shopBound = false;
+  nicknameInput = passwordInput = invisibleNickCheckbox = rotationNickCheckbox = null;
+  previewContainer = fileInput = skinCanvas = skinCtx = gifPreview = null;
+  unmountPanel("shop");
+}
+
+async function ensureShopPanel() {
+  mountPanel("shop", shopHtml);
+  bindShopDom();
+  updateShopAuthNotice();
+}
+
+async function openShopPurchase(nickname, options = {}) {
+  await ensureShopPanel();
   if (typeof showContent === "function") showContent("shop");
   const isClan = !!options.clan;
   const personal = document.getElementById("personal");
@@ -520,8 +554,13 @@ function openShopPurchase(nickname, options = {}) {
   calculateCost();
   nicknameInput.scrollIntoView({ behavior: "smooth", block: "center" });
 }
+
 window.openShopPurchase = openShopPurchase;
 window.updateShopAuthNotice = updateShopAuthNotice;
+window.ensureShopPanel = ensureShopPanel;
 export {
-  openShopPurchase
+  ensureShopPanel,
+  openShopPurchase,
+  resetShopPanel,
+  updateShopAuthNotice
 };

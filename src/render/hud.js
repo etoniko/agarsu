@@ -105,8 +105,10 @@ function shareStats(platform, S) {
 function initShareHandlers(S) {
   updateShareText(S);
   ["vk", "telegram", "whatsapp", "facebook", "twitter"].forEach((p) => {
-    const btn = document.querySelector(`.${p}`);
-    if (btn) btn.addEventListener("click", () => shareStats(p, S));
+    const btn = document.querySelector(`#statics .${p}, .${p}`);
+    if (!btn || btn.dataset.shareWired === "1") return;
+    btn.dataset.shareWired = "1";
+    btn.addEventListener("click", () => shareStats(p, S));
   });
 }
 export {

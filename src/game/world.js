@@ -1,4 +1,4 @@
-import { showStatics } from "../lib/dom.js";
+import { hideOverlays, showStatics } from "../lib/dom.js";
 const normalizeFractlPart = (n) => n % (Math.PI * 2) / (Math.PI * 2);
 function computeFoodPosition(S, nodeid) {
   return {
@@ -94,8 +94,7 @@ function updateNodes(S, reader, hooks) {
       node.ka = posX;
       node.la = posY;
       if (playerId === S.ownerPlayerId) {
-        const overlays = document.getElementById("overlays");
-        if (overlays) overlays.style.display = "none";
+        hideOverlays();
         node.isOwn = true;
         S.playerCells.push(node);
         if (1 == S.playerCells.length) {

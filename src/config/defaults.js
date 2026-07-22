@@ -21,26 +21,26 @@ const KEYBIND_DEFAULTS = {
   sticker9: 57
 };
 const KEYBIND_LABELS = {
-  split: "Split",
-  eject: "Eject (\u043C\u0430\u0441\u0441\u0430 W)",
-  freeze: "\u0417\u0430\u043C\u043E\u0440\u043E\u0437\u043A\u0430",
-  chat: "\u0427\u0430\u0442",
-  coord: "\u041A\u043E\u043E\u0440\u0434\u0438\u043D\u0430\u0442\u044B (C)",
-  macroQ: "Q",
-  macroE: "E",
-  macroR: "R",
-  macroT: "T",
-  macroP: "P",
-  menu: "\u041C\u0435\u043D\u044E / \u043F\u0430\u0443\u0437\u0430 UI",
-  sticker1: "\u0421\u0442\u0438\u043A\u0435\u0440 1",
-  sticker2: "\u0421\u0442\u0438\u043A\u0435\u0440 2",
-  sticker3: "\u0421\u0442\u0438\u043A\u0435\u0440 3",
-  sticker4: "\u0421\u0442\u0438\u043A\u0435\u0440 4",
-  sticker5: "\u0421\u0442\u0438\u043A\u0435\u0440 5",
-  sticker6: "\u0421\u0442\u0438\u043A\u0435\u0440 6",
-  sticker7: "\u0421\u0442\u0438\u043A\u0435\u0440 7",
-  sticker8: "\u0421\u0442\u0438\u043A\u0435\u0440 8",
-  sticker9: "\u0421\u0442\u0438\u043A\u0435\u0440 9"
+  split: "Разделение",
+  eject: "Выброс массы (W)",
+  freeze: "Заморозка",
+  chat: "Чат",
+  coord: "Координаты (C)",
+  macroQ: "Макрос Q",
+  macroE: "Макрос E",
+  macroR: "Макрос R",
+  macroT: "Макрос T",
+  macroP: "Макрос P",
+  menu: "Меню / пауза UI",
+  sticker1: "Стикер 1",
+  sticker2: "Стикер 2",
+  sticker3: "Стикер 3",
+  sticker4: "Стикер 4",
+  sticker5: "Стикер 5",
+  sticker6: "Стикер 6",
+  sticker7: "Стикер 7",
+  sticker8: "Стикер 8",
+  sticker9: "Стикер 9"
 };
 const SETTINGS_BOX_IDS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
 export {
