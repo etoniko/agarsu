@@ -60,12 +60,24 @@ window.renderDeathBanner = function () {
     }
 };
 </script>
+<script type="text/javascript">
+var _tmr = window._tmr || (window._tmr = []);
+_tmr.push({id: "3773988", type: "pageView", start: (new Date()).getTime()});
+(function (d, w, id) {
+  if (d.getElementById(id)) return;
+  var ts = d.createElement("script"); ts.type = "text/javascript"; ts.async = true; ts.id = id;
+  ts.src = "https://top-fwz1.mail.ru/js/code.js";
+  var f = function () {var s = d.getElementsByTagName("script")[0]; s.parentNode.insertBefore(ts, s);};
+  if (w.opera == "[object Opera]") { d.addEventListener("DOMContentLoaded", f, false); } else { f(); }
+})(document, window, "tmr-code");
+</script>
 <meta name="selfwork.ru" content="YCO1OBkuI4MJNlnWL2VsXbRyuXLFJQCJS68rj8Jq2fYQSR4QLT"/>
 </head>
 <body>
+  <noscript><div><img src="https://top-fwz1.mail.ru/counter?id=3773988;js=na" class="inl-0" alt="Top.Mail.Ru" /></div></noscript>
   <div id="overlays" class="overlays">
     <div class="social"><a href="https://t.me/agarsu" target="_blank" class="tg"><i class="fab fa-telegram tg-icon"></i></a><a href="https://vk.com/club233723574" target="_blank" class="soc"><i class="fab fa-vk"></i></a><a href="#" class="soc"><i class="fab fa-discord discord-disabled"></i></a></div>
-    <div class="add-yandex" id="yandex-home-ad"><div id="yandex_rtb_R-A-15699059-13"></div></div>
+    <div class="add-yandex" id="ratinghome"><div id="yandex_rtb_R-A-15699059-13"></div></div>
 	  <div class="center">
       <div class="sidebar">
         <div class="menu-item inl-1" onclick="showContent('shop')">
@@ -79,15 +91,386 @@ window.renderDeathBanner = function () {
         <div class="menu-item" onclick="showContent('store')"><i class="fas fa-user"></i><span class="label" id="accountMenuLabel">Войти</span></div>
       </div>
       <div class="main-content">
-<div id="shop" class="content"></div>
-        <div id="settings" class="content"></div>
-                <div id="skinslist" class="content skins-gallery-content"></div>
-        <div id="home" class="content"></div>
-        <div id="rating" class="content"></div>
-        <div id="store" class="content"></div>
+<div id="shop" class="content">
+  <div id="shopInfo" class="shop-info-layer" aria-live="polite">
+    <div id="shopAuthNotice" class="shop-float-alert shop-float-alert--warn" role="status" hidden></div>
+    <div id="fileError" class="shop-float-alert shop-float-alert--error"></div>
+    <div id="nicknameError" class="shop-float-alert shop-float-alert--error"></div>
+    <div id="passwordError" class="shop-float-alert shop-float-alert--error"></div>
+    <div id="formError" class="shop-float-alert shop-float-alert--error"></div>
+  </div>
+  <div class="top-info"><div><span>Магазин лички</span></div></div>
+  <div id="shopToastContainer" class="shop-toast-container" aria-live="polite"></div>
+  <div class="shop-container">
+    <div class="shop-grid">
+      <div class="shop-form-side">
+        <form id="paymentForm" class="shop-form" autocomplete="off">
+          <div class="shop-form-stack">
+            <div class="shop-form-main">
+              <div class="shop-avatar-block">
+                <label id="previewContainer" for="fileInput" title="Загрузить скин PNG, JPG или GIF">
+                  <canvas id="previewCanvas" width="512" height="512"></canvas>
+                  <img id="previewGif" alt="GIF preview">
+                </label>
+                <input type="file" id="fileInput" accept=".png,.jpg,.gif" autocomplete="off">
+              </div>
+              <div class="shop-form-fields">
+                <div class="shop-inputs">
+                  <div class="shop-field">
+                    <label for="nickname">Никнейм</label>
+                    <div id="nicknameWrapper" class="shop-input-wrap">
+                      <input type="text" id="nickname" placeholder="Ваш ник" required maxlength="16" autocomplete="off">
+                      <span id="charCount" class="shop-counter">0/16</span>
+                    </div>
+                  </div>
+                  <div class="shop-field">
+                    <label for="password">Пароль на ник</label>
+                    <div class="password-wrapper shop-input-wrap">
+                      <input type="password" id="password" placeholder="Необязательно" maxlength="5" autocomplete="off">
+                      <button type="button" id="togglePassword" class="shop-eye" aria-label="Показать пароль"><i class="fa-solid fa-eye"></i></button>
+                    </div>
+                  </div>
+                </div>
+                <div class="shop-options-bar">
+                  <div class="radio-group" role="tablist" aria-label="Тип покупки">
+                    <label class="radio-pill"><input type="radio" name="serviceType" value="personal" id="personal" checked autocomplete="off"><span>Себе</span></label>
+                    <label class="radio-pill"><input type="radio" name="serviceType" value="clan" id="clan" autocomplete="off"><span>Клан</span></label>
+                  </div>
+                  <div class="shop-addon-toggles" role="group" aria-label="Дополнения">
+                    <label class="shop-addon-toggle" title="Невидимый ник — 500 ₽">
+                      <input type="checkbox" id="invisibleNick" autocomplete="off">
+                      <span class="material-icons" aria-hidden="true">visibility_off</span>
+                    </label>
+                    <label class="shop-addon-toggle" title="Поворотный скин — 500 ₽">
+                      <input type="checkbox" id="rotationNick" autocomplete="off">
+                      <span class="material-icons" aria-hidden="true">3d_rotation</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <aside class="shop-checkout">
+        <div id="calculator" class="shop-receipt" hidden>
+          <div class="shop-receipt-head">Ваш заказ</div>
+          <ul class="shop-price-list">
+            <li id="clanMultiplier"><span>Множитель</span><strong id="multiplierText">1x</strong></li>
+            <li id="passwordCost"><span>Пароль</span><strong>0 ₽</strong></li>
+            <li id="skinCost"><span>Скин</span><strong>0 ₽</strong></li>
+            <li id="invisibleCost" class="inl-2"><span>Невидимый ник</span><strong>0 ₽</strong></li>
+            <li id="rotationCost" class="inl-3"><span>Поворот скина</span><strong>0 ₽</strong></li>
+          </ul>
+          <div class="shop-receipt-total">
+            <span>К оплате</span>
+            <strong id="totalAmount">0 ₽</strong>
+          </div>
+        </div>
+        <button type="submit" id="buyButton" class="shop-buy-btn" form="paymentForm" disabled>КУПИТЬ</button>
+        <p class="shop-support">
+          Поддержка: <a href="https://t.me/nikkkkkysha" target="_blank">@nikkkkkysha</a>
+          <span>·</span>
+          <a href="mailto:ikometai@yandex.ru">ikometai@ya.ru</a>
+        </p>
+      </aside>
+    </div>
+  </div>
+</div>
+        <div id="settings" class="content">
+          <div class="top-info">
+            <div><span>Настройки</span></div>
+          </div>
+          <div class="settings-layout">
+            <nav class="settings-nav" aria-label="Разделы настроек">
+              <button type="button" class="settings-nav-item active" data-panel="graphics">
+                <i class="fas fa-palette"></i><span>Графика</span>
+              </button>
+              <button type="button" class="settings-nav-item" data-panel="backgrounds">
+                <i class="fas fa-image"></i><span>Фоны</span>
+              </button>
+              <button type="button" class="settings-nav-item" data-panel="colors">
+                <i class="fas fa-droplet"></i><span>Цвета</span>
+              </button>
+              <button type="button" class="settings-nav-item" data-panel="controls">
+                <i class="fas fa-keyboard"></i><span>Управление</span>
+              </button>
+              <button type="button" class="settings-nav-item" data-panel="system">
+                <i class="fas fa-sliders"></i><span>Прочее</span>
+              </button>
+            </nav>
+            <div class="settings-panels checkbox-container">
+              <section class="settings-panel active" data-panel="graphics">
+                <h3 class="settings-panel-title">Отображение в игре</h3>
+                <label><input type="checkbox" class="save" data-box-id="1" onchange="setSkins(this.checked);">Видеть скины</label>
+                <label><input type="checkbox" class="save" data-box-id="2" onchange="setNames(this.checked);">Видеть имена</label>
+                <label><input type="checkbox" class="save" data-box-id="3" onchange="setColors(this.checked);">Цвета с сервера</label>
+                <label><input type="checkbox" class="save" data-box-id="5" onchange="setShowMass(this.checked);" checked>Показать массу</label>
+                <label><input type="checkbox" class="save" data-box-id="6" onchange="setSmooth(this.checked);">Простой рендер</label>
+                <label><input type="checkbox" class="save" data-box-id="7" onchange="setNoBorder(this.checked);">Отключить обводку</label>
+                <label><input type="checkbox" class="save" data-box-id="9" onchange="setGlow(this.checked);" checked>Эффект лимита</label>
+                <label><input type="checkbox" class="save" data-box-id="12" onchange="setFixedCell(this.checked);">Фиксированная клетка</label>
+                <label><input type="checkbox" class="save" data-box-id="13" onchange="setShowStickers(this.checked);">Показывать стикеры</label>
+              </section>
+              <section class="settings-panel" data-panel="backgrounds">
+                <h3 class="settings-panel-title">Фон карты</h3>
+                <div id="theme-selector" class="settings-field">
+                  <label for="theme-select">Тема поля:</label>
+                  <select id="theme-select">
+                    <option value="gradient">Градиент</option>
+                    <option value="white">Белая</option>
+                    <option value="black">Чёрная</option>
+                  </select>
+                </div>
+                <div id="gradient-settings">
+                  <div class="color-picker">
+                    <span>Цвет центра:</span>
+                    <input type="color" id="gradient-center" value="#132745">
+                  </div>
+                  <div class="color-picker">
+                    <span>Цвет краёв:</span>
+                    <input type="color" id="gradient-edge" value="#000000">
+                  </div>
+                </div>
+                <div id="custom-bg-settings" class="settings-subsection">
+                  <label><input type="checkbox" class="save" data-box-id="15" onchange="setCustomMapBg(this.checked);">Свой фон карты (внутри границ сервера)</label>
+                  <div class="custom-bg-block">
+                    <label class="custom-bg-file"><span>Картинка:</span><input type="file" id="map-bg-file" accept="image/*"></label>
+                    <button type="button" class="custom-bg-clear" id="map-bg-clear">Убрать</button>
+                    <div class="custom-bg-row">
+                      <span>Режим:</span>
+                      <select id="map-bg-mode">
+                        <option value="stretch">Растянуть на всю карту</option>
+                        <option value="repeat">Плитка (повтор)</option>
+                      </select>
+                    </div>
+                    <div class="custom-bg-row" id="map-bg-tile-row">
+                      <span>Размер плитки:</span>
+                      <input type="number" id="map-bg-tile" min="64" max="4096" value="512" step="64">
+                    </div>
+                    <div class="custom-bg-preview" id="map-bg-preview"></div>
+                  </div>
+                  <label><input type="checkbox" class="save" data-box-id="16" onchange="setCustomVirusBg(this.checked);">Своя картинка вместо цвета вируса</label>
+                  <div class="custom-bg-block">
+                    <label class="custom-bg-file"><span>Изображение вируса:</span><input type="file" id="virus-bg-file" accept="image/*"></label>
+                    <button type="button" class="custom-bg-clear" id="virus-bg-clear">Убрать</button>
+                    <div class="custom-bg-preview" id="virus-bg-preview"></div>
+                  </div>
+                </div>
+              </section>
+              <section class="settings-panel" data-panel="colors">
+                <h3 class="settings-panel-title">Свои цвета (только у вас)</h3>
+                <label><input type="checkbox" class="save" data-box-id="14" onchange="setCustomClientColors(this.checked);">Включить свои цвета клеток</label>
+                <div id="client-color-settings">
+                  <div class="color-picker">
+                    <span>Вирус:</span>
+                    <input type="color" id="client-color-virus" value="#33ff33">
+                  </div>
+                  <div class="color-picker">
+                    <span>Еда:</span>
+                    <input type="color" id="client-color-food" value="#ffe066">
+                  </div>
+                  <div class="color-picker">
+                    <span>Враги:</span>
+                    <input type="color" id="client-color-enemy" value="#ff4444">
+                  </div>
+                  <div class="color-picker">
+                    <span>Мои шары:</span>
+                    <input type="color" id="client-color-own" value="#4488ff">
+                  </div>
+                  <div class="color-picker">
+                    <span>Масса (W):</span>
+                    <input type="color" id="client-color-eject" value="#ff66cc">
+                  </div>
+                </div>
+              </section>
+              <section class="settings-panel" data-panel="controls">
+                <h3 class="settings-panel-title">Клавиши и мышь</h3>
+                <label><input type="checkbox" class="save" data-box-id="4" onchange="setMouseClicks(this.checked);">Поддержка клика мышки</label>
+                <div id="keybind-settings" class="custom-bg-block">
+                  <p class="keybind-hint">Нажмите кнопку действия → новая клавиша. Esc — отмена.</p>
+                  <div id="mouse-bind-settings" class="mouse-bind-in-keybind">
+                    <div class="custom-bg-row">
+                      <span>Split (мышь):</span>
+                      <select id="mouse-split-btn">
+                        <option value="1">Левая (ЛКМ)</option>
+                        <option value="3">Правая (ПКМ)</option>
+                        <option value="0">Отключено</option>
+                      </select>
+                    </div>
+                    <div class="custom-bg-row">
+                      <span>Eject (мышь):</span>
+                      <select id="mouse-eject-btn">
+                        <option value="1">Левая (ЛКМ)</option>
+                        <option value="3">Правая (ПКМ)</option>
+                        <option value="0">Отключено</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div id="keybind-list"></div>
+                  <button type="button" id="keybind-reset" class="custom-bg-clear">Сбросить все клавиши</button>
+                </div>
+              </section>
+              <section class="settings-panel" data-panel="system">
+                <h3 class="settings-panel-title">Интерфейс и прочее</h3>
+                <label><input type="checkbox" class="save" data-box-id="8" onchange="setChatHide(this.checked);">Отключить чат</label>
+                <label><input type="checkbox" class="save" data-box-id="10" onchange="setAdultContent(this.checked);">+18 (убрать антимат и блюр)</label>
+                <label><input type="checkbox" class="save" data-box-id="11" onchange="setConfirmCloseTab(this.checked);">Подтверждение выхода из игры</label>
+              </section>
+            </div>
+          </div>
+        </div>
+        <div id="skinslist" class="content skins-gallery-content">
+          <div class="skins-gallery-wrap">
+            <div class="skins-gallery-header">
+              <span class="skins-gallery-title">Галерея бесплатных скинов</span>
+              <button type="button" class="skins-gallery-shop-btn" onclick="showContent('shop')">Создать скин</button>
+            </div>
+            <div id="skinsGalleryGrid" class="skins-gallery-grid"></div>
+            <div id="skinsGalleryPagination" class="skins-gallery-pagination"></div>
+            <p id="skinsGalleryStatus" class="skins-gallery-status"></p>
+          </div>
+        </div>
+        <div id="home" class="content active">
+          <div class="home-header-bar">
+            <div class="home-header-left">
+              <div class="progress-container">
+                <div class="progress-bar">
+                  <div class="level-circle" id="levelCircle">0</div>
+                  <div class="progress-fill"></div>
+                  <div class="progress-text" id="progressText">0% (0/0)</div>
+                </div>
+              </div>
+            </div>
+            <div class="home-header-center">
+              <span id="online" class="home-header-chip">Онлайн: </span>
+            </div>
+            <div class="home-header-right">
+              <span id="accountID" class="home-header-chip">ID: 0000</span>
+              <div onclick="showContent('settings')" class="setting menu-item home-header-chip"><i class="fas fa-gear"></i></div>
+            </div>
+          </div>
+          <div>
+            <div class="line"></div></div>
+          <div class="avatar-containers">
+            <div class="avatar-container">
+              <div class="previous-skin" id="prevSkin" onclick="showPrevious()"></div>
+              <div class="arrow" id="previous" onclick="showPrevious()">&#10094;</div>
+              <div onclick="showContent('skinslist')" id="skinss" class="main-skin anims"></div>
+              <div class="arrow" id="next" onclick="showNext()">&#10095;</div>
+              <div class="next-skin" id="nextSkin" onclick="showNext()"></div>
+            </div>
+     <div class="from-send">
+     <input type="text" placeholder="Ник" name="name" maxlength="16" class="noPress" id="nick" required="" autocomplete="username">
+     <input type="password" placeholder="Пасс" name="pass" maxlength="6" class="noPress" id="pass" required="" autocomplete="current-password" class="inl-4">
+	<div class="selectedIcon">
+		<div id="selectedColor"></div>
+	</div>
+                            <div id="colorList"></div>
+</div>
+          </div>
+		  <div class="servers">
+<ul class="gamemode">
+    <li data-ip="ffa.agar.su" id="ffa"><span class="fi fi-ru"></span>FFA - Москва<i class="fas fa-eye"></i><span class="online-count">10</span><i class="fas fa-user"></i><span class="online-count">40/500</span></li>
+    <li data-ip="ffa.agar.su:6002" id="ms"><span class="fi fi-ru"></span>MegaSplit<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/120</span></li>
+	<li data-ip="ffa.agar.su:6004" id="pvp1"><span class="fi fi-ru"></span>pvp1: 1x1 ffa 1k<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/50</span></li>
+	<li data-ip="ffa.agar.su:6005" id="pvp2"><span class="fi fi-ru"></span>pvp2: 2x2 ms 1k<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/50</span></li>
+	<li data-ip="ffa.agar.su:6007" id="tournament2"><span class="fi fi-ru"></span>Tournament 2x2<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/50</span></li>
+	<li data-ip="ffa.agar.su:6006" id="tournament"><span class="fi fi-ru"></span>Tournament 3x3<i class="fas fa-eye"></i><span class="online-count">0</span><i class="fas fa-user"></i><span class="online-count">0/50</span></li>
+</ul>
+</div>
+          <div class="nav-buttons">
+            <button onclick="spectate();" class="nav-button serv-button"><i class="fas fa-eye"></i> НАБЛЮДАТЬ </button>
+            <button onclick="startGame();" class="nav-button play-button"><i class="fas fa-play"></i> ИГРАТЬ </button>
+          </div>
+        </div>
+        <div id="rating" class="content">
+          <div class="top-info">
+            <div><span>Лучшие Игроки</span></div>
+          </div>
+          <div class="header-row">
+            <div class="cell">Позиция</div>
+            <div class="cell nr">Ник</div>
+            <div class="cell">Уровень</div>
+            <div class="cell">Аватар</div>
+          </div>
+          <div id="table-container"></div>
+        </div>
+        <div id="store" class="content">
+          <div class="top-info">
+            <div><span>Кабинет</span></div>
+          </div>
+          <div class="store-shell">
+            <div id="myNicknamesBlock" class="store-cabinet" style="display:none;">
+              <div class="store-toolbar tabs" id="myNickClanTabs" data-ready="1">
+                <div class="store-tabs">
+                  <button id="tabNicknames" type="button" class="tab active">
+                    <i class="fas fa-user"></i>
+                    <span>Ники</span>
+                    <span class="badge" id="badgeNick">0</span>
+                  </button>
+                  <button id="tabClans" type="button" class="tab">
+                    <i class="fas fa-users"></i>
+                    <span>Кланы</span>
+                    <span class="badge" id="badgeClan">0</span>
+                  </button>
+                  <button id="tabSettings" type="button" class="tab">
+                    <i class="fas fa-gear"></i>
+                    <span>Настройки</span>
+                  </button>
+                </div>
+                <button id="logoutButton" class="tab store-logout" onclick="logoutAccount()">
+                  <i class="fas fa-right-from-bracket"></i>
+                  <span>Выход</span>
+                </button>
+              </div>
+              <div class="list-wrap store-list" id="nickWrap"><ul id="myNickList" class="list"></ul></div>
+              <div class="list-wrap store-list" id="clanWrap" style="display:none;"><ul id="myClanList" class="list"></ul></div>
+              <div id="settingsWrap" class="store-settings-panel" style="display:none;">
+                <div id="restoreProgressBlock" class="restore-progress-block">
+                  <div class="restore-head">
+                    <div>
+                      <div class="restore-title">Восстановление аккаунта</div>
+                      <p class="restore-note">Если вы играли через Google или Telegram — подтвердите старый аккаунт. Ваш прежний ID, опыт и ники останутся, вход будет через VK.</p>
+                    </div>
+                    <span id="restoreStateBadge" class="restore-state-badge">Не восстановлен</span>
+                  </div>
+                  <div id="restoreAvailableBlock">
+                    <button type="button" id="restoreToggle" class="restore-toggle" aria-expanded="false">
+                      <i class="fas fa-link"></i>
+                      <span>Восстановить прогресс с Google / Telegram</span>
+                    </button>
+                    <div id="restorePanel" class="restore-panel" hidden>
+                      <div class="restore-actions">
+                        <div id="restoreGoogleContainer" class="restore-google-wrap"></div>
+                        <button type="button" class="auth-telegram-btn restore-telegram-btn" id="restoreTelegramBtn">
+                          <i class="fab fa-telegram"></i> Восстановить через Telegram
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div id="restoreDoneBlock" class="restore-done-block" style="display:none;">
+                    Этот аккаунт уже был восстановлен. Повторное восстановление не требуется.
+                  </div>
+                  <div id="restoreStatus" class="restore-status" role="status" hidden></div>
+                </div>
+              </div>
+            </div>
+            <div id="authlog" class="store-auth">
+              <div class="store-auth-card">
+                <div class="store-auth-icon"><i class="fas fa-user-lock"></i></div>
+                <h3 class="store-auth-title">Вход в кабинет</h3>
+                <p class="store-auth-text">Войдите через VK, чтобы видеть купленные ники, кланы, пароли и прогресс.</p>
+                <div id="vkAuthContainer" class="auth-block auth-block-vk">
+                  <div id="VkIdSdkOAuthList"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-	  <div class="rating-home" id="home-stats">
+	  <div class="rating-home" id="ratinghome">
     <div class="rating-header">Статистика</div>
     <div class="rating-content" id="topswindow">
         <div class="section-title">Top players</div>
@@ -130,20 +513,58 @@ window.renderDeathBanner = function () {
         </div>
     </div>
 </div>
-	  <footer class="footer"><a href="privacy.html">Политика конфиденциальности</a><a href="rules.html"> | Правила сайта | </a><a href="offer.html">Публичная оферта</a></footer>
+	  <footer class="footer"><a href="privacy.html">Политика конфиденциальности</a> ·<a href="rules.html">Правила сайта</a>· <a href="offer.html">Публичная оферта</a></footer>
   </div>
   <div id="canvas-stage" class="canvas-stage">
   <canvas id="canvas"></canvas>
+  <div id="connect-verify-overlay" class="inl-13">
+    <div id="connect-verify">
+      <i id="connect-verify-icon" class="fas fa-shield-halved connect-verify-icon" aria-hidden="true"></i>
+      <div id="connect-verify-title">Проверка безопасности</div>
+      <div id="connect-verify-text">Подождите, идёт подключение к серверу…</div>
+      <div class="connect-verify-transfer" id="connect-verify-transfer">
+        <div class="connect-verify-node connect-verify-pc">
+          <i class="fas fa-desktop"></i>
+          <span>ПК</span>
+        </div>
+        <div class="connect-verify-link">
+          <div class="connect-verify-packets" aria-hidden="true">
+            <span class="connect-packet connect-packet-out"></span>
+            <span class="connect-packet connect-packet-in"></span>
+            <span class="connect-packet connect-packet-out connect-packet-delay"></span>
+            <span class="connect-packet connect-packet-in connect-packet-delay"></span>
+          </div>
+          <div class="connect-verify-data-stream" id="connect-verify-data-stream">sha256("…") → …</div>
+        </div>
+        <div class="connect-verify-node connect-verify-server">
+          <i class="fas fa-server"></i>
+          <span>Сервер</span>
+        </div>
+      </div>
+      <div id="connect-verify-reconnect" hidden>
+        <button type="button" id="connect-verify-reconnect-btn" class="connect-verify-reconnect-btn">Переподключиться</button>
+      </div>
+    </div>
+  </div>
   </div>
   <div class="noscroll chatX_window" id="chatX_window">
     <div class="chatX_top" id="chatX_top">
         <div onclick="switchToDialog(null);" class="chatX_top_avatar"><i class="fa fa-globe"></i></div>
         <div class="chatX_burger" id="chatX_burger"><i class="fa-solid fa-bars nresize"></i></div>
-        <div class="chatX_close" onclick="document.getElementById('chatX_window').style.display='none';window.hideEmojiList&&window.hideEmojiList();window.showOnChat&&window.showOnChat();" id="chatX_close"><i class="fa-solid fa-xmark"></i></div>
+        <div class="chatX_close" onclick="document.getElementById('chatX_window').style.display = 'none'; document.getElementById('onchat').style.display = 'flex';" id="chatX_close"><i class="fa-solid fa-xmark"></i></div>
     </div>
     <div class="chatX_container" id="chatX_container">
         <div class="chatX_feed" id="chatX_feed">
     </div>
+</div>
+	  		  	  	  <div class="emoji-list">
+  <div class="emoji-item" data-code=":50:"><img src="/emoji/50.gif"></div>
+  <div class="emoji-item" data-code=":253:"><img src="/emoji/253.gif"></div>
+  <div class="emoji-item" data-code=":26:"><img src="/emoji/26.gif"></div>
+  <div class="emoji-item" data-code=":104:"><img src="/emoji/104.png"></div>
+  <div class="emoji-item" data-code=":105:"><img src="/emoji/105.png"></div>
+  <div class="emoji-item" data-code=":92:"><img src="/emoji/92.png"></div>
+  <div class="emoji-item" data-code=":5:"><img src="/emoji/5.png"></div>
 </div>
     <div class="chatX_emch">
       <div class="coord" id="emoji_toggle"><i class="fa-solid fa-face-grin-squint"></i></div>
@@ -151,6 +572,60 @@ window.renderDeathBanner = function () {
       <input class="noPress" id="chat_textbox" maxlength="120" placeholder="Напишите сообщение..." autocomplete="off"></input>
     </div>
   </div>
+  <div id="onchat"><i class="fa fa-message"></i></div>
+  <div class="homemenu"><i class="fas fa-home"></i></div>
+  <div class="score-info" id="score-info">
+    <div class="scorr" id="score-max">0</div>
+    <div class="scorr" id="score-new">0</div>
+    <div class="cell-length" id="cell-length">0</div>
+  </div>
+  <div id="leaderboard"><div class="topclose" onclick="document.getElementById('leaderboard').style.display = 'none'; document.getElementById('onleaderboard').style.display = 'flex';"><i class="fa fa-close"></i></div><h4>Топ Сейчас</h4><div id="toplistnow"></div></div>
+<div id="onleaderboard"><i class="fa fa-bar-chart"></i></div>
+  <div id="ban-banner" class="ban-banner inl-15" role="alert">
+    <div class="ban-banner-inner">
+      <i class="fas fa-ban ban-banner-icon"></i>
+      <div class="ban-banner-text">
+        <div class="ban-banner-title">Доступ заблокирован</div>
+        <div id="ban-banner-message"></div>
+      </div>
+    </div>
+  </div>
+  <div id="map" class="map">
+    <div class="map-header">
+      <div class="ping-container">
+    ping: <span id="ping">0</span> | fps: <span id="fps">0</span>
+</div>
+      <div class="mapclose" onclick="document.getElementById('map').style.display = 'none'; document.getElementById('onmap').style.display = 'flex';"><i class="fa fa-close"></i></div>
+    </div>
+    <div class="map-container"><span id="mapposition"></span>
+      <div><span>A1</span></div>
+      <div><span>A2</span></div>
+      <div><span>A3</span></div>
+      <div><span>A4</span></div>
+      <div><span>A5</span></div>
+      <div><span>B1</span></div>
+      <div><span>B2</span></div>
+      <div><span>B3</span></div>
+      <div><span>B4</span></div>
+      <div><span>B5</span></div>
+      <div><span>C1</span></div>
+      <div><span>C2</span></div>
+      <div><span>C3</span></div>
+      <div><span>C4</span></div>
+      <div><span>C5</span></div>
+      <div><span>D1</span></div>
+      <div><span>D2</span></div>
+      <div><span>D3</span></div>
+      <div><span>D4</span></div>
+      <div><span>D5</span></div>
+      <div><span>E1</span></div>
+      <div><span>E2</span></div>
+      <div><span>E3</span></div>
+      <div><span>E4</span></div>
+      <div><span>E5</span></div>
+    </div>
+  </div>
+  <div id="onmap"><i class="fa fa-compass"></i></div>
   <div id="statics" class="overlays">
 <div class="statsWrapper">
       <div class="headerstats">
@@ -203,47 +678,9 @@ window.renderDeathBanner = function () {
       <div id="table-containerwraper"></div>
     </div>
   </div>
-  <div class="homemenu"><i class="fas fa-home"></i></div>
-  <div class="score-info" id="score-info">
-    <div class="scorr" id="score-max">0</div>
-    <div class="scorr" id="score-new">0</div>
-    <div class="cell-length" id="cell-length">0</div>
-  </div>
-  <div id="leaderboard"><div class="topclose" onclick="document.getElementById('leaderboard').style.display = 'none'; window.showOnLeaderboard && window.showOnLeaderboard();"><i class="fa fa-close"></i></div><h4>Топ Сейчас</h4><div id="toplistnow"></div></div>
-  <div id="map" class="map">
-    <div class="map-header">
-      <div class="ping-container">
-    ping: <span id="ping">0</span> | fps: <span id="fps">0</span>
-</div>
-      <div class="mapclose" onclick="document.getElementById('map').style.display = 'none'; window.showOnMap && window.showOnMap();"><i class="fa fa-close"></i></div>
-    </div>
-    <div class="map-container"><span id="mapposition"></span>
-      <div><span>A1</span></div>
-      <div><span>A2</span></div>
-      <div><span>A3</span></div>
-      <div><span>A4</span></div>
-      <div><span>A5</span></div>
-      <div><span>B1</span></div>
-      <div><span>B2</span></div>
-      <div><span>B3</span></div>
-      <div><span>B4</span></div>
-      <div><span>B5</span></div>
-      <div><span>C1</span></div>
-      <div><span>C2</span></div>
-      <div><span>C3</span></div>
-      <div><span>C4</span></div>
-      <div><span>C5</span></div>
-      <div><span>D1</span></div>
-      <div><span>D2</span></div>
-      <div><span>D3</span></div>
-      <div><span>D4</span></div>
-      <div><span>D5</span></div>
-      <div><span>E1</span></div>
-      <div><span>E2</span></div>
-      <div><span>E3</span></div>
-      <div><span>E4</span></div>
-      <div><span>E5</span></div>
-    </div>
+  <div id="freeze">Pause <i class="inl-16 fa fa-pause"></i></div>
+  <div id="notification-container">
+    <div id="logout-notification" class="notification">Login close</div>
   </div>
 </body>
 </html>

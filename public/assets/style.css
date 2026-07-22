@@ -538,7 +538,7 @@ width: 50px;
   display: flex;
   flex-direction: column;
   gap: 4px;
-  max-height: 180px;
+  max-height: 220px;
   overflow-y: auto;
   margin: 8px 0;
 }
@@ -1272,8 +1272,6 @@ input{font-size:16px;}
   height: 100%;
   background-color: #016bef;
   border-radius: 20px 0 0 20px;
-  position: absolute;
-  left: 1px;
 }
 .progress-text {
   position: absolute;
