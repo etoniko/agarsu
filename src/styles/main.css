@@ -234,178 +234,321 @@ i:hover{cursor:pointer;}
   font-size: 14px;
   color: #fff;
 }
+    /* ===== Личный кабинет (store) ===== */
+    #store.content.active {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      min-height: 0;
+      animation: storePanelIn .28s ease;
+    }
+    @keyframes storePanelIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .store-shell {
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      margin-top: 8px;
+    }
+    #myNicknamesBlock.store-cabinet,
     #myNicknamesBlock {
-      color: #e5edff;
-      font-family: sans-serif;
+      color: #e8eefc;
+      font-family: "Roboto", sans-serif;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 0;
+      flex: 1;
     }
-    #myNicknamesBlock .tabs { margin:6px 0 10px; gap:8px; display:flex; }
+    #myNicknamesBlock .store-toolbar.tabs,
+    #myNicknamesBlock .tabs {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    #myNicknamesBlock .store-tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
     #myNicknamesBlock .tab {
-      padding:8px 12px; border:1px solid #2b3242; border-radius:10px;
-      background:#101625; color:#dbe5ff; cursor:pointer;
-      display:inline-flex; align-items:center; gap:8px; line-height:1;
+      padding: 9px 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      background: linear-gradient(180deg, #141c2f 0%, #0f1626 100%);
+      color: #b8c7e6;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      line-height: 1;
+      font-size: 13px;
+      transition: background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
     }
-	#myNicknamesBlock .tab:hover{background: #121a2b;}
-    #myNicknamesBlock .tab.active {     background: #016bef;border-color: #016bef;color: #fff;font-weight: bold; }
+    #myNicknamesBlock .tab i {
+      font-size: 12px;
+      opacity: 0.85;
+    }
+    #myNicknamesBlock .tab:hover {
+      background: #172038;
+      color: #e8eefc;
+      border-color: rgba(1,107,239,0.35);
+    }
+    #myNicknamesBlock .tab.active {
+      background: linear-gradient(180deg, #1a7cff 0%, #016bef 100%);
+      border-color: #016bef;
+      color: #fff;
+      font-weight: 600;
+      box-shadow: 0 6px 16px rgba(1,107,239,0.28);
+    }
+    #myNicknamesBlock .tab.active .badge {
+      background: rgba(255,255,255,0.22);
+      color: #fff;
+    }
     #myNicknamesBlock .badge {
-    padding: 2px 6px;
-    border-radius: 100%;
-    background: #1f2a44;
-    font-size: 12px;
-    color: #8fb7ff;
-    width: 18px;
-    height: 18px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    }
-    #myNicknamesBlock .list-wrap {
-      border:1px solid #2b3242; border-radius:12px;
-      max-height:305px; overflow:auto; background:#0e1422;
-    }
-    #myNicknamesBlock .list { margin:0; padding:0; }
-    #myNicknamesBlock .list li {
-      display:flex;
-      padding:8px 10px;
-      border-bottom:1px solid #1c2233;
-      overflow:hidden;
-      text-overflow:ellipsis;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 6px;
+      border-radius: 999px;
+      background: #1f2a44;
+      font-size: 11px;
+      font-weight: 700;
+      color: #9ec5ff;
+      display: inline-flex;
+      justify-content: center;
       align-items: center;
     }
-    #myNicknamesBlock .list li:last-child { border-bottom:0; }
-    #myNicknamesBlock .list li:hover { background:#121a2b; }
+    #myNicknamesBlock .store-logout {
+      margin-left: auto;
+      border-color: rgba(255,78,62,0.28);
+      color: #ffb4ac;
+      background: rgba(255,78,62,0.08);
+    }
+    #myNicknamesBlock .store-logout:hover {
+      background: rgba(255,78,62,0.18);
+      border-color: rgba(255,78,62,0.5);
+      color: #ffd4cf;
+    }
+    #myNicknamesBlock .list-wrap,
+    #myNicknamesBlock .store-list {
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px;
+      max-height: 290px;
+      overflow: auto;
+      background:
+        radial-gradient(120% 80% at 0% 0%, rgba(1,107,239,0.08), transparent 55%),
+        linear-gradient(180deg, #101827 0%, #0c1320 100%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+    }
+    #myNicknamesBlock .list { margin: 0; padding: 6px; list-style: none; }
+    #myNicknamesBlock .list li {
+      display: flex;
+      padding: 10px 12px;
+      border: 1px solid transparent;
+      border-radius: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      align-items: center;
+      transition: background .16s ease, border-color .16s ease, transform .16s ease;
+    }
+    #myNicknamesBlock .list li:hover {
+      background: rgba(255,255,255,0.03);
+      border-color: rgba(1,107,239,0.22);
+    }
+    #myNicknamesBlock .list li.empty,
+    #myNicknamesBlock .list li.error {
+      justify-content: center;
+      color: #8fa8d4;
+      font-size: 13px;
+      padding: 28px 12px;
+      border-style: dashed;
+      border-color: rgba(255,255,255,0.08);
+    }
+    #myNicknamesBlock .list li.error { color: #ffb4ac; border-color: rgba(255,78,62,0.25); }
     #myNicknamesBlock .skin {
-      width:28px;
-      height:28px;
-      border-radius:50%;
-      flex:0 0 28px;
-      object-fit:cover;
-      box-shadow:0 0 0 1px #2b3242 inset;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      flex: 0 0 36px;
+      object-fit: cover;
+      box-shadow: 0 0 0 2px rgba(1,107,239,0.25), 0 4px 10px rgba(0,0,0,0.35);
+      background: #1a2236;
     }
     #myNicknamesBlock .skin--empty {
-      display:flex; align-items:center; justify-content:center;
-      background:#283044; color:#9fb3d9; font-size:12px; font-weight:700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(145deg, #283044, #1a2236);
+      color: #9fb3d9;
+      font-size: 13px;
+      font-weight: 700;
     }
-    #myNicknamesBlock .nick {font-weight:600;cursor:pointer;text-align: start;}
-    #myNicknamesBlock .nick:hover { text-decoration:underline; }
-    #myNicknamesBlock .passbox { margin-left:auto; display:flex; align-items:center; gap:6px; height:36px; }
+    #myNicknamesBlock .nick {
+      font-weight: 600;
+      cursor: pointer;
+      text-align: start;
+      font-size: 14px;
+      color: #f2f6ff;
+      transition: color .15s ease;
+    }
+    #myNicknamesBlock .nick:hover { color: #7eb8ff; }
+    #myNicknamesBlock .passbox {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      height: 34px;
+    }
     #myNicknamesBlock .passbox input {
-      height:100%; box-sizing:border-box; padding:0 8px;
-      border:1px solid #2b3242; border-radius:8px;
-      background:#0d1322; color:#e5edff; width:160px; font-size:14px;
+      height: 100%;
+      box-sizing: border-box;
+      padding: 0 10px;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      background: rgba(8,12,22,0.75);
+      color: #e5edff;
+      width: 132px;
+      font-size: 13px;
+      letter-spacing: 0.04em;
     }
     #myNicknamesBlock .icon-btn {
-      height:36px; width:36px; display:flex; align-items:center; justify-content:center;
-      border:1px solid #2b3242; border-radius:8px;
-      background:#0d1322; color:#dbe5ff; cursor:pointer;
+      height: 34px;
+      width: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      background: rgba(8,12,22,0.75);
+      color: #dbe5ff;
+      cursor: pointer;
+      transition: background .15s ease, border-color .15s ease, color .15s ease;
     }
-    #myNicknamesBlock .icon-btn:hover { background:#141b2e; }
-    #myNicknamesBlock .icon-btn i { font-size:16px; pointer-events:none; }
+    #myNicknamesBlock .icon-btn:hover {
+      background: rgba(1,107,239,0.15);
+      border-color: rgba(1,107,239,0.4);
+      color: #fff;
+    }
+    #myNicknamesBlock .icon-btn i { font-size: 14px; pointer-events: none; }
     #myNicknamesBlock .list li.nick-card {
-      flex-wrap:wrap;
-      gap:10px;
-      white-space:normal;
+      flex-wrap: wrap;
+      gap: 10px 12px;
+      white-space: normal;
+      margin-bottom: 4px;
+      background: rgba(255,255,255,0.015);
     }
+    #myNicknamesBlock .list li.nick-card:last-child { margin-bottom: 0; }
     #myNicknamesBlock .nick-card-body {
-      flex:1;
-      min-width:140px;
+      flex: 1;
+      min-width: 140px;
     }
     #myNicknamesBlock .nick-perks {
-      display:flex;
-      flex-wrap:wrap;
-      gap:5px;
-      margin-top:8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 8px;
     }
     #myNicknamesBlock .nick-perk {
-      position:relative;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      min-height:22px;
-      padding:0 10px;
-      border-radius:999px;
-      font-size:10px;
-      font-weight:500;
-      letter-spacing:0.02em;
-      line-height:1;
-      border:1px solid rgba(255,255,255,0.1);
-      color:rgba(219,229,255,0.5);
-      background:transparent;
-      user-select:none;
-      transition:border-color .22s ease, color .22s ease, background .22s ease;
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 22px;
+      padding: 0 10px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      line-height: 1;
+      border: 1px solid rgba(255,255,255,0.1);
+      color: rgba(219,229,255,0.5);
+      background: transparent;
+      user-select: none;
+      transition: border-color .22s ease, color .22s ease, background .22s ease;
     }
     #myNicknamesBlock .nick-perk--on {
-      border-color:rgba(129,199,132,0.45);
-      color:#a5d6a7;
-      background:rgba(76,175,80,0.25);
+      border-color: rgba(129,199,132,0.45);
+      color: #a5d6a7;
+      background: rgba(76,175,80,0.25);
     }
     #myNicknamesBlock .nick-perk--on::before {
-      content:"";
-      width:4px;
-      height:4px;
-      border-radius:50%;
-      background:#81c784;
-      flex-shrink:0;
-      opacity:0.95;
+      content: "";
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: #81c784;
+      flex-shrink: 0;
+      opacity: 0.95;
+      margin-right: 5px;
     }
-    #myNicknamesBlock .nick-perk--action {
-      cursor:pointer;
-    }
+    #myNicknamesBlock .nick-perk--action { cursor: pointer; }
     #myNicknamesBlock .nick-perk--action:not(.nick-perk--on):hover,
     #myNicknamesBlock .nick-perk--action:not(.nick-perk--on):focus-visible {
-      border-color:rgba(126,184,255,0.45);
-      color:rgba(219,229,255,0.95);
-      background:rgba(1,107,239,0.12);
-      outline:none;
+      border-color: rgba(126,184,255,0.45);
+      color: rgba(219,229,255,0.95);
+      background: rgba(1,107,239,0.12);
+      outline: none;
     }
     #myNicknamesBlock .nick-perk--action.nick-perk--on:hover,
     #myNicknamesBlock .nick-perk--action.nick-perk--on:focus-visible {
-      border-color:rgba(129,199,132,0.55);
-      color:#c8e6c9;
-      background:rgba(76,175,80,0.35);
-      outline:none;
+      border-color: rgba(129,199,132,0.55);
+      color: #c8e6c9;
+      background: rgba(76,175,80,0.35);
+      outline: none;
     }
     #myNicknamesBlock .nick-perk-face {
-      display:block;
-      white-space:nowrap;
-      transition:opacity .2s ease, transform .2s ease;
+      display: block;
+      white-space: nowrap;
+      transition: opacity .2s ease, transform .2s ease;
     }
     #myNicknamesBlock .nick-perk--action .nick-perk-face--default {
-      opacity:1;
-      transform:translateY(0);
+      opacity: 1;
+      transform: translateY(0);
     }
     #myNicknamesBlock .nick-perk--action .nick-perk-face--hover {
-      position:absolute;
-      left:0;
-      right:0;
-      text-align:center;
-      opacity:0;
-      transform:translateY(3px);
-      pointer-events:none;
+      position: absolute;
+      left: 0;
+      right: 0;
+      text-align: center;
+      opacity: 0;
+      transform: translateY(3px);
+      pointer-events: none;
     }
     #myNicknamesBlock .nick-perk--action:hover .nick-perk-face--default,
     #myNicknamesBlock .nick-perk--action:focus-visible .nick-perk-face--default {
-      opacity:0;
-      transform:translateY(-3px);
+      opacity: 0;
+      transform: translateY(-3px);
     }
     #myNicknamesBlock .nick-perk--action:hover .nick-perk-face--hover,
     #myNicknamesBlock .nick-perk--action:focus-visible .nick-perk-face--hover {
-      opacity:1;
-      transform:translateY(0);
+      opacity: 1;
+      transform: translateY(0);
     }
     #myNicknamesBlock .nick-perk--action.nick-perk--on::before {
-      opacity:0;
-      width:0;
-      margin:0;
-      transition:opacity .15s ease;
+      opacity: 0;
+      width: 0;
+      margin: 0;
+      transition: opacity .15s ease;
     }
     #myNicknamesBlock .nick-perk--action.nick-perk--on:hover::before,
     #myNicknamesBlock .nick-perk--action.nick-perk--on:focus-visible::before {
-      opacity:0;
-width: 50px;
+      opacity: 0;
+      width: 0;
     }
     @media (max-width:599px){
-      #myNicknamesBlock .nick-card-body{min-width:100px;}
-      #myNicknamesBlock .nick-perk{font-size:9px;padding:0 8px;min-height:20px;}
+      #myNicknamesBlock .nick-card-body { min-width: 100px; }
+      #myNicknamesBlock .nick-perk { font-size: 9px; padding: 0 8px; min-height: 20px; }
+      #myNicknamesBlock .passbox input { width: 100px; }
+      #myNicknamesBlock .tab span:not(.badge) { display: none; }
+      #myNicknamesBlock .store-logout span { display: inline; }
+      #myNicknamesBlock .list-wrap { max-height: 240px; }
     }
 .chatX_msg.blurred { filter: blur(2px); cursor: pointer; transition: filter .15s; }
 .cchatX_msg.blurred.revealed { filter: none; }
@@ -1933,28 +2076,186 @@ input{font-size:16px;}
 @keyframes blink{0%, 50%, 100%{opacity:1;} 25%, 75%{opacity:0;}}
 #recInfo{display:flex;flex-direction:column;align-items:center;color:white;text-shadow:0 0 5px black;font-size:14px;}
 #recTimer{font-weight:bold;font-size:16px;}
-#authlog{width:100%;display:flex;align-items:center;flex-direction:column;min-height:auto;justify-content:center;gap:10px;padding:12px 10px;}
-.auth-block{display:flex;flex-direction:column;align-items:center;width:100%;max-width:360px;}
-.auth-telegram-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:auto;height:35px;padding:0 14px;border:1px solid #ffffff20;border-radius:6px;background:#88888859;color:#ffffffbf;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;opacity:0.85;}
-.auth-telegram-btn:hover{background:#99999973;color:#ffffffd9;opacity:1;}
-.auth-telegram-btn i{font-size:17px;opacity:0.9;}
-#VkIdSdkOneTap,#VkIdSdkOAuthList{display:flex;justify-content:center;width:100%;max-width:360px;overflow:hidden;}
-.restore-progress-block{margin-top:12px;padding-top:12px;border-top:1px solid #2b3242;text-align:left;}
-.restore-toggle{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:10px 12px;border:1px dashed #3d4d6a;border-radius:10px;background:#101625;color:#9fb3d9;font-size:13px;cursor:pointer;transition:background .15s,border-color .15s,color .15s;}
-.restore-toggle:hover{background:#121a2b;border-color:#016bef88;color:#dbe5ff;}
-.restore-panel{margin-top:10px;padding:12px;border:1px solid #2b3242;border-radius:12px;background:#0e1422;}
-.restore-panel[hidden]{display:none!important;}
-.restore-note{margin:0 0 10px;font-size:12px;line-height:1.4;color:#8fa8d4;}
-.restore-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;}
-.restore-google-wrap{display:flex;align-items:center;justify-content:center;min-height:35px;}
-.restore-status{margin-top:10px;padding:8px 10px;border-radius:8px;font-size:12px;line-height:1.35;text-align:center;}
-.restore-status[hidden]{display:none!important;}
-.restore-status--info{background:#016bef22;color:#9ec5ff;border:1px solid #016bef44;}
-.restore-status--success{background:#1b433222;color:#a5d6a7;border:1px solid #4caf5044;}
-.restore-status--error{background:#7f1d1d55;color:#fecaca;border:1px solid #991b1b66;}
-@media (max-width:520px){
-  #authlog{padding:10px 8px;gap:8px;}
-  .restore-actions{flex-direction:column;}
+#authlog,
+#authlog.store-auth {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  min-height: 220px;
+  justify-content: center;
+  gap: 10px;
+  padding: 18px 12px;
+}
+.store-auth-card {
+  width: 100%;
+  max-width: 380px;
+  padding: 22px 18px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(1,107,239,0.18), transparent 60%),
+    linear-gradient(180deg, #121a2d 0%, #0d1422 100%);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.28);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  animation: storeAuthIn .32s ease;
+}
+@keyframes storeAuthIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.store-auth-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(1,107,239,0.16);
+  border: 1px solid rgba(1,107,239,0.35);
+  color: #7eb8ff;
+  font-size: 20px;
+}
+.store-auth-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #f2f6ff;
+}
+.store-auth-text {
+  margin: 0 0 4px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #8fa8d4;
+  max-width: 300px;
+}
+.auth-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 360px;
+}
+.auth-telegram-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: auto;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid rgba(42,171,238,0.35);
+  border-radius: 10px;
+  background: rgba(42,171,238,0.12);
+  color: #d7f1ff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s ease, border-color .15s ease, transform .15s ease;
+}
+.auth-telegram-btn:hover {
+  background: rgba(42,171,238,0.22);
+  border-color: rgba(42,171,238,0.55);
+  transform: translateY(-1px);
+}
+.auth-telegram-btn i { font-size: 17px; opacity: 0.95; }
+#VkIdSdkOneTap,
+#VkIdSdkOAuthList {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  max-width: 360px;
+  overflow: hidden;
+}
+.restore-progress-block {
+  margin-top: 2px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  text-align: left;
+}
+.restore-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px dashed rgba(61,77,106,0.9);
+  border-radius: 12px;
+  background: rgba(16,22,37,0.9);
+  color: #9fb3d9;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s, transform .15s;
+}
+.restore-toggle:hover {
+  background: #121a2b;
+  border-color: rgba(1,107,239,0.55);
+  color: #dbe5ff;
+  transform: translateY(-1px);
+}
+.restore-panel {
+  margin-top: 10px;
+  padding: 14px;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px;
+  background: linear-gradient(180deg, #101827 0%, #0c1320 100%);
+  animation: storePanelIn .22s ease;
+}
+.restore-panel[hidden] { display: none !important; }
+.restore-note {
+  margin: 0 0 12px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #8fa8d4;
+}
+.restore-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.restore-google-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 35px;
+}
+.restore-status {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.35;
+  text-align: center;
+}
+.restore-status[hidden] { display: none !important; }
+.restore-status--info {
+  background: #016bef22;
+  color: #9ec5ff;
+  border: 1px solid #016bef44;
+}
+.restore-status--success {
+  background: #1b433222;
+  color: #a5d6a7;
+  border: 1px solid #4caf5044;
+}
+.restore-status--error {
+  background: #7f1d1d55;
+  color: #fecaca;
+  border: 1px solid #991b1b66;
+}
+@media (max-width:520px) {
+  #authlog,
+  #authlog.store-auth { padding: 12px 8px; min-height: 180px; }
+  .store-auth-card { padding: 18px 14px 14px; }
+  .restore-actions { flex-direction: column; }
 }
 .headerstats{width:100%;display:flex;align-items:center;justify-content:center;margin-bottom:10px;position:relative;}
 .headerstats h1{margin:0;text-align:center;flex:1;}
