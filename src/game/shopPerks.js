@@ -90,6 +90,29 @@ function makePerkBadge(label, active, hoverText, onBuy) {
     span.setAttribute("role", "button");
     span.setAttribute("tabindex", "0");
     span.setAttribute("aria-label", hoverText);
+    let lastX = null;
+    let lastY = null;
+    const setAdapt = (on) => {
+      span.classList.toggle("nick-perk--adapt", !!on);
+    };
+    span.addEventListener("mousemove", (e) => {
+      if (lastX == null || lastY == null) {
+        lastX = e.clientX;
+        lastY = e.clientY;
+        return;
+      }
+      if (Math.abs(e.clientX - lastX) + Math.abs(e.clientY - lastY) < 1) return;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      setAdapt(true);
+    });
+    span.addEventListener("mouseleave", () => {
+      lastX = null;
+      lastY = null;
+      setAdapt(false);
+    });
+    span.addEventListener("focus", () => setAdapt(true));
+    span.addEventListener("blur", () => setAdapt(false));
     const go = (e) => {
       e.stopPropagation();
       onBuy();

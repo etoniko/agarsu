@@ -495,14 +495,14 @@ i:hover{cursor:pointer;}
     #myNicknamesBlock .nick-perk--action {
       cursor: pointer;
     }
-    #myNicknamesBlock .nick-perk--action:not(.nick-perk--on):hover,
-    #myNicknamesBlock .nick-perk--action:not(.nick-perk--on):focus-visible {
+    #myNicknamesBlock .nick-perk--action.nick-perk--adapt:not(.nick-perk--on),
+    #myNicknamesBlock .nick-perk--action:focus-visible:not(.nick-perk--on) {
       border-color: rgba(126,184,255,0.45);
       color: rgba(219,229,255,0.95);
       background: rgba(1,107,239,0.12);
       outline: none;
     }
-    #myNicknamesBlock .nick-perk--action.nick-perk--on:hover,
+    #myNicknamesBlock .nick-perk--action.nick-perk--on.nick-perk--adapt,
     #myNicknamesBlock .nick-perk--action.nick-perk--on:focus-visible {
       border-color: rgba(129,199,132,0.55);
       color: #c8e6c9;
@@ -517,11 +517,11 @@ i:hover{cursor:pointer;}
     #myNicknamesBlock .nick-perk--action .nick-perk-face--hover {
       display: none;
     }
-    #myNicknamesBlock .nick-perk--action:hover .nick-perk-face--default,
+    #myNicknamesBlock .nick-perk--action.nick-perk--adapt .nick-perk-face--default,
     #myNicknamesBlock .nick-perk--action:focus-visible .nick-perk-face--default {
       display: none;
     }
-    #myNicknamesBlock .nick-perk--action:hover .nick-perk-face--hover,
+    #myNicknamesBlock .nick-perk--action.nick-perk--adapt .nick-perk-face--hover,
     #myNicknamesBlock .nick-perk--action:focus-visible .nick-perk-face--hover {
       display: inline;
     }
