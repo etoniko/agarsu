@@ -450,7 +450,7 @@ i:hover{cursor:pointer;}
     #myNicknamesBlock .nick-perks {
       display: flex;
       flex-wrap: wrap;
-      gap: 5px;
+      gap: 8px;
       margin-top: 8px;
       align-items: center;
     }
@@ -471,7 +471,11 @@ i:hover{cursor:pointer;}
       color: rgba(219,229,255,0.55);
       background: transparent;
       user-select: none;
-      transition: border-color .18s ease, color .18s ease, background .18s ease;
+      transition:
+        width .18s ease,
+        border-color .18s ease,
+        color .18s ease,
+        background .18s ease;
       box-sizing: border-box;
       flex: 0 0 auto;
       white-space: nowrap;
@@ -514,16 +518,8 @@ i:hover{cursor:pointer;}
       white-space: nowrap;
       line-height: 1.2;
     }
-    #myNicknamesBlock .nick-perk--action .nick-perk-face--hover {
-      display: none;
-    }
-    #myNicknamesBlock .nick-perk--action.nick-perk--adapt .nick-perk-face--default,
-    #myNicknamesBlock .nick-perk--action:focus-visible .nick-perk-face--default {
-      display: none;
-    }
-    #myNicknamesBlock .nick-perk--action.nick-perk--adapt .nick-perk-face--hover,
-    #myNicknamesBlock .nick-perk--action:focus-visible .nick-perk-face--hover {
-      display: inline;
+    #myNicknamesBlock .nick-perk-face[hidden] {
+      display: none !important;
     }
     #myNicknamesBlock .store-settings-panel {
       border: 1px solid rgba(255,255,255,0.07);

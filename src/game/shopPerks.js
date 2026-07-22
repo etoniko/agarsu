@@ -85,26 +85,50 @@ function makePerkBadge(label, active, hoverText, onBuy) {
     const hover = document.createElement("span");
     hover.className = "nick-perk-face nick-perk-face--hover";
     hover.textContent = hoverText;
+    hover.hidden = true;
     hover.setAttribute("aria-hidden", "true");
     span.appendChild(hover);
     span.setAttribute("role", "button");
     span.setAttribute("tabindex", "0");
     span.setAttribute("aria-label", hoverText);
+    let leaveTimer = null;
+    let baseWidth = 0;
     const setAdapt = (on) => {
       if (on) {
-        // Keep current width so shorter hover text ("Купить") doesn't shrink under the cursor
-        if (!span.style.minWidth) {
-          span.style.minWidth = `${Math.ceil(span.getBoundingClientRect().width)}px`;
-        }
+        if (span.classList.contains("nick-perk--adapt")) return;
+        // Lock the resting width first so shorter hover text cannot shrink under the cursor
+        baseWidth = Math.ceil(span.getBoundingClientRect().width);
+        span.style.width = `${baseWidth}px`;
+        def.hidden = true;
+        hover.hidden = false;
         span.classList.add("nick-perk--adapt");
+        // Allow grow when hover text is longer; never shrink below base while hovered
+        span.style.width = "auto";
+        const adapted = Math.ceil(span.getBoundingClientRect().width);
+        span.style.width = `${Math.max(baseWidth, adapted)}px`;
       } else {
         span.classList.remove("nick-perk--adapt");
-        span.style.minWidth = "";
+        def.hidden = false;
+        hover.hidden = true;
+        span.style.width = "";
+        baseWidth = 0;
       }
     };
-    span.addEventListener("mouseenter", () => setAdapt(true));
-    span.addEventListener("mousemove", () => setAdapt(true));
-    span.addEventListener("mouseleave", () => setAdapt(false));
+    span.addEventListener("mouseenter", () => {
+      if (leaveTimer) {
+        clearTimeout(leaveTimer);
+        leaveTimer = null;
+      }
+      setAdapt(true);
+    });
+    span.addEventListener("mouseleave", () => {
+      if (leaveTimer) clearTimeout(leaveTimer);
+      // Tiny delay avoids flicker when cursor sits on the border between two badges
+      leaveTimer = setTimeout(() => {
+        leaveTimer = null;
+        setAdapt(false);
+      }, 50);
+    });
     span.addEventListener("focus", () => setAdapt(true));
     span.addEventListener("blur", () => setAdapt(false));
     const go = (e) => {
