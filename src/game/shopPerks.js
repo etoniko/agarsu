@@ -176,13 +176,13 @@ function renderNickCard(S, list, fullNick, perks, hooks) {
     makePerkBadge(
       "\u041F\u0430\u0440\u043E\u043B\u044C",
       p.hasSkinPass,
-      p.hasSkinPass ? "\u0421\u043C\u0435\u043D\u0438\u0442\u044C" : "\u041A\u0443\u043F\u0438\u0442\u044C",
+      p.hasSkinPass ? "\u0421\u043C\u0435\u043D\u0438\u0442\u044C \u043F\u0430\u0441\u0441" : "\u041A\u0443\u043F\u0438\u0442\u044C \u043F\u0430\u0441\u0441",
       shop({ focusPassword: true })
     ),
     makePerkBadge(
       "\u0421\u043A\u0438\u043D",
       p.hasSkin,
-      p.hasSkin ? "\u0421\u043C\u0435\u043D\u0438\u0442\u044C" : "\u041A\u0443\u043F\u0438\u0442\u044C",
+      p.hasSkin ? "\u0421\u043C\u0435\u043D\u0438\u0442\u044C \u0441\u043A\u0438\u043D" : "\u041A\u0443\u043F\u0438\u0442\u044C \u0441\u043A\u0438\u043D",
       shop({ focusSkin: true })
     ),
     makePerkBadge(
