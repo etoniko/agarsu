@@ -450,18 +450,17 @@ i:hover{cursor:pointer;}
     #myNicknamesBlock .nick-perks {
       display: flex;
       flex-wrap: wrap;
-      gap: 4px;
+      gap: 5px;
       margin-top: 8px;
       align-items: center;
     }
     #myNicknamesBlock .nick-perk {
-      position: relative;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       width: fit-content;
       max-width: 100%;
-      min-height: 22px;
+      min-height: 24px;
       padding: 4px 10px;
       border-radius: 999px;
       font-size: 10px;
@@ -469,16 +468,10 @@ i:hover{cursor:pointer;}
       letter-spacing: 0.01em;
       line-height: 1.2;
       border: 1px solid rgba(255,255,255,0.1);
-      color: rgba(219,229,255,0.5);
+      color: rgba(219,229,255,0.55);
       background: transparent;
       user-select: none;
-      transition:
-        width .2s ease,
-        border-color .18s ease,
-        color .18s ease,
-        background .18s ease;
-      text-align: center;
-      overflow: hidden;
+      transition: border-color .18s ease, color .18s ease, background .18s ease;
       box-sizing: border-box;
       flex: 0 0 auto;
       white-space: nowrap;
@@ -487,53 +480,53 @@ i:hover{cursor:pointer;}
       border-color: rgba(129,199,132,0.45);
       color: #a5d6a7;
       background: rgba(76,175,80,0.25);
-      padding-left: 16px;
     }
     #myNicknamesBlock .nick-perk--on::before {
       content: "";
-      position: absolute;
-      left: 7px;
-      top: 50%;
-      width: 4px;
-      height: 4px;
-      margin-top: -2px;
+      display: inline-block;
+      width: 5px;
+      height: 5px;
+      margin-right: 6px;
       border-radius: 50%;
       background: #81c784;
-      opacity: 0.95;
+      flex: 0 0 auto;
     }
-    #myNicknamesBlock .nick-perk--action { cursor: pointer; }
+    #myNicknamesBlock .nick-perk--action {
+      cursor: pointer;
+    }
     #myNicknamesBlock .nick-perk--action:not(.nick-perk--on):hover,
-    #myNicknamesBlock .nick-perk--action:not(.nick-perk--on):focus-visible,
-    #myNicknamesBlock .nick-perk--action.nick-perk--hovering:not(.nick-perk--on) {
+    #myNicknamesBlock .nick-perk--action:not(.nick-perk--on):focus-visible {
       border-color: rgba(126,184,255,0.45);
       color: rgba(219,229,255,0.95);
       background: rgba(1,107,239,0.12);
       outline: none;
     }
     #myNicknamesBlock .nick-perk--action.nick-perk--on:hover,
-    #myNicknamesBlock .nick-perk--action.nick-perk--on:focus-visible,
-    #myNicknamesBlock .nick-perk--action.nick-perk--on.nick-perk--hovering {
+    #myNicknamesBlock .nick-perk--action.nick-perk--on:focus-visible {
       border-color: rgba(129,199,132,0.55);
       color: #c8e6c9;
       background: rgba(76,175,80,0.35);
       outline: none;
-      padding-left: 10px;
     }
     #myNicknamesBlock .nick-perk-face {
-      display: inline-block;
+      display: inline;
       white-space: nowrap;
       line-height: 1.2;
     }
-    #myNicknamesBlock .nick-perk-face[hidden] {
-      display: none !important;
+    #myNicknamesBlock .nick-perk--action .nick-perk-face--hover {
+      display: none;
     }
-    #myNicknamesBlock .nick-perk--action.nick-perk--on::before {
-      transition: opacity .15s ease;
+    #myNicknamesBlock .nick-perk--action:hover .nick-perk-face--default,
+    #myNicknamesBlock .nick-perk--action:focus-visible .nick-perk-face--default {
+      display: none;
+    }
+    #myNicknamesBlock .nick-perk--action:hover .nick-perk-face--hover,
+    #myNicknamesBlock .nick-perk--action:focus-visible .nick-perk-face--hover {
+      display: inline;
     }
     #myNicknamesBlock .nick-perk--action.nick-perk--on:hover::before,
-    #myNicknamesBlock .nick-perk--action.nick-perk--on:focus-visible::before,
-    #myNicknamesBlock .nick-perk--action.nick-perk--on.nick-perk--hovering::before {
-      opacity: 0;
+    #myNicknamesBlock .nick-perk--action.nick-perk--on:focus-visible::before {
+      display: none;
     }
     #myNicknamesBlock .store-settings-panel {
       border: 1px solid rgba(255,255,255,0.07);
@@ -543,11 +536,8 @@ i:hover{cursor:pointer;}
     }
     @media (max-width:599px){
       #myNicknamesBlock .nick-card-body { min-width: 100px; }
-      #myNicknamesBlock .nick-perk { font-size: 9px; padding: 3px 8px; min-height: 20px; }
-      #myNicknamesBlock .nick-perk--on { padding-left: 14px; }
-      #myNicknamesBlock .nick-perk--action.nick-perk--on:hover,
-      #myNicknamesBlock .nick-perk--action.nick-perk--on:focus-visible,
-      #myNicknamesBlock .nick-perk--action.nick-perk--on.nick-perk--hovering { padding-left: 8px; }
+      #myNicknamesBlock .nick-perk { font-size: 9px; padding: 3px 8px; min-height: 22px; }
+      #myNicknamesBlock .nick-perk--on::before { margin-right: 5px; }
       #myNicknamesBlock .passbox input { width: 100px; }
       #myNicknamesBlock .tab span:not(.badge) { display: none; }
       #myNicknamesBlock .store-logout span { display: inline; }

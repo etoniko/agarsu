@@ -80,41 +80,11 @@ function makePerkBadge(label, active, hoverText, onBuy) {
   def.className = "nick-perk-face nick-perk-face--default";
   def.textContent = label;
   span.appendChild(def);
-
-  const measureOuterWidth = (face) => {
-    const style = getComputedStyle(span);
-    const padX = (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0);
-    const borderX = (parseFloat(style.borderLeftWidth) || 0) + (parseFloat(style.borderRightWidth) || 0);
-    return Math.ceil(face.scrollWidth + padX + borderX);
-  };
-
-  const setWidthToContent = (face = def) => {
-    const width = measureOuterWidth(face);
-    span.style.width = `${width}px`;
-    return width;
-  };
-
-  const showFace = (useHover) => {
-    const hover = span.querySelector(".nick-perk-face--hover");
-    if (!hover) return;
-    const from = span.getBoundingClientRect().width;
-    span.style.width = `${Math.ceil(from)}px`;
-    def.hidden = !!useHover;
-    hover.hidden = !useHover;
-    span.classList.toggle("nick-perk--hovering", !!useHover);
-    const face = useHover ? hover : def;
-    const to = measureOuterWidth(face);
-    requestAnimationFrame(() => {
-      span.style.width = `${to}px`;
-    });
-  };
-
   if (hoverText && onBuy) {
     span.classList.add("nick-perk--action");
     const hover = document.createElement("span");
     hover.className = "nick-perk-face nick-perk-face--hover";
     hover.textContent = hoverText;
-    hover.hidden = true;
     hover.setAttribute("aria-hidden", "true");
     span.appendChild(hover);
     span.setAttribute("role", "button");
@@ -131,11 +101,6 @@ function makePerkBadge(label, active, hoverText, onBuy) {
         go(e);
       }
     };
-    span.addEventListener("mouseenter", () => showFace(true));
-    span.addEventListener("mouseleave", () => showFace(false));
-    span.addEventListener("focus", () => showFace(true));
-    span.addEventListener("blur", () => showFace(false));
-    requestAnimationFrame(() => setWidthToContent(def));
   } else if (active) {
     span.title = "\u041A\u0443\u043F\u043B\u0435\u043D\u043E";
   }
