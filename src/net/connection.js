@@ -2,6 +2,7 @@ import { getGameServerApiBase, getGameServerWssUrl } from "../config/servers.js"
 import { fetchConnectToken as fetchConnectTokenFromApi } from "./challenge.js";
 import { openGameSocket, safeCloseSocket } from "./wsClient.js";
 import { prepareData, encodeHandshake, encodePing, ClientOpcode } from "../protocol/opcodes.js";
+import { getAccountToken } from "../storage/local.js";
 import {
   showConnectVerifyOverlay,
   hideConnectVerifyOverlay,
@@ -118,7 +119,7 @@ function createConnection(S, hooks = {}) {
         hideConnectVerifyOverlay();
       }
       S.ws = openGameSocket(S.wsUrl, {
-        accountToken: localStorage.accountToken || null,
+        accountToken: getAccountToken() || null,
         connectToken: connectToken || null
       });
       S.ws.onopen = onWsOpen;

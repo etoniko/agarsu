@@ -1,4 +1,5 @@
 import { setCookie } from "../storage/cookies.js";
+import { getAccountToken } from "../storage/local.js";
 import {
   loadPassData,
   loadInvisibleSet,
@@ -209,7 +210,7 @@ async function loadMyNicknames(S, hooks) {
   const clanList = document.getElementById("myClanList");
   const badgeNick = document.getElementById("badgeNick");
   const badgeClan = document.getElementById("badgeClan");
-  if (!localStorage.accountToken) return;
+  if (!getAccountToken()) return;
   if (block) block.style.display = "";
   try {
     S.nickPerksLists = null;

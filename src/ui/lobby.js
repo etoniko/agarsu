@@ -1,5 +1,6 @@
 import { bus, Events } from "../lib/events.js";
 import { hideStatics, showOverlays } from "../lib/dom.js";
+import { getAccountToken } from "../storage/local.js";
 function showContent(id) {
   document.querySelectorAll(".menu-item").forEach((item) => item.classList.remove("active"));
   document.querySelectorAll(".content").forEach((content) => content.classList.remove("active"));
@@ -14,7 +15,7 @@ function showContent(id) {
 function updateAccountMenuLabel() {
   const label = document.getElementById("accountMenuLabel");
   if (!label) return;
-  label.textContent = localStorage.accountToken ? "\u041B\u041A" : "\u0412\u043E\u0439\u0442\u0438";
+  label.textContent = getAccountToken() ? "\u041B\u041A" : "\u0412\u043E\u0439\u0442\u0438";
 }
 function showLogoutNotification() {
   const notif = document.getElementById("logout-notification");

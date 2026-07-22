@@ -1,4 +1,4 @@
-import { clearAccountToken, setAccountToken } from "../storage/local.js";
+import { clearAccountToken, getAccountToken, setAccountToken } from "../storage/local.js";
 import { getLevel, getXp } from "./stats.js";
 import { loadMyNicknames } from "./shopPerks.js";
 const GOOGLE_RESTORE_CLIENT_ID = "157257230972-4vh698jtf46c76sc7607oe1k9tr782je.apps.googleusercontent.com";
@@ -116,7 +116,7 @@ function attachAccountHooks(S, hooks) {
   const wHandle = S.wHandle;
   let restoreGoogleInitialized = false;
   const accountApiGet = (tag, method = "GET", body = null) => {
-    const headers = { Authorization: `Game ${localStorage.accountToken}` };
+    const headers = { Authorization: `Game ${getAccountToken() || ""}` };
     if (body) headers["Content-Type"] = "application/json";
     return fetch("https://api.agar.su/api/" + tag, { method, headers, body: body ? JSON.stringify(body) : null });
   };
@@ -261,7 +261,7 @@ function attachAccountHooks(S, hooks) {
     updateRestoreBlockVisibility(S);
   };
   async function restoreProgressFromTelegram(user) {
-    if (!localStorage.accountToken) {
+    if (!getAccountToken()) {
       return alert("\u0421\u043D\u0430\u0447\u0430\u043B\u0430 \u0432\u043E\u0439\u0434\u0438\u0442\u0435 \u0447\u0435\u0440\u0435\u0437 VK");
     }
     setRestoreStatus("\u041F\u0440\u0438\u0432\u044F\u0437\u044B\u0432\u0430\u0435\u043C \u0430\u043A\u043A\u0430\u0443\u043D\u0442\u2026", "info");
@@ -273,7 +273,7 @@ function attachAccountHooks(S, hooks) {
     }
   }
   async function restoreProgressFromGoogle(credential) {
-    if (!localStorage.accountToken) {
+    if (!getAccountToken()) {
       return alert("\u0421\u043D\u0430\u0447\u0430\u043B\u0430 \u0432\u043E\u0439\u0434\u0438\u0442\u0435 \u0447\u0435\u0440\u0435\u0437 VK");
     }
     setRestoreStatus("\u041F\u0440\u0438\u0432\u044F\u0437\u044B\u0432\u0430\u0435\u043C \u0430\u043A\u043A\u0430\u0443\u043D\u0442\u2026", "info");
@@ -370,7 +370,7 @@ function attachAccountHooks(S, hooks) {
     hooks.sendAccountToken();
   };
   wHandle.logoutAccount = async () => {
-    if (localStorage.accountToken) {
+    if (getAccountToken()) {
       const res = await accountApiGet("me/logout");
       if (res.ok) {
         const data = await res.json();
@@ -385,7 +385,7 @@ function attachAccountHooks(S, hooks) {
       displayAccountData();
     }
   };
-  if (localStorage.accountToken) loadAccountUserData();
+  if (getAccountToken()) loadAccountUserData();
   if (typeof window.updateAccountMenuLabel === "function") {
     window.updateAccountMenuLabel();
   }

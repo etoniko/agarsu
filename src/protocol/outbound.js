@@ -1,4 +1,5 @@
 import { prepareData, ClientOpcode } from "./opcodes.js";
+import { getAccountToken } from "../storage/local.js";
 function createOutbound(S, hooks = {}) {
   function wsIsOpen() {
     return S.ws != null && S.ws.readyState === WebSocket.OPEN;
@@ -71,7 +72,7 @@ function createOutbound(S, hooks = {}) {
     wsSend(msg);
   }
   function sendAccountToken() {
-    const token = localStorage.accountToken;
+    const token = getAccountToken();
     if (!wsIsOpen() || !token) return;
     const msg = prepareData(1 + 2 * token.length);
     msg.setUint8(0, 114);

@@ -37,6 +37,8 @@ async function ensureVkSdk() {
   return false;
 }
 async function boot() {
+  const { hydrateAccountToken } = await import("./storage/local.js");
+  hydrateAccountToken();
   const vkOk = await ensureVkSdk();
   const { initGame } = await import("./game/app.js");
   const { initLobbyUi } = await import("./ui/lobby.js");

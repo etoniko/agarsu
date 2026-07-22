@@ -1,3 +1,4 @@
+import { getAccountToken } from "../storage/local.js";
 const ALLOWTXT_LOCAL = "/allowtxt.txt";
 const ALLOWTXT_API = "https://api.agar.su/allowtxt.txt";
 const ALLOWED_CHARS = new Set();
@@ -124,7 +125,7 @@ function updateShopAuthNotice() {
   const shop = document.getElementById("shop");
   if (!notice || !shop) return;
   const onShop = shop.classList.contains("active");
-  if (!onShop || localStorage.accountToken) {
+  if (!onShop || getAccountToken()) {
     dismissShopFloatAlert(notice);
     notice.textContent = "";
     return;
@@ -215,8 +216,8 @@ nicknameInput.addEventListener("blur", async () => {
   updateCharCount();
   try {
     const headers = { "Content-Type": "application/json" };
-    if (localStorage.accountToken) {
-      headers["Authorization"] = `Game ${localStorage.accountToken}`;
+    if (getAccountToken()) {
+      headers["Authorization"] = `Game ${getAccountToken()}`;
     }
     const res = await fetch("https://api.agar.su/check-nickname", {
       method: "POST",
@@ -224,9 +225,9 @@ nicknameInput.addEventListener("blur", async () => {
       body: JSON.stringify({ nickname: nicknameInput.value.trim() })
     });
     const data = await res.json();
-    if (localStorage.accountToken && data.taken) {
+    if (getAccountToken() && data.taken) {
       const meRes = await fetch("https://api.agar.su/api/me/nicknames", {
-        headers: { "Authorization": `Game ${localStorage.accountToken}` }
+        headers: { "Authorization": `Game ${getAccountToken()}` }
       });
       if (meRes.ok) {
         const meData = await meRes.json();
@@ -429,8 +430,8 @@ document.getElementById("paymentForm").addEventListener("submit", async (e) => {
   if (invisibleNickCheckbox.checked) formData.append("invisible", "1");
   if (rotationNickCheckbox.checked) formData.append("rotation", "1");
   const headers = {};
-  if (localStorage.accountToken) {
-    headers["Authorization"] = `Game ${localStorage.accountToken}`;
+  if (getAccountToken()) {
+    headers["Authorization"] = `Game ${getAccountToken()}`;
   }
   if (file) {
     if (file.type === "image/gif") {
