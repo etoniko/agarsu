@@ -84,9 +84,6 @@ function attachAccountHooks(S, hooks) {
     if (typeof window.updateAccountMenuLabel === "function") {
       window.updateAccountMenuLabel();
     }
-    if (typeof window.showContent === "function") {
-      window.showContent("store");
-    }
     const logoutBtn = document.getElementById("logoutButton");
     const authlogEl = document.getElementById("authlog");
     if (logoutBtn) logoutBtn.style.display = "";

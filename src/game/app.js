@@ -237,10 +237,6 @@ function initGame(wHandle) {
   });
   listsPromise.then(() => fetchNickPerksLists(S)).catch(() => {
   });
-  if (localStorage.accountToken) {
-    loadMyNicknames(S, {}).catch(() => {
-    });
-  }
   listsPromise.then(() => initServers(S)).catch(() => initServers(S));
   setInterval(async () => {
     const data = await preloadStaticLists(true);
