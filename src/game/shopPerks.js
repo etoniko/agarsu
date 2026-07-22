@@ -81,9 +81,15 @@ function makePerkBadge(label, active, hoverText, onBuy) {
   def.textContent = label;
   span.appendChild(def);
 
-  const setWidthToContent = () => {
-    span.style.width = "auto";
-    const width = Math.ceil(span.getBoundingClientRect().width);
+  const measureOuterWidth = (face) => {
+    const style = getComputedStyle(span);
+    const padX = (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0);
+    const borderX = (parseFloat(style.borderLeftWidth) || 0) + (parseFloat(style.borderRightWidth) || 0);
+    return Math.ceil(face.scrollWidth + padX + borderX);
+  };
+
+  const setWidthToContent = (face = def) => {
+    const width = measureOuterWidth(face);
     span.style.width = `${width}px`;
     return width;
   };
@@ -95,9 +101,9 @@ function makePerkBadge(label, active, hoverText, onBuy) {
     span.style.width = `${Math.ceil(from)}px`;
     def.hidden = !!useHover;
     hover.hidden = !useHover;
-    span.style.width = "auto";
-    const to = Math.ceil(span.getBoundingClientRect().width);
-    span.style.width = `${Math.ceil(from)}px`;
+    span.classList.toggle("nick-perk--hovering", !!useHover);
+    const face = useHover ? hover : def;
+    const to = measureOuterWidth(face);
     requestAnimationFrame(() => {
       span.style.width = `${to}px`;
     });
@@ -129,7 +135,7 @@ function makePerkBadge(label, active, hoverText, onBuy) {
     span.addEventListener("mouseleave", () => showFace(false));
     span.addEventListener("focus", () => showFace(true));
     span.addEventListener("blur", () => showFace(false));
-    requestAnimationFrame(setWidthToContent);
+    requestAnimationFrame(() => setWidthToContent(def));
   } else if (active) {
     span.title = "\u041A\u0443\u043F\u043B\u0435\u043D\u043E";
   }
