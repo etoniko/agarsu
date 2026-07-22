@@ -400,36 +400,55 @@ _tmr.push({id: "3773988", type: "pageView", start: (new Date()).getTime()});
           <div class="top-info">
             <div><span>Кабинет</span></div>
           </div>
-          <div>
-<div id="myNicknamesBlock" style="display:none;">
-  <div class="tabs" id="myNickClanTabs" data-ready="1">
-    <button id="tabNicknames" type="button" class="tab active">Ваши ники <span class="badge" id="badgeNick">0</span></button>
-    <button id="tabClans" type="button" class="tab">Ваши кланы <span class="badge" id="badgeClan">0</span></button>
-	<button id="logoutButton" class="tab" onclick="logoutAccount()">Выход</button>
-  </div>
-  <div class="list-wrap" id="nickWrap"><ul id="myNickList" class="list"></ul></div>
-  <div class="list-wrap" id="clanWrap" style="display:none;"><ul id="myClanList" class="list"></ul></div>
-  <div id="restoreProgressBlock" class="restore-progress-block">
-    <button type="button" id="restoreToggle" class="restore-toggle" aria-expanded="false">
-      <i class="fas fa-link"></i> Восстановить прогресс с Google / Telegram
-    </button>
-    <div id="restorePanel" class="restore-panel" hidden>
-      <p class="restore-note">Если вы играли через Google или Telegram — подтвердите старый аккаунт. Ваш прежний ID, опыт и ники останутся, вход будет через VK. Для Google и Telegram может понадобиться VPN.</p>
-      <div class="restore-actions">
-        <div id="restoreGoogleContainer" class="restore-google-wrap"></div>
-        <button type="button" class="auth-telegram-btn restore-telegram-btn" id="restoreTelegramBtn">
-          <i class="fab fa-telegram"></i> Восстановить через Telegram
-        </button>
-      </div>
-      <div id="restoreStatus" class="restore-status" role="status" hidden></div>
-    </div>
-  </div>
-</div>
-<div id="authlog">
-  <div id="vkAuthContainer" class="auth-block auth-block-vk">
-    <div id="VkIdSdkOAuthList"></div>
-  </div>
-</div>
+          <div class="store-shell">
+            <div id="myNicknamesBlock" class="store-cabinet" style="display:none;">
+              <div class="store-toolbar tabs" id="myNickClanTabs" data-ready="1">
+                <div class="store-tabs">
+                  <button id="tabNicknames" type="button" class="tab active">
+                    <i class="fas fa-user"></i>
+                    <span>Ники</span>
+                    <span class="badge" id="badgeNick">0</span>
+                  </button>
+                  <button id="tabClans" type="button" class="tab">
+                    <i class="fas fa-users"></i>
+                    <span>Кланы</span>
+                    <span class="badge" id="badgeClan">0</span>
+                  </button>
+                </div>
+                <button id="logoutButton" class="tab store-logout" onclick="logoutAccount()">
+                  <i class="fas fa-right-from-bracket"></i>
+                  <span>Выход</span>
+                </button>
+              </div>
+              <div class="list-wrap store-list" id="nickWrap"><ul id="myNickList" class="list"></ul></div>
+              <div class="list-wrap store-list" id="clanWrap" style="display:none;"><ul id="myClanList" class="list"></ul></div>
+              <div id="restoreProgressBlock" class="restore-progress-block">
+                <button type="button" id="restoreToggle" class="restore-toggle" aria-expanded="false">
+                  <i class="fas fa-link"></i>
+                  <span>Восстановить прогресс с Google / Telegram</span>
+                </button>
+                <div id="restorePanel" class="restore-panel" hidden>
+                  <p class="restore-note">Если вы играли через Google или Telegram — подтвердите старый аккаунт. Ваш прежний ID, опыт и ники останутся, вход будет через VK. Для Google и Telegram может понадобиться VPN.</p>
+                  <div class="restore-actions">
+                    <div id="restoreGoogleContainer" class="restore-google-wrap"></div>
+                    <button type="button" class="auth-telegram-btn restore-telegram-btn" id="restoreTelegramBtn">
+                      <i class="fab fa-telegram"></i> Восстановить через Telegram
+                    </button>
+                  </div>
+                  <div id="restoreStatus" class="restore-status" role="status" hidden></div>
+                </div>
+              </div>
+            </div>
+            <div id="authlog" class="store-auth">
+              <div class="store-auth-card">
+                <div class="store-auth-icon"><i class="fas fa-user-lock"></i></div>
+                <h3 class="store-auth-title">Вход в кабинет</h3>
+                <p class="store-auth-text">Войдите через VK, чтобы видеть купленные ники, кланы, пароли и прогресс.</p>
+                <div id="vkAuthContainer" class="auth-block auth-block-vk">
+                  <div id="VkIdSdkOAuthList"></div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
