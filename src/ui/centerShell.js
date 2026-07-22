@@ -2,7 +2,13 @@ import { addOverlaysLifecycleHooks } from "../lib/dom.js";
 import overlaysHtml from "./panels/overlays.html?raw";
 
 const MENU_PANELS = ["home", "shop", "settings", "skinslist", "rating", "store"];
+const RATING_HOME_HTML = `<div class="rating-home" id="home-stats">
+    <div class="rating-header">Статистика</div>
+    <div class="rating-content" id="topswindow"></div>
+</div>`;
+
 let overlaysPlaceholder = null;
+let parkedRatingHome = null;
 let lastMenuId = "home";
 let detaching = false;
 let attaching = false;
@@ -28,6 +34,33 @@ function rememberActiveMenu() {
   if (active?.id) lastMenuId = active.id;
 }
 
+function parkRatingHome(overlays) {
+  const ratingHome = overlays?.querySelector(".rating-home");
+  if (!ratingHome) return;
+  ratingHome.style.display = "none";
+  parkedRatingHome = ratingHome;
+  document.body.appendChild(ratingHome);
+}
+
+function restoreRatingHome(overlays) {
+  if (!overlays) return;
+  let ratingHome = parkedRatingHome;
+  if (!ratingHome || !ratingHome.isConnected) {
+    ratingHome = document.querySelector("body > .rating-home");
+  }
+  if (!ratingHome) {
+    const wrap = document.createElement("div");
+    wrap.innerHTML = RATING_HOME_HTML.trim();
+    ratingHome = wrap.firstElementChild;
+  }
+  if (!ratingHome) return;
+  ratingHome.style.display = "";
+  const footer = overlays.querySelector("footer.footer");
+  if (footer) overlays.insertBefore(ratingHome, footer);
+  else overlays.appendChild(ratingHome);
+  parkedRatingHome = null;
+}
+
 async function detachOverlays() {
   if (detaching) return;
   const overlays = document.getElementById("overlays");
@@ -35,6 +68,7 @@ async function detachOverlays() {
   detaching = true;
   try {
     rememberActiveMenu();
+    parkRatingHome(overlays);
     overlaysPlaceholder = document.createComment("agarsu-overlays");
     overlays.replaceWith(overlaysPlaceholder);
     await resetAllMenuPanels();
@@ -78,6 +112,7 @@ function attachOverlays() {
       document.body.insertBefore(overlays, document.body.firstChild);
     }
     overlaysPlaceholder = null;
+    restoreRatingHome(overlays);
     if (typeof window.updateAccountMenuLabel === "function") {
       window.updateAccountMenuLabel();
     }

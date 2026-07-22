@@ -87,11 +87,13 @@ function pointsLabel(n) {
 function displayStats(S, stats) {
   const container = document.getElementById("table-containerwraper");
   if (!container) return;
-  const renderKey = JSON.stringify(stats);
+  const list = Array.isArray(stats) ? stats : [];
+  const renderKey = JSON.stringify(list);
   if (renderKey === S.lastStatsRenderKey && container.childElementCount) return;
   S.lastStatsRenderKey = renderKey;
+  S.lastFetchedStats = list;
   container.innerHTML = "";
-  stats.forEach((player, index) => {
+  list.forEach((player, index) => {
     const playerDiv = document.createElement("div");
     playerDiv.classList.add("top-playerwraper");
     playerDiv.setAttribute("title", player.time);
@@ -114,9 +116,16 @@ async function fetchStats(S, stats) {
     stats.forEach((player) => {
       player.skin = getSkinIdForNick(map, player.nick);
     });
+    S.lastFetchedStats = stats;
     displayStats(S, stats);
   } catch (error) {
     console.error("There was a problem with the fetch operation:", error);
+  }
+}
+function repaintCachedStats(S) {
+  if (Array.isArray(S.lastFetchedStats) && S.lastFetchedStats.length) {
+    S.lastStatsRenderKey = "";
+    displayStats(S, S.lastFetchedStats);
   }
 }
 function loadTopPlayerData(S, stat, hooks) {
@@ -311,6 +320,7 @@ function installGlobalRatingHome(S) {
     ratingHeader.addEventListener("click", () => window.open(STATS_PAGE_URL, "_blank"));
   }
   function loadGlobalRatingHome(force = false) {
+    if (!document.getElementById("topswindow")) return;
     fetch(STATS_API + "/api/rankings?limit=3", { cache: "no-store" }).then((res) => res.ok ? res.json() : Promise.reject()).then((data) => {
       const key = JSON.stringify({ p: data.players, c: data.clans, u: data.updatedAt });
       const container = document.getElementById("topswindow");
@@ -325,15 +335,15 @@ function installGlobalRatingHome(S) {
     loadGlobalRatingHome(true);
   }
   bindRatingHeader();
-  if (isOverlaysVisible()) {
-    loadGlobalRatingHome(true);
-  }
+  loadGlobalRatingHome(true);
   addOverlaysLifecycleHooks({
     onShow: onOverlaysShown
   });
   setInterval(() => {
-    if (isOverlaysVisible()) loadGlobalRatingHome();
+    if (document.getElementById("topswindow")) loadGlobalRatingHome();
   }, 3e5);
+  window.__agarsuRefreshHomeStats = () => loadGlobalRatingHome(true);
+  window.__agarsuRepaintDeathStats = () => repaintCachedStats(S);
 }
 function setActiveFromHash(S) {
   const hash = location.hash.replace("#", "") || "ffa";
@@ -451,6 +461,7 @@ export {
   loadTopPlayerData,
   pointsLabel,
   refreshGlobalRatingHome,
+  repaintCachedStats,
   setActiveFromHash,
   shareStats,
   updateOnlineCount,

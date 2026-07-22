@@ -137,6 +137,12 @@ function showStaticsHud() {
   if (typeof window.__agarsuOnStaticsMounted === "function") {
     window.__agarsuOnStaticsMounted();
   }
+  if (typeof window.__agarsuRepaintDeathStats === "function") {
+    window.__agarsuRepaintDeathStats();
+  }
+  if (typeof window.chekstats === "function") {
+    window.chekstats();
+  }
   if (typeof window.updateShareText === "function") window.updateShareText();
   if (typeof window.renderDeathBanner === "function") window.renderDeathBanner();
 }
