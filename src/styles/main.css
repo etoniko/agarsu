@@ -448,24 +448,24 @@ i:hover{cursor:pointer;}
       min-width: 140px;
     }
     #myNicknamesBlock .nick-perks {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-      gap: 6px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
       margin-top: 8px;
       align-items: stretch;
-      width: 100%;
     }
     #myNicknamesBlock .nick-perk {
       position: relative;
-      display: flex;
+      display: inline-grid;
+      grid-template: 1fr / max-content;
+      justify-items: center;
       align-items: center;
-      justify-content: center;
-      width: 100%;
-      min-width: 0;
-      min-height: 30px;
-      padding: 0 12px;
+      width: max-content;
+      max-width: 100%;
+      min-height: 24px;
+      padding: 0 10px;
       border-radius: 999px;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 500;
       letter-spacing: 0.02em;
       line-height: 1.15;
@@ -474,24 +474,27 @@ i:hover{cursor:pointer;}
       background: transparent;
       user-select: none;
       transition: border-color .22s ease, color .22s ease, background .22s ease;
-      max-width: 100%;
       text-align: center;
       overflow: hidden;
+      box-sizing: border-box;
     }
     #myNicknamesBlock .nick-perk--on {
       border-color: rgba(129,199,132,0.45);
       color: #a5d6a7;
       background: rgba(76,175,80,0.25);
+      padding-left: 16px;
     }
     #myNicknamesBlock .nick-perk--on::before {
       content: "";
+      position: absolute;
+      left: 8px;
+      top: 50%;
       width: 4px;
       height: 4px;
+      margin-top: -2px;
       border-radius: 50%;
       background: #81c784;
-      flex-shrink: 0;
       opacity: 0.95;
-      margin-right: 5px;
     }
     #myNicknamesBlock .nick-perk--action { cursor: pointer; }
     #myNicknamesBlock .nick-perk--action:not(.nick-perk--on):hover,
@@ -509,12 +512,12 @@ i:hover{cursor:pointer;}
       outline: none;
     }
     #myNicknamesBlock .nick-perk-face {
+      grid-area: 1 / 1;
       display: block;
-      width: 100%;
-      white-space: normal;
-      overflow-wrap: anywhere;
-      word-break: normal;
-      padding: 6px 0;
+      width: max-content;
+      max-width: 100%;
+      white-space: nowrap;
+      padding: 4px 0;
       transition: opacity .2s ease, transform .2s ease;
     }
     #myNicknamesBlock .nick-perk--action .nick-perk-face--default {
@@ -522,14 +525,9 @@ i:hover{cursor:pointer;}
       transform: translateY(0);
     }
     #myNicknamesBlock .nick-perk--action .nick-perk-face--hover {
-      position: absolute;
-      left: 0;
-      right: 0;
-      text-align: center;
       opacity: 0;
       transform: translateY(3px);
       pointer-events: none;
-      padding-inline: 12px;
     }
     #myNicknamesBlock .nick-perk--action:hover .nick-perk-face--default,
     #myNicknamesBlock .nick-perk--action:focus-visible .nick-perk-face--default {
@@ -543,14 +541,11 @@ i:hover{cursor:pointer;}
     }
     #myNicknamesBlock .nick-perk--action.nick-perk--on::before {
       opacity: 0;
-      width: 0;
-      margin: 0;
       transition: opacity .15s ease;
     }
     #myNicknamesBlock .nick-perk--action.nick-perk--on:hover::before,
     #myNicknamesBlock .nick-perk--action.nick-perk--on:focus-visible::before {
       opacity: 0;
-      width: 0;
     }
     #myNicknamesBlock .store-settings-panel {
       border: 1px solid rgba(255,255,255,0.07);
@@ -560,8 +555,7 @@ i:hover{cursor:pointer;}
     }
     @media (max-width:599px){
       #myNicknamesBlock .nick-card-body { min-width: 100px; }
-      #myNicknamesBlock .nick-perks { grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); }
-      #myNicknamesBlock .nick-perk { font-size: 10px; padding: 0 10px; min-height: 28px; }
+      #myNicknamesBlock .nick-perk { font-size: 9px; padding: 0 8px; min-height: 22px; }
       #myNicknamesBlock .passbox input { width: 100px; }
       #myNicknamesBlock .tab span:not(.badge) { display: none; }
       #myNicknamesBlock .store-logout span { display: inline; }
