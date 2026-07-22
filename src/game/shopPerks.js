@@ -74,78 +74,55 @@ function getNickPerks(S, nickname, password, lists) {
   };
 }
 function makePerkBadge(label, active, hoverText, onBuy) {
-  const span = document.createElement("span");
-  span.className = "nick-perk" + (active ? " nick-perk--on" : "");
-  const def = document.createElement("span");
-  def.className = "nick-perk-face nick-perk-face--default";
-  def.textContent = label;
-  span.appendChild(def);
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "nick-perk" + (active ? " nick-perk--on" : "");
+  const text = document.createElement("span");
+  text.className = "nick-perk-label";
+  text.textContent = label;
+  btn.appendChild(text);
+
   if (hoverText && onBuy) {
-    span.classList.add("nick-perk--action");
-    const hover = document.createElement("span");
-    hover.className = "nick-perk-face nick-perk-face--hover";
-    hover.textContent = hoverText;
-    hover.hidden = true;
-    hover.setAttribute("aria-hidden", "true");
-    span.appendChild(hover);
-    span.setAttribute("role", "button");
-    span.setAttribute("tabindex", "0");
-    span.setAttribute("aria-label", hoverText);
+    btn.classList.add("nick-perk--action");
+    btn.setAttribute("aria-label", hoverText);
     let leaveTimer = null;
-    let baseWidth = 0;
-    const setAdapt = (on) => {
-      if (on) {
-        if (span.classList.contains("nick-perk--adapt")) return;
-        // Lock the resting width first so shorter hover text cannot shrink under the cursor
-        baseWidth = Math.ceil(span.getBoundingClientRect().width);
-        span.style.width = `${baseWidth}px`;
-        def.hidden = true;
-        hover.hidden = false;
-        span.classList.add("nick-perk--adapt");
-        // Allow grow when hover text is longer; never shrink below base while hovered
-        span.style.width = "auto";
-        const adapted = Math.ceil(span.getBoundingClientRect().width);
-        span.style.width = `${Math.max(baseWidth, adapted)}px`;
-      } else {
-        span.classList.remove("nick-perk--adapt");
-        def.hidden = false;
-        hover.hidden = true;
-        span.style.width = "";
-        baseWidth = 0;
-      }
-    };
-    span.addEventListener("mouseenter", () => {
+    const showHover = () => {
       if (leaveTimer) {
         clearTimeout(leaveTimer);
         leaveTimer = null;
       }
-      setAdapt(true);
-    });
-    span.addEventListener("mouseleave", () => {
+      if (btn.classList.contains("is-hover")) return;
+      // Freeze current box size, then swap text: can grow, cannot shrink under cursor
+      btn.style.minWidth = `${btn.offsetWidth}px`;
+      text.textContent = hoverText;
+      btn.classList.add("is-hover");
+    };
+    const showDefault = () => {
+      text.textContent = label;
+      btn.classList.remove("is-hover");
+      btn.style.minWidth = "";
+    };
+    btn.addEventListener("pointerenter", showHover);
+    btn.addEventListener("pointerleave", () => {
       if (leaveTimer) clearTimeout(leaveTimer);
-      // Tiny delay avoids flicker when cursor sits on the border between two badges
       leaveTimer = setTimeout(() => {
         leaveTimer = null;
-        setAdapt(false);
-      }, 50);
+        showDefault();
+      }, 30);
     });
-    span.addEventListener("focus", () => setAdapt(true));
-    span.addEventListener("blur", () => setAdapt(false));
-    const go = (e) => {
+    btn.addEventListener("focus", showHover);
+    btn.addEventListener("blur", showDefault);
+    btn.addEventListener("click", (e) => {
       e.stopPropagation();
       onBuy();
-    };
-    span.onclick = go;
-    span.onkeydown = (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        go(e);
-      }
-    };
+    });
   } else if (active) {
-    span.title = "\u041A\u0443\u043F\u043B\u0435\u043D\u043E";
+    btn.title = "\u041A\u0443\u043F\u043B\u0435\u043D\u043E";
+    btn.tabIndex = -1;
+  } else {
+    btn.tabIndex = -1;
   }
-  return span;
+  return btn;
 }
 function openShopForNick(nickPart, hasClan, options) {
   if (typeof window.openShopPurchase === "function") {
@@ -218,13 +195,13 @@ function renderNickCard(S, list, fullNick, perks, hooks) {
     makePerkBadge(
       "\u041F\u0430\u0440\u043E\u043B\u044C",
       p.hasSkinPass,
-      p.hasSkinPass ? "\u0421\u043C\u0435\u043D\u0438\u0442\u044C \u043F\u0430\u0441\u0441" : "\u041A\u0443\u043F\u0438\u0442\u044C \u043F\u0430\u0441\u0441",
+      p.hasSkinPass ? "\u0421\u043C\u0435\u043D\u0438\u0442\u044C" : "\u041A\u0443\u043F\u0438\u0442\u044C",
       shop({ focusPassword: true })
     ),
     makePerkBadge(
       "\u0421\u043A\u0438\u043D",
       p.hasSkin,
-      p.hasSkin ? "\u0421\u043C\u0435\u043D\u0438\u0442\u044C \u0441\u043A\u0438\u043D" : "\u041A\u0443\u043F\u0438\u0442\u044C \u0441\u043A\u0438\u043D",
+      p.hasSkin ? "\u0421\u043C\u0435\u043D\u0438\u0442\u044C" : "\u041A\u0443\u043F\u0438\u0442\u044C",
       shop({ focusSkin: true })
     ),
     makePerkBadge(

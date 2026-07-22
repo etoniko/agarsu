@@ -450,48 +450,57 @@ i:hover{cursor:pointer;}
     #myNicknamesBlock .nick-perks {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 6px;
       margin-top: 8px;
       align-items: center;
     }
     #myNicknamesBlock .nick-perk {
+      appearance: none;
+      -webkit-appearance: none;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: fit-content;
+      gap: 6px;
+      width: max-content;
       max-width: 100%;
-      min-height: 24px;
-      padding: 4px 10px;
+      min-height: 26px;
+      margin: 0;
+      padding: 5px 12px;
+      border: 1px solid rgba(255,255,255,0.12);
       border-radius: 999px;
-      font-size: 10px;
-      font-weight: 500;
-      letter-spacing: 0.01em;
-      line-height: 1.2;
-      border: 1px solid rgba(255,255,255,0.1);
-      color: rgba(219,229,255,0.55);
       background: transparent;
-      user-select: none;
-      transition:
-        width .18s ease,
-        border-color .18s ease,
-        color .18s ease,
-        background .18s ease;
-      box-sizing: border-box;
-      flex: 0 0 auto;
+      color: rgba(219,229,255,0.6);
+      font: inherit;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      line-height: 1;
       white-space: nowrap;
+      box-sizing: border-box;
+      overflow: hidden;
+      flex: 0 0 auto;
+      cursor: default;
+      vertical-align: middle;
+      transition: border-color .15s ease, color .15s ease, background .15s ease, min-width .15s ease;
+    }
+    #myNicknamesBlock .nick-perk-label {
+      display: block;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      line-height: 1.2;
     }
     #myNicknamesBlock .nick-perk--on {
       border-color: rgba(129,199,132,0.45);
       color: #a5d6a7;
-      background: rgba(76,175,80,0.25);
+      background: rgba(76,175,80,0.22);
     }
-    /* Dot only for one-time purchases (invisible / rotation), not skin/password */
+    /* Dot only means "already bought, cannot buy again" */
     #myNicknamesBlock .nick-perk--on:not(.nick-perk--action)::before {
       content: "";
-      display: inline-block;
       width: 5px;
       height: 5px;
-      margin-right: 6px;
       border-radius: 50%;
       background: #81c784;
       flex: 0 0 auto;
@@ -499,27 +508,19 @@ i:hover{cursor:pointer;}
     #myNicknamesBlock .nick-perk--action {
       cursor: pointer;
     }
-    #myNicknamesBlock .nick-perk--action.nick-perk--adapt:not(.nick-perk--on),
+    #myNicknamesBlock .nick-perk--action.is-hover:not(.nick-perk--on),
     #myNicknamesBlock .nick-perk--action:focus-visible:not(.nick-perk--on) {
-      border-color: rgba(126,184,255,0.45);
-      color: rgba(219,229,255,0.95);
-      background: rgba(1,107,239,0.12);
+      border-color: rgba(126,184,255,0.5);
+      color: #e8f0ff;
+      background: rgba(1,107,239,0.16);
       outline: none;
     }
-    #myNicknamesBlock .nick-perk--action.nick-perk--on.nick-perk--adapt,
+    #myNicknamesBlock .nick-perk--action.nick-perk--on.is-hover,
     #myNicknamesBlock .nick-perk--action.nick-perk--on:focus-visible {
       border-color: rgba(129,199,132,0.55);
-      color: #c8e6c9;
-      background: rgba(76,175,80,0.35);
+      color: #d7f0d8;
+      background: rgba(76,175,80,0.32);
       outline: none;
-    }
-    #myNicknamesBlock .nick-perk-face {
-      display: inline;
-      white-space: nowrap;
-      line-height: 1.2;
-    }
-    #myNicknamesBlock .nick-perk-face[hidden] {
-      display: none !important;
     }
     #myNicknamesBlock .store-settings-panel {
       border: 1px solid rgba(255,255,255,0.07);
@@ -529,8 +530,7 @@ i:hover{cursor:pointer;}
     }
     @media (max-width:599px){
       #myNicknamesBlock .nick-card-body { min-width: 100px; }
-      #myNicknamesBlock .nick-perk { font-size: 9px; padding: 3px 8px; min-height: 22px; }
-      #myNicknamesBlock .nick-perk--on:not(.nick-perk--action)::before { margin-right: 5px; }
+      #myNicknamesBlock .nick-perk { font-size: 9px; padding: 4px 10px; min-height: 24px; }
       #myNicknamesBlock .passbox input { width: 100px; }
       #myNicknamesBlock .tab span:not(.badge) { display: none; }
       #myNicknamesBlock .store-logout span { display: inline; }
