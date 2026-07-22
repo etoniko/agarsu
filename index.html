@@ -183,6 +183,7 @@ _tmr.push({id: "3773988", type: "pageView", start: (new Date()).getTime()});
           </div>
           <div class="settings-layout">
             <nav class="settings-nav" aria-label="Разделы настроек">
+              <div class="settings-nav-scroll">
               <button type="button" class="settings-nav-item active" data-panel="graphics">
                 <i class="fas fa-palette"></i><span>Графика</span>
               </button>
@@ -198,6 +199,7 @@ _tmr.push({id: "3773988", type: "pageView", start: (new Date()).getTime()});
               <button type="button" class="settings-nav-item" data-panel="system">
                 <i class="fas fa-sliders"></i><span>Прочее</span>
               </button>
+              </div>
             </nav>
             <div class="settings-panels checkbox-container">
               <section class="settings-panel active" data-panel="graphics">
@@ -288,7 +290,6 @@ _tmr.push({id: "3773988", type: "pageView", start: (new Date()).getTime()});
                 <h3 class="settings-panel-title">Клавиши и мышь</h3>
                 <label><input type="checkbox" class="save" data-box-id="4" onchange="setMouseClicks(this.checked);">Поддержка клика мышки</label>
                 <div id="keybind-settings" class="custom-bg-block">
-                  <p class="keybind-hint">Нажмите кнопку действия → новая клавиша. Esc — отмена.</p>
                   <div id="mouse-bind-settings" class="mouse-bind-in-keybind">
                     <div class="custom-bg-row">
                       <span>Split (мышь):</span>
