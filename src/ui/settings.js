@@ -2,6 +2,7 @@ import { getCookie, setCookie } from "../storage/cookies.js";
 import {
   cancelKeybindCapture,
   initKeybindSettings,
+  initMouseButtonSettings,
   initSettingsNav,
   loadKeybinds,
   loadMouseButtonSettings,
