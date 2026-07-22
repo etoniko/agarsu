@@ -450,7 +450,7 @@ i:hover{cursor:pointer;}
     #myNicknamesBlock .nick-perks {
       display: flex;
       flex-wrap: wrap;
-      gap: 5px;
+      gap: 6px;
       margin-top: 8px;
       align-items: center;
     }
@@ -489,7 +489,7 @@ i:hover{cursor:pointer;}
       margin-right: 6px;
       border-radius: 50%;
       background: #81c784;
-      flex: 0 0 auto;
+      flex: 0 0 5px;
     }
     #myNicknamesBlock .nick-perk--action {
       cursor: pointer;
@@ -508,25 +508,31 @@ i:hover{cursor:pointer;}
       background: rgba(76,175,80,0.35);
       outline: none;
     }
+    #myNicknamesBlock .nick-perk-faces {
+      display: inline-grid;
+      grid-template: 1fr / max-content;
+      justify-items: center;
+      align-items: center;
+    }
     #myNicknamesBlock .nick-perk-face {
-      display: inline;
+      grid-area: 1 / 1;
       white-space: nowrap;
       line-height: 1.2;
     }
     #myNicknamesBlock .nick-perk--action .nick-perk-face--hover {
-      display: none;
+      visibility: hidden;
     }
     #myNicknamesBlock .nick-perk--action:hover .nick-perk-face--default,
     #myNicknamesBlock .nick-perk--action:focus-visible .nick-perk-face--default {
-      display: none;
+      visibility: hidden;
     }
     #myNicknamesBlock .nick-perk--action:hover .nick-perk-face--hover,
     #myNicknamesBlock .nick-perk--action:focus-visible .nick-perk-face--hover {
-      display: inline;
+      visibility: visible;
     }
     #myNicknamesBlock .nick-perk--action.nick-perk--on:hover::before,
     #myNicknamesBlock .nick-perk--action.nick-perk--on:focus-visible::before {
-      display: none;
+      visibility: hidden;
     }
     #myNicknamesBlock .store-settings-panel {
       border: 1px solid rgba(255,255,255,0.07);

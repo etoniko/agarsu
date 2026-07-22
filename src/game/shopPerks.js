@@ -76,17 +76,19 @@ function getNickPerks(S, nickname, password, lists) {
 function makePerkBadge(label, active, hoverText, onBuy) {
   const span = document.createElement("span");
   span.className = "nick-perk" + (active ? " nick-perk--on" : "");
+  const faces = document.createElement("span");
+  faces.className = "nick-perk-faces";
   const def = document.createElement("span");
   def.className = "nick-perk-face nick-perk-face--default";
   def.textContent = label;
-  span.appendChild(def);
+  faces.appendChild(def);
   if (hoverText && onBuy) {
     span.classList.add("nick-perk--action");
     const hover = document.createElement("span");
     hover.className = "nick-perk-face nick-perk-face--hover";
     hover.textContent = hoverText;
     hover.setAttribute("aria-hidden", "true");
-    span.appendChild(hover);
+    faces.appendChild(hover);
     span.setAttribute("role", "button");
     span.setAttribute("tabindex", "0");
     span.setAttribute("aria-label", hoverText);
@@ -104,6 +106,7 @@ function makePerkBadge(label, active, hoverText, onBuy) {
   } else if (active) {
     span.title = "\u041A\u0443\u043F\u043B\u0435\u043D\u043E";
   }
+  span.appendChild(faces);
   return span;
 }
 function openShopForNick(nickPart, hasClan, options) {
