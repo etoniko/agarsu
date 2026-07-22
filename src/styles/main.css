@@ -481,7 +481,8 @@ i:hover{cursor:pointer;}
       color: #a5d6a7;
       background: rgba(76,175,80,0.25);
     }
-    #myNicknamesBlock .nick-perk--on::before {
+    /* Dot only for one-time purchases (invisible / rotation), not skin/password */
+    #myNicknamesBlock .nick-perk--on:not(.nick-perk--action)::before {
       content: "";
       display: inline-block;
       width: 5px;
@@ -524,10 +525,6 @@ i:hover{cursor:pointer;}
     #myNicknamesBlock .nick-perk--action:focus-visible .nick-perk-face--hover {
       display: inline;
     }
-    #myNicknamesBlock .nick-perk--action.nick-perk--on:hover::before,
-    #myNicknamesBlock .nick-perk--action.nick-perk--on:focus-visible::before {
-      display: none;
-    }
     #myNicknamesBlock .store-settings-panel {
       border: 1px solid rgba(255,255,255,0.07);
       border-radius: 16px;
@@ -537,7 +534,7 @@ i:hover{cursor:pointer;}
     @media (max-width:599px){
       #myNicknamesBlock .nick-card-body { min-width: 100px; }
       #myNicknamesBlock .nick-perk { font-size: 9px; padding: 3px 8px; min-height: 22px; }
-      #myNicknamesBlock .nick-perk--on::before { margin-right: 5px; }
+      #myNicknamesBlock .nick-perk--on:not(.nick-perk--action)::before { margin-right: 5px; }
       #myNicknamesBlock .passbox input { width: 100px; }
       #myNicknamesBlock .tab span:not(.badge) { display: none; }
       #myNicknamesBlock .store-logout span { display: inline; }
