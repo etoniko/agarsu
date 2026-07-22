@@ -2,19 +2,72 @@ import { clearAccountToken, setAccountToken } from "../storage/local.js";
 import { getLevel, getXp } from "./stats.js";
 import { loadMyNicknames } from "./shopPerks.js";
 const GOOGLE_RESTORE_CLIENT_ID = "157257230972-4vh698jtf46c76sc7607oe1k9tr782je.apps.googleusercontent.com";
+const RESTORED_AT_KEY = "accountRestoredAt";
+function isTruthyRestoreValue(value) {
+  return value !== null && value !== undefined && value !== "" && value !== false && value !== 0 && value !== "0" && value !== "false";
+}
+function getRestoreTimestamp(accountData) {
+  const candidates = [
+    accountData?.restored_at,
+    accountData?.restoredAt,
+    accountData?.restore_at,
+    accountData?.is_restored === true ? accountData?.restored_at || Date.now() : null,
+    accountData?.restored === true ? accountData?.restored_at || Date.now() : null
+  ];
+  for (const value of candidates) {
+    if (isTruthyRestoreValue(value)) return value;
+  }
+  try {
+    const cached = localStorage.getItem(RESTORED_AT_KEY);
+    return isTruthyRestoreValue(cached) ? cached : null;
+  } catch {
+    return null;
+  }
+}
+function isAccountRestored(accountData) {
+  return getRestoreTimestamp(accountData) != null;
+}
+function persistRestoreTimestamp(value) {
+  if (!isTruthyRestoreValue(value)) return;
+  try {
+    localStorage.setItem(RESTORED_AT_KEY, String(value));
+  } catch {
+  }
+}
+function clearRestoreTimestamp() {
+  try {
+    localStorage.removeItem(RESTORED_AT_KEY);
+  } catch {
+  }
+}
+function formatRestoreDate(value) {
+  if (!isTruthyRestoreValue(value)) return "";
+  const num = Number(value);
+  const date = !Number.isNaN(num) && num > 0 ? new Date(num < 1e12 ? num * 1000 : num) : new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("ru-RU");
+}
 function updateRestoreBlockVisibility(S) {
   const block = document.getElementById("restoreProgressBlock");
   const available = document.getElementById("restoreAvailableBlock");
   const done = document.getElementById("restoreDoneBlock");
   const badge = document.getElementById("restoreStateBadge");
   if (!block) return;
-  const restored = Boolean(S.accountData?.restored_at);
+  const restoredAt = getRestoreTimestamp(S.accountData);
+  const restored = restoredAt != null;
   if (badge) {
-    badge.textContent = restored ? "Восстановлен" : "Не восстановлен";
+    const dateLabel = formatRestoreDate(restoredAt);
+    badge.textContent = restored ? (dateLabel ? `\u0412\u043E\u0441\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D ${dateLabel}` : "\u0412\u043E\u0441\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D") : "\u041D\u0435 \u0432\u043E\u0441\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D";
     badge.className = "restore-state-badge" + (restored ? " restore-state-badge--done" : "");
   }
   if (available) available.style.display = restored ? "none" : "";
-  if (done) done.style.display = restored ? "" : "none";
+  if (done) {
+    done.style.display = restored ? "" : "none";
+    if (restored) {
+      const dateLabel = formatRestoreDate(restoredAt);
+      done.textContent = dateLabel ? `\u042D\u0442\u043E\u0442 \u0430\u043A\u043A\u0430\u0443\u043D\u0442 \u0443\u0436\u0435 \u0431\u044B\u043B \u0432\u043E\u0441\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D ${dateLabel}. \u041F\u043E\u0432\u0442\u043E\u0440\u043D\u043E\u0435 \u0432\u043E\u0441\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D\u0438\u0435 \u043D\u0435 \u0442\u0440\u0435\u0431\u0443\u0435\u0442\u0441\u044F.` : "\u042D\u0442\u043E\u0442 \u0430\u043A\u043A\u0430\u0443\u043D\u0442 \u0443\u0436\u0435 \u0431\u044B\u043B \u0432\u043E\u0441\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D. \u041F\u043E\u0432\u0442\u043E\u0440\u043D\u043E\u0435 \u0432\u043E\u0441\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D\u0438\u0435 \u043D\u0435 \u0442\u0440\u0435\u0431\u0443\u0435\u0442\u0441\u044F.";
+    }
+  }
   block.style.display = "";
 }
 function showNickClanTab(S, which) {
@@ -93,6 +146,7 @@ function attachAccountHooks(S, hooks) {
   };
   const setAccountData = (data) => {
     S.accountData = data;
+    persistRestoreTimestamp(getRestoreTimestamp(data));
     displayAccountData();
     loadMyNicknames(S, nickHooks);
     if (typeof window.updateAccountMenuLabel === "function") {
@@ -108,6 +162,7 @@ function attachAccountHooks(S, hooks) {
     S.accountData = null;
     localStorage.removeItem("accountData");
     clearAccountToken();
+    clearRestoreTimestamp();
     const block = document.getElementById("myNicknamesBlock");
     if (block) block.style.display = "none";
     const restorePanel = document.getElementById("restorePanel");
@@ -192,13 +247,18 @@ function attachAccountHooks(S, hooks) {
       return;
     }
     setRestoreStatus(data.message || "\u0410\u043A\u043A\u0430\u0443\u043D\u0442 \u043F\u0440\u0438\u0432\u044F\u0437\u0430\u043D \u043A VK", "success");
+    const restoredAt = data.restored_at || data.restoredAt || Date.now();
+    persistRestoreTimestamp(restoredAt);
+    if (S.accountData) S.accountData.restored_at = restoredAt;
     if (data.token) {
-      if (data.restored_at && S.accountData) S.accountData.restored_at = data.restored_at;
-      wHandle.onAccountLoggedIn(data.token);
-      updateRestoreBlockVisibility(S);
-    } else {
-      loadAccountUserData();
+      setAccountToken(data.token);
+      if (typeof window.updateAccountMenuLabel === "function") {
+        window.updateAccountMenuLabel();
+      }
+      hooks.sendAccountToken();
     }
+    await loadAccountUserData();
+    updateRestoreBlockVisibility(S);
   };
   async function restoreProgressFromTelegram(user) {
     if (!localStorage.accountToken) {
