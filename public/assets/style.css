@@ -5,14 +5,16 @@
     color: #ffffff !important;
     font-weight: lighter;
 }
-.chatX_msg[class*="☼k☼"]{
-    background: linear-gradient(rgb(0 0 0 / 33%), rgb(0 0 0 / 50%)), url(/assets/photo/778.jpg?3) !important;
+.chatX_msg[class*="\263Ck\263C"],
+.chatX_msg[class*="\263CK\263C"]{
+    background: linear-gradient(rgb(0 0 0 / 33%), rgb(0 0 0 / 50%)), url(/assets/photo/778.png?4) !important;
     background-size: cover !important;
     background-position: center 45% !important;
 	border: solid 1px #ffffff3d;
 }
-.Lednick[class*="☼k☼"]{
-    background: linear-gradient(rgb(0 0 0 / 33%), rgb(0 0 0 / 50%)), url(/assets/photo/778.jpg?3) !important;
+.Lednick[class*="\263Ck\263C"],
+.Lednick[class*="\263CK\263C"]{
+    background: linear-gradient(rgb(0 0 0 / 33%), rgb(0 0 0 / 50%)), url(/assets/photo/778.png?4) !important;
     background-size: cover !important;
     background-position: center 45% !important;
 	border: solid 1px #ffffff3d;
