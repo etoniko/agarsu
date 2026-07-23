@@ -10,6 +10,9 @@ function showContent(id) {
   if (panel) panel.classList.add("active");
   if (typeof window.updateShopAuthNotice === "function") window.updateShopAuthNotice();
   if (id === "skinslist" && typeof window.initSkinsGallery === "function") window.initSkinsGallery();
+  if (id === "home") {
+    import("./skinsGallery.js").then((m) => m.bindHomeAvatarUi()).catch(() => {});
+  }
   bus.emit(Events.SHOW_CONTENT, { id });
 }
 function updateAccountMenuLabel() {

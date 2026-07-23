@@ -1,3 +1,4 @@
+import { onReady } from "../lib/dom.js";
 import { loadSkinListMap } from "../storage/staticLists.js";
 import { normalizeNick } from "../lib/nick.js";
 let lastActionTime = 0;
@@ -80,7 +81,7 @@ async function loadSkinsGalleryData() {
   const { map: skinMap } = await loadSkinListMap();
   const items = [];
   for (const nick of MANUAL_SKINS_NICKS) {
-    const code = skinMap.get(nick.toLowerCase());
+    const code = skinMap.get(normalizeNick(nick));
     if (code) {
       items.push({ nick, code });
     }
@@ -445,7 +446,10 @@ window.savePlayerData = savePlayerData;
 window.updateAvatarDisplay = updateAvatarDisplay;
 window.__agarsuUpdatePlayerPass = updateCurrentPlayerPass;
 window.__agarsuGetPlayers = getPlayers;
-if (typeof loadSkinsList === "function") window.loadSkinsList = loadSkinsList;
+window.loadSkinsList = loadSkinsList;
+onReady(() => {
+  bindHomeAvatarUi();
+});
 export {
   bindHomeAvatarUi,
   initSkinsGallery,
