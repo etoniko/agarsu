@@ -13,7 +13,8 @@ function setCookie(name, value, days) {
     date.setTime(date.getTime() + days * 24 * 60 * 60 * 1e3);
     expires = "; expires=" + date.toUTCString();
   }
-  document.cookie = name + "=" + encodeURIComponent(value || "") + expires + cookieSecurityFlags();
+  const encoded = encodeURIComponent(value == null ? "" : String(value));
+  document.cookie = name + "=" + encoded + expires + cookieSecurityFlags();
 }
 function deleteCookie(name) {
   document.cookie = name + "=; Max-Age=0" + cookieSecurityFlags();

@@ -100,10 +100,10 @@ function initCustomBgSettings(S) {
   if (mapMode) mapMode.value = S.customMapBgMode;
   if (mapTile) mapTile.value = S.customMapBgTileSize;
   syncBgTileRows(S);
-  const enabledMap = getCookie("checkbox-15");
-  if (enabledMap !== void 0 && enabledMap !== null) S.customMapBgEnabled = enabledMap === "true";
-  const enabledVirus = getCookie("checkbox-16");
-  if (enabledVirus !== void 0 && enabledVirus !== null) S.customVirusBgEnabled = enabledVirus === "true";
+  const enabledMap = readCheckboxSaved(15);
+  if (enabledMap !== null) S.customMapBgEnabled = enabledMap;
+  const enabledVirus = readCheckboxSaved(16);
+  if (enabledVirus !== null) S.customVirusBgEnabled = enabledVirus;
   loadBgImageFromDataUrl(localStorage.getItem("custom_map_bg_image"), (img) => {
     S.mapBgImage = img;
     updateBgPreview("map-bg-preview", img ? localStorage.getItem("custom_map_bg_image") : null);
@@ -188,9 +188,9 @@ function getClientCellColor(S, cell) {
   return null;
 }
 function loadClientColorSettings(S) {
-  const enabled = getCookie("checkbox-14");
-  if (enabled !== void 0 && enabled !== null) {
-    S.customClientColors = enabled === "true";
+  const enabled = readCheckboxSaved(14);
+  if (enabled !== null) {
+    S.customClientColors = enabled;
   }
   S.clientColorVirus = getCookie("client_color_virus") || S.clientColorVirus;
   S.clientColorFood = getCookie("client_color_food") || S.clientColorFood;
@@ -251,13 +251,33 @@ function getCheckboxDefaultValue(S, id) {
     default: return false;
   }
 }
+function persistCheckbox(id, value) {
+  setCookie("checkbox-" + id, value ? "true" : "false", 365);
+  try {
+    localStorage.setItem("checkbox-" + id, value ? "true" : "false");
+  } catch {
+  }
+}
+function readCheckboxSaved(id) {
+  const fromCookie = getCookie("checkbox-" + id);
+  if (fromCookie !== void 0 && fromCookie !== null && fromCookie !== "") {
+    return fromCookie === "true";
+  }
+  try {
+    const fromLs = localStorage.getItem("checkbox-" + id);
+    if (fromLs === "true" || fromLs === "false") return fromLs === "true";
+  } catch {
+  }
+  return null;
+}
 function restoreCheckboxCookies(S) {
-  window.addEventListener("load", function() {
+  // Modules boot after window "load", so never wait for it — run when DOM is ready.
+  onReady(function() {
     const checkboxes = Array.from(document.querySelectorAll(".save"));
     checkboxes.forEach((input) => {
       const id = Number(input.dataset.boxId);
-      const value = getCookie("checkbox-" + id);
-      input.checked = value !== void 0 && value !== null ? value === "true" : getCheckboxDefaultValue(S, id);
+      const saved = readCheckboxSaved(id);
+      input.checked = saved !== null ? saved : getCheckboxDefaultValue(S, id);
     });
     loadClientColorSettings(S);
     loadMouseButtonSettings(S);
@@ -265,10 +285,12 @@ function restoreCheckboxCookies(S) {
     renderKeybindUI(S);
     checkboxes.forEach((input) => {
       input.dispatchEvent(new Event("change", { bubbles: true }));
+      if (input.dataset.persistBound === "1") return;
+      input.dataset.persistBound = "1";
       input.addEventListener("change", function() {
         const id = Number(input.dataset.boxId);
         const value = input.checked;
-        setCookie("checkbox-" + id, value, 365);
+        persistCheckbox(id, value);
         if (id == 10) S.wHandle.setAdultContent(value);
         if (id == 11) S.wHandle.setConfirmCloseTab(value);
         if (id == 13) S.wHandle.setShowStickers(value);
@@ -283,52 +305,68 @@ function attachSettings(S, hooks = {}) {
   const wHandle = S.wHandle;
   wHandle.setSkins = function(arg) {
     S.showSkin = arg;
+    persistCheckbox(1, arg);
   };
   wHandle.setNames = function(arg) {
     S.showName = arg;
+    persistCheckbox(2, arg);
   };
   wHandle.setColors = function(arg) {
     S.showColor = arg;
+    persistCheckbox(3, arg);
   };
   wHandle.setMouseClicks = function(arg) {
     S.enableMouseClicks = arg;
+    persistCheckbox(4, arg);
     syncMouseBindSettingsVisibility(S);
   };
   wHandle.setShowMass = function(arg) {
     S.showMass = arg;
+    persistCheckbox(5, arg);
   };
   wHandle.setSmooth = function(arg) {
     S.smoothRender = arg ? 2 : 0.4;
+    persistCheckbox(6, arg);
   };
   wHandle.setNoBorder = function(arg) {
     S.closebord = arg;
+    persistCheckbox(7, arg);
   };
   wHandle.setChatHide = function(arg) {
     S.hideChat = arg;
+    persistCheckbox(8, arg);
   };
   wHandle.setGlow = function(arg) {
     S.showGlow = arg;
+    persistCheckbox(9, arg);
   };
   wHandle.setAdultContent = function(arg) {
     S.showAdultContent = arg;
-  };
-  wHandle.setFixedCell = function(arg) {
-    S.fixedCell = arg;
+    persistCheckbox(10, arg);
   };
   wHandle.setConfirmCloseTab = function(arg) {
     S.confirmCloseTab = arg;
+    persistCheckbox(11, arg);
+  };
+  wHandle.setFixedCell = function(arg) {
+    S.fixedCell = arg;
+    persistCheckbox(12, arg);
   };
   wHandle.setShowStickers = function(arg) {
     S.showStickers = arg;
+    persistCheckbox(13, arg);
   };
   wHandle.setCustomClientColors = function(arg) {
     S.customClientColors = arg;
+    persistCheckbox(14, arg);
   };
   wHandle.setCustomMapBg = function(arg) {
     S.customMapBgEnabled = arg;
+    persistCheckbox(15, arg);
   };
   wHandle.setCustomVirusBg = function(arg) {
     S.customVirusBgEnabled = arg;
+    persistCheckbox(16, arg);
   };
   if (hooks.fixDead) {
     wHandle.fixDead = hooks.fixDead;

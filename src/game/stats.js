@@ -358,7 +358,7 @@ function attachStats(S, hooks) {
     onShow: startOnlineCountPolling,
     onHide: stopOnlineCountPolling
   });
-  window.addEventListener("load", () => setActiveFromHash(S));
+  onReady(() => setActiveFromHash(S));
   window.addEventListener("hashchange", () => setActiveFromHash(S));
   if (isOverlaysVisible()) {
     startOnlineCountPolling();
@@ -399,8 +399,8 @@ function attachStats(S, hooks) {
       }, 3e3);
     }
   };
-  onReady(() => installGlobalRatingHome(S));
-  window.addEventListener("load", () => {
+  onReady(() => {
+    installGlobalRatingHome(S);
     updateShareText(S);
     ["vk", "telegram", "whatsapp", "facebook", "twitter"].forEach((p) => {
       const btn = document.querySelector(`.${p}`);
