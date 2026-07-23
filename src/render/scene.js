@@ -1,4 +1,5 @@
-import { getCookie } from "../storage/cookies.js";
+import { getCookie, setCookie } from "../storage/cookies.js";
+import { onReady } from "../lib/dom.js";
 import { getSkinImageUrl } from "./skins.js";
 import { normalizeNick } from "../lib/nick.js";
 import { calcViewZoom, mouseCoordinateChange, viewRange } from "../game/camera.js";
@@ -9,6 +10,7 @@ let miniMapEls = null;
 const MINIMAP_DOT_RADIUS = 5;
 const ROW_LETTERS = ["A", "B", "C", "D", "E"];
 let screenGradientCache = { key: "", gradient: null };
+let gridThemeSettingsBound = false;
 let perfOverlayEl = null;
 const perfEnabled = typeof location !== "undefined" && new URLSearchParams(location.search).has("perf");
 const perfStats = {
@@ -21,19 +23,84 @@ const perfStats = {
   drawn: 0,
   movePoints: 0
 };
+function readStored(key, fallback = null) {
+  const fromCookie = getCookie(key);
+  if (fromCookie !== void 0 && fromCookie !== null && fromCookie !== "") return fromCookie;
+  try {
+    const fromLs = localStorage.getItem(key);
+    if (fromLs != null && fromLs !== "") return fromLs;
+  } catch {
+  }
+  return fallback;
+}
+function writeStored(key, value, days = 365) {
+  setCookie(key, value, days);
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+  }
+}
+function invalidateGridStyleCache() {
+  gridStyleCache.at = 0;
+  screenGradientCache.key = "";
+  screenGradientCache.gradient = null;
+}
 function getGridStyle() {
   const now = Date.now();
   if (now - gridStyleCache.at > GRID_STYLE_CACHE_MS) {
     gridStyleCache = {
-      theme: getCookie("grid_theme") || "gradient",
-      center: getCookie("gradient_center") || "#132745",
-      edge: getCookie("gradient_edge") || "#000000",
+      theme: readStored("grid_theme", "gradient"),
+      center: readStored("gradient_center", "#132745"),
+      edge: readStored("gradient_edge", "#000000"),
       at: now
     };
     screenGradientCache.key = "";
     screenGradientCache.gradient = null;
   }
   return gridStyleCache;
+}
+function syncGradientSettingsVisibility(theme) {
+  const panel = document.getElementById("gradient-settings");
+  if (panel) panel.style.display = theme === "gradient" ? "" : "none";
+}
+function applyGridTheme(theme, center, edge) {
+  if (theme) writeStored("grid_theme", theme);
+  if (center) writeStored("gradient_center", center);
+  if (edge) writeStored("gradient_edge", edge);
+  invalidateGridStyleCache();
+  const style = getGridStyle();
+  syncGradientSettingsVisibility(style.theme);
+  drawGrid();
+}
+function initGridThemeSettings() {
+  if (gridThemeSettingsBound) return;
+  const selectElement = document.getElementById("theme-select");
+  const centerColor = document.getElementById("gradient-center");
+  const edgeColor = document.getElementById("gradient-edge");
+  if (!selectElement || !centerColor || !edgeColor) return;
+  gridThemeSettingsBound = true;
+  const savedTheme = readStored("grid_theme", "gradient");
+  const savedCenter = readStored("gradient_center", "#132745");
+  const savedEdge = readStored("gradient_edge", "#000000");
+  selectElement.value = savedTheme;
+  centerColor.value = savedCenter;
+  edgeColor.value = savedEdge;
+  writeStored("grid_theme", savedTheme);
+  writeStored("gradient_center", savedCenter);
+  writeStored("gradient_edge", savedEdge);
+  invalidateGridStyleCache();
+  syncGradientSettingsVisibility(savedTheme);
+  selectElement.addEventListener("change", function() {
+    applyGridTheme(this.value, null, null);
+  });
+  const onColorInput = () => {
+    applyGridTheme("gradient", centerColor.value, edgeColor.value);
+    if (selectElement.value !== "gradient") {
+      selectElement.value = "gradient";
+    }
+  };
+  centerColor.addEventListener("input", onColorInput);
+  edgeColor.addEventListener("input", onColorInput);
 }
 function buildMiniMapCellMap(cells) {
   const cellMap = new Map();
@@ -138,6 +205,7 @@ function clearScene(ctx, width, height, fillStyle) {
 }
 function attachScene(S, hooks = {}) {
   deps = { S, hooks };
+  onReady(() => initGridThemeSettings());
   requestAnimationFrame(() => initMiniMapLayout());
   return {
     redrawGameScene,
