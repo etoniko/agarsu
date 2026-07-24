@@ -1,8 +1,8 @@
 /**
  * Own antimat: normalize obfuscation so
  * "Пизда" / "пиз да" / "п.и.з.д.а" / "pizda" / "blya" → словарь
- * Mask: full "***" (no first letter kept)
- */
+ * Mask: full asterisks (no first letter kept)
+ *
  * Сколько «схожих» латиница↔кириллица:
  * — визуальных близнецов (выглядят одинаково): ~12 (a/а, e/е, o/о, p/р, c/с, x/х, y/у, H/Н, K/К, M/М, T/Т, B/В)
  * — для чата важнее транслит: вся латиница a–z → русские звуки (p→п, не р!), иначе "pizda" станет "ризда"
