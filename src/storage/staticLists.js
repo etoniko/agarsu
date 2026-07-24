@@ -142,7 +142,10 @@ function invalidateStatsRenderCaches(S) {
 }
 function toLowerSet(text) {
   return new Set(
-    String(text || "").split("\n").map((l) => l.trim().toLowerCase()).filter(Boolean)
+    String(text || "")
+      .split("\n")
+      .map((l) => l.trim().toLowerCase().replace(/ё/g, "е"))
+      .filter(Boolean)
   );
 }
 async function loadPassData(force = false) {

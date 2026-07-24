@@ -26,30 +26,63 @@ function formatTime(date) {
   const minutes = String(date.getMinutes()).padStart(2, "0");
   return `${hours}:${minutes}`;
 }
+function normalizeBadToken(token) {
+  return String(token || "")
+    .toLowerCase()
+    .replace(/ё/g, "е")
+    .replace(/^[^0-9a-zа-я]+|[^0-9a-zа-я]+$/gi, "");
+}
+/** пизда → п** (первая буква + **) */
+function maskBadWord(word) {
+  const chars = Array.from(String(word || ""));
+  if (!chars.length) return word;
+  return chars[0] + "**";
+}
+function getBadWordsList(S) {
+  if (!S.badWordsSet) return [];
+  if (!S._badWordsList || S._badWordsListFrom !== S.badWordsSet) {
+    S._badWordsList = [...S.badWordsSet].sort((a, b) => b.length - a.length);
+    S._badWordsListFrom = S.badWordsSet;
+  }
+  return S._badWordsList;
+}
 function censorMessage(S, message) {
-  if (!S.badWordsSet) {
+  if (S.showAdultContent) return message;
+  if (!S.badWordsSet || S.badWordsSet.size === 0) {
     console.warn("\u0421\u043F\u0438\u0441\u043E\u043A \u043C\u0430\u0442\u0435\u0440\u043D\u044B\u0445 \u0441\u043B\u043E\u0432 \u043D\u0435 \u0437\u0430\u0433\u0440\u0443\u0436\u0435\u043D. \u0410\u043D\u0442\u0438\u043C\u0430\u0442 \u043D\u0435 \u0440\u0430\u0431\u043E\u0442\u0430\u0435\u0442.");
     return message;
   }
-  const words = message.split(" ").filter((word) => word !== "");
-  let censoredMessage = "";
-  for (let i = 0; i < words.length; i++) {
-    const word = words[i];
-    const lowerCaseWord = word.toLowerCase();
-    if (S.badWordsSet.has(lowerCaseWord)) {
-      censoredMessage += "***";
-    } else {
-      censoredMessage += word;
-    }
-    if (i < words.length - 1) {
-      censoredMessage += " ";
+  let text = String(message || "");
+  // Multi-word phrases first (longest first)
+  for (const phrase of getBadWordsList(S)) {
+    if (!phrase.includes(" ")) continue;
+    const re = new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+    text = text.replace(re, (m) => maskBadWord(m));
+  }
+  const parts = text.split(/(\s+)/);
+  for (let i = 0; i < parts.length; i++) {
+    if (/^\s+$/.test(parts[i]) || !parts[i]) continue;
+    const raw = parts[i];
+    const core = normalizeBadToken(raw);
+    if (core && S.badWordsSet.has(core)) {
+      // Keep surrounding punctuation: !!!пизда!!! → !!!п**!!!
+      const m = raw.match(/^([^0-9a-zA-Zа-яА-ЯёЁ]*)([0-9a-zA-Zа-яА-ЯёЁ].*[0-9a-zA-Zа-яА-ЯёЁ]|[0-9a-zA-Zа-яА-ЯёЁ])([^0-9a-zA-Zа-яА-ЯёЁ]*)$/);
+      if (m) {
+        parts[i] = m[1] + maskBadWord(m[2]) + m[3];
+      } else {
+        parts[i] = maskBadWord(raw);
+      }
     }
   }
-  return censoredMessage;
+  return parts.join("");
 }
 function countProfanity(S, message) {
-  if (!S.badWordsSet) return 0;
-  return message.split(/\s+/).filter(Boolean).reduce((n, w) => n + (S.badWordsSet.has(w.toLowerCase()) ? 1 : 0), 0);
+  if (!S.badWordsSet || S.badWordsSet.size === 0) return 0;
+  if (S.showAdultContent) return 0;
+  return String(message || "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .reduce((n, w) => n + (S.badWordsSet.has(normalizeBadToken(w)) ? 1 : 0), 0);
 }
 function shouldBlurAndRecord(S, pId, message) {
   if (S.showAdultContent) return false;
