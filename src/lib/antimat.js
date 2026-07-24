@@ -1,8 +1,8 @@
 /**
  * Own antimat: normalize obfuscation so
  * "Пизда" / "пиз да" / "п.и.з.д.а" / "pizda" / "blya" → словарь
- * Mask: first letter + "***"  (п***)
- *
+ * Mask: full "***" (no first letter kept)
+ */
  * Сколько «схожих» латиница↔кириллица:
  * — визуальных близнецов (выглядят одинаково): ~12 (a/а, e/е, o/о, p/р, c/с, x/х, y/у, H/Н, K/К, M/М, T/Т, B/В)
  * — для чата важнее транслит: вся латиница a–z → русские звуки (p→п, не р!), иначе "pizda" станет "ризда"
@@ -263,8 +263,9 @@ function findMatches(flat, dict) {
   return hits;
 }
 
-function maskSpan(chars, start) {
-  return chars[start] + "***";
+function maskSpan(chars, start, end) {
+  const len = Math.max(3, (end - start + 1) | 0);
+  return "*".repeat(len);
 }
 
 function getDict(badWordsSet) {
@@ -295,7 +296,7 @@ function censorText(badWordsSet, message) {
   for (const hit of hits) {
     if (hit.origStart < cursor) continue;
     out += chars.slice(cursor, hit.origStart).join("");
-    out += maskSpan(chars, hit.origStart);
+    out += maskSpan(chars, hit.origStart, hit.origEnd);
     cursor = hit.origEnd + 1;
   }
   out += chars.slice(cursor).join("");
