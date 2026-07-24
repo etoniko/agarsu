@@ -263,9 +263,8 @@ function findMatches(flat, dict) {
   return hits;
 }
 
-function maskSpan(chars, start, end) {
-  const len = Math.max(3, (end - start + 1) | 0);
-  return "*".repeat(len);
+function maskSpan() {
+  return "***";
 }
 
 function getDict(badWordsSet) {
@@ -296,7 +295,7 @@ function censorText(badWordsSet, message) {
   for (const hit of hits) {
     if (hit.origStart < cursor) continue;
     out += chars.slice(cursor, hit.origStart).join("");
-    out += maskSpan(chars, hit.origStart, hit.origEnd);
+    out += maskSpan();
     cursor = hit.origEnd + 1;
   }
   out += chars.slice(cursor).join("");
