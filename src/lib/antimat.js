@@ -162,11 +162,14 @@ function isLetterAt(chars, idx) {
 /** Exact match allowing WILD in stream = any key letter */
 function matchWildAt(norm, start, key) {
   if (start + key.length > norm.length) return -1;
+  let real = 0;
   for (let k = 0; k < key.length; k++) {
     const nch = norm[start + k];
     if (nch === WILD) continue;
+    real++;
     if (nch !== key[k]) return -1;
   }
+  if (real < minRealLetters(key.length)) return -1;
   return start + key.length;
 }
 
@@ -175,43 +178,61 @@ function matchOneSubAt(norm, start, key) {
   if (key.length < FUZZY_MIN) return -1;
   if (start + key.length > norm.length) return -1;
   let diff = 0;
+  let real = 0;
   for (let k = 0; k < key.length; k++) {
     const nch = norm[start + k];
     if (nch === WILD) continue;
+    real++;
     if (nch !== key[k]) {
       diff++;
       if (diff > 1) return -1;
     }
   }
+  if (real < minRealLetters(key.length)) return -1;
   return start + key.length;
 }
 
 /** One missing letter in the middle/end: stream shorter by 1 */
 function matchOneDeleteAt(norm, start, key) {
   if (key.length < FUZZY_MIN) return -1;
-  // align key to norm window of length key.length - 1
   const win = key.length - 1;
   if (win < FUZZY_MIN - 1 || start + win > norm.length) return -1;
   let si = start;
   let skipped = false;
+  let real = 0;
   for (let k = 0; k < key.length; k++) {
     if (si >= start + win) {
-      // rest of key must be the one deletion at end
-      if (k === key.length - 1 && !skipped) return start + win;
+      if (k === key.length - 1 && !skipped) {
+        if (real < minRealLetters(key.length)) return -1;
+        return start + win;
+      }
       return -1;
     }
     const nch = norm[si];
-    if (nch === WILD || nch === key[k]) {
+    if (nch === WILD) {
+      si++;
+      continue;
+    }
+    if (nch === key[k]) {
+      real++;
       si++;
       continue;
     }
     if (!skipped) {
-      skipped = true; // skip this key letter (not present in stream)
+      skipped = true;
       continue;
     }
     return -1;
   }
-  return si === start + win ? si : -1;
+  if (si !== start + win) return -1;
+  if (real < minRealLetters(key.length)) return -1;
+  return si;
+}
+
+/** Сколько настоящих букв нужно, чтобы не ловить "123456789" как мат */
+function minRealLetters(keyLen) {
+  if (keyLen <= 3) return keyLen;
+  return Math.max(3, Math.ceil(keyLen * 0.6));
 }
 
 function tryAddHit(hits, used, flat, start, end, key) {
