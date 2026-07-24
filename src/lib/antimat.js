@@ -1,107 +1,46 @@
 /**
  * Own antimat: normalize obfuscation so
- * "Пизда" / "пиз да" / "п.и.з.д.а" / "pizda" / "blya" → словарь
- * Mask: full asterisks (no first letter kept)
+ * "Пизда" / "пиз да" / "п.и.з.д.а" / "pizda" / "пи3орас" / "пидора" → словарь
+ * Mask: always "***"
  *
- * Сколько «схожих» латиница↔кириллица:
- * — визуальных близнецов (выглядят одинаково): ~12 (a/а, e/е, o/о, p/р, c/с, x/х, y/у, H/Н, K/К, M/М, T/Т, B/В)
- * — для чата важнее транслит: вся латиница a–z → русские звуки (p→п, не р!), иначе "pizda" станет "ризда"
- * — плюс греческие, leet-цифры, диграфы ya/zh/sh…
+ * — латиница → кириллица (транслит)
+ * — цифры = wildcard (одна любая буква): пи3орас ≈ пидорас
+ * — 1 ошибка / не дописал (для слов ≥5–6 букв)
  */
+
+const WILD = "\u0001";
 
 /** Latin single letters → Russian (phonetic translit for chat) */
 const LATIN = {
-  a: "а",
-  b: "б",
-  c: "с",
-  d: "д",
-  e: "е",
-  f: "ф",
-  g: "г",
-  h: "х",
-  i: "и",
-  j: "й",
-  k: "к",
-  l: "л",
-  m: "м",
-  n: "н",
-  o: "о",
-  p: "п",
-  q: "к",
-  r: "р",
-  s: "с",
-  t: "т",
-  u: "у",
-  v: "в",
-  w: "ш",
-  x: "х",
-  y: "й",
-  z: "з"
+  a: "а", b: "б", c: "с", d: "д", e: "е", f: "ф", g: "г", h: "х",
+  i: "и", j: "й", k: "к", l: "л", m: "м", n: "н", o: "о", p: "п",
+  q: "к", r: "р", s: "с", t: "т", u: "у", v: "в", w: "ш", x: "х",
+  y: "й", z: "з"
 };
 
-/** Visual / Greek / leet extras → Russian */
+/** Greek / symbols → Russian (digits are wildcards, not here) */
 const EXTRA = {
-  α: "а",
-  β: "в",
-  ε: "е",
-  η: "н",
-  ι: "и",
-  κ: "к",
-  ο: "о",
-  ρ: "р",
-  τ: "т",
-  υ: "у",
-  χ: "х",
-  φ: "ф",
-  "0": "о",
-  "1": "и",
-  "3": "з",
-  "4": "ч",
-  "5": "с",
-  "6": "б",
-  "7": "т",
-  "8": "в",
-  "9": "д",
-  "@": "а",
-  $: "с"
+  α: "а", β: "в", ε: "е", η: "н", ι: "и", κ: "к",
+  ο: "о", ρ: "р", τ: "т", υ: "у", χ: "х", φ: "ф",
+  "@": "а", $: "с"
 };
 
-/** Rare Cyrillic → Russian */
 const CYR_VARIANT = {
-  ё: "е",
-  і: "и",
-  ї: "и",
-  ґ: "г",
-  є: "е",
-  ў: "у",
-  һ: "н",
-  ѕ: "с"
+  ё: "е", і: "и", ї: "и", ґ: "г", є: "е", ў: "у", һ: "н", ѕ: "с"
 };
 
-/** Latin digraphs / trigraphs (longest first) */
 const DIGRAPHS = [
-  ["shch", "щ"],
-  ["sch", "щ"],
-  ["yo", "е"],
-  ["zh", "ж"],
-  ["kh", "х"],
-  ["ts", "ц"],
-  ["tc", "ц"],
-  ["ch", "ч"],
-  ["sh", "ш"],
-  ["ya", "я"],
-  ["ja", "я"],
-  ["yu", "ю"],
-  ["ju", "ю"],
-  ["ye", "е"],
-  ["je", "е"],
-  ["yi", "и"],
-  ["iy", "ий"]
+  ["shch", "щ"], ["sch", "щ"], ["yo", "е"], ["zh", "ж"], ["kh", "х"],
+  ["ts", "ц"], ["tc", "ц"], ["ch", "ч"], ["sh", "ш"],
+  ["ya", "я"], ["ja", "я"], ["yu", "ю"], ["ju", "ю"],
+  ["ye", "е"], ["je", "е"], ["yi", "и"], ["iy", "ий"]
 ];
 
 const SHORT_MAX = 3;
+const FUZZY_MIN = 5; // 1 substitution / digit wild for words this long+
+const PREFIX_MIN_KEY = 6; // allow missing 1–2 ending letters
 const LOOKALIKE_COUNT = Object.keys(LATIN).length + Object.keys(EXTRA).length;
-const VISUAL_TWIN_COUNT = 12; // aа eе oо pр cс xх yу HН KК MМ TТ BВ
+const VISUAL_TWIN_COUNT = 12;
 
 function foldFullwidth(ch) {
   const code = ch.codePointAt(0);
@@ -110,13 +49,6 @@ function foldFullwidth(ch) {
   return ch;
 }
 
-function isLatinLetter(ch) {
-  return /^[a-z]$/i.test(foldFullwidth(ch));
-}
-
-/**
- * Extract letter-like stream: latin kept as a-z for digraphs; cyr/leet already folded.
- */
 function extractSeq(chars) {
   const seq = [];
   for (let i = 0; i < chars.length; i++) {
@@ -133,10 +65,14 @@ function extractSeq(chars) {
       seq.push({ ch: c, i, latin: true });
       continue;
     }
+    // digit or * # ? = одна «любая» буква
+    if (/[0-9*#?]/.test(c)) {
+      seq.push({ ch: WILD, i, latin: false, wild: true });
+      continue;
+    }
     if (EXTRA[c]) {
       seq.push({ ch: EXTRA[c], i, latin: false });
     }
-    // junk skipped
   }
   return seq;
 }
@@ -186,9 +122,10 @@ function seqToNorm(seq) {
 }
 
 function mapChar(ch) {
-  // used for boundary checks — anything that survives extractSeq
   let c = foldFullwidth(ch).toLowerCase();
-  if (CYR_VARIANT[c] || /[а-я]/i.test(c) || /[a-z]/i.test(c) || EXTRA[c]) return true;
+  if (CYR_VARIANT[c] || /[а-я]/i.test(c) || /[a-z]/i.test(c) || EXTRA[c] || /[0-9*#?]/.test(c)) {
+    return true;
+  }
   return null;
 }
 
@@ -200,23 +137,21 @@ function flattenMessage(text) {
 }
 
 function normalizeWord(word) {
-  return flattenMessage(word).norm;
+  // dictionary entries: no wildcards, strip junk/digits as letters-only
+  return flattenMessage(String(word || "").replace(/[0-9*#?]/g, "")).norm;
 }
 
 function compileDictionary(rawSet) {
-  const byLen = new Map();
   const list = [];
+  const seen = new Set();
   for (const raw of rawSet) {
     const key = normalizeWord(raw);
-    if (key.length < 2) continue;
-    if (!byLen.has(key.length)) byLen.set(key.length, new Set());
-    const bucket = byLen.get(key.length);
-    if (bucket.has(key)) continue;
-    bucket.add(key);
+    if (key.length < 2 || seen.has(key)) continue;
+    seen.add(key);
     list.push(key);
   }
   list.sort((a, b) => b.length - a.length);
-  return { list, byLen };
+  return { list };
 }
 
 function isLetterAt(chars, idx) {
@@ -224,38 +159,117 @@ function isLetterAt(chars, idx) {
   return mapChar(chars[idx]) != null;
 }
 
+/** Exact match allowing WILD in stream = any key letter */
+function matchWildAt(norm, start, key) {
+  if (start + key.length > norm.length) return -1;
+  for (let k = 0; k < key.length; k++) {
+    const nch = norm[start + k];
+    if (nch === WILD) continue;
+    if (nch !== key[k]) return -1;
+  }
+  return start + key.length;
+}
+
+/** Same length, at most 1 letter differs (WILD counts as match) */
+function matchOneSubAt(norm, start, key) {
+  if (key.length < FUZZY_MIN) return -1;
+  if (start + key.length > norm.length) return -1;
+  let diff = 0;
+  for (let k = 0; k < key.length; k++) {
+    const nch = norm[start + k];
+    if (nch === WILD) continue;
+    if (nch !== key[k]) {
+      diff++;
+      if (diff > 1) return -1;
+    }
+  }
+  return start + key.length;
+}
+
+/** One missing letter in the middle/end: stream shorter by 1 */
+function matchOneDeleteAt(norm, start, key) {
+  if (key.length < FUZZY_MIN) return -1;
+  // align key to norm window of length key.length - 1
+  const win = key.length - 1;
+  if (win < FUZZY_MIN - 1 || start + win > norm.length) return -1;
+  let si = start;
+  let skipped = false;
+  for (let k = 0; k < key.length; k++) {
+    if (si >= start + win) {
+      // rest of key must be the one deletion at end
+      if (k === key.length - 1 && !skipped) return start + win;
+      return -1;
+    }
+    const nch = norm[si];
+    if (nch === WILD || nch === key[k]) {
+      si++;
+      continue;
+    }
+    if (!skipped) {
+      skipped = true; // skip this key letter (not present in stream)
+      continue;
+    }
+    return -1;
+  }
+  return si === start + win ? si : -1;
+}
+
+function tryAddHit(hits, used, flat, start, end, key) {
+  if (end <= start) return false;
+  for (let j = start; j < end; j++) {
+    if (used[j]) return false;
+  }
+  const { indexMap, indexMapEnd, chars } = flat;
+  const origStart = indexMap[start];
+  const origEnd = (indexMapEnd || indexMap)[end - 1];
+  const short = key.length <= SHORT_MAX;
+  const leftOk = !isLetterAt(chars, origStart - 1);
+  const rightOk = !isLetterAt(chars, origEnd + 1);
+  if (short && !(leftOk && rightOk)) return false;
+  // fuzzy/prefix: always require soft boundaries to cut false positives inside normal words
+  if (key.length >= FUZZY_MIN && !(leftOk && rightOk)) {
+    // allow inside only for exact-ish? keep boundary for fuzzy
+    return false;
+  }
+  for (let j = start; j < end; j++) used[j] = 1;
+  hits.push({ origStart, origEnd, key });
+  return true;
+}
+
 function findMatches(flat, dict) {
-  const { norm, indexMap, indexMapEnd, chars } = flat;
+  const { norm } = flat;
   const n = norm.length;
   const used = new Uint8Array(n);
   const hits = [];
 
   for (const key of dict.list) {
-    const len = key.length;
-    if (len > n) continue;
-    let from = 0;
-    while (from <= n - len) {
-      const idx = norm.indexOf(key, from);
-      if (idx === -1) break;
-      let overlap = false;
-      for (let j = idx; j < idx + len; j++) {
-        if (used[j]) {
-          overlap = true;
-          break;
+    const klen = key.length;
+    if (klen > n + 1) continue;
+
+    for (let start = 0; start < n; start++) {
+      if (used[start]) continue;
+
+      // 1) exact / digit-wild
+      let end = matchWildAt(norm, start, key);
+      if (end !== -1 && tryAddHit(hits, used, flat, start, end, key)) continue;
+
+      // 2) one wrong letter (пидопас ≈ пидорас)
+      end = matchOneSubAt(norm, start, key);
+      if (end !== -1 && tryAddHit(hits, used, flat, start, end, key)) continue;
+
+      // 3) one letter missing in typing (пидрас / пидора…)
+      end = matchOneDeleteAt(norm, start, key);
+      if (end !== -1 && tryAddHit(hits, used, flat, start, end, key)) continue;
+
+      // 4) not finished: prefix of long word (пидора → пидорас)
+      if (klen >= PREFIX_MIN_KEY) {
+        for (const cut of [1, 2]) {
+          const plen = klen - cut;
+          if (plen < FUZZY_MIN) continue;
+          end = matchWildAt(norm, start, key.slice(0, plen));
+          if (end !== -1 && tryAddHit(hits, used, flat, start, end, key)) break;
         }
       }
-      if (!overlap) {
-        const origStart = indexMap[idx];
-        const origEnd = (indexMapEnd || indexMap)[idx + len - 1];
-        const short = len <= SHORT_MAX;
-        const leftOk = !isLetterAt(chars, origStart - 1);
-        const rightOk = !isLetterAt(chars, origEnd + 1);
-        if (!short || (leftOk && rightOk)) {
-          for (let j = idx; j < idx + len; j++) used[j] = 1;
-          hits.push({ origStart, origEnd, key });
-        }
-      }
-      from = idx + 1;
     }
   }
 
