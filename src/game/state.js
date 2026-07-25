@@ -9,7 +9,7 @@ function createGameState() {
     qTree: null,
     ws: null,
     wsUrl: null,
-    CONNECTION_URL: "ffa.agar.su",
+    CONNECTION_URL: "hostkey.agar.su",
     SELECTED_SERVER: null,
     currentWebSocketUrl: null,
     connectInProgress: false,

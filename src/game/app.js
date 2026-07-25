@@ -232,6 +232,7 @@ function initGame(wHandle) {
         history.replaceState(null, "", "#" + li.id);
         const titleEl = document.getElementById("serverTitle");
         if (titleEl) titleEl.textContent = `\u0421\u0442\u0430\u0442\u0438\u0441\u0442\u0438\u043A\u0430 ${li.id}`;
+        if (typeof wHandle.chekstats === "function") wHandle.chekstats();
       });
     });
   });

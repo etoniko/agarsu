@@ -1,6 +1,7 @@
 const GAME_SERVERS = {
-  // FFA (443): WS without PoW. /challenge on :443 returns 403 — skip PoW.
-  ffa: { host: "hostkey.agar.su", api: "https://ffa.agar.su", title: "FFA - \u041C\u043E\u0441\u043A\u0432\u0430", pow: false },
+  // FFA Moscow moved to HostKey node. /challenge returns 403 — skip PoW.
+  // api must match host — ffa.agar.su/checkStats is unreachable.
+  ffa: { host: "hostkey.agar.su", api: "https://hostkey.agar.su", title: "FFA - \u041C\u043E\u0441\u043A\u0432\u0430", pow: false },
   // FFA2 (6013): PoW required — api and host must both use :6013.
   ffa2: { host: "ffa.agar.su:6013", api: "https://ffa.agar.su:6013", title: "FFA - \u0410\u0433\u0430\u0440\u0438\u043E", pow: true },
   // Other game ports: /challenge returns 403 — connect without PoW (same as before ffa2 pow gate).

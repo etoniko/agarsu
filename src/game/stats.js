@@ -344,7 +344,7 @@ function setActiveFromHash(S) {
   if (activeLi) {
     activeLi.classList.add("active");
     if (titleEl) titleEl.textContent = `\u0421\u0442\u0430\u0442\u0438\u0441\u0442\u0438\u043A\u0430 ${hashWithoutParams}`;
-    if (!S.SELECTED_SERVER) {
+    if (activeLi.dataset.ip) {
       S.SELECTED_SERVER = activeLi.dataset.ip;
     }
     if (typeof S.wHandle.chekstats === "function") {
@@ -367,7 +367,7 @@ function attachStats(S, hooks) {
     try {
       const { obj } = await loadSkinListMap();
       applySkinListToState(S, { obj });
-      const statsUrl = getGameServerApiBase(S.CONNECTION_URL) + "/checkStats";
+      const statsUrl = getGameServerApiBase(S.SELECTED_SERVER || S.CONNECTION_URL) + "/checkStats";
       const response = await fetch(statsUrl, { method: "GET" });
       if (!response.ok) {
         throw new Error(`\u041E\u0448\u0438\u0431\u043A\u0430 \u0437\u0430\u043F\u0440\u043E\u0441\u0430: ${response.status}`);
