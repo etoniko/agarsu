@@ -3,13 +3,13 @@
   "private": true,
   "version": "2.0.0",
   "type": "module",
+  "description": "Agar.su client — single bundle, self-hosted assets, deferred ads; Mail.ru skipped when authorized",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
   },
   "devDependencies": {
-    "playwright": "^1.52.0",
     "vite": "^6.3.5"
   }
 }

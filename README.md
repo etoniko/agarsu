@@ -1,37 +1,23 @@
 # Agar.su client
 
-Клиент https://agar.su — Vite + ES modules.
+Клиент https://agar.su — Vite + ES modules (оптимизированная сборка).
 
-## Структура
+## Что сделано
 
-```text
-repo-root/
-  index.html
-  public/photo/      # игровые изображения
-  src/
-    main.js          # boot
-    config/          # servers, endpoints, keybinds
-    protocol/        # BinaryReader, opcodes
-    net/             # PoW challenge, WebSocket
-    game/            # логика игры
-    render/          # canvas, hud, skins, leaderboard
-    ui/              # lobby, shop, chat, account
-    api/ storage/ lib/
-    styles/main.css
-  .github/workflows/deploy.yml
-  CNAME
-```
+- Один JS-бандл (без code-split чанков)
+- Шрифты / Font Awesome / Material Icons / флаг RU — с `/vendor` (без CDN в boot)
+- Яндекс Ads и Mail.ru — после старта игры (не блокируют boot)
+- Mail.ru Top **не грузится**, если игрок авторизован (`accountToken`)
+- В iframe / `?embed=1` — без VK SDK
+- Без unpkg
 
 ## Команды
 
 ```bash
 npm install
-npm run dev
-npm run build
+npm run dev      # http://localhost:5175
+npm run build    # → dist/
+npm run preview  # http://localhost:4175
 ```
 
-## Проверено
-
-- Boot, `startGame` / `spectate`
-- Вход на FFA, WebSocket `wss://ffa.agar.su`, пакеты rx/tx
-- Движение мыши по canvas
+Embed: `/?embed=1`

@@ -2,6 +2,7 @@ import { bus, Events } from "../lib/events.js";
 import { hideStatics, showOverlays } from "../lib/dom.js";
 import { getAccountToken } from "../storage/local.js";
 import { attachSmoothScroll } from "../lib/smoothScroll.js";
+import { bindHomeAvatarUi } from "./skinsGallery.js";
 function showContent(id) {
   document.querySelectorAll(".menu-item").forEach((item) => item.classList.remove("active"));
   document.querySelectorAll(".content").forEach((content) => content.classList.remove("active"));
@@ -12,7 +13,11 @@ function showContent(id) {
   if (typeof window.updateShopAuthNotice === "function") window.updateShopAuthNotice();
   if (id === "skinslist" && typeof window.initSkinsGallery === "function") window.initSkinsGallery();
   if (id === "home") {
-    import("./skinsGallery.js").then((m) => m.bindHomeAvatarUi()).catch(() => {});
+    try {
+      bindHomeAvatarUi();
+    } catch {
+      /* ignore */
+    }
   }
   bus.emit(Events.SHOW_CONTENT, { id });
 }
