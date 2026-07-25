@@ -160,7 +160,8 @@ async function fetchConnectToken(apiBase, ui = {}) {
     return null;
   }
   if (!res.ok) {
-    if (res.status === 404) {
+    // 403/404 = this port has no PoW endpoint — connect without token
+    if (res.status === 404 || res.status === 403) {
       serverPowSupportCache.set(apiBase, false);
     }
     return null;
