@@ -213,26 +213,62 @@ function drawChatBoard(S, hooks) {
   }
   S.chatRenderedCount = S.chatBoard.length;
 }
+function isReversedScroll(el) {
+  if (!el) return false;
+  try {
+    return getComputedStyle(el).flexDirection.includes("reverse");
+  } catch {
+    return false;
+  }
+}
 function isScrollNearBottom(el) {
   if (!el) return true;
+  // column-reverse: визуальный «низ» (новые) = scrollTop ≈ 0
+  if (isReversedScroll(el)) {
+    return Math.abs(el.scrollTop) < 80;
+  }
   return el.scrollHeight - el.scrollTop - el.clientHeight < 80;
 }
+function getPrimaryChatScroller(preferred) {
+  const feed = preferred?.id === "chatX_feed" || preferred?.classList?.contains("chatX_feed")
+    ? preferred
+    : document.getElementById("chatX_feed");
+  const container = document.getElementById("chatX_container");
+  if (preferred && preferred !== feed && preferred !== container) {
+    if (preferred.scrollHeight > preferred.clientHeight + 1) return preferred;
+  }
+  if (container && container.scrollHeight > container.clientHeight + 1) return container;
+  if (feed && feed.scrollHeight > feed.clientHeight + 1) return feed;
+  return container || feed || preferred;
+}
+function scrollElementToLatest(el) {
+  if (!el) return;
+  if (el.scrollHeight <= el.clientHeight) {
+    if (isReversedScroll(el)) el.scrollTop = 0;
+    return;
+  }
+  if (isReversedScroll(el)) {
+    el.scrollTop = 0;
+  } else {
+    el.scrollTop = el.scrollHeight;
+  }
+}
+let chatScrollLockUntil = 0;
 function scrollChatToLatest(targetDiv) {
-  if (!targetDiv) return;
-  requestAnimationFrame(() => {
-    const scrollEl = (el) => {
-      if (!el || el.scrollHeight <= el.clientHeight) return;
-      el.scrollTop = el.scrollHeight;
-    };
-    scrollEl(targetDiv);
+  const run = () => {
+    chatScrollLockUntil = performance.now() + 200;
+    const primary = getPrimaryChatScroller(targetDiv);
+    scrollElementToLatest(targetDiv);
+    scrollElementToLatest(primary);
     const container = document.getElementById("chatX_container");
-    if (container && container !== targetDiv) {
-      if (getComputedStyle(container).flexDirection === "column-reverse") {
-        container.scrollTop = 0;
-      } else {
-        scrollEl(container);
-      }
+    if (container && container !== targetDiv && container !== primary) {
+      scrollElementToLatest(container);
     }
+  };
+  // два кадра: после layout + после возможной подгрузки аватаров/переносов
+  requestAnimationFrame(() => {
+    run();
+    requestAnimationFrame(run);
   });
 }
 function bindChatScrollTracking(S) {
@@ -241,12 +277,13 @@ function bindChatScrollTracking(S) {
   if (S.chatScrollBound) return;
   S.chatScrollBound = true;
   S.chatStickToBottom = true;
-  const onScroll = (el) => {
-    if (!el) return;
-    S.chatStickToBottom = isScrollNearBottom(el);
+  const onScroll = () => {
+    if (performance.now() < chatScrollLockUntil) return;
+    const primary = getPrimaryChatScroller();
+    S.chatStickToBottom = isScrollNearBottom(primary);
   };
-  feed?.addEventListener("scroll", () => onScroll(feed), { passive: true });
-  container?.addEventListener("scroll", () => onScroll(container), { passive: true });
+  feed?.addEventListener("scroll", onScroll, { passive: true });
+  container?.addEventListener("scroll", onScroll, { passive: true });
 }
 function renderChatMessage(S, hooks, lastMessage, msgIndex) {
   if (!lastMessage) return;
@@ -476,10 +513,6 @@ function renderChatMessage(S, hooks, lastMessage, msgIndex) {
     document.addEventListener("click", closeMenu, { once: true });
   });
   targetDiv.appendChild(msgDiv);
-  const stickToBottom = targetDialogId ? true : S.chatStickToBottom !== false;
-  if (stickToBottom) {
-    scrollChatToLatest(targetDiv);
-  }
   if (targetDialogId && S.dialogs[targetDialogId]) {
     S.dialogMessages[targetDialogId].push(msgDiv);
     const topAvatarImg = S.dialogs[targetDialogId].avatar.querySelector("img");
@@ -489,10 +522,22 @@ function renderChatMessage(S, hooks, lastMessage, msgIndex) {
       topAvatarImg.title = lastMessage.name || `User ${targetDialogId.replace("!ls", "")}`;
     }
   }
+  // Сначала trim, потом scroll — иначе после удаления старых сообщений скролл «отлипает»
   if (targetDialogId) {
     while (targetDiv.children.length > S.maxDialogMessages) targetDiv.removeChild(targetDiv.firstChild);
   } else {
     while (targetDiv.children.length > S.maxGlobalMessages) targetDiv.removeChild(targetDiv.firstChild);
+  }
+  const stickToBottom = targetDialogId ? true : S.chatStickToBottom !== false;
+  if (stickToBottom) {
+    scrollChatToLatest(targetDiv);
+    // аватар мог изменить высоту после load
+    const avatarImg = msgDiv.querySelector("img.chatX_avatar");
+    if (avatarImg && !avatarImg.complete) {
+      avatarImg.addEventListener("load", () => {
+        if (S.chatStickToBottom !== false || targetDialogId) scrollChatToLatest(targetDiv);
+      }, { once: true });
+    }
   }
   const chatInput = document.getElementById("ls");
   if (S.activeDialog) {

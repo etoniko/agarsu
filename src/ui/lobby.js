@@ -112,10 +112,17 @@ function initChatResize() {
   document.addEventListener(
     "wheel",
     (e) => {
-      if (!isPointerOverChat(e.clientX, e.clientY) || !chatContainer) return;
-      if (chatContainer.scrollHeight <= chatContainer.clientHeight) return;
-      chatContainer.scrollTop += e.deltaY;
+      if (!isPointerOverChat(e.clientX, e.clientY)) return;
+      const feed = document.getElementById("chatX_feed");
+      let scroller = null;
+      if (feed && feed.scrollHeight > feed.clientHeight + 1) scroller = feed;
+      else if (chatContainer && chatContainer.scrollHeight > chatContainer.clientHeight + 1) scroller = chatContainer;
+      if (!scroller) return;
+      const reversed = getComputedStyle(scroller).flexDirection.includes("reverse");
+      // column-reverse: положительный deltaY (колесо вниз) должен уводить к старым = увеличивать scrollTop
+      scroller.scrollTop += e.deltaY;
       e.preventDefault();
+      void reversed;
     },
     { passive: false }
   );
