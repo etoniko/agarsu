@@ -1,25 +1,34 @@
 import { defineConfig } from "vite";
 import { resolve } from "path";
-var stdin_default = defineConfig({
+
+export default defineConfig({
   root: ".",
   publicDir: "public",
+  base: "/",
   build: {
     outDir: "dist",
     emptyOutDir: true,
-    sourcemap: true,
+    sourcemap: false,
+    cssCodeSplit: false,
+    modulePreload: { polyfill: false },
+    target: "es2018",
+    assetsInlineLimit: 0,
     rollupOptions: {
-      input: resolve(__dirname, "index.html")
+      input: resolve(__dirname, "index.html"),
+      output: {
+        inlineDynamicImports: true,
+        entryFileNames: "assets/client-[hash].js",
+        chunkFileNames: "assets/client-[hash].js",
+        assetFileNames: "assets/[name]-[hash][extname]"
+      }
     }
   },
   server: {
-    port: 5174,
+    port: 5175,
     strictPort: true,
     open: false
   },
   preview: {
-    port: 4174
+    port: 4175
   }
 });
-export {
-  stdin_default as default
-};
