@@ -2418,7 +2418,7 @@ input{font-size:16px;}
   #shop .shop-addon-toggle .material-icons{font-size:22px;}
 }
 #onchat{position:absolute;left:10px;bottom:10px;border:solid #ffffff26 1px;border-radius:25px;background:rgba(0, 0, 0, .3);width:40px;height:40px;padding:5px;display:none;align-items:center;justify-content:center;cursor:pointer;}
-.chatX_container{display: flex;overflow-y: auto;flex-direction: column-reverse;height: 100%;}
+.chatX_container{display:flex;overflow:hidden;flex-direction:column;flex:1;min-height:0;height:auto;}
 .chatX_top_avatar{cursor: pointer;}
 .chatX_top_avatar:hover{opacity: 0.5;transform:scale(1.2);}
 .chat-context-menu {position: absolute;background: rgb(0 0 0 / 74%);color: rgb(255, 255, 255);padding: 5px;border-radius: 5px;z-index: 1000;}
@@ -2459,6 +2459,7 @@ input{font-size:16px;}
 .chatX_feed{
   flex:1;
   overflow-y:auto;
+  overflow-x:hidden;
   display:flex;
   flex-direction:column;
   gap:8px;
