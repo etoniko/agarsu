@@ -1,5 +1,6 @@
 import { normalizeNick } from "../lib/nick.js";
 import { censorText, countHits } from "../lib/antimat.js";
+import { attachSmoothScroll } from "../lib/smoothScroll.js";
 import { SKIN_FALLBACK_URL } from "../config/endpoints.js";
 import { setImgSrc } from "../render/skins.js";
 import { getLevel } from "../game/stats.js";
@@ -221,30 +222,19 @@ let chatScrollLockUntil = 0;
 function scrollChatToLatest(targetDiv) {
   const el = targetDiv || document.getElementById("chatX_feed");
   if (!el) return;
-  const go = (smooth) => {
-    chatScrollLockUntil = performance.now() + (smooth ? 450 : 250);
-    const top = el.scrollHeight + 1e6;
-    try {
-      el.scrollTo({ top, behavior: smooth ? "smooth" : "auto" });
-    } catch {
-      el.scrollTop = top;
-    }
-    const last = el.lastElementChild;
-    if (last) {
-      try {
-        last.scrollIntoView({ block: "end", inline: "nearest", behavior: smooth ? "smooth" : "auto" });
-      } catch {
-        try { last.scrollIntoView(false); } catch { /* ignore */ }
-      }
-    }
+  const go = () => {
+    chatScrollLockUntil = performance.now() + 480;
+    const scroller = attachSmoothScroll(el);
+    scroller.toEnd();
   };
-  // один плавный уход вниз после layout
-  requestAnimationFrame(() => go(true));
+  requestAnimationFrame(go);
 }
 function bindChatScrollTracking(S) {
   if (S.chatScrollBound) return;
   S.chatScrollBound = true;
   S.chatStickToBottom = true;
+  const feed = document.getElementById("chatX_feed");
+  if (feed) attachSmoothScroll(feed);
   const onScroll = (el) => {
     if (!el) return;
     if (performance.now() < chatScrollLockUntil) {
@@ -253,8 +243,7 @@ function bindChatScrollTracking(S) {
     }
     S.chatStickToBottom = isScrollNearBottom(el);
   };
-  // Слушаем только ленты сообщений (не column-reverse container)
-  document.getElementById("chatX_feed")?.addEventListener("scroll", (e) => onScroll(e.currentTarget), { passive: true });
+  feed?.addEventListener("scroll", (e) => onScroll(e.currentTarget), { passive: true });
   document.getElementById("chatX_container")?.addEventListener(
     "scroll",
     (e) => {

@@ -2465,7 +2465,6 @@ input{font-size:16px;}
   gap:8px;
   padding-right:3px;
   min-height:0;
-  scroll-behavior:smooth;
 }
 /* Canonical scrollbar = chatX_feed (2px, no arrows, no horizontal bar) */
 .chatX_feed::-webkit-scrollbar {

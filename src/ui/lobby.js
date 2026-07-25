@@ -1,6 +1,7 @@
 import { bus, Events } from "../lib/events.js";
 import { hideStatics, showOverlays } from "../lib/dom.js";
 import { getAccountToken } from "../storage/local.js";
+import { attachSmoothScroll } from "../lib/smoothScroll.js";
 function showContent(id) {
   document.querySelectorAll(".menu-item").forEach((item) => item.classList.remove("active"));
   document.querySelectorAll(".content").forEach((content) => content.classList.remove("active"));
@@ -116,8 +117,13 @@ function initChatResize() {
       const feed = document.querySelector("#chatX_container .chatX_feed:not([style*='display: none'])")
         || document.getElementById("chatX_feed");
       if (!feed || feed.scrollHeight <= feed.clientHeight + 1) return;
-      feed.scrollTop += e.deltaY;
       e.preventDefault();
+      const scroller = attachSmoothScroll(feed, { ease: 0.18 });
+      // deltaMode: 1 = lines, 2 = pages
+      let dy = e.deltaY;
+      if (e.deltaMode === 1) dy *= 16;
+      else if (e.deltaMode === 2) dy *= feed.clientHeight;
+      scroller.by(dy);
     },
     { passive: false }
   );
