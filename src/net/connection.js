@@ -1,4 +1,4 @@
-import { getGameServerApiBase, getGameServerWssUrl } from "../config/servers.js";
+import { getGameServerApiBase, getGameServerWssUrl, serverRequiresPow } from "../config/servers.js";
 import { fetchConnectToken as fetchConnectTokenFromApi } from "./challenge.js";
 import { openGameSocket, safeCloseSocket } from "./wsClient.js";
 import { prepareData, encodeHandshake, encodePing, ClientOpcode } from "../protocol/opcodes.js";
@@ -70,6 +70,9 @@ function createConnection(S, hooks = {}) {
     showConnecting();
   }
   async function fetchConnectToken(gameHost) {
+    if (!serverRequiresPow(gameHost)) {
+      return null;
+    }
     const apiBase = getGameServerApiBase(gameHost);
     return fetchConnectTokenFromApi(apiBase, {
       setText: setConnectVerifyText,
@@ -115,6 +118,14 @@ function createConnection(S, hooks = {}) {
         return;
       }
       if (attemptId !== S.connectAttemptId) return;
+      if (serverRequiresPow(host) && !connectToken) {
+        if (isSpectMode()) {
+          scheduleSpectReconnect();
+        } else {
+          showReconnectPanel("\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043F\u0440\u043E\u0439\u0442\u0438 \u043F\u0440\u043E\u0432\u0435\u0440\u043A\u0443 \u0441\u0435\u0440\u0432\u0435\u0440\u0430. \u041D\u0430\u0436\u043C\u0438\u0442\u0435, \u0447\u0442\u043E\u0431\u044B \u043F\u043E\u0432\u0442\u043E\u0440\u0438\u0442\u044C.");
+        }
+        return;
+      }
       if (connectToken === null) {
         hideConnectVerifyOverlay();
       }
