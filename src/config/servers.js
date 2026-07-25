@@ -1,5 +1,6 @@
 const GAME_SERVERS = {
   ffa: { host: "ffa.agar.su", api: "https://ffa.agar.su", title: "FFA - \u041C\u043E\u0441\u043A\u0432\u0430" },
+  ffa2: { host: "ffa.agar.su:6013", api: "https://ffa.agar.su", title: "FFA - \u0410\u0433\u0430\u0440\u0438\u043E" },
   ms: { host: "ffa.agar.su:6002", api: "https://ffa.agar.su:6002", title: "MegaSplit" },
   pvp1: { host: "ffa.agar.su:6004", api: "https://ffa.agar.su:6004", title: "pvp1: 1x1 ffa 1k" },
   pvp2: { host: "ffa.agar.su:6005", api: "https://ffa.agar.su:6005", title: "pvp2: 2x2 ms 1k" },
