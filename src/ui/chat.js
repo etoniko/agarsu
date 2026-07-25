@@ -221,25 +221,25 @@ let chatScrollLockUntil = 0;
 function scrollChatToLatest(targetDiv) {
   const el = targetDiv || document.getElementById("chatX_feed");
   if (!el) return;
-  const go = () => {
-    chatScrollLockUntil = performance.now() + 250;
-    // надёжный низ ленты
-    el.scrollTop = el.scrollHeight + 1e6;
+  const go = (smooth) => {
+    chatScrollLockUntil = performance.now() + (smooth ? 450 : 250);
+    const top = el.scrollHeight + 1e6;
+    try {
+      el.scrollTo({ top, behavior: smooth ? "smooth" : "auto" });
+    } catch {
+      el.scrollTop = top;
+    }
     const last = el.lastElementChild;
     if (last) {
       try {
-        last.scrollIntoView({ block: "end", inline: "nearest", behavior: "auto" });
+        last.scrollIntoView({ block: "end", inline: "nearest", behavior: smooth ? "smooth" : "auto" });
       } catch {
         try { last.scrollIntoView(false); } catch { /* ignore */ }
       }
     }
-    el.scrollTop = el.scrollHeight + 1e6;
   };
-  go();
-  requestAnimationFrame(() => {
-    go();
-    requestAnimationFrame(go);
-  });
+  // один плавный уход вниз после layout
+  requestAnimationFrame(() => go(true));
 }
 function bindChatScrollTracking(S) {
   if (S.chatScrollBound) return;
