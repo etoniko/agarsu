@@ -5,6 +5,7 @@
  *
  * — латиница → кириллица (транслит)
  * — цифры = wildcard (одна любая буква): пи3орас ≈ пидорас
+ * — растянутые буквы схлопываются: пииизда / хууууй / бляяяя → база
  * — 1 ошибка / не дописал (для слов ≥5–6 букв)
  */
 
@@ -118,7 +119,30 @@ function seqToNorm(seq) {
     indexMapEnd.push(seq[i].i);
     i++;
   }
-  return { norm: norm.join(""), indexMap, indexMapEnd };
+  return collapseRuns(norm.join(""), indexMap, indexMapEnd);
+}
+
+/**
+ * пииизда / хууууй / бляяяя / ппппииииззздааа → схлопнуть повтор букв
+ * пппиииииззздаааааа → пизда
+ */
+function collapseRuns(normStr, indexMap, indexMapEnd) {
+  if (!normStr.length) return { norm: "", indexMap: [], indexMapEnd: [] };
+  const outN = [];
+  const outS = [];
+  const outE = [];
+  for (let i = 0; i < normStr.length; i++) {
+    const ch = normStr[i];
+    const prev = outN.length ? outN[outN.length - 1] : null;
+    if (prev !== null && prev === ch) {
+      outE[outE.length - 1] = indexMapEnd[i];
+      continue;
+    }
+    outN.push(ch);
+    outS.push(indexMap[i]);
+    outE.push(indexMapEnd[i]);
+  }
+  return { norm: outN.join(""), indexMap: outS, indexMapEnd: outE };
 }
 
 function mapChar(ch) {
