@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Админка турниров</title>
+<style>
+:root{
+  --bg:#060b14;--panel:#0c1524;--card:#111d30;--card2:#162640;
+  --line:#1e3354;--txt:#e6eef8;--dim:#8fa3be;--mute:#5c7394;
+  --blue:#4d9fff;--blue2:#7ab8ff;--red:#ff5c5c;--ok:#3ecf8e;
+  --fight-w:220px;--row-h:34px;
+}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.45 system-ui,sans-serif;background:var(--bg);color:var(--txt);height:100vh;display:flex;overflow:hidden}
+button,input,select,textarea{font:inherit}
+input,select,textarea{background:var(--card);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:8px 10px}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--blue);outline-offset:0}
+button{cursor:pointer;border:0;border-radius:8px;padding:8px 14px;background:var(--card2);color:var(--txt);border:1px solid var(--line)}
+button:hover{border-color:var(--blue)}
+button.primary{background:#1a3a66;border-color:var(--blue);color:var(--blue2)}
+button.danger{color:var(--red)}
+.side{width:280px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column}
+.side-head{padding:16px;border-bottom:1px solid var(--line)}
+.side-head h1{margin:0 0 10px;font-size:16px}
+.side-list{flex:1;overflow:auto;padding:8px}
+.item{display:block;width:100%;text-align:left;padding:10px 12px;border-radius:8px;margin-bottom:4px;background:transparent;border:1px solid transparent;color:inherit}
+.item:hover,.item.active{background:var(--card);border-color:var(--line)}
+.item b{display:block;font-size:13px}
+.item small{display:block;color:var(--dim);font-size:11px;margin-top:3px}
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.top{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.top .grow{flex:1}
+.scroll{flex:1;overflow:auto;padding:18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.field label{display:block;font-size:11px;color:var(--mute);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em}
+.section{margin-bottom:28px}
+.section h2{margin:0 0 12px;font-size:15px}
+.teams{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.team{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px}
+.team-head{font-size:12px;color:var(--dim);margin-bottom:8px}
+.team input{width:100%;margin-bottom:6px}
+.map-wrap{overflow:auto;padding:24px 16px;background:#071018;border-radius:12px;border:1px solid var(--line)}
+.map{display:inline-block;min-width:100%;vertical-align:top}
+.map-tags{display:grid;grid-template-columns:repeat(var(--cols),max-content);gap:28px;margin-bottom:14px;justify-content:center}
+.map-tags span{text-align:center;font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
+.map-grid{display:grid;grid-template-columns:repeat(var(--cols),max-content);gap:28px;align-items:stretch;justify-content:center}
+.lane{display:grid;grid-template-rows:repeat(var(--rows,6),minmax(calc(var(--row-h)*2 + 14px),1fr));min-height:var(--colh);position:relative;align-content:stretch;gap:6px}
+.lane-l::after,.lane-r::after{content:'';position:absolute;top:4%;bottom:4%;width:14px;pointer-events:none}
+.lane-l::after{right:-12px;border-right:2px solid var(--line)}
+.lane-r::after{left:-12px;border-left:2px solid var(--line)}
+.lane-m{display:flex;grid-template-rows:none;justify-content:center;align-items:center;flex-direction:column;gap:10px}
+.final-roster{display:flex;gap:10px;align-items:stretch;justify-content:center;width:100%}
+.final-side{display:flex;flex-direction:column;gap:6px;flex:1;max-width:var(--fight-w)}
+.final-side .cell{background:var(--card);border:1px solid var(--line);border-radius:10px}
+.final-rr{display:flex;flex-direction:column;gap:8px;width:100%;max-width:calc(var(--fight-w) * 2 + 40px)}
+.final-rr .fight.crown{width:100%;max-width:var(--fight-w);align-self:center}
+.final-rr-lbl{text-align:center;font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin:2px 0}
+.final-cross-lbl{text-align:center;font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--blue2);margin:8px 0 4px}
+.final-block{width:100%;max-width:calc(var(--fight-w)*2 + 48px)}
+.final-pool{display:flex;gap:12px;justify-content:center;width:100%;margin-bottom:4px}
+.final-pool-col{flex:1;max-width:var(--fight-w);display:flex;flex-direction:column;gap:6px}
+.final-pool-hdr{text-align:center;font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin-bottom:2px}
+.final-slot{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.final-slot.finalist{border-color:var(--blue);box-shadow:0 0 0 1px rgba(77,159,255,.25)}
+.final-podium{display:flex;gap:10px;justify-content:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);width:100%;max-width:calc(var(--fight-w)*2 + 48px)}
+.podium-item{flex:1;max-width:140px;text-align:center;padding:10px 8px;border-radius:10px;background:var(--card);border:1px solid var(--line)}
+.podium-item .place{display:block;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px;color:var(--mute)}
+.podium-item .pname{font-size:12px;font-weight:600;line-height:1.25;word-break:break-word}
+.podium-item.gold{border-color:var(--red);background:rgba(255,92,92,.1)}
+.podium-item.gold .place{color:#ffb4b4}
+.podium-item.silver{border-color:var(--line)}
+.podium-item.bronze{border-color:var(--line);opacity:.9}
+.fight{width:var(--fight-w);background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;flex-shrink:0;box-shadow:0 4px 16px rgba(0,0,0,.25);align-self:center;position:relative}
+.fight.advance{border-style:dashed;border-color:var(--blue);opacity:.95}
+.fight.advance .cell.pending .name{color:var(--mute);font-size:12px;font-style:italic}
+.lane-l .fight::after,.lane-r .fight::after{content:'';position:absolute;top:50%;width:14px;height:2px;background:var(--line);pointer-events:none;transform:translateY(-50%)}
+.lane-l .fight::after{right:-14px}
+.lane-r .fight::after{left:-14px}
+.fight.crown{border-color:var(--red)}
+.fight.crown .cap{background:var(--red)}
+.cap{height:3px;background:var(--line)}
+.mid{height:1px;background:var(--line)}
+.cell{cursor:pointer}
+.cell.pickable{cursor:pointer}
+.cell.lose.pickable:hover{opacity:.85;background:var(--card2)}
+.cell.win.pickable:hover,.cell.win-pick.pickable:hover{filter:brightness(1.08)}
+.cell.win{background:rgba(77,159,255,.14)}
+.cell.lose{opacity:.42}
+.cell.pending{opacity:.72}
+.cell.lose.pickable{opacity:.58;cursor:pointer}
+.fight.crown .cell.pending .name{color:var(--dim);font-weight:400}
+.fight.crown .cell.pending .row:first-child .name::before{display:none}
+.cell.win-pick{background:rgba(255,92,92,.14)}
+.fight.crown .cell.win-pick .name{color:#ffb4b4;font-weight:600}
+.row{display:flex;align-items:center;gap:8px;padding:0 10px;height:var(--row-h);min-height:var(--row-h)}
+.name{flex:1;min-width:0;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cell.win .name{font-weight:600;color:#fff}
+.cell.win .row:first-child .name::before{content:'';display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--blue);margin-right:6px}
+.map-empty{text-align:center;color:var(--mute);padding:24px}
+.status{padding:8px 14px;font-size:12px;color:var(--dim);border-top:1px solid var(--line)}
+.status.ok{color:var(--ok)}
+.status.err{color:var(--red)}
+.hint{font-size:12px;color:var(--mute);margin-top:6px}
+a.link{color:var(--blue2)}
+@media(max-width:900px){
+  body{flex-direction:column}
+  .side{width:100%;max-height:34vh}
+  :root{--fight-w:190px}
+}
+</style>
+</head>
+<body>
+<aside class="side">
+  <div class="side-head">
+    <h1>Архив турниров</h1>
+    <button type="button" class="primary" id="btn-new" style="width:100%">+ Новый турнир</button>
+  </div>
+  <div class="side-list" id="list"></div>
+</aside>
+<main class="main">
+  <div class="top">
+    <button type="button" class="primary" id="btn-save">Сохранить</button>
+    <button type="button" id="btn-export">Скачать JSON</button>
+    <label><input type="file" id="file-import" accept=".json,application/json" hidden><button type="button" id="btn-import">Импорт</button></label>
+    <button type="button" class="danger" id="btn-del">Удалить</button>
+    <span class="grow"></span>
+    <a class="link" id="view-link" href="index.html" target="_blank" hidden>Открыть на сайте ↗</a>
+  </div>
+  <div class="scroll" id="workspace">
+    <p class="hint">Данные лежат в <code>archive/</code>: <code>manifest.json</code>, <code>1.json</code>, <code>2.json</code>… Самый большой номер — текущий турнир. «Сохранить» скачает файлы — залей их в <code>archive/</code> на сервер.</p>
+  </div>
+  <div class="status" id="status"></div>
+</main>
+
+<script>
+(function () {
+  var ARCHIVE = 'archive/';
+
+  var manifest = { tournaments: [] };
+  var cache = {};
+  var listEl = document.getElementById('list');
+  var workspace = document.getElementById('workspace');
+  var statusEl = document.getElementById('status');
+  var viewLink = document.getElementById('view-link');
+  var list = [];
+  var cur = null;
+  var dirty = false;
+
+  var MODES = ['Classic', 'FFA Teams', 'Gigasplit', 'Megasplit', 'Crazy', 'Другое'];
+  var MAX_SLOTS = 512;
+
+  function $(id) { return document.getElementById(id); }
+
+  function setStatus(msg, ok) {
+    statusEl.textContent = msg || '';
+    statusEl.className = 'status' + (ok === true ? ' ok' : ok === false ? ' err' : '');
+  }
+
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function playersPerTeam(t) {
+    var m = String(t.format || '1x1').match(/^(\d+)x\d+$/i);
+    return m ? parseInt(m[1], 10) : 1;
+  }
+
+  function isSolo(d) { return playersPerTeam(d) === 1; }
+
+  function unitsCap(d) { return isSolo(d) ? 'Слотов' : 'Команд'; }
+
+  function unitsInGrid(d) { return isSolo(d) ? 'слотов' : 'команд'; }
+
+  function defaultPlayerName(i, j, perTeam) {
+    if (perTeam === 1) return 'Слот ' + (i + 1);
+    return 'Игрок ' + (i * perTeam + j + 1);
+  }
+
+  function sideIndices(n, side) {
+    var leftCount = Math.ceil(n / 2);
+    var start = side === 'left' ? 0 : leftCount;
+    var count = side === 'left' ? leftCount : n - leftCount;
+    var out = [];
+    for (var i = 0; i < count; i++) out.push(start + i);
+    return out;
+  }
+
+  function roundsPerSide(n) {
+    var h = Math.ceil(n / 2), r = 0;
+    while (h > 1) { r++; h = Math.ceil(h / 2); }
+    return r;
+  }
+
+  function sideParticipantsAtRound(n, round) {
+    var count = Math.ceil(n / 2), r;
+    for (r = 0; r < round; r++) count = Math.ceil(count / 2);
+    return count;
+  }
+
+  function round0Pairs(side, data) {
+    var idx = sideIndices(data.totalTeams, side), pairs = [], i;
+    for (i = 0; i + 1 < idx.length; i += 2) pairs.push([idx[i], idx[i + 1]]);
+    return pairs;
+  }
+
+  function maxSideRows(data) {
+    return Math.max(
+      round0Pairs('left', data).length,
+      round0Pairs('right', data).length,
+      1
+    );
+  }
+
+  function gridRowStyle(lane) {
+    var r1 = Math.floor(lane) + 1;
+    var r2 = Math.ceil(lane) + 2;
+    if (r2 <= r1) r2 = r1 + 1;
+    return r1 + ' / ' + r2;
+  }
+
+  function fightLane(round, matchIdx) {
+    if (round === 0) return matchIdx;
+    return (fightLane(round - 1, matchIdx * 2) + fightLane(round - 1, matchIdx * 2 + 1)) / 2;
+  }
+
+  function getRoundWinner(side, round, matchIdx, data) {
+    var row = data.winners[side] && data.winners[side][round];
+    if (!row || row[matchIdx] == null) return null;
+    return Number(row[matchIdx]);
+  }
+
+  function getTreeMatchState(side, round, matchIdx, data) {
+    var lane = fightLane(round, matchIdx);
+    if (round === 0) {
+      var pairs = round0Pairs(side, data);
+      if (matchIdx >= pairs.length) return null;
+      return { type: 'fight', matchIdx: matchIdx, pair: pairs[matchIdx], lane: lane };
+    }
+    var f0 = matchIdx * 2, f1 = matchIdx * 2 + 1;
+    var w0 = getRoundWinner(side, round - 1, f0, data);
+    var w1 = getRoundWinner(side, round - 1, f1, data);
+    if (w0 != null && w1 != null) {
+      return { type: 'fight', matchIdx: matchIdx, pair: [w0, w1], lane: lane };
+    }
+    if (w0 != null) {
+      return { type: 'partial', matchIdx: matchIdx, team: w0, top: true, lane: lane };
+    }
+    if (w1 != null) {
+      return { type: 'partial', matchIdx: matchIdx, team: w1, top: false, lane: lane };
+    }
+    return null;
+  }
+
+  function expectedPairCount(side, round, data) {
+    var n = side === 'left' ? Math.ceil(data.totalTeams / 2) : Math.floor(data.totalTeams / 2);
+    return Math.max(0, Math.floor(n / Math.pow(2, round + 1)));
+  }
+
+  function roundParticipants(side, round, data) {
+    if (round === 0) return sideIndices(data.totalTeams, side);
+    return roundAdvancers(side, round - 1, data);
+  }
+
+  function roundPairs(side, round, data) {
+    var count = round === 0
+      ? round0Pairs(side, data).length
+      : expectedPairCount(side, round, data);
+    var pairs = [], i, state;
+    for (i = 0; i < count; i++) {
+      state = getTreeMatchState(side, round, i, data);
+      if (state && state.type === 'fight') pairs.push(state.pair);
+    }
+    return pairs;
+  }
+
+  function isRoundComplete(side, round, data) {
+    var count = expectedPairCount(side, round, data);
+    if (!count) return true;
+    var winners = data.winners[side][round] || [];
+    for (var i = 0; i < count; i++) {
+      if (winners[i] == null) return false;
+    }
+    return true;
+  }
+
+  function roundAdvancers(side, round, data) {
+    var count = expectedPairCount(side, round, data);
+    var winners = data.winners[side][round] || [];
+    var out = [], i;
+    for (i = 0; i < count; i++) {
+      if (winners[i] != null) out.push(Number(winners[i]));
+    }
+    return out;
+  }
+
+  function getColumnItems(side, round, data) {
+    var count = round === 0
+      ? round0Pairs(side, data).length
+      : expectedPairCount(side, round, data);
+    var items = [], i, state;
+    for (i = 0; i < count; i++) {
+      state = getTreeMatchState(side, round, i, data);
+      if (!state) continue;
+      state.gridRow = gridRowStyle(state.lane);
+      items.push(state);
+    }
+    return items;
+  }
+
+  function isSideComplete(data, side) {
+    var rounds = roundsPerSide(data.totalTeams), r;
+    for (r = 0; r < rounds; r++) {
+      if (!isRoundComplete(side, r, data)) return false;
+    }
+    return true;
+  }
+
+  function sideStopRound(n) {
+    var rounds = roundsPerSide(n), r;
+    for (r = 0; r < rounds; r++) {
+      if (sideParticipantsAtRound(n, r + 1) === 3) return r;
+    }
+    return -1;
+  }
+
+  function displayRounds(data) {
+    var stop = sideStopRound(data.totalTeams);
+    return stop >= 0 ? stop + 1 : roundsPerSide(data.totalTeams);
+  }
+
+  function usesTripleFinal(data) {
+    return sideStopRound(data.totalTeams) >= 0;
+  }
+
+  function getSideFinalists(data, side) {
+    var sr = sideStopRound(data.totalTeams);
+    if (sr < 0 || !isRoundComplete(side, sr, data)) return null;
+    var count = expectedPairCount(side, sr, data);
+    var winners = data.winners[side][sr] || [];
+    var out = [], i;
+    for (i = 0; i < count; i++) {
+      if (winners[i] != null) out.push(Number(winners[i]));
+    }
+    if (out.length < 3) {
+      var parts = roundParticipants(side, sr, data);
+      var inFight = {}, j, st;
+      for (j = 0; j < count; j++) {
+        st = getTreeMatchState(side, sr, j, data);
+        if (st && st.type === 'fight') st.pair.forEach(function (x) { inFight[x] = true; });
+      }
+      parts.forEach(function (t) {
+        if (!inFight[t] && out.indexOf(t) < 0) out.push(t);
+      });
+    }
+    return out.length === 3 ? out : null;
+  }
+
+  function isFinalSixReady(data) {
+    return !!(getSideFinalists(data, 'left') && getSideFinalists(data, 'right'));
+  }
+
+  function getFinalSix(data) {
+    if (!isFinalSixReady(data)) return null;
+    return { left: getSideFinalists(data, 'left'), right: getSideFinalists(data, 'right') };
+  }
+
+  function getCrossTriplet(data) {
+    var six = getFinalSix(data);
+    if (!six) return null;
+    var cross = data.winners.finalCross || [];
+    var out = [], i;
+    for (i = 0; i < 3; i++) {
+      if (cross[i] == null) return null;
+      out.push(Number(cross[i]));
+    }
+    return out;
+  }
+
+  function teamLabel(data, teamIdx) {
+    var t = data.teams[teamIdx];
+    if (!t) return '—';
+    var p = (t.players || []).filter(Boolean);
+    return p.length ? p.join(' · ') : '—';
+  }
+
+  function getSideChampion(data, side) {
+    if (usesTripleFinal(data)) {
+      var tri = getCrossTriplet(data);
+      if (!tri) return null;
+      var rr = computeRRRankings(data, tri);
+      return rr.length ? rr[0].team : null;
+    }
+    if (!isSideComplete(data, side)) return null;
+    var rounds = roundsPerSide(data.totalTeams);
+    if (rounds === 0) {
+      var idx = sideIndices(data.totalTeams, side);
+      return idx.length === 1 ? idx[0] : null;
+    }
+    var r, row, i;
+    for (r = rounds - 1; r >= 0; r--) {
+      row = data.winners[side][r] || [];
+      for (i = 0; i < row.length; i++) {
+        if (row[i] != null) return Number(row[i]);
+      }
+    }
+    return null;
+  }
+
+  function ensureWinners(data) {
+    if (!data.winners) data.winners = { left: [], right: [], final: null, finalCross: [null, null, null], finalRR: [null, null, null] };
+    if (!data.winners.left) data.winners.left = [];
+    if (!data.winners.right) data.winners.right = [];
+    if (!data.winners.finalCross) data.winners.finalCross = [null, null, null];
+    if (!data.winners.finalRR) data.winners.finalRR = [null, null, null];
+  }
+
+  function columnLabels(data) {
+    var n = data.totalTeams;
+    var rounds = displayRounds(data);
+    var tags = [];
+    var r;
+    for (r = 0; r < rounds; r++) tags.push('1/' + sideParticipantsAtRound(n, r));
+    tags.push('финал');
+    for (r = rounds - 1; r >= 0; r--) tags.push('1/' + sideParticipantsAtRound(n, r));
+    return tags;
+  }
+
+  function isFightEditable(side, round, matchIdx, data) {
+    if (round === 0) return true;
+    var row = data.winners[side] && data.winners[side][round];
+    if (row && row[matchIdx] != null) return true;
+    var state = getTreeMatchState(side, round, matchIdx, data);
+    return state != null && state.type === 'fight';
+  }
+
+  function isMatchEditable(side, round, data, matchIdx) {
+    if (side === 'final' || side === 'final-rr' || side === 'final-cross') return true;
+    return isFightEditable(side, round, matchIdx, data);
+  }
+
+  function cellClass(teamIdx, pick, editable, crown, pending) {
+    var cls = 'cell';
+    if (pending) return cls + ' pending pickable';
+    if (!editable) return cls + ' lose';
+    cls += ' pickable';
+    if (pick == null) return cls;
+    if (teamEq(pick, teamIdx)) return cls + (crown ? ' win-pick' : ' win');
+    return cls + ' lose';
+  }
+
+  function teamEq(a, b) {
+    return a != null && b != null && Number(a) === Number(b);
+  }
+
+  function renderCell(side, round, matchIdx, teamIdx, cls, data, pick) {
+    var t = data.teams[teamIdx] || { players: [] };
+    var tip = pick == null ? 'Выбрать победителя' :
+      teamEq(pick, teamIdx) ? 'Повторный клик — отменить' : 'Выбрать победителя';
+    var html = '<div class="' + cls + '" data-side="' + side + '" data-round="' + round +
+      '" data-match="' + matchIdx + '" data-team="' + teamIdx + '" title="' + esc(tip) + '">';
+    (t.players || ['']).forEach(function (p) {
+      html += '<div class="row"><span class="name" title="' + esc(p) + '">' + esc(p || '—') + '</span></div>';
+    });
+    return html + '</div>';
+  }
+
+  function renderFightBox(side, round, matchIdx, pair, data, gridRow) {
+    var pick = data.winners[side][round] && data.winners[side][round][matchIdx];
+    var editable = isFightEditable(side, round, matchIdx, data);
+    var style = gridRow ? ' style="grid-row:' + gridRow + '"' : '';
+    var html = '<div class="fight"' + style + '><div class="cap"></div>';
+    pair.forEach(function (ti, idx) {
+      html += renderCell(side, round, matchIdx, ti, cellClass(ti, pick, editable, false), data, pick);
+      if (idx === 0) html += '<div class="mid"></div>';
+    });
+    return html + '</div>';
+  }
+
+  function renderPartialBox(side, round, item, data) {
+    var t = data.teams[item.team] || { players: [] };
+    var pending = '<div class="cell pending"><div class="row"><span class="name">ожидание соперника</span></div></div>';
+    var win = '';
+    (t.players || ['']).forEach(function (p) {
+      win += '<div class="cell win"><div class="row"><span class="name" title="' + esc(p) + '">' + esc(p || '—') + '</span></div></div>';
+    });
+    var html = '<div class="fight advance" style="grid-row:' + item.gridRow + '"><div class="cap"></div>';
+    if (item.top) html += win + '<div class="mid"></div>' + pending;
+    else html += pending + '<div class="mid"></div>' + win;
+    return html + '</div>';
+  }
+
+  function getFinalPair(data) {
+    if (usesTripleFinal(data)) return null;
+    if (data.totalTeams <= 1) return null;
+    if (data.totalTeams === 2) return [0, 1];
+    var lc = getSideChampion(data, 'left');
+    var rc = getSideChampion(data, 'right');
+    if (lc == null || rc == null) return null;
+    return [lc, rc];
+  }
+
+  function finalRRPairs() {
+    return [[0, 1], [0, 2], [1, 2]];
+  }
+
+  function finalRRLabels() {
+    return ['1 vs 2', '1 vs 3', '2 vs 3'];
+  }
+
+  function computeRRRankings(data, triplet) {
+    var rr = data.winners.finalRR || [];
+    var pairs = finalRRPairs();
+    var wins = [0, 0, 0], i, pick, a, b;
+    for (i = 0; i < pairs.length; i++) {
+      pick = rr[i];
+      if (pick == null) continue;
+      a = pairs[i][0];
+      b = pairs[i][1];
+      if (teamEq(pick, triplet[a])) wins[a]++;
+      else if (teamEq(pick, triplet[b])) wins[b]++;
+    }
+    var ranked = triplet.map(function (t, idx) {
+      return { team: t, wins: wins[idx] };
+    });
+    ranked.sort(function (x, y) { return y.wins - x.wins; });
+    var out = [], p;
+    for (p = 0; p < ranked.length; p++) {
+      out.push({ place: p + 1, team: ranked[p].team, wins: ranked[p].wins });
+    }
+    return out;
+  }
+
+  function computeRRChampion(data, triplet) {
+    var ranked = computeRRRankings(data, triplet);
+    if (!ranked.length || ranked[0].wins === 0) return null;
+    if (ranked.length > 1 && ranked[0].wins === ranked[1].wins) return null;
+    return ranked[0].team;
+  }
+
+  function syncFinalWinner(data) {
+    var triplet = getCrossTriplet(data);
+    if (!triplet) {
+      return;
+    }
+    var champ = computeRRChampion(data, triplet);
+    if (champ != null) {
+      data.winners.final = champ;
+      data.winnerTeam = { players: (data.teams[champ].players || []).slice() };
+    } else {
+      data.winners.final = null;
+      data.winnerTeam = null;
+    }
+  }
+
+  function finalWaitLabel(data) {
+    var sr = sideStopRound(data.totalTeams);
+    if (sr < 0) return 'Финал — после полуфиналов с обеих сторон';
+    return 'Финал — после 1/' + sideParticipantsAtRound(data.totalTeams, sr + 1) + ' с обеих сторон';
+  }
+
+  function renderFinalSlot(teamIdx, data, extraCls) {
+    var t = data.teams[teamIdx] || { players: [] };
+    var html = '<div class="final-slot' + (extraCls ? ' ' + extraCls : '') + '">';
+    (t.players || ['']).forEach(function (p) {
+      html += '<div class="cell win"><div class="row"><span class="name" title="' + esc(p) + '">' + esc(p || '—') + '</span></div></div>';
+    });
+    return html + '</div>';
+  }
+
+  function renderFinalPodium(data, triplet) {
+    var ranked = computeRRRankings(data, triplet);
+    if (!ranked.length || ranked[0].wins === 0) return '';
+    var cls = ['gold', 'silver', 'bronze'];
+    var labels = ['Топ 1', 'Топ 2', 'Топ 3'];
+    var html = '<div class="final-podium">';
+    ranked.forEach(function (r, i) {
+      html += '<div class="podium-item ' + cls[i] + '"><span class="place">' + labels[i] + '</span>' +
+        '<span class="pname">' + esc(teamLabel(data, r.team)) + '</span></div>';
+    });
+    return html + '</div>';
+  }
+
+  function renderFinalFight(data) {
+    if (!usesTripleFinal(data)) {
+      var pair = getFinalPair(data);
+      if (!pair) return '<p class="map-empty">' + finalWaitLabel(data) + '</p>';
+      var fin = data.winners.final;
+      var pending = fin == null;
+      var html = '<div class="fight crown"><div class="cap"></div>';
+      pair.forEach(function (ti, idx) {
+        html += renderCell('final', 0, 0, ti, cellClass(ti, fin, true, true, pending), data, fin);
+        if (idx === 0) html += '<div class="mid"></div>';
+      });
+      return html + '</div>';
+    }
+
+    var six = getFinalSix(data);
+    if (!six) return '<p class="map-empty">' + finalWaitLabel(data) + '</p>';
+
+    var cross = data.winners.finalCross || [];
+    var triplet = getCrossTriplet(data);
+    var rr = data.winners.finalRR || [];
+    var pairs = finalRRPairs();
+    var labels = finalRRLabels();
+    var html = '<div class="final-block">';
+
+    html += '<div class="final-pool">';
+    html += '<div class="final-pool-col"><div class="final-pool-hdr">Слева · 3</div>';
+    six.left.forEach(function (ti) { html += renderFinalSlot(ti, data, 'finalist'); });
+    html += '</div>';
+    html += '<div class="final-pool-col"><div class="final-pool-hdr">Справа · 3</div>';
+    six.right.forEach(function (ti) { html += renderFinalSlot(ti, data, 'finalist'); });
+    html += '</div></div>';
+
+    html += '<div class="final-cross-lbl">Полуфинал · 3 пары</div>';
+    for (var ci = 0; ci < 3; ci++) {
+      var cpick = cross[ci];
+      var cpending = cpick == null;
+      html += '<div class="fight crown"><div class="cap"></div>';
+      html += renderCell('final-cross', ci, 0, six.left[ci], cellClass(six.left[ci], cpick, true, true, cpending), data, cpick);
+      html += '<div class="mid"></div>';
+      html += renderCell('final-cross', ci, 1, six.right[ci], cellClass(six.right[ci], cpick, true, true, cpending), data, cpick);
+      html += '</div>';
+    }
+
+    if (triplet) {
+      html += '<div class="final-cross-lbl" style="margin-top:10px">Финал · круговая</div>';
+      pairs.forEach(function (pair, mi) {
+        var pick = rr[mi];
+        var pending = pick == null;
+        html += '<div class="final-rr-lbl">' + labels[mi] + '</div>';
+        html += '<div class="fight crown"><div class="cap"></div>';
+        pair.forEach(function (slot, idx) {
+          var ti = triplet[slot];
+          html += renderCell('final-rr', mi, slot, ti, cellClass(ti, pick, true, true, pending), data, pick);
+          if (idx === 0) html += '<div class="mid"></div>';
+        });
+        html += '</div>';
+      });
+      html += renderFinalPodium(data, triplet);
+    }
+
+    return html + '</div>';
+  }
+
+  function renderVisualMap(data) {
+    var rounds = displayRounds(data);
+    var cols = Math.max(1, rounds * 2 + 1);
+    var ppt = playersPerTeam(data);
+    var maxRows = maxSideRows(data);
+    var colh = Math.max(160, maxRows * (ppt * 36 + 28));
+    var fightW = data.totalTeams >= 128 ? 170 : data.totalTeams >= 64 ? 190 : 220;
+    var tags = columnLabels(data);
+    var html = '<div class="map" style="--cols:' + cols + ';--rows:' + maxRows + ';--colh:' + colh + 'px;--fight-w:' + fightW + 'px">';
+    html += '<div class="map-tags">' + tags.map(function (t) { return '<span>' + t + '</span>'; }).join('') + '</div>';
+    html += '<div class="map-grid">';
+    var c, items, rr, fi;
+    for (c = 0; c < cols; c++) {
+      var laneCls = 'lane';
+      if (c === 0) laneCls += ' lane-l';
+      else if (c === cols - 1) laneCls += ' lane-r';
+      else if (c === rounds) laneCls += ' lane-m';
+      html += '<div class="' + laneCls + '" style="--rows:' + maxRows + '">';
+      if (c === rounds) {
+        html += renderFinalFight(data);
+      } else if (c < rounds) {
+        items = getColumnItems('left', c, data);
+        for (fi = 0; fi < items.length; fi++) {
+          if (items[fi].type === 'fight') {
+            html += renderFightBox('left', c, items[fi].matchIdx, items[fi].pair, data, items[fi].gridRow);
+          } else if (items[fi].type === 'partial') {
+            html += renderPartialBox('left', c, items[fi], data);
+          }
+        }
+      } else {
+        rr = cols - 1 - c;
+        items = getColumnItems('right', rr, data);
+        for (fi = 0; fi < items.length; fi++) {
+          if (items[fi].type === 'fight') {
+            html += renderFightBox('right', rr, items[fi].matchIdx, items[fi].pair, data, items[fi].gridRow);
+          } else if (items[fi].type === 'partial') {
+            html += renderPartialBox('right', rr, items[fi], data);
+          }
+        }
+      }
+      html += '</div>';
+    }
+    return html + '</div></div>';
+  }
+
+  function setPick(data, side, round, matchIdx, teamIdx) {
+    ensureWinners(data);
+    while (data.winners[side].length <= round) data.winners[side].push([]);
+    var row = (data.winners[side][round] || []).slice();
+    while (row.length <= matchIdx) row.push(null);
+    teamIdx = Number(teamIdx);
+    if (teamEq(row[matchIdx], teamIdx)) row[matchIdx] = null;
+    else row[matchIdx] = teamIdx;
+    data.winners[side][round] = row;
+    data.winners[side].length = round + 1;
+    data.winners.final = null;
+    data.winners.finalCross = [null, null, null];
+    data.winners.finalRR = [null, null, null];
+    data.winnerTeam = null;
+    dirty = true;
+    renderBracketOnly();
+  }
+
+  function setFinalCross(data, matchIdx, teamIdx) {
+    ensureWinners(data);
+    var six = getFinalSix(data);
+    if (!six) return;
+    teamIdx = Number(teamIdx);
+    var pair = [six.left[matchIdx], six.right[matchIdx]];
+    if (pair.indexOf(teamIdx) < 0) return;
+    var cross = (data.winners.finalCross || [null, null, null]).slice();
+    while (cross.length < 3) cross.push(null);
+    if (teamEq(cross[matchIdx], teamIdx)) cross[matchIdx] = null;
+    else cross[matchIdx] = teamIdx;
+    data.winners.finalCross = cross;
+    data.winners.finalRR = [null, null, null];
+    data.winners.final = null;
+    data.winnerTeam = null;
+    dirty = true;
+    renderBracketOnly();
+  }
+
+  function setFinalRR(data, matchIdx, teamIdx) {
+    ensureWinners(data);
+    var triplet = getCrossTriplet(data);
+    if (!triplet) return;
+    teamIdx = Number(teamIdx);
+    var pairs = finalRRPairs();
+    var pair = pairs[matchIdx];
+    if (!teamEq(triplet[pair[0]], teamIdx) && !teamEq(triplet[pair[1]], teamIdx)) return;
+    var rr = (data.winners.finalRR || [null, null, null]).slice();
+    while (rr.length < 3) rr.push(null);
+    if (teamEq(rr[matchIdx], teamIdx)) rr[matchIdx] = null;
+    else rr[matchIdx] = teamIdx;
+    data.winners.finalRR = rr;
+    syncFinalWinner(data);
+    dirty = true;
+    renderBracketOnly();
+  }
+
+  function setFinal(data, teamIdx) {
+    ensureWinners(data);
+    teamIdx = Number(teamIdx);
+    if (teamEq(data.winners.final, teamIdx)) {
+      data.winners.final = null;
+      data.winnerTeam = null;
+    } else {
+      data.winners.final = teamIdx;
+      data.winnerTeam = { players: (data.teams[teamIdx].players || []).slice() };
+    }
+    data.winners.finalRR = [null, null, null];
+    data.winners.finalCross = [null, null, null];
+    dirty = true;
+    renderBracketOnly();
+  }
+
+  function rebuildTeams(data, teamCount, perTeam) {
+    var old = data.teams || [];
+    data.totalTeams = teamCount;
+    data.format = perTeam + 'x' + perTeam;
+    data.teams = [];
+    for (var i = 0; i < teamCount; i++) {
+      var pl = [];
+      for (var j = 0; j < perTeam; j++) {
+        pl.push((old[i] && old[i].players && old[i].players[j]) || defaultPlayerName(i, j, perTeam));
+      }
+      data.teams.push({ players: pl });
+    }
+    data.winners = { left: [], right: [], final: null, finalCross: [null, null, null], finalRR: [null, null, null] };
+    data.winnerTeam = null;
+    dirty = true;
+  }
+
+  function currentNum() {
+    var nums = manifest.tournaments || [];
+    return nums.length ? Math.max.apply(null, nums) : 0;
+  }
+
+  function winnerFrom(d) {
+    ensureWinners(d);
+    if (usesTripleFinal(d)) {
+      var tri = getCrossTriplet(d);
+      if (tri) {
+        var ranked = computeRRRankings(d, tri);
+        if (ranked.length && ranked[0].wins > 0) {
+          return ranked.map(function (r) {
+            return r.place + '. ' + teamLabel(d, r.team);
+          }).join(' · ');
+        }
+      }
+      if (d.winnerTeam && d.winnerTeam.players) {
+        var p = d.winnerTeam.players.filter(Boolean);
+        if (p.length) return p.join(' · ');
+      }
+      return null;
+    }
+    if (d.winnerTeam && d.winnerTeam.players) {
+      var p = d.winnerTeam.players.filter(Boolean);
+      if (p.length) return p.join(' · ');
+    }
+    return null;
+  }
+
+  function renderList() {
+    listEl.innerHTML = list.map(function (it) {
+      var active = cur && cur.num === it.num ? ' active' : '';
+      var tag = it.isCurrent ? ' · текущий' : '';
+      var win = it.winnerName ? ' · ' + esc(it.winnerName) : '';
+      return '<button type="button" class="item' + active + '" data-id="' + it.num + '"><b>#' + it.num + tag + ' ' + esc(it.name) + '</b><small>' +
+        esc(it.format) + ' · ' + esc(it.mode || '') + win + '</small></button>';
+    }).join('');
+    listEl.querySelectorAll('.item').forEach(function (b) {
+      b.addEventListener('click', function () { loadOne(Number(b.getAttribute('data-id'))); });
+    });
+  }
+
+  function render() {
+    if (!cur) {
+      workspace.innerHTML = '<p class="hint">Нет выбранного турнира</p>';
+      viewLink.hidden = true;
+      return;
+    }
+    var d = cur;
+    ensureWinners(d);
+    var ppt = playersPerTeam(d);
+    var modeKnown = MODES.indexOf(d.mode) >= 0;
+    var modeOpts = MODES.map(function (m) {
+      var sel = (modeKnown ? d.mode : 'Другое') === m ? ' selected' : '';
+      return '<option' + sel + '>' + m + '</option>';
+    }).join('');
+    var pptLabel = isSolo(d) ? 'Игроков в слоте' : 'Игроков в команде';
+
+    workspace.innerHTML =
+      '<div class="section"><h2>Основное</h2><div class="grid">' +
+      '<div class="field"><label>Название</label><input id="f-name" value="' + esc(d.name) + '"></div>' +
+      '<div class="field"><label>Номер файла</label><input id="f-id" value="' + (d.num || d.id) + '" readonly></div>' +
+      '<div class="field"><label>Дата</label><input id="f-date" type="datetime-local" value="' + esc(toLocal(d.date)) + '"></div>' +
+      '<div class="field"><label>' + pptLabel + '</label><input id="f-ppt" type="number" min="1" max="10" value="' + ppt + '"></div>' +
+      '<div class="field"><label>' + unitsCap(d) + ' в сетке</label><input id="f-teams" type="number" min="2" max="' + MAX_SLOTS + '" value="' + d.totalTeams + '"></div>' +
+      '<div class="field"><label>Режим</label><select id="f-mode">' + modeOpts + '</select><input id="f-mode-custom" placeholder="Свой режим" value="' +
+        esc(MODES.indexOf(d.mode) >= 0 ? '' : (d.mode || '')) + '" style="margin-top:6px;width:100%"></div>' +
+      '<div class="field"><label>Награда</label><input id="f-reward" value="' + esc(d.reward || '') + '"></div>' +
+      '</div><p class="hint">Формат: <b>' + esc(d.format) + '</b>. Клик — победитель. Победитель сразу выдвигается к следующей паре (1+2 → 3+4 → …). Повторный клик — отмена.' +
+      (usesTripleFinal(d) ? ' Финал: 3 слева + 3 справа → 3 пары → круговая (топ 1·2·3).' : '') + '</p></div>' +
+
+      '<div class="section"><h2>' + (isSolo(d) ? 'Слоты' : 'Команды') + ' (' + d.totalTeams + ')</h2><div class="teams" id="teams-box"></div></div>' +
+
+      '<div class="section"><h2>Сетка</h2><p class="hint">До ' + MAX_SLOTS + ' ' + unitsInGrid(d) + '. Синий — победитель, красный — чемпион.</p>' +
+      '<div class="map-wrap" id="map-box">' + renderVisualMap(d) + '</div></div>';
+
+    var teamsBox = $('teams-box');
+    d.teams.forEach(function (t, i) {
+      var box = document.createElement('div');
+      box.className = 'team';
+      box.innerHTML = '<div class="team-head">' + (isSolo(d) ? 'Слот' : 'Команда') + ' #' + (i + 1) + '</div>';
+      (t.players || []).forEach(function (p, j) {
+        var inp = document.createElement('input');
+        inp.value = p;
+        inp.placeholder = isSolo(d) ? 'Ник игрока' : ('Игрок ' + (j + 1));
+        inp.addEventListener('input', function () {
+          d.teams[i].players[j] = inp.value;
+          dirty = true;
+          renderBracketOnly();
+        });
+        box.appendChild(inp);
+      });
+      teamsBox.appendChild(box);
+    });
+
+    bindMeta();
+    bindBracket();
+    var num = d.num || d.id;
+    viewLink.href = num === currentNum() ? 'index.html' : 'index.html#' + num;
+    viewLink.hidden = false;
+  }
+
+  function renderBracketOnly() {
+    var box = document.getElementById('map-box');
+    if (!box || !cur) return;
+    box.innerHTML = renderVisualMap(cur);
+    bindBracket();
+  }
+
+  function bindMeta() {
+    $('f-name').addEventListener('input', function (e) { cur.name = e.target.value; dirty = true; renderList(); });
+    $('f-date').addEventListener('change', function (e) { cur.date = fromLocal(e.target.value); dirty = true; });
+    $('f-reward').addEventListener('input', function (e) { cur.reward = e.target.value; dirty = true; });
+    $('f-mode').addEventListener('change', function () { if ($('f-mode').value !== 'Другое') { cur.mode = $('f-mode').value; dirty = true; } });
+    $('f-mode-custom').addEventListener('input', function (e) {
+      if ($('f-mode').value === 'Другое' || $('f-mode-custom').value) cur.mode = e.target.value;
+      dirty = true;
+    });
+    $('f-ppt').addEventListener('change', function () {
+      var n = parseInt($('f-ppt').value, 10) || 1;
+      rebuildTeams(cur, cur.totalTeams, n);
+      render();
+    });
+    $('f-teams').addEventListener('change', function () {
+      var n = parseInt($('f-teams').value, 10);
+      if (isNaN(n) || n < 2) n = 2;
+      if (n > MAX_SLOTS) n = MAX_SLOTS;
+      rebuildTeams(cur, n, playersPerTeam(cur));
+      render();
+    });
+  }
+
+  function bindBracket() {
+    workspace.querySelectorAll('.cell.pickable[data-team]').forEach(function (el) {
+      el.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var side = el.getAttribute('data-side');
+        var team = Number(el.getAttribute('data-team'));
+        if (side === 'final') setFinal(cur, team);
+        else if (side === 'final-cross') setFinalCross(cur, Number(el.getAttribute('data-round')), team);
+        else if (side === 'final-rr') setFinalRR(cur, Number(el.getAttribute('data-round')), team);
+        else setPick(cur, side, Number(el.getAttribute('data-round')),
+          Number(el.getAttribute('data-match')), team);
+      });
+    });
+  }
+
+  function toLocal(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    if (isNaN(d)) return '';
+    var p = function (n) { return String(n).padStart(2, '0'); };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+
+  function fromLocal(v) {
+    return v ? new Date(v).toISOString() : new Date().toISOString();
+  }
+
+  function fetchJson(url) {
+    return fetch(url).then(function (r) {
+      if (!r.ok) throw new Error(url);
+      return r.json();
+    });
+  }
+
+  function downloadJson(data, filename) {
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  function loadList() {
+    return fetchJson(ARCHIVE + 'manifest.json').then(function (mf) {
+      manifest = mf;
+      var nums = (mf.tournaments || []).slice().sort(function (a, b) { return b - a; });
+      var curN = currentNum();
+      return Promise.all(nums.map(function (n) {
+        return fetchJson(ARCHIVE + n + '.json').then(function (d) {
+          d.num = n;
+          d.id = n;
+          cache[n] = d;
+          return { num: n, name: d.name, format: d.format, mode: d.mode || '', winnerName: winnerFrom(d), isCurrent: n === curN };
+        });
+      }));
+    }).then(function (items) {
+      list = items;
+      renderList();
+    }).catch(function () {
+      setStatus('Нет archive/manifest.json — создайте новый турнир', false);
+    });
+  }
+
+  function loadOne(num) {
+    num = Number(num);
+    if (cache[num]) {
+      cur = cache[num];
+      dirty = false;
+      render();
+      renderList();
+      setStatus('');
+      return Promise.resolve();
+    }
+    return fetchJson(ARCHIVE + num + '.json').then(function (d) {
+      d.num = num;
+      d.id = num;
+      cache[num] = d;
+      cur = d;
+      dirty = false;
+      render();
+      renderList();
+      setStatus('');
+    });
+  }
+
+  function save() {
+    if (!cur) return;
+    ensureWinners(cur);
+    var n = cur.num || cur.id;
+    cur.num = n;
+    cur.id = n;
+    cur.archivedAt = new Date().toISOString();
+    downloadJson(cur, n + '.json');
+    var manifestChanged = manifest.tournaments.indexOf(n) < 0;
+    if (manifestChanged) {
+      manifest.tournaments.push(n);
+      manifest.tournaments.sort(function (a, b) { return a - b; });
+      downloadJson(manifest, 'manifest.json');
+    }
+    cache[n] = cur;
+    dirty = false;
+    return loadList().then(function () {
+      setStatus('Скачано ' + n + '.json' + (manifestChanged ? ' и manifest.json' : '') + ' → залей в archive/', true);
+    });
+  }
+
+  function createNew() {
+    var ppt = 1;
+    var teams = 24;
+    var n = currentNum() + 1;
+    cur = {
+      id: n, num: n, name: 'Новый турнир #' + n, date: new Date().toISOString(),
+      archivedAt: new Date().toISOString(), totalTeams: teams, format: '1x1',
+      mode: 'Classic', reward: '',
+      teams: Array.from({ length: teams }, function (_, i) {
+        return { players: ['Слот ' + (i + 1)] };
+      }),
+      winners: { left: [], right: [], final: null, finalCross: [null, null, null], finalRR: [null, null, null] }, winnerTeam: null,
+    };
+    cache[n] = cur;
+    if (manifest.tournaments.indexOf(n) < 0) manifest.tournaments.push(n);
+    dirty = true;
+    loadList().then(function () { render(); });
+    setStatus('Турнир #' + n + ' — сохраните, чтобы скачать файлы', true);
+  }
+
+  function removeCur() {
+    if (!cur || !confirm('Убрать #' + (cur.num || cur.id) + ' из manifest? Файл .json удалите вручную.')) return;
+    var n = cur.num || cur.id;
+    manifest.tournaments = manifest.tournaments.filter(function (x) { return x !== n; });
+    delete cache[n];
+    downloadJson(manifest, 'manifest.json');
+    cur = null;
+    dirty = false;
+    loadList().then(function () { render(); });
+    setStatus('Скачан обновлённый manifest.json → залей в archive/', true);
+  }
+
+  $('btn-new').addEventListener('click', createNew);
+  $('btn-save').addEventListener('click', save);
+  $('btn-export').addEventListener('click', function () {
+    if (cur) downloadJson(cur, (cur.num || cur.id) + '.json');
+  });
+  $('btn-import').addEventListener('click', function () { $('file-import').click(); });
+  $('file-import').addEventListener('change', function (e) {
+    var f = e.target.files[0];
+    if (!f) return;
+    var r = new FileReader();
+    r.onload = function () {
+      try {
+        cur = JSON.parse(r.result);
+        dirty = true;
+        render();
+        setStatus('Импортировано — нажмите Сохранить', true);
+      } catch (err) { setStatus('Ошибка JSON', false); }
+    };
+    r.readAsText(f);
+    e.target.value = '';
+  });
+  $('btn-del').addEventListener('click', removeCur);
+
+  loadList().then(function () {
+    if (list.length) loadOne(currentNum() || list[0].num);
+  });
+})();
+</script>
+</body>
+</html>
