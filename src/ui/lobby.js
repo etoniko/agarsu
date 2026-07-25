@@ -26,24 +26,6 @@ function updateAccountMenuLabel() {
   if (!label) return;
   label.textContent = getAccountToken() ? "\u041B\u041A" : "\u0412\u043E\u0439\u0442\u0438";
 }
-function showLogoutNotification() {
-  const notif = document.getElementById("logout-notification");
-  if (!notif) return;
-  notif.style.display = "block";
-  setTimeout(() => {
-    notif.classList.add("show");
-  }, 10);
-  setTimeout(() => {
-    notif.classList.remove("show");
-    notif.addEventListener(
-      "transitionend",
-      () => {
-        notif.style.display = "none";
-      },
-      { once: true }
-    );
-  }, 3e3);
-}
 function initChatResize() {
   const chatWindow = document.getElementById("chatX_window");
   const chatContainer = document.getElementById("chatX_container");
@@ -248,10 +230,8 @@ function initLobbyUi() {
 }
 window.showContent = showContent;
 window.updateAccountMenuLabel = updateAccountMenuLabel;
-window.showLogoutNotification = showLogoutNotification;
 export {
   initLobbyUi,
   showContent,
-  showLogoutNotification,
   updateAccountMenuLabel
 };
