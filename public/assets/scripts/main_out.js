@@ -90,7 +90,7 @@ stats.forEach((player, index) => {
                         }
 	
     // По умолчанию выбранный сервер
-    let SELECTED_SERVER = wHandle.CONNECTION_URL || "ffa.agar.su";
+    let SELECTED_SERVER = wHandle.CONNECTION_URL || "hostkey.agar.su";
 
     // --- Подсветка активного сервера из hash ---
     function setActiveFromHash() {
@@ -214,7 +214,7 @@ wHandle.startGame = function () {
     wHandle.chekstats = async function () {
         try {
             // Получаем текущий домен из CONNECTION_URL (или другого источника)
-            const statsUrl = getGameServerApiBase(CONNECTION_URL) + "/checkStats";
+            const statsUrl = getGameServerApiBase(SELECTED_SERVER || CONNECTION_URL) + "/checkStats";
 
             // Выполняем запрос
             const response = await fetch(statsUrl, { method: 'GET' });
@@ -234,7 +234,7 @@ wHandle.startGame = function () {
 
 // host — для wss, api — HTTPS того же игрового сервера (клиент может быть на GitHub)
 const GAME_SERVERS = {
-	    "ffa":        { host: "ffa.agar.su",           api: "https://ffa.agar.su", pow: false },
+	    "ffa":        { host: "hostkey.agar.su",       api: "https://hostkey.agar.su", pow: false },
 	    "ffa2":       { host: "ffa.agar.su:6013",      api: "https://ffa.agar.su:6013", pow: true },
         "ms":         { host: "ffa.agar.su:6002",      api: "https://ffa.agar.su:6002" },
         "pvp2":       { host: "ffa.agar.su:6005",      api: "https://ffa.agar.su:6005" },
@@ -273,6 +273,7 @@ document.querySelectorAll('.gamemode li').forEach(li => {
         // Обновляем hash без дергания страницы
         history.replaceState(null, '', '#' + li.id);
 titleEl.textContent = `Статистика ${li.id}`;
+        if (typeof wHandle.chekstats === 'function') wHandle.chekstats();
     });
 });
 });
