@@ -3331,9 +3331,9 @@ input{font-size:16px;}
 }
 
 .server-group {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
+  /* background: rgba(255, 255, 255, 0.04); */
+  /* border: 1px solid rgba(255, 255, 255, 0.08); */
+  /* border-radius: 8px; */
   overflow: hidden;
   transition: border-color 0.2s ease;
   min-width: 0;
@@ -3463,7 +3463,6 @@ input{font-size:16px;}
   .server-group {
     width: 130px;
     flex: 0 0 130px;
-    border-radius: 8px;
   }
 
   .group-header {
