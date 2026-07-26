@@ -303,7 +303,7 @@
   }
   var GAME_SERVERS = {
     ffa: {
-      host: "hostkey.agar.su",
+      host: "ffa.agar.su",
       title: "FFA - Москва"
     },
     ffa2: {
