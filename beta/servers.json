@@ -1,6 +1,6 @@
 {
     "ffa": {
-        "host": "hostkey.agar.su",
+        "host": "ffa.agar.su",
         "api": "https://hostkey.agar.su",
         "name": "FFA - Moscow"
     },
