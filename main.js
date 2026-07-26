@@ -1791,8 +1791,10 @@
     (_a = ui.setText) == null ? void 0 : _a.call(ui, serverPowSupportCache.get(apiBase) === true ? "Запрос проверки…" : "Проверка сервера…");
     let res;
     try {
+      // Short timeout: servers without /challenge (ms/pvp) or blocked ports must not hang connect
       res = await fetch(apiBase + "/challenge", {
-        cache: "no-store"
+        cache: "no-store",
+        signal: AbortSignal.timeout(3500)
       });
     } catch (e) {
       return null;
@@ -4182,41 +4184,54 @@
       console.error("Ошибка обработки данных о топ-1 игроке:", error);
     }
   }
-  async function updateOnlineCount() {
-    var _a, _b, _c;
-    let rows = [];
-    try {
-      const res = await fetch(ONLINE_HUB_URL, {
-        cache: "no-store"
-      });
-      if (!res.ok) return;
-      const data = await res.json();
-      rows = Array.isArray(data.servers) ? data.servers : [];
-    } catch (_) {
-      return;
-    }
-    let totalOnline = 0;
-    for (const row of rows) {
-      const id = row.id;
-      if (!id) continue;
-      const playing = (_a = row.playing) != null ? _a : 0;
-      const observers = (_b = row.no_playing) != null ? _b : 0;
-      const max = (_c = row.max) != null ? _c : 0;
-      totalOnline += playing + observers;
-      const li = document.getElementById(id);
-      if (li) {
-        const spans = li.querySelectorAll(".online-count");
-        if (spans.length >= 2) {
-          spans[0].textContent = observers;
-          spans[1].textContent = max > 0 ? `${playing}/${max}` : String(playing);
-        }
+async function updateOnlineCount() {
+  var _a, _b, _c;
+  let rows = [];
+  try {
+    const res = await fetch(ONLINE_HUB_URL, {
+      cache: "no-store"
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    rows = Array.isArray(data.servers) ? data.servers : [];
+  } catch (_) {
+    return;
+  }
+  
+  let totalOnline = 0;
+  for (const row of rows) {
+    const id = row.id;
+    if (!id) continue;
+    const playing = (_a = row.playing) != null ? _a : 0;
+    const observers = (_b = row.no_playing) != null ? _b : 0;
+    const max = (_c = row.max) != null ? _c : 0;
+    totalOnline += playing + observers;
+    
+    // Ищем элемент .server-item с нужным id
+    const item = document.getElementById(id);
+    if (item) {
+      const spans = item.querySelectorAll(".online-count");
+      if (spans.length >= 2) {
+        spans[0].textContent = observers;
+        spans[1].textContent = max > 0 ? `${playing}/${max}` : String(playing);
+        
+        // Обновляем цвет (зелёный/серый)
+        spans.forEach(span => {
+          const num = parseInt(span.textContent, 10);
+          if (!isNaN(num)) {
+            span.classList.remove('has-online', 'no-online');
+            span.classList.add(num > 0 ? 'has-online' : 'no-online');
+          }
+        });
       }
     }
-    const onlineElement = document.getElementById("online");
-    if (onlineElement) {
-      onlineElement.textContent = `Онлайн: ${totalOnline}`;
-    }
   }
+  
+  const onlineElement = document.getElementById("online");
+  if (onlineElement) {
+    onlineElement.textContent = `Онлайн: ${totalOnline}`;
+  }
+}
   function startOnlineCountPolling() {
     updateOnlineCount();
     if (!window.onlineInterval) {
@@ -6321,31 +6336,44 @@
       cancelKeybindCapture: () => cancelKeybindCapture(S)
     };
   }
-  function initServers(S) {
-    let serverKey = "ffa";
-    const hash = S.wHandle.location.hash.slice(1);
-    const hashWithoutParams = hash.split("?")[0];
-    const urlParams = new URLSearchParams(window.location.search);
-    if (hash && SERVERS[hashWithoutParams]) {
-      serverKey = hashWithoutParams;
-    } else {
-      const keys = Object.keys(SERVERS);
-      if (keys.length) serverKey = keys[0];
-    }
-    S.CONNECTION_URL = SERVERS[serverKey];
-    S.SELECTED_SERVER = S.CONNECTION_URL;
-    document.querySelectorAll(".gamemode li").forEach(li => li.classList.remove("active"));
-    const activeLi = document.getElementById(serverKey);
-    if (activeLi) activeLi.classList.add("active");
-    const titleEl = document.getElementById("serverTitle");
-    if (titleEl) titleEl.textContent = "Статистика " + serverKey;
-    if (urlParams.has("spect") || hash.includes("?spect")) {
-      window._autoSpectate = true;
-    }
-    if (typeof S.wHandle.chekstats === "function") {
-      S.wHandle.chekstats();
-    }
+function initServers(S) {
+  let serverKey = "ffa";
+  const hash = S.wHandle.location.hash.slice(1);
+  const hashWithoutParams = hash.split("?")[0];
+  const urlParams = new URLSearchParams(window.location.search);
+  
+  // Определяем сервер из URL
+  if (hash && SERVERS[hashWithoutParams]) {
+    serverKey = hashWithoutParams;
+  } else {
+    const keys = Object.keys(SERVERS);
+    if (keys.length) serverKey = keys[0];
   }
+  
+  S.CONNECTION_URL = SERVERS[serverKey];
+  S.SELECTED_SERVER = S.CONNECTION_URL;
+  
+  // Обновляем активный класс на НОВЫХ элементах .server-item
+  document.querySelectorAll(".server-item").forEach(el => el.classList.remove("active"));
+  const activeItem = document.getElementById(serverKey);
+  if (activeItem) {
+    activeItem.classList.add("active");
+  }
+  
+  const titleEl = document.getElementById("serverTitle");
+  if (titleEl) {
+    const serverName = GAME_SERVERS[serverKey]?.title || serverKey;
+    titleEl.textContent = `Статистика ${serverName}`;
+  }
+  
+  if (urlParams.has("spect") || hash.includes("?spect")) {
+    window._autoSpectate = true;
+  }
+  
+  if (typeof S.wHandle.chekstats === "function") {
+    S.wHandle.chekstats();
+  }
+}
   function hideGameOverlays() {
     hideOverlays();
   }
@@ -6515,19 +6543,41 @@
       if (typeof wHandle.chekstats === "function") wHandle.chekstats();
     };
     wHandle.connect = connection.wsConnect;
-    onReady(() => {
-      document.querySelectorAll(".gamemode li").forEach(li => {
-        li.addEventListener("click", () => {
-          document.querySelectorAll(".gamemode li").forEach(l => l.classList.remove("active"));
-          li.classList.add("active");
-          S.SELECTED_SERVER = li.dataset.ip;
-          history.replaceState(null, "", "#" + li.id);
-          const titleEl = document.getElementById("serverTitle");
-          if (titleEl) titleEl.textContent = `Статистика ${li.id}`;
-          if (typeof wHandle.chekstats === "function") wHandle.chekstats();
-        });
-      });
+onReady(() => {
+  // Обработчики для НОВЫХ элементов .server-item
+  document.querySelectorAll(".server-item").forEach(item => {
+    item.addEventListener("click", function() {
+      // Убираем активный класс у всех
+      document.querySelectorAll(".server-item").forEach(el => el.classList.remove("active"));
+      // Добавляем активный класс нажатому
+      this.classList.add("active");
+      
+      // ✅ ТОЛЬКО СОХРАНЯЕМ ВЫБРАННЫЙ СЕРВЕР
+      const id = this.id;
+      if (id) {
+        S.SELECTED_SERVER = this.dataset.ip;
+        S.CONNECTION_URL = this.dataset.ip;
+        history.replaceState(null, "", "#" + id);
+      }
+      
+      // Обновляем заголовок статистики
+      const titleEl = document.getElementById("serverTitle");
+      if (titleEl) {
+        const serverName = GAME_SERVERS[id]?.title || id || "FFA";
+        titleEl.textContent = `Статистика ${serverName}`;
+      }
+      
+      // Обновляем статистику
+      if (typeof wHandle.chekstats === "function") {
+        wHandle.chekstats();
+      }
+      
+      // ❌ НЕ КОННЕКТИМСЯ К СЕРВЕРУ!
+      // ❌ НЕ ЗАКРЫВАЕМ ВЕБСОКЕТ!
+      // ❌ НЕ ВЫЗЫВАЕМ setserver!
     });
+  });
+});
     listsPromise.then(() => fetchNickPerksLists(S)).catch(() => {});
     listsPromise.then(() => initServers(S)).catch(() => initServers(S));
     setInterval(async () => {

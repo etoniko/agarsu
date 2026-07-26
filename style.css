@@ -3313,3 +3313,197 @@ input{font-size:16px;}
 .inl-14{display:none;}
 .inl-15{display:none;}
 .inl-16{color:red;}
+/* ============================================
+   НОВЫЙ ДИЗАЙН СЕРВЕРОВ
+   ============================================ */
+.servers {
+  margin-top: 8px;
+  width: 100%;
+  padding: 0 4px;
+  box-sizing: border-box;
+}
+
+.server-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  max-width: 100%;
+}
+
+.server-group {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+  min-width: 0;
+}
+
+.group-header {
+  background: rgba(1, 107, 239, 0.12);
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #aac8ff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.group-header i {
+  font-size: 12px;
+  color: #4d8eff;
+}
+
+.server-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.server-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 8px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  font-size: 11px;
+  color: #c8d6f0;
+  min-height: 24px;
+  background: #1d273c;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateX(0);
+  border-left: 2px solid transparent;
+  padding-left: 6px; /* Отступ под полосу */
+}
+
+.server-item:last-child {
+  border-bottom: none;
+}
+
+/* Активный сервер - НЕ двигается, синяя полоса всегда есть */
+.server-item.active {
+  background: rgba(2, 105, 232, 0.35);
+  border-left: 2px solid #016bef;
+  padding-left: 6px;
+}
+
+  .server-item:hover:not(.active) {
+    transform: translateX(3px);
+  }
+
+
+.server-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 11px;
+  font-weight: 500;
+  min-width: 0;
+}
+
+.server-stats {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 9px;
+  color: #8a9fc0;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.server-stats i {
+  font-size: 8px;
+}
+
+.server-stats .online-count {
+  min-width: 12px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 9px;
+}
+
+/* Онлайн > 0 — зелёный */
+.online-count.has-online {
+  color: #4ade80;
+  text-shadow: 0 0 10px rgba(74, 222, 128, 0.2);
+}
+
+/* Онлайн = 0 — серый */
+.online-count.no-online {
+  color: #4a5568;
+}
+
+/* ============================================
+   МОБИЛЬНЫЕ — 2x2 через FLEX
+   ============================================ */
+@media (max-width: 599px) {
+  .servers {
+    padding: 0 4px;
+    margin-top: 8px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .server-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    width: 272px;
+    max-width: 100%;
+    justify-content: center;
+  }
+
+  .server-group {
+    width: 130px;
+    flex: 0 0 130px;
+    border-radius: 8px;
+  }
+
+  .group-header {
+    font-size: 9px;
+    padding: 4px 8px;
+    gap: 4px;
+  }
+
+  .group-header i {
+    font-size: 9px;
+  }
+
+  .server-item {
+    padding: 4px 6px;
+    font-size: 9px;
+    min-height: 20px;
+    gap: 3px;
+    padding-left: 4px;
+    border-left-width: 2px;
+  }
+
+  .server-name {
+    font-size: 9px;
+  }
+
+  .server-stats {
+    font-size: 8px;
+    gap: 2px;
+  }
+
+  .server-stats i {
+    font-size: 7px;
+  }
+
+  .server-stats .online-count {
+    font-size: 8px;
+    min-width: 8px;
+  }
+
+  .server-item.active {
+    padding-left: 4px;
+  }
+}
