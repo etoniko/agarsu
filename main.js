@@ -1591,6 +1591,9 @@
       ytLink.title = "YouTube канал";
       iconsContainer.appendChild(ytLink);
     }
+    if (ADMINS.some(admin => admin.toLowerCase() === lowerName)) {
+    msgDiv.style.backgroundColor = "#FF0000";
+}
     if (!isSystemLine && donators.includes(lowerName)) {
       const donateIcon = document.createElement("div");
       donateIcon.title = "Данный игрок является спонсором Agar.su";
@@ -2752,6 +2755,7 @@
       pointsLabel: null,
       Quad: null,
       donators: null,
+      admins: null,
       youtubers: null,
       url_youtubers: null,
       passUsers: null,
@@ -2764,7 +2768,7 @@
       maxGlobalMessages: 100,
       maxDialogMessages: 50,
       profanityCountByPlayer: null,
-      BLUR_THRESHOLD: 3,
+      BLUR_THRESHOLD: 10,
       RESET_TIME: 6e4,
       api: {}
     };
@@ -5338,6 +5342,7 @@ async function updateOnlineCount() {
     return api;
   }
   var DONATORS = [ "bambule", "☼k☼" ];
+  var ADMINS = [ "nico", "banshee" ];
   var YOUTUBERS = [ "salruz", "morcov", "sealand" ];
   var URL_YOUTUBERS = [ "https://youtube.com/@SalRuzO", "https://www.youtube.com/@MORCCVA", "https://www.youtube.com/@sealandv" ];
   function formatTime(date) {
@@ -5608,6 +5613,9 @@ async function updateOnlineCount() {
     msgDiv.setAttribute("data-id", lastMessage.pId);
     msgDiv.dataset.chatIdx = String(msgIndex);
     const lowerName = lastMessage.name.toLowerCase();
+    if (ADMINS.some(admin => admin.toLowerCase() === lowerName)) {
+    msgDiv.style.backgroundColor = "#FF0000";
+}
     if (DONATORS.includes(lowerName)) msgDiv.className = "chatX_msg " + lowerName; else msgDiv.className = "chatX_msg";
     const normalizedName = normalizeNick(lastMessage.name || "");
     let targetDialogId = null;
