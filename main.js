@@ -5342,7 +5342,7 @@ async function updateOnlineCount() {
     return api;
   }
   var DONATORS = [ "bambule", "☼k☼" ];
-  var ADMINS = [ "nico", "banshee" ];
+  var ADMINS = [ "нико", "banshee" ];
   var YOUTUBERS = [ "salruz", "morcov", "sealand" ];
   var URL_YOUTUBERS = [ "https://youtube.com/@SalRuzO", "https://www.youtube.com/@MORCCVA", "https://www.youtube.com/@sealandv" ];
   function formatTime(date) {
