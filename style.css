@@ -3337,10 +3337,8 @@ input{font-size:16px;}
 }
 
 .group-header {
-  background: #016bef;
   padding: 5px 10px;
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 13px;
   color: #ffffff;
   display: flex;
   align-items: center;
