@@ -2626,7 +2626,7 @@
       qTree: null,
       ws: null,
       wsUrl: null,
-      CONNECTION_URL: "hostkey.agar.su",
+      CONNECTION_URL: "ffa.agar.su",
       SELECTED_SERVER: null,
       currentWebSocketUrl: null,
       connectInProgress: false,
