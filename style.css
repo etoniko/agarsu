@@ -3319,7 +3319,7 @@ input{font-size:16px;}
 .servers {
   margin-top: 10px;
   width: 100%;
-  padding: 0 4px;
+  /* padding: 0 4px; */
   box-sizing: border-box;
 }
 
@@ -3397,7 +3397,7 @@ input{font-size:16px;}
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   min-width: 0;
 }
@@ -3413,14 +3413,14 @@ input{font-size:16px;}
 }
 
 .server-stats i {
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .server-stats .online-count {
   min-width: 12px;
   text-align: center;
   font-weight: 700;
-  font-size: 9px;
+  font-size: 10px;
 }
 
 /* Онлайн > 0 — зелёный */
