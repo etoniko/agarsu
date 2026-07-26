@@ -26,7 +26,27 @@
       window.renderDeathBanner = window.renderDeathBanner || function () {};
       window.yaContextCb = window.yaContextCb || [];
     </script>
-    <script src="main-compres.js" defer></script>
+    <!-- Yandex.Metrika counter -->
+    <script type="text/javascript">
+      (function(m,e,t,r,i,k,a){
+        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+      })(window, document,'script','https://mc.yandex.ru/metrika/tag.js', 'ym');
+      ym(102289504, 'init', {clickmap:true, trackLinks:true, accurateTrackBounce:true, webvisor:true});
+      // Цель «Играть» — 1 раз на браузер (localStorage), чтобы постоянные игроки не накручивали конверсии
+      window.trackPlayGoal = function () {
+        try {
+          if (localStorage.getItem('ym_play_goal')) return;
+          ym(102289504, 'reachGoal', 'play');
+          localStorage.setItem('ym_play_goal', '1');
+        } catch (e) {}
+      };
+    </script>
+    <noscript><div><img src="https://mc.yandex.ru/watch/102289504" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+    <!-- /Yandex.Metrika counter -->
+    <script src="main.js" defer></script>
 </head>
 <body>
   <div id="overlays" class="overlays">
@@ -339,7 +359,7 @@
 </div>
           <div class="nav-buttons">
             <button onclick="spectate();" class="nav-button serv-button"><i class="fas fa-eye"></i> НАБЛЮДАТЬ </button>
-            <button onclick="startGame();" class="nav-button play-button"><i class="fas fa-play"></i> ИГРАТЬ </button>
+            <button onclick="trackPlayGoal();startGame();" class="nav-button play-button"><i class="fas fa-play"></i> ИГРАТЬ </button>
           </div>
         </div>
         <div id="rating" class="content">
@@ -620,7 +640,7 @@
       <div id="shareText"></div>
       <div class="nav-buttons">
         <div onclick="spectate();" class="nav-button serv-button"><i class="fas fa-eye"></i>Наблюдать</div>
-        <button id="button-text" onclick="startGame();return false" class="nav-button play-button"><i class="fas fa-play"></i> ИГРАТЬ</button>
+        <button id="button-text" onclick="trackPlayGoal();startGame();return false" class="nav-button play-button"><i class="fas fa-play"></i> ИГРАТЬ</button>
       </div>
     </div>
     <div class="statsWrapper">
