@@ -1,7 +1,7 @@
 {
     "ffa": {
         "host": "ffa.agar.su",
-        "api": "https://hostkey.agar.su",
+        "api": "https://ffa.agar.su",
         "name": "FFA - Moscow"
     },
     "tournament": {
