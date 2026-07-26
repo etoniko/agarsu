@@ -304,38 +304,31 @@
   var GAME_SERVERS = {
     ffa: {
       host: "hostkey.agar.su",
-      title: "FFA - Москва",
-      pow: false
+      title: "FFA - Москва"
     },
     ffa2: {
       host: "ffa.agar.su:6013",
-      title: "FFA - Агарио",
-      pow: true
+      title: "FFA - Агарио"
     },
     ms: {
       host: "ffa.agar.su:6002",
-      title: "MegaSplit",
-      pow: false
+      title: "MegaSplit"
     },
     pvp1: {
       host: "ffa.agar.su:6004",
-      title: "pvp1: 1x1 ffa 1k",
-      pow: false
+      title: "pvp1: 1x1 ffa 1k"
     },
     pvp2: {
       host: "ffa.agar.su:6005",
-      title: "pvp2: 2x2 ms 1k",
-      pow: false
+      title: "pvp2: 2x2 ms 1k"
     },
     tournament2: {
       host: "ffa.agar.su:6007",
-      title: "Tournament 2x2",
-      pow: false
+      title: "Tournament 2x2"
     },
     tournament: {
       host: "ffa.agar.su:6006",
-      title: "Tournament 3x3",
-      pow: false
+      title: "Tournament 3x3"
     }
   };
   var SERVERS = Object.fromEntries(Object.entries(GAME_SERVERS).map(([id, s]) => [ id, s.host ]));
@@ -352,11 +345,6 @@
   function getGameServerWssUrl(host) {
     const h = host || GAME_SERVERS.ffa.host;
     return "wss://" + String(h).replace(/^wss?:\/\//i, "");
-  }
-  function serverRequiresPow(hostOrUrl) {
-    const entry = findGameServer(hostOrUrl);
-    if (entry && typeof entry.pow === "boolean") return entry.pow;
-    return false;
   }
   var KEYBIND_DEFAULTS = {
     split: 32,
@@ -1971,9 +1959,6 @@
       showConnecting();
     }
     async function fetchConnectToken2(gameHost) {
-      if (!serverRequiresPow(gameHost)) {
-        return null;
-      }
       const apiBase = getPowApiBase(gameHost);
       return fetchConnectToken(apiBase, {
         setText: setConnectVerifyText,
@@ -2020,7 +2005,7 @@
           return;
         }
         if (attemptId !== S.connectAttemptId) return;
-        if (serverRequiresPow(host) && !connectToken) {
+        if (serverPowSupportCache.get(getPowApiBase(host)) === true && !connectToken) {
           if (isSpectMode()) {
             scheduleSpectReconnect();
           } else {
