@@ -3388,7 +3388,7 @@ input{font-size:16px;}
 }
 
   .server-item:hover:not(.active) {
-    transform: translateX(3px);
+    transform: translateX(3px);color:#92a7c2;
   }
 
 
