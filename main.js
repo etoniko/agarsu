@@ -1591,9 +1591,6 @@
       ytLink.title = "YouTube канал";
       iconsContainer.appendChild(ytLink);
     }
-    if (ADMINS.some(admin => admin.toLowerCase() === lowerName)) {
-    msgDiv.style.backgroundColor = "#FF0000";
-}
     if (!isSystemLine && donators.includes(lowerName)) {
       const donateIcon = document.createElement("div");
       donateIcon.title = "Данный игрок является спонсором Agar.su";
