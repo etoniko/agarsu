@@ -306,10 +306,6 @@
       host: "ffa.agar.su",
       title: "FFA - Москва"
     },
-    ffa2: {
-      host: "ffa.agar.su:6013",
-      title: "FFA - Агарио"
-    },
     ms: {
       host: "ffa.agar.su:6002",
       title: "MegaSplit"
