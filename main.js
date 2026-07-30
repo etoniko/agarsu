@@ -306,6 +306,10 @@
       host: "ffa.agar.su",
       title: "FFA - Москва"
     },
+    ffa1: {
+      host: "sixz.ru/ffa1",
+      title: "FFA - Москва 2"
+    },
     ms: {
       host: "ffa.agar.su:6002",
       title: "MegaSplit"
