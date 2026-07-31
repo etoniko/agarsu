@@ -4711,16 +4711,40 @@ async function updateOnlineCount() {
     const name = document.createElement("div");
     name.className = "nick";
     name.textContent = label;
-    name.onclick = () => {
+    const applyNickFromCabinet = () => {
       try {
         if (typeof hooks.setNick === "function") hooks.setNick(str);
       } catch (e) {}
-      document.getElementById("nick").value = nickPart;
-      document.getElementById("pass").value = pass;
+      const nickEl = document.getElementById("nick");
+      const passEl = document.getElementById("pass");
+      if (nickEl) nickEl.value = nickPart;
+      if (passEl) {
+        passEl.value = pass;
+        passEl.style.display = pass ? "block" : "none";
+      }
       setCookie("userPass", pass, 7);
-      document.getElementById("pass").style.display = pass ? "block" : "none";
-      if (typeof hooks.selectSkin === "function") hooks.selectSkin(nickPart);
+      // Сохраняем в avatar-containers (localStorage players) — ник или клан
+      const pick =
+        typeof hooks.selectSkin === "function"
+          ? hooks.selectSkin
+          : typeof window.selectSkin === "function"
+            ? window.selectSkin
+            : null;
+      if (pick) {
+        Promise.resolve(pick(nickPart)).catch(() => {});
+      } else if (typeof window.savePlayerData === "function") {
+        window.savePlayerData(nickPart, "", pass);
+        if (typeof window.updateAvatarDisplay === "function") window.updateAvatarDisplay();
+      }
     };
+    name.onclick = e => {
+      e.stopPropagation();
+      applyNickFromCabinet();
+    };
+    li.addEventListener("click", e => {
+      if (e.target.closest(".nick-perks, .passbox, button, a, input")) return;
+      applyNickFromCabinet();
+    });
     const perksRow = document.createElement("div");
     perksRow.className = "nick-perks";
     const shop = opts => () => openShopForNick(nickPart, hasClan, opts);
@@ -6746,7 +6770,10 @@ onReady(() => {
     attachAccountHooks(S, {
       sendAccountToken: () => outbound.sendAccountToken(),
       setNick: n => wHandle.setNick(n),
-      selectSkin: null
+      selectSkin: nick => {
+        if (typeof window.selectSkin === "function") return window.selectSkin(nick);
+        return selectSkin(nick);
+      }
     });
     initShareHandlers(S);
     connection.bindVisibilityHandlers();
@@ -6996,15 +7023,12 @@ onReady(() => {
   async function selectSkin(nick) {
     const skinsMap = await loadSkinsList();
     const normalizedNick = normalizeNick(nick);
-    if (skinsMap.has(normalizedNick)) {
-      const id = skinsMap.get(normalizedNick);
-      savePlayerData(nick, id, getPassInputValue());
-      currentIndex = getCurrentPlayerIndex(nick);
-      updateAvatarDisplay();
-    } else {
-      const skinss = document.querySelector("#skinss");
-      if (skinss) setBackgroundImageIfChanged(skinss, "");
-    }
+    const id = skinsMap.has(normalizedNick) ? skinsMap.get(normalizedNick) : "";
+    // Всегда сохраняем в avatar-containers (даже без скина / клан)
+    savePlayerData(nick, id, getPassInputValue());
+    currentIndex = getCurrentPlayerIndex(nick);
+    if (currentIndex < 0) currentIndex = 0;
+    updateAvatarDisplay();
   }
   function getCurrentPlayerIndex(nick) {
     const players = getPlayers();
@@ -7210,6 +7234,7 @@ onReady(() => {
   window.showPrevious = showPrevious;
   window.savePlayerData = savePlayerData;
   window.updateAvatarDisplay = updateAvatarDisplay;
+  window.selectSkin = selectSkin;
   window.__agarsuUpdatePlayerPass = updateCurrentPlayerPass;
   window.__agarsuGetPlayers = getPlayers;
   window.loadSkinsList = loadSkinsList;
