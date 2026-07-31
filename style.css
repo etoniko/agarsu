@@ -624,7 +624,6 @@ i:hover{cursor:pointer;}
     display: none;
     padding: 6px;
     background: rgb(133 133 133 / 65%);
-    width: 283px;
     margin-top: 8px;
     justify-content: space-between;
 }
