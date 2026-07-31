@@ -178,6 +178,14 @@
             <div class="settings-panels checkbox-container">
               <section class="settings-panel active" data-panel="graphics">
                 <h3 class="settings-panel-title">Отображение в игре</h3>
+                <div id="quality-selector" class="settings-field">
+                  <label for="quality-select">Качество:</label>
+                  <select id="quality-select" onchange="setRenderQuality(this.value);">
+                    <option value="low">Низкое (DPI 50%)</option>
+                    <option value="medium">Среднее (DPI 75%)</option>
+                    <option value="high" selected>Высокое</option>
+                  </select>
+                </div>
                 <label><input type="checkbox" class="save" data-box-id="1" onchange="setSkins(this.checked);">Видеть скины</label>
                 <label><input type="checkbox" class="save" data-box-id="2" onchange="setNames(this.checked);">Видеть имена</label>
                 <label><input type="checkbox" class="save" data-box-id="3" onchange="setColors(this.checked);">Цвета с сервера</label>
