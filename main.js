@@ -859,10 +859,19 @@
       S.viewZoom = (9 * S.viewZoom + newViewZoom) / 10;
     }
   }
+  function getQualityDprScale(quality) {
+    if (quality === "low") return .5;
+    if (quality === "medium") return .75;
+    return 1;
+  }
+  function getEffectiveDpr(S) {
+    const base = window.devicePixelRatio || 1;
+    return base * getQualityDprScale(S && S.renderQuality);
+  }
   function canvasResize(S) {
     const wHandle = S.wHandle || window;
     window.scrollTo(0, 0);
-    const dpr = window.devicePixelRatio;
+    const dpr = getEffectiveDpr(S);
     S.dpr = dpr;
     S.canvasWidth = wHandle.innerWidth * dpr;
     S.canvasHeight = wHandle.innerHeight * dpr;
@@ -1120,7 +1129,7 @@
       return;
     }
     const t0 = perfEnabled ? performance.now() : 0;
-    if (.4 > S.viewZoom) {
+    if (.4 > S.viewZoom || S.renderQuality === "low" || S.renderQuality === "medium") {
       S.qTree = null;
       if (perfEnabled) perfStats.qtreeMs = performance.now() - t0;
       return;
@@ -2697,6 +2706,10 @@
       showColor: true,
       showMass: true,
       hideChat: false,
+      renderQuality: (() => {
+        const q = readStored("render_quality", "high");
+        return q === "low" || q === "medium" ? q : "high";
+      })(),
       smoothRender: .4,
       closebord: false,
       enableMouseClicks: false,
@@ -2873,6 +2886,13 @@
         this._dirty = true;
       }
     },
+    setStroke(a) {
+      const next = !!a;
+      if (this._stroke !== next) {
+        this._stroke = next;
+        this._dirty = true;
+      }
+    },
     setValue(a) {
       if (a != this._value) {
         this._value = a;
@@ -3003,6 +3023,7 @@
     },
     getNumPoints() {
       const S = deps3.S;
+      if (S.renderQuality === "low" || S.renderQuality === "medium") return 0;
       if (this.id === 0) return 16;
       let minPoints = this.size < 20 ? 0 : 10;
       if (this.isVirus) minPoints = 30;
@@ -3132,7 +3153,8 @@
       const invisible = S.invisible || new Set;
       const rotation = S.rotation || new Set;
       const skinList = S.skinList || {};
-      const simpleRender = this.id !== 0 && !this.isAgitated && S.smoothRender > S.viewZoom || this.getNumPoints() < 10;
+      const qualitySimple = S.renderQuality === "low" || S.renderQuality === "medium";
+      const simpleRender = qualitySimple || this.id !== 0 && !this.isAgitated && S.smoothRender > S.viewZoom || this.getNumPoints() < 10;
       if (!simpleRender && this.wasSimpleDrawing) this.points.forEach(p => p.size = this.size);
       let bigPointSize = this.size;
       if (!this.wasSimpleDrawing) this.points.forEach(p => bigPointSize = Math.max(bigPointSize, p.size));
@@ -3144,7 +3166,8 @@
       }
       let renderSize = this.size;
       if (renderSize === 0) renderSize = 20;
-      ctx.lineWidth = S.closebord ? 0 : 10;
+      const noBorder = S.closebord || S.renderQuality === "low";
+      ctx.lineWidth = noBorder ? 0 : 10;
       ctx.lineCap = "round";
       ctx.lineJoin = this.isVirus ? "miter" : "round";
       const isTransp = transparent.has(this.name);
@@ -3161,7 +3184,7 @@
       }
       ctx.closePath();
       const useVirusImageFill = this.isVirus && !isTransp && drawVirusFillBackground(ctx, this, renderSize, simpleRender, bigPointSize);
-      if (!S.closebord) ctx.stroke();
+      if (!noBorder) ctx.stroke();
       if (!useVirusImageFill) ctx.fill();
       if (S.showSkin && !this.isVirus) {
         const normalizeNickFn = deps3.normalizeNick || normalizeNick;
@@ -3270,6 +3293,7 @@
           this.nameCache.setValue(displayName);
           this.nameCache.setSize(this.getNameSize());
           this.nameCache.setScale(zoomRatio);
+          this.nameCache.setStroke(S.renderQuality !== "low");
           const img = this.nameCache.render();
           let drawWidth = img.width * invZoom;
           let drawHeight = img.height * invZoom;
@@ -3284,7 +3308,7 @@
           const drawY = y - drawHeight / 2;
           ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
         }
-        if (S.showMass && !this.isVirus && !this.isEjected && !this.isAgitated && this.size > 100) {
+        if (S.renderQuality !== "low" && S.showMass && !this.isVirus && !this.isEjected && !this.isAgitated && this.size > 100) {
           const massVal = Math.floor(this.size * this.size * .01);
           this.sizeCache.setValue(massVal);
           this.sizeCache.setScale(zoomRatio);
@@ -3590,7 +3614,7 @@
     S.mainCanvas = S.nCanvas = document.getElementById("canvas");
     S.ctx = S.mainCanvas.getContext("2d");
     function syncMouseFromEvent(event2) {
-      const dpr = window.devicePixelRatio || 1;
+      const dpr = S.dpr || getEffectiveDpr(S);
       S.rawMouseX = event2.clientX * dpr;
       S.rawMouseY = event2.clientY * dpr;
       mouseCoordinateChange(S);
@@ -3963,7 +3987,7 @@
         }
       });
     });
-    S.dpr = window.devicePixelRatio;
+    S.dpr = getEffectiveDpr(S);
     function onTouchStart(e) {
       for (let i = 0; i < e.changedTouches.length; i++) {
         const touch = e.changedTouches[i];
@@ -6211,6 +6235,12 @@ async function updateOnlineCount() {
   }
   function restoreCheckboxCookies(S) {
     onReady(function() {
+      const qualitySelect = document.getElementById("quality-select");
+      const savedQuality = readStored("render_quality", "high");
+      const quality = savedQuality === "low" || savedQuality === "medium" ? savedQuality : "high";
+      S.renderQuality = quality;
+      if (qualitySelect) qualitySelect.value = quality;
+      if (S.nCanvas) canvasResize(S);
       const checkboxes = Array.from(document.querySelectorAll(".save"));
       checkboxes.forEach(input => {
         const id = Number(input.dataset.boxId);
@@ -6267,6 +6297,14 @@ async function updateOnlineCount() {
     wHandle.setSmooth = function(arg) {
       S.smoothRender = arg ? 2 : .4;
       persistCheckbox(6, arg);
+    };
+    wHandle.setRenderQuality = function(arg) {
+      const q = arg === "low" || arg === "medium" ? arg : "high";
+      S.renderQuality = q;
+      writeStored("render_quality", q);
+      const select = document.getElementById("quality-select");
+      if (select && select.value !== q) select.value = q;
+      canvasResize(S);
     };
     wHandle.setNoBorder = function(arg) {
       S.closebord = arg;
