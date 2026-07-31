@@ -7642,6 +7642,63 @@ onReady(() => {
   }
   var nicknameInput = document.getElementById("nickname");
   var passwordInput = document.getElementById("password");
+  var emailInput = document.getElementById("shopEmail");
+  var shopPayOverlay = document.getElementById("shopPayOverlay");
+  var shopPayBackdrop = document.getElementById("shopPayBackdrop");
+  var payButton = document.getElementById("payButton");
+  var shopPayBack = document.getElementById("shopPayBack");
+  var shopPayAmount = document.getElementById("shopPayAmount");
+  var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  var isPayStepOpen = false;
+  var isSubmittingPayment = false;
+  function getShopEmail() {
+    return ((emailInput == null ? void 0 : emailInput.value) || "").trim().toLowerCase();
+  }
+  function isShopEmailValid() {
+    return EMAIL_RE.test(getShopEmail());
+  }
+  function updatePayButtonState() {
+    if (!payButton) return;
+    payButton.disabled = isSubmittingPayment || !isShopEmailValid();
+    if (isSubmittingPayment) return;
+    payButton.textContent = "ОПЛАТИТЬ";
+  }
+  function trySubmitEmail() {
+    if (!isPayStepOpen || isSubmittingPayment) return;
+    if (!isShopEmailValid()) {
+      if (getShopEmail()) showError("emailError", "Введите корректный email");
+      return;
+    }
+    hideError("emailError");
+    startPayment();
+  }
+  function openPayStep() {
+    if (!shopPayOverlay) return;
+    const totalText = (document.getElementById("totalAmount") || {}).textContent || "0 ₽";
+    if (shopPayAmount) shopPayAmount.textContent = totalText;
+    shopPayOverlay.hidden = false;
+    shopPayOverlay.setAttribute("aria-hidden", "false");
+    requestAnimationFrame(() => shopPayOverlay.classList.add("is-open"));
+    isPayStepOpen = true;
+    hideError("emailError");
+    hideError("formError");
+    updatePayButtonState();
+    setTimeout(() => emailInput == null ? void 0 : emailInput.focus(), 60);
+  }
+  function closePayStep() {
+    if (!shopPayOverlay || isSubmittingPayment) return;
+    shopPayOverlay.classList.remove("is-open");
+    shopPayOverlay.setAttribute("aria-hidden", "true");
+    isPayStepOpen = false;
+    hideError("emailError");
+    const finishHide = () => {
+      if (!isPayStepOpen) shopPayOverlay.hidden = true;
+    };
+    shopPayOverlay.addEventListener("transitionend", finishHide, {
+      once: true
+    });
+    setTimeout(finishHide, 240);
+  }
   loadAllowTxt().then(() => {
     blockForbiddenChars(nicknameInput);
     blockForbiddenChars(passwordInput);
@@ -7649,6 +7706,38 @@ onReady(() => {
     blockForbiddenChars(nicknameInput);
     blockForbiddenChars(passwordInput);
     showToast("Не удалось загрузить allowtxt.txt", "error");
+  });
+  emailInput == null ? void 0 : emailInput.addEventListener("input", () => {
+    if (!getShopEmail() || isShopEmailValid()) hideError("emailError");
+    updatePayButtonState();
+  });
+  emailInput == null ? void 0 : emailInput.addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      trySubmitEmail();
+    }
+  });
+  emailInput == null ? void 0 : emailInput.addEventListener("blur", () => {
+    if (!isPayStepOpen || isSubmittingPayment) return;
+    if (isShopEmailValid()) trySubmitEmail();
+  });
+  shopPayBack == null ? void 0 : shopPayBack.addEventListener("mousedown", e => {
+    e.preventDefault();
+  });
+  shopPayBack == null ? void 0 : shopPayBack.addEventListener("click", () => closePayStep());
+  shopPayBackdrop == null ? void 0 : shopPayBackdrop.addEventListener("click", () => {
+    if (isSubmittingPayment) return;
+    if (isShopEmailValid()) trySubmitEmail();
+    else closePayStep();
+  });
+  payButton == null ? void 0 : payButton.addEventListener("mousedown", e => {
+    e.preventDefault();
+  });
+  payButton == null ? void 0 : payButton.addEventListener("click", () => {
+    trySubmitEmail();
+  });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && isPayStepOpen && !isSubmittingPayment) closePayStep();
   });
   nicknameInput.addEventListener("blur", async () => {
     const isClan = document.getElementById("clan").checked;
@@ -7829,6 +7918,7 @@ onReady(() => {
     if (!nickname || isNicknameTaken || !hasOrderItem) {
       setReceiptVisible(false);
       buyButton.disabled = true;
+      if (isPayStepOpen) closePayStep();
       return;
     }
     const passwordCost = password ? 150 : 0;
@@ -7862,9 +7952,11 @@ onReady(() => {
     if (total > 0) {
       totalEl.textContent = `${total} ₽`;
       buyButton.disabled = false;
+      if (isPayStepOpen && shopPayAmount) shopPayAmount.textContent = `${total} ₽`;
     } else {
       setReceiptVisible(false);
       buyButton.disabled = true;
+      if (isPayStepOpen) closePayStep();
     }
   }
   document.querySelectorAll('input[name="serviceType"]').forEach(radio => {
@@ -7876,20 +7968,56 @@ onReady(() => {
   updateNicknameDisplay();
   calculateCost();
   updateShopAuthNotice();
-  document.getElementById("paymentForm").addEventListener("submit", async e => {
-    var _a;
-    e.preventDefault();
-    const rawNickname = nicknameInput.value.trim();
-    const nickname = rawNickname.toLowerCase();
-    const password = passwordInput.value.trim().toLowerCase();
+  document.getElementById("buyButton").addEventListener("click", () => {
+    if (document.getElementById("buyButton").disabled) return;
+    const nickname = nicknameInput.value.trim();
+    const password = passwordInput.value.trim();
     const file = fileInput.files[0];
-    const serviceType = ((_a = document.querySelector('input[name="serviceType"]:checked')) == null ? void 0 : _a.value) || "";
     if (!nickname) {
       showError("formError", "Введите ник/клан.");
       return;
     }
+    if (isNicknameTaken) {
+      showError("formError", "Ник занят");
+      return;
+    }
     if (!password && !file && !invisibleNickCheckbox.checked && !rotationNickCheckbox.checked) {
       showError("formError", "Выберите хотя бы пароль или скин для оплаты");
+      return;
+    }
+    openPayStep();
+  });
+  document.getElementById("paymentForm").addEventListener("submit", e => {
+    e.preventDefault();
+    if (!document.getElementById("buyButton").disabled) openPayStep();
+  });
+  async function startPayment() {
+    var _a;
+    if (isSubmittingPayment) return;
+    const rawNickname = nicknameInput.value.trim();
+    const nickname = rawNickname.toLowerCase();
+    const password = passwordInput.value.trim().toLowerCase();
+    const email = getShopEmail();
+    const file = fileInput.files[0];
+    const serviceType = ((_a = document.querySelector('input[name="serviceType"]:checked')) == null ? void 0 : _a.value) || "";
+    if (!nickname) {
+      showError("formError", "Введите ник/клан.");
+      closePayStep();
+      return;
+    }
+    if (!email) {
+      showError("emailError", "Укажите email для чека");
+      emailInput == null ? void 0 : emailInput.focus();
+      return;
+    }
+    if (!isShopEmailValid()) {
+      showError("emailError", "Введите корректный email");
+      emailInput == null ? void 0 : emailInput.focus();
+      return;
+    }
+    if (!password && !file && !invisibleNickCheckbox.checked && !rotationNickCheckbox.checked) {
+      showError("formError", "Выберите хотя бы пароль или скин для оплаты");
+      closePayStep();
       return;
     }
     const multiplier = getMultiplier();
@@ -7900,6 +8028,7 @@ onReady(() => {
     formData.append("name", nickname);
     formData.append("amount", amount);
     formData.append("serviceType", serviceType);
+    formData.append("email", email);
     if (password) formData.append("password", password);
     if (invisibleNickCheckbox.checked) formData.append("invisible", "1");
     if (rotationNickCheckbox.checked) formData.append("rotation", "1");
@@ -7907,24 +8036,45 @@ onReady(() => {
     if (getAccountToken()) {
       headers["Authorization"] = `Game ${getAccountToken()}`;
     }
-    if (file) {
-      if (file.type === "image/gif") {
-        formData.append("image", file, file.name);
-        await sendForm(formData, headers);
-      } else {
-        skinCanvas.toBlob(async blob => {
-          if (!blob) {
-            showError("formError", "Не удалось обработать изображение. Попробуйте другой файл.");
-            return;
-          }
-          formData.append("image", blob, "skin.png");
+    isSubmittingPayment = true;
+    updatePayButtonState();
+    if (payButton) payButton.textContent = "ОПЛАТА...";
+    const restorePayBtn = () => {
+      isSubmittingPayment = false;
+      updatePayButtonState();
+    };
+    try {
+      if (file) {
+        if (file.type === "image/gif") {
+          formData.append("image", file, file.name);
           await sendForm(formData, headers);
-        }, "image/png");
+        } else {
+          await new Promise((resolve, reject) => {
+            skinCanvas.toBlob(async blob => {
+              if (!blob) {
+                showError("formError", "Не удалось обработать изображение. Попробуйте другой файл.");
+                reject(new Error("blob"));
+                return;
+              }
+              formData.append("image", blob, "skin.png");
+              try {
+                await sendForm(formData, headers);
+                resolve();
+              } catch (err) {
+                reject(err);
+              }
+            }, "image/png");
+          });
+        }
+      } else {
+        await sendForm(formData, headers);
       }
-    } else {
-      await sendForm(formData, headers);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      restorePayBtn();
     }
-  });
+  }
   async function sendForm(formData, headers = {}) {
     var _a;
     try {
@@ -7933,8 +8083,12 @@ onReady(() => {
         headers,
         body: formData
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg = data.error && (data.error.description || data.error) || `Ошибка оплаты (${res.status})`;
+        showError("formError", String(msg), true);
+        throw new Error(String(msg));
+      }
       if (data.warning) {
         showError("formError", data.warning, false);
         setTimeout(() => hideError("formError"), 8e3);
@@ -7942,17 +8096,25 @@ onReady(() => {
       if ((_a = data == null ? void 0 : data.confirmation) == null ? void 0 : _a.confirmation_url) {
         showToast("Переходим к оплате...", "success");
         window.location.href = data.confirmation.confirmation_url;
-      } else if (data == null ? void 0 : data.redirect) {
+        return;
+      }
+      if (data == null ? void 0 : data.redirect) {
         showToast("Переходим к оплате...", "success");
         window.location.href = data.redirect;
-      } else if (data == null ? void 0 : data.error) {
-        showError("formError", `Ошибка: ${data.error.description || data.error}`, true);
-      } else {
-        showError("formError", "Неизвестная ошибка платежа.", true);
+        return;
       }
+      if (data == null ? void 0 : data.error) {
+        showError("formError", `Ошибка: ${data.error.description || data.error}`, true);
+        throw new Error(String(data.error.description || data.error));
+      }
+      showError("formError", "Неизвестная ошибка платежа.", true);
+      throw new Error("unknown payment error");
     } catch (err) {
       console.error(err);
-      showError("formError", "Ошибка соединения. Попробуйте позже.", true);
+      if (!(err && err.message && String(err.message).includes("Ошибка"))) {
+        showError("formError", "Ошибка соединения. Попробуйте позже.", true);
+      }
+      throw err;
     }
   }
   var togglePassword = document.getElementById("togglePassword");
@@ -7970,6 +8132,7 @@ onReady(() => {
   });
   function openShopPurchase(nickname, options = {}) {
     if (typeof showContent === "function") showContent("shop");
+    closePayStep();
     const isClan = !!options.clan;
     const personal = document.getElementById("personal");
     const clan = document.getElementById("clan");
