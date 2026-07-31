@@ -298,6 +298,7 @@
     <div id="fileError" class="shop-float-alert shop-float-alert--error"></div>
     <div id="nicknameError" class="shop-float-alert shop-float-alert--error"></div>
     <div id="passwordError" class="shop-float-alert shop-float-alert--error"></div>
+    <div id="emailError" class="shop-float-alert shop-float-alert--error"></div>
     <div id="formError" class="shop-float-alert shop-float-alert--error"></div>
   </div>
   <div class="top-info"><div><span data-en="Personal shop" data-tr="Kişisel mağaza" data-zh="个人商店" data-ar="متجر شخصي" data-es="Tienda personal" data-pl="Sklep osobisty" data-de="Persönlicher Shop" data-uk="Магазин ніку">Магазин лички</span></div></div>
@@ -368,13 +369,27 @@
             <strong id="totalAmount">0 ₽</strong>
           </div>
         </div>
-        <button type="submit" id="buyButton" class="shop-buy-btn" form="paymentForm" disabled data-en="BUY" data-tr="SATIN AL" data-zh="购买" data-ar="شراء" data-es="COMPRAR" data-pl="KUP" data-de="KAUFEN" data-uk="КУПИТИ">КУПИТЬ</button>
+        <button type="button" id="buyButton" class="shop-buy-btn" disabled data-en="BUY" data-tr="SATIN AL" data-zh="购买" data-ar="شراء" data-es="COMPRAR" data-pl="KUP" data-de="KAUFEN" data-uk="КУПИТИ">КУПИТЬ</button>
         <p class="shop-support">
           <span data-en="Support:" data-tr="Destek:" data-zh="支持：" data-ar="الدعم:" data-es="Soporte:" data-pl="Wsparcie:" data-de="Support:" data-uk="Підтримка:">Поддержка:</span> <a href="https://t.me/nikkkkkysha" target="_blank">@nikkkkkysha</a>
           <span>·</span>
           <a href="mailto:ikometai@yandex.ru">ikometai@ya.ru</a>
         </p>
       </aside>
+    </div>
+    <div id="shopPayOverlay" class="shop-pay-overlay" hidden aria-hidden="true">
+      <div class="shop-pay-backdrop" id="shopPayBackdrop"></div>
+      <div class="shop-pay-card" role="dialog" aria-modal="true" aria-labelledby="shopPayTitle">
+        <button type="button" id="shopPayBack" class="shop-pay-close" aria-label="Закрыть" data-en-aria-label="Close" data-tr-aria-label="Kapat" data-zh-aria-label="关闭" data-ar-aria-label="إغلاق" data-es-aria-label="Cerrar" data-pl-aria-label="Zamknij" data-de-aria-label="Schließen" data-uk-aria-label="Закрити">&times;</button>
+        <div class="shop-pay-title" id="shopPayTitle">
+          <span data-en="Receipt" data-tr="Fiş" data-zh="收据" data-ar="الإيصال" data-es="Recibo" data-pl="Paragon" data-de="Beleg" data-uk="Чек">Чек</span>
+          <strong id="shopPayAmount">0 ₽</strong>
+        </div>
+        <p class="shop-pay-hint" data-en="Before payment, enter your email for the receipt" data-tr="Ödemeden önce fiş için e-postanızı yazın" data-zh="付款前请填写收据邮箱" data-ar="قبل الدفع أدخل بريدك للإيصال" data-es="Antes de pagar, indica tu email para el recibo" data-pl="Przed płatnością podaj email na paragon" data-de="Vor der Zahlung E-Mail für den Beleg angeben" data-uk="Перед оплатою вкажіть email для чека">Перед переходом на оплату укажите вашу почту</p>
+        <label class="shop-pay-label" for="shopEmail" data-en="Email for receipt" data-tr="Fiş e-postası" data-zh="收据邮箱" data-ar="بريد الإيصال" data-es="Email del recibo" data-pl="Email na paragon" data-de="E-Mail für Beleg" data-uk="Email для чека">Email для чека</label>
+        <input type="email" id="shopEmail" name="email" class="shop-pay-email" data-en-placeholder="name@example.com" data-tr-placeholder="name@example.com" data-zh-placeholder="name@example.com" data-ar-placeholder="name@example.com" data-es-placeholder="name@example.com" data-pl-placeholder="name@example.com" data-de-placeholder="name@example.com" data-uk-placeholder="name@example.com" placeholder="name@example.com" maxlength="120" autocomplete="email" inputmode="email">
+        <button type="button" id="payButton" class="shop-pay-btn" disabled data-en="PAY" data-tr="ÖDE" data-zh="支付" data-ar="ادفع" data-es="PAGAR" data-pl="ZAPŁAĆ" data-de="ZAHLEN" data-uk="СПЛАТИТИ">ОПЛАТИТЬ</button>
+      </div>
     </div>
   </div>
 </div>

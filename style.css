@@ -624,6 +624,7 @@ i:hover{cursor:pointer;}
     display: none;
     padding: 6px;
     background: rgb(133 133 133 / 65%);
+    width: 283px;
     margin-top: 8px;
     justify-content: space-between;
 }
@@ -1910,6 +1911,127 @@ input{font-size:16px;}
   pointer-events:none;
 }
 #shop .top-info{margin-bottom:8px;}
+#shop .shop-pay-overlay{
+  position:absolute;
+  inset:0;
+  z-index:70;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:16px;
+  box-sizing:border-box;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .2s ease;
+}
+#shop .shop-pay-overlay.is-open{
+  opacity:1;
+  pointer-events:auto;
+}
+#shop .shop-pay-overlay[hidden]:not(.is-open){display:none!important;}
+#shop .shop-pay-backdrop{
+  position:absolute;
+  inset:0;
+  background:#0b1220cc;
+  backdrop-filter:blur(2px);
+}
+#shop .shop-pay-card{
+  position:relative;
+  z-index:1;
+  width:min(320px, 100%);
+  padding:18px 16px 16px;
+  background:#132038;
+  border:1px solid #016bef55;
+  border-radius:14px;
+  box-shadow:0 16px 40px #00000066;
+  box-sizing:border-box;
+  transform:translateY(8px) scale(.98);
+  transition:transform .2s ease;
+}
+#shop .shop-pay-overlay.is-open .shop-pay-card{
+  transform:translateY(0) scale(1);
+}
+#shop .shop-pay-close{
+  position:absolute;
+  top:8px;
+  right:8px;
+  width:28px;
+  height:28px;
+  border:none;
+  border-radius:8px;
+  background:transparent;
+  color:#8fa8d4;
+  font-size:20px;
+  line-height:1;
+  cursor:pointer;
+}
+#shop .shop-pay-close:hover{background:#ffffff12;color:#fff;}
+#shop .shop-pay-title{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:10px;
+  padding-right:28px;
+  font-size:13px;
+  font-weight:600;
+  color:#8fa8d4;
+}
+#shop .shop-pay-title strong,
+#shop #shopPayAmount{
+  font-size:22px;
+  font-weight:700;
+  color:#fff;
+}
+#shop .shop-pay-hint{
+  margin:8px 0 14px;
+  font-size:12px;
+  line-height:1.4;
+  color:#9eb4d8;
+}
+#shop .shop-pay-label{
+  display:block;
+  margin-bottom:6px;
+  font-size:11px;
+  font-weight:600;
+  color:#8fa8d4;
+}
+#shop .shop-pay-email{
+  width:100%;
+  height:38px;
+  margin-bottom:12px;
+  padding:0 12px;
+  font-size:14px;
+  font-family:inherit;
+  color:#fff;
+  background:#0e172c;
+  border:1px solid #ffffff1a;
+  border-radius:10px;
+  box-sizing:border-box;
+}
+#shop .shop-pay-email:focus{
+  border-color:#016bef;
+  outline:none;
+  box-shadow:0 0 0 3px #016bef28;
+}
+#shop .shop-pay-email::placeholder{color:#5c7294;}
+#shop .shop-pay-btn{
+  width:100%;
+  height:40px;
+  border:none;
+  border-radius:10px;
+  background:#016bef;
+  color:#fff;
+  font-size:13px;
+  font-weight:700;
+  letter-spacing:.04em;
+  cursor:pointer;
+  transition:background .15s, opacity .15s;
+}
+#shop .shop-pay-btn:hover:not(:disabled){background:#0a5fd0;}
+#shop .shop-pay-btn:disabled{
+  opacity:.45;
+  cursor:not-allowed;
+}
 #shop .shop-container{
   position:relative;
   width:690px;
@@ -2307,6 +2429,9 @@ input{font-size:16px;}
 #shop .shop-toast-warning{background:#2a2418;color:#f0d78a;border-color:#c9a22755;}
 #shop .shop-toast-error{background:#991b1b;color:#fff;}
 @media (max-width:599px){
+  #shop .shop-pay-card{width:100%;padding:14px 12px;}
+  #shop .shop-pay-title strong,
+  #shop #shopPayAmount{font-size:18px;}
   #shop .shop-container{
     width:100%;
     height:370px;
