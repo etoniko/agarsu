@@ -1549,6 +1549,7 @@
       entryDiv.style.color = "#FFFFFF";
     }
     const nameSpan = document.createElement("span");
+    nameSpan.className = "Lednick-name";
     nameSpan.innerHTML = name;
     if (!isSystemLine && isTournamentPlayer && !isWinner) {
       nameSpan.title = "Участник турнира";
@@ -1560,13 +1561,11 @@
       const playerPassId = resolvePlayer ? resolvePlayer(cleanName) : null;
       const passId = clanPassId || playerPassId;
       if (passId) {
-        const profileBase = clanPassId ? hooks.STATS_CLAN_PROFILE_BASE || "https://agar.su/stats/clans/?id=" : hooks.STATS_PROFILE_BASE || "https://agar.su/stats/users/?id=";
-        nameSpan.title = clanPassId ? "Статистика клана" : "Статистика игрока";
+        nameSpan.dataset.hasPass = "1";
+        nameSpan.dataset.passId = String(passId);
+        nameSpan.dataset.passClan = clanPassId ? "1" : "0";
+        nameSpan.title = clanPassId ? "ПКМ — статистика клана" : "ПКМ — статистика игрока";
         nameSpan.style.cursor = "pointer";
-        nameSpan.onclick = function(e) {
-          e.stopPropagation();
-          window.open(profileBase + encodeURIComponent(passId), "_blank");
-        };
       }
     }
     const iconsContainer = document.createElement("span");
@@ -2194,7 +2193,15 @@
       }
       wsSend(msg);
     }
+    function isIncompletePrivateChat(str) {
+      const s = String(str || "").trim();
+      if (!s || !/^!ls/i.test(s)) return false;
+      // Valid PM: !ls<id> <non-empty message>. Bare !ls1223 must not go to public chat.
+      return !/^!ls\d+\s+\S/i.test(s);
+    }
     function sendChat(str) {
+      if (isIncompletePrivateChat(str)) return;
+      str = appendChatLangTag(str);
       if (!wsIsOpen() || !(str.length < 200) || !(str.length > 0) || S.hideChat) return;
       const msg = prepareData(2 + 2 * str.length);
       let offset = 0;
@@ -3732,9 +3739,21 @@
           const chatText = chatInput ? chatInput.value.trim() : "";
           let combinedText = "";
           if (lsText && chatText) combinedText = lsText + " " + chatText; else if (lsText) combinedText = lsText; else if (chatText) combinedText = chatText;
+          if (combinedText && /^!ls/i.test(combinedText) && !/^!ls\d+\s+\S/i.test(combinedText)) {
+            // Incomplete PM (!ls1223 without message) — do not send, keep chat open
+            isTyping = true;
+            if (chatInput) chatInput.focus();
+            return;
+          }
           if (combinedText.length > 0) hooks.sendChat(combinedText);
           if (chatInput) chatInput.value = "";
-          if (lsInput) lsInput.value = "";
+          if (lsInput) {
+            if (S.activeDialog && /^!ls\d+$/i.test(S.activeDialog)) {
+              lsInput.value = S.activeDialog + " ";
+            } else {
+              lsInput.value = "";
+            }
+          }
           if (chatInput) chatInput.blur();
           if (lsInput) lsInput.blur();
         } else {
@@ -5379,6 +5398,54 @@ async function updateOnlineCount() {
     }
     return censorText(S.badWordsSet, message);
   }
+  var CHAT_LANG_CODES = new Set([ "ru", "en", "uk", "tr", "zh", "ar", "es", "pl", "de" ]);
+  var CHAT_LANG_FLAG = {
+    ru: "ru",
+    en: "gb",
+    uk: "ua",
+    tr: "tr",
+    zh: "cn",
+    ar: "sa",
+    es: "es",
+    pl: "pl",
+    de: "de"
+  };
+  var CHAT_LANG_TAG_RE = /\s*:(ru|en|uk|tr|zh|ar|es|pl|de)\s*$/i;
+  function getChatUiLangCode() {
+    let lang = "ru";
+    try {
+      if (typeof window.getUiLang === "function") lang = window.getUiLang(); else if (window.__uiLang) lang = window.__uiLang;
+    } catch (e) {}
+    lang = String(lang || "ru").toLowerCase();
+    if (lang === "zh-cn" || lang.indexOf("zh") === 0) lang = "zh";
+    if (CHAT_LANG_CODES.has(lang)) return lang;
+    return "en";
+  }
+  function parseChatLangTag(message) {
+    const raw = String(message == null ? "" : message);
+    const m = raw.match(CHAT_LANG_TAG_RE);
+    if (!m) return {
+      text: raw,
+      lang: null
+    };
+    return {
+      text: raw.slice(0, m.index).trimEnd(),
+      lang: m[1].toLowerCase()
+    };
+  }
+  function appendChatLangTag(str) {
+    let s = String(str || "").trim();
+    if (!s) return s;
+    if (/^!ls\d+\s+PvPInvite;/i.test(s)) return s;
+    if (/вoшёл в игру/i.test(s)) return s;
+    s = s.replace(CHAT_LANG_TAG_RE, "").trimEnd();
+    const code = getChatUiLangCode();
+    const tag = " :" + code;
+    if (s.length + tag.length >= 200) {
+      s = s.slice(0, Math.max(0, 199 - tag.length)).trimEnd();
+    }
+    return s + tag;
+  }
   function countProfanity(S, message) {
     if (!S.badWordsSet || S.badWordsSet.size === 0) return 0;
     if (S.showAdultContent) return 0;
@@ -5635,8 +5702,8 @@ async function updateOnlineCount() {
     msgDiv.dataset.chatIdx = String(msgIndex);
     const lowerName = lastMessage.name.toLowerCase();
     if (ADMINS.some(admin => admin.toLowerCase() === lowerName)) {
-    msgDiv.style.backgroundColor = "#7b2929";
-}
+      msgDiv.style.backgroundColor = "rgba(194, 13, 13, 0.74)";
+    }
     if (DONATORS.includes(lowerName)) msgDiv.className = "chatX_msg " + lowerName; else msgDiv.className = "chatX_msg";
     const normalizedName = normalizeNick(lastMessage.name || "");
     let targetDialogId = null;
@@ -5650,11 +5717,21 @@ async function updateOnlineCount() {
         targetDiv = ((_b = S.dialogs[targetDialogId]) == null ? void 0 : _b.div) || targetDiv;
       }
     }
+    const parsedLang = parseChatLangTag(messageContent);
+    messageContent = parsedLang.text;
+    const messageLang = parsedLang.lang;
     if (!targetDiv) targetDiv = document.getElementById("chatX_feed");
     const avatarContainer = document.createElement("div");
     avatarContainer.className = "avatarXcontainer";
     if (S.passUsers.includes(normalizedName)) {
       avatarContainer.style.setProperty("--after-display", "block");
+    }
+    if (messageLang && CHAT_LANG_FLAG[messageLang]) {
+      const langBadge = document.createElement("span");
+      langBadge.className = "chatX_lang fi fi-" + CHAT_LANG_FLAG[messageLang];
+      langBadge.title = messageLang.toUpperCase();
+      langBadge.setAttribute("aria-label", messageLang);
+      avatarContainer.appendChild(langBadge);
     }
     const avatar = document.createElement("img");
     avatar.className = "chatX_avatar";
@@ -5760,72 +5837,54 @@ async function updateOnlineCount() {
     msgDiv.appendChild(timeDiv);
     msgDiv.addEventListener("contextmenu", e => {
       e.preventDefault();
-      document.querySelectorAll(".chat-context-menu").forEach(m => m.remove());
-      const menu = document.createElement("div");
-      menu.className = "chat-context-menu";
-      menu.style.top = e.clientY + "px";
-      menu.style.left = e.clientX + "px";
       const playerId = lastMessage.pId;
-      const pmBtn = document.createElement("div");
-      pmBtn.textContent = "Личное сообщение";
-      pmBtn.style.cursor = "pointer";
-      pmBtn.onclick = () => {
-        createDialog(S, hooks, playerId, lastMessage.name, S.skinList[normalizeNick(lastMessage.name)] ? `https://api.agar.su/skins/${S.skinList[normalizeNick(lastMessage.name)]}.png` : "https://api.agar.su/skins/4.png");
-        switchToDialog(S, `!ls${playerId}`);
-        menu.remove();
-      };
-      const ignoreBtn = document.createElement("div");
-      ignoreBtn.textContent = "Игнорировать";
-      ignoreBtn.style.cursor = "pointer";
-      ignoreBtn.onclick = () => {
-        S.ignoredPlayers.add(playerId);
-        msgDiv.remove();
-        menu.remove();
-      };
-      const clearIgnoreBtn = document.createElement("div");
-      clearIgnoreBtn.textContent = "Удалить всех из игнора";
-      clearIgnoreBtn.style.cursor = "pointer";
-      clearIgnoreBtn.onclick = () => {
-        S.ignoredPlayers.clear();
-        menu.remove();
-      };
-      const delMsgBtn = document.createElement("div");
-      delMsgBtn.textContent = "Удалить сообщение";
-      delMsgBtn.style.cursor = "pointer";
-      delMsgBtn.onclick = () => {
-        msgDiv.remove();
-        menu.remove();
-      };
-      const delAllBtn = document.createElement("div");
-      delAllBtn.textContent = "Удалить все сообщения игрока";
-      delAllBtn.style.cursor = "pointer";
-      delAllBtn.onclick = () => {
-        [ ...targetDiv.children ].forEach(c => {
-          var _a2;
-          if ((_a2 = c.querySelector(".chatX_nick")) == null ? void 0 : _a2.title.includes(playerId)) c.remove();
+      const menuItems = [];
+      if (resolveStatsForName(S, lastMessage.name)) {
+        menuItems.push({
+          label: "Статистика",
+          onClick: () => openStatsForName(S, lastMessage.name)
         });
-        menu.remove();
-      };
-      const pvpBtn = document.createElement("div");
-      pvpBtn.textContent = "Позвать на PvP";
-      pvpBtn.style.cursor = "pointer";
-      pvpBtn.onclick = () => {
-        openPvPModal(S, hooks, lastMessage.pId, lastMessage.name);
-        menu.remove();
-      };
-      menu.appendChild(pvpBtn);
-      menu.appendChild(pmBtn);
-      menu.appendChild(ignoreBtn);
-      menu.appendChild(clearIgnoreBtn);
-      menu.appendChild(delMsgBtn);
-      menu.appendChild(delAllBtn);
-      document.body.appendChild(menu);
-      const closeMenu = event => {
-        if (!menu.contains(event.target)) menu.remove();
-      };
-      document.addEventListener("click", closeMenu, {
-        once: true
+      }
+      menuItems.push({
+        label: "Позвать на PvP",
+        onClick: () => openPvPModal(S, hooks, lastMessage.pId, lastMessage.name)
       });
+      menuItems.push({
+        label: "Личное сообщение",
+        onClick: () => {
+          createDialog(S, hooks, playerId, lastMessage.name, S.skinList[normalizeNick(lastMessage.name)] ? `https://api.agar.su/skins/${S.skinList[normalizeNick(lastMessage.name)]}.png` : "https://api.agar.su/skins/4.png");
+          switchToDialog(S, `!ls${playerId}`);
+        }
+      });
+      menuItems.push({
+        label: "Игнорировать",
+        onClick: () => {
+          S.ignoredPlayers.add(playerId);
+          msgDiv.remove();
+        }
+      });
+      menuItems.push({
+        label: "Удалить всех из игнора",
+        onClick: () => {
+          S.ignoredPlayers.clear();
+        }
+      });
+      menuItems.push({
+        label: "Удалить сообщение",
+        onClick: () => {
+          msgDiv.remove();
+        }
+      });
+      menuItems.push({
+        label: "Удалить все сообщения игрока",
+        onClick: () => {
+          [ ...targetDiv.children ].forEach(c => {
+            var _a2;
+            if ((_a2 = c.querySelector(".chatX_nick")) == null ? void 0 : _a2.title.includes(playerId)) c.remove();
+          });
+        }
+      });
+      showUiContextMenu(menuItems, e.clientX, e.clientY);
     });
     targetDiv.appendChild(msgDiv);
     if (targetDialogId && S.dialogs[targetDialogId]) {
@@ -5946,6 +6005,53 @@ async function updateOnlineCount() {
     const norm = normalizeNick(clean);
     if (!norm || norm.startsWith("[")) return null;
     return S.passPlayerNickToId.get(norm) || null;
+  }
+  function resolveStatsForName(S, name) {
+    const clanPassId = resolveClanPassIdFromName(S, name);
+    const playerPassId = resolvePlayerPassIdFromName(S, name);
+    const passId = clanPassId || playerPassId;
+    if (!passId) return null;
+    return {
+      passId,
+      isClan: !!clanPassId,
+      url: (clanPassId ? STATS_CLAN_PROFILE_BASE : STATS_PROFILE_BASE) + encodeURIComponent(passId)
+    };
+  }
+  function openStatsForName(S, name) {
+    const info = resolveStatsForName(S, name);
+    if (!info) return false;
+    window.open(info.url, "_blank");
+    return true;
+  }
+  function showUiContextMenu(items, x, y) {
+    document.querySelectorAll(".chat-context-menu").forEach(m => m.remove());
+    if (!(items && items.length)) return null;
+    const menu = document.createElement("div");
+    menu.className = "chat-context-menu";
+    menu.style.top = y + "px";
+    menu.style.left = x + "px";
+    items.forEach(item => {
+      const el = document.createElement("div");
+      el.textContent = item.label;
+      el.style.cursor = "pointer";
+      el.onclick = () => {
+        try {
+          item.onClick && item.onClick();
+        } finally {
+          menu.remove();
+        }
+      };
+      menu.appendChild(el);
+    });
+    document.body.appendChild(menu);
+    const closeMenu = event => {
+      if (!menu.contains(event.target)) {
+        menu.remove();
+        document.removeEventListener("click", closeMenu);
+      }
+    };
+    setTimeout(() => document.addEventListener("click", closeMenu), 0);
+    return menu;
   }
   var CUSTOM_BG_STORAGE_MAX = 9e5;
   function loadBgImageFromDataUrl(dataUrl, onReady2) {
@@ -7309,9 +7415,27 @@ onReady(() => {
     });
     leaderboard.addEventListener("click", e => {
       if (e.button !== 0) return;
-      const nickElem = e.target.closest(".Lednick span");
+      const nickElem = e.target.closest(".Lednick-name");
       if (!nickElem) return;
       insertNick(nickElem.textContent);
+    });
+    leaderboard.addEventListener("contextmenu", e => {
+      e.preventDefault();
+      const nickElem = e.target.closest(".Lednick-name");
+      if (!nickElem) return;
+      const nick = (nickElem.textContent || "").trim();
+      if (!nick) return;
+      const S = window.__gameState;
+      if (!S) return;
+      const items = [];
+      if (resolveStatsForName(S, nick)) {
+        items.push({
+          label: "Статистика",
+          onClick: () => openStatsForName(S, nick)
+        });
+      }
+      if (!items.length) return;
+      showUiContextMenu(items, e.clientX, e.clientY);
     });
     const emojiToggle = document.getElementById("emoji_toggle");
     if (emojiToggle) {
