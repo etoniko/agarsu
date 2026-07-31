@@ -5635,7 +5635,7 @@ async function updateOnlineCount() {
     msgDiv.dataset.chatIdx = String(msgIndex);
     const lowerName = lastMessage.name.toLowerCase();
     if (ADMINS.some(admin => admin.toLowerCase() === lowerName)) {
-    msgDiv.style.backgroundColor = "#FF0000";
+    msgDiv.style.backgroundColor = "#7b2929";
 }
     if (DONATORS.includes(lowerName)) msgDiv.className = "chatX_msg " + lowerName; else msgDiv.className = "chatX_msg";
     const normalizedName = normalizeNick(lastMessage.name || "");
