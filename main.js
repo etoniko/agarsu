@@ -311,23 +311,23 @@
       title: "FFA - Москва 2"
     },
     ms: {
-      host: "ffa.agar.su:6002",
+      host: "sixz.ru/ms",
       title: "MegaSplit"
     },
     pvp1: {
-      host: "ffa.agar.su:6004",
+      host: "sixz.ru/pvp1",
       title: "pvp1: 1x1 ffa 1k"
     },
     pvp2: {
-      host: "ffa.agar.su:6005",
+      host: "sixz.ru/pvp2",
       title: "pvp2: 2x2 ms 1k"
     },
-    tournament2: {
-      host: "ffa.agar.su:6007",
+    tournament: {
+      host: "sixz.ru/tournament",
       title: "Tournament 2x2"
     },
-    tournament: {
-      host: "ffa.agar.su:6006",
+    tournament2: {
+      host: "sixz.ru/tournament2",
       title: "Tournament 3x3"
     }
   };
