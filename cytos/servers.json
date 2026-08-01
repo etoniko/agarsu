@@ -11,6 +11,14 @@
           "api": "https://ffa.agar.su",
           "players": 0
         },
+                {
+          "id": "ffa1",
+          "name": "ffa1",
+          "mode": "FFA - Moscow 2",
+          "host": "sixz.ru/ffa1",
+          "api": "https://sixz.ru/ffa1",
+          "players": 0
+        },
         {
           "id": "tournament",
           "name": "tournament",
