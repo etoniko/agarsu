@@ -4,29 +4,34 @@
         "api": "https://ffa.agar.su",
         "name": "FFA - Moscow"
     },
+    "ffa1": {
+        "host": "sixz.ru/ffa1",
+        "api": "https://sixz.ru/ffa1",
+        "name": "FFA - Moscow"
+    },
     "tournament": {
-        "host": "ffa.agar.su:6006",
-        "api": "https://ffa.agar.su:6006",
+        "host": "sixz.ru/tournament",
+        "api": "https://sixz.ru/tournament",
         "name": "Tournament"
     },
-        "tournament2": {
-        "host": "ffa.agar.su:6007",
-        "api": "https://ffa.agar.su:6007",
+    "tournament2": {
+        "host": "sixz.ru/tournament2",
+        "api": "https://sixz.ru/tournament2",
         "name": "Tournament2"
     },
     "ms": {
-        "host": "ffa.agar.su:6002",
-        "api": "https://ffa.agar.su:6002",
+        "host": "sixz.ru/ms",
+        "api": "https://sixz.ru/ms",
         "name": "MegaSplit"
     },
     "pvp1": {
-        "host": "ffa.agar.su:6004",
-        "api": "https://ffa.agar.su:6004",
+        "host": "sixz.ru/pvp1",
+        "api": "https://sixz.ru/pvp1",
         "name": "pvp1: 1x1 ffa 1k"
     },
     "pvp2": {
-        "host": "ffa.agar.su:6005",
-        "api": "https://ffa.agar.su:6005",
+        "host": "sixz.ru/pvp2",
+        "api": "https://sixz.ru/pvp2",
         "name": "pvp2: 2x2 ms 1k"
     }
 }
