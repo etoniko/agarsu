@@ -7,14 +7,14 @@
 }
 .chatX_msg[class*="\263Ck\263C"],
 .chatX_msg[class*="\263CK\263C"]{
-    background: linear-gradient(rgb(0 0 0 / 33%), rgb(0 0 0 / 50%)), url(/photo/778.png?4) !important;
+    background: linear-gradient(rgb(0 0 0 / 33%), rgb(0 0 0 / 50%)), url(/photo/778.jpg) !important;
     background-size: cover !important;
     background-position: center 45% !important;
     border: solid 1px #ffffff3d;
 }
 .Lednick[class*="\263Ck\263C"],
 .Lednick[class*="\263CK\263C"]{
-    background: linear-gradient(rgb(0 0 0 / 33%), rgb(0 0 0 / 50%)), url(/photo/778.png?4) !important;
+    background: linear-gradient(rgb(0 0 0 / 33%), rgb(0 0 0 / 50%)), url(/photo/778.jpg) !important;
     background-size: cover !important;
     background-position: center 45% !important;
     border: solid 1px #ffffff3d;
