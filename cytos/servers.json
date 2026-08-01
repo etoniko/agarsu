@@ -1,0 +1,57 @@
+{
+  "regions": [
+    {
+      "id": "Servers",
+      "servers": [
+        {
+          "id": "ffa",
+          "name": "ffa",
+          "mode": "FFA - Moscow",
+          "host": "ffa.agar.su",
+          "api": "https://ffa.agar.su",
+          "players": 0
+        },
+        {
+          "id": "tournament",
+          "name": "tournament",
+          "mode": "Tournament",
+          "host": "ffa.agar.su:6006",
+          "api": "https://ffa.agar.su:6006",
+          "players": 0
+        },
+        {
+          "id": "tournament2",
+          "name": "tournament2",
+          "mode": "Tournament2",
+          "host": "ffa.agar.su:6007",
+          "api": "https://ffa.agar.su:6007",
+          "players": 0
+        },
+        {
+          "id": "ms",
+          "name": "ms",
+          "mode": "MegaSplit",
+          "host": "ffa.agar.su:6002",
+          "api": "https://ffa.agar.su:6002",
+          "players": 0
+        },
+        {
+          "id": "pvp1",
+          "name": "pvp1",
+          "mode": "1x1 ffa 1k",
+          "host": "ffa.agar.su:6004",
+          "api": "https://ffa.agar.su:6004",
+          "players": 0
+        },
+        {
+          "id": "pvp2",
+          "name": "pvp2",
+          "mode": "2x2 ms 1k",
+          "host": "ffa.agar.su:6005",
+          "api": "https://ffa.agar.su:6005",
+          "players": 0
+        }
+      ]
+    }
+  ]
+}
