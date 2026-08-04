@@ -1534,7 +1534,8 @@
     const isTournamentPlayer = TOURNAMENT_PLAYERS.some(tourneyName => tourneyName.toLowerCase() === cleanNameLower);
     const isWinner = TOURNAMENT_WINNERS.some(w => w.toLowerCase() === cleanNameLower);
     const donators = (S == null ? void 0 : S.donators) || [];
-    if (!isSystemLine && donators.includes(lowerName)) {
+    const chatBackgrounds = (S == null ? void 0 : S.chatBackgrounds) || [];
+    if (!isSystemLine && chatBackgrounds.includes(lowerName)) {
       entryDiv.className = "Lednick " + lowerName;
     } else {
       entryDiv.className = "Lednick";
@@ -2772,6 +2773,7 @@
       pointsLabel: null,
       Quad: null,
       donators: null,
+      chatBackgrounds: null,
       admins: null,
       youtubers: null,
       url_youtubers: null,
@@ -5405,9 +5407,10 @@ async function updateOnlineCount() {
     });
     return api;
   }
-  var DONATORS = [ "bambule", "☼k☼" ];
-  var ADMINS = [ "нико", "banshee" ];
-  var YOUTUBERS = [ "salruz", "morcov", "sealand" ];
+  var DONATORS = ["☼k☼"];
+  var CHAT_BACKGROUNDS = ["bambule", "☼k☼","pulik","liquidator"];
+  var ADMINS = ["нико", "banshee"];
+  var YOUTUBERS = ["salruz", "morcov", "sealand"];
   var URL_YOUTUBERS = [ "https://youtube.com/@SalRuzO", "https://www.youtube.com/@MORCCVA", "https://www.youtube.com/@sealandv" ];
   function formatTime(date) {
     const hours = String(date.getHours()).padStart(2, "0");
@@ -5728,7 +5731,7 @@ async function updateOnlineCount() {
     if (ADMINS.some(admin => admin.toLowerCase() === lowerName)) {
       msgDiv.style.backgroundColor = "rgba(194, 13, 13, 0.74)";
     }
-    if (DONATORS.includes(lowerName)) msgDiv.className = "chatX_msg " + lowerName; else msgDiv.className = "chatX_msg";
+    if (CHAT_BACKGROUNDS.includes(lowerName)) msgDiv.className = "chatX_msg " + lowerName; else msgDiv.className = "chatX_msg";
     const normalizedName = normalizeNick(lastMessage.name || "");
     let targetDialogId = null;
     let messageContent = messageRaw;
@@ -5987,6 +5990,7 @@ async function updateOnlineCount() {
   function attachChat(S, hooks) {
     var _a, _b;
     S.donators = DONATORS;
+    S.chatBackgrounds = CHAT_BACKGROUNDS;
     S.youtubers = YOUTUBERS;
     S.url_youtubers = URL_YOUTUBERS;
     S.passUsers = S.passUsers || [];
