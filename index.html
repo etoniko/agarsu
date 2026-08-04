@@ -139,6 +139,31 @@
     justify-content:flex-start;
   }
 </style>
+	<style>
+#liquid-tour-banner .liq-btn{
+  transition: transform .15s ease, filter .15s ease, box-shadow .15s ease, background .15s ease, border-color .15s ease, color .15s ease !important;
+}
+#liquid-tour-banner .liq-btn:hover{
+  transform: translateY(-1px) scale(1.03) !important;
+  filter: brightness(1.08) !important;
+}
+#liquid-tour-banner .liq-btn-primary:hover{
+  box-shadow: 0 6px 18px rgba(255,106,42,.55) !important;
+}
+#liquid-tour-banner .liq-btn-ghost:hover{
+  background: rgba(255,138,61,.18) !important;
+  border-color: #ffb347 !important;
+  color: #ffe0c2 !important;
+  box-shadow: 0 4px 14px rgba(255,106,42,.25) !important;
+}
+#liquid-tour-banner .liq-hero:hover img{
+  transform: scale(1.09) !important;
+  filter: brightness(1.06) saturate(1.05) !important;
+}
+#liquid-tour-banner .liq-hero img{
+  transition: transform .35s ease, filter .35s ease !important;
+}
+</style>
 <script>
 (function () {
   var LANGS = ['ru','en','uk','tr','zh','ar','es','pl','de'];
@@ -854,7 +879,98 @@
         <div class="chatX_close" onclick="document.getElementById('chatX_window').style.display = 'none'; document.getElementById('onchat').style.display = 'flex';" id="chatX_close"><i class="fa-solid fa-xmark"></i></div>
     </div>
     <div class="chatX_container" id="chatX_container">
-        <div class="chatX_feed" id="chatX_feed"></div>
+        <div class="chatX_feed" id="chatX_feed">
+<div id="liquid-tour-banner" style="
+  display:block!important;
+  flex:0 0 auto!important;
+  width:100%!important;
+  margin:4px 0 8px!important;
+  overflow:hidden!important;
+  border-radius:12px!important;
+  border:1px solid rgba(255,138,61,.55)!important;
+  background:#120805!important;
+  color:#fff4ea!important;
+  font-family:Arial,Helvetica,sans-serif!important;
+  box-shadow:0 6px 18px rgba(0,0,0,.35)!important;
+  grid-template-columns:none!important;
+  pointer-events:auto!important;
+  position:relative!important;
+  z-index:5!important;
+">
+  <div
+    class="liq-hero"
+    role="link"
+    tabindex="0"
+    onclick="event.stopPropagation();event.preventDefault();window.open('https://xn--bdk.pw/','_blank','noopener');"
+    onmousedown="event.stopPropagation();"
+    style="
+      display:block!important;
+      position:relative!important;
+      height:96px!important;
+      overflow:hidden!important;
+      cursor:pointer!important;
+      pointer-events:auto!important;
+    "
+  >
+    <img
+      src="/photo/.png"
+      alt="Tournament Liquid"
+      draggable="false"
+      style="
+        display:block!important;
+        width:100%!important;
+        height:160px!important;
+        object-fit:cover!important;
+        object-position:center top!important;
+        transform:scale(1.05)!important;
+        background:#2a120a!important;
+        border:0!important;
+        pointer-events:none!important;
+      "
+    >
+    <span style="position:absolute!important;left:0!important;right:0!important;bottom:0!important;height:55%!important;background:linear-gradient(180deg,transparent,rgba(12,6,4,.92))!important;pointer-events:none!important;"></span>
+    <span style="position:absolute!important;left:10px!important;bottom:8px!important;right:10px!important;z-index:1!important;line-height:1.05!important;pointer-events:none!important;">
+      <span style="display:block!important;font-size:9px!important;font-weight:700!important;letter-spacing:.22em!important;color:#ffb347!important;">AGAR.SU</span>
+      <span style="display:block!important;font-size:18px!important;font-weight:800!important;color:#fff!important;text-transform:uppercase!important;">Tournament</span>
+      <span style="display:block!important;font-size:18px!important;font-weight:800!important;color:#ff8a3d!important;text-transform:uppercase!important;margin-top:-2px!important;">Liquid</span>
+    </span>
+  </div>
+
+  <div style="padding:8px 10px 10px!important;pointer-events:auto!important;" onmousedown="event.stopPropagation();">
+    <div style="display:inline-block!important;font-size:10px!important;font-weight:800!important;letter-spacing:.08em!important;text-transform:uppercase!important;color:#2a0f05!important;background:linear-gradient(90deg,#ffb347,#ff6a2a)!important;border-radius:999px!important;padding:2px 8px!important;margin:0 0 6px!important;">набор открыт</div>
+    <div style="font-size:12px!important;line-height:1.35!important;color:rgba(255,244,234,.82)!important;margin:0 0 7px!important;">FFA 2×2 · 10к · до 3 побед · призы 6к / 4к / 2к</div>
+
+    <div style="display:flex!important;gap:6px!important;flex-wrap:wrap!important;">
+      <button
+        type="button"
+        class="liq-btn liq-btn-primary"
+        onclick="event.stopPropagation();event.preventDefault();window.open('https://xn--bdk.pw/','_blank','noopener');"
+        onmousedown="event.stopPropagation();"
+        style="
+          display:inline-flex!important;align-items:center!important;justify-content:center!important;
+          height:30px!important;padding:0 14px!important;border:0!important;border-radius:999px!important;
+          background:linear-gradient(180deg,#ffb347,#ff6a2a)!important;color:#2a0f05!important;
+          font-size:11px!important;font-weight:800!important;letter-spacing:.04em!important;text-transform:uppercase!important;
+          cursor:pointer!important;pointer-events:auto!important;position:relative!important;z-index:6!important;
+        "
+      >Заявка</button>
+
+      <button
+        type="button"
+        class="liq-btn liq-btn-ghost"
+        onclick="event.stopPropagation();event.preventDefault();window.open('https://agar.su/tournament/','_blank','noopener');"
+        onmousedown="event.stopPropagation();"
+        style="
+          display:inline-flex!important;align-items:center!important;justify-content:center!important;
+          height:30px!important;padding:0 14px!important;border-radius:999px!important;
+          border:1px solid rgba(255,138,61,.55)!important;color:#ffc089!important;background:rgba(0,0,0,.25)!important;
+          font-size:11px!important;font-weight:700!important;
+          cursor:pointer!important;pointer-events:auto!important;position:relative!important;z-index:6!important;
+        "
+      >Сетка</button>
+    </div>
+  </div>
+</div></div>
     </div>
 	  		  	  	  <div class="emoji-list">
   <div class="emoji-item" data-code=":50:"><img src="/emoji/50.gif"></div>
