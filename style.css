@@ -5,6 +5,18 @@
     color: #ffffff !important;
     font-weight: lighter;
 }
+.liquidator {
+    background: linear-gradient(rgb(0 0 0 / 33%), rgb(0 0 0 / 50%)), url(/photo/0001.png) !important;
+    background-size: cover !important;
+    color: #ffffff !important;
+    font-weight: lighter;
+}
+.pulik {
+    background: linear-gradient(rgb(0 0 0 / 33%), rgb(0 0 0 / 50%)), url(/photo/0002.png) !important;
+    background-size: cover !important;
+    color: #ffffff !important;
+    font-weight: lighter;
+}
 .chatX_msg[class*="\263Ck\263C"],
 .chatX_msg[class*="\263CK\263C"]{
     background: linear-gradient(rgb(0 0 0 / 33%), rgb(0 0 0 / 50%)), url(/photo/778.jpg) !important;
