@@ -1,0 +1,149 @@
+{
+  "id": 3,
+  "num": 3,
+  "name": "Tournament Liquid",
+  "date": "2026-08-06T19:30:00.000Z",
+  "archivedAt": "2026-08-04T19:30:02.758Z",
+  "totalTeams": 24,
+  "format": "1x1",
+  "mode": "FFA Teams",
+  "reward": "6000р",
+  "teams": [
+    {
+      "players": [
+        "Слот 1"
+      ]
+    },
+    {
+      "players": [
+        "Слот 2"
+      ]
+    },
+    {
+      "players": [
+        "Слот 3"
+      ]
+    },
+    {
+      "players": [
+        "Слот 4"
+      ]
+    },
+    {
+      "players": [
+        "Слот 5"
+      ]
+    },
+    {
+      "players": [
+        "Слот 6"
+      ]
+    },
+    {
+      "players": [
+        "Слот 7"
+      ]
+    },
+    {
+      "players": [
+        "Слот 8"
+      ]
+    },
+    {
+      "players": [
+        "Слот 9"
+      ]
+    },
+    {
+      "players": [
+        "Слот 10"
+      ]
+    },
+    {
+      "players": [
+        "Слот 11"
+      ]
+    },
+    {
+      "players": [
+        "Слот 12"
+      ]
+    },
+    {
+      "players": [
+        "Слот 13"
+      ]
+    },
+    {
+      "players": [
+        "Слот 14"
+      ]
+    },
+    {
+      "players": [
+        "Слот 15"
+      ]
+    },
+    {
+      "players": [
+        "Слот 16"
+      ]
+    },
+    {
+      "players": [
+        "Слот 17"
+      ]
+    },
+    {
+      "players": [
+        "Слот 18"
+      ]
+    },
+    {
+      "players": [
+        "Слот 19"
+      ]
+    },
+    {
+      "players": [
+        "Слот 20"
+      ]
+    },
+    {
+      "players": [
+        "Слот 21"
+      ]
+    },
+    {
+      "players": [
+        "Слот 22"
+      ]
+    },
+    {
+      "players": [
+        "Слот 23"
+      ]
+    },
+    {
+      "players": [
+        "Слот 24"
+      ]
+    }
+  ],
+  "winners": {
+    "left": [],
+    "right": [],
+    "final": null,
+    "finalCross": [
+      null,
+      null,
+      null
+    ],
+    "finalRR": [
+      null,
+      null,
+      null
+    ]
+  },
+  "winnerTeam": null
+}
