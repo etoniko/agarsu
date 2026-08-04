@@ -8193,29 +8193,6 @@ onReady(() => {
     const passInput = document.getElementById("pass");
     if (!nickInput || !passInput) return;
     let allowedNicks = [];
-    function normalizeNick2(nick) {
-      if (!nick) return "";
-      let n = nick.trim();
-      const brackets = {
-        "[": "]",
-        "{": "}",
-        "(": ")",
-        "|": "|"
-      };
-      const firstChar = n.charAt(0);
-      const lastChar = n.charAt(n.length - 1);
-      if (brackets[firstChar]) {
-        const closeChar = brackets[firstChar];
-        const endIndex = n.indexOf(closeChar, 1);
-        if (endIndex === -1) return "";
-        const innerNick = n.substring(1, endIndex);
-        if (!innerNick || innerNick.trim() !== innerNick) return "";
-        n = innerNick;
-      } else {
-        if (!n || n.trim() !== n) return "";
-      }
-      return n.toLowerCase();
-    }
     function setCookie2(name, value, days) {
       let expires = "";
       if (days) {
@@ -8239,7 +8216,8 @@ onReady(() => {
       if (pass) setCookie2("userPass", pass, 7); else setCookie2("userPass", "", -1);
     }
     function checkNickStatus(nick) {
-      const normalized = normalizeNick2(nick);
+      // Same normalizeNick as pass.txt: clans stay as "[isq]", not stripped "isq"
+      const normalized = normalizeNick(nick);
       if (allowedNicks.includes(normalized)) {
         passInput.style.display = "block";
       } else {
