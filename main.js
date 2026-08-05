@@ -2319,6 +2319,93 @@
     }
     S.nodesSortDirty = true;
   }
+  function ensureStickerState(S) {
+    if (!S.activeStickersByNode) S.activeStickersByNode = Object.create(null);
+    if (!S.activeStickersByName) S.activeStickersByName = Object.create(null);
+  }
+  function stickerNameKey(name) {
+    return String(name || "").trim().toLowerCase();
+  }
+  function setNodeSticker(node, stickerId) {
+    if (!node) return;
+    if (stickerId) {
+      node.currentSticker = stickerId;
+      node.stickerActive = true;
+    } else {
+      node.currentSticker = null;
+      node.stickerActive = false;
+    }
+  }
+  function rememberSticker(S, nodeId, name, stickerId) {
+    ensureStickerState(S);
+    if (stickerId) {
+      if (nodeId != null) S.activeStickersByNode[nodeId] = stickerId;
+      const key = stickerNameKey(name);
+      if (key) S.activeStickersByName[key] = stickerId;
+    } else {
+      if (nodeId != null) delete S.activeStickersByNode[nodeId];
+      const key = stickerNameKey(name);
+      if (key) delete S.activeStickersByName[key];
+    }
+  }
+  function resolveRememberedSticker(S, nodeId, name) {
+    ensureStickerState(S);
+    if (nodeId != null && S.activeStickersByNode[nodeId]) return S.activeStickersByNode[nodeId];
+    const key = stickerNameKey(name);
+    if (key && S.activeStickersByName[key]) return S.activeStickersByName[key];
+    return null;
+  }
+  /** UpdateNodes: FF+id запоминаем; 00 только паддинг протокола — не гасим активный стикер. */
+  function syncNodeStickerFromUpdate(S, node, name, stickerFromUpdate) {
+    if (!node) return;
+    const n = name || node.name || "";
+    if (stickerFromUpdate) {
+      rememberSticker(S, node.id, n, stickerFromUpdate);
+      setNodeSticker(node, stickerFromUpdate);
+      return;
+    }
+    const remembered = resolveRememberedSticker(S, node.id, n);
+    if (remembered) setNodeSticker(node, remembered);
+  }
+  /** Пакет STICKER — явное вкл/выкл для всех клеток игрока (как у Petri: state, не тик). */
+  function applyStickerPacket(S, stickerPlayerId, stickerId, enabled) {
+    ensureStickerState(S);
+    let refName = null;
+    let isOwnPacket = stickerPlayerId === S.ownerPlayerId;
+    for (let i = 0; i < S.nodelist.length; i++) {
+      const node = S.nodelist[i];
+      if (node && node.id === stickerPlayerId) {
+        refName = node.name || null;
+        if (node.isOwn) isOwnPacket = true;
+        break;
+      }
+    }
+    if (isOwnPacket) {
+      for (let i = 0; i < S.playerCells.length; i++) {
+        const cell = S.playerCells[i];
+        if (!cell) continue;
+        if (!refName && cell.name) refName = cell.name;
+        rememberSticker(S, cell.id, cell.name, enabled ? stickerId : null);
+        setNodeSticker(cell, enabled ? stickerId : null);
+      }
+    }
+    const nameKey = stickerNameKey(refName);
+    if (enabled) {
+      if (stickerPlayerId != null) S.activeStickersByNode[stickerPlayerId] = stickerId;
+      if (nameKey) S.activeStickersByName[nameKey] = stickerId;
+    } else {
+      delete S.activeStickersByNode[stickerPlayerId];
+      if (nameKey) delete S.activeStickersByName[nameKey];
+    }
+    for (let i = 0; i < S.nodelist.length; i++) {
+      const node = S.nodelist[i];
+      if (!node || node.isFood || node.isVirus || node.isEjected) continue;
+      const hit = node.id === stickerPlayerId || isOwnPacket && node.isOwn || nameKey && stickerNameKey(node.name) === nameKey;
+      if (!hit) continue;
+      rememberSticker(S, node.id, node.name, enabled ? stickerId : null);
+      setNodeSticker(node, enabled ? stickerId : null);
+    }
+  }
   function updateNodes(S, reader, hooks) {
     const {Cell: Cell2, onPlayerDeath} = hooks;
     S.timestamp = Date.now();
@@ -2365,11 +2452,16 @@
       const flagEjected = !!(spiked & 32) || !!(spiked & 64);
       const flagAgitated = !!(spiked & 16);
       const name = reader.utf8();
-      let stickerData = null;
+      // Хвост протокола: FF+id (стикер есть) или 00 (в этом апдекте нет).
+      // Источник истины — пакет STICKER + карта activeStickers*: байт 00 НЕ сбрасывает
+      // активный стикер (иначе у всех мерцает главная клетка на каждом тике).
+      let stickerFromUpdate = null;
       if (reader.canRead) {
         const marker = reader.uint8();
         if (marker === 255) {
-          stickerData = reader.uint8();
+          stickerFromUpdate = reader.uint8() || null;
+        } else if (marker === 0) {
+          stickerFromUpdate = false;
         }
       }
       if (type === 1 && !S.mapBoundsReady) {
@@ -2400,12 +2492,8 @@
           }
         }
       }
-      if (stickerData) {
-        node.currentSticker = stickerData;
-        node.stickerActive = true;
-      } else if (node) {
-        node.stickerActive = false;
-        node.currentSticker = null;
+      if (node) {
+        syncNodeStickerFromUpdate(S, node, name, stickerFromUpdate);
       }
       node.isVirus = flagVirus;
       node.isEjected = flagEjected;
@@ -2443,6 +2531,8 @@
   function clearWorld(S) {
     S.playerCells = [];
     S.nodes = {};
+    S.activeStickersByNode = Object.create(null);
+    S.activeStickersByName = Object.create(null);
     S.nodelist = [];
     S.Cells = [];
     S.leaderBoard = [];
@@ -2603,19 +2693,7 @@
           offset += 4;
           const stickerId = msg.getUint8(offset++);
           const stickerAction = msg.getUint8(offset++);
-          for (let i = 0; i < S.nodelist.length; i++) {
-            const node = S.nodelist[i];
-            if (node.id === stickerPlayerId && node.name) {
-              if (stickerAction === 1) {
-                node.currentSticker = stickerId;
-                node.stickerActive = true;
-              } else {
-                node.stickerActive = false;
-                node.currentSticker = null;
-              }
-              break;
-            }
-          }
+          applyStickerPacket(S, stickerPlayerId, stickerId, stickerAction === 1);
           break;
         }
 
@@ -2769,6 +2847,8 @@
       isPinching: false,
       stickerCooldown: false,
       stickerCooldownTimer: null,
+      activeStickersByNode: Object.create(null),
+      activeStickersByName: Object.create(null),
       lastStatsRenderKey: "",
       pointsLabel: null,
       Quad: null,
@@ -3615,6 +3695,7 @@
     S.ma = true;
     S.freeze = false;
     S.stickerCooldown = false;
+    ensureStickerState(S);
     const reconnectBtn = document.getElementById("connect-verify-reconnect-btn");
     if (reconnectBtn && !reconnectBtn.dataset.bound) {
       reconnectBtn.dataset.bound = "1";
@@ -3686,16 +3767,21 @@
       }
     }
     function showStickerOverCell(stickerId) {
-      const cell = S.playerCells[0];
-      if (!cell) return;
-      cell.currentSticker = stickerId;
-      cell.stickerActive = true;
+      ensureStickerState(S);
+      for (let i = 0; i < S.playerCells.length; i++) {
+        const cell = S.playerCells[i];
+        if (!cell) continue;
+        rememberSticker(S, cell.id, cell.name, stickerId);
+        setNodeSticker(cell, stickerId);
+      }
     }
     function hideSticker() {
-      const cell = S.playerCells[0];
-      if (cell) {
-        cell.currentSticker = null;
-        cell.stickerActive = false;
+      ensureStickerState(S);
+      for (let i = 0; i < S.playerCells.length; i++) {
+        const cell = S.playerCells[i];
+        if (!cell) continue;
+        rememberSticker(S, cell.id, cell.name, null);
+        setNodeSticker(cell, null);
       }
     }
     function pressStickerKey(stickerId) {
