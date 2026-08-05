@@ -229,7 +229,7 @@
     } catch (e) {}
     stopTicker();
     refreshProgressUi();
-    showStickyBanner();
+    hideStickyBanner();
     log("GameplayAPI.stop", stats.xp);
     if (wasActive) onDeathCountedOnce();
     if (submitScore !== false) submitXpScore(true);
@@ -358,15 +358,17 @@
     var css = document.createElement("style");
     css.id = "yg-adapter-style";
     css.textContent = [
-      "body.yg-mode .add-yandex,",
       "body.yg-mode .social,",
       "body.yg-mode #liquid-cloud-banner,",
-      "body.yg-mode .death,",
       "body.yg-mode #authlog,",
       "body.yg-mode #myNicknamesBlock,",
       "body.yg-mode #accountID,",
       "body.yg-mode #ygXpChip,",
       "body.yg-mode .footer{display:none!important;}",
+      "body.yg-mode .add-yandex,",
+      "body.yg-mode .death{display:block!important;}",
+      "body.yg-mode #yandex_rtb_R-A-15699059-13,",
+      "body.yg-mode #yandex_rtb_R-A-15699059-14{display:block!important;min-height:1px;}",
       "body.yg-mode #shop > :not(.yg-shop-cta){display:none!important;}",
       "body.yg-mode #shop .yg-shop-cta,",
       "body.yg-mode .yg-shop-cta{",
@@ -517,17 +519,61 @@
     if (progressContainer) progressContainer.style.display = "";
   }
 
-  function disableExternalAds() {
-    try {
+  function renderRtbBlock(blockId, renderTo) {
+    var el = document.getElementById(renderTo);
+    if (!el) return;
+    var doRender = function () {
+      try {
+        el.innerHTML = "";
+        if (window.Ya && Ya.Context && Ya.Context.AdvManager) {
+          Ya.Context.AdvManager.render({
+            blockId: blockId,
+            renderTo: renderTo
+          });
+        }
+      } catch (e) {
+        log("rtb render fail", blockId, e);
+      }
+    };
+    if (window.Ya && Ya.Context && Ya.Context.AdvManager) {
+      doRender();
+    } else {
       window.yaContextCb = window.yaContextCb || [];
-      window.Ya = window.Ya || {};
-      window.Ya.Context = window.Ya.Context || {};
-      window.Ya.Context.AdvManager = { render: function () {} };
-    } catch (e) {}
-    ["yandex_rtb_R-A-15699059-13", "yandex_rtb_R-A-15699059-14"].forEach(function (id) {
-      var el = document.getElementById(id);
-      if (el) el.innerHTML = "";
+      window.yaContextCb.push(doRender);
+    }
+  }
+
+  /** Свои RTB-блоки остаются и в yandex-режиме */
+  function enableRtbAds() {
+    window.yaContextCb = window.yaContextCb || [];
+    window.renderDeathBanner = function () {
+      renderRtbBlock("R-A-15699059-14", "yandex_rtb_R-A-15699059-14");
+    };
+
+    function ensureContextJs() {
+      if (document.querySelector('script[src*="yandex.ru/ads/system/context.js"]')) return Promise.resolve();
+      return loadScript("https://yandex.ru/ads/system/context.js").catch(function () {});
+    }
+
+    ensureContextJs().then(function () {
+      renderRtbBlock("R-A-15699059-13", "yandex_rtb_R-A-15699059-13");
+      renderRtbBlock("R-A-15699059-14", "yandex_rtb_R-A-15699059-14");
     });
+
+    // после смерти main.js зовёт renderDeathBanner — оставляем рабочим
+    var overlays = document.getElementById("overlays");
+    if (overlays && !overlays.__ygRtbObs) {
+      overlays.__ygRtbObs = true;
+      var obs = new MutationObserver(function () {
+        var shown = overlays.style.display !== "none";
+        if (shown) {
+          setTimeout(function () {
+            if (typeof window.renderDeathBanner === "function") window.renderDeathBanner();
+          }, 100);
+        }
+      });
+      obs.observe(overlays, { attributes: true, attributeFilter: ["style"] });
+    }
   }
 
   function blockServerXpUi() {
@@ -613,24 +659,7 @@
     });
   }
 
-  function showStickyBanner() {
-    if (!ysdk || !ysdk.adv || typeof ysdk.adv.showBannerAdv !== "function") return;
-    try {
-      ysdk.adv.getBannerAdvStatus().then(function (res) {
-        if (res && res.stickyAdvIsShowing) return;
-        if (res && res.reason) {
-          log("sticky reason", res.reason);
-          return;
-        }
-        return ysdk.adv.showBannerAdv();
-      }).catch(function (e) {
-        log("sticky show fail", e);
-      });
-    } catch (e) {
-      try { ysdk.adv.showBannerAdv(); } catch (e2) {}
-    }
-  }
-
+  /** Sticky справа двигает layout — всегда прячем, никогда не показываем */
   function hideStickyBanner() {
     if (!ysdk || !ysdk.adv || typeof ysdk.adv.hideBannerAdv !== "function") return;
     try {
@@ -642,6 +671,7 @@
   function showEntryFullscreenAdv() {
     if (entryFullscreenShown || !ysdk || !ysdk.adv) return;
     entryFullscreenShown = true;
+    hideStickyBanner();
     try {
       ysdk.adv.showFullscreenAdv({
         callbacks: {
@@ -652,16 +682,16 @@
           },
           onClose: function (wasShown) {
             log("entry fullscreen close", wasShown);
-            showStickyBanner();
+            hideStickyBanner();
           },
           onError: function (err) {
             log("entry fullscreen error", err);
-            showStickyBanner();
+            hideStickyBanner();
           }
         }
       });
     } catch (e) {
-      showStickyBanner();
+      hideStickyBanner();
     }
   }
 
@@ -674,8 +704,11 @@
     } catch (e) {
       log("LoadingAPI.ready fail", e);
     }
-    // чуть позже меню — показать fullscreen входа, потом sticky
+    hideStickyBanner();
     setTimeout(showEntryFullscreenAdv, 400);
+    // платформа может снова показать sticky — гасим ещё раз
+    setTimeout(hideStickyBanner, 800);
+    setTimeout(hideStickyBanner, 2000);
   }
 
   function bindPlayer(player) {
@@ -716,7 +749,7 @@
       });
     }
     injectStyles();
-    disableExternalAds();
+    enableRtbAds();
     patchMenu();
     patchShop();
     removeXpChip();
