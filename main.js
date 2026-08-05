@@ -2355,10 +2355,18 @@
     if (key && S.activeStickersByName[key]) return S.activeStickersByName[key];
     return null;
   }
-  /** UpdateNodes: FF+id запоминаем; 00 только паддинг протокола — не гасим активный стикер. */
+  /** UpdateNodes: FF+id запоминаем; 00 не гасит чужой активный стикер. Свои — только пока клавиша зажата. */
   function syncNodeStickerFromUpdate(S, node, name, stickerFromUpdate) {
     if (!node) return;
     const n = name || node.name || "";
+    if (node.isOwn) {
+      if (S.localStickerHeld && S.localStickerId) {
+        setNodeSticker(node, S.localStickerId);
+      } else {
+        setNodeSticker(node, null);
+      }
+      return;
+    }
     if (stickerFromUpdate) {
       rememberSticker(S, node.id, n, stickerFromUpdate);
       setNodeSticker(node, stickerFromUpdate);
@@ -2367,7 +2375,7 @@
     const remembered = resolveRememberedSticker(S, node.id, n);
     if (remembered) setNodeSticker(node, remembered);
   }
-  /** Пакет STICKER — явное вкл/выкл для всех клеток игрока (как у Petri: state, не тик). */
+  /** Пакет STICKER — явное вкл/выкл. Для своих ignore «on», если клавиша уже отпущена (анти-залипание). */
   function applyStickerPacket(S, stickerPlayerId, stickerId, enabled) {
     ensureStickerState(S);
     let refName = null;
@@ -2381,13 +2389,27 @@
       }
     }
     if (isOwnPacket) {
+      if (enabled && !S.localStickerHeld) return;
+      if (!enabled) {
+        S.localStickerHeld = false;
+        S.localStickerId = null;
+      }
       for (let i = 0; i < S.playerCells.length; i++) {
         const cell = S.playerCells[i];
         if (!cell) continue;
         if (!refName && cell.name) refName = cell.name;
-        rememberSticker(S, cell.id, cell.name, enabled ? stickerId : null);
-        setNodeSticker(cell, enabled ? stickerId : null);
+        setNodeSticker(cell, enabled && S.localStickerHeld ? stickerId : null);
       }
+      if (!enabled) {
+        const nameKey = stickerNameKey(refName);
+        delete S.activeStickersByNode[stickerPlayerId];
+        if (nameKey) delete S.activeStickersByName[nameKey];
+        for (let i = 0; i < S.playerCells.length; i++) {
+          const cell = S.playerCells[i];
+          if (cell) rememberSticker(S, cell.id, cell.name, null);
+        }
+      }
+      return;
     }
     const nameKey = stickerNameKey(refName);
     if (enabled) {
@@ -2399,8 +2421,8 @@
     }
     for (let i = 0; i < S.nodelist.length; i++) {
       const node = S.nodelist[i];
-      if (!node || node.isFood || node.isVirus || node.isEjected) continue;
-      const hit = node.id === stickerPlayerId || isOwnPacket && node.isOwn || nameKey && stickerNameKey(node.name) === nameKey;
+      if (!node || node.isOwn || node.isFood || node.isVirus || node.isEjected) continue;
+      const hit = node.id === stickerPlayerId || nameKey && stickerNameKey(node.name) === nameKey;
       if (!hit) continue;
       rememberSticker(S, node.id, node.name, enabled ? stickerId : null);
       setNodeSticker(node, enabled ? stickerId : null);
@@ -2847,6 +2869,8 @@
       isPinching: false,
       stickerCooldown: false,
       stickerCooldownTimer: null,
+      localStickerHeld: false,
+      localStickerId: null,
       activeStickersByNode: Object.create(null),
       activeStickersByName: Object.create(null),
       lastStatsRenderKey: "",
@@ -3690,11 +3714,14 @@
     wHandle.resetKeybinds = () => resetKeybinds(S);
     let isTyping = false;
     let currentSticker = null;
+    const heldStickerKeys = new Set();
     const keyPressed = {};
     const mouseHoldState = {};
     S.ma = true;
     S.freeze = false;
     S.stickerCooldown = false;
+    S.localStickerHeld = false;
+    S.localStickerId = null;
     ensureStickerState(S);
     const reconnectBtn = document.getElementById("connect-verify-reconnect-btn");
     if (reconnectBtn && !reconnectBtn.dataset.bound) {
@@ -3767,16 +3794,17 @@
       }
     }
     function showStickerOverCell(stickerId) {
-      ensureStickerState(S);
+      S.localStickerHeld = true;
+      S.localStickerId = stickerId;
       for (let i = 0; i < S.playerCells.length; i++) {
         const cell = S.playerCells[i];
         if (!cell) continue;
-        rememberSticker(S, cell.id, cell.name, stickerId);
         setNodeSticker(cell, stickerId);
       }
     }
     function hideSticker() {
-      ensureStickerState(S);
+      S.localStickerHeld = false;
+      S.localStickerId = null;
       for (let i = 0; i < S.playerCells.length; i++) {
         const cell = S.playerCells[i];
         if (!cell) continue;
@@ -3785,25 +3813,35 @@
       }
     }
     function pressStickerKey(stickerId) {
-      if (!S.showStickers || isTyping || S.stickerCooldown || currentSticker === stickerId) return;
-      if (currentSticker !== null) {
+      if (!S.showStickers || isTyping) return;
+      if (heldStickerKeys.has(stickerId)) return;
+      heldStickerKeys.add(stickerId);
+      if (currentSticker !== null && currentSticker !== stickerId) {
         sendSticker(currentSticker, false);
-        hideSticker();
       }
       currentSticker = stickerId;
       sendSticker(stickerId, true);
       showStickerOverCell(stickerId);
-      S.stickerCooldown = true;
-      if (S.stickerCooldownTimer) clearTimeout(S.stickerCooldownTimer);
-      S.stickerCooldownTimer = setTimeout(() => {
-        S.stickerCooldown = false;
-      }, 500);
     }
     function releaseStickerKey(stickerId) {
-      if (currentSticker === stickerId) {
-        currentSticker = null;
-        sendSticker(stickerId, false);
+      if (!heldStickerKeys.has(stickerId)) return;
+      heldStickerKeys.delete(stickerId);
+      if (heldStickerKeys.size === 0) {
+        if (currentSticker !== null) {
+          sendSticker(currentSticker, false);
+          currentSticker = null;
+        }
         hideSticker();
+        return;
+      }
+      // осталась другая зажатая клавиша — переключиться на неё
+      let next = null;
+      heldStickerKeys.forEach(function (id) { next = id; });
+      if (next != null && currentSticker !== next) {
+        if (currentSticker !== null) sendSticker(currentSticker, false);
+        currentSticker = next;
+        sendSticker(next, true);
+        showStickerOverCell(next);
       }
     }
     wHandle.onkeydown = function(event2) {
@@ -3963,6 +4001,15 @@
         if (code === getBind(S, "sticker" + s)) releaseStickerKey(s);
       }
     };
+    const clearAllHeldStickers = () => {
+      if (!heldStickerKeys.size && !currentSticker) return;
+      heldStickerKeys.clear();
+      if (currentSticker !== null) {
+        sendSticker(currentSticker, false);
+        currentSticker = null;
+      }
+      hideSticker();
+    };
     const colorSelected = document.getElementById("selectedColor");
     const colorList = document.getElementById("colorList");
     const skinss = document.getElementById("skinss");
@@ -4006,6 +4053,7 @@
       Object.keys(keyPressed).forEach(k => {
         keyPressed[k] = false;
       });
+      clearAllHeldStickers();
     };
     document.addEventListener("contextmenu", () => {
       if (keyPressed.eject) {
