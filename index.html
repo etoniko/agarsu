@@ -298,7 +298,25 @@
 })();
 </script>
 
+    <script>
+      // Яндекс Игры: детект iframe / ?yandex=1 без отдельной папки /yandex
+      window.__AGARSU_YANDEX_CANDIDATE__ = (function () {
+        try {
+          var q = new URLSearchParams(location.search);
+          if (q.get("yandex") === "1" || q.get("yg") === "1") return true;
+          if (q.has("app-id") || q.has("app_id") || q.has("draft")) return true;
+        } catch (e) {}
+        try {
+          if (/yandex\.[a-z.]+\/(?:games|app)|games\.yandex\./i.test(String(document.referrer || ""))) return true;
+        } catch (e2) {}
+        if (window !== window.top) {
+          try { void window.top.location.href; } catch (e3) { return true; }
+        }
+        return false;
+      })();
+    </script>
     <script src="main.js?8" defer></script>
+    <script src="main-yandex.js?1" defer></script>
 </head>
 <body>
   <div id="overlays" class="overlays">
