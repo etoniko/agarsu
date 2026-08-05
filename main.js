@@ -2876,8 +2876,6 @@
       ejectPressedByTouch: false,
       pinchZoomStartDistance: 0,
       isPinching: false,
-      stickerCooldown: false,
-      stickerCooldownTimer: null,
       localStickerHeld: false,
       localStickerId: null,
       activeStickersByNode: Object.create(null),
@@ -3724,11 +3722,13 @@
     let isTyping = false;
     let currentSticker = null;
     const heldStickerKeys = new Set();
+    let stickerGateUntil = 0;
+    let stickerSyncTimer = null;
+    const STICKER_ACTION_DELAY = 500;
     const keyPressed = {};
     const mouseHoldState = {};
     S.ma = true;
     S.freeze = false;
-    S.stickerCooldown = false;
     S.localStickerHeld = false;
     S.localStickerId = null;
     ensureStickerState(S);
@@ -3821,21 +3821,17 @@
         setNodeSticker(cell, null);
       }
     }
-    function pressStickerKey(stickerId) {
-      if (!S.showStickers || isTyping) return;
-      if (heldStickerKeys.has(stickerId)) return;
-      heldStickerKeys.add(stickerId);
-      if (currentSticker !== null && currentSticker !== stickerId) {
-        sendSticker(currentSticker, false);
-      }
-      currentSticker = stickerId;
-      sendSticker(stickerId, true);
-      showStickerOverCell(stickerId);
+    function pickHeldSticker() {
+      let next = null;
+      heldStickerKeys.forEach(function (id) {
+        next = id;
+      });
+      return next;
     }
-    function releaseStickerKey(stickerId) {
-      if (!heldStickerKeys.has(stickerId)) return;
-      heldStickerKeys.delete(stickerId);
-      if (heldStickerKeys.size === 0) {
+    /** Применить реальное состояние зажатых клавиш (show/hide/switch). */
+    function applyHeldStickerState() {
+      const next = pickHeldSticker();
+      if (next == null) {
         if (currentSticker !== null) {
           sendSticker(currentSticker, false);
           currentSticker = null;
@@ -3843,15 +3839,51 @@
         hideSticker();
         return;
       }
-      // осталась другая зажатая клавиша — переключиться на неё
-      let next = null;
-      heldStickerKeys.forEach(function (id) { next = id; });
-      if (next != null && currentSticker !== next) {
-        if (currentSticker !== null) sendSticker(currentSticker, false);
-        currentSticker = next;
-        sendSticker(next, true);
+      if (currentSticker === next) {
         showStickerOverCell(next);
+        return;
       }
+      if (currentSticker !== null) sendSticker(currentSticker, false);
+      currentSticker = next;
+      sendSticker(next, true);
+      showStickerOverCell(next);
+    }
+    function armStickerGate() {
+      stickerGateUntil = Date.now() + STICKER_ACTION_DELAY;
+    }
+    /** 500ms между действиями; клавиши трекаем сразу, применение — сразу или по таймеру. */
+    function requestStickerSync() {
+      const wait = stickerGateUntil - Date.now();
+      if (wait <= 0) {
+        if (stickerSyncTimer) {
+          clearTimeout(stickerSyncTimer);
+          stickerSyncTimer = null;
+        }
+        applyHeldStickerState();
+        armStickerGate();
+        return;
+      }
+      if (stickerSyncTimer) return;
+      stickerSyncTimer = setTimeout(function () {
+        stickerSyncTimer = null;
+        applyHeldStickerState();
+        armStickerGate();
+        // если за ожидание снова жали/отпускали — догнать актуальное состояние
+        if (pickHeldSticker() !== currentSticker || pickHeldSticker() == null && currentSticker !== null) {
+          requestStickerSync();
+        }
+      }, wait);
+    }
+    function pressStickerKey(stickerId) {
+      if (!S.showStickers || isTyping) return;
+      if (heldStickerKeys.has(stickerId)) return;
+      heldStickerKeys.add(stickerId);
+      requestStickerSync();
+    }
+    function releaseStickerKey(stickerId) {
+      if (!heldStickerKeys.has(stickerId)) return;
+      heldStickerKeys.delete(stickerId);
+      requestStickerSync();
     }
     wHandle.onkeydown = function(event2) {
       if (S.keybindCaptureAction) {
@@ -4011,6 +4043,11 @@
       }
     };
     const clearAllHeldStickers = () => {
+      if (stickerSyncTimer) {
+        clearTimeout(stickerSyncTimer);
+        stickerSyncTimer = null;
+      }
+      stickerGateUntil = 0;
       if (!heldStickerKeys.size && !currentSticker) return;
       heldStickerKeys.clear();
       if (currentSticker !== null) {
