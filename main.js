@@ -2355,7 +2355,11 @@
     if (key && S.activeStickersByName[key]) return S.activeStickersByName[key];
     return null;
   }
-  /** UpdateNodes: FF+id запоминаем; 00 не гасит чужой активный стикер. Свои — только пока клавиша зажата. */
+  /**
+   * UpdateNodes хвост: FF+id = стикер вкл, 00 = выкл.
+   * Свои клетки — только пока зажата клавиша (анти-мерцание/залипание у себя).
+   * Чужие: 00 обязательно гасит (иначе 2-я вкладка видит стикер после отпускания).
+   */
   function syncNodeStickerFromUpdate(S, node, name, stickerFromUpdate) {
     if (!node) return;
     const n = name || node.name || "";
@@ -2370,6 +2374,11 @@
     if (stickerFromUpdate) {
       rememberSticker(S, node.id, n, stickerFromUpdate);
       setNodeSticker(node, stickerFromUpdate);
+      return;
+    }
+    if (stickerFromUpdate === false) {
+      rememberSticker(S, node.id, n, null);
+      setNodeSticker(node, null);
       return;
     }
     const remembered = resolveRememberedSticker(S, node.id, n);
