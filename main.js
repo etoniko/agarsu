@@ -3724,7 +3724,7 @@
     const heldStickerKeys = new Set();
     let stickerGateUntil = 0;
     let stickerSyncTimer = null;
-    const STICKER_ACTION_DELAY = 500;
+    const STICKER_ACTION_DELAY = 300;
     const keyPressed = {};
     const mouseHoldState = {};
     S.ma = true;
