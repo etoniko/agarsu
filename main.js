@@ -307,7 +307,7 @@
       title: "FFA - Москва"
     },
     ffa1: {
-      host: "sixz.ru/ffa1",
+      host: "ffa.agar.su:6001",
       title: "FFA - Москва 2"
     },
     ms: {
