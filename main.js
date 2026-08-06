@@ -3290,7 +3290,7 @@
       ctx.lineWidth = noBorder ? 0 : 10;
       ctx.lineCap = "round";
       ctx.lineJoin = this.isVirus ? "miter" : "round";
-      const isTransp = transparent.has(this.name);
+      const isTransp = S.showSkin && transparent.has(this.name);
       const cellColor = this.getEffectiveColor();
       ctx.fillStyle = isTransp ? "rgba(0,0,0,0)" : cellColor;
       ctx.strokeStyle = isTransp ? "rgba(0,0,0,0)" : simpleRender ? cellColor : this.getStrokeColor();
