@@ -3,7 +3,7 @@
   "num": 3,
   "name": "Tournament Liquid (ИДЕТ НАБОР СЕТКА ЕЩЕ НЕ БЫЛА РАССТАВЛЕНА В СПИСКЕ ИГРОКИ КОТОРЫЕ БУДУТ УЧАСТОВАТЬ)",
   "date": "2026-08-06T19:30:00.000Z",
-  "archivedAt": "2026-08-07T14:26:59.172Z",
+  "archivedAt": "2026-08-07T15:03:53.625Z",
   "totalTeams": 28,
   "format": "2x2",
   "mode": "FFA Teams",
@@ -72,7 +72,7 @@
     {
       "players": [
         "cruelty",
-        ""
+        "melancholy"
       ]
     },
     {
@@ -83,7 +83,7 @@
     },
     {
       "players": [
-        "melancholy",
+        "mma",
         ""
       ]
     },
@@ -131,7 +131,7 @@
     },
     {
       "players": [
-        "mma",
+        "",
         ""
       ]
     },
@@ -179,7 +179,16 @@
     }
   ],
   "winners": {
-    "left": [],
+    "left": [
+      [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    ],
     "right": [],
     "final": null,
     "finalCross": [
