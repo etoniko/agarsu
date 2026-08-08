@@ -4,7 +4,7 @@
   "name": "Tournament Liquid (ИДЕТ НАБОР СЕТКА ЕЩЕ НЕ БЫЛА РАССТАВЛЕНА В СПИСКЕ ИГРОКИ КОТОРЫЕ БУДУТ УЧАСТОВАТЬ)",
   "date": "2026-08-06T19:30:00.000Z",
   "archivedAt": "2026-08-07T18:42:31.208Z",
-  "totalTeams": 28,
+  "totalTeams": 16,
   "format": "2x2",
   "mode": "FFA Teams",
   "reward": "6000р",
@@ -60,13 +60,13 @@
     {
       "players": [
         "Kolibri",
-        ""
+        "курага"
       ]
     },
     {
       "players": [
-        "Пузырь",
-        ""
+        "error",
+        "error"
       ]
     },
     {
@@ -83,14 +83,14 @@
     },
     {
       "players": [
-        "mma",
-        ""
+        "silvers rayleigh",
+        "silvers rayleigh"
       ]
     },
     {
       "players": [
-        "silvers rayleigh",
-        ""
+        "khirad",
+        "㊙ sharingan ㊯"
       ]
     },
     {
@@ -104,91 +104,10 @@
         "prime xvii",
         "prime xvii"
       ]
-    },
-    {
-      "players": [
-        "khirad",
-        "㊙ sharingan ㊯"
-      ]
-    },
-    {
-      "players": [
-        "error",
-        "error"
-      ]
-    },
-    {
-      "players": [
-        "курага",
-        ""
-      ]
-    },
-    {
-      "players": [
-        "",
-        ""
-      ]
-    },
-    {
-      "players": [
-        "",
-        ""
-      ]
-    },
-    {
-      "players": [
-        "",
-        ""
-      ]
-    },
-    {
-      "players": [
-        "",
-        ""
-      ]
-    },
-    {
-      "players": [
-        "",
-        ""
-      ]
-    },
-    {
-      "players": [
-        "",
-        ""
-      ]
-    },
-    {
-      "players": [
-        "",
-        ""
-      ]
-    },
-    {
-      "players": [
-        "",
-        ""
-      ]
-    },
-    {
-      "players": [
-        "",
-        ""
-      ]
     }
   ],
   "winners": {
-    "left": [
-      [
-        null,
-        null,
-        null,
-        null,
-        null,
-        null
-      ]
-    ],
+    "left": [],
     "right": [],
     "final": null,
     "finalCross": [
