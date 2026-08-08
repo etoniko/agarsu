@@ -1,0 +1,125 @@
+{
+  "id": 3,
+  "num": 3,
+  "name": "Tournament Liquid",
+  "date": "2026-08-06T19:30:00.000Z",
+  "archivedAt": "2026-08-08T16:41:14.455Z",
+  "totalTeams": 16,
+  "format": "2x2",
+  "mode": "FFA Teams",
+  "reward": "6000р",
+  "teams": [
+    {
+      "players": [
+        "Vaas",
+        "Mnrve"
+      ]
+    },
+    {
+      "players": [
+        "Kolibri",
+        "курага"
+      ]
+    },
+    {
+      "players": [
+        "Kiss me",
+        "Touch me"
+      ]
+    },
+    {
+      "players": [
+        "Netherlands",
+        "Vesper"
+      ]
+    },
+    {
+      "players": [
+        "𝓙𝓲𝓷𝔁",
+        "Jeff"
+      ]
+    },
+    {
+      "players": [
+        "khirad",
+        "㊙ sharingan ㊯"
+      ]
+    },
+    {
+      "players": [
+        "d4se1n",
+        "newlightchild"
+      ]
+    },
+    {
+      "players": [
+        "Умалишенный",
+        "Sexy supra"
+      ]
+    },
+    {
+      "players": [
+        "𝑉𝑜𝑖𝑑",
+        "狼"
+      ]
+    },
+    {
+      "players": [
+        "༼ᵍᵃⁿᵍ༽༼٥९९٥༽ぶ",
+        "Moonlight"
+      ]
+    },
+    {
+      "players": [
+        "silvers rayleigh",
+        "silvers rayleigh"
+      ]
+    },
+    {
+      "players": [
+        "error",
+        "error"
+      ]
+    },
+    {
+      "players": [
+        "cruelty",
+        "melancholy"
+      ]
+    },
+    {
+      "players": [
+        "groymix",
+        "☼K☼"
+      ]
+    },
+    {
+      "players": [
+        "Профи",
+        "Tears"
+      ]
+    },
+    {
+      "players": [
+        "prime xvii",
+        "prime xvii"
+      ]
+    }
+  ],
+  "winners": {
+    "left": [],
+    "right": [],
+    "final": null,
+    "finalCross": [
+      null,
+      null,
+      null
+    ],
+    "finalRR": [
+      null,
+      null,
+      null
+    ]
+  },
+  "winnerTeam": null
+}
