@@ -3,7 +3,7 @@
   "num": 3,
   "name": "Tournament Liquid",
   "date": "2026-08-06T19:30:00.000Z",
-  "archivedAt": "2026-08-08T17:07:17.420Z",
+  "archivedAt": "2026-08-09T11:46:02.653Z",
   "totalTeams": 16,
   "format": "2x2",
   "mode": "FFA Teams",
@@ -107,7 +107,13 @@
     }
   ],
   "winners": {
-    "left": [],
+    "left": [
+      [
+        null,
+        null,
+        4
+      ]
+    ],
     "right": [],
     "final": null,
     "finalCross": [
