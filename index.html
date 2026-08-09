@@ -21,7 +21,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=new_releases" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link rel="stylesheet" href="style.css?1238">
+    <link rel="stylesheet" href="style.css?1239">
     <script>
       window.renderDeathBanner = window.renderDeathBanner || function () {};
       window.yaContextCb = window.yaContextCb || [];
@@ -315,13 +315,36 @@
         return false;
       })();
     </script>
-    <script src="main.js?19" defer></script>
+    <script src="main.js?20" defer></script>
     <script src="main-yandex.js?7" defer></script>
 </head>
 <body>
   <div id="overlays" class="overlays">
     <div class="social"><a href="https://t.me/agarsu" target="_blank" class="tg"><i class="fab fa-telegram tg-icon"></i></a><a href="https://vk.com/club233723574" target="_blank" class="soc"><i class="fab fa-vk"></i></a><a href="#" class="soc"><i class="fab fa-discord discord-disabled"></i></a></div>
     <div class="add-yandex" id="ratinghome"><div id="yandex_rtb_R-A-15699059-13"></div></div>
+	      <section id="game-howto" class="game-howto" aria-labelledby="game-howto-title" hidden>
+      <div id="game-howto-card-wrap" class="game-howto-card-wrap">
+        <div id="game-howto-confirmation" class="game-howto-confirmation" hidden>
+          <strong id="game-howto-question">Точно понятно?</strong>
+          <div class="game-howto-confirmation-actions">
+            <button type="button" id="game-howto-review" class="game-howto-review">ВЕРНУТЬСЯ НАЗАД</button>
+            <button type="button" id="game-howto-finish" class="game-howto-finish">ДА!</button>
+          </div>
+        </div>
+        <div id="game-howto-content">
+          <div class="game-howto-kicker">КАК ИГРАТЬ</div>
+          <h2 id="game-howto-title">Управляйте шарами правильно</h2>
+          <p class="game-howto-intro">Курсор задаёт направление. <b>W</b> выбрасывает массу, <b>Space</b> делит шар. Держите дистанцию: шары не прилипают и могут пролететь рядом.</p>
+          <div class="game-howto-grid">
+            <article class="game-howto-card is-good"><img src="assets/tutorial/primerr1.gif" alt="Правильно: движение шаров"><strong>ПРАВИЛЬНО</strong><span>Двигайтесь к цели с дистанции.</span></article>
+            <article class="game-howto-card is-good"><img src="assets/tutorial/primerr2.gif" alt="Правильно: деление шара"><strong>ПРАВИЛЬНО</strong><span>Делитесь на нужной дистанции.</span></article>
+            <article class="game-howto-card is-bad"><img src="assets/tutorial/primerclose1.gif" alt="Неправильно: слишком близкое движение"><strong>НЕПРАВИЛЬНО</strong><span>Не входите вплотную.</span></article>
+            <article class="game-howto-card is-bad"><img src="assets/tutorial/primerclose2.gif" alt="Неправильно: деление вблизи"><strong>НЕПРАВИЛЬНО</strong><span>Не делитесь слишком близко.</span></article>
+          </div>
+          <button type="button" id="game-howto-confirm" class="game-howto-confirm">ПОНЯТНО!</button>
+        </div>
+      </div>
+    </section>
 	  <div class="center">
       <div class="sidebar">
         <div class="menu-item inl-1" onclick="showContent('shop')">
