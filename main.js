@@ -4674,6 +4674,43 @@ async function updateOnlineCount() {
         console.error("Ошибка загрузки данных о топ-1 игроке:", error);
       }
     };
+    function initGameHowto() {
+      const howto = document.getElementById("game-howto");
+      const confirm = document.getElementById("game-howto-confirm");
+      const confirmation = document.getElementById("game-howto-confirmation");
+      const review = document.getElementById("game-howto-review");
+      const finish = document.getElementById("game-howto-finish");
+      if (!howto || !confirm || !confirmation || !review || !finish) return;
+      const cookieName = "agarsu_game_howto_seen";
+      const hasCookie = document.cookie.split(";").some(item => item.trim().indexOf(cookieName + "=") === 0);
+      if (!hasCookie) howto.hidden = false;
+      const content = document.getElementById("game-howto-content");
+      const wrap = document.getElementById("game-howto-card-wrap");
+      const question = document.getElementById("game-howto-question");
+      confirm.addEventListener("click", () => {
+        wrap.classList.add("is-confirmation");
+        content.hidden = true;
+        confirm.hidden = true;
+        confirmation.hidden = false;
+      });
+      review.addEventListener("click", () => {
+        wrap.classList.remove("is-confirmation");
+        confirmation.hidden = true;
+        content.hidden = false;
+        confirm.hidden = false;
+      });
+      finish.addEventListener("click", () => {
+        question.textContent = "Ну ладно)";
+        document.cookie = cookieName + "=1; max-age=31536000; path=/; SameSite=Lax";
+        howto.classList.add("is-closing");
+        window.setTimeout(() => {
+          howto.hidden = true;
+          howto.classList.remove("is-closing");
+        }, 2500);
+      });
+    }
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initGameHowto, { once: true });
+    else initGameHowto();
     wHandle.startGame = function() {
       let nickInput = document.getElementById("nick").value.trim();
       let passInput = document.getElementById("pass").value;
