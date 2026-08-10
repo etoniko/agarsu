@@ -1524,24 +1524,7 @@
     return S.leaderBoard.map(e => `${e.id}|${e.name}|${e.level}|${e.xp}`).join("\n");
   }
   function renderLeaderboardName(container, name) {
-    const value = String(name || "");
-    const streakPattern = /\*(\d+)\*/g;
-    let lastIndex = 0;
-    let match;
-    while ((match = streakPattern.exec(value)) !== null) {
-      if (match.index > lastIndex) {
-        container.appendChild(document.createTextNode(value.slice(lastIndex, match.index)));
-      }
-      const streak = document.createElement("span");
-      streak.title = "Серия побед подряд";
-      streak.className = "streak";
-      streak.textContent = match[1];
-      container.appendChild(streak);
-      lastIndex = streakPattern.lastIndex;
-    }
-    if (lastIndex < value.length) {
-      container.appendChild(document.createTextNode(value.slice(lastIndex)));
-    }
+    container.textContent = String(name || "");
   }
   function createLeaderboardEntry(name, level, isMe, isSystemLine, b) {
     var _a;
