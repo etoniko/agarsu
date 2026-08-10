@@ -3614,6 +3614,17 @@ input{font-size:16px;}
    МОБИЛЬНЫЕ — 2x2 через FLEX
    ============================================ */
 @media (max-width: 599px) {
+  #overlays {
+    align-items: flex-start;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .center {
+    margin: 0 auto;
+  }
+
   .servers {
     padding: 0 4px;
     margin-top: 8px;
