@@ -1134,6 +1134,9 @@
       if (perfEnabled) perfStats.qtreeMs = performance.now() - t0;
       return;
     }
+    S.qTree = null;
+    if (perfEnabled) perfStats.qtreeMs = performance.now() - t0;
+    return;
     let minX = Number.POSITIVE_INFINITY;
     let minY = Number.POSITIVE_INFINITY;
     let maxX = Number.NEGATIVE_INFINITY;
@@ -2843,10 +2846,10 @@
       showMass: true,
       hideChat: false,
       renderQuality: (() => {
-        const q = readStored("render_quality", "high");
+        const q = readStored("render_quality", "low");
         return q === "low" || q === "medium" ? q : "high";
       })(),
-      smoothRender: .4,
+      smoothRender: 2,
       closebord: false,
       enableMouseClicks: false,
       mouseSplitButton: 3,
@@ -3161,86 +3164,12 @@
       }
     },
     getNumPoints() {
-      const S = deps3.S;
-      if (S.renderQuality === "low" || S.renderQuality === "medium") return 0;
-      if (this.id === 0) return 16;
-      let minPoints = this.size < 20 ? 0 : 10;
-      if (this.isVirus) minPoints = 30;
-      let b = this.isVirus ? this.size : this.size * S.viewZoom;
-      b *= S.z;
-      if (this.flag & 32) b *= .25;
-      return ~~Math.max(b, minPoints);
+      return 0;
     },
-    createPoints() {
-      const numPoints = this.getNumPoints();
-      while (this.points.length > numPoints) {
-        const idx = ~~(Math.random() * this.points.length);
-        this.points.splice(idx, 1);
-        this.pointsAcc.splice(idx, 1);
-      }
-      if (!this.points.length && numPoints > 0) {
-        this.points.push({
-          ref: this,
-          size: this.size,
-          x: this.x,
-          y: this.y
-        });
-        this.pointsAcc.push(Math.random() - .5);
-      }
-      while (this.points.length < numPoints) {
-        const idx = ~~(Math.random() * this.points.length);
-        const point = this.points[idx];
-        this.points.splice(idx, 0, {
-          ref: this,
-          size: point.size,
-          x: point.x,
-          y: point.y
-        });
-        this.pointsAcc.splice(idx, 0, this.pointsAcc[idx]);
-      }
-    },
-    movePoints() {
-      const S = deps3.S;
-      if (S._perfMovePoints) S._perfMovePoints += 1;
-      this.createPoints();
-      const pts = this.points;
-      const acc = this.pointsAcc;
-      const n = pts.length;
-      for (let i = 0; i < n; i++) {
-        const prev = acc[(i - 1 + n) % n];
-        const next = acc[(i + 1) % n];
-        acc[i] += (Math.random() - .5) * (this.isAgitated ? 3 : 1);
-        acc[i] = Math.max(Math.min(acc[i] * .7, 10), -10);
-        acc[i] = (prev + next + 8 * acc[i]) / 10;
-      }
-      const ref = this;
-      const isVirus = this.isVirus ? 0 : (this.id / 1e3 + S.timestamp / 1e4) % (2 * Math.PI);
-      for (let j = 0; j < n; j++) {
-        let f = pts[j].size;
-        const prev = pts[(j - 1 + n) % n].size;
-        const next = pts[(j + 1) % n].size;
-        if (this.size > 15 && S.qTree && this.size * S.viewZoom > 20 && this.id !== 0) {
-          const x = pts[j].x;
-          const y = pts[j].y;
-          let collide = false;
-          S.qTree.retrieve2(x - 5, y - 5, 10, 10, a => {
-            if (a.ref !== ref && (x - a.x) ** 2 + (y - a.y) ** 2 < 625) collide = true;
-          });
-          if (!collide && (x < S.leftPos || y < S.topPos || x > S.rightPos || y > S.bottomPos)) {
-            collide = true;
-          }
-          if (collide) acc[j] = Math.max(0, acc[j]) - 1;
-        }
-        f = Math.max(0, f + acc[j]);
-        f = this.isAgitated ? (19 * f + this.size) / 20 : (12 * f + this.size) / 13;
-        pts[j].size = (prev + next + 8 * f) / 10;
-        const angle = 2 * Math.PI / n * j;
-        let radius = pts[j].size;
-        if (this.isVirus && j % 2 === 0) radius += 5;
-        pts[j].x = this.x + Math.cos(angle + isVirus) * radius;
-        pts[j].y = this.y + Math.sin(angle + isVirus) * radius;
-      }
-    },
+    createPoints() {},
+
+    movePoints() {},
+
     updatePos() {
       const S = deps3.S;
       if (this.id === 0) return 1;
@@ -3292,12 +3221,8 @@
       const invisible = S.invisible || new Set;
       const rotation = S.rotation || new Set;
       const skinList = S.skinList || {};
-      const qualitySimple = S.renderQuality === "low" || S.renderQuality === "medium";
-      const simpleRender = qualitySimple || this.id !== 0 && !this.isAgitated && S.smoothRender > S.viewZoom || this.getNumPoints() < 10;
-      if (!simpleRender && this.wasSimpleDrawing) this.points.forEach(p => p.size = this.size);
+      const simpleRender = true;
       let bigPointSize = this.size;
-      if (!this.wasSimpleDrawing) this.points.forEach(p => bigPointSize = Math.max(bigPointSize, p.size));
-      this.wasSimpleDrawing = simpleRender;
       ctx.save();
       this.drawTime = S.timestamp;
       if (this._posFrame !== S.frameId) {
@@ -3314,13 +3239,7 @@
       ctx.fillStyle = isTransp ? "rgba(0,0,0,0)" : cellColor;
       ctx.strokeStyle = isTransp ? "rgba(0,0,0,0)" : simpleRender ? cellColor : this.getStrokeColor();
       ctx.beginPath();
-      if (simpleRender) {
-        ctx.arc(this.x, this.y, renderSize, 0, 2 * Math.PI);
-      } else {
-        this.movePoints();
-        ctx.moveTo(this.points[0].x, this.points[0].y);
-        this.points.forEach(p => ctx.lineTo(p.x, p.y));
-      }
+      ctx.arc(this.x, this.y, renderSize, 0, 2 * Math.PI);
       ctx.closePath();
       const useVirusImageFill = this.isVirus && !isTransp && drawVirusFillBackground(ctx, this, renderSize, simpleRender, bigPointSize);
       if (!noBorder) ctx.stroke();
@@ -6550,7 +6469,7 @@ async function updateOnlineCount() {
       return S.showMass;
 
      case 6:
-      return S.smoothRender > .4;
+      return false;
 
      case 7:
       return S.closebord;
@@ -6668,6 +6587,7 @@ async function updateOnlineCount() {
       S.smoothRender = arg ? 2 : .4;
       persistCheckbox(6, arg);
     };
+    wHandle.setSmooth.enabled = false;
     wHandle.setRenderQuality = function(arg) {
       const q = arg === "low" || arg === "medium" ? arg : "high";
       S.renderQuality = q;
