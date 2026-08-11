@@ -1523,9 +1523,6 @@
     if (!S) return "";
     return S.leaderBoard.map(e => `${e.id}|${e.name}|${e.level}|${e.xp}`).join("\n");
   }
-  function renderLeaderboardName(container, name) {
-    container.textContent = String(name || "");
-  }
   function createLeaderboardEntry(name, level, isMe, isSystemLine, b) {
     var _a;
     const S = deps2.S;
@@ -1554,7 +1551,7 @@
     }
     const nameSpan = document.createElement("span");
     nameSpan.className = "Lednick-name";
-    renderLeaderboardName(nameSpan, name);
+    nameSpan.innerHTML = name;
     if (!isSystemLine && isTournamentPlayer && !isWinner) {
       nameSpan.title = "Участник турнира";
     }
@@ -1653,6 +1650,7 @@
         const myCell = S.playerCells.find(cell => cell.id === S.leaderBoard[b].id);
         if (myCell == null ? void 0 : myCell.name) name = myCell.name;
       }
+      name = name.replace(/\*(\d+)\*/g, (_match, p1) => `<span title="Серия побед подряд" class="streak">${p1}</span>`);
       if (b < 10) {
         const entryDiv = createLeaderboardEntry(name, S.leaderBoard[b].level, isMe, isSystemLine, b);
         toplistDiv.insertAdjacentHTML("beforeend", entryDiv.outerHTML);
@@ -1919,7 +1917,7 @@
     function isSpectMode() {
       const urlParams = new URLSearchParams(window.location.search);
       const hash = window.location.hash;
-      return urlParams.has("spect") || urlParams.has("spectator") || hash.includes("?spect") || hash.includes("?spectator");
+      return urlParams.has("spect") || hash.includes("?spect");
     }
     function clearSpectReconnectTimer() {
       if (S.spectReconnectTimer) {
@@ -6762,7 +6760,7 @@ function initServers(S) {
     titleEl.textContent = `Статистика ${serverName}`;
   }
   
-  if (urlParams.has("spect") || urlParams.has("spectator") || hash.includes("?spect") || hash.includes("?spectator")) {
+  if (urlParams.has("spect") || hash.includes("?spect")) {
     window._autoSpectate = true;
   }
   
@@ -7004,9 +7002,8 @@ onReady(() => {
     function startGameLoop() {
       const urlParams = new URLSearchParams(window.location.search);
       const hash = wHandle.location.hash;
-      if (urlParams.has("spect") || urlParams.has("spectator") || hash.includes("?spect") || hash.includes("?spectator")) {
-        const requestedZoom = Number.parseFloat(urlParams.get("zoom"));
-        S.zoom = Number.isFinite(requestedZoom) ? Math.min(4, Math.max(.3, requestedZoom)) : .4;
+      if (urlParams.has("spect") || hash.includes("?spect")) {
+        S.zoom = .5;
       }
       if (window._autoSpectate && typeof wHandle.spectate === "function") {
         delete window._autoSpectate;
