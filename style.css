@@ -2613,6 +2613,8 @@ input{font-size:16px;}
 }
 .chatX_window {width: 300px;height: 360px;background: rgba(0, 0, 0, .3);border-radius: 25px;padding: 8px 3px 8px 8px;position: absolute;left: 10px;bottom: 10px;display: flex;flex-direction: column;overflow: hidden;min-width: 220px;max-width: 520px;min-height: 120px;max-height: min(720px, 85vh);color: white;box-sizing: border-box;border: solid #ffffff26 1px;pointer-events: none;}
 .chatX_window .chatX_top,
+.chatX_window .chatX_container,
+.chatX_window .chatX_feed,
 .chatX_window .chatX_emch,
 .chatX_window .emoji-list,
 .chatX_window .chatX_msg,
@@ -2625,6 +2627,8 @@ input{font-size:16px;}
   flex:1;
   overflow-y:auto;
   overflow-x:hidden;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
   display:flex;
   flex-direction:column;
   gap:8px;
