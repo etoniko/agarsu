@@ -3619,7 +3619,7 @@ input{font-size:16px;}
    ============================================ */
 @media (max-width: 599px) {
   #overlays {
-    align-items: flex-start;
+    align-items: center;
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
@@ -3627,6 +3627,7 @@ input{font-size:16px;}
 
   .center {
     margin: 0 auto;
+    justify-content: center;
   }
 
   .servers {
