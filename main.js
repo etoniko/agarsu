@@ -2944,7 +2944,7 @@
       ...d
     };
   }
-  var DEFAULT_TRANSPARENT = [ "liqwid", "⟨本⟩ Itana.", "†Ĵώâ4ќâ†","g"];
+  var DEFAULT_TRANSPARENT = [ "liqwid", "⟨本⟩ Itana.", "†Ĵώâ4ќâ†","g","Uroboros"];
   function ensureNameSets(S) {
     if (!S.transparent) S.transparent = new Set(DEFAULT_TRANSPARENT);
     if (!S.invisible) {
