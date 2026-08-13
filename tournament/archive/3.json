@@ -3,7 +3,7 @@
   "num": 3,
   "name": "Tournament Liquid",
   "date": "2026-08-06T19:30:00.000Z",
-  "archivedAt": "2026-08-11T16:30:34.754Z",
+  "archivedAt": "2026-08-13T12:20:37.416Z",
   "totalTeams": 16,
   "format": "2x2",
   "mode": "FFA Teams",
@@ -110,7 +110,7 @@
     "left": [
       [
         0,
-        null,
+        2,
         4,
         6
       ],
