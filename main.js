@@ -824,15 +824,30 @@
     onOverlaysShow = onShow != null ? onShow : null;
     onOverlaysHide = onHide != null ? onHide : null;
   }
+  let touchDeviceDetected = false;
+  function setTouchDeviceDetected(v) {
+    touchDeviceDetected = v;
+  }
+  function updateTouchButtonsVisibility() {
+    const el = byId("touch-buttons");
+    if (!el) return;
+    if (touchDeviceDetected && !isOverlaysVisible()) {
+      el.hidden = false;
+    } else {
+      el.hidden = true;
+    }
+  }
   function showOverlays() {
     const el = byId("overlays");
     showElement(el);
     onOverlaysShow == null ? void 0 : onOverlaysShow();
+    updateTouchButtonsVisibility();
   }
   function hideOverlays() {
     const el = byId("overlays");
     hideElement(el);
     onOverlaysHide == null ? void 0 : onOverlaysHide();
+    updateTouchButtonsVisibility();
   }
   function isOverlaysVisible() {
     return isVisible(byId("overlays"));
@@ -1256,7 +1271,6 @@
       perfStats.frame = S.frameId;
       updatePerfOverlay(S);
     }
-    drawSplitIcon(ctx);
     drawTouch(ctx);
   }
   function drawGrid() {
@@ -2944,7 +2958,7 @@
       ...d
     };
   }
-  var DEFAULT_TRANSPARENT = [ "liqwid", "⟨本⟩ Itana.", "†Ĵώâ4ќâ†","g","Uroboros","ww"];
+  var DEFAULT_TRANSPARENT = [ "liqwid", "⟨本⟩ Itana.", "†Ĵώâ4ќâ†","g","Uroboros"];
   function ensureNameSets(S) {
     if (!S.transparent) S.transparent = new Set(DEFAULT_TRANSPARENT);
     if (!S.invisible) {
@@ -3706,6 +3720,7 @@
       S.mainCanvas.addEventListener("touchmove", onTouchMove, false);
       S.mainCanvas.addEventListener("touchend", onTouchEnd, false);
     }
+    bindTouchDivButtons(S, hooks);
     S.mainCanvas.onmouseup = function() {};
     function handleWheel(event2) {
       const chatContainer = document.querySelector(".noscroll");
@@ -4227,6 +4242,59 @@
         }
       }
       S.touches = e.touches;
+    }
+    function bindTouchDivButtons(S, hooks) {
+      const ejectBtn = document.getElementById("touch-eject");
+      const splitBtn = document.getElementById("touch-split");
+      if (!ejectBtn || !splitBtn) return;
+      const startEject = () => {
+        if (S.ejectPressedByTouch) return;
+        S.ejectPressedByTouch = true;
+        hooks.sendMouseMove();
+        hooks.sendUint8(21);
+        if (!S.ejectInterval) {
+          S.ejectInterval = setInterval(() => {
+            if (S.ejectPressedByTouch && hooks.wsIsOpen()) {
+              hooks.sendMouseMove();
+              hooks.sendUint8(21);
+            }
+          }, 80);
+        }
+      };
+      const stopEject = () => {
+        S.ejectPressedByTouch = false;
+        if (S.ejectInterval) {
+          clearInterval(S.ejectInterval);
+          S.ejectInterval = null;
+        }
+      };
+      const doSplit = () => {
+        hooks.sendMouseMove();
+        hooks.sendUint8(17);
+      };
+      ejectBtn.addEventListener("touchstart", e => {
+        e.preventDefault();
+        startEject();
+      }, {passive: false});
+      ejectBtn.addEventListener("touchend", e => {
+        e.preventDefault();
+        stopEject();
+      }, {passive: false});
+      ejectBtn.addEventListener("touchcancel", stopEject, {passive: false});
+      ejectBtn.addEventListener("mousedown", e => {
+        e.preventDefault();
+        startEject();
+      });
+      ejectBtn.addEventListener("mouseup", stopEject);
+      ejectBtn.addEventListener("mouseleave", stopEject);
+      splitBtn.addEventListener("touchstart", e => {
+        e.preventDefault();
+        doSplit();
+      }, {passive: false});
+      splitBtn.addEventListener("mousedown", e => {
+        e.preventDefault();
+        doSplit();
+      });
     }
     wHandle.onresize = () => canvasResize(S);
     canvasResize(S);
@@ -6727,6 +6795,7 @@ function initServers(S) {
     S.splitIcon.src = "/photo/split.png";
     S.ejectIcon.src = "/photo/eject.png";
     S.isTouchStart = "ontouchstart" in wHandle && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    setTouchDeviceDetected(S.isTouchStart);
     S.Quad = Quad;
     S.nodesSortDirty = true;
     bindCellDeps({
@@ -7642,6 +7711,202 @@ onReady(() => {
       });
     }
   }
+  function initHudEditor() {
+    var STORAGE_KEY = "hud_layout_v1";
+    var DEFAULTS = {
+      eject: { x: 88, y: 88, scale: 100 },
+      split: { x: 88, y: 72, scale: 100 },
+      minimap: { x: 88, y: 64, scale: 100 }
+    };
+    var ELEMENTS = [
+      { key: "eject", label: "Выброс", selector: "#touch-eject" },
+      { key: "split", label: "Сплит", selector: "#touch-split" },
+      { key: "minimap", label: "Миникарта", selector: "#map" }
+    ];
+    var editorEl = document.getElementById("hud-editor");
+    var openBtn = document.getElementById("hud-editor-open");
+    var selectEl = document.getElementById("hud-editor-select");
+    var scaleInput = document.getElementById("hud-editor-scale");
+    var scaleVal = document.getElementById("hud-editor-scale-val");
+    var resetBtn = document.getElementById("hud-editor-reset");
+    var saveBtn = document.getElementById("hud-editor-save");
+    var closeBtn = document.getElementById("hud-editor-close");
+    if (!editorEl || !openBtn || !selectEl || !scaleInput) return;
+    var layout = loadLayout();
+    var savedSnapshot = null;
+    var editing = false;
+    var selectedKey = null;
+    var overlaysEl = document.getElementById("overlays");
+    var mapPreviousStyle = null;
+    ELEMENTS.forEach(function(cfg) {
+      var option = document.createElement("option");
+      option.value = cfg.key;
+      option.textContent = cfg.label;
+      selectEl.appendChild(option);
+    });
+    function loadLayout() {
+      try {
+        var raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) return JSON.parse(raw) || {};
+      } catch (e) {}
+      return {};
+    }
+    function persistLayout() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(layout)); } catch (e) {}
+    }
+    function getCfg(key) {
+      for (var i = 0; i < ELEMENTS.length; i++) if (ELEMENTS[i].key === key) return ELEMENTS[i];
+      return null;
+    }
+    function getEl(cfg) { return document.querySelector(cfg.selector); }
+    function clone(o) { return JSON.parse(JSON.stringify(o)); }
+    function applyToEl(cfg, data) {
+      var el = getEl(cfg);
+      if (!el || !data) return;
+      el.style.position = "fixed";
+      el.style.left = data.x + "%";
+      el.style.top = data.y + "%";
+      el.style.right = "auto";
+      el.style.bottom = "auto";
+      el.style.margin = "0";
+      el.style.transform = "translate(-50%,-50%) scale(" + (data.scale / 100) + ")";
+      el.style.transformOrigin = "center center";
+    }
+    function applyAll() {
+      ELEMENTS.forEach(function(cfg) {
+        if (layout[cfg.key]) applyToEl(cfg, layout[cfg.key]);
+      });
+    }
+    function select(key) {
+      selectedKey = key;
+      if (selectEl) selectEl.value = key;
+      var data = layout[key] || DEFAULTS[key];
+      if (scaleInput) scaleInput.value = data.scale;
+      if (scaleVal) scaleVal.textContent = data.scale + "%";
+      document.querySelectorAll(".hud-editable").forEach(function(el) { el.classList.remove("hud-selected"); });
+      var el = getEl(getCfg(key));
+      if (el) el.classList.add("hud-selected");
+    }
+    function openEditor() {
+      editing = true;
+      savedSnapshot = clone(layout);
+      mapPreviousStyle = null;
+      if (typeof showContent2 === "function") showContent2("home");
+      if (overlaysEl) overlaysEl.style.display = "none";
+      document.body.classList.add("hud-editing");
+      editorEl.hidden = false;
+      var touchButtons = document.getElementById("touch-buttons");
+      if (touchButtons) touchButtons.hidden = false;
+      ELEMENTS.forEach(function(cfg) {
+        var el = getEl(cfg);
+        if (!el) return;
+        if (cfg.key === "minimap") {
+          mapPreviousStyle = el.getAttribute("style");
+          el.style.display = "block";
+        }
+        if (!layout[cfg.key]) layout[cfg.key] = Object.assign({}, DEFAULTS[cfg.key]);
+        el.classList.add("hud-editable");
+        el.setAttribute("data-hud-key", cfg.key);
+        applyToEl(cfg, layout[cfg.key]);
+      });
+      select(ELEMENTS[0].key);
+    }
+    function closeEditor(save) {
+      if (save) {
+        ELEMENTS.forEach(function(cfg) {
+          var el = getEl(cfg);
+          if (!el) return;
+          if (layout[cfg.key]) applyToEl(cfg, layout[cfg.key]);
+          el.classList.remove("hud-editable", "hud-selected");
+          el.removeAttribute("data-hud-key");
+        });
+        persistLayout();
+      } else {
+        layout = clone(savedSnapshot || {});
+        ELEMENTS.forEach(function(cfg) {
+          var el = getEl(cfg);
+          if (!el) return;
+          el.classList.remove("hud-editable", "hud-selected");
+          el.removeAttribute("data-hud-key");
+          el.style.cssText = "";
+        });
+        applyAll();
+      }
+      editing = false;
+      document.body.classList.remove("hud-editing");
+      editorEl.hidden = true;
+      if (overlaysEl) overlaysEl.style.display = "none";
+      if (typeof showContent2 === "function") showContent2("home");
+      applyAll();
+      mapPreviousStyle = null;
+      updateTouchButtonsVisibility();
+      savedSnapshot = null;
+    }
+    openBtn.addEventListener("click", openEditor);
+    if (saveBtn) saveBtn.addEventListener("click", function(e) { e.preventDefault(); e.stopPropagation(); closeEditor(true); });
+    closeBtn.addEventListener("click", function(e) { e.preventDefault(); e.stopPropagation(); closeEditor(false); });
+    resetBtn.addEventListener("click", function() {
+      if (!selectedKey) return;
+      layout[selectedKey] = Object.assign({}, DEFAULTS[selectedKey]);
+      applyToEl(getCfg(selectedKey), layout[selectedKey]);
+      select(selectedKey);
+    });
+    selectEl.addEventListener("change", function() { select(selectEl.value); });
+    scaleInput.addEventListener("input", function() {
+      if (!selectedKey) return;
+      var data = layout[selectedKey] || Object.assign({}, DEFAULTS[selectedKey]);
+      data.scale = parseInt(scaleInput.value, 10) || 100;
+      layout[selectedKey] = data;
+      if (scaleVal) scaleVal.textContent = data.scale + "%";
+      applyToEl(getCfg(selectedKey), data);
+      persistLayout();
+    });
+    document.addEventListener("pointerdown", function(e) {
+      if (!editing) return;
+      var t = e.target;
+      while (t && t !== document && !(t.getAttribute && t.getAttribute("data-hud-key"))) t = t.parentNode;
+      if (!t || t === document) return;
+      var key = t.getAttribute("data-hud-key");
+      if (!key) return;
+      e.preventDefault();
+      select(key);
+      var data = layout[key] || Object.assign({}, DEFAULTS[key]);
+      var startX = e.clientX, startY = e.clientY;
+      var startPx = { x: data.x / 100 * window.innerWidth, y: data.y / 100 * window.innerHeight };
+      var el = t;
+      try { el.setPointerCapture(e.pointerId); } catch (err) {}
+      function onMove(ev) {
+        var nx = startPx.x + (ev.clientX - startX);
+        var ny = startPx.y + (ev.clientY - startY);
+        data.x = Math.max(2, Math.min(98, Math.round(nx / window.innerWidth * 1000) / 10));
+        data.y = Math.max(2, Math.min(98, Math.round(ny / window.innerHeight * 1000) / 10));
+        layout[key] = data;
+        applyToEl(getCfg(key), data);
+        persistLayout();
+      }
+      function onUp() {
+        el.removeEventListener("pointermove", onMove);
+        el.removeEventListener("pointerup", onUp);
+        el.removeEventListener("pointercancel", onUp);
+      }
+      el.addEventListener("pointermove", onMove);
+      el.addEventListener("pointerup", onUp);
+      el.addEventListener("pointercancel", onUp);
+    });
+    document.addEventListener("keydown", function(e) {
+      if (e.key === "Escape" && editing) closeEditor(true);
+    });
+    editorEl.addEventListener("pointerdown", function(e) {
+      if (e.target === editorEl) closeEditor(true);
+    });
+    document.addEventListener("pointerdown", function(e) {
+      if (!editing || editorEl.contains(e.target)) return;
+      var t = e.target;
+      while (t && t !== document && !(t.getAttribute && t.getAttribute("data-hud-key"))) t = t.parentNode;
+      if (!t || t === document) closeEditor(true);
+    });
+    applyAll();
+  }
   function initLobbyUi() {
     const {loadChatSize} = initChatResize();
     updateAccountMenuLabel();
@@ -7649,6 +7914,7 @@ onReady(() => {
     initHudToggles();
     initOverlayMouseBridge();
     initChatNickInsert();
+    initHudEditor();
   }
   window.showContent = showContent2;
   window.updateAccountMenuLabel = updateAccountMenuLabel;
