@@ -315,7 +315,7 @@
         return false;
       })();
     </script>
-    <script src="main.js?104" defer></script>
+    <script src="main.js?103" defer></script>
     <script src="main-yandex.js?7" defer></script>
 </head>
 <body>
@@ -621,6 +621,9 @@
                 <label><input type="checkbox" class="save" data-box-id="8" onchange="setChatHide(this.checked);"><span data-en="Disable chat" data-tr="Sohbeti kapat" data-zh="禁用聊天" data-ar="تعطيل الدردشة" data-es="Desactivar chat" data-pl="Wyłącz czat" data-de="Chat deaktivieren" data-uk="Вимкнути чат">Отключить чат</span></label>
                 <label><input type="checkbox" class="save" data-box-id="10" onchange="setAdultContent(this.checked);"><span data-en="+18 (no filter/blur)" data-tr="+18 (filtre/bulanıklık kapalı)" data-zh="+18（无过滤）" data-ar="+18 (بدون فلتر)" data-es="+18 (sin filtro)" data-pl="+18 (bez filtra)" data-de="+18 (ohne Filter)" data-uk="+18 (без фільтра)">+18 (убрать антимат и блюр)</span></label>
                 <label><input type="checkbox" class="save" data-box-id="11" onchange="setConfirmCloseTab(this.checked);"><span data-en="Confirm exit" data-tr="Çıkışı onayla" data-zh="确认退出" data-ar="تأكيد الخروج" data-es="Confirmar salida" data-pl="Potwierdź wyjście" data-de="Verlassen bestätigen" data-uk="Підтвердити вихід">Подтверждение выхода из игры</span></label>
+                <div class="settings-field">
+                  <button type="button" id="hud-editor-open" class="settings-action-btn" data-en="Customize HUD layout" data-tr="Arayüz düzenini özelleştir" data-zh="自定义界面布局" data-ar="تخصيص تخطيط الواجهة" data-es="Personalizar diseño de interfaz" data-pl="Dostosuj układ interfejsu" data-de="HUD-Layout anpassen" data-uk="Налаштувати розкладку інтерфейсу">Настроить расположение интерфейса</button>
+                </div>
               </section>
             </div>
           </div>
@@ -882,6 +885,10 @@
   </div>
   <div id="canvas-stage" class="canvas-stage">
   <canvas id="canvas"></canvas>
+  <div id="touch-buttons" class="touch-buttons" hidden>
+    <button type="button" id="touch-eject" class="touch-btn touch-eject" aria-label="Eject"><img src="/photo/eject.png" alt=""></button>
+    <button type="button" id="touch-split" class="touch-btn touch-split" aria-label="Split"><img src="/photo/split.png" alt=""></button>
+  </div>
   <div id="connect-verify-overlay" class="inl-13">
     <div id="connect-verify">
       <i id="connect-verify-icon" class="fas fa-shield-halved connect-verify-icon" aria-hidden="true"></i>
@@ -1043,5 +1050,25 @@
     </div>
   </div>
   <div id="freeze">Pause <i class="inl-16 fa fa-pause"></i></div>
+  <div id="hud-editor" class="hud-editor" hidden>
+    <div class="hud-editor-toolbar">
+      <div class="hud-editor-title" data-en="HUD editor" data-tr="Arayüz düzenleyici" data-zh="界面编辑器" data-ar="محرر الواجهة" data-es="Editor de interfaz" data-pl="Edytor interfejsu" data-de="HUD-Editor" data-uk="Редактор інтерфейсу">Редактор интерфейса</div>
+      <div class="hud-editor-hint" data-en="Drag elements to move, use slider to scale" data-tr="Taşımak için sürükleyin, ölçeklemek için kaydırıcıyı kullanın" data-zh="拖动移动，使用滑块缩放" data-ar="اسحب للتحريك، استخدم شريط التمرير للتكبير" data-es="Arrastra para mover, usa el control deslizante para escalar" data-pl="Przeciągnij, aby przesunąć, użyj suwaka do skalowania" data-de="Ziehen zum Bewegen, Schieberegler zum Skalieren" data-uk="Перетягніть, щоб перемістити, повзунок для масштабу">Перетаскивайте элементы, чтобы переместить, ползунок — для масштаба</div>
+      <div class="hud-editor-row">
+        <span class="hud-editor-label" data-en="Element:" data-tr="Öğe:" data-zh="元素：" data-ar="العنصر:" data-es="Elemento:" data-pl="Элемент:" data-de="Element:" data-uk="Елемент:">Элемент:</span>
+        <select id="hud-editor-select" class="hud-editor-select"></select>
+      </div>
+      <div class="hud-editor-row">
+        <span class="hud-editor-label" data-en="Scale:" data-tr="Ölçek:" data-zh="缩放：" data-ar="الحجم:" data-es="Escala:" data-pl="Skala:" data-de="Skalierung:" data-uk="Масштаб:">Масштаб:</span>
+        <input type="range" id="hud-editor-scale" class="hud-editor-range" min="30" max="300" value="100">
+        <span id="hud-editor-scale-val" class="hud-editor-scale-val">100%</span>
+      </div>
+      <div class="hud-editor-row hud-editor-actions">
+        <button type="button" id="hud-editor-reset" class="hud-editor-btn" data-en="Reset" data-tr="Sıfırla" data-zh="重置" data-ar="إعادة تعيين" data-es="Restablecer" data-pl="Resetuj" data-de="Zurücksetzen" data-uk="Скинути">Сбросить</button>
+        <button type="button" id="hud-editor-save" class="hud-editor-btn hud-editor-btn-primary" data-en="Save" data-tr="Kaydet" data-zh="保存" data-ar="حفظ" data-es="Guardar" data-pl="Zapisz" data-de="Speichern" data-uk="Зберегти">Сохранить</button>
+        <button type="button" id="hud-editor-close" class="hud-editor-btn" data-en="Close" data-tr="Kapat" data-zh="关闭" data-ar="إغلاق" data-es="Cerrar" data-pl="Kapat" data-de="Schließen" data-uk="Закрити">Закрыть</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
