@@ -1517,8 +1517,8 @@
       }
     }
   }
-  var TOURNAMENT_PLAYERS = [ "khirad", "Оbladаit", "Всекончал", "bl1ck", "newlightchild", "morcov", "☼K☼", "ау", "v_potoke", "Папа", "deffka", "прошка", "griffin", "some no mai", "АЛИК ))))", "Jeff", "PULIK", "salruz", "vaas", "aeris", "sorry", "курага", "𝓙𝓲𝓷𝔁", "ʟᴇɢᴇɴᴅ", "ᴋɪᴘʟᴇɴᴋᴀ🪐", "𝓙𝓲𝓷𝔁" ];
-  var TOURNAMENT_WINNERS = [ "Vaas", "Оbladаit" ];
+  var TOURNAMENT_PLAYERS = ["Vaas","Mnrve"];
+  var TOURNAMENT_WINNERS = ["Vaas","Mnrve"];
   var deps2 = {
     S: null,
     hooks: {}
