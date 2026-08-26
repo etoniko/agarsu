@@ -194,19 +194,6 @@
       }
       html += `</div></div>`;
 
-      if (stats.lastPoll && stats.lastPoll.servers) {
-        const rows = Object.entries(stats.lastPoll.servers);
-        if (rows.length) {
-          html += `<div class="card"><h2>Последнее обновление</h2><div class="card-body"><table>
-            <thead><tr><th>Сервер</th><th>Место</th><th>Рекорд</th><th>Ник</th><th>Очки</th></tr></thead><tbody>`;
-          rows.forEach(([sid, r]) => {
-            html += `<tr><td>${serverCell(sid, r.serverName || sid)}</td><td>${r.rank || "—"}</td>
-              <td class="pts">${r.score || 0}</td><td>${esc(r.nick || "—")}</td><td>${r.points || 0}</td></tr>`;
-          });
-          html += "</tbody></table></div></div>";
-        }
-      }
-
       html += `<div class="card"><h2>Рекорды по серверам · ${esc(PERIOD_LABELS[period] || period)}</h2><div class="card-body">`;
       if (!recList.length) {
         html += '<p class="muted">Нет данных по серверам за этот период.</p>';
