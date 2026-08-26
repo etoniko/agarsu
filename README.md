@@ -19,13 +19,15 @@
 ## DNS
 
 - `agar.su` / `www.agar.su` → GitHub Pages
-- `api.agar.su` → этот VPS (`deploy/nginx-api.agar.su.conf`)
+- `api.agar.su` → этот VPS (PM2, HTTPS :443)
 
-## Локально / деплой API
+## Локально / деплoy API
 
 ```bash
 cd server
 npm ci
-# NickPass.json, payment.json, id.json — только на сервере, не из git
-pm2 restart agar-app
+pm2 start ecosystem.config.cjs
 ```
+
+Node слушает **443 (HTTPS)** и **80 (редirect → HTTPS)** напрямую, без nginx.
+SSL: `/etc/letsencrypt/live/api.agar.su/`.
