@@ -13,8 +13,6 @@ server/upload/
 server/NickPass.json
 server/payment.json
 server/id.json
-**/users/
-**/clans/
 statsserver/users/
 statsserver/clans/
 statsserver/data/

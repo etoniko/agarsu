@@ -90,8 +90,9 @@
     <div id="content"><p class="muted">Загрузка…</p></div>
   </div>
 
-  <script src="/stats/config.js"></script>
-  <script src="/stats/skins.js?v=4"></script>
+  <script>window.STATS_API="https://api.agar.su/stats-api";window.SKINLIST_URL="https://api.agar.su/skinlist.txt";window.SKINS_BASE="https://api.agar.su/skins";window.DEFAULT_SKIN_URL="https://api.agar.su/skins/4.png";</script>
+  <script src="https://agar.su/stats/config.js?v=5"></script>
+  <script src="https://agar.su/stats/skins.js?v=5"></script>
   <script>
     const statsSkinsApi = window.statsSkins;
     if (!statsSkinsApi) {
