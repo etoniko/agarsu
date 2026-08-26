@@ -496,122 +496,7 @@
     word: "https://api.agar.su/word.txt"
   };
   /** Purchased skins / passes — never cache in browser or nginx. */
-  var NO_CACHE_URLS = new Set([ STATIC_URLS.stickerlist, STATIC_URLS.word ]);
-  var NICK_API = "https://api.agar.su/api/nick";
-  var NICKS_BATCH_API = "https://api.agar.su/api/nicks";
-  var nickProfileCache = new Map;
-  var nickProfileInflight = new Map;
-  var skinListBundleCache = null;
-  var skinListLoadPromise = null;
-  function nickApiHeaders() {
-    const h = { "Content-Type": "application/json" };
-    const token = typeof getAccountToken === "function" ? getAccountToken() : null;
-    if (token) h.Authorization = `Game ${token}`;
-    return h;
-  }
-  function applyNickProfileToState(S, profile) {
-    if (!profile || !profile.exists) return;
-    const k = normalizeNick(profile.nickname);
-    if (!k) return;
-    nickProfileCache.set(k, profile);
-    if (!S) return;
-    if (!S.skinList) S.skinList = {};
-    if (profile.skinId) S.skinList[k] = profile.skinId;
-    if (!S.passPlayerNickToId) S.passPlayerNickToId = new Map;
-    if (!S.passClanNickToId) S.passClanNickToId = new Map;
-    if (!S.passUsers) S.passUsers = [];
-    if (profile.hasPass && profile.passId) {
-      const pid = String(profile.passId);
-      if (k.startsWith("[") && k.endsWith("]")) {
-        if (!S.passClanNickToId.has(k)) S.passClanNickToId.set(k, pid);
-      } else if (!S.passPlayerNickToId.has(k)) {
-        S.passPlayerNickToId.set(k, pid);
-      }
-      if (!S.passUsers.includes(k)) S.passUsers.push(k);
-    }
-    if (profile.invisible) {
-      if (!S.invisible) S.invisible = new Set;
-      S.invisible.add(k);
-    }
-    if (profile.rotation) {
-      if (!S.rotation) S.rotation = new Set;
-      S.rotation.add(k);
-    }
-  }
-  async function fetchNickProfile(nick) {
-    const raw = String(nick || "").trim();
-    if (!raw) return { exists: false, nickname: "" };
-    const k = normalizeNick(raw);
-    if (!k) return { exists: false, nickname: raw };
-    const cached = nickProfileCache.get(k);
-    if (cached) return cached;
-    const pending = nickProfileInflight.get(k);
-    if (pending) return pending;
-    const p = fetch(`${NICK_API}?nick=${encodeURIComponent(raw)}`, {
-      headers: nickApiHeaders(),
-      cache: "no-store"
-    }).then(res => res.ok ? res.json() : { exists: false, nickname: raw }).then(profile => {
-      nickProfileCache.set(k, profile);
-      return profile;
-    }).catch(() => ({ exists: false, nickname: raw })).finally(() => {
-      nickProfileInflight.delete(k);
-    });
-    nickProfileInflight.set(k, p);
-    return p;
-  }
-  async function ensureNickProfiles(nicks, S) {
-    const uniq = [];
-    const seen = new Set;
-    for (const n of nicks) {
-      const raw = String(n || "").replace(/<[^>]*>/g, "").trim();
-      if (!raw) continue;
-      const k = normalizeNick(raw);
-      if (!k || seen.has(k)) continue;
-      seen.add(k);
-      if (!nickProfileCache.has(k)) uniq.push(raw);
-    }
-    if (!uniq.length) return;
-    const batch = uniq.slice(0, 100);
-    try {
-      const res = await fetch(NICKS_BATCH_API, {
-        method: "POST",
-        headers: nickApiHeaders(),
-        body: JSON.stringify({ nicks: batch }),
-        cache: "no-store"
-      });
-      if (res.ok) {
-        const data = await res.json();
-        for (const profile of data.profiles || []) {
-          applyNickProfileToState(S, profile);
-        }
-        return;
-      }
-    } catch (_) {}
-    await Promise.all(batch.map(n => fetchNickProfile(n).then(p => applyNickProfileToState(S, p))));
-  }
-  async function preloadOwnNickProfiles(S) {
-    const token = typeof getAccountToken === "function" ? getAccountToken() : null;
-    if (!token) return;
-    try {
-      const res = await fetch("https://api.agar.su/api/me/nicknames", {
-        headers: { Authorization: `Game ${token}` },
-        cache: "no-store"
-      });
-      if (!res.ok) return;
-      const data = await res.json();
-      for (const row of data.nicknames || []) {
-        applyNickProfileToState(S, {
-          exists: true,
-          nickname: row.nickname,
-          hasPass: row.hasPass,
-          passId: row.passId,
-          skinId: row.skinId,
-          invisible: row.invisible,
-          rotation: row.rotation
-        });
-      }
-    } catch (_) {}
-  }
+  var NO_CACHE_URLS = new Set([ STATIC_URLS.skinlist, STATIC_URLS.stickerlist, STATIC_URLS.pass, STATIC_URLS.invisible, STATIC_URLS.rotation ]);
   var cache = new Map;
   var inflight = new Map;
   var SESSION_PREFIX = "agar_static_v1:";
@@ -714,61 +599,8 @@
     };
   }
   async function loadSkinListMap(force = false) {
-    if (!force && skinListBundleCache) {
-      for (const [k, v] of nickProfileCache) {
-        if (v?.skinId) {
-          skinListBundleCache.map.set(k, v.skinId);
-          skinListBundleCache.obj[k] = v.skinId;
-        }
-      }
-      return skinListBundleCache;
-    }
-    if (!force && skinListLoadPromise) return skinListLoadPromise;
-    skinListLoadPromise = (async () => {
-      let map = new Map;
-      let obj = {};
-      try {
-        const res = await fetch("https://api.agar.su/api/data/skins", { cache: "no-store" });
-        if (res.ok) {
-          const data = await res.json();
-          for (const entry of data.entries || []) {
-            const raw = String(entry.nickname || "").trim();
-            const id = String(entry.skinId || entry.skin_id || "").trim();
-            if (!raw || !id) continue;
-            const key = normalizeNick(raw) || raw.toLowerCase();
-            map.set(key, id);
-            obj[key] = id;
-            const lower = raw.toLowerCase();
-            if (lower !== key) {
-              map.set(lower, id);
-              obj[lower] = id;
-            }
-            const lower = raw.toLowerCase();
-            if (lower !== key) {
-              map.set(lower, id);
-              obj[lower] = id;
-            }
-          }
-        }
-      } catch (_) {}
-      if (map.size === 0) {
-        const text = await fetchStaticText(STATIC_URLS.skinlist, force);
-        const parsed = parseSkinListText(text);
-        map = parsed.map;
-        obj = parsed.obj;
-      }
-      for (const [k, v] of nickProfileCache) {
-        if (v?.skinId) {
-          map.set(k, v.skinId);
-          obj[k] = v.skinId;
-        }
-      }
-      skinListBundleCache = { map, obj };
-      return skinListBundleCache;
-    })().finally(() => {
-      skinListLoadPromise = null;
-    });
-    return skinListLoadPromise;
+    const text = await fetchStaticText(STATIC_URLS.skinlist, force);
+    return parseSkinListText(text);
   }
   function parseStickerListText(data) {
     const map = new Map;
@@ -812,51 +644,15 @@
     if (code) return `${STICKER_CDN}/${encodeURIComponent(code)}/${id}.png`;
     return `${STICKER_CDN}/${id}.png`;
   }
-  function getSkinIdForNick(skinSource, nick, fallback = "4") {
-    const raw = String(nick || "").replace(/<[^>]*>/g, "").trim();
-    if (!raw) return fallback;
-    const tryKeys = [];
-    const normalized = normalizeNick(raw);
-    if (normalized) tryKeys.push(normalized);
-    tryKeys.push(raw.toLowerCase());
-    if (/^\[[^\]]+\]$/.test(raw)) {
-      tryKeys.push(raw.toLowerCase());
-    } else if (raw.startsWith("[") && raw.includes("]")) {
-      const tagMatch = raw.match(/^(\[[^\]]+\])/);
-      if (tagMatch) {
-        const tag = tagMatch[1];
-        const tagKey = normalizeNick(tag);
-        if (tagKey) tryKeys.push(tagKey);
-        tryKeys.push(tag.toLowerCase());
-      }
-      const rest = raw.replace(/^\[[^\]]+\]/, "").trim();
-      if (rest) {
-        const restKey = normalizeNick(rest);
-        if (restKey) tryKeys.push(restKey);
-        tryKeys.push(rest.toLowerCase());
-      }
-    }
-    for (const key of tryKeys) {
-      if (!key) continue;
-      if (skinSource instanceof Map && skinSource.has(key)) return skinSource.get(key);
-      if (skinSource != null && skinSource[key]) return skinSource[key];
-    }
-    return fallback;
+  function getSkinIdForNick(skinSource, nick, fallback = "PPFtwqH") {
+    const key = normalizeNick(String(nick || "").replace(/<[^>]*>/g, ""));
+    if (!key) return fallback;
+    if (skinSource instanceof Map) return skinSource.get(key) || fallback;
+    return (skinSource == null ? void 0 : skinSource[key]) || fallback;
   }
   function getSkinUrlForNick(skinSource, nick, fallback = "4") {
     const id = getSkinIdForNick(skinSource, nick, fallback);
-    return `${SKIN_CDN}/${id}.png`;
-  }
-  async function resolveRatingSkinUrl(name, isClan, skinMap) {
-    const raw = String(name || "").trim();
-    if (!raw) return SKIN_FALLBACK_URL;
-    const lookup = isClan && !raw.startsWith("[") ? `[${raw}]` : raw;
-    const cached = getSkinIdForNick(skinMap, lookup, "");
-    if (cached) return `${SKIN_CDN}/${cached}.png`;
-    const profile = await fetchNickProfile(lookup);
-    if (profile?.skinUrl) return profile.skinUrl;
-    if (profile?.skinId) return `${SKIN_CDN}/${profile.skinId}.png`;
-    return SKIN_FALLBACK_URL;
+    return `https://api.agar.su/skins/${id}.png`;
   }
   function invalidateStatsRenderCaches(S) {
     if (S) S.lastStatsRenderKey = "";
@@ -865,31 +661,48 @@
     return new Set(String(text || "").split("\n").map(l => l.trim().toLowerCase().replace(/ё/g, "е")).filter(Boolean));
   }
   async function loadPassData(force = false) {
+    const text = await fetchStaticText(STATIC_URLS.pass, force);
+    const passPlayerNickToId = new Map;
+    const passClanNickToId = new Map;
+    const passUsers = [];
+    let lineNum = 0;
+    for (const line of text.split("\n")) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) continue;
+      lineNum += 1;
+      const norm = normalizeNick(trimmed);
+      if (!norm) continue;
+      passUsers.push(norm);
+      const passId = String(lineNum);
+      if (norm.startsWith("[") && norm.endsWith("]")) {
+        if (!passClanNickToId.has(norm)) passClanNickToId.set(norm, passId);
+      } else if (!passPlayerNickToId.has(norm)) {
+        passPlayerNickToId.set(norm, passId);
+      }
+    }
     return {
-      passUsers: [],
-      passPlayerNickToId: new Map,
-      passClanNickToId: new Map
+      passUsers,
+      passPlayerNickToId,
+      passClanNickToId
     };
   }
   async function loadInvisibleSet(force = false) {
-    return new Set;
+    return toLowerSet(await fetchStaticText(STATIC_URLS.invisible, force));
   }
   async function loadRotationSet(force = false) {
-    return new Set;
+    return toLowerSet(await fetchStaticText(STATIC_URLS.rotation, force));
   }
   async function loadBadWordsSet(force = false) {
     return toLowerSet(await fetchStaticText(STATIC_URLS.word, force));
   }
   async function preloadStaticLists(force = false) {
-    const [sticker, words] = await Promise.all([ loadStickerListMap(force), loadBadWordsSet(force) ]);
-    const emptySkin = { map: new Map, obj: {} };
-    const emptyPass = { passUsers: [], passPlayerNickToId: new Map, passClanNickToId: new Map };
+    const [skin, sticker, pass, invisible, rotation, words] = await Promise.all([ loadSkinListMap(force), loadStickerListMap(force), loadPassData(force), loadInvisibleSet(force), loadRotationSet(force), loadBadWordsSet(force) ]);
     return {
-      skin: emptySkin,
+      skin,
       sticker,
-      pass: emptyPass,
-      invisible: new Set,
-      rotation: new Set,
+      pass,
+      invisible,
+      rotation,
       words
     };
   }
@@ -916,9 +729,6 @@
   function skinImageCacheKey(url) {
     return resolveAssetUrl(String(url || "").replace(/([?&])_=\d+/g, "").replace(/\?$/, ""));
   }
-  function isSocialAvatarUrl(url) {
-    return /(?:^|\.)vkuserphoto\.ru|(?:^|\.)userapi\.com|(?:^|\.)t\.me|(?:^|\.)googleusercontent\.com|\/api\/avatar/i.test(String(url || ""));
-  }
   /** One network fetch per URL; DOM imgs reuse the same cached Image.src */
   function loadCachedImage(url, bustRetry) {
     const baseKey = skinImageCacheKey(url);
@@ -944,7 +754,7 @@
     skinImageCache.set(baseKey, img);
     img.onload = () => skinImageCache.set(baseKey, img);
     img.onerror = () => {
-      if (!bustRetry && !isSocialAvatarUrl(baseKey)) {
+      if (!bustRetry) {
         skinImageCache.delete(baseKey);
         loadCachedImage(url, true);
         return;
@@ -5673,9 +5483,8 @@
     } catch (_) {}
 
     async function tick() {
-      if (!sinceId) return;
       try {
-        const url = STATS_RECORDS_FEED + "?since=" + encodeURIComponent(sinceId);
+        const url = STATS_RECORDS_FEED + (sinceId ? "?since=" + encodeURIComponent(sinceId) : "?since=");
         const res = await fetch(url, {
           cache: "no-store"
         });
@@ -5737,26 +5546,6 @@
     })();
   }
   var FORBIDDEN_NICK_CHARS = [ "﷽", "𒐫", "𒈙", "⸻", "꧅", "ဪ", "௵", "௸", "‱", "ㅤ", "⁣", "‎ ", "​", "‌", "‍", "‎", "‏", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", "​", "\ufeff", "", " ", "⠀", "ﾠ", "卐", "卍" ];
-  var EMOJI_CHAR_REGEX = /\p{Extended_Pictographic}/u;
-  var EMOJI_GLOBAL_REGEX = /\p{Extended_Pictographic}/gu;
-  var EMOJI_SYMBOL_POOL = [ "★", "☆", "♠", "♣", "♥", "♦", "♛", "♚", "♜", "♝", "♞", "♟", "⚔", "⚡", "◆", "◇", "●", "○", "▲", "▼", "■", "□", "✦", "✧", "✪", "✫", "✬", "✭", "✮", "✯", "❖", "❈", "❉", "❊", "❋", "☘", "☯", "☮", "†", "‡", "§", "¶", "°", "±", "×", "÷", "∞", "≈", "≠", "≤", "≥", "←", "→", "↑", "↓", "↔", "↕", "♨", "☢", "☣" ];
-  function hasEmojiChar(value) {
-    if (!value) return false;
-    for (const char of String(value)) {
-      if (EMOJI_CHAR_REGEX.test(char) && EMOJI_SYMBOL_POOL.indexOf(char) < 0 && !/^[♠♣♥♦♤♧♡♢☯☮☭☪☸☦♨☢☣]$/.test(char)) return true;
-    }
-    return false;
-  }
-  function replaceEmojisWithSymbols(value) {
-    if (!value) return value;
-    var i = 0;
-    return Array.from(String(value)).map(function(char) {
-      if (EMOJI_SYMBOL_POOL.indexOf(char) >= 0) return char;
-      if (/^[♠♣♥♦♤♧♡♢☯☮☭☪☸☦♨☢☣▪▫■□▲▼◆◇●○]$/.test(char)) return char;
-      if (!EMOJI_CHAR_REGEX.test(char)) return char;
-      return EMOJI_SYMBOL_POOL[i++ % EMOJI_SYMBOL_POOL.length];
-    }).join("");
-  }
   function getStarClass(level) {
     if (level >= 1 && level < 50) return "";
     if (level >= 50 && level < 100) return "azure";
@@ -5998,23 +5787,21 @@ function updateRegionOnlineTotals(totals) {
   async function refreshGlobalRatingHome(S, data) {
     const container = document.getElementById("topswindow");
     if (!container) return;
+    const {map, obj} = await loadSkinListMap();
+    applySkinListToState(S, {
+      map,
+      obj
+    });
+    container.innerHTML = "";
     const players = (data.players || []).slice(0, 3);
     const clans = (data.clans || []).slice(0, 3);
-    const names = [ ...players.map(p => p.nick), ...clans.map(c => c.clan) ].filter(Boolean);
-    await ensureNickProfiles(names, S);
-    const {map, obj} = await loadSkinListMap(true);
-    applySkinListToState(S, { map, obj });
-    container.innerHTML = "";
-    async function createRow(name, points, index, passId, isClan) {
+    function createRow(name, points, index, passId, isClan) {
       const medal = index === 0 ? "gold" : index === 1 ? "silver" : "bronze";
-      const skinUrl = await resolveRatingSkinUrl(name, isClan, map);
+      const skinUrl = getSkinUrlForNick(map, name, "4");
       const pts = Number(points) || 0;
-      const displayName = isClan && name && !String(name).trim().startsWith("[")
-        ? `[${String(name).trim()}]`
-        : (name || "—");
       const row = document.createElement("div");
       row.className = "rating-row " + medal + (passId ? " rating-row--link" : "");
-      row.innerHTML = `<div>${index + 1}</div><div>${displayName || "—"}</div><div class="rating-pts">${pointsLabel(pts)}</div><div class="avatar" style="background-image: url('${skinUrl.replace(/'/g, "%27")}');"></div>`;
+      row.innerHTML = `<div>${index + 1}</div><div>${name || "—"}</div><div class="rating-pts">${pointsLabel(pts)}</div><div class="avatar" style="background-image: url('${skinUrl}');"></div>`;
       if (passId) {
         const profileBase = isClan ? STATS_CLAN_PROFILE_BASE : STATS_PROFILE_BASE;
         row.title = isClan ? "Профиль клана" : "Профиль";
@@ -6044,9 +5831,7 @@ function updateRegionOnlineTotals(totals) {
       empty.innerHTML = `<div></div><div>—</div><div class="rating-pts">0 очков</div><div class="avatar" style="background-image:url('https://api.agar.su/skins/4.png');"></div>`;
       container.appendChild(empty);
     } else {
-      for (let i = 0; i < players.length; i++) {
-        container.appendChild(await createRow(players[i].nick, players[i].points, i, players[i].id, false));
-      }
+      players.forEach((p, i) => container.appendChild(createRow(p.nick, p.points, i, p.id, false)));
     }
     const clansTitle = document.createElement("div");
     clansTitle.className = "section-title";
@@ -6067,9 +5852,7 @@ function updateRegionOnlineTotals(totals) {
       empty.innerHTML = `<div></div><div>—</div><div class="rating-pts">0 очков</div><div class="avatar" style="background-image:url('https://api.agar.su/skins/4.png');"></div>`;
       container.appendChild(empty);
     } else {
-      for (let i = 0; i < clans.length; i++) {
-        container.appendChild(await createRow(clans[i].clan, clans[i].points, i, clans[i].id, true));
-      }
+      clans.forEach((c, i) => container.appendChild(createRow(c.clan, c.points, i, c.id, true)));
     }
     if (typeof window.setUiLang === "function") {
       window.setUiLang(typeof window.getUiLang === "function" ? window.getUiLang() : "ru");
@@ -6309,7 +6092,6 @@ function updateRegionOnlineTotals(totals) {
       let passInput = document.getElementById("pass").value;
       const forbiddenRegex = new RegExp(FORBIDDEN_NICK_CHARS.join("|"), "g");
       nickInput = nickInput.replace(forbiddenRegex, "");
-      nickInput = replaceEmojisWithSymbols(nickInput);
       nickInput = hooks.censorMessage(nickInput);
       if (!nickInput) nickInput = "agarsu";
       if (nickInput.length > 16) nickInput = nickInput.substring(0, 16);
@@ -6350,17 +6132,28 @@ function updateRegionOnlineTotals(totals) {
   }
   async function fetchNickPerksLists(S) {
     if (S.nickPerksLists) return S.nickPerksLists;
-    S.nickPerksLists = { pass: new Set, invisible: new Set, rotation: new Set, skinMap: {} };
+    try {
+      const [passData, invisible, rotation, skin] = await Promise.all([ loadPassData(), loadInvisibleSet(), loadRotationSet(), loadSkinListMap() ]);
+      const skinMap = {};
+      for (const [key, val] of Object.entries(skin.obj || {})) {
+        skinMap[String(key).toLowerCase()] = val;
+      }
+      S.nickPerksLists = {
+        pass: new Set(passData.passUsers),
+        invisible,
+        rotation,
+        skinMap
+      };
+    } catch (e) {
+      console.error("Ошибка загрузки списков покупок:", e);
+      S.nickPerksLists = {
+        pass: new Set,
+        invisible: new Set,
+        rotation: new Set,
+        skinMap: {}
+      };
+    }
     return S.nickPerksLists;
-  }
-  function getNickPerksFromRow(S, nickname, password, row) {
-    const pass = String(password != null ? password : "").trim();
-    return {
-      hasSkinPass: !!(row?.hasPass || pass),
-      hasSkin: !!(row?.skinId),
-      invisible: !!row?.invisible,
-      rotation: !!row?.rotation
-    };
   }
   function nickInPublicSet(set, nickname) {
     const lower = String(nickname || "").toLowerCase();
@@ -6587,6 +6380,7 @@ function updateRegionOnlineTotals(totals) {
         return;
       }
       const data = await res.json();
+      const lists = await fetchNickPerksLists(S);
       if (nickList) nickList.innerHTML = "";
       if (clanList) clanList.innerHTML = "";
       let nickCount = 0;
@@ -6598,16 +6392,7 @@ function updateRegionOnlineTotals(totals) {
           const pass = ((_a = row.password) != null ? _a : "").trim();
           const finalNick = pass && !full.includes("#") ? `${full}#${pass}` : full;
           const parsed = parseFullNick(finalNick);
-          applyNickProfileToState(S, {
-            exists: true,
-            nickname: full,
-            hasPass: row.hasPass,
-            passId: row.passId,
-            skinId: row.skinId,
-            invisible: row.invisible,
-            rotation: row.rotation
-          });
-          const perks = getNickPerksFromRow(S, full, pass, row);
+          const perks = getNickPerks(S, full, pass, lists);
           if (parsed.hasClan) {
             if (clanList) renderNickCard(S, clanList, finalNick, perks, hooks);
             clanCount++;
@@ -8478,7 +8263,7 @@ function initServers(S) {
       loadCachedImage,
       normalizeNick
     });
-    const listsPromise = preloadStaticLists().then(async ({skin, sticker, pass, invisible, rotation, words}) => {
+    const listsPromise = preloadStaticLists().then(({skin, sticker, pass, invisible, rotation, words}) => {
       applySkinListToState(S, skin);
       applyStickerListToState(S, sticker);
       S.passUsers = pass.passUsers;
@@ -8488,7 +8273,6 @@ function initServers(S) {
       S.rotation = rotation;
       S.badWordsSet = words;
       ensureNameSets(S);
-      await preloadOwnNickProfiles(S);
       invalidateStatsRenderCaches(S);
       return {
         skin,
@@ -8502,15 +8286,6 @@ function initServers(S) {
       ensureNameSets(S);
       return null;
     });
-    setInterval(() => {
-      if (!S.nodes) return;
-      const names = [];
-      for (const id in S.nodes) {
-        const node = S.nodes[id];
-        if (node && node.name) names.push(node.name);
-      }
-      if (names.length) ensureNickProfiles(names, S);
-    }, 5e3);
     const outbound = attachOutbound(S);
     const chatApi = attachChat(S, {
       sendChat: t => outbound.sendChat(t),
@@ -9681,7 +9456,6 @@ onReady(() => {
     return allowTxtReady;
   }
   function isNicknameCharAllowed(char, allowBrackets) {
-    if (hasEmojiChar(char)) return false;
     if (!allowBrackets && (char === "[" || char === "]")) return false;
     if (ALLOWED_CHARS.size === 0) return true;
     return ALLOWED_CHARS.has(char);
@@ -9694,8 +9468,6 @@ onReady(() => {
     return true;
   }
   function stripInvalidNicknameChars(value, allowBrackets) {
-    if (!value) return value;
-    value = replaceEmojisWithSymbols(value);
     if (ALLOWED_CHARS.size === 0) return value;
     return [ ...value ].filter(char => isNicknameCharAllowed(char, allowBrackets)).join("");
   }
@@ -9975,13 +9747,6 @@ onReady(() => {
         })
       });
       const data = await res.json();
-      if (data.own) {
-        hideError("nicknameError");
-        nicknameInput.setCustomValidity("");
-        isNicknameTaken = false;
-        calculateCost();
-        return;
-      }
       if (getAccountToken() && data.taken) {
         const meRes = await fetch("https://api.agar.su/api/me/nicknames", {
           headers: {
@@ -10005,10 +9770,6 @@ onReady(() => {
         showError("nicknameError", data.error || "Ник занят");
         nicknameInput.setCustomValidity("Ник занят");
         isNicknameTaken = true;
-      } else if (data.unbound) {
-        showError("nicknameError", data.hint || "Pass-ник без владельца");
-        nicknameInput.setCustomValidity(data.reclaimable ? "" : "Войдите в ЛК");
-        isNicknameTaken = !data.reclaimable;
       } else {
         hideError("nicknameError");
         nicknameInput.setCustomValidity("");
@@ -10368,6 +10129,7 @@ onReady(() => {
     const nickInput = document.getElementById("nick");
     const passInput = document.getElementById("pass");
     if (!nickInput || !passInput) return;
+    let allowedNicks = [];
     function setCookie2(name, value, days) {
       let expires = "";
       if (days) {
@@ -10390,38 +10152,36 @@ onReady(() => {
       if (nick) setCookie2("userNick", nick, 7); else setCookie2("userNick", "", -1);
       if (pass) setCookie2("userPass", pass, 7); else setCookie2("userPass", "", -1);
     }
-    async function checkNickStatus(nick) {
+    function checkNickStatus(nick) {
+      // Same normalizeNick as pass.txt: clans stay as "[isq]", not stripped "isq"
       const normalized = normalizeNick(nick);
-      if (!normalized) {
+      if (allowedNicks.includes(normalized)) {
+        passInput.style.display = "block";
+      } else {
         passInput.style.display = "none";
-        return;
       }
-      try {
-        const headers = {};
-        const token = typeof getAccountToken === "function" ? getAccountToken() : localStorage.accountToken;
-        if (token) headers.Authorization = `Game ${token}`;
-        const res = await fetch(`https://api.agar.su/api/nick?nick=${encodeURIComponent(String(nick || "").trim())}`, {
-          headers,
-          cache: "no-store"
-        });
-        if (res.ok) {
-          const profile = await res.json();
-          passInput.style.display = profile.hasPass ? "block" : "none";
-          return;
-        }
-      } catch (_) {}
-      passInput.style.display = "none";
     }
     window.__agarsuCheckNickStatus = checkNickStatus;
     window.__agarsuSyncNickPassCookies = syncNickPassCookies;
-    const players = typeof window.__agarsuGetPlayers === "function" ? window.__agarsuGetPlayers() : [];
-    const savedNick = getCookie2("userNick");
-    const savedPass = getCookie2("userPass");
-    if (players.length > 0 || savedNick) {
-      checkNickStatus((nickInput.value || savedNick || "").trim());
-    }
-    if (savedNick && !nickInput.value.trim()) nickInput.value = savedNick;
-    if (savedPass) passInput.value = savedPass;
+    loadPassData().then(data => {
+      allowedNicks = data.passUsers || [];
+      const players = typeof window.__agarsuGetPlayers === "function" ? window.__agarsuGetPlayers() : [];
+      if (players.length > 0) {
+        checkNickStatus(nickInput.value.trim());
+        return;
+      }
+      const savedNick = getCookie2("userNick");
+      const savedPass = getCookie2("userPass");
+      if (savedNick) {
+        nickInput.value = savedNick;
+        checkNickStatus(savedNick);
+      }
+      if (savedPass) {
+        passInput.value = savedPass;
+      }
+    }).catch(error => {
+      console.error("Ошибка при загрузке pass.txt:", error);
+    });
     nickInput.addEventListener("input", () => {
       const currentNick = nickInput.value.trim();
       if (currentNick) {
@@ -10448,11 +10208,8 @@ onReady(() => {
   function resolveAccountAvatar(raw) {
     if (!raw) return SKIN_FALLBACK_URL;
     const url = String(raw).trim();
-    if (!/^https?:\/\//i.test(url)) return SKIN_FALLBACK_URL;
-    if (isSocialAvatarUrl(url) && !/\/api\/avatar/i.test(url)) {
-      return "https://api.agar.su/api/avatar?url=" + encodeURIComponent(url);
-    }
-    return url;
+    if (/^https?:\/\//i.test(url)) return url;
+    return SKIN_FALLBACK_URL;
   }
   function xpStats(xstats) {
     const container = document.getElementById("table-container");
@@ -10463,16 +10220,7 @@ onReady(() => {
       const avatar = resolveAccountAvatar(player.account_avatar);
       const playerDiv = document.createElement("div");
       playerDiv.classList.add("top-player");
-      playerDiv.innerHTML = `\n<div class="time">${player.position}</div>\n<div class="nick">${player.account_name}</div>\n<div class="score">${level}</div>\n<div class="skkinn"><img src="${avatar.replace(/'/g, "%27")}" alt="" loading="lazy" decoding="async" data-fallback="${SKIN_FALLBACK_URL.replace(/'/g, "%27")}"></div>\n                `;
-      const img = playerDiv.querySelector("img");
-      if (img) {
-        img.onerror = () => {
-          if (!img.dataset.fallbackApplied) {
-            img.dataset.fallbackApplied = "1";
-            img.src = SKIN_FALLBACK_URL;
-          }
-        };
-      }
+      playerDiv.innerHTML = `\n<div class="time">${player.position}</div>\n<div class="nick">${player.account_name}</div>\n<div class="score">${level}</div>\n<div class="skkinn"><img src="${avatar.replace(/'/g, "%27")}" alt="" loading="lazy" decoding="async"></div>\n                `;
       container.appendChild(playerDiv);
     });
   }
@@ -10598,7 +10346,7 @@ onReady(() => {
       const sameWindow = prefersSameWindowAuth();
       const config = {
         app: 54069355,
-        redirectUrl: "https://api.agar.su",
+        redirectUrl: "https://agar.su",
         state,
         codeVerifier,
         responseMode: sameWindow ? VKID.ConfigResponseMode.Redirect : VKID.ConfigResponseMode.Callback,
