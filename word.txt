@@ -45,10 +45,6 @@ gota
 ху йню
 яйца
 пидорасина
-www
-http
-https
-://
 .io
 .com
 .ru
@@ -1834,7 +1830,6 @@ zaebat
 petri
 dish
 petridish
-petridish.pw
 ХУЕСОС
 ЕБУ
 МАТЬ

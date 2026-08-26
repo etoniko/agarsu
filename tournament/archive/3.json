@@ -3,7 +3,7 @@
   "num": 3,
   "name": "Tournament Liquid",
   "date": "2026-08-06T19:30:00.000Z",
-  "archivedAt": "2026-08-14T18:27:48.013Z",
+  "archivedAt": "2026-08-22T18:47:16.187Z",
   "totalTeams": 16,
   "format": "2x2",
   "mode": "FFA Teams",
@@ -117,6 +117,9 @@
       [
         0,
         4
+      ],
+      [
+        0
       ]
     ],
     "right": [
@@ -129,9 +132,12 @@
       [
         10,
         12
+      ],
+      [
+        10
       ]
     ],
-    "final": null,
+    "final": 0,
     "finalCross": [
       null,
       null,
@@ -143,5 +149,10 @@
       null
     ]
   },
-  "winnerTeam": null
+  "winnerTeam": {
+    "players": [
+      "Vaas",
+      "Mnrve"
+    ]
+  }
 }

@@ -14,14 +14,10 @@
     <meta property="og:type" content="website">
 	<meta name="yandex-verification" content="a454c4468218ca1c" />
     <title data-en="Agar.su - Play Online" data-tr="Agar.su - Çevrimiçi Oyna" data-zh="Agar.su - 在线游戏" data-ar="Agar.su - العب عبر الإنترنت" data-es="Agar.su - Jugar en línea" data-pl="Agar.su - Graj online" data-de="Agar.su - Online spielen" data-uk="Agar.su - Гра онлайн">Agar.su - Игра Онлайн</title>
-    <link rel="icon" href="https://agar.su/icon.svg" type="image/svg+xml">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="canonical" href="https://agar.su">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flag-icons@7.2.3/css/flag-icons.min.css">
-    <link href="https://fonts.googleapis.com/css?family=Ubuntu:700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=new_releases" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link rel="stylesheet" href="style.css?1245">
+    <link rel="stylesheet" href="/fonts/fonts.css?v=1">
+    <link rel="stylesheet" href="style.css?v=11">
     <script>
       window.renderDeathBanner = window.renderDeathBanner || function () {};
       window.yaContextCb = window.yaContextCb || [];
@@ -315,36 +311,14 @@
         return false;
       })();
     </script>
-    <script src="main.js?105" defer></script>
-    <script src="main-yandex.js?7" defer></script>
+	<script src="webgl2render.js?v=23" defer></script>
+    <script src="main.js?v=24" defer></script>
+    <script src="main-yandex.js?v=7" defer></script>
 </head>
 <body>
   <div id="overlays" class="overlays">
     <div class="social"><a href="https://t.me/agarsu" target="_blank" class="tg"><i class="fab fa-telegram tg-icon"></i></a><a href="https://vk.com/club233723574" target="_blank" class="soc"><i class="fab fa-vk"></i></a><a href="#" class="soc"><i class="fab fa-discord discord-disabled"></i></a></div>
     <div class="add-yandex" id="ratinghome"><div id="yandex_rtb_R-A-15699059-13"></div></div>
-	      <section id="game-howto" class="game-howto" aria-labelledby="game-howto-title" hidden>
-      <div id="game-howto-card-wrap" class="game-howto-card-wrap">
-        <div id="game-howto-confirmation" class="game-howto-confirmation" hidden>
-          <strong id="game-howto-question">Точно понятно?</strong>
-          <div class="game-howto-confirmation-actions">
-            <button type="button" id="game-howto-review" class="game-howto-review">ВЕРНУТЬСЯ НАЗАД</button>
-            <button type="button" id="game-howto-finish" class="game-howto-finish">ДА!</button>
-          </div>
-        </div>
-        <div id="game-howto-content">
-          <div class="game-howto-kicker">КАК ИГРАТЬ</div>
-          <h2 id="game-howto-title">Управляйте шарами правильно</h2>
-          <p class="game-howto-intro">Курсор задаёт направление. <b>W</b> выбрасывает массу, <b>Space</b> делит шар. Держите дистанцию: шары не прилипают и могут пролететь рядом.</p>
-          <div class="game-howto-grid">
-            <article class="game-howto-card is-good"><img src="assets/tutorial/primerr1.gif" alt="Правильно: движение шаров"><strong>ПРАВИЛЬНО</strong><span>Двигайтесь к цели с дистанции.</span></article>
-            <article class="game-howto-card is-good"><img src="assets/tutorial/primerr2.gif" alt="Правильно: деление шара"><strong>ПРАВИЛЬНО</strong><span>Делитесь на нужной дистанции.</span></article>
-            <article class="game-howto-card is-bad"><img src="assets/tutorial/primerclose1.gif" alt="Неправильно: слишком близкое движение"><strong>НЕПРАВИЛЬНО</strong><span>Не входите вплотную.</span></article>
-            <article class="game-howto-card is-bad"><img src="assets/tutorial/primerclose2.gif" alt="Неправильно: деление вблизи"><strong>НЕПРАВИЛЬНО</strong><span>Не делитесь слишком близко.</span></article>
-          </div>
-          <button type="button" id="game-howto-confirm" class="game-howto-confirm">ПОНЯТНО!</button>
-        </div>
-      </div>
-    </section>
 	  <div class="center">
       <div class="sidebar">
         <div class="menu-item inl-1" onclick="showContent('shop')">
@@ -578,6 +552,7 @@
               <section class="settings-panel" data-panel="controls">
                 <h3 class="settings-panel-title" data-en="Controls" data-tr="Kontroller" data-zh="控制" data-ar="التحكم" data-es="Controles" data-pl="Sterowanie" data-de="Steuerung" data-uk="Керування">Клавиши и мышь</h3>
                 <label><input type="checkbox" class="save" data-box-id="4" onchange="setMouseClicks(this.checked);"><span data-en="Mouse clicks" data-tr="Fare tıklaması" data-zh="鼠标点击" data-ar="نقر الفأرة" data-es="Clics del ratón" data-pl="Kliknięcia myszy" data-de="Mausklicks" data-uk="Кліки миші">Поддержка клика мышки</span></label>
+                <label><input type="checkbox" class="save" data-box-id="17" onchange="setSpectateAutoFollow(this.checked);"><span data-en="Auto-follow on spectate click" data-tr="İzlemede tıklayınca otomatik takip" data-zh="观战时点击自动跟随" data-ar="متابعة تلقائية عند النقر أثناء المشاهدة" data-es="Seguir al hacer clic en espectador" data-pl="Auto-śledzenie po kliknięciu w spectate" data-de="Auto-Folge bei Zuschauer-Klick" data-uk="Авто-слідкування кліком у спостереженні">Авто-наблюдение (клик по клетке)</span></label>
                 <div id="keybind-settings" class="custom-bg-block">
                   <div id="mouse-bind-settings" class="mouse-bind-in-keybind">
                     <div class="custom-bg-row">
@@ -662,6 +637,13 @@
           </div>
           <div>
             <div class="line"></div></div>
+          <div class="home-region-switcher">
+            <div class="region-switcher" role="tablist" aria-label="Регион серверов">
+              <button type="button" class="region-option active" data-region="ru" aria-label="Россия"><span class="region-flag flag-ru" aria-hidden="true"></span><span class="region-online" data-region-online="ru">0</span></button>
+              <button type="button" class="region-option" data-region="tr" aria-label="Турция"><span class="region-flag" aria-hidden="true"><span class="fi fi-tr"></span></span><span class="region-online" data-region-online="tr">0</span></button>
+              <button type="button" class="region-option" data-region="eu" aria-label="Европа"><span class="region-flag" aria-hidden="true"><span class="fi fi-eu"></span></span><span class="region-online" data-region-online="eu">0</span></button>
+            </div>
+          </div>
           <div class="avatar-containers">
             <div class="avatar-container">
               <div class="previous-skin" id="prevSkin" onclick="showPrevious()"></div>
@@ -680,17 +662,17 @@
 </div>
           </div>
           <div class="servers">
-            <div class="server-grid">
+            <div class="server-grid" data-nl-server-prefix="tr">
               <!-- Группа FFA -->
               <div class="server-group">
                 <div class="group-header"><i class="fas fa-globe"></i> FFA</div>
                 <div class="server-list">
-                  <div class="server-item active" data-ip="ffa.agar.su" id="ffa">
+                  <div class="server-item active" data-region="ru" data-ip="ffa.agar.su:443" id="ffa">
                     <span class="server-name" data-en="Moscow" data-tr="Moskova" data-zh="莫斯科" data-ar="موسكو" data-es="Moscú" data-pl="Moskwa" data-de="Moskau" data-uk="Москва">Москва</span>
-                    <span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count has-online">17</span> <i class="fas fa-user"></i> <span class="online-count has-online">18/200</span></span>
+                    <span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count has-online">17</span> <i class="fas fa-user"></i> <span class="online-count has-online">0/200</span></span>
                   </div>
-					<div class="server-item" data-ip="ffa.agar.su:6001" id="ffa1">
-                    <span class="server-name" data-en="Moscow 2" data-tr="Moskova 2" data-zh="莫斯科 2" data-ar="موسكو 2" data-es="Moscú 2" data-pl="Moskwa 2" data-de="Moskau 2" data-uk="Москва 2">Москва 2</span>
+					<div class="server-item" data-region="ru" data-ip="sixz.ru:6011/hardcore9" id="hardcore9">
+                    <span class="server-name">hardcore9</span>
                     <span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/200</span></span>
                   </div>
                 </div>
@@ -703,9 +685,14 @@
 ">
                 <div class="group-header"><i class="fas fa-rocket"></i>MegaSplit</div>
                 <div class="server-list">
-                  <div class="server-item" data-ip="ms.agar.su:6001" id="ms">
-                    <span class="server-name">Ms#1</span>
-                    <span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count has-online">3</span> <i class="fas fa-user"></i> <span class="online-count has-online">23/120</span></span>
+                  <div class="server-item" data-region="ru" data-ip="ms.agar.su:6001" id="ms">
+                    <span class="server-name">ms#1</span>
+                    <span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count has-online">3</span> <i class="fas fa-user"></i> <span class="online-count has-online">0/120</span></span>
+                  </div>
+				  
+				 <div class="server-item" data-region="ru" data-ip="sixz.ru:6011/megasplit5k1" id="megasplit5k1">
+                    <span class="server-name">ms5k1</span>
+                    <span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count has-online">3</span> <i class="fas fa-user"></i> <span class="online-count has-online">0/250</span></span>
                   </div>
                 </div>
               </div>
@@ -717,11 +704,11 @@
 ">
                 <div class="group-header"><i class="fas fa-crosshairs"></i> PVP</div>
                 <div class="server-list">
-                  <div class="server-item" data-ip="ms.agar.su:6004" id="pvp1">
+                  <div class="server-item" data-region="ru" data-ip="ms.agar.su:6004" id="pvp1">
                     <span class="server-name">1x1 ffa 1k</span>
                     <span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/50</span></span>
                   </div>
-                  <div class="server-item" data-ip="ms.agar.su:6005" id="pvp2">
+                  <div class="server-item" data-region="ru" data-ip="ms.agar.su:6005" id="pvp2">
                     <span class="server-name">2x2 ms 1k</span>
                     <span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/50</span></span>
                   </div>
@@ -735,16 +722,73 @@
 ">
                 <div class="group-header"><i class="fas fa-trophy"></i> Tournament</div>
                 <div class="server-list">
-                  <div class="server-item" data-ip="ms.agar.su:6002" id="tournament">
+                  <div class="server-item" data-region="ru" data-ip="ms.agar.su:6002" id="tournament">
                     <span class="server-name">2x2 ffa 10k</span>
                     <span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/100</span></span>
                   </div>
-                  <div class="server-item" data-ip="ms.agar.su:6003" id="tournament2">
+                  <div class="server-item" data-region="ru" data-ip="ms.agar.su:6003" id="tournament2">
                     <span class="server-name">3x3 ffa 10k</span>
                     <span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/100</span></span>
                   </div>
                 </div>
               </div>
+<div class="server-group" data-region-group="tr-ultra" hidden>
+  <div class="group-header"><i class="fas fa-bolt"></i> Ultra</div>
+  <div class="server-list">
+    <div class="server-item" data-region="tr" data-ip="sixz.ru:6013/tatil" id="tatil"><span class="server-name">Etkinlik-1</span><span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/200</span></span></div>
+    <div class="server-item" data-region="tr" data-ip="sixz.ru:6013/gsz1" id="gsz1"><span class="server-name">GSZ-1</span><span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/200</span></span></div>
+  </div>
+</div>
+<div class="server-group" data-region-group="tr-high" style="border-left: 1px solid #d3d3d3; padding-left: 6px;" hidden>
+  <div class="group-header"><i class="fas fa-fire"></i> High</div>
+  <div class="server-list">
+    <div class="server-item" data-region="tr" data-ip="sixz.ru:6013/ffa1" id="ffa1"><span class="server-name">FFA-1</span><span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/200</span></span></div>
+    <div class="server-item" data-region="tr" data-ip="sixz.ru:6013/ffa4" id="ffa4"><span class="server-name">FFA-4</span><span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/200</span></span></div>
+  </div>
+</div>
+<div class="server-group" data-region-group="tr-medium" style="border-left: 1px solid #d3d3d3; padding-left: 6px;" hidden>
+  <div class="group-header"><i class="fas fa-balance-scale"></i> Medium</div>
+  <div class="server-list">
+    <div class="server-item" data-region="tr" data-ip="sixz.ru:6013/ffa5" id="ffa5"><span class="server-name">FFA-5</span><span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/200</span></span></div>
+    <div class="server-item" data-region="tr" data-ip="sixz.ru:6013/ffa57" id="ffa57"><span class="server-name">FFA-57</span><span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/200</span></span></div>
+  </div>
+</div>
+<div class="server-group" data-region-group="tr-low" style="border-left: 1px solid #d3d3d3; padding-left: 6px;" hidden>
+  <div class="group-header"><i class="fas fa-leaf"></i> Low</div>
+  <div class="server-list">
+    <div class="server-item" data-region="tr" data-ip="sixz.ru:6013/ffa21" id="ffa21"><span class="server-name">FFA-21</span><span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/200</span></span></div>
+    <div class="server-item" data-region="tr" data-ip="sixz.ru:6013/ffa54" id="ffa54"><span class="server-name">FFA-54</span><span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/200</span></span></div>
+  </div>
+</div>
+<div class="server-group" data-region-group="eu-ultra" hidden>
+  <div class="group-header"><i class="fas fa-bolt"></i> Ultra</div>
+  <div class="server-list">
+    <div class="server-item" data-region="eu" data-ip="sixz.ru:6017/hc" id="hardcore"><span class="server-name">hardcore</span><span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/600</span></span></div>
+    <div class="server-item" data-region="eu" data-ip="xn--bdk.pw:6015/pop2" id="ultra"><span class="server-name">Crazy Bomb 2</span><span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/200</span></span></div>
+  </div>
+</div>
+<div class="server-group" data-region-group="eu-high" style="border-left: 1px solid #d3d3d3; padding-left: 6px;" hidden>
+  <div class="group-header"><i class="fas fa-fire"></i> High</div>
+  <div class="server-list">
+    <div class="server-item" data-region="eu" data-ip="xn--bdk.pw:6015/pop1" id="pop1"><span class="server-name">Virus Bomb 1</span><span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/200</span></span></div>
+    <div class="server-item" data-region="eu" data-ip="xn--bdk.pw:6015/ffa1" id="liveffa1"><span class="server-name">FFA 1</span><span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/200</span></span></div>
+  </div>
+</div>
+<div class="server-group" data-region-group="eu-medium" style="border-left: 1px solid #d3d3d3; padding-left: 6px;" hidden>
+  <div class="group-header"><i class="fas fa-circle"></i> Medium</div>
+  <div class="server-list">
+    <div class="server-item" data-region="eu" data-ip="xn--bdk.pw:6015/ffa2" id="liveffa2"><span class="server-name">FFA 2</span><span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/200</span></span></div>
+    <div class="server-item" data-region="eu" data-ip="xn--bdk.pw:6014/darctida" id="darctida"><span class="server-name">Delta Arctida</span><span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/200</span></span></div>
+  </div>
+</div>
+<div class="server-group" data-region-group="eu-low" style="border-left: 1px solid #d3d3d3; padding-left: 6px;" hidden>
+  <div class="group-header"><i class="fas fa-leaf"></i> Low</div>
+  <div class="server-list">
+    <div class="server-item" data-region="eu" data-ip="xn--bdk.pw:6014/dffa" id="dffa"><span class="server-name">Delta FFA</span><span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/200</span></span></div>
+    <div class="server-item" data-region="eu" data-ip="xn--bdk.pw:6014/drookery" id="drookery"><span class="server-name">Delta Rookery</span><span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/200</span></span></div>
+  </div>
+</div>
+
             </div>
           </div>
           <div class="nav-buttons">
@@ -839,9 +883,31 @@
       </div>
     </div>
 	  <div class="rating-home" id="ratinghome">
-    <div class="rating-header" data-en="Statistics" data-tr="İstatistik" data-zh="统计" data-ar="الإحصائيات" data-es="Estadísticas" data-pl="Statystyki" data-de="Statistik" data-uk="Статистика">Статистика</div>
+    <div class="rating-header">
+      <span class="rating-header-title" data-en="Statistics" data-tr="İstatistik" data-zh="统计" data-ar="الإحصائيات" data-es="Estadísticas" data-pl="Statystyki" data-de="Statistik" data-uk="Статистика">Статистика</span>
+      <div class="rating-header-controls" onclick="event.stopPropagation()">
+        <div class="period-dd period-dd--home" data-period-for="homePeriodSelect">
+          <button type="button" class="period-dd__btn" aria-haspopup="listbox" aria-expanded="false">
+            <span class="period-dd__label">Всё время</span>
+            <span class="period-dd__chev" aria-hidden="true"></span>
+          </button>
+          <ul class="period-dd__menu" role="listbox" hidden>
+            <li role="option" data-value="alltime" class="is-current" aria-selected="true">Всё время</li>
+            <li role="option" data-value="year">Год</li>
+            <li role="option" data-value="today">Сегодня</li>
+            <li role="option" data-value="yesterday">Вчера</li>
+          </ul>
+          <select id="homePeriodSelect" class="period-dd__native" tabindex="-1" aria-hidden="true">
+            <option value="alltime" selected>Всё время</option>
+            <option value="year">Год</option>
+            <option value="today">Сегодня</option>
+            <option value="yesterday">Вчера</option>
+          </select>
+        </div>
+      </div>
+    </div>
     <div class="rating-content" id="topswindow">
-        <div class="section-title">Top players</div>
+        <div class="section-title" data-en="Top players" data-ru="Топ игроков" data-uk="Топ гравців" data-tr="En iyi oyuncular" data-zh="顶级玩家" data-ar="أفضل اللاعبين" data-es="Mejores jugadores" data-pl="Najlepsi gracze" data-de="Top-Spieler">Топ игроков</div>
         <div class="rating-row gold" title="19:34 19.02">
             <div>1</div>
             <div>-</div>
@@ -860,7 +926,7 @@
             <div>-</div>
             <div class="avatar inl-9"></div>
         </div>
-        <div class="section-title">Top Clans</div>
+        <div class="section-title" data-en="Top Clans" data-ru="Топ кланов" data-uk="Топ кланів" data-tr="En iyi klanlar" data-zh="顶级氏族" data-ar="أفضل العشائر" data-es="Mejores clanes" data-pl="Najlepsze klany" data-de="Top-Clans">Топ кланов</div>
         <div class="rating-row gold" title="0:19 08.02">
             <div>1</div>
             <div>-</div>
@@ -1039,11 +1105,30 @@
     </div>
     <div class="statsWrapper">
       <div class="headerstats">
-        <h1 id="serverTitle" data-en="FFA statistics" data-tr="FFA istatistikleri" data-zh="FFA 统计" data-ar="إحصائيات FFA" data-es="Estadísticas FFA" data-pl="Statystyki FFA" data-de="FFA-Statistik" data-uk="Статистика FFA">Статистика ffa</h1></div>
+        <h1 id="serverTitle" data-en="FFA statistics" data-tr="FFA istatistikleri" data-zh="FFA 统计" data-ar="إحصائيات FFA" data-es="Estadísticas FFA" data-pl="Statystyki FFA" data-de="FFA-Statistik" data-uk="Статистика FFA">Статистика ffa</h1>
+        <div class="period-dd period-dd--death" data-period-for="deathPeriodSelect">
+          <button type="button" class="period-dd__btn" aria-haspopup="listbox" aria-expanded="false" title="Период рекордов">
+            <span class="period-dd__label">Сегодня</span>
+            <span class="period-dd__chev" aria-hidden="true"></span>
+          </button>
+          <ul class="period-dd__menu" role="listbox" hidden>
+            <li role="option" data-value="today" class="is-current" aria-selected="true">Сегодня</li>
+            <li role="option" data-value="yesterday">Вчера</li>
+            <li role="option" data-value="year">Год</li>
+            <li role="option" data-value="alltime">Всё время</li>
+          </ul>
+          <select id="deathPeriodSelect" class="period-dd__native" tabindex="-1" aria-hidden="true">
+            <option value="today" selected>Сегодня</option>
+            <option value="yesterday">Вчера</option>
+            <option value="year">Год</option>
+            <option value="alltime">Всё время</option>
+          </select>
+        </div>
+      </div>
       <div class="header-rowwraper">
         <div data-en="Rank" data-tr="Sıra" data-zh="排名" data-ar="المركز" data-es="Posición" data-pl="Pozycja" data-de="Platz" data-uk="Позиція">Позиция</div>
         <div data-en="Nick" data-tr="Nick" data-zh="昵称" data-ar="اللقب" data-es="Nick" data-pl="Nick" data-de="Nick" data-uk="Нік">Ник</div>
-        <div data-en="Score" data-tr="Skor" data-zh="分数" data-ar="النقاط" data-es="Puntuación" data-pl="Wynik" data-de="Punktzahl" data-uk="Рахунок">Счет</div>
+        <div id="deathScoreLabel" data-en="Mass" data-tr="Kütle" data-zh="质量" data-ar="الكتلة" data-es="Masa" data-pl="Masa" data-de="Masse" data-uk="Маса">Масса</div>
         <div data-en="Skin" data-tr="Skin" data-zh="皮肤" data-ar="الجلد" data-es="Skin" data-pl="Skin" data-de="Skin" data-uk="Скін">Скин</div>
       </div>
       <div id="table-containerwraper"></div>

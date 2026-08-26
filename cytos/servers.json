@@ -58,6 +58,14 @@
           "host": "ms.agar.su:6005",
           "api": "https://ms.agar.su:6005",
           "players": 0
+        },
+		        {
+          "id": "darctida",
+          "name": "darctida",
+          "mode": "darctid",
+          "host": "xn--bdk.pw:6014/darctida",
+          "api": "https://xn--bdk.pw:6014/darctida",
+          "players": 0
         }
       ]
     }

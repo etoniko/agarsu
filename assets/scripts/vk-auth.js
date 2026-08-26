@@ -38,20 +38,8 @@
     if (!("VKIDSDK" in window)) return;
 
     const VKID = window.VKIDSDK;
-    const container =
-      document.getElementById("VkIdSdkOAuthList") ||
-      document.getElementById("VkIdSdkOneTap");
+    const container = document.getElementById("VkIdSdkOneTap");
     if (!container) return;
-
-    // Redirect fallback: обработать code ДО генерации нового PKCE
-    const urlParams = new URLSearchParams(window.location.search);
-    const codeFromUrl = urlParams.get("code");
-    const deviceFromUrl = urlParams.get("device_id");
-    if (codeFromUrl && deviceFromUrl) {
-      sendCodeToServer(codeFromUrl, deviceFromUrl);
-      window.history.replaceState({}, "", window.location.pathname + window.location.hash);
-      return;
-    }
 
     // PKCE: code_verifier генерируем сами → обмен на бэкенде (id.vk.ru/oauth2/auth)
     const codeVerifier = randomString(64);
@@ -59,6 +47,7 @@
     sessionStorage.setItem("vk_code_verifier", codeVerifier);
     sessionStorage.setItem("vk_state", state);
 
+    // Как в кабинете VK ID (Low-code One Tap) + codeVerifier для backend exchange
     VKID.Config.init({
       app: 54069355,
       redirectUrl: "https://agar.su",
@@ -69,23 +58,29 @@
       scope: "",
     });
 
-    // Виджет 3 в 1: чистые кнопки VK / Mail / OK
-    const oauthListNames = [
-      VKID.OAuthName.VK,
-      VKID.OAuthName.MAIL,
-      VKID.OAuthName.OK,
-    ];
+    // Redirect fallback: ?code= &device_id= в URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const codeFromUrl = urlParams.get("code");
+    const deviceFromUrl = urlParams.get("device_id");
+    if (codeFromUrl && deviceFromUrl) {
+      sendCodeToServer(codeFromUrl, deviceFromUrl);
+      window.history.replaceState({}, "", window.location.pathname + window.location.hash);
+      return;
+    }
 
-    new VKID.OAuthList()
+    const oneTap = new VKID.OneTap();
+    oneTap
       .render({
         container,
-        oauthList: oauthListNames,
+        showAlternativeLogin: true,
+        oauthList: ["mail_ru", "ok_ru"],
+        styles: { width: 360, height: 44, borderRadius: 8 },
+        skin: VKID.OneTapSkin.Primary,
         scheme: VKID.Scheme.LIGHT,
         lang: VKID.Languages.RUS,
-        styles: { height: 44, borderRadius: 8 },
       })
       .on(VKID.WidgetEvents.ERROR, vkidOnError)
-      .on(VKID.OAuthListInternalEvents.LOGIN_SUCCESS, function (payload) {
+      .on(VKID.OneTapInternalEvents.LOGIN_SUCCESS, function (payload) {
         sendCodeToServer(payload.code, payload.device_id);
       });
   }
@@ -93,6 +88,6 @@
   if ("VKIDSDK" in window) {
     initVkAuth();
   } else {
-    document.querySelector('script[src*="vkid-sdk"]')?.addEventListener("load", initVkAuth);
+    document.querySelector('script[src*="@vkid/sdk"]')?.addEventListener("load", initVkAuth);
   }
 })();

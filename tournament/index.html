@@ -908,7 +908,7 @@ a.bar-btn{text-decoration:none;display:inline-flex;align-items:center}
   }
 
   function applySkins() {
-    fetch('https://api.agar.su/skinlist.txt').then(function (r) { return r.ok ? r.text() : ''; }).then(function (t) {
+    fetch('https://agar.su/skinlist.txt').then(function (r) { return r.ok ? r.text() : ''; }).then(function (t) {
       if (!t) return;
       var m = {};
       t.split(/\r?\n/).forEach(function (l) {
@@ -920,7 +920,7 @@ a.bar-btn{text-decoration:none;display:inline-flex;align-items:center}
       });
       document.querySelectorAll('img[data-nick]').forEach(function (img) {
         var id = m[img.getAttribute('data-nick').toLowerCase()];
-        if (id) img.src = 'https://api.agar.su/skins/' + id + '.png';
+        if (id) img.src = 'https://agar.su/skins/' + id + '.png';
       });
     }).catch(function () {});
   }

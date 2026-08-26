@@ -264,7 +264,7 @@ nicknameInput.addEventListener("blur", async () => {
     if (localStorage.accountToken) {
       headers['Authorization'] = `Game ${localStorage.accountToken}`;
     }
-    const res = await fetch('https://api.agar.su/check-nickname', {
+    const res = await fetch('https://agar.su/check-nickname', {
       method: 'POST',
       headers,
       body: JSON.stringify({ nickname: nicknameInput.value.trim() })
@@ -274,7 +274,7 @@ nicknameInput.addEventListener("blur", async () => {
     // Если авторизован — проверим, наш ли это ник
     if (localStorage.accountToken && data.taken) {
       // Запросим список своих ников
-      const meRes = await fetch('https://api.agar.su/api/me/nicknames', {
+      const meRes = await fetch('https://agar.su/api/me/nicknames', {
         headers: { 'Authorization': `Game ${localStorage.accountToken}` }
       });
       if (meRes.ok) {
@@ -539,7 +539,7 @@ document.getElementById("paymentForm").addEventListener("submit", async (e) => {
 
 async function sendForm(formData, headers = {}) {
   try {
-    const res = await fetch("https://api.agar.su/create-payment", {
+    const res = await fetch("https://agar.su/create-payment", {
       method: "POST",
       headers,
       body: formData
