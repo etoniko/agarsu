@@ -125,14 +125,7 @@ function globalRankForPassId(passId, period) {
   };
 }
 
-function cors(res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-}
-
 function sendJson(res, status, body) {
-  cors(res);
   res.writeHead(status, { "Content-Type": "application/json; charset=utf-8" });
   res.end(JSON.stringify(body));
 }
@@ -238,7 +231,6 @@ async function pollAll() {
 
 function handleRequest(req, res) {
   if (req.method === "OPTIONS") {
-    cors(res);
     res.writeHead(204);
     return res.end();
   }

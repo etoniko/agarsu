@@ -5,9 +5,9 @@ import express from "express";
 import fs from "fs";
 import path from "path";
 import http from "http";
+import https from "https";
 import bodyParser from "body-parser";
 import multer from "multer";
-import cors from "cors";
 import crypto from "crypto";
 import axios from "axios";
 import mysql from "mysql";
@@ -34,34 +34,46 @@ function isAllowedNickname(value, allowBrackets = false) {
 }
 
 const app = express();
-app.set("trust proxy", "loopback");
+app.set("trust proxy", true);
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cors({ origin: "*" }));
-app.use(express.static("public"));
+
+const CORS_ORIGINS = new Set([
+  "https://agar.su",
+  "https://www.agar.su",
+  "https://lk.agar.su",
+]);
+
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && CORS_ORIGINS.has(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+  } else {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+  }
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader("Vary", "Origin");
+
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
+
+  next();
+});
+
+app.use(express.static("public", {
+  setHeaders(res, filePath) {
+    if (/\.txt$/i.test(filePath)) {
+      res.setHeader("Cache-Control", "no-store");
+    }
+  },
+}));
 
 app.get("/allowtxt.txt", (req, res) => {
   res.type("text/plain; charset=utf-8");
   res.sendFile(ALLOWTXT_PATH);
-});
-
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  const allowedOrigins = ["https://agar.su", "https://lk.agar.su"];
-
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-  }
-
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  res.setHeader("Access-Control-Allow-Credentials", "true"); // если используешь cookies в будущем
-
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
-  }
-
-  next();
 });
 
 const allowedIPs = (process.env.USERS_P_IPS || "127.0.0.1").split(",");
@@ -1302,6 +1314,27 @@ app.get("/usersp", (req, res) => {
 startOnlinePolling();
 startStatsPolling().catch((err) => console.error("Stats init failed:", err));
 
-http.createServer(app).listen(Number(process.env.PORT || 8080), "127.0.0.1", () => {
-  console.log(`Server running on http://127.0.0.1:${process.env.PORT || 8080}`);
-}); 
+const SSL_KEY = process.env.SSL_KEY || "/etc/letsencrypt/live/api.agar.su/privkey.pem";
+const SSL_CERT = process.env.SSL_CERT || "/etc/letsencrypt/live/api.agar.su/fullchain.pem";
+const HTTPS_PORT = Number(process.env.PORT || 443);
+
+function startServers() {
+  const ssl = {
+    key: fs.readFileSync(SSL_KEY),
+    cert: fs.readFileSync(SSL_CERT),
+  };
+
+  https.createServer(ssl, app).listen(HTTPS_PORT, "0.0.0.0", () => {
+    console.log(`api.agar.su HTTPS on :${HTTPS_PORT}`);
+  });
+
+  http.createServer((req, res) => {
+    const host = (req.headers.host || "api.agar.su").replace(/:\d+$/, "");
+    res.writeHead(301, { Location: `https://${host}${req.url || "/"}` });
+    res.end();
+  }).listen(80, "0.0.0.0", () => {
+    console.log("HTTP :80 → HTTPS redirect");
+  });
+}
+
+startServers();

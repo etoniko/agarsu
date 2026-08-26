@@ -615,14 +615,14 @@
               <div class="arrow" id="next" onclick="showNext()">&#10095;</div>
               <div class="next-skin" id="nextSkin" onclick="showNext()"></div>
             </div>
-     <div class="from-send">
+     <form class="from-send" autocomplete="on" onsubmit="return false">
      <input type="text" data-en-placeholder="Nick" data-tr-placeholder="Nick" data-zh-placeholder="昵称" data-ar-placeholder="اللقب" data-es-placeholder="Nick" data-pl-placeholder="Nick" data-de-placeholder="Nick" data-uk-placeholder="Нік" placeholder="Ник" name="name" maxlength="16" class="noPress" id="nick" required="" autocomplete="username">
-     <input type="password" data-en-placeholder="Pass" data-tr-placeholder="Şifre" data-zh-placeholder="密码" data-ar-placeholder="كلمة المرور" data-es-placeholder="Pass" data-pl-placeholder="Hasło" data-de-placeholder="Pass" data-uk-placeholder="Пароль" placeholder="Пасс" name="pass" maxlength="6" class="noPress" id="pass" required="" autocomplete="current-password" class="inl-4">
+     <input type="password" data-en-placeholder="Pass" data-tr-placeholder="Şifre" data-zh-placeholder="密码" data-ar-placeholder="كلمة المرور" data-es-placeholder="Pass" data-pl-placeholder="Hasło" data-de-placeholder="Pass" data-uk-placeholder="Пароль" placeholder="Пасс" name="pass" maxlength="6" class="noPress inl-4" id="pass" required="" autocomplete="current-password">
 	<div class="selectedIcon">
 		<div id="selectedColor"></div>
 	</div>
                             <div id="colorList"></div>
-</div>
+</form>
           </div>
           <div class="servers">
             <div class="server-grid" data-nl-server-prefix="nl">

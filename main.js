@@ -538,8 +538,7 @@
     if (NO_CACHE_URLS.has(url)) {
       const pending = inflight.get(url);
       if (pending) return pending;
-      const fetchUrl = url + (url.indexOf("?") >= 0 ? "&" : "?") + "_=" + Date.now();
-      const p = fetch(fetchUrl, { cache: "no-store" }).then(res => {
+      const p = fetch(url, { cache: "no-store" }).then(res => {
         if (!res.ok) throw new Error(`fetch failed: ${url} (${res.status})`);
         return res.text();
       }).catch(err => {

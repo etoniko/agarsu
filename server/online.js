@@ -136,7 +136,6 @@ async function poll() {
 }
 
 function onRequest(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
   if (req.method === "OPTIONS") {
     res.writeHead(204);
     res.end();
