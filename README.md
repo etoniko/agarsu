@@ -12,9 +12,14 @@
 
 ## Stats
 
+| Слой | Где | Что |
+|------|-----|-----|
+| UI | `stats/` → GitHub Pages | HTML/JS, без данных игроков |
+| API | `server/statsserver/` → api.agar.su | poll, `users/*.json`, `data/` на диске VPS |
+
 1. Игровые сервера отдают `checkStats` на api.
-2. `server/statsserver` копит очки на диске API.
-3. Статика на Pages дергает `https://api.agar.su/stats-api/...`.
+2. `server/statsserver` на VPS копит очки (`users/`, `clans/`, `data/` — **не в git**).
+3. Браузер на agar.su/stats/ дергает `https://api.agar.su/stats-api/...`.
 
 ## DNS
 
