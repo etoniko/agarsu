@@ -2,8 +2,11 @@
 
 | Host | Role |
 |------|------|
-| **agar.su** | GitHub Pages — статический клиент |
-| **api.agar.su** | VPS — API, skins, pass.txt, stats-api |
+| **agar.su** | GitHub Pages — **только статика** (HTML/JS/CSS) |
+| **api.agar.su** | VPS — API, pass.txt, skinlist, skins, stats-api |
+
+**Не коммитить на GitHub:** `pass.txt`, `skinlist.txt`, `invisible.txt`, `rotation.txt`, `word.txt`, `allowtxt.txt`, `server/public/`, `NickPass.json`.
+Все списки и данные игроков — **только на api.agar.su**.
 
 ## Секреты
 

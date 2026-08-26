@@ -454,7 +454,7 @@
     pass: "https://api.agar.su/pass.txt",
     invisible: "https://api.agar.su/invisible.txt",
     rotation: "https://api.agar.su/rotation.txt",
-    word: "/word.txt"
+    word: "https://api.agar.su/word.txt"
   };
   var cache = new Map;
   var inflight = new Map;
@@ -7918,8 +7918,6 @@ onReady(() => {
   }
   window.showContent = showContent2;
   window.updateAccountMenuLabel = updateAccountMenuLabel;
-  var ALLOWTXT_LOCAL = "/allowtxt.txt";
-  var ALLOWTXT_API = "https://api.agar.su/allowtxt.txt";
   var ALLOWED_CHARS = new Set;
   var allowTxtReady = null;
   function parseAllowTxt(text) {
@@ -7931,17 +7929,12 @@ onReady(() => {
   }
   function loadAllowTxt() {
     if (!allowTxtReady) {
-      allowTxtReady = fetch(ALLOWTXT_LOCAL).then(r => {
-        if (!r.ok) throw new Error("local allowtxt");
-        return r.text();
-      }).then(text => {
-        if (!parseAllowTxt(text)) throw new Error("empty allowtxt");
-      }).catch(() => fetch(ALLOWTXT_API).then(r => {
+      allowTxtReady = fetch("https://api.agar.su/allowtxt.txt", { cache: "no-store" }).then(r => {
         if (!r.ok) throw new Error("api allowtxt");
         return r.text();
       }).then(text => {
         if (!parseAllowTxt(text)) throw new Error("empty api allowtxt");
-      }));
+      });
     }
     return allowTxtReady;
   }

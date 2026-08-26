@@ -183,7 +183,7 @@ export default class UserInterface {
 
     updateSkinPreview() {
         const nick = this.core.store.name?.trim()
-        const skinUrl = this.core.app.getSkinUrl(this.core.store.name) || "/skins/4.png"
+        const skinUrl = this.core.app.getSkinUrl(this.core.store.name) || "https://api.agar.su/skins/4.png"
         this.skinButton.style.backgroundImage = `url("${skinUrl}")`
         this.skinButton.style.backgroundSize = "contain"
         this.skinButton.style.backgroundRepeat = "no-repeat"
@@ -246,7 +246,7 @@ export default class UserInterface {
         } else {
             for (let i = 0; i < profiles.length; i++) {
                 const profile = profiles[i]
-                const skinUrl = this.core.app.getSkinUrl(profile.nick) || "/skins/4.png"
+                const skinUrl = this.core.app.getSkinUrl(profile.nick) || "https://api.agar.su/skins/4.png"
                 const isActive = profile.nick === this.core.store.name
                     && (profile.pass || "") === (this.core.store.pass || "")
                 const passLabel = profile.pass

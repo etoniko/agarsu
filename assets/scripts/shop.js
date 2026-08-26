@@ -1,10 +1,7 @@
-const ALLOWTXT_STATS = 'allowtxt.txt';
-const ALLOWTXT_SERVER = '/allowtxt.txt';
+const ALLOWTXT_URL = 'https://api.agar.su/allowtxt.txt';
 
 function resolveAllowTxtUrl() {
-  const host = location.hostname;
-  if (host.includes('github.io')) return ALLOWTXT_STATS;
-  return ALLOWTXT_SERVER;
+  return ALLOWTXT_URL;
 }
 
 const ALLOWED_CHARS = new Set();

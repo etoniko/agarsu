@@ -30,3 +30,11 @@ skins/**
 !skins/README.md
 stickers/**
 server/public/
+# API list files — live only on api.agar.su/public/, not GitHub Pages
+/pass.txt
+/skinlist.txt
+/stickerlist.txt
+/invisible.txt
+/rotation.txt
+/word.txt
+/allowtxt.txt

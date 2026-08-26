@@ -22,10 +22,12 @@ let skinsGalleryResizeBound = false;
 let cachedSkinsMap = null;
 let cachedSkinsMapAt = 0;
 const SKINS_MAP_TTL = 0;
+const API_ORIGIN = 'https://api.agar.su';
+const SKIN_CDN = API_ORIGIN + '/skins';
 const LIST_FETCH_OPTS = { cache: 'no-store' };
 
 function getSkinPreviewUrl(skinId) {
-    return skinId ? `/skins/${skinId}.png` : '';
+    return skinId ? `${SKIN_CDN}/${skinId}.png` : '';
 }
 
 function setBackgroundImageIfChanged(el, skinId) {
@@ -60,7 +62,7 @@ function bindSkinsGalleryResize() {
 
 async function loadSkinsGalleryData() {
     // Загружаем skinlist.txt для получения ID по никам
-    const skinRes = await fetch('/skinlist.txt', LIST_FETCH_OPTS);
+    const skinRes = await fetch(API_ORIGIN + '/skinlist.txt', LIST_FETCH_OPTS);
     if (!skinRes.ok) throw new Error('skinlist');
     const skinText = await skinRes.text();
     
@@ -153,7 +155,7 @@ function renderSkinsGalleryPage(page) {
         card.type = 'button';
         card.className = 'skins-gallery-card';
         card.innerHTML = `
-            <img src="/skins/${skin.code}.png" alt="" loading="lazy">
+            <img src="${SKIN_CDN}/${skin.code}.png" alt="" loading="lazy">
             <h4>${escapeHtml(skin.nick)}</h4>
         `;
         card.addEventListener('click', async () => {
@@ -214,7 +216,7 @@ async function loadSkinsList(force) {
     if (!force && cachedSkinsMap && Date.now() - cachedSkinsMapAt < SKINS_MAP_TTL) {
         return cachedSkinsMap;
     }
-    const response = await fetch('/skinlist.txt', LIST_FETCH_OPTS);
+    const response = await fetch(API_ORIGIN + '/skinlist.txt', LIST_FETCH_OPTS);
     const data = await response.text();
     const skinsMap = new Map();
 

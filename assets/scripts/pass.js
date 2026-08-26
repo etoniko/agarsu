@@ -1,5 +1,6 @@
 (function () {
-    const LIST_FETCH_OPTS = { cache: 'no-store' };
+const API_ORIGIN = 'https://api.agar.su';
+const LIST_FETCH_OPTS = { cache: 'no-store' };
     let allowedNicks = new Set();
     let loadPromise = null;
 
@@ -67,7 +68,7 @@
     async function loadPassList(force) {
         if (!force && loadPromise) return loadPromise;
 
-        loadPromise = fetch('/pass.txt', LIST_FETCH_OPTS)
+        loadPromise = fetch(API_ORIGIN + '/pass.txt', LIST_FETCH_OPTS)
             .then((response) => {
                 if (!response.ok) throw new Error('Не удалось загрузить pass.txt');
                 return response.text();
