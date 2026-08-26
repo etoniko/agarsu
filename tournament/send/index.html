@@ -235,7 +235,7 @@ input::placeholder{color:var(--mute)}
     return m;
   }
 
-  fetch('https://agar.su/skinlist.txt')
+  fetch('https://api.agar.su/skinlist.txt')
     .then(function (r) { return r.ok ? r.text() : ''; })
     .then(function (t) { if (t) skinMap = parseSkinlist(t); })
     .catch(function () {});
@@ -249,7 +249,7 @@ input::placeholder{color:var(--mute)}
     var entry = skinMap[val.toLowerCase()];
     if (entry) {
       skinNick.textContent = entry.nick;
-      skinImg.src = 'https://agar.su/skins/' + entry.id + '.png';
+      skinImg.src = 'https://api.agar.su/skins/' + entry.id + '.png';
       skinImg.onerror = function () { skinImg.src = PH; };
       preview.classList.add('show');
     } else {

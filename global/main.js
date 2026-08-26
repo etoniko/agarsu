@@ -443,21 +443,21 @@
     if (!n || n.trim() !== n) return "";
     return n.toLowerCase();
   }
-  var ONLINE_HUB_URL = "https://agar.su/online";//2
-  var TOP100_URL = "https://agar.su/api/top100";
-  var SKINLIST_URL = "https://agar.su/skinlist.txt";
-  var STICKERLIST_URL = "https://agar.su/stickerlist.txt";
-  var SKIN_CDN = "https://agar.su/skins";
-  var STICKER_CDN = "https://agar.su/stickers";
-  var SKIN_FALLBACK_URL = "https://agar.su/skins/4.png";
+  var ONLINE_HUB_URL = "https://api.agar.su/online";//2
+  var TOP100_URL = "https://api.agar.su/api/top100";
+  var SKINLIST_URL = "https://api.agar.su/skinlist.txt";
+  var STICKERLIST_URL = "https://api.agar.su/stickerlist.txt";
+  var SKIN_CDN = "https://api.agar.su/skins";
+  var STICKER_CDN = "https://api.agar.su/stickers";
+  var SKIN_FALLBACK_URL = "https://api.agar.su/skins/4.png";
   var WS_SUBPROTOCOL = "eSejeKSVdysQvZs0ES1H";
   var TTL_MS = 3e5;
   var STATIC_URLS = {
     skinlist: SKINLIST_URL,
     stickerlist: STICKERLIST_URL,
-    pass: "https://agar.su/pass.txt",
-    invisible: "https://agar.su/invisible.txt",
-    rotation: "https://agar.su/rotation.txt",
+    pass: "https://api.agar.su/pass.txt",
+    invisible: "https://api.agar.su/invisible.txt",
+    rotation: "https://api.agar.su/rotation.txt",
     word: "/word.txt"
   };
   var cache = new Map;
@@ -596,7 +596,7 @@
   }
   function getSkinUrlForNick(skinSource, nick, fallback = "4") {
     const id = getSkinIdForNick(skinSource, nick, fallback);
-    return `https://agar.su/skins/${id}.png`;
+    return `https://api.agar.su/skins/${id}.png`;
   }
   function invalidateStatsRenderCaches(S) {
     if (S) S.lastStatsRenderKey = "";
@@ -4890,7 +4890,7 @@
       getBind: action => getBind(S, action)
     };
   }
-  var STATS_API = "https://agar.su/stats-api";
+  var STATS_API = "https://api.agar.su/stats-api";
   var STATS_PAGE_URL = "https://agar.su/stats/";
   var STATS_PROFILE_BASE = "https://agar.su/stats/users/?id=";
   var STATS_CLAN_PROFILE_BASE = "https://agar.su/stats/clans/?id=";
@@ -5340,7 +5340,7 @@ function updateRegionOnlineTotals(totals) {
     if (!players.length) {
       const empty = document.createElement("div");
       empty.className = "rating-row";
-      empty.innerHTML = `<div></div><div>—</div><div class="rating-pts">0 очков</div><div class="avatar" style="background-image:url('https://agar.su/skins/4.png');"></div>`;
+      empty.innerHTML = `<div></div><div>—</div><div class="rating-pts">0 очков</div><div class="avatar" style="background-image:url('https://api.agar.su/skins/4.png');"></div>`;
       container.appendChild(empty);
     } else {
       players.forEach((p, i) => container.appendChild(createRow(p.nick, p.points, i, p.id, false)));
@@ -5361,7 +5361,7 @@ function updateRegionOnlineTotals(totals) {
     if (!clans.length) {
       const empty = document.createElement("div");
       empty.className = "rating-row";
-      empty.innerHTML = `<div></div><div>—</div><div class="rating-pts">0 очков</div><div class="avatar" style="background-image:url('https://agar.su/skins/4.png');"></div>`;
+      empty.innerHTML = `<div></div><div>—</div><div class="rating-pts">0 очков</div><div class="avatar" style="background-image:url('https://api.agar.su/skins/4.png');"></div>`;
       container.appendChild(empty);
     } else {
       clans.forEach((c, i) => container.appendChild(createRow(c.clan, c.points, i, c.id, true)));
@@ -5656,11 +5656,11 @@ function updateRegionOnlineTotals(totals) {
       const cleanKey = nickname.replace(/\[|\]/g, "").trim().toLowerCase();
       const code = S.skinList[cleanKey];
       if (code) {
-        return `https://agar.su/skins/${code}.png`;
+        return `https://api.agar.su/skins/${code}.png`;
       }
       const withBrackets = `[${cleanKey}]`;
       const code2 = S.skinList[withBrackets];
-      return code2 ? `https://agar.su/skins/${code2}.png` : null;
+      return code2 ? `https://api.agar.su/skins/${code2}.png` : null;
     } catch (e) {
       console.error("Skin error:", e);
       return null;
@@ -6028,7 +6028,7 @@ function updateRegionOnlineTotals(totals) {
         Authorization: `Game ${getAccountToken() || ""}`
       };
       if (body) headers["Content-Type"] = "application/json";
-      return fetch("https://agar.su/api/" + tag, {
+      return fetch("https://api.agar.su/api/" + tag, {
         method,
         headers,
         body: body ? JSON.stringify(body) : null
@@ -6124,7 +6124,7 @@ function updateRegionOnlineTotals(totals) {
       if (provider !== "vk") return;
       let res;
       try {
-        res = await fetch("https://agar.su/api/auth/vk", {
+        res = await fetch("https://api.agar.su/api/auth/vk", {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
@@ -6835,7 +6835,7 @@ function updateRegionOnlineTotals(totals) {
       messageContent = privateMatch[2];
       if (!messageContent.startsWith("PvPInvite;")) {
         targetDialogId = `!ls${number}`;
-        createDialog(S, hooks, number, lastMessage.name, S.skinList[normalizedName] ? `https://agar.su/skins/${S.skinList[normalizedName]}.png` : "https://agar.su/skins/4.png");
+        createDialog(S, hooks, number, lastMessage.name, S.skinList[normalizedName] ? `https://api.agar.su/skins/${S.skinList[normalizedName]}.png` : "https://api.agar.su/skins/4.png");
         targetDiv = ((_b = S.dialogs[targetDialogId]) == null ? void 0 : _b.div) || targetDiv;
       }
     }
@@ -6974,7 +6974,7 @@ function updateRegionOnlineTotals(totals) {
       menuItems.push({
         label: "Личное сообщение",
         onClick: () => {
-          createDialog(S, hooks, playerId, lastMessage.name, S.skinList[normalizeNick(lastMessage.name)] ? `https://agar.su/skins/${S.skinList[normalizeNick(lastMessage.name)]}.png` : "https://agar.su/skins/4.png");
+          createDialog(S, hooks, playerId, lastMessage.name, S.skinList[normalizeNick(lastMessage.name)] ? `https://api.agar.su/skins/${S.skinList[normalizeNick(lastMessage.name)]}.png` : "https://api.agar.su/skins/4.png");
           switchToDialog(S, `!ls${playerId}`);
         }
       });
@@ -8015,7 +8015,7 @@ onReady(() => {
   var cachedSkinsMapAt = 0;
   var avatarCtxMenu = null;
   function getSkinPreviewUrl(skinId) {
-    return skinId ? `https://agar.su/skins/${skinId}.png` : "";
+    return skinId ? `https://api.agar.su/skins/${skinId}.png` : "";
   }
   function setBackgroundImageIfChanged(el, skinId) {
     if (!el) return;
@@ -8157,7 +8157,7 @@ onReady(() => {
       const card = document.createElement("button");
       card.type = "button";
       card.className = "skins-gallery-card";
-      card.innerHTML = `\n            <img src="https://agar.su/skins/${skin.code}.png" alt="" loading="lazy">\n            <h4>${escapeHtml(skin.nick)}</h4>\n        `;
+      card.innerHTML = `\n            <img src="https://api.agar.su/skins/${skin.code}.png" alt="" loading="lazy">\n            <h4>${escapeHtml(skin.nick)}</h4>\n        `;
       card.addEventListener("click", async () => {
         await selectSkin(skin.nick);
         showContent("home");
@@ -8872,7 +8872,7 @@ onReady(() => {
   window.showContent = showContent2;
   window.updateAccountMenuLabel = updateAccountMenuLabel;
   var ALLOWTXT_LOCAL = "/allowtxt.txt";
-  var ALLOWTXT_API = "https://agar.su/allowtxt.txt";
+  var ALLOWTXT_API = "https://api.agar.su/allowtxt.txt";
   var ALLOWED_CHARS = new Set;
   var allowTxtReady = null;
   function parseAllowTxt(text) {
@@ -9182,7 +9182,7 @@ onReady(() => {
       if (getAccountToken()) {
         headers["Authorization"] = `Game ${getAccountToken()}`;
       }
-      const res = await fetch("https://agar.su/check-nickname", {
+      const res = await fetch("https://api.agar.su/check-nickname", {
         method: "POST",
         headers,
         body: JSON.stringify({
@@ -9191,7 +9191,7 @@ onReady(() => {
       });
       const data = await res.json();
       if (getAccountToken() && data.taken) {
-        const meRes = await fetch("https://agar.su/api/me/nicknames", {
+        const meRes = await fetch("https://api.agar.su/api/me/nicknames", {
           headers: {
             Authorization: `Game ${getAccountToken()}`
           }
@@ -9483,7 +9483,7 @@ onReady(() => {
   async function sendForm(formData, headers = {}) {
     var _a;
     try {
-      const res = await fetch("https://agar.su/create-payment", {
+      const res = await fetch("https://api.agar.su/create-payment", {
         method: "POST",
         headers,
         body: formData

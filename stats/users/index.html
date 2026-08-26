@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Profile — Agar.su</title>
-  <link id="pageIcon" rel="icon" type="image/png" href="https://agar.su/skins/4.png">
+  <link id="pageIcon" rel="icon" type="image/png" href="https://api.agar.su/skins/4.png">
   <style>
     :root {
       --bg: #0f1118; --panel: #1a1d28; --panel2: #222633; --text: #e8ecf4;
@@ -98,7 +98,7 @@
   <script src="../config.js"></script>
   <script src="../skins.js?v=3"></script>
   <script>
-    const API = window.STATS_API || "https://agar.su/stats-api";
+    const API = window.STATS_API || "https://api.agar.su/stats-api";
     const REFRESH_MS = window.STATS_REFRESH_MS || 300000;
     const { loadSkins, resolveAvatar, avatarHtml, setFavicon } = window.statsSkins;
     const serverUrl = window.statsServerUrl;
@@ -149,7 +149,7 @@
       const rankPart = rank ? "#" + rank + " " : "";
       document.title = rankPart + nick + " — Profile · Agar.su";
 
-      const iconUrl = avatarUrl || window.DEFAULT_SKIN_URL || "https://agar.su/skins/4.png";
+      const iconUrl = avatarUrl || window.DEFAULT_SKIN_URL || "https://api.agar.su/skins/4.png";
       setFavicon(iconUrl);
     }
 

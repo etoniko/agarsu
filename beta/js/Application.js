@@ -2,7 +2,7 @@ import Cell from "./Cell.js"
 
 export default class Application {
     static SKIN_ORIGIN = "https://agar.su"
-    static PASS_LIST_URL = "https://agar.su/pass.txt"
+    static PASS_LIST_URL = "https://api.agar.su/pass.txt"
     static MINIMAP_SIZE = 170
     static SECTOR_COLS = 5
     static SECTOR_ROWS = 5

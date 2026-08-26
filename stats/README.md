@@ -1,6 +1,6 @@
 # Agar.su — Stats (клиент)
 
-Статика для GitHub / клиентского VPS. Данные с **https://agar.su/stats-api**.
+Статика для GitHub / клиентского VPS. Данные с **https://api.agar.su/stats-api**.
 
 API-сервер — в папке **`../statsserver/`** (отдельный VPS).
 
