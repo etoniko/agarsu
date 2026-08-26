@@ -193,7 +193,7 @@ async function pollAll() {
   totals = sanitizeTotals(mergeTotals(totals, snapshot, pollAt));
   writeJson(TOTALS_PATH, totals);
 
-  const periodResult = updatePeriodsFromSnapshot(periodsState, snapshot, pollAt);
+  const periodResult = updatePeriodsFromSnapshot(periodsState, snapshot, pollAt, passRegistry);
   periodsState = periodResult.state;
 
   const serverMeta = new Map(servers.map((s) => [s.id, s]));
