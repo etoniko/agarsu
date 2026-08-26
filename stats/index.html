@@ -270,7 +270,7 @@
     </div>
   </div>
 
-  <script src="config.js"></script>
+  <script src="/stats/config.js"></script>
   <script>
     const API_BASE = window.STATS_API || "https://api.agar.su/stats-api";
     const REFRESH_MS = window.STATS_REFRESH_MS || 300000;
@@ -309,7 +309,7 @@
     function nickCell(row) {
       const label = esc(row.nick);
       if (row.id) {
-        return `<a href="${esc(profileUrl(row.id))}" class="nick-link">${label}</a>`;
+        return `<a href="${esc(profileUrl(row.id, state.period))}" class="nick-link">${label}</a>`;
       }
       return label;
     }
@@ -317,7 +317,7 @@
     function clanCell(row) {
       const label = esc(row.clan);
       if (row.id) {
-        return `<a href="${esc(clanProfileUrl(row.id))}" class="nick-link clan-tag">${label}</a>`;
+        return `<a href="${esc(clanProfileUrl(row.id, state.period))}" class="nick-link clan-tag">${label}</a>`;
       }
       return `<span class="clan-tag">${label}</span>`;
     }
@@ -416,7 +416,7 @@
     function renderTopNick(top) {
       if (!top) return "—";
       if (top.id) {
-        return `<a href="${esc(profileUrl(top.id))}" class="nick-link">${esc(top.nick)}</a> (${top.score})`;
+        return `<a href="${esc(profileUrl(top.id, state.period))}" class="nick-link">${esc(top.nick)}</a> (${top.score})`;
       }
       return `${esc(top.nick)} (${top.score})`;
     }
@@ -424,7 +424,7 @@
     function renderTopClan(top) {
       if (!top) return "—";
       const name = top.id
-        ? `<a href="${esc(clanProfileUrl(top.id))}" class="nick-link clan-tag">${esc(top.clan)}</a>`
+        ? `<a href="${esc(clanProfileUrl(top.id, state.period))}" class="nick-link clan-tag">${esc(top.clan)}</a>`
         : `<span class="clan-tag">${esc(top.clan)}</span>`;
       return `${name} (${top.score})`;
     }
@@ -520,8 +520,14 @@
       if (body) body.scrollTop = 0;
     });
 
-    const qId = new URLSearchParams(location.search).get("id");
-    if (qId) location.replace("users/?id=" + encodeURIComponent(qId));
+    const q = new URLSearchParams(location.search);
+    const qId = q.get("id");
+    if (qId) {
+      let dest = "users/?id=" + encodeURIComponent(qId);
+      const qPeriod = q.get("period");
+      if (qPeriod) dest += "&period=" + encodeURIComponent(qPeriod);
+      location.replace(dest);
+    }
 
     load();
     setInterval(load, REFRESH_MS);

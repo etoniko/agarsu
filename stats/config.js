@@ -19,12 +19,16 @@ window.statsBaseUrl = function () {
   return href.endsWith("/") ? href : href + "/";
 };
 
-window.statsProfileUrl = function (id) {
-  return window.statsBaseUrl() + "users/?id=" + encodeURIComponent(id);
+window.statsProfileUrl = function (id, period) {
+  let url = window.statsBaseUrl() + "users/?id=" + encodeURIComponent(id);
+  if (period) url += "&period=" + encodeURIComponent(period);
+  return url;
 };
 
-window.statsClanProfileUrl = function (id) {
-  return window.statsBaseUrl() + "clans/?id=" + encodeURIComponent(id);
+window.statsClanProfileUrl = function (id, period) {
+  let url = window.statsBaseUrl() + "clans/?id=" + encodeURIComponent(id);
+  if (period) url += "&period=" + encodeURIComponent(period);
+  return url;
 };
 
 window.statsServerUrl = function (id) {
