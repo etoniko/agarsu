@@ -1,0 +1,17 @@
+{
+  "type": "module",
+  "dependencies": {
+    "@octokit/rest": "^22.0.0",
+    "axios": "^1.13.2",
+    "cors": "^2.8.5",
+    "express": "^5.2.1",
+    "http2": "^3.3.6",
+    "lknpd-nalog-api": "^1.0.1",
+    "multer": "^2.0.2",
+    "mysql": "^2.18.1",
+    "node-fetch": "^3.3.2",
+    "nodemailer": "^7.0.12",
+    "sharp": "^0.34.4",
+    "uuid": "^13.0.0"
+  }
+}

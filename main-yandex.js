@@ -520,60 +520,14 @@
   }
 
   function renderRtbBlock(blockId, renderTo) {
-    var el = document.getElementById(renderTo);
-    if (!el) return;
-    var doRender = function () {
-      try {
-        el.innerHTML = "";
-        if (window.Ya && Ya.Context && Ya.Context.AdvManager) {
-          Ya.Context.AdvManager.render({
-            blockId: blockId,
-            renderTo: renderTo
-          });
-        }
-      } catch (e) {
-        log("rtb render fail", blockId, e);
-      }
-    };
-    if (window.Ya && Ya.Context && Ya.Context.AdvManager) {
-      doRender();
-    } else {
-      window.yaContextCb = window.yaContextCb || [];
-      window.yaContextCb.push(doRender);
-    }
+    // no-op: banners off
   }
 
   /** Свои RTB-блоки остаются и в yandex-режиме */
   function enableRtbAds() {
-    window.yaContextCb = window.yaContextCb || [];
-    window.renderDeathBanner = function () {
-      renderRtbBlock("R-A-15699059-14", "yandex_rtb_R-A-15699059-14");
-    };
-
-    function ensureContextJs() {
-      if (document.querySelector('script[src*="yandex.ru/ads/system/context.js"]')) return Promise.resolve();
-      return loadScript("https://yandex.ru/ads/system/context.js").catch(function () {});
-    }
-
-    ensureContextJs().then(function () {
-      renderRtbBlock("R-A-15699059-13", "yandex_rtb_R-A-15699059-13");
-      renderRtbBlock("R-A-15699059-14", "yandex_rtb_R-A-15699059-14");
-    });
-
-    // после смерти main.js зовёт renderDeathBanner — оставляем рабочим
-    var overlays = document.getElementById("overlays");
-    if (overlays && !overlays.__ygRtbObs) {
-      overlays.__ygRtbObs = true;
-      var obs = new MutationObserver(function () {
-        var shown = overlays.style.display !== "none";
-        if (shown) {
-          setTimeout(function () {
-            if (typeof window.renderDeathBanner === "function") window.renderDeathBanner();
-          }, 100);
-        }
-      });
-      obs.observe(overlays, { attributes: true, attributeFilter: ["style"] });
-    }
+    // Yandex RTB banners disabled — keep empty .add-yandex / .death slots
+    window.renderDeathBanner = function () {};
+    return Promise.resolve();
   }
 
   function blockServerXpUi() {

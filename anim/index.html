@@ -622,7 +622,7 @@
                         <input type="color" id="customBgColor" value="#1a1a2e" title="Свой цвет" />
                     </div>
                     <span id="previewInfo">
-                        <i class="fas fa-plus-circle" style="color:#1a73e8;"></i> 2–10 кадров
+                        <i class="fas fa-plus-circle" style="color:#1a73e8;"></i> 2–100 кадров
                     </span>
                 </div>
             </div>
@@ -691,7 +691,7 @@
             const editFileInput = document.getElementById('editFileInput');
             const customBgColor = document.getElementById('customBgColor');
 
-            const MAX_FRAMES = 10;
+            const MAX_FRAMES = 100;
             const MIN_FRAMES = 2;
             const FRAME_HEIGHT = 400;
 
@@ -812,7 +812,7 @@
                 const addBtn = document.createElement('div');
                 addBtn.className = 'circle-add' + (frames.length >= MAX_FRAMES ? ' disabled' : '');
                 addBtn.innerHTML = `<i class="fas fa-plus"></i>`;
-                addBtn.title = frames.length >= MAX_FRAMES ? 'Достигнут максимум (10)' : 'Добавить кадр';
+                addBtn.title = frames.length >= MAX_FRAMES ? 'Достигнут максимум (100)' : 'Добавить кадр';
 
                 if (frames.length < MAX_FRAMES) {
                     addBtn.addEventListener('click', () => fileInput.click());
@@ -865,7 +865,7 @@
                 if (count < MIN_FRAMES) {
                     widthDisplay.textContent = '—';
                     fileSizeEl.textContent = '—';
-                    previewInfo.innerHTML = '<i class="fas fa-plus-circle" style="color:#1a73e8;"></i> Добавьте 2–10 кадров';
+                    previewInfo.innerHTML = '<i class="fas fa-plus-circle" style="color:#1a73e8;"></i> Добавьте 2–100 кадров';
                     return;
                 }
 

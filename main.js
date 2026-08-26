@@ -301,49 +301,77 @@
     if (!isStorageReliable()) return true;
     return false;
   }
-  var GAME_SERVERS = {
-    ffa: {
-      host: "ffa.agar.su",
-      title: "FFA - Москва"
-    },
-    ffa1: {
-      host: "ffa.agar.su:6001",
-      title: "FFA - Москва 2"
-    },
-    ms: {
-      host: "ms.agar.su:6001",
-      title: "MegaSplit"
-    },
-    pvp1: {
-      host: "ms.agar.su:6004",
-      title: "pvp1: 1x1 ffa 1k"
-    },
-    pvp2: {
-      host: "ms.agar.su:6005",
-      title: "pvp2: 2x2 ms 1k"
-    },
-    tournament: {
-      host: "ms.agar.su:6002",
-      title: "Tournament 2x2"
-    },
-    tournament2: {
-      host: "ms.agar.su:6003",
-      title: "Tournament 3x3"
-    }
-  };
-  var SERVERS = Object.fromEntries(Object.entries(GAME_SERVERS).map(([id, s]) => [ id, s.host ]));
+  var SERVERS = {};
+  var REGION_CONFIGS = {};
+  function readServersFromHtml() {
+    const regions = {};
+    document.querySelectorAll(".server-item[data-ip]").forEach(item => {
+      const region = item.dataset.region || "ru";
+      const key = item.dataset.serverKey || item.id;
+      if (!key) return;
+      if (!regions[region]) regions[region] = { label: region === "tr" ? "Турция" : region === "eu" ? "Европа" : "Россия", available: true, servers: {} };
+      regions[region].servers[key] = { host: item.dataset.ip, title: item.dataset.title || item.querySelector(".server-name")?.textContent.trim() || key };
+    });
+    REGION_CONFIGS = regions;
+    return regions;
+  }
+  var activeRegion = null;
+  function getDefaultRegion() {
+    try { let saved = localStorage.getItem("agar_region"); if (saved === "nl") saved = "tr"; if (saved && REGION_CONFIGS[saved]) return saved; } catch (e) {}
+    const browserLanguage = String((navigator && (navigator.language || navigator.userLanguage)) || "").toLowerCase();
+    return browserLanguage.startsWith("ru") ? "ru" : "tr";
+  }
   function findGameServer(hostOrUrl) {
-    if (!hostOrUrl) return GAME_SERVERS.ffa;
-    return Object.values(GAME_SERVERS).find(s => s.host === hostOrUrl) || null;
+    if (!hostOrUrl) return null;
+    return Object.values(REGION_CONFIGS).flatMap(region => Object.values(region.servers)).find(server => server.host === hostOrUrl) || null;
+  }
+  function findRegionForHost(hostOrUrl) {
+    if (!hostOrUrl) return null;
+    const host = String(hostOrUrl).replace(/^wss?:\/\//i, "");
+    for (const [region, cfg] of Object.entries(REGION_CONFIGS || {})) {
+      for (const server of Object.values(cfg.servers || {})) {
+        if (server.host === host) return region;
+      }
+    }
+    // Fallback by port/path when list miss
+    if (/:6013\b|sixz\.ru:6013/i.test(host)) return "tr";
+    if (/:6014\b|xn--bdk\.pw|\/d(?:ffa|rookery|arctida)/i.test(host)) return "eu";
+    return null;
+  }
+  /**
+   * EN(EU) + TR servers: mass as 1.2k / 1,2k.
+   * Quantized so the label does not rebuild every tick (less GPU/text load).
+   */
+  function formatMassLabel(mass, regionKey, host) {
+    const fullMass = /sixz\.ru:6017|:6017\b/i.test(String(host || ""));
+    const useK = !fullMass && (regionKey === "tr" || regionKey === "eu" || regionKey === "en");
+    let m = mass | 0;
+    if (!useK) return String(m);
+    if (m >= 1000) {
+      m = Math.round(m / 100) * 100;
+      let s = (m / 1000).toFixed(1);
+      if (regionKey === "tr") s = s.replace(".", ",");
+      return s + "k";
+    }
+    m = Math.round(m / 10) * 10;
+    return String(m);
+  }
+  /** TR / EU(EN): lighter Arial labels, no black outline */
+  function isLightLabelRegion(regionKey) {
+    return regionKey === "tr" || regionKey === "eu" || regionKey === "en";
   }
   function getPowApiBase(hostOrUrl) {
     const entry = findGameServer(hostOrUrl);
-    const host = entry ? entry.host : hostOrUrl || GAME_SERVERS.ffa.host;
+    let host = entry ? entry.host : hostOrUrl || "ffa.agar.su";
+    host = String(host || "").replace(/^wss?:\/\//i, "");
+    // strip room path: xn--bdk.pw:6014/dparty → xn--bdk.pw:6014
+    const slash = host.indexOf("/");
+    if (slash > 0) host = host.slice(0, slash);
     if (/^https?:\/\//i.test(host)) return String(host).replace(/\/$/, "");
-    return "https://" + String(host).replace(/^wss?:\/\//i, "");
+    return "https://" + host;
   }
   function getGameServerWssUrl(host) {
-    const h = host || GAME_SERVERS.ffa.host;
+    const h = host || "ffa.agar.su";
     return "wss://" + String(h).replace(/^wss?:\/\//i, "");
   }
   var KEYBIND_DEFAULTS = {
@@ -450,7 +478,7 @@
     if (!n || n.trim() !== n) return "";
     return n.toLowerCase();
   }
-  var ONLINE_HUB_URL = "https://api.agar.su:6008/online?1";
+  var ONLINE_HUB_URL = "https://api.agar.su/online";//2
   var TOP100_URL = "https://api.agar.su/api/top100";
   var SKINLIST_URL = "https://api.agar.su/skinlist.txt";
   var STICKERLIST_URL = "https://api.agar.su/stickerlist.txt";
@@ -465,8 +493,10 @@
     pass: "https://api.agar.su/pass.txt",
     invisible: "https://api.agar.su/invisible.txt",
     rotation: "https://api.agar.su/rotation.txt",
-    word: "/word.txt"
+    word: "https://api.agar.su/word.txt"
   };
+  /** Purchased skins / passes — never cache in browser or nginx. */
+  var NO_CACHE_URLS = new Set([ STATIC_URLS.skinlist, STATIC_URLS.stickerlist, STATIC_URLS.pass, STATIC_URLS.invisible, STATIC_URLS.rotation ]);
   var cache = new Map;
   var inflight = new Map;
   var SESSION_PREFIX = "agar_static_v1:";
@@ -505,6 +535,26 @@
     return text;
   }
   function fetchStaticText(url, force = false) {
+    if (NO_CACHE_URLS.has(url)) {
+      const pending = inflight.get(url);
+      if (pending) return pending;
+      const fetchUrl = url + (url.indexOf("?") >= 0 ? "&" : "?") + "_=" + Date.now();
+      const p = fetch(fetchUrl, { cache: "no-store" }).then(res => {
+        if (!res.ok) throw new Error(`fetch failed: ${url} (${res.status})`);
+        return res.text();
+      }).catch(err => {
+        console.error("fetchStaticText:", err);
+        const hit = cache.get(url);
+        return hit ? hit.text : "";
+      }).finally(() => {
+        inflight.delete(url);
+      });
+      inflight.set(url, p);
+      return p.then(text => {
+        cache.set(url, { text, at: Date.now() });
+        return text;
+      });
+    }
     const now = Date.now();
     const hit = cache.get(url);
     if (!force && hit && now - hit.at < TTL_MS) {
@@ -658,6 +708,7 @@
     };
   }
   var skinImageCache = new Map;
+  var skinPetriFailAt = new Map;
   function getSkinImageUrl(skinId, fallbackId = "4") {
     const id = skinId && String(skinId).trim() || fallbackId;
     return `${SKIN_CDN}/${id}.png`;
@@ -676,26 +727,386 @@
     img.dataset.resolvedSrc = resolved;
     img.src = resolved;
   }
-  function loadCachedImage(url) {
-    const entry = skinImageCache.get(url);
+  function skinImageCacheKey(url) {
+    return resolveAssetUrl(String(url || "").replace(/([?&])_=\d+/g, "").replace(/\?$/, ""));
+  }
+  /** One network fetch per URL; DOM imgs reuse the same cached Image.src */
+  function loadCachedImage(url, bustRetry) {
+    const baseKey = skinImageCacheKey(url);
+    const fetchUrl = bustRetry
+      ? url + (url.indexOf("?") >= 0 ? "&" : "?") + "_=" + Date.now()
+      : url;
+    const resolved = resolveAssetUrl(fetchUrl);
+    const entry = skinImageCache.get(baseKey);
     if (entry instanceof Image) return entry;
     if (entry === "error") {
-      if (url === SKIN_FALLBACK_URL) return null;
-      return loadCachedImage(SKIN_FALLBACK_URL);
+      if (baseKey === skinImageCacheKey(SKIN_FALLBACK_URL)) return null;
+      if (/\/api\/getSkin\?/i.test(baseKey)) {
+        const failAt = skinPetriFailAt.get(baseKey) || 0;
+        if (Date.now() - failAt < 5000) return null;
+        skinImageCache.delete(baseKey);
+      } else {
+        return loadCachedImage(SKIN_FALLBACK_URL);
+      }
     }
     const img = new Image;
     img.decoding = "async";
-    skinImageCache.set(url, img);
-    img.onload = () => skinImageCache.set(url, img);
+    img.crossOrigin = "anonymous";
+    skinImageCache.set(baseKey, img);
+    img.onload = () => skinImageCache.set(baseKey, img);
     img.onerror = () => {
-      skinImageCache.set(url, "error");
-      if (url !== SKIN_FALLBACK_URL) loadCachedImage(SKIN_FALLBACK_URL);
+      if (!bustRetry) {
+        skinImageCache.delete(baseKey);
+        loadCachedImage(url, true);
+        return;
+      }
+      skinImageCache.set(baseKey, "error");
+      if (/\/api\/getSkin\?/i.test(baseKey)) {
+        skinPetriFailAt.set(baseKey, Date.now());
+        return;
+      }
+      if (baseKey !== skinImageCacheKey(SKIN_FALLBACK_URL)) loadCachedImage(SKIN_FALLBACK_URL);
     };
-    img.src = url;
+    img.src = resolved;
     return img;
+  }
+
+  var SKIN_STRIP_MS = 100;
+  var DOM_STRIP_SELECTOR = "#skinss,#prevSkin,#nextSkin,.skinswraper,.skkinn img,.rating-home .avatar,.rating-row .avatar,.skins-gallery-card img,.nick-card img.skin,img.chatX_avatar,img.account-level-avatar,.chatX_top_avatar img,.avatarXcontainer img";
+  var domStripRaf = 0;
+  var lastDomStripTick = 0;
+  function getSkinStripInfo(img) {
+    if (!img) return { isStrip: false, frames: 1, fw: 0, fh: 0 };
+    var fw = img.naturalWidth || img.width || 0;
+    var fh = img.naturalHeight || img.height || 0;
+    if (fw <= 0 || fh <= 0) return { isStrip: false, frames: 1, fw: fw, fh: fh };
+    var frames = fw > fh ? Math.max(1, Math.floor(fw / fh)) : 1;
+    return { isStrip: frames > 1, frames: frames, fw: fw, fh: fh };
+  }
+  function getSkinStripFrameIndex(frames, now) {
+    if (!frames || frames <= 1) return 0;
+    return Math.floor((now != null ? now : Date.now()) / SKIN_STRIP_MS) % frames;
+  }
+  function getSkinStripSourceRect(img, now) {
+    var info = getSkinStripInfo(img);
+    if (!info.fw || !info.fh) return { sx: 0, sy: 0, sw: 0, sh: 0, frame: 0, frames: 1 };
+    if (!info.isStrip) return { sx: 0, sy: 0, sw: info.fw, sh: info.fh, frame: 0, frames: 1 };
+    var frame = getSkinStripFrameIndex(info.frames, now);
+    return { sx: frame * info.fh, sy: 0, sw: info.fh, sh: info.fh, frame: frame, frames: info.frames };
+  }
+  function drawSkinStripImage(ctx, img, dx, dy, dw, dh, now) {
+    if (!ctx || !img) return;
+    var r = getSkinStripSourceRect(img, now);
+    if (r.sw <= 0 || r.sh <= 0) return;
+    ctx.drawImage(img, r.sx, r.sy, r.sw, r.sh, dx, dy, dw, dh);
+  }
+  function extractCssUrl(value) {
+    if (!value || value === "none") return "";
+    var m = String(value).match(/url\(\s*['"]?([^'")]+)['"]?\s*\)/i);
+    return m ? m[1] : "";
+  }
+  function getElementSkinUrl(el) {
+    if (!el) return "";
+    if (el.tagName === "IMG") return el.currentSrc || el.getAttribute("src") || el.src || "";
+    var inline = extractCssUrl(el.style.backgroundImage);
+    if (inline) return inline;
+    try { return extractCssUrl(getComputedStyle(el).backgroundImage); } catch (e) { return ""; }
+  }
+  function clearDomStripStyles(el) {
+    if (el.dataset.skinStrip !== "1") return;
+    if (el.tagName === "IMG") {
+      el.style.removeProperty("width");
+      el.style.removeProperty("height");
+      el.style.removeProperty("max-width");
+      el.style.removeProperty("transform");
+      el.style.removeProperty("object-fit");
+      el.style.removeProperty("margin-left");
+      el.style.removeProperty("border-radius");
+      el.style.removeProperty("border");
+      el.style.removeProperty("box-shadow");
+      el.style.removeProperty("display");
+      el.classList.remove("skin-strip-anim");
+      delete el.dataset.skinStripSide;
+    } else {
+      el.style.backgroundSize = "";
+      el.style.backgroundPosition = "";
+      el.style.backgroundRepeat = "";
+      el.style.width = "";
+      el.style.height = "";
+      el.style.minWidth = "";
+      el.style.minHeight = "";
+      el.style.padding = "";
+      el.style.boxSizing = "";
+      el.classList.remove("skin-strip-bg");
+    }
+    delete el.dataset.skinStrip;
+  }
+  function applyBackgroundStrip(el, frames, frame) {
+    // Never write width/height here — clientWidth shrinks under border-box and
+    // would collapse #skinss / avatars every tick (strip skins like amfitamin).
+    if (el.style.width || el.style.height || el.style.minWidth || el.style.minHeight) {
+      el.style.width = "";
+      el.style.height = "";
+      el.style.minWidth = "";
+      el.style.minHeight = "";
+      el.style.padding = "";
+      el.style.boxSizing = "";
+    }
+    var w = el.clientWidth || el.offsetWidth;
+    var h = el.clientHeight || el.offsetHeight;
+    var side = Math.max(1, Math.min(w || h, h || w));
+    if (!side) return;
+    el.classList.add("skin-strip-bg");
+    el.style.backgroundRepeat = "no-repeat";
+    el.style.backgroundSize = frames * side + "px " + side + "px";
+    el.style.backgroundPosition = "-" + frame * side + "px center";
+    el.dataset.skinStrip = "1";
+  }
+  function isStripClipHost(el) {
+    if (!el) return false;
+    return el.classList.contains("skinswraper") || el.classList.contains("skkinn") || el.classList.contains("avatar") || el.id === "skinss" || el.id === "prevSkin" || el.id === "nextSkin";
+  }
+  function defaultStripSideForImg(img) {
+    if (!img) return 40;
+    if (img.classList.contains("chatX_avatar")) return 50;
+    if (img.classList.contains("account-level-avatar")) return 20;
+    if (img.classList.contains("skin")) return 36;
+    if (img.classList.contains("chatX_avatar_private")) return 20;
+    return 40;
+  }
+  function ensureImgStripHost(img) {
+    var parent = img.parentElement;
+    if (!parent) return null;
+    if (parent.classList.contains("skin-strip-host")) return parent;
+    if (isStripClipHost(parent)) {
+      parent.classList.add("skin-strip-host");
+      if (!parent.style.overflow) parent.style.overflow = "hidden";
+      return parent;
+    }
+    var cs = getComputedStyle(img);
+    var side = Math.max(1, Math.round(Math.min(
+      parseFloat(cs.width) || img.clientWidth || 0,
+      parseFloat(cs.height) || img.clientHeight || 0
+    ) || defaultStripSideForImg(img)));
+    var wrap = document.createElement("span");
+    wrap.className = "skin-strip-host";
+    wrap.style.width = side + "px";
+    wrap.style.height = side + "px";
+    wrap.style.minWidth = side + "px";
+    wrap.style.minHeight = side + "px";
+    wrap.style.overflow = "hidden";
+    wrap.style.borderRadius = "50%";
+    wrap.style.display = "inline-block";
+    wrap.style.flexShrink = "0";
+    wrap.style.boxSizing = "border-box";
+    wrap.style.verticalAlign = "middle";
+    wrap.style.position = "relative";
+    if (cs.borderTopWidth && cs.borderTopWidth !== "0px") {
+      wrap.style.border = cs.borderTopWidth + " solid " + (cs.borderTopColor || "currentColor");
+    }
+    if (cs.boxShadow && cs.boxShadow !== "none") {
+      wrap.style.boxShadow = cs.boxShadow;
+    }
+    parent.insertBefore(wrap, img);
+    wrap.appendChild(img);
+    img.dataset.skinStripWrapped = "1";
+    return wrap;
+  }
+  function applyImgStrip(img, frames, frame) {
+    var host = ensureImgStripHost(img);
+    if (!host) return;
+    var side = parseInt(img.dataset.skinStripSide || "", 10);
+    if (!side) {
+      side = Math.max(1, Math.round(Math.min(
+        host.clientWidth || host.offsetWidth || 0,
+        host.clientHeight || host.offsetHeight || 0
+      ) || defaultStripSideForImg(img)));
+      img.dataset.skinStripSide = String(side);
+    }
+    img.classList.add("skin-strip-anim");
+    img.style.setProperty("width", frames * side + "px", "important");
+    img.style.setProperty("height", side + "px", "important");
+    img.style.setProperty("max-width", "none", "important");
+    img.style.setProperty("border-radius", "0", "important");
+    img.style.setProperty("border", "none", "important");
+    img.style.setProperty("box-shadow", "none", "important");
+    img.style.setProperty("object-fit", "fill", "important");
+    img.style.setProperty("display", "block", "important");
+    img.style.setProperty("transform", "translateX(-" + frame * side + "px)", "important");
+    img.dataset.skinStrip = "1";
+  }
+  function updateDomSkinStrip(el, now) {
+    if (el.dataset && el.dataset.skinStripStatic === "1") return;
+    if (el.closest && el.closest("#leaderboard, #toplistnow")) return;
+    // Skip hidden menu tabs / death screen — no work, no layout thrash
+    if (el.closest) {
+      var hiddenPanel = el.closest(".content:not(.active), #statics");
+      if (hiddenPanel) {
+        try {
+          if (hiddenPanel.id === "statics") {
+            var st = hiddenPanel.style.display;
+            if (!st || st === "none") return;
+          } else if (!hiddenPanel.classList.contains("active")) return;
+        } catch (e) { return; }
+      }
+    }
+    var url = getElementSkinUrl(el);
+    if (!url) { clearDomStripStyles(el); return; }
+    var img = loadCachedImage(resolveAssetUrl(url));
+    if (!(img instanceof Image) || !img.complete || !(img.naturalWidth || img.width)) return;
+    var info = getSkinStripInfo(img);
+    if (!info.isStrip) { clearDomStripStyles(el); return; }
+    var frame = getSkinStripFrameIndex(info.frames, now);
+    if (el.tagName === "IMG") applyImgStrip(el, info.frames, frame);
+    else applyBackgroundStrip(el, info.frames, frame);
+  }
+  function startDomSkinStripAnimator() {
+    if (domStripRaf) return;
+    function loop() {
+      domStripRaf = requestAnimationFrame(loop);
+      var now = Date.now();
+      if (now - lastDomStripTick < 50) return;
+      lastDomStripTick = now;
+      var nodes = document.querySelectorAll(DOM_STRIP_SELECTOR);
+      for (var i = 0; i < nodes.length; i++) updateDomSkinStrip(nodes[i], now);
+    }
+    domStripRaf = requestAnimationFrame(loop);
+  }
+
+  /**
+   * Chat / UI avatars: never start a new download per message.
+   * Warm skinImageCache first, then point the DOM img at the same src.
+   */
+  function setSkinAvatarFromUrl(img, url) {
+    if (!img || !url) return;
+    const resolved = resolveAssetUrl(url);
+    const fallbackResolved = resolveAssetUrl(SKIN_FALLBACK_URL);
+    if (img.dataset.resolvedSrc === resolved && img.complete && img.naturalWidth > 0) return;
+
+    img.crossOrigin = "anonymous";
+    img.decoding = "async";
+    img.dataset.resolvedSrc = resolved;
+
+    const cached = loadCachedImage(resolved);
+    if (!(cached instanceof Image)) {
+      if (resolved !== fallbackResolved) setSkinAvatarFromUrl(img, SKIN_FALLBACK_URL);
+      return;
+    }
+
+    const apply = () => {
+      if (skinImageCache.get(resolved) === "error") {
+        if (resolved !== fallbackResolved) setSkinAvatarFromUrl(img, SKIN_FALLBACK_URL);
+        return;
+      }
+      if (cached.complete && cached.naturalWidth > 0) {
+        if (img.src !== cached.src) img.src = cached.src;
+        return;
+      }
+      if (cached.complete && resolved !== fallbackResolved) {
+        setSkinAvatarFromUrl(img, SKIN_FALLBACK_URL);
+      }
+    };
+
+    apply();
+    if (!cached.complete) {
+      cached.addEventListener("load", apply, { once: true });
+      cached.addEventListener("error", () => {
+        if (resolved !== fallbackResolved) setSkinAvatarFromUrl(img, SKIN_FALLBACK_URL);
+      }, { once: true });
+    }
+  }
+  function setSkinAvatarById(img, skinId) {
+    setSkinAvatarFromUrl(img, getSkinImageUrl(skinId));
+  }
+  /** Leaderboard/small UI: one strip frame, no animation loop. */
+  function setSkinAvatarStatic(img, url) {
+    if (!img || !url) return;
+    img.dataset.skinStripStatic = "1";
+    setSkinAvatarFromUrl(img, url);
+    const resolved = resolveAssetUrl(url);
+    const apply = () => {
+      const cached = loadCachedImage(resolved);
+      if (!(cached instanceof Image) || !cached.complete || !(cached.naturalWidth || cached.width)) return;
+      const info = getSkinStripInfo(cached);
+      if (!info.isStrip) return;
+      applyImgStrip(img, info.frames, 0);
+    };
+    apply();
+    const cached = loadCachedImage(resolved);
+    if (cached instanceof Image && !cached.complete) {
+      cached.addEventListener("load", apply, { once: true });
+    }
+  }
+  function setSkinAvatarStaticById(img, skinId) {
+    setSkinAvatarStatic(img, getSkinImageUrl(skinId));
   }
   function getSkinImage(skinId) {
     return loadCachedImage(getSkinImageUrl(skinId));
+  }
+  /** Bridge skins via unified xn--bdk.pw skinsbot. skinlist.txt still wins (agar.su only). */
+  var SKINS_BOT_BASE = "https://xn--bdk.pw:6016";
+  function isBubbleSkinHost(host) {
+    return /sixz\.ru:6017|:6017\b/i.test(String(host || ""));
+  }
+  function bubbleSkinLine(nick) {
+    const s = String(nick || "");
+    const i = s.indexOf("\n");
+    if (i < 0) return null;
+    const line = s.slice(0, i).trim();
+    return line || null;
+  }
+  function bubbleNickDisplay(nick) {
+    let s = String(nick || "");
+    if (s.indexOf("\n") >= 0) s = s.slice(s.indexOf("\n") + 1);
+    if (s.charCodeAt(0) === 4) s = s.slice(1);
+    return s.split("#")[0].replace(/<[^>]*>/g, "").trim();
+  }
+  function isPetriSkinHost(host) {
+    return /sixz\.ru:6011|:6011\/|megasplit|hardcore9|sixz\.ru:6013|:6013\/|sixz\.ru:6017|:6017\//i.test(String(host || ""));
+  }
+  function getSkinBridge(host) {
+    const h = String(host || "");
+    if (/sixz\.ru:6017|:6017\b/i.test(h)) return "bubble";
+    if (/sixz\.ru:6013|:6013\b/i.test(h)) return "agarz";
+    return "petri";
+  }
+  function getPetriSkinUrl(nick, host) {
+    const h = String(host || "");
+    if (isBubbleSkinHost(h)) {
+      const skinPath = bubbleSkinLine(nick);
+      const display = bubbleNickDisplay(nick);
+      if (!skinPath || !display) return null;
+      return SKINS_BOT_BASE + "/api/getSkin?bridge=bubble&username=" + encodeURIComponent(display) + "&skin=" + encodeURIComponent(skinPath);
+    }
+    const bare = String(nick || "").split("#")[0].replace(/<[^>]*>/g, "").trim();
+    if (!bare) return null;
+    return SKINS_BOT_BASE + "/api/getSkin?bridge=" + getSkinBridge(host) + "&username=" + encodeURIComponent(bare);
+  }
+  function getCellSkinImage(S, nick, skinId, getSkinImageFn, loadCachedImageFn) {
+    if (skinId) return (getSkinImageFn || getSkinImage)(skinId);
+    const host = S && (S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl);
+    if (!isPetriSkinHost(host)) return null;
+    const url = getPetriSkinUrl(nick, host);
+    return url ? (loadCachedImageFn || loadCachedImage)(url) : null;
+  }
+  function isSkinImageReady(img) {
+    return !!(img && img.complete && (img.naturalWidth || img.width) > 0);
+  }
+  /**
+   * Skin for transparent-body nicks: only the real skin file, never silent fallback.
+   * Missing / still loading / failed → null (caller must keep cell color visible).
+   */
+  function getOwnedSkinDrawable(skinId) {
+    if (!skinId) return null;
+    const baseKey = skinImageCacheKey(getSkinImageUrl(skinId));
+    const entry = skinImageCache.get(baseKey);
+    if (entry === "error") return null;
+    let img = entry instanceof Image ? entry : null;
+    if (!img) {
+      img = loadCachedImage(getSkinImageUrl(skinId));
+      if (skinImageCache.get(baseKey) === "error") return null;
+    }
+    return isSkinImageReady(img) ? img : null;
   }
   var scoreMessages = {
     low: [ "Ничего, зови друзей и попробуй ещё раз!", "Только начало! Поделись с друзьями и вернись сильным!", "Быстро умер? Зови друзей, пусть они покажут мастерство!", "Не расстраивайся, каждая игра — это опыт. Попробуй снова!", "Попробуй поменять фон в настройках — может, поможет!", "Используй F, чтобы остановиться и обдумать стратегию!", "Терпение и стратегия важнее скорости!", "Нажимая W — выделяется цешка (маленькая масса)." ],
@@ -777,6 +1188,7 @@
   }
   var onOverlaysShow = null;
   var onOverlaysHide = null;
+  var onStaticsShow = null;
   function onReady(fn) {
     if (document.readyState === "loading") {
       document.addEventListener("DOMContentLoaded", fn, {
@@ -854,6 +1266,9 @@
   }
   function showStatics() {
     setElementDisplay(byId("statics"), "flex");
+    if (typeof onStaticsShow === "function") {
+      try { onStaticsShow(); } catch (e) {}
+    }
   }
   function hideStatics() {
     hideElement(byId("statics"));
@@ -861,6 +1276,45 @@
   function mouseCoordinateChange(S) {
     S.X = (S.rawMouseX - S.canvasWidth / 2) / S.viewZoom + S.nodeX;
     S.Y = (S.rawMouseY - S.canvasHeight / 2) / S.viewZoom + S.nodeY;
+  }
+  function normalizeSpectateNick(name) {
+    return String(name || "").trim().toLowerCase();
+  }
+  function findSpectateHit(S, wx, wy) {
+    let best = null;
+    let bestSize = Infinity;
+    const list = S.nodelist || [];
+    for (let i = 0; i < list.length; i++) {
+      const node = list[i];
+      if (!node || node.destroyed || node.isOwn || node.isFood || node.isVirus || node.isEjected) continue;
+      if (!node.name && !(node.playerId > 0)) continue;
+      const dx = node.x - wx;
+      const dy = node.y - wy;
+      const r = node.size || 0;
+      if (r <= 0) continue;
+      if (dx * dx + dy * dy < r * r && r < bestSize) {
+        best = node;
+        bestSize = r;
+      }
+    }
+    return best;
+  }
+  function collectSpectateFollowCells(S) {
+    const nick = S.spectateFollowNick;
+    const pid = S.spectateFollowPid | 0;
+    if (!nick && !pid) return [];
+    const out = [];
+    const list = S.nodelist || [];
+    for (let i = 0; i < list.length; i++) {
+      const node = list[i];
+      if (!node || node.destroyed || node.isFood || node.isVirus || node.isEjected) continue;
+      if (pid && (node.playerId | 0) === pid) {
+        out.push(node);
+        continue;
+      }
+      if (nick && normalizeSpectateNick(node.name) === nick) out.push(node);
+    }
+    return out;
   }
   function viewRange(S) {
     const ratio = Math.max(S.canvasHeight / 1080, S.canvasWidth / 1920);
@@ -922,6 +1376,8 @@
     frame: 0,
     sortMs: 0,
     drawMs: 0,
+    preMs: 0,
+    gridMs: 0,
     qtreeMs: 0,
     miniMapMs: 0,
     nodes: 0,
@@ -1061,14 +1517,15 @@
     document.body.appendChild(perfOverlayEl);
   }
   function updatePerfOverlay(S) {
-    var _a, _b;
+    var _a, _b, _c;
     if (!perfEnabled) return;
     ensurePerfOverlay();
-    perfOverlayEl.textContent = `FPS ${S.fps}\nnodes ${perfStats.nodes} drawn ${perfStats.drawn}\nsort ${perfStats.sortMs.toFixed(2)}ms draw ${perfStats.drawMs.toFixed(2)}ms\nqtree ${perfStats.qtreeMs.toFixed(2)}ms movePts ${perfStats.movePoints}\nminimap ${perfStats.miniMapMs.toFixed(2)}ms\nzoom ${(_a = S.viewZoom) == null ? void 0 : _a.toFixed(2)} cells ${((_b = S.playerCells) == null ? void 0 : _b.length) || 0}`;
+    perfOverlayEl.textContent = `FPS ${S.fps}\nnodes ${perfStats.nodes} drawn ${perfStats.drawn}\npre ${perfStats.preMs.toFixed(2)}ms grid ${perfStats.gridMs.toFixed(2)}ms\nsort ${perfStats.sortMs.toFixed(2)}ms draw ${perfStats.drawMs.toFixed(2)}ms\nqtree ${perfStats.qtreeMs.toFixed(2)}ms movePts ${perfStats.movePoints}\nminimap ${perfStats.miniMapMs.toFixed(2)}ms\nzoom ${(_a = S.viewZoom) == null ? void 0 : _a.toFixed(2)} cells ${((_b = S.playerCells) == null ? void 0 : _b.length) || 0}\nwebgl ${((_c = S.webglRenderer) == null ? void 0 : _c.ready) ? "on" : "off"} ws ${S.wsParseBridge && S.wsParseBridge.isEnabled() ? "worker" : "main"}`;
     window.__perfStats = {
       ...perfStats,
       fps: S.fps,
-      viewZoom: S.viewZoom
+      viewZoom: S.viewZoom,
+      webgl: !!((_c = S.webglRenderer) == null ? void 0 : _c.ready)
     };
   }
   var isBackgroundLoaded = false;
@@ -1210,10 +1667,19 @@
   function drawGameScene() {
     const S = deps.S;
     if (!(S == null ? void 0 : S.ctx)) return;
+    const tPre = perfEnabled ? performance.now() : 0;
     S.frameId = (S.frameId || 0) + 1;
     S.timestamp = Date.now();
     const playerCount = S.playerCells.length;
     if (playerCount > 0) {
+      if (S.spectateFollowNick || S.spectateFollowPid) {
+        S.spectateFollowNick = null;
+        S.spectateFollowPid = 0;
+        if (S._spectateFollowTimer) {
+          clearInterval(S._spectateFollowTimer);
+          S._spectateFollowTimer = null;
+        }
+      }
       calcViewZoom(S);
       let sumX = 0;
       let sumY = 0;
@@ -1232,7 +1698,20 @@
       S.nodeX = (S.nodeX + avgX) / 2;
       S.nodeY = (S.nodeY + avgY) / 2;
     } else {
-      if (!S.mapBoundsReady) {
+      const follow = collectSpectateFollowCells(S);
+      if (follow.length) {
+        let sumX = 0;
+        let sumY = 0;
+        for (let i = 0; i < follow.length; i++) {
+          const cell = follow[i];
+          if (cell._posFrame !== S.frameId) cell.updatePos();
+          cell._posFrame = S.frameId;
+          sumX += cell.x;
+          sumY += cell.y;
+        }
+        S.posX = sumX / follow.length;
+        S.posY = sumY / follow.length;
+      } else if (!S.mapBoundsReady && !S.spectateFollowNick && !S.spectateFollowPid) {
         S.posX = (S.leftPos + S.rightPos) / 2;
         S.posY = (S.topPos + S.bottomPos) / 2;
       }
@@ -1242,8 +1721,10 @@
     }
     buildQTree();
     mouseCoordinateChange(S);
+    const tGrid = perfEnabled ? performance.now() : 0;
     drawGrid();
     drawCenterBackground();
+    if (perfEnabled) perfStats.gridMs = performance.now() - tGrid;
     if (S.nodesSortDirty !== false) {
       const tSort = perfEnabled ? performance.now() : 0;
       S.nodelist.sort((a, b) => a.size - b.size || a.id - b.id);
@@ -1254,17 +1735,54 @@
     }
     perfStats.nodes = S.nodelist.length;
     if (perfEnabled) S._perfMovePoints = 0;
+    if (perfEnabled) perfStats.preMs = performance.now() - tPre;
     const {ctx, canvasWidth, canvasHeight, viewZoom, nodeX, nodeY} = S;
+    const textZoomRatio = Math.ceil(10 * viewZoom) * .1;
+    S.textZoomRatio = textZoomRatio;
+    S.textInvZoom = 1 / textZoomRatio;
+    S.playRegion = findRegionForHost(S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl) || activeRegion || "ru";
+    S.formatMassLabel = formatMassLabel;
     const tDraw = perfEnabled ? performance.now() : 0;
     ctx.save();
     ctx.translate(canvasWidth / 2, canvasHeight / 2);
     ctx.scale(viewZoom, viewZoom);
     ctx.translate(-nodeX, -nodeY);
     drawCustomMapBackground(ctx);
-    for (let i = 0; i < S.nodelist.length; i++) {
-      S.nodelist[i].drawOneCell(ctx);
-    }
     ctx.restore();
+    const webgl = S.webglRenderer;
+    let usedWebgl = false;
+    if (webgl && webgl.ready) {
+      usedWebgl = !!webgl.renderCells(S, S.nodelist, S.webglDeps);
+      if (usedWebgl) {
+        // Overlay canvas composites in DOM; only blit when not mounted.
+        if (!S.webglOverlay) {
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.drawImage(webgl.canvas, 0, 0);
+        }
+        if (perfEnabled) perfStats.drawn = webgl.drawn || 0;
+      } else if (S.webglOverlay && webgl.canvas) {
+        webgl.canvas.style.visibility = "hidden";
+      }
+      if (usedWebgl && S.webglOverlay && webgl.canvas) {
+        webgl.canvas.style.visibility = "visible";
+      }
+    }
+    if (!usedWebgl) {
+      if (S.webglOverlay && S.webglRenderer && S.webglRenderer.canvas) {
+        S.webglRenderer.canvas.style.visibility = "hidden";
+      }
+      ctx.save();
+      ctx.translate(canvasWidth / 2, canvasHeight / 2);
+      ctx.scale(viewZoom, viewZoom);
+      ctx.translate(-nodeX, -nodeY);
+      let drawn = 0;
+      for (let i = 0; i < S.nodelist.length; i++) {
+        S.nodelist[i].drawOneCell(ctx);
+        drawn++;
+      }
+      ctx.restore();
+      if (perfEnabled) perfStats.drawn = drawn;
+    }
     if (perfEnabled) {
       perfStats.drawMs = performance.now() - tDraw;
       perfStats.movePoints = S._perfMovePoints || 0;
@@ -1349,7 +1867,10 @@
   }
   function drawCenterBackground() {
     const S = deps.S;
-    if (!(S == null ? void 0 : S.ctx) || !isBackgroundLoaded) return;
+    if (!(S == null ? void 0 : S.ctx)) return;
+    // Неофициальный сервер: без center.png / рекорда в центре карты
+    if (document.body.classList.contains("no-official-stats")) return;
+    if (!isBackgroundLoaded) return;
     const mapCenterX = (S.leftPos + S.rightPos) / 2;
     const mapCenterY = (S.topPos + S.bottomPos) / 2;
     const screenX = (mapCenterX - S.nodeX) * S.viewZoom + S.canvasWidth / 2;
@@ -1366,7 +1887,7 @@
       ctx.arc(screenX, screenY, radius, 0, 2 * Math.PI);
       ctx.closePath();
       ctx.clip();
-      ctx.drawImage(innerImage, screenX - scaledInnerImageWidth / 2, screenY - scaledInnerImageHeight / 2, scaledInnerImageWidth, scaledInnerImageHeight);
+      drawSkinStripImage(ctx, innerImage, screenX - scaledInnerImageWidth / 2, screenY - scaledInnerImageHeight / 2, scaledInnerImageWidth, scaledInnerImageHeight);
       ctx.restore();
     }
     ctx.drawImage(centerBackground, screenX - scaledBackgroundWidth / 2, screenY - scaledBackgroundHeight / 2, scaledBackgroundWidth, scaledBackgroundHeight);
@@ -1538,7 +2059,7 @@
   function getLeaderBoardRenderKey() {
     const S = deps2.S;
     if (!S) return "";
-    return S.leaderBoard.map(e => `${e.id}|${e.name}|${e.level}|${e.xp}`).join("\n");
+    return S.leaderBoard.map(e => `${e.id}|${e.name}|${e.level}`).join("\n");
   }
   function renderLeaderboardName(container, name) {
     const value = String(name || "");
@@ -1662,12 +2183,26 @@
     entryDiv.appendChild(nameSpan);
     return entryDiv;
   }
+  function updateLeaderboardTooltips() {
+    const S = deps2.S;
+    if (!S) return;
+    const rows = document.querySelectorAll("#toplistnow .Lednick");
+    rows.forEach((row, b) => {
+      const entry = S.leaderBoard[b];
+      if (!entry) return;
+      const tip = row.querySelector(".tooltip");
+      if (tip) tip.textContent = "XP: " + (entry.xp || 0);
+    });
+  }
   function drawCustomLeaderBoard() {
     var _a, _b;
     const S = deps2.S;
     if (!S) return;
     const renderKey = getLeaderBoardRenderKey();
-    if (renderKey === S.lastLeaderBoardRenderKey) return;
+    if (renderKey === S.lastLeaderBoardRenderKey) {
+      updateLeaderboardTooltips();
+      return;
+    }
     S.lastLeaderBoardRenderKey = renderKey;
     const toplistDiv = document.getElementById("toplistnow");
     if (!toplistDiv) return;
@@ -1699,7 +2234,10 @@
     const hooks = deps2.hooks;
     if (!S) return;
     const renderKey = getLeaderBoardRenderKey();
-    if (renderKey === S.lastLeaderBoardRenderKey) return;
+    if (renderKey === S.lastLeaderBoardRenderKey) {
+      updateLeaderboardTooltips();
+      return;
+    }
     S.lastLeaderBoardRenderKey = renderKey;
     const toplistDiv = document.getElementById("toplistnow");
     if (!toplistDiv) return;
@@ -2187,8 +2725,18 @@
     }
     function sendMouseMove() {
       if (!wsIsOpen()) return;
-      if (S.freeze) {
-        if (!(Math.abs(S.oldX - S.posX) < .1 && Math.abs(S.oldY - S.posY) < .1)) {
+      const spectating = !S.playerCells.length;
+      // Freeze: mouse on main cell center (0,0 of primary cell)
+      if (S.freeze && !spectating && S.playerCells.length) {
+        const main = S.playerCells[0];
+        if (main) {
+          S.posX = main.x;
+          S.posY = main.y;
+        }
+      }
+      // Spectate: overview follows camera aim (posX), not free cursor
+      if (S.freeze || spectating) {
+        if (!(Math.abs(S.oldX - S.posX) < .05 && Math.abs(S.oldY - S.posY) < .05)) {
           S.oldX = S.posX;
           S.oldY = S.posY;
           const msg = prepareData(21);
@@ -2565,7 +3113,8 @@
       node.isVirus = flagVirus;
       node.isEjected = flagEjected;
       node.isAgitated = flagAgitated;
-      if (type === 1) node.isFood = true;
+      if (type === 1 || type === 4) node.isFood = true; // type4 = AgarZ/Petri food w/ coords
+      if (type === 0 && playerId) node.playerId = playerId >>> 0;
       node.nx = posX;
       node.ny = posY;
       node.setSize(size);
@@ -2581,6 +3130,83 @@
       if (typeof onPlayerDeath === "function") {
         onPlayerDeath(S);
       } else {
+        showStatics();
+        if (typeof window.updateShareText === "function") window.updateShareText();
+        if (typeof window.renderDeathBanner === "function") window.renderDeathBanner();
+      }
+    }
+  }
+  /** Apply worker-parsed UPDATE_NODES (no BinaryReader on main). */
+  function applyUpdateNodesParsed(S, packet, hooks) {
+    const {Cell: Cell2, onPlayerDeath} = hooks;
+    const kills = packet.kills || [];
+    const upserts = packet.upserts || [];
+    const destroys = packet.destroys || [];
+    S.timestamp = Date.now();
+    S.ua = false;
+    S.nodesSortDirty = true;
+    for (let i = 0; i < kills.length; i++) {
+      const {killedId, killerId} = kills[i];
+      const killer = S.nodes[killerId];
+      const killedNode = S.nodes[killedId];
+      if (killer && killedNode) {
+        killedNode.destroy();
+        killedNode.ox = killedNode.x;
+        killedNode.oy = killedNode.y;
+        killedNode.oSize = killedNode.size;
+        killedNode.nx = killer.x;
+        killedNode.ny = killer.y;
+        killedNode.nSize = killedNode.size;
+        killedNode.updateTime = S.timestamp;
+      }
+    }
+    for (let i = 0; i < upserts.length; i++) {
+      const u = upserts[i];
+      const nodeid = u.id;
+      let node = S.nodes[nodeid];
+      if (node) {
+        node.updatePos();
+        node.ox = node.x;
+        node.oy = node.y;
+        node.oSize = node.size;
+        node.color = u.color;
+      } else {
+        node = new Cell2(nodeid, u.x, u.y, u.size, u.color, u.name);
+        S.nodelist.push(node);
+        S.nodes[nodeid] = node;
+        node.ka = u.x;
+        node.la = u.y;
+        if (u.playerId === S.ownerPlayerId) {
+          const overlays = document.getElementById("overlays");
+          if (overlays) overlays.style.display = "none";
+          node.isOwn = true;
+          S.playerCells.push(node);
+          if (1 == S.playerCells.length) {
+            S.nodeX = node.x;
+            S.nodeY = node.y;
+          }
+        }
+      }
+      if (node) syncNodeStickerFromUpdate(S, node, u.name, u.stickerFromUpdate);
+      node.isVirus = u.flagVirus;
+      node.isEjected = u.flagEjected;
+      node.isAgitated = u.flagAgitated;
+      if (u.isFood) node.isFood = true;
+      if (u.type === 0 && u.playerId) node.playerId = u.playerId >>> 0;
+      node.nx = u.x;
+      node.ny = u.y;
+      node.setSize(u.size);
+      node.updateTime = S.timestamp;
+      node.flag = u.spiked;
+      if (u.name) node.setName(u.name);
+    }
+    for (let i = 0; i < destroys.length; i++) {
+      const node = S.nodes[destroys[i]];
+      if (node) node.destroy();
+    }
+    if (S.ua && S.playerCells.length === 0) {
+      if (typeof onPlayerDeath === "function") onPlayerDeath(S);
+      else {
         showStatics();
         if (typeof window.updateShareText === "function") window.updateShareText();
         if (typeof window.renderDeathBanner === "function") window.renderDeathBanner();
@@ -2660,7 +3286,31 @@
         break;
 
        case ServerOpcode.CLEAR_NODES:
-        S.playerCells = [];
+        // CLEAR alone wiped playerCells without S.ua → death screen skipped (AgarZ)
+        if (S.playerCells.length > 0) {
+          S.ua = true;
+          S.freeze = false;
+          try {
+            const freezeEl = document.querySelector("#freeze");
+            if (freezeEl) freezeEl.style.display = "none";
+          } catch (_) {}
+          S.playerCells = [];
+          if (S._spectateFollowTimer) {
+            clearInterval(S._spectateFollowTimer);
+            S._spectateFollowTimer = null;
+          }
+          S.spectateFollowNick = null;
+          S.spectateFollowPid = 0;
+          showStatics();
+          if (typeof window.updateShareText === "function") {
+            try { window.updateShareText(S); } catch (_) {
+              try { window.updateShareText(); } catch (_) {}
+            }
+          }
+          if (typeof window.renderDeathBanner === "function") window.renderDeathBanner();
+        } else {
+          S.playerCells = [];
+        }
         break;
 
        case ServerOpcode.CUSTOM_LB:
@@ -2737,6 +3387,8 @@
             S.nodeX = S.posX;
             S.nodeY = S.posY;
             S.viewZoom = S.posSize;
+            S.oldX = S.posX - 999;
+            S.oldY = S.posY - 999;
           }
           (_g = hooks.onGameHandshakeReady) == null ? void 0 : _g.call(hooks);
           break;
@@ -2772,6 +3424,211 @@
       handleWsMessage
     };
   }
+
+  /** Apply structured packet from ws-parse-worker (Version A). */
+  function applyParsedWsPacket(S, packet, hooks, bridge) {
+    if (!packet || !packet.type) return;
+    switch (packet.type) {
+      case "ban":
+        hideConnectVerifyOverlay();
+        showBanBanner(packet.banRemaining, packet.banReason);
+        S.connectInProgress = false;
+        S.gameHandshakeDone = false;
+        if (S.wsPingInterval) {
+          clearInterval(S.wsPingInterval);
+          S.wsPingInterval = null;
+        }
+        if (S.ws) {
+          safeCloseSocket(S.ws);
+          S.ws = null;
+        }
+        break;
+      case "ping":
+        S.ping = Date.now() - S.pingstamp;
+        if (hooks.setPingDisplay) hooks.setPingDisplay(S.ping);
+        break;
+      case "updateNodes":
+        if (hooks.applyUpdateNodesParsed) hooks.applyUpdateNodesParsed(packet);
+        else if (hooks.updateNodesParsed) hooks.updateNodesParsed(packet);
+        break;
+      case "updateCamera":
+        S.posSize = 0.15;
+        break;
+      case "clearNodes":
+        if (S.playerCells.length > 0) {
+          S.ua = true;
+          S.freeze = false;
+          try {
+            const freezeEl = document.querySelector("#freeze");
+            if (freezeEl) freezeEl.style.display = "none";
+          } catch (_) {}
+          S.playerCells = [];
+          if (S._spectateFollowTimer) {
+            clearInterval(S._spectateFollowTimer);
+            S._spectateFollowTimer = null;
+          }
+          S.spectateFollowNick = null;
+          S.spectateFollowPid = 0;
+          showStatics();
+          if (typeof window.updateShareText === "function") {
+            try { window.updateShareText(S); } catch (_) {
+              try { window.updateShareText(); } catch (_) {}
+            }
+          }
+          if (typeof window.renderDeathBanner === "function") window.renderDeathBanner();
+        } else {
+          S.playerCells = [];
+        }
+        break;
+      case "customLb":
+        S.noRanking = true;
+        S.leaderBoard = packet.entries || [];
+        if (hooks.drawCustomLeaderBoard) hooks.drawCustomLeaderBoard();
+        break;
+      case "ffaLb": {
+        S.noRanking = false;
+        const entries = packet.entries || [];
+        S.leaderBoard = entries.map((e) => ({
+          id: e.id,
+          name: e.name,
+          level: e.xp && hooks.getLevel ? hooks.getLevel(e.xp) : -1,
+          xp: e.xp || 0
+        }));
+        if (hooks.drawLeaderBoard) hooks.drawLeaderBoard();
+        break;
+      }
+      case "borders":
+        S.leftPos = packet.left;
+        S.topPos = packet.top;
+        S.rightPos = packet.right;
+        S.bottomPos = packet.bottom;
+        S.foodMinSize = packet.foodMinSize;
+        S.foodMaxSize = packet.foodMaxSize;
+        S.ownerPlayerId = packet.ownerPlayerId;
+        S.mapBoundsReady = true;
+        repositionFoodNodes(S);
+        S.mapWidth = (S.rightPos + S.leftPos) / 2;
+        S.mapHeight = (S.bottomPos + S.topPos) / 2;
+        S.posX = (S.rightPos + S.leftPos) / 2;
+        S.posY = (S.bottomPos + S.topPos) / 2;
+        S.posSize = 1;
+        if (S.playerCells.length === 0) {
+          S.nodeX = S.posX;
+          S.nodeY = S.posY;
+          S.viewZoom = S.posSize;
+          S.oldX = S.posX - 999;
+          S.oldY = S.posY - 999;
+        }
+        if (bridge && bridge.syncBounds) bridge.syncBounds();
+        if (hooks.onGameHandshakeReady) hooks.onGameHandshakeReady();
+        break;
+      case "chat":
+        if (hooks.addChatParsed) hooks.addChatParsed(packet);
+        break;
+      case "xp":
+        if (hooks.onUpdateXp) hooks.onUpdateXp(packet.xp);
+        break;
+      case "sticker":
+        if (S.showStickers) {
+          applyStickerPacket(S, packet.stickerPlayerId, packet.stickerId, !!packet.enabled);
+        }
+        break;
+      default:
+        break;
+    }
+  }
+
+  /**
+   * Version A: parse WS binaries off-main via Worker; apply in order on main.
+   * Falls back to sync handleWsMessage if Worker unavailable.
+   */
+  function createWsParseBridge(S, hooks, syncFallback) {
+    let worker = null;
+    let enabled = false;
+    let nextId = 0;
+    let nextApply = 0;
+    const pending = new Map();
+
+    function syncBounds() {
+      if (!worker || !enabled) return;
+      try {
+        worker.postMessage({
+          cmd: "setBounds",
+          ready: !!S.mapBoundsReady,
+          left: S.leftPos,
+          top: S.topPos,
+          right: S.rightPos,
+          bottom: S.bottomPos
+        });
+      } catch (_) {}
+    }
+
+    function flushPending() {
+      while (pending.has(nextApply)) {
+        const packet = pending.get(nextApply);
+        pending.delete(nextApply);
+        nextApply++;
+        try {
+          applyParsedWsPacket(S, packet, hooks, { syncBounds });
+        } catch (err) {
+          console.error("[ws-worker] apply failed", err);
+        }
+      }
+    }
+
+    try {
+      worker = new Worker("ws-parse-worker.js");
+      worker.onmessage = (ev) => {
+        const msg = ev.data || {};
+        if (msg.id == null) return;
+        if (!msg.ok) {
+          console.warn("[ws-worker] parse error", msg.error);
+          pending.set(msg.id, { type: "unknown" });
+          flushPending();
+          return;
+        }
+        pending.set(msg.id, msg.packet);
+        flushPending();
+      };
+      worker.onerror = (err) => {
+        console.warn("[ws-worker] disabled, sync fallback", err);
+        enabled = false;
+      };
+      enabled = true;
+      syncBounds();
+    } catch (err) {
+      console.warn("[ws-worker] unavailable", err);
+      enabled = false;
+      worker = null;
+    }
+
+    function onRawDataView(dv) {
+      if (!enabled || !worker) {
+        syncFallback(dv);
+        return;
+      }
+      const id = nextId++;
+      let buffer;
+      try {
+        buffer = dv.buffer.slice(dv.byteOffset, dv.byteOffset + dv.byteLength);
+      } catch (_) {
+        syncFallback(dv);
+        return;
+      }
+      try {
+        worker.postMessage({ cmd: "parse", id, buffer }, [buffer]);
+      } catch (_) {
+        syncFallback(dv);
+      }
+    }
+
+    return {
+      onRawDataView,
+      syncBounds,
+      isEnabled: () => enabled
+    };
+  }
+
   function attachHandlers(S, hooks = {}) {
     const api = createHandlers(S, hooks);
     Object.assign(S.api, api);
@@ -2824,6 +3681,8 @@
       foodMinSize: 0,
       foodMaxSize: 0,
       ownerPlayerId: -1,
+      spectateFollowNick: null,
+      spectateFollowPid: 0,
       mapWidth: 5e3,
       mapHeight: 5e3,
       viewZoom: 1,
@@ -2866,6 +3725,7 @@
       smoothRender: 2,
       closebord: false,
       enableMouseClicks: false,
+      spectateAutoFollow: false,
       mouseSplitButton: 3,
       mouseEjectButton: 1,
       showGlow: true,
@@ -2912,6 +3772,7 @@
       ejectPressedByTouch: false,
       pinchZoomStartDistance: 0,
       isPinching: false,
+      uiTouchIds: null,
       localStickerHeld: false,
       localStickerId: null,
       activeStickersByNode: Object.create(null),
@@ -2949,6 +3810,8 @@
   var deps3 = {
     S: null,
     getSkinImage,
+    getOwnedSkinDrawable,
+    isSkinImageReady,
     loadCachedImage,
     normalizeNick
   };
@@ -2986,6 +3849,9 @@
   }
   function getClientCellColor(cell) {
     const S = deps3.S;
+    if (cell.isVirus && /sixz\.ru:6017|:6017\b/i.test(String(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl || ""))) {
+      return "#ff9900";
+    }
     if (!S.customClientColors) return null;
     if (cell.isVirus) return S.clientColorVirus;
     if (cell.isFood) return S.clientColorFood;
@@ -3020,6 +3886,7 @@
     _stroke: false,
     _strokeColor: "#000000",
     _size: 16,
+    _font: "Ubuntu",
     _canvas: null,
     _ctx: null,
     _dirty: false,
@@ -3033,6 +3900,13 @@
     setScale(a) {
       if (this._scale != a) {
         this._scale = a;
+        this._dirty = true;
+      }
+    },
+    setFont(a) {
+      const next = a || "Ubuntu";
+      if (this._font !== next) {
+        this._font = next;
         this._dirty = true;
       }
     },
@@ -3059,15 +3933,18 @@
       if (null == this._canvas) {
         this._canvas = document.createElement("canvas");
         this._ctx = this._canvas.getContext("2d");
+        this._ver = 0;
       }
       if (this._dirty) {
         this._dirty = false;
+        this._ver = (this._ver || 0) + 1;
         const canvas = this._canvas;
         const ctx = this._ctx;
         const value = this._value;
         const scale = this._scale;
         const fontsize = this._size;
-        const font = fontsize + "px Ubuntu";
+        const family = this._font || "Ubuntu";
+        const font = fontsize + "px " + family;
         ctx.font = font;
         const h = ~~(.2 * fontsize);
         const wd = fontsize * .1;
@@ -3160,6 +4037,12 @@
       this.name = name;
       this._skinNameKey = null;
       this._skinId = null;
+      this._nameLower = name ? name.toLowerCase() : "";
+      this._txtNameVal = void 0;
+      this._txtNameSize = 0;
+      this._txtMassVal = -1;
+      this._txtZoom = 0;
+      this._txtNameStroke = null;
       const size = this.getNameSize();
       if (!this.nameCache) {
         this.nameCache = new UText(size, "#FFFFFF", true, "#000000");
@@ -3167,6 +4050,8 @@
         this.nameCache.setSize(size);
       }
       this.nameCache.setValue(name);
+      this._txtNameVal = name;
+      this._txtNameSize = size;
     },
     setSize(size) {
       this.nSize = size;
@@ -3176,6 +4061,7 @@
       } else {
         this.sizeCache.setSize(sizeHalf);
       }
+      this._txtMassSize = sizeHalf;
     },
     getNumPoints() {
       return 0;
@@ -3219,7 +4105,7 @@
       const base = this.getEffectiveColor();
       const parseColor = i => {
         const hexPart = base && base.length >= i + 2 ? base.substr(i, 2) : "00";
-        let c = Math.floor(parseInt(hexPart, 16) * .9).toString(16);
+        let c = Math.floor(parseInt(hexPart, 16) * .78).toString(16);
         return c.length === 1 ? "0" + c : c;
       };
       return `#${parseColor(1)}${parseColor(3)}${parseColor(5)}`;
@@ -3229,8 +4115,8 @@
       if (!this.shouldRender()) return;
       const S = deps3.S;
       const getSkinImage2 = deps3.getSkinImage || getSkinImage;
+      const getOwnedSkinDrawable2 = deps3.getOwnedSkinDrawable || getOwnedSkinDrawable;
       const loadCachedImage2 = deps3.loadCachedImage || loadCachedImage;
-      const normalizeNick2 = deps3.normalizeNick || normalizeNick;
       const transparent = S.transparent || new Set;
       const invisible = S.invisible || new Set;
       const rotation = S.rotation || new Set;
@@ -3244,31 +4130,30 @@
       }
       let renderSize = this.size;
       if (renderSize === 0) renderSize = 20;
-      const noBorder = S.closebord || S.renderQuality === "low";
-      ctx.lineWidth = noBorder ? 0 : 10;
       ctx.lineCap = "round";
       ctx.lineJoin = this.isVirus ? "miter" : "round";
-      const isTransp = S.showSkin && transparent.has(this.name);
+      const normalizeNickFn = deps3.normalizeNick || normalizeNick;
+      const skinName = normalizeNickFn(this.name);
+      if (this._skinNameKey !== skinName) {
+        this._skinNameKey = skinName;
+        this._skinId = null;
+      }
+      const skinId = skinList[skinName] || null;
+      if (this._skinId !== skinId) this._skinId = skinId;
+      const wantTransp = !!(S.showSkin && !this.isVirus && transparent.has(this.name));
+      // Transparent body only when the real skin is loaded — never leave an invisible ghost.
+      const ownedSkinImg = wantTransp && skinId ? getOwnedSkinDrawable2(skinId) : null;
+      const isTransp = !!(wantTransp && ownedSkinImg);
       const cellColor = this.getEffectiveColor();
       ctx.fillStyle = isTransp ? "rgba(0,0,0,0)" : cellColor;
-      ctx.strokeStyle = isTransp ? "rgba(0,0,0,0)" : simpleRender ? cellColor : this.getStrokeColor();
       ctx.beginPath();
       ctx.arc(this.x, this.y, renderSize, 0, 2 * Math.PI);
       ctx.closePath();
       const useVirusImageFill = this.isVirus && !isTransp && drawVirusFillBackground(ctx, this, renderSize, simpleRender, bigPointSize);
-      if (!noBorder) ctx.stroke();
       if (!useVirusImageFill) ctx.fill();
       if (S.showSkin && !this.isVirus) {
-        const normalizeNickFn = deps3.normalizeNick || normalizeNick;
-        const skinName = (_a = this._skinNameKey) != null ? _a : normalizeNickFn(this.name);
-        if (this._skinNameKey !== skinName) {
-          this._skinNameKey = skinName;
-          this._skinId = skinList[skinName] || null;
-        }
-        const skinId = this._skinId;
-        if (skinId) {
-          const skinImg = getSkinImage2(skinId);
-          if (skinImg && skinImg.complete && skinImg.width > 0) {
+        const skinImg = isTransp ? ownedSkinImg : getCellSkinImage(S, this.name, skinId, getSkinImage2, loadCachedImage2);
+        if (skinImg && isSkinImageReady(skinImg)) {
             ctx.save();
             ctx.clip();
             if (typeof this.skinZoom === "undefined") this.skinZoom = 1;
@@ -3281,9 +4166,6 @@
               this.skinZoom += (1 - this.skinZoom) * .05;
               this.skinPhase = 0;
             }
-            const fw = skinImg.width;
-            const fh = skinImg.height;
-            const frame = fw > fh ? Math.floor(Date.now() / 100 % Math.floor(fw / fh)) : 0;
             const sz = simpleRender ? this.size * this.skinZoom : bigPointSize * this.skinZoom;
             if (rotation.has(skinName)) {
               if (!this._rot) {
@@ -3315,18 +4197,24 @@
               this._rot.current += (this._rot.target - this._rot.current) * .12;
               ctx.translate(this.x, this.y);
               ctx.rotate(this._rot.current);
-              ctx.drawImage(skinImg, fw > fh ? frame * fh : 0, 0, fh, fh, -sz, -sz, sz * 2, sz * 2);
+              drawSkinStripImage(ctx, skinImg, -sz, -sz, sz * 2, sz * 2);
             } else {
-              ctx.drawImage(skinImg, fw > fh ? frame * fh : 0, 0, fh, fh, this.x - sz, this.y - sz, sz * 2, sz * 2);
+              drawSkinStripImage(ctx, skinImg, this.x - sz, this.y - sz, sz * 2, sz * 2);
             }
             ctx.restore();
           }
-        }
       }
       const mass = Math.floor(this.size * this.size * .01);
       if (typeof this.glowActive === "undefined") this.glowActive = false;
-      if (!this.glowActive && mass >= 22400) this.glowActive = true;
-      if (this.glowActive && mass <= 22300) this.glowActive = false;
+      // MegaSplit / AgarZ (6013) / Delta (6014) — no mass-limit glow on these hosts
+      const _host = String(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl || "");
+      const _noMassLimitGlow = /megasplit|:6013\/|sixz\.ru:6013|:6014\/|sixz\.ru:6017|:6017\/|\/d(?:ffa|rookery|arctida)/i.test(_host);
+      if (_noMassLimitGlow) {
+        this.glowActive = false;
+      } else {
+        if (!this.glowActive && mass >= 22400) this.glowActive = true;
+        if (this.glowActive && mass <= 22300) this.glowActive = false;
+      }
       if (this.glowActive && S.showGlow) {
         const effectImg = loadCachedImage2("/photo/limited.png");
         if (effectImg && effectImg.complete && effectImg.width > 0) {
@@ -3356,36 +4244,82 @@
       if (this.id !== 0) {
         const x = this.x;
         const y = this.y;
-        const zoomRatio = Math.ceil(10 * S.viewZoom) * .1;
-        const invZoom = 1 / zoomRatio;
+        const zoomRatio = S.textZoomRatio;
+        const invZoom = S.textInvZoom;
+        const screenSize = this.size * S.viewZoom;
+        const showMassLabels = screenSize > 28;
+        if (zoomRatio !== this._txtZoom) {
+          this._txtZoom = zoomRatio;
+          if (this.nameCache) this.nameCache.setScale(zoomRatio);
+          if (this.sizeCache) this.sizeCache.setScale(zoomRatio);
+        }
         if (S.showName && this.name && this.nameCache && this.size > 10) {
           let displayName = this.name;
-          const lowerName = this.name.toLowerCase();
-          if (invisible.has(lowerName)) displayName = "";
-          this.nameCache.setValue(displayName);
-          this.nameCache.setSize(this.getNameSize());
-          this.nameCache.setScale(zoomRatio);
-          this.nameCache.setStroke(S.renderQuality !== "low");
-          const img = this.nameCache.render();
-          let drawWidth = img.width * invZoom;
-          let drawHeight = img.height * invZoom;
-          const MAX_WIDTH_FACTOR = 2;
-          const maxAllowedWidth = this.size * MAX_WIDTH_FACTOR;
-          if (drawWidth > maxAllowedWidth) {
-            const shrink = maxAllowedWidth / drawWidth;
-            drawWidth *= shrink;
-            drawHeight *= shrink;
+          if (isBubbleSkinHost(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl)) {
+            displayName = bubbleNickDisplay(this.name);
+          } else if (!isPetriSkinHost(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl) && invisible.has(this._nameLower)) {
+            displayName = "";
           }
-          const drawX = x - drawWidth / 2;
-          const drawY = y - drawHeight / 2;
-          ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+          if (displayName) {
+            const nameSize = this.getNameSize();
+            const light = isLightLabelRegion(S.playRegion);
+            const wantsStroke = !light && S.renderQuality !== "low";
+            const labelFont = light ? "Arial" : "Ubuntu";
+            if (displayName !== this._txtNameVal) {
+              this._txtNameVal = displayName;
+              this.nameCache.setValue(displayName);
+            }
+            if (nameSize !== this._txtNameSize) {
+              this._txtNameSize = nameSize;
+              this.nameCache.setSize(nameSize);
+            }
+            if (wantsStroke !== this._txtNameStroke) {
+              this._txtNameStroke = wantsStroke;
+              this.nameCache.setStroke(wantsStroke);
+            }
+            if (labelFont !== this._txtNameFont) {
+              this._txtNameFont = labelFont;
+              this.nameCache.setFont(labelFont);
+            }
+            const img = this.nameCache.render();
+            let drawWidth = img.width * invZoom;
+            let drawHeight = img.height * invZoom;
+            const maxAllowedWidth = this.size * 2;
+            if (drawWidth > maxAllowedWidth) {
+              const shrink = maxAllowedWidth / drawWidth;
+              drawWidth *= shrink;
+              drawHeight *= shrink;
+            }
+            ctx.drawImage(img, x - drawWidth / 2, y - drawHeight / 2, drawWidth, drawHeight);
+          }
         }
-        if (S.renderQuality !== "low" && S.showMass && !this.isVirus && !this.isEjected && !this.isAgitated && this.size > 100) {
-          const massVal = Math.floor(this.size * this.size * .01);
-          this.sizeCache.setValue(massVal);
-          this.sizeCache.setScale(zoomRatio);
+        if (S.renderQuality !== "low" && S.showMass && showMassLabels && !this.isVirus && !this.isEjected && !this.isAgitated && this.size > 100) {
+          if (!this.sizeCache) {
+            const sizeHalf = this.getNameSize() * .5;
+            this.sizeCache = new UText(sizeHalf, "#FFFFFF", true, "#000000");
+            this._txtMassSize = sizeHalf;
+            if (this._txtZoom) this.sizeCache.setScale(this._txtZoom);
+          }
+          const light = isLightLabelRegion(S.playRegion);
+          const massFont = light ? "Arial" : "Ubuntu";
+          const wantsMassStroke = !light;
+          if (this._txtMassStroke !== wantsMassStroke) {
+            this._txtMassStroke = wantsMassStroke;
+            this.sizeCache.setStroke(wantsMassStroke);
+          }
+          if (this._txtMassFont !== massFont) {
+            this._txtMassFont = massFont;
+            this.sizeCache.setFont(massFont);
+          }
+          const massLabel = formatMassLabel(mass, S.playRegion || "ru", S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl);
+          if (massLabel !== this._txtMassVal) {
+            this._txtMassVal = massLabel;
+            this.sizeCache.setValue(massLabel);
+          }
           const img = this.sizeCache.render();
-          ctx.drawImage(img, x - img.width * invZoom / 2, y + img.height * .9 * invZoom, img.width * invZoom, img.height * invZoom);
+          const massW = img.width * invZoom;
+          const massH = img.height * invZoom;
+          ctx.drawImage(img, x - massW / 2, y + massH * .9, massW, massH);
         }
       }
       ctx.restore();
@@ -3691,6 +4625,31 @@
     }
     S.mainCanvas = S.nCanvas = document.getElementById("canvas");
     S.ctx = S.mainCanvas.getContext("2d");
+    if (typeof createWebGL2Renderer === "function" && !S.webglRenderer) {
+      try {
+        S.webglRenderer = createWebGL2Renderer();
+        S.webglDeps = {
+          getSkinImage,
+          getOwnedSkinDrawable,
+          isSkinImageReady,
+          loadCachedImage,
+          normalizeNick,
+          getStickerUrl
+        };
+        if (S.webglRenderer && S.webglRenderer.canvas) {
+          const stage = document.getElementById("canvas-stage") || S.mainCanvas.parentElement;
+          const glCanvas = S.webglRenderer.canvas;
+          if (stage && !glCanvas.parentElement) {
+            glCanvas.style.cssText = "position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;";
+            stage.appendChild(glCanvas);
+            S.webglOverlay = true;
+          }
+        }
+      } catch (e) {
+        S.webglRenderer = null;
+        console.warn("WebGL2 renderer disabled", e);
+      }
+    }
     function syncMouseFromEvent(event2) {
       const dpr = S.dpr || getEffectiveDpr(S);
       S.rawMouseX = event2.clientX * dpr;
@@ -3702,17 +4661,74 @@
       passive: true
     });
     const updateMouseAim = () => {
-      let x = S.X < S.rightPos ? S.X : S.rightPos;
-      let y = S.Y < S.bottomPos ? S.Y : S.bottomPos;
-      x = -S.rightPos > x ? -S.rightPos : x;
-      y = -S.bottomPos > y ? -S.bottomPos : y;
-      S.posX = x;
-      S.posY = y;
+      if (!S.mapBoundsReady) {
+        S.posX = S.X;
+        S.posY = S.Y;
+        return;
+      }
+      S.posX = Math.max(S.leftPos, Math.min(S.rightPos, S.X));
+      S.posY = Math.max(S.topPos, Math.min(S.bottomPos, S.Y));
     };
-    S.mainCanvas.addEventListener("mousedown", () => {
-      if (!S.playerCells.length) {
-        updateMouseAim();
+    /** Overview moves on spectate-click (op 1), not mouse alone — auto-click while following. */
+    function sendSpectateAimClick() {
+      if (S.playerCells.length) return;
+      S.oldX = S.posX - 999;
+      S.oldY = S.posY - 999;
+      if (typeof hooks.sendMouseMove === "function") hooks.sendMouseMove();
+      const pid = S.spectateFollowPid | 0;
+      if (pid && hooks.prepareData && hooks.wsSend) {
+        const msg = hooks.prepareData(5);
+        msg.setUint8(0, 1);
+        msg.setUint32(1, pid, true);
+        hooks.wsSend(msg);
+      } else if (typeof hooks.sendUint8 === "function") {
         hooks.sendUint8(1);
+      }
+    }
+    function stopSpectateFollowAutoClick() {
+      if (S._spectateFollowTimer) {
+        clearInterval(S._spectateFollowTimer);
+        S._spectateFollowTimer = null;
+      }
+    }
+    function startSpectateFollowAutoClick() {
+      stopSpectateFollowAutoClick();
+      S._spectateFollowTimer = setInterval(() => {
+        if (S.playerCells.length || !(S.spectateFollowNick || S.spectateFollowPid)) {
+          stopSpectateFollowAutoClick();
+          return;
+        }
+        const follow = collectSpectateFollowCells(S);
+        if (follow.length) {
+          let sx = 0;
+          let sy = 0;
+          for (let i = 0; i < follow.length; i++) {
+            sx += follow[i].x;
+            sy += follow[i].y;
+          }
+          S.posX = sx / follow.length;
+          S.posY = sy / follow.length;
+        }
+        sendSpectateAimClick();
+      }, 250);
+    }
+    S.mainCanvas.addEventListener("mousedown", () => {
+      if (S.playerCells.length) return;
+      const hit = findSpectateHit(S, S.X, S.Y);
+      if (hit && S.spectateAutoFollow) {
+        S.spectateFollowNick = normalizeSpectateNick(hit.name) || null;
+        S.spectateFollowPid = hit.playerId > 0 ? hit.playerId >>> 0 : 0;
+        S.posX = hit.x;
+        S.posY = hit.y;
+        sendSpectateAimClick();
+        startSpectateFollowAutoClick();
+      } else {
+        S.spectateFollowNick = null;
+        S.spectateFollowPid = 0;
+        stopSpectateFollowAutoClick();
+        // Авто-наблюдение выкл.: клик везде — точка под курсором (не центр клетки)
+        updateMouseAim();
+        sendSpectateAimClick();
       }
     });
     if (S.touchable) {
@@ -3887,8 +4903,11 @@
         if (!keyPressed.freeze && S.playerCells.length > 0) {
           S.freeze = !S.freeze;
           if (S.freeze) {
-            S.posX = S.X;
-            S.posY = S.Y;
+            const main = S.playerCells[0];
+            if (main) {
+              S.posX = main.x;
+              S.posY = main.y;
+            }
             document.querySelector("#freeze").style.display = "flex";
           } else {
             document.querySelector("#freeze").style.display = "none";
@@ -4142,9 +5161,22 @@
       });
     });
     S.dpr = getEffectiveDpr(S);
+    if (!S.uiTouchIds) S.uiTouchIds = new Set();
+    function isUiTouchId(id) {
+      return S.uiTouchIds && S.uiTouchIds.has(id);
+    }
+    function collectGameTouches(touchList) {
+      const out = [];
+      for (let i = 0; i < touchList.length; i++) {
+        const t = touchList[i];
+        if (!isUiTouchId(t.identifier)) out.push(t);
+      }
+      return out;
+    }
     function onTouchStart(e) {
       for (let i = 0; i < e.changedTouches.length; i++) {
         const touch = e.changedTouches[i];
+        if (isUiTouchId(touch.identifier)) continue;
         const size = ~~(S.canvasWidth / 7);
         if (touch.clientX * S.dpr > S.canvasWidth - size && touch.clientY * S.dpr > S.canvasHeight - size) {
           hooks.sendMouseMove();
@@ -4176,9 +5208,11 @@
     }
     function onTouchMove(e) {
       e.preventDefault();
-      if (e.touches.length === 2) {
-        const dx = e.touches[0].clientX - e.touches[1].clientX;
-        const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const gameTouches = collectGameTouches(e.touches);
+      // Pinch только если 2 пальца на карте/джойстике — не считая кнопок split/eject
+      if (gameTouches.length === 2) {
+        const dx = gameTouches[0].clientX - gameTouches[1].clientX;
+        const dy = gameTouches[0].clientY - gameTouches[1].clientY;
         const currentDistance = Math.sqrt(dx * dx + dy * dy);
         if (!S.isPinching) {
           S.pinchZoomStartDistance = currentDistance;
@@ -4193,8 +5227,10 @@
         }
         return;
       }
+      if (gameTouches.length < 2) S.isPinching = false;
       for (let i = 0; i < e.changedTouches.length; i++) {
         const touch = e.changedTouches[i];
+        if (isUiTouchId(touch.identifier)) continue;
         if (S.leftTouchID === touch.identifier) {
           S.leftTouchPos.reset(touch.clientX * S.dpr, touch.clientY * S.dpr);
           S.leftVector.copyFrom(S.leftTouchPos);
@@ -4216,11 +5252,13 @@
       S.touches = e.touches;
     }
     function onTouchEnd(e) {
-      if (e.touches.length < 2) {
+      const gameTouchesLeft = collectGameTouches(e.touches);
+      if (gameTouchesLeft.length < 2) {
         S.isPinching = false;
       }
       for (let i = 0; i < e.changedTouches.length; i++) {
         const touch = e.changedTouches[i];
+        if (S.uiTouchIds) S.uiTouchIds.delete(touch.identifier);
         if (S.leftTouchID === touch.identifier) {
           S.leftTouchID = -1;
           S.leftVector.reset(0, 0);
@@ -4240,6 +5278,7 @@
           clearInterval(S.ejectInterval);
           S.ejectInterval = null;
         }
+        if (S.uiTouchIds) S.uiTouchIds.clear();
       }
       S.touches = e.touches;
     }
@@ -4247,6 +5286,17 @@
       const ejectBtn = document.getElementById("touch-eject");
       const splitBtn = document.getElementById("touch-split");
       if (!ejectBtn || !splitBtn) return;
+      if (!S.uiTouchIds) S.uiTouchIds = new Set();
+      const markUiTouches = (e) => {
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          S.uiTouchIds.add(e.changedTouches[i].identifier);
+        }
+      };
+      const unmarkUiTouches = (e) => {
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          S.uiTouchIds.delete(e.changedTouches[i].identifier);
+        }
+      };
       const startEject = () => {
         if (S.ejectPressedByTouch) return;
         S.ejectPressedByTouch = true;
@@ -4274,13 +5324,20 @@
       };
       ejectBtn.addEventListener("touchstart", e => {
         e.preventDefault();
+        e.stopPropagation();
+        markUiTouches(e);
         startEject();
       }, {passive: false});
       ejectBtn.addEventListener("touchend", e => {
         e.preventDefault();
+        e.stopPropagation();
+        unmarkUiTouches(e);
         stopEject();
       }, {passive: false});
-      ejectBtn.addEventListener("touchcancel", stopEject, {passive: false});
+      ejectBtn.addEventListener("touchcancel", e => {
+        unmarkUiTouches(e);
+        stopEject();
+      }, {passive: false});
       ejectBtn.addEventListener("mousedown", e => {
         e.preventDefault();
         startEject();
@@ -4289,7 +5346,17 @@
       ejectBtn.addEventListener("mouseleave", stopEject);
       splitBtn.addEventListener("touchstart", e => {
         e.preventDefault();
+        e.stopPropagation();
+        markUiTouches(e);
         doSplit();
+      }, {passive: false});
+      splitBtn.addEventListener("touchend", e => {
+        e.preventDefault();
+        e.stopPropagation();
+        unmarkUiTouches(e);
+      }, {passive: false});
+      splitBtn.addEventListener("touchcancel", e => {
+        unmarkUiTouches(e);
       }, {passive: false});
       splitBtn.addEventListener("mousedown", e => {
         e.preventDefault();
@@ -4308,10 +5375,177 @@
       getBind: action => getBind(S, action)
     };
   }
-  var STATS_API = "https://api.agar.su:6009";
+  var STATS_API = "https://api.agar.su/stats-api";
   var STATS_PAGE_URL = "https://agar.su/stats/";
   var STATS_PROFILE_BASE = "https://agar.su/stats/users/?id=";
   var STATS_CLAN_PROFILE_BASE = "https://agar.su/stats/clans/?id=";
+  var STATS_RECORDS_FEED = STATS_API + "/api/records/feed";
+  var STATS_FEED_POLL_MS = 10000;
+  var STATS_FEED_STORAGE_KEY = "agar_stats_feed_since";
+
+  function resolveOfficialServerId(connectionUrl) {
+    const host = String(connectionUrl || "").toLowerCase().replace(/^wss?:\/\//, "");
+    if (!host) return null;
+    if (host.includes("ffa.agar.su")) return "ffa";
+    if (host.includes("ms.agar.su:6001") || host === "ms.agar.su" || host.startsWith("ms.agar.su/")) return "ms";
+    if (host.includes("ms.agar.su:6004")) return "pvp1";
+    if (host.includes("ms.agar.su:6005")) return "pvp2";
+    if (host.includes("ms.agar.su:6002")) return "tournament";
+    if (host.includes("ms.agar.su:6003")) return "tournament2";
+    return null;
+  }
+
+  function updateOfficialStatsVisibility(S) {
+    const serverId = resolveOfficialServerId(
+      (S && (S.SELECTED_SERVER || S.CONNECTION_URL || S.wsUrl)) || ""
+    );
+    document.body.classList.toggle("no-official-stats", !serverId);
+    return serverId;
+  }
+
+  /** FFA/MS — масса; PVP/Tournament — победы. */
+  function deathScoreLabelForServer(serverId) {
+    const wins = serverId === "pvp1" || serverId === "pvp2" ||
+      serverId === "tournament" || serverId === "tournament2";
+    if (wins) {
+      return {
+        ru: "Побед",
+        en: "Wins",
+        tr: "Galibiyet",
+        zh: "胜场",
+        ar: "انتصارات",
+        es: "Victorias",
+        pl: "Wygrane",
+        de: "Siege",
+        uk: "Перемог"
+      };
+    }
+    return {
+      ru: "Масса",
+      en: "Mass",
+      tr: "Kütle",
+      zh: "质量",
+      ar: "الكتلة",
+      es: "Masa",
+      pl: "Masa",
+      de: "Masse",
+      uk: "Маса"
+    };
+  }
+
+  function updateDeathScoreLabel(serverId) {
+    const el = document.getElementById("deathScoreLabel");
+    if (!el) return;
+    const labels = deathScoreLabelForServer(serverId);
+    el.textContent = labels.ru;
+    el.setAttribute("data-en", labels.en);
+    el.setAttribute("data-tr", labels.tr);
+    el.setAttribute("data-zh", labels.zh);
+    el.setAttribute("data-ar", labels.ar);
+    el.setAttribute("data-es", labels.es);
+    el.setAttribute("data-pl", labels.pl);
+    el.setAttribute("data-de", labels.de);
+    el.setAttribute("data-uk", labels.uk);
+  }
+
+  function formatChatClock(date) {
+    const d = date instanceof Date ? date : new Date();
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mm = String(d.getMinutes()).padStart(2, "0");
+    return hh + ":" + mm;
+  }
+
+  function pushStatsSystemChat(S, hooks, text) {
+    if (!S || !Array.isArray(S.chatBoard) || !text) return;
+    S.chatBoard.push({
+      pId: 0,
+      playerXp: 0,
+      playerLevel: -1,
+      name: "Agar.su",
+      color: "#ffd54f",
+      message: String(text),
+      time: formatChatClock(new Date),
+      isStatsRecord: true
+    });
+    if (typeof hooks.drawChatBoard === "function") hooks.drawChatBoard();
+    else if (typeof drawChatBoard === "function") {
+      try {
+        drawChatBoard(S, hooks);
+      } catch (_) {}
+    }
+  }
+
+  function startStatsRecordFeed(S, hooks) {
+    if (S.__statsFeedStarted) return;
+    S.__statsFeedStarted = true;
+    let sinceId = "";
+    try {
+      sinceId = localStorage.getItem(STATS_FEED_STORAGE_KEY) || "";
+    } catch (_) {}
+
+    async function tick() {
+      try {
+        const url = STATS_RECORDS_FEED + (sinceId ? "?since=" + encodeURIComponent(sinceId) : "?since=");
+        const res = await fetch(url, {
+          cache: "no-store"
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const events = Array.isArray(data.events) ? data.events : [];
+        if (!events.length) return;
+
+        const currentServerId = resolveOfficialServerId(S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl || "");
+
+        for (const ev of events) {
+          const messages = Array.isArray(ev.messages) ? ev.messages : [];
+          for (const msg of messages) {
+            if (!msg || !msg.text) continue;
+            // PVP / tournament — не показываем рекорды дня (победы скачут)
+            if (msg.server) {
+              const sid = String(msg.server).toLowerCase();
+              if (sid.startsWith("pvp") || sid.startsWith("tournament")) continue;
+            }
+            if (msg.scope === "global") {
+              // Глобальные (год/alltime) с pvp/tournament тоже глушим
+              const evServer = String(ev.server || "").toLowerCase();
+              if (evServer.startsWith("pvp") || evServer.startsWith("tournament")) continue;
+              pushStatsSystemChat(S, hooks, msg.text);
+            } else if (msg.scope === "server") {
+              if (currentServerId && msg.server && currentServerId === msg.server) {
+                // На всякий случай: если сидим на pvp/tournament — молчим
+                const cur = String(currentServerId).toLowerCase();
+                if (cur.startsWith("pvp") || cur.startsWith("tournament")) continue;
+                pushStatsSystemChat(S, hooks, msg.text);
+              }
+            }
+          }
+          if (ev.id) sinceId = ev.id;
+        }
+        try {
+          localStorage.setItem(STATS_FEED_STORAGE_KEY, sinceId);
+        } catch (_) {}
+      } catch (_) {}
+    }
+
+    // Первый запрос только запоминает курсор, без спама старыми событиями
+    (async () => {
+      try {
+        const res = await fetch(STATS_RECORDS_FEED, {
+          cache: "no-store"
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const events = Array.isArray(data.events) ? data.events : [];
+        if (events.length) {
+          sinceId = events[events.length - 1].id || sinceId;
+          try {
+            localStorage.setItem(STATS_FEED_STORAGE_KEY, sinceId);
+          } catch (_) {}
+        }
+      } catch (_) {}
+      setInterval(tick, STATS_FEED_POLL_MS);
+    })();
+  }
   var FORBIDDEN_NICK_CHARS = [ "﷽", "𒐫", "𒈙", "⸻", "꧅", "ဪ", "௵", "௸", "‱", "ㅤ", "⁣", "‎ ", "​", "‌", "‍", "‎", "‏", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", "​", "\ufeff", "", " ", "⠀", "ﾠ", "卐", "卍" ];
   function getStarClass(level) {
     if (level >= 1 && level < 50) return "";
@@ -4327,16 +5561,18 @@
     const normalized = normalizeNick((nick || "").replace(/<[^>]*>/g, ""));
     return normalized && S.skinList[normalized] ? S.skinList[normalized] : "4";
   }
-  function createLevelIcon(S, level, nick, hooks) {
-    const getSkinImageUrl2 = hooks.getSkinImageUrl;
+  function createLevelIcon(S, level, nick, hooks, options) {
+    options = options || {};
     if (level >= 200) {
       const img = document.createElement("img");
       img.className = "account-level-avatar " + getStarClass(level);
-      setImgSrc(img, getSkinImageUrl2(getPlayerSkinId(S, nick)));
+      const skinId = getPlayerSkinId(S, nick);
+      if (options.staticSkin) setSkinAvatarStaticById(img, skinId);
+      else setSkinAvatarById(img, skinId);
       img.onerror = () => {
         if (!img.dataset.fallback) {
           img.dataset.fallback = "1";
-          setImgSrc(img, SKIN_FALLBACK_URL);
+          setSkinAvatarFromUrl(img, SKIN_FALLBACK_URL);
         }
       };
       return img;
@@ -4370,7 +5606,9 @@
       const playerDiv = document.createElement("div");
       playerDiv.classList.add("top-playerwraper");
       playerDiv.setAttribute("title", player.time);
-      playerDiv.innerHTML = `\n        <div>${index + 1}</div>\n        <div>${player.nick}</div>\n        <div>${player.score}</div>\n        <div class="skinswraper" style="background-image: url('${getSkinUrlForNick(S.skinList, player.nick)}');"></div>\n    `;
+      const skinUrl = getSkinUrlForNick(S.skinList, player.nick);
+      const safeSkinUrl = String(skinUrl).replace(/'/g, "%27");
+      playerDiv.innerHTML = `\n        <div>${index + 1}</div>\n        <div>${player.nick}</div>\n        <div>${player.score}</div>\n        <div class="skinswraper" style="background-image:url('${safeSkinUrl}')"></div>\n    `;
       container.appendChild(playerDiv);
     });
   }
@@ -4440,7 +5678,7 @@ async function updateOnlineCount() {
     totalOnline += playing + observers;
     
     // Ищем элемент .server-item с нужным id
-    const item = document.getElementById(id);
+    const item = document.querySelector(`.server-item[data-server-key="${id}"]`) || document.getElementById(id);
     if (item) {
       const spans = item.querySelectorAll(".online-count");
       if (spans.length >= 2) {
@@ -4460,9 +5698,21 @@ async function updateOnlineCount() {
   }
   
   const onlineElement = document.getElementById("online");
-  if (onlineElement) {
-    onlineElement.textContent = `Онлайн: ${totalOnline}`;
+  if (onlineElement) onlineElement.textContent = `Онлайн: ${totalOnline}`;
+  updateRegionOnlineTotals(getRegionOnlineTotals(rows));
+}
+function getRegionOnlineTotals(rows) {
+  const totals = Object.fromEntries(Object.keys(REGION_CONFIGS).map(key => [key, 0]));
+  for (const [key, config] of Object.entries(REGION_CONFIGS)) {
+    const ids = new Set(Object.keys(config.servers));
+    totals[key] = rows.reduce((sum, row) => ids.has(row.id) ? sum + (Number(row.playing) || 0) + (Number(row.no_playing) || 0) : sum, 0);
   }
+  return totals;
+}
+function updateRegionOnlineTotals(totals) {
+  document.querySelectorAll("[data-region-online]").forEach(element => {
+    if (totals[element.dataset.regionOnline] != null) element.textContent = String(totals[element.dataset.regionOnline]);
+  });
 }
   function startOnlineCountPolling() {
     updateOnlineCount();
@@ -4565,7 +5815,16 @@ async function updateOnlineCount() {
     }
     const playersTitle = document.createElement("div");
     playersTitle.className = "section-title";
-    playersTitle.innerText = "Top players";
+    playersTitle.setAttribute("data-en", "Top players");
+    playersTitle.setAttribute("data-ru", "Топ игроков");
+    playersTitle.setAttribute("data-uk", "Топ гравців");
+    playersTitle.setAttribute("data-tr", "En iyi oyuncular");
+    playersTitle.setAttribute("data-zh", "顶级玩家");
+    playersTitle.setAttribute("data-ar", "أفضل اللاعبين");
+    playersTitle.setAttribute("data-es", "Mejores jugadores");
+    playersTitle.setAttribute("data-pl", "Najlepsi gracze");
+    playersTitle.setAttribute("data-de", "Top-Spieler");
+    playersTitle.innerText = "Топ игроков";
     container.appendChild(playersTitle);
     if (!players.length) {
       const empty = document.createElement("div");
@@ -4577,7 +5836,16 @@ async function updateOnlineCount() {
     }
     const clansTitle = document.createElement("div");
     clansTitle.className = "section-title";
-    clansTitle.innerText = "Top Clans";
+    clansTitle.setAttribute("data-en", "Top Clans");
+    clansTitle.setAttribute("data-ru", "Топ кланов");
+    clansTitle.setAttribute("data-uk", "Топ кланів");
+    clansTitle.setAttribute("data-tr", "En iyi klanlar");
+    clansTitle.setAttribute("data-zh", "顶级氏族");
+    clansTitle.setAttribute("data-ar", "أفضل العشائر");
+    clansTitle.setAttribute("data-es", "Mejores clanes");
+    clansTitle.setAttribute("data-pl", "Najlepsze klany");
+    clansTitle.setAttribute("data-de", "Top-Clans");
+    clansTitle.innerText = "Топ кланов";
     container.appendChild(clansTitle);
     if (!clans.length) {
       const empty = document.createElement("div");
@@ -4587,20 +5855,107 @@ async function updateOnlineCount() {
     } else {
       clans.forEach((c, i) => container.appendChild(createRow(c.clan, c.points, i, c.id, true)));
     }
+    if (typeof window.setUiLang === "function") {
+      window.setUiLang(typeof window.getUiLang === "function" ? window.getUiLang() : "ru");
+    }
   }
+  function installPeriodDropdowns() {
+    if (window.__periodDdInstalled) return;
+    window.__periodDdInstalled = true;
+
+    function closeAll(except) {
+      document.querySelectorAll(".period-dd.is-open").forEach((dd) => {
+        if (except && dd === except) return;
+        dd.classList.remove("is-open");
+        const menu = dd.querySelector(".period-dd__menu");
+        const btn = dd.querySelector(".period-dd__btn");
+        if (menu) menu.hidden = true;
+        if (btn) btn.setAttribute("aria-expanded", "false");
+      });
+    }
+
+    function setValue(dd, value, fireChange) {
+      const selectId = dd.getAttribute("data-period-for");
+      const select = selectId ? document.getElementById(selectId) : null;
+      const label = dd.querySelector(".period-dd__label");
+      const items = dd.querySelectorAll(".period-dd__menu [data-value]");
+      let text = value;
+      items.forEach((li) => {
+        const on = li.getAttribute("data-value") === value;
+        // Текущий выбор уже на кнопке — в списке его не дублируем
+        li.classList.toggle("is-current", on);
+        li.setAttribute("aria-selected", on ? "true" : "false");
+        if (on) text = li.textContent.trim();
+      });
+      if (label) label.textContent = text;
+      if (select && select.value !== value) {
+        select.value = value;
+        if (fireChange) select.dispatchEvent(new Event("change", { bubbles: true }));
+      } else if (select && fireChange) {
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    }
+
+    document.querySelectorAll(".period-dd").forEach((dd) => {
+      const btn = dd.querySelector(".period-dd__btn");
+      const menu = dd.querySelector(".period-dd__menu");
+      const selectId = dd.getAttribute("data-period-for");
+      const select = selectId ? document.getElementById(selectId) : null;
+      if (!btn || !menu) return;
+      if (select) setValue(dd, select.value || menu.querySelector(".is-active")?.getAttribute("data-value") || "", false);
+
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const willOpen = !dd.classList.contains("is-open");
+        closeAll();
+        if (willOpen) {
+          dd.classList.add("is-open");
+          menu.hidden = false;
+          btn.setAttribute("aria-expanded", "true");
+        }
+      });
+
+      menu.addEventListener("click", (e) => {
+        const li = e.target.closest("[data-value]");
+        if (!li) return;
+        e.preventDefault();
+        e.stopPropagation();
+        setValue(dd, li.getAttribute("data-value"), true);
+        closeAll();
+      });
+    });
+
+    document.addEventListener("click", () => closeAll());
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeAll();
+    });
+  }
+
   function installGlobalRatingHome(S) {
     let loadGlobalRatingTimer = null;
     let lastGlobalRatingKey = "";
     const ratingHome = document.getElementById("ratinghome");
-    const ratingHeader = ratingHome && ratingHome.querySelector(".rating-header");
-    if (ratingHeader) {
-      ratingHeader.addEventListener("click", () => window.open(STATS_PAGE_URL, "_blank"));
+    updateOfficialStatsVisibility(S);
+    const ratingHeaderTitle = ratingHome && ratingHome.querySelector(".rating-header-title");
+    if (ratingHeaderTitle) {
+      ratingHeaderTitle.addEventListener("click", () => window.open(STATS_PAGE_URL, "_blank"));
+    } else {
+      const ratingHeader = ratingHome && ratingHome.querySelector(".rating-header");
+      if (ratingHeader) ratingHeader.addEventListener("click", () => window.open(STATS_PAGE_URL, "_blank"));
+    }
+    const homePeriodSelect = document.getElementById("homePeriodSelect");
+    function currentHomePeriod() {
+      return (homePeriodSelect && homePeriodSelect.value) || "alltime";
     }
     function loadGlobalRatingHome() {
-      fetch(STATS_API + "/api/rankings?limit=3", {
+      updateOfficialStatsVisibility(S);
+      const period = currentHomePeriod();
+      fetch(STATS_API + "/rankings?limit=3&period=" + encodeURIComponent(period) + "&metric=points", {
         cache: "no-store"
       }).then(res => res.ok ? res.json() : Promise.reject()).then(data => {
         const key = JSON.stringify({
+          period,
           p: data.players,
           c: data.clans,
           u: data.updatedAt
@@ -4609,6 +5964,12 @@ async function updateOnlineCount() {
         lastGlobalRatingKey = key;
         return refreshGlobalRatingHome(S, data);
       }).catch(e => console.error("Global rating load error:", e));
+    }
+    if (homePeriodSelect) {
+      homePeriodSelect.addEventListener("change", () => {
+        lastGlobalRatingKey = "";
+        loadGlobalRatingHome();
+      });
     }
     function scheduleLoadGlobalRatingHome() {
       clearTimeout(loadGlobalRatingTimer);
@@ -4644,8 +6005,8 @@ async function updateOnlineCount() {
       if (activeLi.dataset.ip) {
         S.SELECTED_SERVER = activeLi.dataset.ip;
       }
-      if (typeof S.wHandle.chekstats === "function") {
-        S.wHandle.chekstats();
+      if (typeof S.wHandle.refreshCenterTop === "function") {
+        S.wHandle.refreshCenterTop();
       }
     }
   }
@@ -4659,20 +6020,58 @@ async function updateOnlineCount() {
     if (isOverlaysVisible()) {
       startOnlineCountPolling();
     }
+    wHandle.refreshCenterTop = async function() {
+      try {
+        const {obj} = await loadSkinListMap();
+        applySkinListToState(S, { obj });
+        const serverId = updateOfficialStatsVisibility(S);
+        if (!serverId) return;
+        const statsUrl = STATS_API + "/api/server/" + encodeURIComponent(serverId) +
+          "?period=today&limit=1";
+        const response = await fetch(statsUrl, {
+          method: "GET",
+          cache: "no-store"
+        });
+        if (!response.ok) throw new Error(`Ошибка запроса: ${response.status}`);
+        const payload = await response.json();
+        const stat = Array.isArray(payload.players) ? payload.players : [];
+        loadTopPlayerData2(S, stat, hooks);
+      } catch (error) {
+        console.error("Ошибка загрузки топ-1 для центра карты:", error);
+      }
+    };
     wHandle.chekstats = async function() {
       try {
         const {obj} = await loadSkinListMap();
         applySkinListToState(S, {
           obj
         });
-        const statsUrl = getPowApiBase(S.SELECTED_SERVER || S.CONNECTION_URL) + "/checkStats";
+        const serverId = updateOfficialStatsVisibility(S);
+        const periodEl = document.getElementById("deathPeriodSelect");
+        const period = (periodEl && periodEl.value) || "today";
+        if (!serverId) {
+          console.warn("chekstats: unknown official server", S.SELECTED_SERVER || S.CONNECTION_URL);
+          displayStats(S, []);
+          return;
+        }
+        updateDeathScoreLabel(serverId);
+        const statsUrl = STATS_API + "/api/server/" + encodeURIComponent(serverId) +
+          "?period=" + encodeURIComponent(period) + "&limit=500";
         const response = await fetch(statsUrl, {
-          method: "GET"
+          method: "GET",
+          cache: "no-store"
         });
         if (!response.ok) {
           throw new Error(`Ошибка запроса: ${response.status}`);
         }
-        const stat = await response.json();
+        const payload = await response.json();
+        if (payload && payload.scoreLabel) {
+          const el = document.getElementById("deathScoreLabel");
+          if (el) el.textContent = payload.scoreLabel;
+        } else {
+          updateDeathScoreLabel(serverId);
+        }
+        const stat = Array.isArray(payload.players) ? payload.players : [];
         loadTopPlayerData2(S, stat, hooks);
         invalidateStatsRenderCaches(S);
         await fetchStats(S, stat);
@@ -4680,51 +6079,26 @@ async function updateOnlineCount() {
         console.error("Ошибка загрузки данных о топ-1 игроке:", error);
       }
     };
-    function initGameHowto() {
-      const howto = document.getElementById("game-howto");
-      const confirm = document.getElementById("game-howto-confirm");
-      const confirmation = document.getElementById("game-howto-confirmation");
-      const review = document.getElementById("game-howto-review");
-      const finish = document.getElementById("game-howto-finish");
-      if (!howto || !confirm || !confirmation || !review || !finish) return;
-      const cookieName = "agarsu_game_howto_seen";
-      const hasCookie = document.cookie.split(";").some(item => item.trim().indexOf(cookieName + "=") === 0);
-      if (!hasCookie) howto.hidden = false;
-      const content = document.getElementById("game-howto-content");
-      const wrap = document.getElementById("game-howto-card-wrap");
-      const question = document.getElementById("game-howto-question");
-      confirm.addEventListener("click", () => {
-        wrap.classList.add("is-confirmation");
-        content.hidden = true;
-        confirm.hidden = true;
-        confirmation.hidden = false;
-      });
-      review.addEventListener("click", () => {
-        wrap.classList.remove("is-confirmation");
-        confirmation.hidden = true;
-        content.hidden = false;
-        confirm.hidden = false;
-      });
-      finish.addEventListener("click", () => {
-        question.textContent = "Ну ладно)";
-        document.cookie = cookieName + "=1; max-age=31536000; path=/; SameSite=Lax";
-        howto.classList.add("is-closing");
-        window.setTimeout(() => {
-          howto.hidden = true;
-          howto.classList.remove("is-closing");
-        }, 2500);
+    const deathPeriodSelect = document.getElementById("deathPeriodSelect");
+    if (deathPeriodSelect) {
+      deathPeriodSelect.addEventListener("change", () => {
+        if (typeof wHandle.chekstats === "function") wHandle.chekstats();
       });
     }
-    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initGameHowto, { once: true });
-    else initGameHowto();
+    onStaticsShow = () => {
+      if (typeof wHandle.chekstats === "function") wHandle.chekstats();
+    };
     wHandle.startGame = function() {
       let nickInput = document.getElementById("nick").value.trim();
       let passInput = document.getElementById("pass").value;
       const forbiddenRegex = new RegExp(FORBIDDEN_NICK_CHARS.join("|"), "g");
       nickInput = nickInput.replace(forbiddenRegex, "");
       nickInput = hooks.censorMessage(nickInput);
+      if (!nickInput) nickInput = "agarsu";
       if (nickInput.length > 16) nickInput = nickInput.substring(0, 16);
       if (passInput.length > 8) passInput = passInput.substring(0, 8);
+      const nickEl = document.getElementById("nick");
+      if (nickEl && !String(nickEl.value || "").trim()) nickEl.value = nickInput;
       hooks.setNick(nickInput + "#" + passInput);
     };
     wHandle.coord = function() {
@@ -4737,6 +6111,7 @@ async function updateOnlineCount() {
       }
     };
     onReady(() => {
+      installPeriodDropdowns();
       installGlobalRatingHome(S);
       updateShareText2(S);
       [ "vk", "telegram", "whatsapp", "facebook", "twitter" ].forEach(p => {
@@ -5261,7 +6636,7 @@ async function updateOnlineCount() {
       if (provider !== "vk") return;
       let res;
       try {
-        res = await fetch("https://api.agar.su/api/auth/vk", {
+        res = await fetch("https://agar.su/api/auth/vk", {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
@@ -5742,11 +7117,11 @@ async function updateOnlineCount() {
     avatarContainer.className = "chatX_top_avatar";
     const avatar = document.createElement("img");
     avatar.className = "chatX_avatar_private";
-    setImgSrc(avatar, senderAvatar || SKIN_FALLBACK_URL);
+    setSkinAvatarFromUrl(avatar, senderAvatar || SKIN_FALLBACK_URL);
     avatar.onerror = () => {
       if (!avatar.dataset.fallback) {
         avatar.dataset.fallback = "1";
-        setImgSrc(avatar, SKIN_FALLBACK_URL);
+        setSkinAvatarFromUrl(avatar, SKIN_FALLBACK_URL);
       }
     };
     avatar.title = senderName || `User ${number}`;
@@ -5926,6 +7301,15 @@ async function updateOnlineCount() {
   function renderChatMessage(S, hooks, lastMessage, msgIndex) {
     var _a, _b;
     if (!lastMessage) return;
+    if (lastMessage.isStatsRecord) {
+      const simpleDiv = document.createElement("div");
+      simpleDiv.className = "chatexit chatexit-record";
+      simpleDiv.dataset.chatIdx = String(msgIndex);
+      simpleDiv.textContent = lastMessage.message || "";
+      document.getElementById("chatX_feed").appendChild(simpleDiv);
+      if (S.chatStickToBottom !== false) scrollChatToLatest(document.getElementById("chatX_feed"));
+      return;
+    }
     if (lastMessage.message && lastMessage.message.toLowerCase().includes("вoшёл в игру")) {
       const simpleDiv = document.createElement("div");
       simpleDiv.className = "chatexit";
@@ -5986,13 +7370,14 @@ async function updateOnlineCount() {
     const avatar = document.createElement("img");
     avatar.className = "chatX_avatar";
     avatar.decoding = "async";
-    avatar.loading = "lazy";
     const skinId = S.skinList[normalizedName];
-    setImgSrc(avatar, skinId ? hooks.getSkinImageUrl(skinId) : SKIN_FALLBACK_URL);
+    const _skinHost = S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl;
+    const petriAvatar = (!skinId && isPetriSkinHost(_skinHost)) ? getPetriSkinUrl(lastMessage.name, _skinHost) : null;
+    setSkinAvatarFromUrl(avatar, skinId ? getSkinImageUrl(skinId) : (petriAvatar || SKIN_FALLBACK_URL));
     avatar.onerror = () => {
       if (!avatar.dataset.fallback) {
         avatar.dataset.fallback = "1";
-        setImgSrc(avatar, SKIN_FALLBACK_URL);
+        setSkinAvatarFromUrl(avatar, SKIN_FALLBACK_URL);
       }
     };
     avatarContainer.appendChild(avatar);
@@ -6141,8 +7526,8 @@ async function updateOnlineCount() {
       S.dialogMessages[targetDialogId].push(msgDiv);
       const topAvatarImg = S.dialogs[targetDialogId].avatar.querySelector("img");
       if (topAvatarImg) {
-        const avatarUrl = S.skinList[normalizedName] ? hooks.getSkinImageUrl(S.skinList[normalizedName]) : SKIN_FALLBACK_URL;
-        setImgSrc(topAvatarImg, avatarUrl);
+        const sid = S.skinList[normalizedName];
+        setSkinAvatarFromUrl(topAvatarImg, sid ? getSkinImageUrl(sid) : SKIN_FALLBACK_URL);
         topAvatarImg.title = lastMessage.name || `User ${targetDialogId.replace("!ls", "")}`;
       }
     }
@@ -6232,8 +7617,10 @@ async function updateOnlineCount() {
     const chatHooks = {
       ...hooks,
       sendChat: hooks.sendChat,
-      setserver: hooks.setserver
+      setserver: hooks.setserver,
+      drawChatBoard: () => drawChatBoard(S, hooks)
     };
+    startStatsRecordFeed(S, chatHooks);
     return {
       addChat: (view, offset) => addChat(S, chatHooks, view, offset),
       drawChatBoard: () => drawChatBoard(S, chatHooks),
@@ -6472,6 +7859,9 @@ async function updateOnlineCount() {
     return sz > S.foodMaxSize && sz <= Math.max(55, S.foodMaxSize + 20);
   }
   function getClientCellColor2(S, cell) {
+    if (cell.isVirus && /sixz\.ru:6017|:6017\b/i.test(String(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl || ""))) {
+      return "#ff9900";
+    }
     if (!S.customClientColors) return null;
     if (cell.isVirus) return S.clientColorVirus;
     if (cell.isFood) return S.clientColorFood;
@@ -6569,6 +7959,9 @@ async function updateOnlineCount() {
      case 16:
       return S.customVirusBgEnabled;
 
+     case 17:
+      return S.spectateAutoFollow;
+
      default:
       return false;
     }
@@ -6624,6 +8017,7 @@ async function updateOnlineCount() {
           if (id == 14) S.wHandle.setCustomClientColors(value);
           if (id == 15) S.wHandle.setCustomMapBg(value);
           if (id == 16) S.wHandle.setCustomVirusBg(value);
+          if (id == 17) S.wHandle.setSpectateAutoFollow(value);
         });
       });
     });
@@ -6646,6 +8040,18 @@ async function updateOnlineCount() {
       S.enableMouseClicks = arg;
       persistCheckbox(4, arg);
       syncMouseBindSettingsVisibility(S);
+    };
+    wHandle.setSpectateAutoFollow = function(arg) {
+      S.spectateAutoFollow = !!arg;
+      persistCheckbox(17, S.spectateAutoFollow);
+      if (!S.spectateAutoFollow) {
+        S.spectateFollowNick = null;
+        S.spectateFollowPid = 0;
+        if (S._spectateFollowTimer) {
+          clearInterval(S._spectateFollowTimer);
+          S._spectateFollowTimer = null;
+        }
+      }
     };
     wHandle.setShowMass = function(arg) {
       S.showMass = arg;
@@ -6713,6 +8119,12 @@ async function updateOnlineCount() {
       },
       set(v) {
         S.freeze = !!v;
+        if (!S.freeze) {
+          try {
+            const freezeEl = document.querySelector("#freeze");
+            if (freezeEl) freezeEl.style.display = "none";
+          } catch (_) {}
+        }
       },
       configurable: true
     });
@@ -6737,42 +8149,90 @@ async function updateOnlineCount() {
       cancelKeybindCapture: () => cancelKeybindCapture(S)
     };
   }
+function getServerDomId(regionKey, serverKey) {
+  return document.querySelector(`.server-item[data-region="${regionKey}"][data-server-key="${serverKey}"]`)?.id || serverKey;
+}
+function renderRegionServers(regionKey) {
+  const config = REGION_CONFIGS[regionKey];
+  if (!config) return;
+  document.querySelectorAll(".server-item").forEach(item => {
+    const visible = item.dataset.region === regionKey;
+    item.hidden = !visible;
+    item.classList.remove("active");
+  });
+  document.querySelectorAll(".server-group").forEach(group => {
+    group.hidden = !group.querySelector(`.server-item[data-region="${regionKey}"]`);
+  });
+  document.querySelectorAll("[data-region]").forEach(button => button.classList.toggle("active", button.dataset.region === regionKey));
+}
+function applyRegion(regionKey, S, save) {
+  const config = REGION_CONFIGS[regionKey];
+  if (!config) return false;
+  activeRegion = regionKey;
+  SERVERS = Object.fromEntries(Object.entries(config.servers).map(([id, server]) => [id, server.host]));
+  renderRegionServers(regionKey);
+  if (save !== false) try { localStorage.setItem("agar_region", regionKey); } catch (e) {}
+  if (S) {
+    history.replaceState(null, "", " ");
+    initServers(S);
+  }
+  return true;
+}
+function getServerHash(regionKey, serverKey) {
+  return serverKey;
+}
+function parseServerHash(hashValue) {
+  const value = String(hashValue || "").split("?")[0].toLowerCase();
+  if (REGION_CONFIGS.eu?.servers[value]) return { regionKey: "eu", serverKey: value };
+  if (REGION_CONFIGS.tr?.servers[value]) return { regionKey: "tr", serverKey: value };
+  return { regionKey: "ru", serverKey: value };
+}
+function getRegionForHash(hashValue) {
+  const parsed = parseServerHash(hashValue);
+  return REGION_CONFIGS[parsed.regionKey]?.servers[parsed.serverKey] ? parsed.regionKey : null;
+}
 function initServers(S) {
+  readServersFromHtml();
   let serverKey = "ffa";
   const hash = S.wHandle.location.hash.slice(1);
   const hashWithoutParams = hash.split("?")[0];
+  const parsedHash = parseServerHash(hashWithoutParams);
+  const hashRegion = getRegionForHash(hashWithoutParams);
+  if (!activeRegion) applyRegion(hashRegion || getDefaultRegion(), null, false);
+  else if (hashRegion && hashRegion !== activeRegion) applyRegion(hashRegion, null, false);
   const urlParams = new URLSearchParams(window.location.search);
   
   // Определяем сервер из URL
-  if (hash && SERVERS[hashWithoutParams]) {
-    serverKey = hashWithoutParams;
+  if (hashRegion && parsedHash.serverKey && SERVERS[parsedHash.serverKey]) {
+    serverKey = parsedHash.serverKey;
   } else {
     const keys = Object.keys(SERVERS);
     if (keys.length) serverKey = keys[0];
   }
   
-  S.CONNECTION_URL = SERVERS[serverKey];
+  S.CONNECTION_URL = serverKey ? SERVERS[serverKey] : null;
   S.SELECTED_SERVER = S.CONNECTION_URL;
   
   // Обновляем активный класс на НОВЫХ элементах .server-item
   document.querySelectorAll(".server-item").forEach(el => el.classList.remove("active"));
-  const activeItem = document.getElementById(serverKey);
+  const activeItem = serverKey ? document.getElementById(getServerDomId(activeRegion, serverKey)) : null;
   if (activeItem) {
     activeItem.classList.add("active");
   }
   
   const titleEl = document.getElementById("serverTitle");
   if (titleEl) {
-    const serverName = GAME_SERVERS[serverKey]?.title || serverKey;
+    const serverName = REGION_CONFIGS[activeRegion]?.servers[serverKey]?.title || serverKey;
     titleEl.textContent = `Статистика ${serverName}`;
   }
+
+  if (typeof updateOfficialStatsVisibility === "function") updateOfficialStatsVisibility(S);
   
   if (urlParams.has("spect") || urlParams.has("spectator") || hash.includes("?spect") || hash.includes("?spectator")) {
     window._autoSpectate = true;
   }
-  
-  if (typeof S.wHandle.chekstats === "function") {
-    S.wHandle.chekstats();
+  if (typeof S.wHandle.refreshCenterTop === "function") {
+    S.wHandle.refreshCenterTop();
   }
 }
   function hideGameOverlays() {
@@ -6843,7 +8303,7 @@ function initServers(S) {
       createLevelIcon: (level, nick) => createLevelIcon(S, level, nick, {
         getSkinImageUrl,
         setImgSrc
-      }),
+      }, { staticSkin: true }),
       getStarClass,
       resolveClanPassIdFromName: name => resolveClanPassIdFromName(S, name),
       resolvePlayerPassIdFromName: name => resolvePlayerPassIdFromName(S, name),
@@ -6876,6 +8336,11 @@ function initServers(S) {
       updateNodes: reader => updateNodes(S, reader, {
         Cell,
         onPlayerDeath: () => {
+          S.freeze = false;
+          try {
+            const freezeEl = document.querySelector("#freeze");
+            if (freezeEl) freezeEl.style.display = "none";
+          } catch (_) {}
           showStatics();
           updateShareText(S);
           if (typeof window.renderDeathBanner === "function") window.renderDeathBanner();
@@ -6891,7 +8356,45 @@ function initServers(S) {
       getLevel,
       setPingDisplay
     });
-    connectionHooks.onMessage = dv => handlers.handleWsMessage(dv);
+    const onPlayerDeath = () => {
+      S.freeze = false;
+      try {
+        const freezeEl = document.querySelector("#freeze");
+        if (freezeEl) freezeEl.style.display = "none";
+      } catch (_) {}
+      showStatics();
+      updateShareText(S);
+      if (typeof window.renderDeathBanner === "function") window.renderDeathBanner();
+    };
+    const wsBridgeHooks = {
+      applyUpdateNodesParsed: (packet) => applyUpdateNodesParsed(S, packet, { Cell, onPlayerDeath }),
+      addChatParsed: (packet) => {
+        S.chatBoard.push({
+          pId: packet.pId,
+          playerXp: packet.playerXp,
+          playerLevel: packet.playerXp ? getLevel(packet.playerXp) : -1,
+          name: packet.name,
+          color: packet.color,
+          message: packet.message,
+          time: formatTime(new Date)
+        });
+        if (typeof chatApi.drawChatBoard === "function") chatApi.drawChatBoard();
+      },
+      drawLeaderBoard: () => lbApi.drawLeaderBoard(),
+      drawCustomLeaderBoard: () => lbApi.drawCustomLeaderBoard(),
+      onUpdateXp: xp => {
+        if (typeof wHandle.onUpdateXp === "function") wHandle.onUpdateXp(xp);
+      },
+      onGameHandshakeReady: () => connection.onGameHandshakeReady(),
+      getLevel,
+      setPingDisplay
+    };
+    const wsBridge = createWsParseBridge(S, wsBridgeHooks, (dv) => handlers.handleWsMessage(dv));
+    S.wsParseBridge = wsBridge;
+    connectionHooks.onMessage = (dv) => wsBridge.onRawDataView(dv);
+    if (wsBridge.isEnabled()) {
+      console.debug("[ws-worker] parse offloaded to Worker");
+    }
     attachSettings(S, {
       fixDead: () => fixDead(S)
     });
@@ -6915,9 +8418,9 @@ function initServers(S) {
       const alreadyConnected = S.ws && S.ws.readyState === WebSocket.OPEN && S.currentWebSocketUrl === wsUrl;
       if (arg !== S.CONNECTION_URL) {
         S.CONNECTION_URL = arg;
-        const foundHash = Object.keys(SERVERS).find(key => SERVERS[key] === arg);
-        if (foundHash) {
-          history.replaceState(null, "", `#${foundHash}`);
+        const foundServerKey = Object.keys(SERVERS).find(key => SERVERS[key] === arg);
+        if (foundServerKey) {
+          history.replaceState(null, "", `#${getServerHash(activeRegion, foundServerKey)}`);
           setActiveFromHash(S);
         } else {
           console.warn("Неизвестный сервер URL:", arg);
@@ -6933,55 +8436,63 @@ function initServers(S) {
       wHandle.setserver(S.SELECTED_SERVER);
       hideGameOverlays();
       S.userNickName = arg;
+      S.spectateFollowNick = null;
+      S.spectateFollowPid = 0;
+      if (S._spectateFollowTimer) {
+        clearInterval(S._spectateFollowTimer);
+        S._spectateFollowTimer = null;
+      }
       outbound.sendNickName();
       hideStatics();
       S.maxScore = 0;
+      if (typeof wHandle.refreshCenterTop === "function") wHandle.refreshCenterTop();
     };
     wHandle.spectate = function() {
       wHandle.setserver(S.SELECTED_SERVER);
       S.userNickName = null;
+      S.spectateFollowNick = null;
+      S.spectateFollowPid = 0;
+      if (S._spectateFollowTimer) {
+        clearInterval(S._spectateFollowTimer);
+        S._spectateFollowTimer = null;
+      }
       hideGameOverlays();
       hideStatics();
-      if (typeof wHandle.chekstats === "function") wHandle.chekstats();
+      if (typeof wHandle.refreshCenterTop === "function") wHandle.refreshCenterTop();
     };
     wHandle.connect = connection.wsConnect;
 onReady(() => {
-  // Обработчики для НОВЫХ элементов .server-item
-  document.querySelectorAll(".server-item").forEach(item => {
-    item.addEventListener("click", function() {
-      // Убираем активный класс у всех
-      document.querySelectorAll(".server-item").forEach(el => el.classList.remove("active"));
-      // Добавляем активный класс нажатому
-      this.classList.add("active");
-      
-      // ✅ ТОЛЬКО СОХРАНЯЕМ ВЫБРАННЫЙ СЕРВЕР
-      const id = this.id;
-      if (id) {
-        S.SELECTED_SERVER = this.dataset.ip;
-        S.CONNECTION_URL = this.dataset.ip;
-        history.replaceState(null, "", "#" + id);
-      }
-      
-      // Обновляем заголовок статистики
-      const titleEl = document.getElementById("serverTitle");
-      if (titleEl) {
-        const serverName = GAME_SERVERS[id]?.title || id || "FFA";
-        titleEl.textContent = `Статистика ${serverName}`;
-      }
-      
-      // Обновляем статистику
-      if (typeof wHandle.chekstats === "function") {
-        wHandle.chekstats();
-      }
-      
-      // ❌ НЕ КОННЕКТИМСЯ К СЕРВЕРУ!
-      // ❌ НЕ ЗАКРЫВАЕМ ВЕБСОКЕТ!
-      // ❌ НЕ ВЫЗЫВАЕМ setserver!
-    });
+  const serverGrid = document.querySelector(".server-grid");
+  if (!serverGrid || serverGrid.dataset.serverClickBound === "1") return;
+  serverGrid.dataset.serverClickBound = "1";
+  serverGrid.addEventListener("click", event => {
+    const item = event.target.closest(".server-item");
+    if (!item || !serverGrid.contains(item)) return;
+    const id = item.dataset.serverKey || item.id;
+    if (!id || !REGION_CONFIGS[activeRegion]?.servers[id]) return;
+    document.querySelectorAll(".server-item").forEach(el => el.classList.remove("active"));
+    item.classList.add("active");
+    S.SELECTED_SERVER = item.dataset.ip;
+    S.CONNECTION_URL = item.dataset.ip;
+    history.replaceState(null, "", "#" + getServerHash(activeRegion, id));
+    const titleEl = document.getElementById("serverTitle");
+    if (titleEl) titleEl.textContent = `Статистика ${REGION_CONFIGS[activeRegion].servers[id].title || id}`;
+    if (typeof updateOfficialStatsVisibility === "function") updateOfficialStatsVisibility(S);
+    if (typeof wHandle.refreshCenterTop === "function") wHandle.refreshCenterTop();
   });
 });
     listsPromise.then(() => fetchNickPerksLists(S)).catch(() => {});
     listsPromise.then(() => initServers(S)).catch(() => initServers(S));
+    onReady(() => {
+      document.querySelectorAll(".region-option[data-region]").forEach(button => {
+        if (button.dataset.regionBound === "1") return;
+        button.dataset.regionBound = "1";
+        button.addEventListener("click", () => {
+          if (applyRegion(button.dataset.region, S, true)) updateOnlineCount();
+        });
+      });
+      startOnlineCountPolling();
+    });
     setInterval(async () => {
       const data = await preloadStaticLists(true);
       applySkinListToState(S, data.skin);
@@ -6993,7 +8504,12 @@ onReady(() => {
       S.rotation = data.rotation;
       S.badWordsSet = data.words;
       invalidateStatsRenderCaches(S);
-      if (typeof wHandle.chekstats === "function") wHandle.chekstats();
+      const staticsEl = document.getElementById("statics");
+      if (staticsEl && staticsEl.style.display === "flex" && typeof wHandle.chekstats === "function") {
+        wHandle.chekstats();
+      } else if (typeof wHandle.refreshCenterTop === "function") {
+        wHandle.refreshCenterTop();
+      }
     }, TTL_MS);
     wHandle.addEventListener("hashchange", () => initServers(S));
     attachAccountHooks(S, {
@@ -7047,7 +8563,7 @@ onReady(() => {
   var actionInterval = 500;
   var actionTimeout;
   var currentIndex = 0;
-  var MANUAL_SKINS_NICKS = [ "Ленин", "Сталин", "Гагарин", "Жуков", "Хрущёв", "CССР", "Путин", "Россия" ];
+  var MANUAL_SKINS_NICKS = [ "Муха", "Паук", "Кактус", "Могучая", "Ящерица", "Лиса", "Волк", "Мамонт", "Динозавр", "Мороженое", "Ракета", "Зая", "Фаун", "Бабушка", "Юпитер", "Марс", "Луна", "Гора", "Нептун", "Плутон", "Уран", "Венера", "Сатурн","Теннисистка", "Первобытный", "Влюблённый", "Влюблённая"];
   var SKINS_PER_PAGE_MOBILE = 8;
   var SKINS_PER_PAGE_DESKTOP = 14;
   var PLAYERS_KEY = "players";
@@ -7470,6 +8986,7 @@ onReady(() => {
   window.loadSkinsList = loadSkinsList;
   onReady(() => {
     bindHomeAvatarUi();
+    startDomSkinStripAnimator();
   });
   function showContent2(id) {
     document.querySelectorAll(".menu-item").forEach(item => item.classList.remove("active"));
@@ -7480,6 +8997,7 @@ onReady(() => {
     if (panel) panel.classList.add("active");
     if (typeof window.updateShopAuthNotice === "function") window.updateShopAuthNotice();
     if (id === "skinslist" && typeof window.initSkinsGallery === "function") window.initSkinsGallery();
+    if (id === "rating" && typeof ensureTop100Loaded === "function") ensureTop100Loaded();
     if (id === "home") {
       try {
         bindHomeAvatarUi();
@@ -8710,23 +10228,35 @@ onReady(() => {
       const avatar = resolveAccountAvatar(player.account_avatar);
       const playerDiv = document.createElement("div");
       playerDiv.classList.add("top-player");
-      playerDiv.innerHTML = `\n<div class="time">${player.position}</div>\n<div class="nick">${player.account_name}</div>\n<div class="score">${level}</div>\n<div class="skkinn" style="background-image: url('${avatar.replace(/'/g, "%27")}');"></div>\n                `;
+      playerDiv.innerHTML = `\n<div class="time">${player.position}</div>\n<div class="nick">${player.account_name}</div>\n<div class="score">${level}</div>\n<div class="skkinn"><img src="${avatar.replace(/'/g, "%27")}" alt="" loading="lazy" decoding="async"></div>\n                `;
       container.appendChild(playerDiv);
     });
   }
   async function fetchTop100() {
-    try {
-      const res = await fetch(TOP100_URL, {
-        cache: "no-store"
-      });
-      if (!res.ok) throw new Error("top100 " + res.status);
-      const data = await res.json();
-      xpStats(data);
-    } catch (err) {
-      console.error("Error fetching top 100:", err);
-    }
+    if (fetchTop100._loading) return fetchTop100._loading;
+    fetchTop100._loading = (async () => {
+      try {
+        const res = await fetch(TOP100_URL, {
+          cache: "no-store"
+        });
+        if (!res.ok) throw new Error("top100 " + res.status);
+        const data = await res.json();
+        xpStats(data);
+        fetchTop100._loaded = true;
+      } catch (err) {
+        console.error("Error fetching top 100:", err);
+      } finally {
+        fetchTop100._loading = null;
+      }
+    })();
+    return fetchTop100._loading;
   }
-  fetchTop100();
+  // Lazy: rating tab only — do not fetch 100 avatars on Home
+  // fetchTop100();
+  function ensureTop100Loaded() {
+    if (fetchTop100._loaded) return;
+    fetchTop100();
+  }
   function initVkAuthModule() {
     var _a;
     const PKCE_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-";
@@ -8824,7 +10354,7 @@ onReady(() => {
       const sameWindow = prefersSameWindowAuth();
       const config = {
         app: 54069355,
-        redirectUrl: "https://agar.su",
+        redirectUrl: "https://api.agar.su",
         state,
         codeVerifier,
         responseMode: sameWindow ? VKID.ConfigResponseMode.Redirect : VKID.ConfigResponseMode.Callback,
@@ -8889,44 +10419,9 @@ onReady(() => {
     });
   }
   function setupYandexAds() {
-    window.yaContextCb = window.yaContextCb || [];
-    function renderHomeBanner() {
-      if (!document.getElementById("yandex_rtb_R-A-15699059-13")) {
-        if (document.readyState === "loading") {
-          document.addEventListener("DOMContentLoaded", renderHomeBanner, {
-            once: true
-          });
-        }
-        return;
-      }
-      try {
-        Ya.Context.AdvManager.render({
-          blockId: "R-A-15699059-13",
-          renderTo: "yandex_rtb_R-A-15699059-13"
-        });
-      } catch (e) {}
-    }
-    window.renderDeathBanner = function() {
-      const el = document.getElementById("yandex_rtb_R-A-15699059-14");
-      if (!el) return;
-      const doRender = () => {
-        try {
-          el.innerHTML = "";
-          Ya.Context.AdvManager.render({
-            blockId: "R-A-15699059-14",
-            renderTo: "yandex_rtb_R-A-15699059-14"
-          });
-        } catch (e) {}
-      };
-      if (window.Ya && Ya.Context && Ya.Context.AdvManager) {
-        doRender();
-      } else {
-        window.yaContextCb = window.yaContextCb || [];
-        window.yaContextCb.push(doRender);
-      }
-    };
-    window.yaContextCb.push(renderHomeBanner);
-    return loadScript("https://yandex.ru/ads/system/context.js").catch(() => {});
+    // Banners disabled — keep empty layout slots (.add-yandex / .death)
+    window.renderDeathBanner = function() {};
+    return Promise.resolve();
   }
   function setupMailRuCounter() {
     window._tmr = window._tmr || [];

@@ -24,7 +24,7 @@
         // Получение данных с сервера
         async function fetchTop100() {
             try {
-                const res = await fetch('https://api.agar.su/api/top100');
+                const res = await fetch('https://agar.su/api/top100');
                 const data = await res.json();
 
                 xpStats(data);

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Клан — Agar.su</title>
-  <link id="pageIcon" rel="icon" type="image/png" href="https://api.agar.su/skins/4.png">
+  <link id="pageIcon" rel="icon" type="image/png" href="https://agar.su/skins/4.png">
   <style>
     :root {
       --bg: #0f1118; --panel: #1a1d28; --panel2: #222633; --text: #e8ecf4;
@@ -45,6 +45,8 @@
     .avatar {
       width: 72px; height: 72px; border-radius: 50%; border: 2px solid var(--border);
       object-fit: cover; flex-shrink: 0; background: var(--panel2);
+      background-size: cover; background-position: center; background-repeat: no-repeat;
+      overflow: hidden;
     }
     .profile-nick { font-size: 1.4rem; font-weight: 700; color: var(--clan); }
     .profile-nick.rank-gold { color: gold; }
@@ -56,6 +58,15 @@
     }
     .btn:hover { border-color: var(--accent); }
     .btn.ok { border-color: #4caf50; color: #a5d6a7; }
+    .period-row {
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+      margin: 0 0 16px;
+    }
+    .period-row label { color: var(--muted); font-size: 0.9rem; }
+    .period-row select {
+      background: var(--panel2); color: var(--text); border: 1px solid var(--border);
+      border-radius: 8px; padding: 8px 12px; font-size: 0.9rem;
+    }
     .srv-link { color: var(--text); text-decoration: none; }
     .srv-link:hover { color: var(--accent); text-decoration: none; }
     a.back { color: var(--muted); text-decoration: none; font-size: 0.95rem; display: inline-block; margin-bottom: 16px; }
@@ -66,16 +77,25 @@
   <div class="wrap">
     <a href="../" class="back">← Глобальный рейтинг</a>
     <div id="head"><h1>Клан</h1></div>
+    <div class="period-row">
+      <label for="profilePeriod">Период</label>
+      <select id="profilePeriod">
+        <option value="alltime" selected>Всё время</option>
+        <option value="year">Год</option>
+        <option value="today">Сегодня</option>
+        <option value="yesterday">Вчера</option>
+      </select>
+    </div>
     <p class="muted" id="subNote">Данные обновляются каждые 5 минут.</p>
     <div id="content"><p class="muted">Загрузка…</p></div>
   </div>
 
   <script src="../config.js"></script>
-  <script src="../skins.js"></script>
+  <script src="../skins.js?v=3"></script>
   <script>
-    const API = window.STATS_API || "https://api.agar.su:6009";
+    const API = window.STATS_API || "https://agar.su/stats-api";
     const REFRESH_MS = window.STATS_REFRESH_MS || 300000;
-    const { loadSkins, resolveAvatar } = window.statsSkins;
+    const { loadSkins, resolveAvatar, avatarHtml, setFavicon } = window.statsSkins;
     const serverUrl = window.statsServerUrl;
 
     function esc(s) {
@@ -117,16 +137,8 @@
       const rankPart = rank ? "#" + rank + " " : "";
       document.title = rankPart + clan + " — Клан · Agar.su";
 
-      const iconUrl = avatarUrl || window.DEFAULT_SKIN_URL || "https://api.agar.su/skins/4.png";
-      let link = document.getElementById("pageIcon");
-      if (!link) {
-        link = document.createElement("link");
-        link.id = "pageIcon";
-        link.rel = "icon";
-        link.type = "image/png";
-        document.head.appendChild(link);
-      }
-      if (link.href !== iconUrl) link.href = iconUrl;
+      const iconUrl = avatarUrl || window.DEFAULT_SKIN_URL || "https://agar.su/skins/4.png";
+      setFavicon(iconUrl);
     }
 
     function formatGlobalRank(stats) {
@@ -136,17 +148,25 @@
       return `<span class="pts ${rankCls}">${stats.globalRank}</span>${total}`;
     }
 
+    const PERIOD_LABELS = {
+      today: "Сегодня",
+      yesterday: "Вчера",
+      year: "Год",
+      alltime: "Всё время",
+    };
+
     function render(stats) {
       const id = stats.id || stats.uid;
       const clan = stats.clan || "—";
       const ava = resolveAvatar(stats);
       setPageMeta(stats, clan, ava);
+      const period = stats.period || "alltime";
 
       const head = document.getElementById("head");
       const rankCls = nickRankClass(stats);
       head.innerHTML = `
         <div class="profile-head">
-          <img class="avatar" src="${esc(ava)}" alt="">
+          ${avatarHtml(ava)}
           <div>
             <div class="profile-nick ${rankCls}">${esc(clan)}</div>
           </div>
@@ -155,12 +175,12 @@
       document.getElementById("copyBtn").onclick = () => copyLink(id);
 
       const members = (stats.members || []).filter(Boolean);
-      const recs = Object.values(stats.records || {}).sort((a, b) => (b.score || 0) - (a.score || 0));
-      let html = `<div class="card"><h2>Статистика клана</h2><div class="card-body">`;
-      html += `<p><strong>Место в рейтинге кланов:</strong> ${formatGlobalRank(stats)}</p>`;
+      const recList = Object.values(stats.records || {});
+      let html = `<div class="card"><h2>Статистика клана · ${esc(PERIOD_LABELS[period] || period)}</h2><div class="card-body">`;
+      html += `<p><strong>Место в рейтинге (${esc(PERIOD_LABELS[period] || period)}):</strong> ${formatGlobalRank(stats)}</p>`;
       const maxPts = Number(stats.maxPoints) || 150;
-      html += `<p><strong>Всего очков:</strong> <span class="pts">${Number(stats.points) || 0}</span> <span class="muted">из ${maxPts}</span></p>`;
-      html += `<p><strong>Лучший рекорд:</strong> ${Number(stats.bestScore) || 0}</p>`;
+      html += `<p><strong>Очки за период:</strong> <span class="pts">${Number(stats.points) || 0}</span> <span class="muted">из ${maxPts}</span></p>`;
+      html += `<p><strong>Лучший рекорд за период:</strong> ${Number(stats.bestScore) || 0}</p>`;
       if (members.length) {
         html += `<p><strong>Участники в топе:</strong> ${members.map((m) => esc(m)).join(", ")}</p>`;
       }
@@ -179,14 +199,22 @@
         }
       }
 
-      html += `<div class="card"><h2>Рекорды по серверам</h2><div class="card-body">`;
-      if (!recs.length) {
-        html += '<p class="muted">Рекорды появятся, когда клан попадёт в топ.</p>';
+      html += `<div class="card"><h2>Рекорды по серверам · ${esc(PERIOD_LABELS[period] || period)}</h2><div class="card-body">`;
+      if (!recList.length) {
+        html += '<p class="muted">Нет данных по серверам за этот период.</p>';
       } else {
-        html += '<table><thead><tr><th>Сервер</th><th>Рекорд</th><th>Ник</th><th>Место</th></tr></thead><tbody>';
-        recs.forEach((r) => {
-          html += `<tr><td>${serverCell(r.serverId, r.serverName || r.serverId)}</td><td class="pts">${r.score || 0}</td>
-            <td>${esc(r.nick)}</td><td>${r.rank || "—"}</td></tr>`;
+        html += '<table><thead><tr><th>Сервер</th><th>Тип</th><th>Рекорд</th><th>Ник</th><th>Место</th><th>Статус</th></tr></thead><tbody>';
+        recList.forEach((r) => {
+          const label = r.scoreLabel || "Масса";
+          const has = r.hasRecord === true || (Number(r.score) || 0) > 0;
+          html += `<tr>
+            <td>${serverCell(r.serverId, r.serverName || r.serverId)}</td>
+            <td class="muted">${esc(label)}</td>
+            <td class="pts">${has ? (r.score || 0) : "—"}</td>
+            <td>${has ? esc(r.nick || "—") : '<span class="muted">—</span>'}</td>
+            <td>${has && r.rank ? r.rank : "—"}</td>
+            <td>${has ? '<span style="color:#a5d6a7">есть</span>' : '<span class="muted">нет</span>'}</td>
+          </tr>`;
         });
         html += "</tbody></table>";
       }
@@ -197,10 +225,14 @@
     async function load(id, forceSkins) {
       const box = document.getElementById("content");
       if (!box.dataset.loaded) box.innerHTML = '<p class="muted">Загрузка…</p>';
-      history.replaceState(null, "", "?id=" + encodeURIComponent(id));
+      const period = document.getElementById("profilePeriod")?.value || "alltime";
+      history.replaceState(null, "", "?id=" + encodeURIComponent(id) + "&period=" + encodeURIComponent(period));
       try {
         await loadSkins(forceSkins);
-        const res = await fetch(API + "/api/clan/" + encodeURIComponent(id), { cache: "no-store" });
+        const res = await fetch(
+          API + "/api/clan/" + encodeURIComponent(id) + "?period=" + encodeURIComponent(period),
+          { cache: "no-store" }
+        );
         if (!res.ok) throw new Error(res.status === 404 ? "Клан не найден" : "HTTP " + res.status);
         box.innerHTML = render(await res.json());
         box.dataset.loaded = "1";
@@ -209,7 +241,15 @@
       }
     }
 
-    const qId = new URLSearchParams(location.search).get("id");
+    const q = new URLSearchParams(location.search);
+    const qId = q.get("id");
+    const qPeriod = q.get("period");
+    if (qPeriod && document.getElementById("profilePeriod")) {
+      document.getElementById("profilePeriod").value = qPeriod;
+    }
+    document.getElementById("profilePeriod")?.addEventListener("change", () => {
+      if (qId) load(qId, false);
+    });
     if (qId) {
       load(qId, true);
       setInterval(() => load(qId, false), REFRESH_MS);

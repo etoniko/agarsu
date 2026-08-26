@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Рейтинг сервера — Agar.su</title>
   <link rel="icon" href="https://agar.su/icon.svg" type="image/x-icon">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="/fonts/fa/all.min.css?v=1">
   <style>
     :root {
       --bg: #0f1118; --panel: #1a1d28; --panel2: #222633; --text: #e8ecf4;
@@ -23,6 +23,14 @@
     a.back:hover { color: var(--accent); }
     h1 { margin: 0 0 8px; font-size: 1.8rem; }
     .sub { color: var(--muted); margin-bottom: 18px; font-size: 0.95rem; line-height: 1.6; }
+    .period-row {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+    }
+    .period-row label { color: var(--muted); font-size: 0.9rem; }
+    .period-row select {
+      background: var(--panel2); color: var(--text); border: 1px solid var(--border);
+      border-radius: 8px; padding: 8px 12px; font-size: 0.9rem;
+    }
     .meta { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; }
     .pill {
       background: var(--panel); border: 1px solid var(--border); border-radius: 999px;
@@ -122,13 +130,24 @@
   <div class="wrap">
     <a href="../" class="back">← Глобальный рейтинг</a>
     <h1 id="title">Рейтинг сервера</h1>
-    <p class="sub">Топ игроков и кланов <strong>на выбранном сервере</strong> — снимок последнего опроса.
-    Очки — за место в топе на этом сервере в момент обновления.</p>
+    <p class="sub" id="sub">Топ игроков и кланов на выбранном сервере за период.
+    Очки — за место в рекордах этого сервера.</p>
+
+    <div class="period-row">
+      <label for="serverPeriod">Период</label>
+      <select id="serverPeriod">
+        <option value="alltime" selected>Всё время</option>
+        <option value="year">Год</option>
+        <option value="today">Сегодня</option>
+        <option value="yesterday">Вчера</option>
+      </select>
+    </div>
 
     <div id="error" class="err"></div>
     <nav class="srv-nav" id="srvNav"></nav>
 
     <div class="meta">
+      <div class="pill">Период: <strong id="periodLabel">Всё время</strong></div>
       <div class="pill">Обновлено: <strong id="updated">—</strong></div>
       <div class="pill" id="statusPill">Статус: <strong id="statusText">—</strong></div>
     </div>
@@ -136,7 +155,7 @@
     <div class="grid">
       <div class="card">
         <div class="card-head">
-          <h2>Игроки на сервере</h2>
+          <h2 id="playersTitle">Игроки на сервере</h2>
           <button type="button" class="toggle-list" id="togglePlayers" aria-expanded="false" hidden>
             <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
           </button>
@@ -145,7 +164,7 @@
       </div>
       <div class="card">
         <div class="card-head">
-          <h2>Кланы на сервере</h2>
+          <h2 id="clansTitle">Кланы на сервере</h2>
           <button type="button" class="toggle-list" id="toggleClans" aria-expanded="false" hidden>
             <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
           </button>
@@ -157,15 +176,23 @@
 
   <script src="../config.js"></script>
   <script>
-    const API = window.STATS_API || "https://api.agar.su:6009";
+    const API = window.STATS_API || "https://agar.su/stats-api";
     const REFRESH_MS = window.STATS_REFRESH_MS || 300000;
     const TOP_COLLAPSED = 10;
     const profileUrl = window.statsProfileUrl;
     const clanProfileUrl = window.statsClanProfileUrl;
     const serverUrl = window.statsServerUrl;
+    const PERIOD_LABELS = {
+      today: "Сегодня",
+      yesterday: "Вчера",
+      year: "Год",
+      alltime: "Всё время",
+    };
 
     const state = {
       serverId: null,
+      period: "alltime",
+      scoreLabel: "Рекорд",
       serverList: [],
       players: [],
       clans: [],
@@ -218,7 +245,14 @@
 
     function ensurePanel(wrapId, kind, cols) {
       const wrap = document.getElementById(wrapId);
-      if (wrap.querySelector(".rank-panel")) return;
+      const existing = wrap.querySelector(".rank-panel");
+      if (existing) {
+        const head = existing.querySelector(".rank-row.head");
+        if (head) {
+          head.innerHTML = `<span>#</span><span>${cols[0]}</span><span>${cols[1]}</span><span>${cols[2]}</span>`;
+        }
+        return;
+      }
       wrap.innerHTML = panelShell(kind, cols);
       if (state[kind + "Expanded"]) {
         document.getElementById(kind + "Panel").classList.add("is-expanded");
@@ -234,16 +268,17 @@
     }
 
     function paintLists() {
-      ensurePanel("playersWrap", "players", ["Ник", "Рекорд", "Очки"]);
-      ensurePanel("clansWrap", "clans", ["Клан", "Рекорд", "Очки"]);
+      const scoreCol = state.scoreLabel || "Рекорд";
+      ensurePanel("playersWrap", "players", ["Ник", scoreCol, "Очки"]);
+      ensurePanel("clansWrap", "clans", ["Клан", scoreCol, "Очки"]);
 
       document.getElementById("playersRows").innerHTML = state.players.length
-        ? state.players.map((r) => rankRowHtml(r.rank, nickCell(r), r.score, r.points)).join("")
-        : '<div class="loading" style="padding:20px 8px">Нет игроков</div>';
+        ? state.players.map((r) => rankRowHtml(r.rank, nickCell(r), r.score, r.points ?? 0)).join("")
+        : '<div class="loading" style="padding:20px 8px">Нет игроков за этот период</div>';
 
       document.getElementById("clansRows").innerHTML = state.clans.length
-        ? state.clans.map((r) => rankRowHtml(r.rank, clanCell(r), r.score, r.points)).join("")
-        : '<div class="loading" style="padding:20px 8px">Нет кланов</div>';
+        ? state.clans.map((r) => rankRowHtml(r.rank, clanCell(r), r.score, r.points ?? 0)).join("")
+        : '<div class="loading" style="padding:20px 8px">Нет кланов за этот период</div>';
 
       ["players", "clans"].forEach((kind) => {
         const panel = document.getElementById(kind + "Panel");
@@ -254,12 +289,29 @@
       });
     }
 
+    function currentPeriod() {
+      return document.getElementById("serverPeriod")?.value || state.period || "alltime";
+    }
+
+    function syncUrl() {
+      const id = state.serverId;
+      if (!id) return;
+      const period = currentPeriod();
+      const next = "#" + encodeURIComponent(id) + "?period=" + encodeURIComponent(period);
+      // hash query: #ffa?period=year — fallback to search if needed
+      const qs = new URLSearchParams(location.search);
+      qs.set("period", period);
+      history.replaceState(null, "", "?" + qs.toString() + "#" + encodeURIComponent(id));
+    }
+
     function renderNav() {
       const nav = document.getElementById("srvNav");
+      const period = currentPeriod();
       nav.innerHTML = state.serverList.map((s) => {
         const active = s.id === state.serverId ? " active" : "";
         const dot = s.ok ? "ok" : "bad";
-        return `<a href="${esc(serverUrl(s.id))}" class="srv-tab${active}" data-id="${esc(s.id)}">
+        const link = "?" + new URLSearchParams({ period }).toString() + "#" + encodeURIComponent(s.id);
+        return `<a href="${esc(link)}" class="srv-tab${active}" data-id="${esc(s.id)}">
           <span class="dot ${dot}"></span>${esc(s.name)}</a>`;
       }).join("");
     }
@@ -285,20 +337,37 @@
       const errEl = document.getElementById("error");
       errEl.style.display = "none";
       state.serverId = id;
+      state.period = currentPeriod();
       state.playersExpanded = false;
       state.clansExpanded = false;
 
       try {
         if (!state.serverList.length) await loadServerList();
 
-        const res = await fetch(API + "/api/server/" + encodeURIComponent(id), { cache: "no-store" });
+        const res = await fetch(
+          API + "/api/server/" + encodeURIComponent(id)
+            + "?period=" + encodeURIComponent(state.period)
+            + "&limit=10000",
+          { cache: "no-store" }
+        );
         if (!res.ok) throw new Error(res.status === 404 ? "Сервер не найден" : "HTTP " + res.status);
         const data = await res.json();
 
         document.getElementById("title").textContent = data.name || id;
         document.title = (data.name || id) + " — Agar.su";
+        const period = data.period || state.period;
+        state.period = period;
+        state.scoreLabel = data.scoreLabel || (data.kind === "score" ? "Побед" : "Масса");
+        document.getElementById("periodLabel").textContent = PERIOD_LABELS[period] || period;
         document.getElementById("updated").textContent = data.updatedAt
           ? new Date(data.updatedAt).toLocaleString("ru-RU") : "—";
+        document.getElementById("sub").textContent =
+          "Топ игроков и кланов на этом сервере · " + (PERIOD_LABELS[period] || period)
+          + ". Очки — за место в рекордах сервера за выбранный период.";
+        document.getElementById("playersTitle").textContent =
+          "Игроки · " + (PERIOD_LABELS[period] || period);
+        document.getElementById("clansTitle").textContent =
+          "Кланы · " + (PERIOD_LABELS[period] || period);
 
         const pill = document.getElementById("statusPill");
         const st = document.getElementById("statusText");
@@ -312,12 +381,12 @@
 
         state.players = data.players || [];
         state.clans = data.clans || [];
+        // reset panels so headers refresh with score label
+        document.getElementById("playersWrap").innerHTML = "";
+        document.getElementById("clansWrap").innerHTML = "";
         renderNav();
         paintLists();
-
-        if (location.hash.replace(/^#/, "") !== id) {
-          history.replaceState(null, "", "#" + encodeURIComponent(id));
-        }
+        syncUrl();
       } catch (e) {
         errEl.textContent = "Не удалось загрузить: " + e.message;
         errEl.style.display = "block";
@@ -326,6 +395,12 @@
 
     async function init() {
       try {
+        const q = new URLSearchParams(location.search);
+        const qPeriod = q.get("period");
+        if (qPeriod && PERIOD_LABELS[qPeriod]) {
+          document.getElementById("serverPeriod").value = qPeriod;
+          state.period = qPeriod;
+        }
         await loadServerList();
         const id = currentHashId() || state.serverList[0].id;
         await loadServer(id);
@@ -335,6 +410,10 @@
         errEl.style.display = "block";
       }
     }
+
+    document.getElementById("serverPeriod").addEventListener("change", () => {
+      if (state.serverId) loadServer(state.serverId);
+    });
 
     document.getElementById("togglePlayers").addEventListener("click", () => {
       state.playersExpanded = !state.playersExpanded;

@@ -1,0 +1,56 @@
+{
+  "pollIntervalMs": 300000,
+  "passPollMs": 300000,
+  "fetchTimeoutMs": 15000,
+  "insecureGameTls": true,
+  "port": 6009,
+  "host": "0.0.0.0",
+  "passUrl": "https://agar.su/pass.txt",
+  "sslKey": "/etc/letsencrypt/live/agar.su/privkey.pem",
+  "sslCert": "/etc/letsencrypt/live/agar.su/fullchain.pem",
+  "timezone": "Europe/Moscow",
+  "servers": [
+    {
+      "id": "ffa",
+      "name": "FFA - Москва",
+      "url": "https://ffa.agar.su/checkStats",
+      "kind": "mass",
+      "noClans": false
+    },
+    {
+      "id": "ms",
+      "name": "MegaSplit",
+      "url": "https://ms.agar.su:6001/checkStats",
+      "kind": "mass",
+      "noClans": false
+    },
+    {
+      "id": "pvp1",
+      "name": "1x1 ffa 1k",
+      "url": "https://ms.agar.su:6004/checkStats",
+      "kind": "score",
+      "noClans": true
+    },
+    {
+      "id": "pvp2",
+      "name": "2x2 ms 1k",
+      "url": "https://ms.agar.su:6005/checkStats",
+      "kind": "score",
+      "noClans": true
+    },
+    {
+      "id": "tournament",
+      "name": "Tournament 2x2",
+      "url": "https://ms.agar.su:6002/checkStats",
+      "kind": "score",
+      "noClans": true
+    },
+    {
+      "id": "tournament2",
+      "name": "Tournament 3x3",
+      "url": "https://ms.agar.su:6003/checkStats",
+      "kind": "score",
+      "noClans": true
+    }
+  ]
+}
