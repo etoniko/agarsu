@@ -17,7 +17,12 @@ server/id.json
 **/clans/
 statsserver/users/
 statsserver/clans/
+statsserver/data/
 statsserver/data/*.json
+server/statsserver/users/
+server/statsserver/clans/
+server/statsserver/data/
+server/statsserver/data/*.json
 *.bak
 *.bak-*
 .DS_Store

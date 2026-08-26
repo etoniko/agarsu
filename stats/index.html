@@ -270,11 +270,31 @@
     </div>
   </div>
 
-  <script src="/stats/config.js"></script>
+  <script src="/stats/config.js?v=2"></script>
   <script>
     const API_BASE = window.STATS_API || "https://api.agar.su/stats-api";
     const REFRESH_MS = window.STATS_REFRESH_MS || 300000;
     const TOP_COLLAPSED = 10;
+
+    if (!window.statsProfileUrl) {
+      window.statsBaseUrl = function () {
+        return location.origin + "/stats/";
+      };
+      window.statsProfileUrl = function (id, period) {
+        let u = window.statsBaseUrl() + "users/?id=" + encodeURIComponent(id);
+        if (period) u += "&period=" + encodeURIComponent(period);
+        return u;
+      };
+      window.statsClanProfileUrl = function (id, period) {
+        let u = window.statsBaseUrl() + "clans/?id=" + encodeURIComponent(id);
+        if (period) u += "&period=" + encodeURIComponent(period);
+        return u;
+      };
+      window.statsServerUrl = function (id) {
+        return window.statsBaseUrl() + "servers/#" + encodeURIComponent(id);
+      };
+    }
+
     const profileUrl = window.statsProfileUrl;
     const clanProfileUrl = window.statsClanProfileUrl;
 
@@ -453,7 +473,7 @@
           API_BASE + "/api/rankings?limit=100"
             + "&period=" + encodeURIComponent(state.period)
             + "&metric=" + encodeURIComponent(state.metric),
-          { cache: "no-store" }
+          { cache: "no-store", mode: "cors" }
         );
         if (!res.ok) throw new Error("HTTP " + res.status);
         const data = await res.json();
@@ -472,7 +492,9 @@
         paintRankings();
         document.getElementById("serversWrap").innerHTML = renderServers(data.servers || []);
       } catch (e) {
-        errEl.textContent = "Не удалось загрузить: " + e.message;
+        const msg = String(e && e.message ? e.message : e);
+        errEl.textContent = "Не удалось загрузить с api.agar.su: " + msg
+          + ". Данные игроков только на API, не в GitHub. Попробуйте Ctrl+F5.";
         errEl.style.display = "block";
       }
     }
