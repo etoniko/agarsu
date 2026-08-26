@@ -68,7 +68,7 @@
   async function loadSkins(force) {
     if (!force && skinMap) return skinMap;
     if (!force && loadPromise) return loadPromise;
-    loadPromise = fetch(SKINLIST_URL + "?v=" + Date.now(), { cache: "no-store" })
+    loadPromise = fetch(SKINLIST_URL, { cache: "no-store" })
       .then((r) => {
         if (!r.ok) throw new Error("skinlist");
         return r.text();
