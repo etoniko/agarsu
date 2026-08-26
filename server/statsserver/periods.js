@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { toNum } from "./num.js";
+import { mergeProfileRecords } from "./serverIds.js";
 import { formatLeaderboards, sanitizeTotals, pointsForRank } from "./scoring.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -235,7 +236,8 @@ function upsertServerRecord(map, row, pollAt) {
   if (!row || !row.nick) return;
   const score = toNum(row.score);
   if (score <= 0) return;
-  const key = row.id ? `id:${row.id}` : `nick:${String(row.nick).trim().toLowerCase()}`;
+  const nickKey = String(row.nick).trim().toLowerCase();
+  const key = row.id ? `id:${row.id}` : `nick:${nickKey}`;
   const prev = map[key];
   if (prev && toNum(prev.score) >= score) return;
   map[key] = {
@@ -245,6 +247,73 @@ function upsertServerRecord(map, row, pollAt) {
     clan: row.clan || null,
     time: pollAt,
   };
+  // Один игрок — одна строка: убираем дубль по nick, если уже есть id
+  if (row.id) {
+    const staleNickKey = `nick:${nickKey}`;
+    if (staleNickKey !== key && map[staleNickKey]) delete map[staleNickKey];
+  }
+}
+
+/** Схлопывает id:* и nick:* для одного passId / ника на доске сервера. */
+function dedupeBoardRows(rows) {
+  const byId = new Map();
+  const nickOnly = [];
+  for (const row of rows || []) {
+    if (!row || !row.nick || toNum(row.score) <= 0) continue;
+    if (row.id) {
+      const id = String(row.id);
+      const prev = byId.get(id);
+      if (!prev || toNum(row.score) > toNum(prev.score)) byId.set(id, row);
+    } else {
+      nickOnly.push(row);
+    }
+  }
+  const out = [...byId.values()];
+  const usedNicks = new Set(out.map((r) => String(r.nick).trim().toLowerCase()));
+  for (const row of nickOnly) {
+    const nk = String(row.nick).trim().toLowerCase();
+    if (usedNicks.has(nk)) continue;
+    out.push(row);
+    usedNicks.add(nk);
+  }
+  return out;
+}
+
+function dedupeBoardMap(map) {
+  return Object.fromEntries(
+    dedupeBoardRows(Object.values(map || {}))
+      .sort((a, b) => toNum(b.score) - toNum(a.score))
+      .map((row) => {
+        const nickKey = String(row.nick).trim().toLowerCase();
+        const key = row.id ? `id:${row.id}` : `nick:${nickKey}`;
+        return [key, row];
+      })
+  );
+}
+
+function dedupeScoreRankingRows(list) {
+  const byNick = new Map();
+  for (const row of list || []) {
+    const nk = String(row.nick || "").trim().toLowerCase();
+    if (!nk) continue;
+    const prev = byNick.get(nk);
+    if (!prev) {
+      byNick.set(nk, row);
+      continue;
+    }
+    const prevScore = toNum(prev.bestScore);
+    const nextScore = toNum(row.bestScore);
+    let keep = prev;
+    if (nextScore > prevScore) keep = row;
+    else if (nextScore === prevScore && row.id && !prev.id) keep = row;
+    keep = { ...keep };
+    keep.servers = { ...(prev.servers || {}), ...(row.servers || {}) };
+    keep.serverCount = Object.keys(keep.servers).length;
+    keep.bestScore = Math.max(prevScore, nextScore);
+    if (!keep.id && row.id) keep.id = row.id;
+    byNick.set(nk, keep);
+  }
+  return [...byNick.values()];
 }
 
 function updateServerBoardsFromSnapshot(state, snapshot, pollAt) {
@@ -290,8 +359,8 @@ function formatServerPeriodBoard(state, serverId, period, limit = 100) {
   const board = ensureServerBoard(state, serverId);
   const lim = Math.min(MAX_STORED, Math.max(1, Number(limit) || 100));
   // Рекорды игроков за период (без клановых строк) + очки за место
-  return Object.values(board[p] || {})
-    .filter((row) => row && row.nick && !isClanBoardRow(row) && toNum(row.score) > 0)
+  return dedupeBoardRows(Object.values(board[p] || {}))
+    .filter((row) => row && row.nick && !isClanBoardRow(row))
     .sort((a, b) => toNum(b.score) - toNum(a.score))
     .slice(0, lim)
     .map((row, i) => {
@@ -312,8 +381,8 @@ function formatServerPeriodClans(state, serverId, period, limit = 100) {
   const p = PERIOD_KEYS.includes(period) ? period : "today";
   const board = ensureServerBoard(state, serverId);
   const lim = Math.min(MAX_STORED, Math.max(1, Number(limit) || 100));
-  return Object.values(board[p] || {})
-    .filter((row) => row && isClanBoardRow(row) && toNum(row.score) > 0)
+  return dedupeBoardRows(Object.values(board[p] || {}))
+    .filter((row) => row && isClanBoardRow(row))
     .sort((a, b) => toNum(b.score) - toNum(a.score))
     .slice(0, lim)
     .map((row, i) => {
@@ -908,13 +977,15 @@ function formatScoreRankings(state, period, limit = 100) {
 
   const lim = Math.min(MAX_STORED, Math.max(1, Number(limit) || 100));
   const isClanRow = (r) => !!(r.clan || /^\[/.test(String(r.nick || "").trim()));
-  const players = [...byKey.values()]
-    .filter((r) => r.id && !isClanRow(r))
+  let players = dedupeScoreRankingRows(
+    [...byKey.values()].filter((r) => r.id && !isClanRow(r))
+  )
     .sort((a, b) => toNum(b.bestScore) - toNum(a.bestScore))
     .slice(0, lim);
 
-  const clans = [...byKey.values()]
-    .filter((r) => r.id && isClanRow(r))
+  let clans = dedupeScoreRankingRows(
+    [...byKey.values()].filter((r) => r.id && isClanRow(r))
+  )
     .sort((a, b) => toNum(b.bestScore) - toNum(a.bestScore))
     .slice(0, Math.min(lim, 200))
     .map((r) => ({
@@ -1101,14 +1172,51 @@ function migrateRecordsLogic(state) {
     state.recordsLogicVersion = 6;
     state.suppressNotifyUntil = new Date(Date.now() + 2 * 60 * 1000).toISOString();
   }
+  // v7: dedupe server boards + profile ffa1→ffa, stop replaying old feed events
+  if (Number(state.recordsLogicVersion) < 7) {
+    for (const board of Object.values(state.serverBoards || {})) {
+      for (const period of PERIOD_KEYS) {
+        board[period] = dedupeBoardMap(board[period] || {});
+      }
+    }
+    migrateProfileRecordFiles();
+    state.recordsLogicVersion = 7;
+    state.suppressNotifyUntil = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+    writeJson(FEED_PATH, { updatedAt: new Date().toISOString(), events: [] });
+  }
   return state;
+}
+
+function migrateProfileRecordFiles() {
+  for (const baseDir of [USERS_DIR, CLANS_DIR]) {
+    if (!fs.existsSync(baseDir)) continue;
+    let ids = [];
+    try {
+      ids = fs.readdirSync(baseDir);
+    } catch {
+      continue;
+    }
+    for (const id of ids) {
+      const file = path.join(baseDir, id, "stats.json");
+      try {
+        const data = JSON.parse(fs.readFileSync(file, "utf8"));
+        if (!data.records) continue;
+        const merged = mergeProfileRecords(data.records);
+        if (JSON.stringify(merged) === JSON.stringify(data.records)) continue;
+        data.records = merged;
+        fs.writeFileSync(file, JSON.stringify(data, null, 2), "utf8");
+      } catch {
+        /* skip broken profile */
+      }
+    }
+  }
 }
 
 function getFeedSince(sinceId) {
   const events = loadFeed();
-  if (!sinceId) return events;
+  if (!sinceId) return [];
   const idx = events.findIndex((e) => e.id === sinceId);
-  if (idx < 0) return events.slice(-20);
+  if (idx < 0) return [];
   return events.slice(idx + 1);
 }
 

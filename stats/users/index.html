@@ -210,19 +210,6 @@
       html += `<p><strong>Очки за период:</strong> <span class="pts">${Number(stats.points) || 0}</span> <span class="muted">из ${maxPts}</span></p>`;
       html += `<p><strong>Лучший рекорд за период:</strong> ${Number(stats.bestScore) || 0}</p></div></div>`;
 
-      if (stats.lastPoll && stats.lastPoll.servers) {
-        const rows = Object.entries(stats.lastPoll.servers);
-        if (rows.length) {
-          html += `<div class="card"><h2>Последнее обновление</h2><div class="card-body"><table>
-            <thead><tr><th>Сервер</th><th>Место</th><th>Рекорд</th><th>Очки</th></tr></thead><tbody>`;
-          rows.forEach(([sid, r]) => {
-            html += `<tr><td>${serverCell(sid, r.serverName || sid)}</td><td>${r.rank || "—"}</td>
-              <td class="pts">${r.score || 0}</td><td>${r.points || 0}</td></tr>`;
-          });
-          html += "</tbody></table></div></div>";
-        }
-      }
-
       html += `<div class="card"><h2>Рекорды по серверам · ${esc(PERIOD_LABELS[period] || period)}</h2><div class="card-body">`;
       if (!recList.length) {
         html += '<p class="muted">Нет данных по серверам за этот период.</p>';

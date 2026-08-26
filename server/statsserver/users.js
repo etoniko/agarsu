@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { toNum } from "./num.js";
+import { mergeProfileRecords, normalizeServerId } from "./serverIds.js";
 
 function safeUid(uid) {
   const s = String(uid || "").trim();
@@ -23,6 +24,7 @@ function readUserStats(root, uid) {
     data.points = toNum(data.points);
     data.polls = toNum(data.polls);
     data.bestScore = toNum(data.bestScore);
+    if (data.records) data.records = mergeProfileRecords(data.records);
     return data;
   } catch {
     return null;
@@ -78,7 +80,7 @@ function updateUserFromPoll(root, uid, payload, registry) {
   if (payload.lastPoll) stats.lastPoll = payload.lastPoll;
 
   for (const rec of payload.records || []) {
-    const sid = rec.serverId;
+    const sid = normalizeServerId(rec.serverId);
     if (!sid) continue;
     const score = toNum(rec.score);
     const prev = stats.records[sid];
@@ -96,6 +98,7 @@ function updateUserFromPoll(root, uid, payload, registry) {
     stats.bestScore = Math.max(stats.bestScore, score);
   }
 
+  stats.records = mergeProfileRecords(stats.records);
   writeUserStats(root, safe, stats);
   return stats;
 }
