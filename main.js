@@ -10346,7 +10346,7 @@ onReady(() => {
       const sameWindow = prefersSameWindowAuth();
       const config = {
         app: 54069355,
-        redirectUrl: "https://api.agar.su",
+        redirectUrl: "https://agar.su",
         state,
         codeVerifier,
         responseMode: sameWindow ? VKID.ConfigResponseMode.Redirect : VKID.ConfigResponseMode.Callback,
