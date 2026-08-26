@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** https://agar.su:6008/online — читает online.json, опрос domain/process каждые 15 сек */
+/** https://api.agar.su/online — читает online.json, опрос domain/process каждые 15 сек */
 import http from "http";
 import https from "https";
 import fs from "fs";
