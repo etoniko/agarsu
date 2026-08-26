@@ -1167,7 +1167,7 @@ function fulfillPayment(paymentId, meta = {}) {
     nickname: pendingItem.nickname,
     password: pendingItem.password,
     has_skin: !!pendingItem.file,
-    skin_file: pendingItem.file ? `https://agar.su/skins/${pendingItem.internal_id}.${pendingItem.ext}` : null,
+    skin_file: pendingItem.file ? `https://api.agar.su/skins/${pendingItem.internal_id}.${pendingItem.ext}` : null,
     skin_ext: pendingItem.ext || null,
     uid: pendingItem.uid,
     invisible: pendingItem.invisible,

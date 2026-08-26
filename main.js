@@ -6636,7 +6636,7 @@ function updateRegionOnlineTotals(totals) {
       if (provider !== "vk") return;
       let res;
       try {
-        res = await fetch("https://agar.su/api/auth/vk", {
+        res = await fetch("https://api.agar.su/api/auth/vk", {
           method: "POST",
           headers: {
             "Content-Type": "application/json"

@@ -5,7 +5,7 @@
   "insecureGameTls": true,
   "port": 6009,
   "host": "0.0.0.0",
-  "passUrl": "https://agar.su/pass.txt",
+  "passUrl": "https://api.agar.su/pass.txt",
   "sslKey": "/etc/letsencrypt/live/agar.su/privkey.pem",
   "sslCert": "/etc/letsencrypt/live/agar.su/fullchain.pem",
   "timezone": "Europe/Moscow",

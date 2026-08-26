@@ -56,7 +56,7 @@ const PORT = Number(process.env.STATS_PORT || config.port || 6009);
 const HOST = process.env.STATS_HOST || config.host || "0.0.0.0";
 const SSL_KEY = process.env.SSL_KEY || config.sslKey;
 const SSL_CERT = process.env.SSL_CERT || config.sslCert;
-const PASS_URL = process.env.PASS_URL || config.passUrl || "https://agar.su/pass.txt";
+const PASS_URL = process.env.PASS_URL || config.passUrl || "https://api.agar.su/pass.txt";
 const FETCH_TIMEOUT_MS = Number(config.fetchTimeoutMs || 15000);
 const INSECURE_GAME_TLS = config.insecureGameTls !== false;
 

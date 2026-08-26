@@ -478,7 +478,7 @@
                         <div class="clan-price">для клана: 200 ₽</div>
                     </div>
                     <div class="back">
-                        <img src="https://agar.su/skins/3.png" alt="Пример">
+                        <img src="https://api.agar.su/skins/3.png" alt="Пример">
                         <p>Кастомное статичное изображение в формате PNG или JPG</p>
                     </div>
                 </div>
@@ -758,7 +758,7 @@ nicknameInput.addEventListener("blur", async () => {
     if (localStorage.accountToken) {
       headers['Authorization'] = `Game ${localStorage.accountToken}`;
     }
-    const res = await fetch('https://agar.su/check-nickname', {
+    const res = await fetch('https://api.agar.su/check-nickname', {
       method: 'POST',
       headers,
       body: JSON.stringify({ nickname: nicknameInput.value.trim() })
@@ -768,7 +768,7 @@ nicknameInput.addEventListener("blur", async () => {
     // Если авторизован — проверим, наш ли это ник
     if (localStorage.accountToken && data.taken) {
       // Запросим список своих ников
-      const meRes = await fetch('https://agar.su/api/me/nicknames', {
+      const meRes = await fetch('https://api.agar.su/api/me/nicknames', {
         headers: { 'Authorization': `Game ${localStorage.accountToken}` }
       });
       if (meRes.ok) {
@@ -1006,7 +1006,7 @@ document.getElementById("paymentForm").addEventListener("submit", async (e) => {
 
 async function sendForm(formData, headers = {}) {
   try {
-    const res = await fetch("https://agar.su/create-payment", {
+    const res = await fetch("https://api.agar.su/create-payment", {
       method: "POST",
       headers,
       body: formData
@@ -1058,7 +1058,7 @@ let currentPage = 1;
 async function loadData() {
     try {
         // Fetch skinlist.txt
-        const skinResponse = await fetch('https://agar.su/skinlist.txt');
+        const skinResponse = await fetch('https://api.agar.su/skinlist.txt');
         const skinText = await skinResponse.text();
         const skinLines = skinText.trim().split('\n');
         skins = skinLines.map(line => {
@@ -1067,7 +1067,7 @@ async function loadData() {
         }).reverse(); // Реверс: новые (последние строки) сначала
 
         // Fetch pass.txt
-        const passResponse = await fetch('https://agar.su/pass.txt');
+        const passResponse = await fetch('https://api.agar.su/pass.txt');
         const passText = await passResponse.text();
         const passLines = passText.trim().split('\n');
         passLines.forEach(nick => passwords.add(nick.trim()));
@@ -1093,7 +1093,7 @@ function renderGallery(page) {
         const card = document.createElement('div');
         card.className = 'skin-card';
         card.innerHTML = `
-            <img src="https://agar.su/skins/${skin.code}.png" alt="Скин ${skin.nick}">
+            <img src="https://api.agar.su/skins/${skin.code}.png" alt="Скин ${skin.nick}">
             <h4>${skin.nick}            <span class="password-icon material-icons">
                 ${passwords.has(skin.nick) ? 'lock' : 'lock_open'}
             </span></h4>
