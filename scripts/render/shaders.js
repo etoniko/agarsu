@@ -104,7 +104,10 @@ void main() {
   vec4 col;
   if (v_texMode > 0.5) {
     if (dist > 1.0) discard;
-    vec2 sampleUv = vec2(v_uvOffset + (v_local.x * 0.5 + 0.5) * v_uv.x, v_local.y * 0.5 + 0.5);
+    vec2 sampleUv = vec2(
+      v_uvOffset + (v_local.x * 0.5 + 0.5) * v_uv.x,
+      0.5 + v_local.y * 0.5 * v_uv.y
+    );
     col = texture(u_tex, sampleUv);
     if (col.a < 0.01) discard;
   } else {

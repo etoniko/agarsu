@@ -1042,6 +1042,17 @@
   function getSkinImage(skinId) {
     return loadCachedImage(getSkinImageUrl(skinId));
   }
+  /**
+   * Limited-glow mass thresholds by server.
+   * Default (ffa / ms / pvp / tournament / hardcore / chashka): 22400 / 22300
+   * MegaSplit 5K: 32400 / 32300
+   */
+  function getLimitGlowMassBounds(host) {
+    const h = String(host || "");
+    if (/megasplit5k|\/ms5k/i.test(h)) return { on: 32400, off: 32300 };
+    return { on: 22400, off: 22300 };
+  }
+  window.getLimitGlowMassBounds = getLimitGlowMassBounds;
   /** Bridge skins via unified xn--bdk.pw skinsbot. skinlist.txt still wins (agar.su only). */
   var SKINS_BOT_BASE = "https://xn--bdk.pw:6016";
   function isBubbleSkinHost(host) {
@@ -4205,21 +4216,17 @@
       }
       const mass = Math.floor(this.size * this.size * .01);
       if (typeof this.glowActive === "undefined") this.glowActive = false;
-      // MegaSplit / AgarZ (6013) / Delta (6014) — no mass-limit glow on these hosts
-      const _host = String(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl || "");
-      const _noMassLimitGlow = /megasplit|:6013\/|sixz\.ru:6013|:6014\/|sixz\.ru:6017|:6017\/|\/d(?:ffa|rookery|arctida)/i.test(_host);
-      if (_noMassLimitGlow) {
-        this.glowActive = false;
-      } else {
-        if (!this.glowActive && mass >= 22400) this.glowActive = true;
-        if (this.glowActive && mass <= 22300) this.glowActive = false;
-      }
+      const glowMass = getLimitGlowMassBounds(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl);
+      if (!this.glowActive && mass >= glowMass.on) this.glowActive = true;
+      if (this.glowActive && mass <= glowMass.off) this.glowActive = false;
       if (this.glowActive && S.showGlow) {
         const effectImg = loadCachedImage2("/photo/limited.png");
         if (effectImg && effectImg.complete && effectImg.width > 0) {
           ctx.save();
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, renderSize, 0, 2 * Math.PI);
           ctx.clip();
-          const edrawSize = 2 * bigPointSize;
+          const edrawSize = 2 * renderSize;
           ctx.globalAlpha = 1;
           ctx.drawImage(effectImg, this.x - edrawSize / 2, this.y - edrawSize / 2, edrawSize, edrawSize);
           ctx.restore();

@@ -5,6 +5,13 @@
 (function (global) {
   "use strict";
 
+  /** Limited glow: megasplit5k 32400/32300, everyone else 22400/22300 */
+  function getLimitGlowMassBounds(host) {
+    const h = String(host || "");
+    if (/megasplit5k|\/ms5k/i.test(h)) return { on: 32400, off: 32300 };
+    return { on: 22400, off: 22300 };
+  }
+
   const MAX_CIRCLES = 8192;
   const MAX_LABELS = 4096;
   const MAX_TEX = 8192;
@@ -551,7 +558,6 @@ void main() {
     const textZoomRatio = S.textZoomRatio || Math.ceil(10 * viewZoom) * 0.1;
     const invZoom = S.textInvZoom || 1 / Math.max(textZoomRatio, 0.001);
     const host = String(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl || "");
-    const noMassLimitGlow = /megasplit|:6013\/|sixz\.ru:6013|:6014\/|sixz\.ru:6017|:6017\/|\/d(?:ffa|rookery|arctida)/i.test(host);
 
     const cam = { nodeX: S.nodeX, nodeY: S.nodeY, zoom: viewZoom, w, h };
     // Layer spacing: larger nodelist index = closer. Labels sit just in front of own cell,
@@ -559,6 +565,7 @@ void main() {
     const layerStep = 1.0 / (total + 2);
     const depthFill = (i) => 1.0 - (i + 1) * layerStep;
     const depthSkin = (i) => depthFill(i) - layerStep * 0.25;
+    const depthGlow = (i) => depthFill(i) - layerStep * 0.35;
     const depthLabel = (i) => depthFill(i) - layerStep * 0.5;
     const skinFrameBase = ((S.timestamp || Date.now()) / 100) | 0;
     this._labelBatches.clear();
@@ -706,7 +713,9 @@ void main() {
             const fw = skinImg.naturalWidth || skinImg.width;
             const fh = skinImg.naturalHeight || skinImg.height;
             const frame = fw > fh ? skinFrameBase % Math.floor(fw / fh) : 0;
-            const sz = cell.size * cell.skinZoom;
+            // Keep cell radius fixed; zoom UVs like old canvas clip+oversized draw
+            const sz = cell.size;
+            const z = Math.max(1, cell.skinZoom || 1);
             let rot = 0;
             if (rotation.has(skinName)) {
               if (!cell._rot) cell._rot = { target: 0, current: 0, lastAngle: null };
@@ -732,23 +741,27 @@ void main() {
             const gpu = prepareSkinGpuSource(gl, skinImg, frame);
             if (gpu) {
               const entry = this.texMedia.get("skin:" + (skinId || ("petri:" + (petriSkinKey || cell.name || "x"))) + ":f" + frame, gpu.source, gpu.version);
-              if (entry) this._queueTex(entry, cell.x, cell.y, sz, rot, gpu.u0, 0, gpu.u1, 1, dSkin, true);
+              if (entry) {
+                const uMid = (gpu.u0 + gpu.u1) * 0.5;
+                const vMid = 0.5;
+                const uHalf = (gpu.u1 - gpu.u0) * 0.5 / z;
+                const vHalf = 0.5 / z;
+                this._queueTex(entry, cell.x, cell.y, sz, rot, uMid - uHalf, vMid - vHalf, uMid + uHalf, vMid + vHalf, dSkin, true);
+              }
             }
           }
       }
 
       const mass = Math.floor(cell.size * cell.size * 0.01);
       if (typeof cell.glowActive === "undefined") cell.glowActive = false;
-      if (noMassLimitGlow) cell.glowActive = false;
-      else {
-        if (!cell.glowActive && mass >= 22400) cell.glowActive = true;
-        if (cell.glowActive && mass <= 22300) cell.glowActive = false;
-      }
+      const glowMass = getLimitGlowMassBounds(host);
+      if (!cell.glowActive && mass >= glowMass.on) cell.glowActive = true;
+      if (cell.glowActive && mass <= glowMass.off) cell.glowActive = false;
       if (cell.glowActive && S.showGlow && loadCachedImage) {
         const effectImg = loadCachedImage("/photo/limited.png");
         if (effectImg && effectImg.complete && effectImg.width > 0) {
           const entry = this.texMedia.get("glow", effectImg, effectImg.width);
-          this._queueTex(entry, cell.x, cell.y, cell.size, 0, 0, 0, 1, 1, depthSkin(i), true);
+          if (entry) this._queueTex(entry, cell.x, cell.y, cell.size, 0, 0, 0, 1, 1, depthGlow(i), true);
         }
       }
 
