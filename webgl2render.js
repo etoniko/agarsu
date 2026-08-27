@@ -5,9 +5,11 @@
 (function (global) {
   "use strict";
 
-  /** Limited glow: megasplit5k 32400/32300, everyone else 22400/22300 */
+  /** Limited glow (Russia only). TR/EU disabled. megasplit5k 32400/32300, else 22400/22300 */
   function getLimitGlowMassBounds(host) {
     const h = String(host || "");
+    if (/:6013\b|sixz\.ru:6013/i.test(h)) return null; // Turkey
+    if (/:6014\b|:6015\b|:6017\b|xn--bdk\.pw|\/d(?:ffa|rookery|arctida)/i.test(h)) return null; // Europe
     if (/megasplit5k|\/ms5k/i.test(h)) return { on: 32400, off: 32300 };
     return { on: 22400, off: 22300 };
   }
@@ -755,8 +757,12 @@ void main() {
       const mass = Math.floor(cell.size * cell.size * 0.01);
       if (typeof cell.glowActive === "undefined") cell.glowActive = false;
       const glowMass = getLimitGlowMassBounds(host);
-      if (!cell.glowActive && mass >= glowMass.on) cell.glowActive = true;
-      if (cell.glowActive && mass <= glowMass.off) cell.glowActive = false;
+      if (!glowMass) {
+        cell.glowActive = false;
+      } else {
+        if (!cell.glowActive && mass >= glowMass.on) cell.glowActive = true;
+        if (cell.glowActive && mass <= glowMass.off) cell.glowActive = false;
+      }
       if (cell.glowActive && S.showGlow && loadCachedImage) {
         const effectImg = loadCachedImage("/photo/limited.png");
         if (effectImg && effectImg.complete && effectImg.width > 0) {

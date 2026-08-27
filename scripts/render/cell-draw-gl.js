@@ -141,8 +141,12 @@ export function drawCellGL(renderer, cell, S, helpers) {
   const glowMass = (typeof getLimitGlowMassBounds === "function")
     ? getLimitGlowMassBounds(host)
     : (/megasplit5k|\/ms5k/i.test(host) ? { on: 32400, off: 32300 } : { on: 22400, off: 22300 });
-  if (!cell.glowActive && mass >= glowMass.on) cell.glowActive = true;
-  if (cell.glowActive && mass <= glowMass.off) cell.glowActive = false;
+  if (!glowMass) {
+    cell.glowActive = false;
+  } else {
+    if (!cell.glowActive && mass >= glowMass.on) cell.glowActive = true;
+    if (cell.glowActive && mass <= glowMass.off) cell.glowActive = false;
+  }
 
   if (cell.glowActive && S.showGlow) {
     const effectImg = loadCachedImage("/photo/limited.png");
