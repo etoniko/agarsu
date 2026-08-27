@@ -3314,8 +3314,12 @@
       }
       const mass = Math.floor(this.size * this.size * .01);
       if (typeof this.glowActive === "undefined") this.glowActive = false;
-      if (!this.glowActive && mass >= 22400) this.glowActive = true;
-      if (this.glowActive && mass <= 22300) this.glowActive = false;
+      const _host = String(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl || "");
+      const glowMass = (typeof getLimitGlowMassBounds === "function")
+        ? getLimitGlowMassBounds(_host)
+        : (/megasplit5k|\/ms5k/i.test(_host) ? { on: 32400, off: 32300 } : { on: 22400, off: 22300 });
+      if (!this.glowActive && mass >= glowMass.on) this.glowActive = true;
+      if (this.glowActive && mass <= glowMass.off) this.glowActive = false;
       if (this.glowActive && S.showGlow) {
         const effectImg = loadCachedImage2("/photo/limited.png");
         if (effectImg && effectImg.complete && effectImg.width > 0) {

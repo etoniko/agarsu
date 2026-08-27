@@ -1115,8 +1115,13 @@
             const uv = renderer.ensureSkin(String(skinId), skinImg, frame);
             if (uv) {
               const angle = updateCellRotation(node, rotation, skinName);
-              const sz = renderSize * (node.skinZoom || 1);
-              renderer.pushSkin(node.x, node.y, sz, angle, uv.u0, uv.v0, uv.u1, uv.v1, 1, cellDepth);
+              const z = Math.max(1, node.skinZoom || 1);
+              const sz = renderSize;
+              // UV zoom = old canvas clip + oversized skin draw
+              const u0 = uv.u0, v0 = uv.v0, u1 = uv.u1, v1 = uv.v1;
+              const uMid = (u0 + u1) * 0.5, vMid = (v0 + v1) * 0.5;
+              const uHalf = (u1 - u0) * 0.5 / z, vHalf = (v1 - v0) * 0.5 / z;
+              renderer.pushSkin(node.x, node.y, sz, angle, uMid - uHalf, vMid - vHalf, uMid + uHalf, vMid + vHalf, 1, cellDepth);
             }
           }
         }
@@ -3674,14 +3679,12 @@
       let drew = false;
       const mass = Math.floor(this.size * this.size * .01);
       if (typeof this.glowActive === "undefined") this.glowActive = false;
-      const _host = String(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl || "");
-      const _noMassLimitGlow = /megasplit|:6013\/|sixz\.ru:6013|:6014\/|\/d(?:ffa|rookery|arctida)/i.test(_host);
-      if (_noMassLimitGlow) {
-        this.glowActive = false;
-      } else {
-        if (!this.glowActive && mass >= 22400) this.glowActive = true;
-        if (this.glowActive && mass <= 22300) this.glowActive = false;
-      }
+      const _hostA = String(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl || "");
+      const glowMassA = (typeof getLimitGlowMassBounds === "function")
+        ? getLimitGlowMassBounds(_hostA)
+        : (/megasplit5k|\/ms5k/i.test(_hostA) ? { on: 32400, off: 32300 } : { on: 22400, off: 22300 });
+      if (!this.glowActive && mass >= glowMassA.on) this.glowActive = true;
+      if (this.glowActive && mass <= glowMassA.off) this.glowActive = false;
       if (this.isVirus && !isTransp && S.customVirusBgEnabled) {
         ctx.save();
         ctx.beginPath();
@@ -3786,15 +3789,12 @@
       }
       const mass = Math.floor(this.size * this.size * .01);
       if (typeof this.glowActive === "undefined") this.glowActive = false;
-      // MegaSplit / AgarZ (6013) / Delta (6014) — no mass-limit glow on these hosts
-      const _host = String(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl || "");
-      const _noMassLimitGlow = /megasplit|:6013\/|sixz\.ru:6013|:6014\/|\/d(?:ffa|rookery|arctida)/i.test(_host);
-      if (_noMassLimitGlow) {
-        this.glowActive = false;
-      } else {
-        if (!this.glowActive && mass >= 22400) this.glowActive = true;
-        if (this.glowActive && mass <= 22300) this.glowActive = false;
-      }
+      const _hostB = String(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl || "");
+      const glowMassB = (typeof getLimitGlowMassBounds === "function")
+        ? getLimitGlowMassBounds(_hostB)
+        : (/megasplit5k|\/ms5k/i.test(_hostB) ? { on: 32400, off: 32300 } : { on: 22400, off: 22300 });
+      if (!this.glowActive && mass >= glowMassB.on) this.glowActive = true;
+      if (this.glowActive && mass <= glowMassB.off) this.glowActive = false;
       if (this.glowActive && S.showGlow) {
         const effectImg = loadCachedImage2("/photo/limited.png");
         if (effectImg && effectImg.complete && effectImg.width > 0) {

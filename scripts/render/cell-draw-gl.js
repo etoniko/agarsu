@@ -81,7 +81,8 @@ export function drawCellGL(renderer, cell, S, helpers) {
         const fw = skinImg.width;
         const fh = skinImg.height;
         const frame = fw > fh ? Math.floor(Date.now() / 100 % Math.floor(fw / fh)) : 0;
-        const sz = renderSize * cell.skinZoom;
+        const sz = renderSize;
+        const z = Math.max(1, cell.skinZoom || 1);
         const texKey = `skin:${skinId}:${fw}x${fh}`;
         registerTexture(renderer, texKey, skinImg);
 
@@ -113,8 +114,9 @@ export function drawCellGL(renderer, cell, S, helpers) {
           rot = cell._rot.current;
         }
 
-        const uvScaleX = fw > fh ? fh / fw : 1;
-        const uvOffset = fw > fh ? (frame * fh) / fw : 0;
+        const uvScaleX = (fw > fh ? fh / fw : 1) / z;
+        const frameW = fw > fh ? fh / fw : 1;
+        const uvOffset = (fw > fh ? (frame * fh) / fw : 0) + (frameW - uvScaleX) * 0.5;
         renderer.pushCircle(
           cell.x,
           cell.y,
@@ -124,7 +126,7 @@ export function drawCellGL(renderer, cell, S, helpers) {
           0,
           true,
           uvScaleX,
-          1,
+          1 / z,
           rot,
           texKey,
           uvOffset
@@ -136,13 +138,11 @@ export function drawCellGL(renderer, cell, S, helpers) {
   const mass = Math.floor(cell.size * cell.size * 0.01);
   if (typeof cell.glowActive === "undefined") cell.glowActive = false;
   const host = String(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl || "");
-  const noMassLimitGlow = /megasplit|:6013\/|sixz\.ru:6013|:6014\/|\/d(?:ffa|rookery|arctida)/i.test(host);
-  if (noMassLimitGlow) {
-    cell.glowActive = false;
-  } else {
-    if (!cell.glowActive && mass >= 22400) cell.glowActive = true;
-    if (cell.glowActive && mass <= 22300) cell.glowActive = false;
-  }
+  const glowMass = (typeof getLimitGlowMassBounds === "function")
+    ? getLimitGlowMassBounds(host)
+    : (/megasplit5k|\/ms5k/i.test(host) ? { on: 32400, off: 32300 } : { on: 22400, off: 22300 });
+  if (!cell.glowActive && mass >= glowMass.on) cell.glowActive = true;
+  if (cell.glowActive && mass <= glowMass.off) cell.glowActive = false;
 
   if (cell.glowActive && S.showGlow) {
     const effectImg = loadCachedImage("/photo/limited.png");
