@@ -3683,8 +3683,12 @@
       const glowMassA = (typeof getLimitGlowMassBounds === "function")
         ? getLimitGlowMassBounds(_hostA)
         : (/megasplit5k|\/ms5k/i.test(_hostA) ? { on: 32400, off: 32300 } : { on: 22400, off: 22300 });
-      if (!this.glowActive && mass >= glowMassA.on) this.glowActive = true;
-      if (this.glowActive && mass <= glowMassA.off) this.glowActive = false;
+      if (!glowMassA) {
+        this.glowActive = false;
+      } else {
+        if (!this.glowActive && mass >= glowMassA.on) this.glowActive = true;
+        if (this.glowActive && mass <= glowMassA.off) this.glowActive = false;
+      }
       if (this.isVirus && !isTransp && S.customVirusBgEnabled) {
         ctx.save();
         ctx.beginPath();
@@ -3793,8 +3797,12 @@
       const glowMassB = (typeof getLimitGlowMassBounds === "function")
         ? getLimitGlowMassBounds(_hostB)
         : (/megasplit5k|\/ms5k/i.test(_hostB) ? { on: 32400, off: 32300 } : { on: 22400, off: 22300 });
-      if (!this.glowActive && mass >= glowMassB.on) this.glowActive = true;
-      if (this.glowActive && mass <= glowMassB.off) this.glowActive = false;
+      if (!glowMassB) {
+        this.glowActive = false;
+      } else {
+        if (!this.glowActive && mass >= glowMassB.on) this.glowActive = true;
+        if (this.glowActive && mass <= glowMassB.off) this.glowActive = false;
+      }
       if (this.glowActive && S.showGlow) {
         const effectImg = loadCachedImage2("/photo/limited.png");
         if (effectImg && effectImg.complete && effectImg.width > 0) {

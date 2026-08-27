@@ -1043,16 +1043,25 @@
     return loadCachedImage(getSkinImageUrl(skinId));
   }
   /**
-   * Limited-glow mass thresholds by server.
-   * Default (ffa / ms / pvp / tournament / hardcore / chashka): 22400 / 22300
+   * Limited-glow mass thresholds by server (Russia only).
+   * Turkey / Europe servers: disabled.
+   * Default RU (ffa / ms / pvp / tournament / hardcore9): 22400 / 22300
    * MegaSplit 5K: 32400 / 32300
    */
+  function isLimitGlowDisabledHost(host) {
+    const h = String(host || "");
+    if (/:6013\b|sixz\.ru:6013/i.test(h)) return true; // Turkey
+    if (/:6014\b|:6015\b|:6017\b|xn--bdk\.pw|\/d(?:ffa|rookery|arctida)/i.test(h)) return true; // Europe
+    return false;
+  }
   function getLimitGlowMassBounds(host) {
+    if (isLimitGlowDisabledHost(host)) return null;
     const h = String(host || "");
     if (/megasplit5k|\/ms5k/i.test(h)) return { on: 32400, off: 32300 };
     return { on: 22400, off: 22300 };
   }
   window.getLimitGlowMassBounds = getLimitGlowMassBounds;
+  window.isLimitGlowDisabledHost = isLimitGlowDisabledHost;
   /** Bridge skins via unified xn--bdk.pw skinsbot. skinlist.txt still wins (agar.su only). */
   var SKINS_BOT_BASE = "https://xn--bdk.pw:6016";
   function isBubbleSkinHost(host) {
@@ -4217,8 +4226,12 @@
       const mass = Math.floor(this.size * this.size * .01);
       if (typeof this.glowActive === "undefined") this.glowActive = false;
       const glowMass = getLimitGlowMassBounds(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl);
-      if (!this.glowActive && mass >= glowMass.on) this.glowActive = true;
-      if (this.glowActive && mass <= glowMass.off) this.glowActive = false;
+      if (!glowMass) {
+        this.glowActive = false;
+      } else {
+        if (!this.glowActive && mass >= glowMass.on) this.glowActive = true;
+        if (this.glowActive && mass <= glowMass.off) this.glowActive = false;
+      }
       if (this.glowActive && S.showGlow) {
         const effectImg = loadCachedImage2("/photo/limited.png");
         if (effectImg && effectImg.complete && effectImg.width > 0) {

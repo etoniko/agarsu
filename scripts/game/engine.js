@@ -3494,8 +3494,12 @@ import { drawCellGL } from '../render/cell-draw-gl.js';
       const glowMass = (typeof getLimitGlowMassBounds === "function")
         ? getLimitGlowMassBounds(_host)
         : (/megasplit5k|\/ms5k/i.test(_host) ? { on: 32400, off: 32300 } : { on: 22400, off: 22300 });
-      if (!this.glowActive && mass >= glowMass.on) this.glowActive = true;
-      if (this.glowActive && mass <= glowMass.off) this.glowActive = false;
+      if (!glowMass) {
+        this.glowActive = false;
+      } else {
+        if (!this.glowActive && mass >= glowMass.on) this.glowActive = true;
+        if (this.glowActive && mass <= glowMass.off) this.glowActive = false;
+      }
       if (this.glowActive && S.showGlow) {
         const effectImg = loadCachedImage2("/photo/limited.png");
         if (effectImg && effectImg.complete && effectImg.width > 0) {
