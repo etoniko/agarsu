@@ -1045,8 +1045,7 @@
   /**
    * Limited-glow mass thresholds by server (Russia only).
    * Turkey / Europe servers: disabled.
-   * Default RU (ffa / ms / pvp / tournament / hardcore9): 22400 / 22300
-   * MegaSplit 5K: 32400 / 32300
+   * Default RU (ffa / ms / pvp / tournament): 22400 / 22300
    */
   function isLimitGlowDisabledHost(host) {
     const h = String(host || "");
@@ -1056,8 +1055,6 @@
   }
   function getLimitGlowMassBounds(host) {
     if (isLimitGlowDisabledHost(host)) return null;
-    const h = String(host || "");
-    if (/megasplit5k|\/ms5k/i.test(h)) return { on: 32400, off: 32300 };
     return { on: 22400, off: 22300 };
   }
   window.getLimitGlowMassBounds = getLimitGlowMassBounds;
@@ -1080,14 +1077,15 @@
     if (s.charCodeAt(0) === 4) s = s.slice(1);
     return s.split("#")[0].replace(/<[^>]*>/g, "").trim();
   }
+  /** AgarZ / Bubble skin bridges only (no Petri / :6011). */
   function isPetriSkinHost(host) {
-    return /sixz\.ru:6011|:6011\/|megasplit|hardcore9|sixz\.ru:6013|:6013\/|sixz\.ru:6017|:6017\//i.test(String(host || ""));
+    return /sixz\.ru:6013|:6013\/|sixz\.ru:6017|:6017\//i.test(String(host || ""));
   }
   function getSkinBridge(host) {
     const h = String(host || "");
     if (/sixz\.ru:6017|:6017\b/i.test(h)) return "bubble";
     if (/sixz\.ru:6013|:6013\b/i.test(h)) return "agarz";
-    return "petri";
+    return null;
   }
   function getPetriSkinUrl(nick, host) {
     const h = String(host || "");
@@ -1097,9 +1095,11 @@
       if (!skinPath || !display) return null;
       return SKINS_BOT_BASE + "/api/getSkin?bridge=bubble&username=" + encodeURIComponent(display) + "&skin=" + encodeURIComponent(skinPath);
     }
+    const bridge = getSkinBridge(host);
+    if (!bridge) return null;
     const bare = String(nick || "").split("#")[0].replace(/<[^>]*>/g, "").trim();
     if (!bare) return null;
-    return SKINS_BOT_BASE + "/api/getSkin?bridge=" + getSkinBridge(host) + "&username=" + encodeURIComponent(bare);
+    return SKINS_BOT_BASE + "/api/getSkin?bridge=" + bridge + "&username=" + encodeURIComponent(bare);
   }
   function getCellSkinImage(S, nick, skinId, getSkinImageFn, loadCachedImageFn) {
     if (skinId) return (getSkinImageFn || getSkinImage)(skinId);
@@ -3132,7 +3132,7 @@
       node.isVirus = flagVirus;
       node.isEjected = flagEjected;
       node.isAgitated = flagAgitated;
-      if (type === 1 || type === 4) node.isFood = true; // type4 = AgarZ/Petri food w/ coords
+      if (type === 1 || type === 4) node.isFood = true; // type4 = AgarZ food w/ coords
       if (type === 0 && playerId) node.playerId = playerId >>> 0;
       node.nx = posX;
       node.ny = posY;
@@ -7391,8 +7391,8 @@ function updateRegionOnlineTotals(totals) {
     avatar.decoding = "async";
     const skinId = S.skinList[normalizedName];
     const _skinHost = S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl;
-    const petriAvatar = (!skinId && isPetriSkinHost(_skinHost)) ? getPetriSkinUrl(lastMessage.name, _skinHost) : null;
-    setSkinAvatarFromUrl(avatar, skinId ? getSkinImageUrl(skinId) : (petriAvatar || SKIN_FALLBACK_URL));
+    const bridgeAvatar = (!skinId && isPetriSkinHost(_skinHost)) ? getPetriSkinUrl(lastMessage.name, _skinHost) : null;
+    setSkinAvatarFromUrl(avatar, skinId ? getSkinImageUrl(skinId) : (bridgeAvatar || SKIN_FALLBACK_URL));
     avatar.onerror = () => {
       if (!avatar.dataset.fallback) {
         avatar.dataset.fallback = "1";
