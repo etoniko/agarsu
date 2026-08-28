@@ -335,16 +335,23 @@
     }
     // Fallback by port/path when list miss
     if (/:6013\b|sixz\.ru:6013/i.test(host)) return "tr";
-    if (/:6014\b|xn--bdk\.pw|\/d(?:ffa|rookery|arctida)/i.test(host)) return "eu";
+    // hardcore (6017) + darctida live under RU list in HTML
+    if (/sixz\.ru:6017|:6017\b|\/hc\b|\/darctida\b/i.test(host)) return "ru";
+    if (/:6014\b|:6015\b|xn--bdk\.pw|\/d(?:ffa|rookery)/i.test(host)) return "eu";
     return null;
+  }
+  function isForeignStyleHost(host) {
+    return /:6014\b|:6015\b|:6017\b|xn--bdk\.pw|sixz\.ru:6017|\/darctida\b|\/hc\b/i.test(String(host || ""));
   }
   /**
    * EN(EU) + TR servers: mass as 1.2k / 1,2k.
    * Quantized so the label does not rebuild every tick (less GPU/text load).
+   * hardcore/darctida stay on RU tab but keep foreign mass style by host.
    */
   function formatMassLabel(mass, regionKey, host) {
-    const fullMass = /sixz\.ru:6017|:6017\b/i.test(String(host || ""));
-    const useK = !fullMass && (regionKey === "tr" || regionKey === "eu" || regionKey === "en");
+    const h = String(host || "");
+    const fullMass = /sixz\.ru:6017|:6017\b/i.test(h);
+    const useK = !fullMass && (regionKey === "tr" || regionKey === "eu" || regionKey === "en" || isForeignStyleHost(h));
     let m = mass | 0;
     if (!useK) return String(m);
     if (m >= 1000) {
@@ -356,9 +363,9 @@
     m = Math.round(m / 10) * 10;
     return String(m);
   }
-  /** TR / EU(EN): lighter Arial labels, no black outline */
-  function isLightLabelRegion(regionKey) {
-    return regionKey === "tr" || regionKey === "eu" || regionKey === "en";
+  /** TR / EU(EN): lighter Arial labels, no black outline (incl. hardcore/darctida by host) */
+  function isLightLabelRegion(regionKey, host) {
+    return regionKey === "tr" || regionKey === "eu" || regionKey === "en" || isForeignStyleHost(host);
   }
   function getPowApiBase(hostOrUrl) {
     const entry = findGameServer(hostOrUrl);
@@ -4281,7 +4288,8 @@
           }
           if (displayName) {
             const nameSize = this.getNameSize();
-            const light = isLightLabelRegion(S.playRegion);
+            const playHost = S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl;
+            const light = isLightLabelRegion(S.playRegion, playHost);
             const wantsStroke = !light && S.renderQuality !== "low";
             const labelFont = light ? "Arial" : "Ubuntu";
             if (displayName !== this._txtNameVal) {
@@ -4319,7 +4327,8 @@
             this._txtMassSize = sizeHalf;
             if (this._txtZoom) this.sizeCache.setScale(this._txtZoom);
           }
-          const light = isLightLabelRegion(S.playRegion);
+          const playHost = S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl;
+          const light = isLightLabelRegion(S.playRegion, playHost);
           const massFont = light ? "Arial" : "Ubuntu";
           const wantsMassStroke = !light;
           if (this._txtMassStroke !== wantsMassStroke) {
@@ -4330,7 +4339,7 @@
             this._txtMassFont = massFont;
             this.sizeCache.setFont(massFont);
           }
-          const massLabel = formatMassLabel(mass, S.playRegion || "ru", S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl);
+          const massLabel = formatMassLabel(mass, S.playRegion || "ru", playHost);
           if (massLabel !== this._txtMassVal) {
             this._txtMassVal = massLabel;
             this.sizeCache.setValue(massLabel);
