@@ -1113,7 +1113,7 @@
       const id = s.slice(2).split(/[\s\n/]/)[0];
       if (id) return "https://i.imgur.com/" + id + ".png";
     }
-    const rel = s.replace(/^\//, "").replace(/\.png$/i, "");
+    const rel = s.replace(/^\//, "").replace(/\.png$/i, "").split("/").map(encodeURIComponent).join("/");
     return BUBBLE_SKIN_CDN + "/" + rel + ".png";
   }
   /** AgarZ / Bubble skin bridges only (no Petri / :6011). */
@@ -1130,12 +1130,16 @@
     const h = String(host || "");
     if (isBubbleSkinHost(h)) {
       const skinPath = bubbleSkinLine(nick);
-      if (!skinPath) return null;
-      const direct = bubbleSkinDirectUrl(skinPath);
-      if (direct) return direct;
-      const display = bubbleNickDisplay(nick);
-      if (!display) return null;
-      return SKINS_BOT_BASE + "/api/getSkin?bridge=bubble&username=" + encodeURIComponent(display) + "&skin=" + encodeURIComponent(skinPath);
+      if (skinPath) {
+        const direct = bubbleSkinDirectUrl(skinPath);
+        if (direct) return direct;
+        const display = bubbleNickDisplay(nick);
+        if (display) {
+          return SKINS_BOT_BASE + "/api/getSkin?bridge=bubble&username=" + encodeURIComponent(display) + "&skin=" + encodeURIComponent(skinPath);
+        }
+      }
+      const displayOnly = bubbleNickDisplay(nick);
+      if (displayOnly) return bubbleSkinDirectUrl(displayOnly);
     }
     const bridge = getSkinBridge(host);
     if (!bridge) return null;
@@ -2907,9 +2911,11 @@
     }
     function sendChat(str) {
       if (isIncompletePrivateChat(str)) return;
-      str = appendChatLangTag(str);
-      if (!wsIsOpen() || !(str.length < 200) || !(str.length > 0) || S.hideChat) return;
       const proto = S.activeProtocol;
+      if (!(proto && typeof proto.encodeChat === "function")) {
+        str = appendChatLangTag(str);
+      }
+      if (!wsIsOpen() || !(str.length < 200) || !(str.length > 0) || S.hideChat) return;
       if (proto && typeof proto.encodeChat === "function") {
         const packets = proto.encodeChat(str, S) || [];
         for (let i = 0; i < packets.length; i++) wsSend(packets[i]);
@@ -7454,7 +7460,9 @@ function updateRegionOnlineTotals(totals) {
       simpleDiv.className = "chatexit";
       const nameSpan = document.createElement("span");
       nameSpan.style.color = lastMessage.color || "#b8c0cc";
-      nameSpan.textContent = `${lastMessage.name}:`;
+      const enterHost = S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl;
+      const enterName = isBubbleSkinHost(enterHost) ? bubbleNickDisplay(lastMessage.name) || lastMessage.name : lastMessage.name;
+      nameSpan.textContent = `${enterName}:`;
       simpleDiv.appendChild(nameSpan);
       simpleDiv.append(` ${lastMessage.message}`);
       document.getElementById("chatX_feed").appendChild(simpleDiv);
@@ -7561,7 +7569,9 @@ function updateRegionOnlineTotals(totals) {
     }
     const nameDiv = document.createElement("div");
     nameDiv.className = "chatX_nick";
-    const safeName = censorMessage(S, lastMessage.name);
+    const chatHost = S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl;
+    const chatDisplayName = isBubbleSkinHost(chatHost) ? bubbleNickDisplay(lastMessage.name) || lastMessage.name : lastMessage.name;
+    const safeName = censorMessage(S, chatDisplayName);
     nameDiv.textContent = safeName + ":";
     if (targetDialogId) {
       nameDiv.style.color = lastMessage.color || "#b8c0cc";

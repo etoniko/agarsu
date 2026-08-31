@@ -126,6 +126,22 @@
   var BUBBLE_FOOD_MAX_U16 = 125;
   var PID_PLACEHOLDER = 0xfffffffe;
   var BUBBLE_SKIN_CDN = "https://buble.am/skins";
+  /** Same palette as buble.am account (CONFIG.ACCOUNT_COLORS). */
+  var BUBBLE_ACCOUNT_COLORS = [
+    "#7bd148", "#5484ed", "#a4bdfc", "#6fe75f", "#51b749",
+    "#fbd75b", "#ffb878", "#dc2127", "#dbadff",
+  ];
+  var BUBBLE_CHAT_LANG_TAG_RE = /\s*:(ru|en|uk|tr|zh|ar|es|pl|de)\s*$/i;
+
+  function bubbleSkinCdnPath(key) {
+    return String(key || "")
+      .replace(/\.png$/i, "")
+      .split("/")
+      .map(function (part) {
+        return encodeURIComponent(part);
+      })
+      .join("/");
+  }
 
   /** buble.am display nick from UTF-16 name field (or legacy skin\\nnick in name). */
   function bubbleNickDisplay(rawName) {
@@ -159,10 +175,10 @@
       var id = key.slice(2).split(/[\s\n/]/)[0];
       return id ? "https://i.imgur.com/" + id + ".png" : "";
     }
-    return BUBBLE_SKIN_CDN + "/" + key.replace(/\.png$/i, "") + ".png";
+    return BUBBLE_SKIN_CDN + "/" + bubbleSkinCdnPath(key) + ".png";
   }
 
-  /** Prefer flags&4 skin; fallback: legacy first line of name. */
+  /** Prefer flags&4 skin; else first line of skin\\nnick (personal skins use username). */
   function extractBubbleSkin(rawName, skinFromFlags) {
     var fromFlags = bubbleSkinLoadKey(skinFromFlags);
     if (fromFlags) return fromFlags;
@@ -172,6 +188,39 @@
       if (first && first.charCodeAt(0) !== 4) return bubbleSkinLoadKey(first);
     }
     return "";
+  }
+
+  function stripBubbleChatLangTag(text) {
+    return String(text || "").replace(BUBBLE_CHAT_LANG_TAG_RE, "").trimEnd();
+  }
+
+  function pickRandomBubbleAccountColor() {
+    return BUBBLE_ACCOUNT_COLORS[(Math.random() * BUBBLE_ACCOUNT_COLORS.length) | 0];
+  }
+
+  /** POST /api/setcolor — random account color each spawn (like buble.am LK). */
+  function setBubbleAccountColor(hex) {
+    var color = String(hex || "").trim();
+    var tok = bubbleProjectToken();
+    if (!color || !tok || typeof fetch !== "function") return Promise.resolve(false);
+    return fetch("https://buble.am/api/setcolor", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + tok,
+      },
+      body: JSON.stringify({ color: color }),
+    })
+      .then(function (r) {
+        return !!(r && r.ok);
+      })
+      .catch(function () {
+        return false;
+      });
+  }
+
+  function rotateBubbleSpawnColor() {
+    return setBubbleAccountColor(pickRandomBubbleAccountColor());
   }
 
   /** Agar.su cell wire name: "{skinPath}\\n{DisplayNick}" (skin from flags, nick from UTF-16). */
@@ -191,16 +240,9 @@
     state.skinByNick[nick] = key;
   }
 
-  function chatBubbleWireName(state, rawName, skinFromFlags) {
+  /** Chat/LB label — display nick only (no skin line, avoids double name in UI). */
+  function chatBubbleWireName(state, rawName) {
     var display = bubbleNickDisplay(rawName) || "player";
-    var skin = extractBubbleSkin(rawName, skinFromFlags);
-    if (!skin && state && state.skinByNick) {
-      skin = state.skinByNick[String(display).trim().toLowerCase()] || "";
-    }
-    if (skin) {
-      rememberBubbleSkin(state, display, skin);
-      return skin + "\n" + display;
-    }
     return display;
   }
 
@@ -229,7 +271,9 @@
   function ensureBubbleAuth() {
     var existing = bubbleProjectToken();
     saveBubbleToken(existing);
-    return Promise.resolve(existing);
+    return rotateBubbleSpawnColor().then(function () {
+      return existing;
+    });
   }
 
   function bubbleAuthPacket(token) {
@@ -287,8 +331,8 @@
   }
 
   function buildAgarChat(r, g, b, name, text) {
-    var nm = String(name || "player").slice(0, 80);
-    var tx = publicNick(text) || String(text || "");
+    var nm = bubbleNickDisplay(name) || String(name || "player").slice(0, 80);
+    var tx = stripBubbleChatLangTag(String(text || "")).slice(0, 200);
     var msg = prep(1 + 1 + 3 + 4 + 2 + 2 * nm.length + 2 + 2 * tx.length + 2);
     var o = 0;
     msg.setUint8(o++, 99);
@@ -503,6 +547,7 @@
     },
     /** Always public nick only — strips #pass / agar credentials. */
     encodeNick: function (rawNick) {
+      rotateBubbleSpawnColor();
       var nick = publicNick(rawNick) || "agar.su";
       return [utf16Packet(0, nick)];
     },
@@ -510,7 +555,7 @@
       return [new Uint8Array([1])];
     },
     encodeChat: function (text) {
-      var s = String(text || "").slice(0, 200);
+      var s = stripBubbleChatLangTag(String(text || "")).slice(0, 200);
       if (!s) return [];
       // Bubble: [99][0][utf16…] — needs Bubble project token for delivery, never agar.su LK.
       var msg = prep(2 + 2 * s.length);
@@ -588,6 +633,7 @@
         state.ownerPid = 0;
         state.ownerBorderOk = false;
         state.borderOwnerSent = 0;
+        state.skinByNick = Object.create(null);
         return [new DataView(new Uint8Array([20]).buffer)];
       }
 
@@ -604,7 +650,7 @@
           var skinRaw = c.skin || "";
           var skinKey = extractBubbleSkin(rawName, skinRaw);
           var displayNick = bubbleNickDisplay(rawName);
-          var wireName = bubbleWireName(rawName, skinRaw);
+          var wireName = skinKey && displayNick ? skinKey + "\n" + displayNick : displayNick || skinKey || rawName;
           if (skinKey && displayNick && c.type === 0) {
             rememberBubbleSkin(state, displayNick, skinKey);
           }
