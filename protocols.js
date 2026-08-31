@@ -148,14 +148,6 @@
     return Promise.resolve(existing);
   }
 
-  function isBubbleAccountNick(name) {
-    var d = publicNick(name).toLowerCase().replace(/\s+/g, " ");
-    if (!d) return false;
-    if (d === "player agarsu" || d === "[su] player agarsu") return true;
-    if (/^\[su\]\s*player\s*aga/i.test(d)) return true;
-    return false;
-  }
-
   function bubbleAuthPacket(token) {
     var t = String(token || "").trim();
     var bytes = new Uint8Array(1 + t.length + 1);
@@ -275,12 +267,13 @@
   }
 
   function parseClassicUpdate(buf, start) {
+    var len = buf.byteLength;
     var off = start;
-    if (off + 2 > buf.length) return null;
+    if (off + 2 > len) return null;
     var eatN = buf.getUint16(off, true);
     off += 2;
     var eaten = [];
-    for (var i = 0; i < eatN && off + 8 <= buf.length; i++) {
+    for (var i = 0; i < eatN && off + 8 <= len; i++) {
       var killer = buf.getUint32(off, true);
       off += 4;
       var killed = buf.getUint32(off, true);
@@ -288,11 +281,11 @@
       eaten.push({ killer: killer, killed: killed });
     }
     var cells = [];
-    while (off + 4 <= buf.length) {
+    while (off + 4 <= len) {
       var id = buf.getUint32(off, true);
       off += 4;
       if (id === 0) break;
-      if (off + 11 > buf.length) break;
+      if (off + 11 > len) break;
       var x = buf.getInt32(off, true); off += 4;
       var y = buf.getInt32(off, true); off += 4;
       var size = buf.getInt16(off, true); off += 2;
@@ -300,17 +293,17 @@
       var g = buf.getUint8(off++);
       var b = buf.getUint8(off++);
       var flags = buf.getUint8(off++);
-      if (flags & 2 && off + 4 <= buf.length) off += 4;
+      if (flags & 2 && off + 4 <= len) off += 4;
       var skin = "";
       if (flags & 4) {
-        while (off < buf.length) {
+        while (off < len) {
           var ch = buf.getUint8(off++);
           if (!ch) break;
           skin += String.fromCharCode(ch);
         }
       }
       var name = "";
-      while (off + 1 < buf.length) {
+      while (off + 1 < len) {
         var c = buf.getUint16(off, true);
         off += 2;
         if (!c) break;
@@ -341,12 +334,12 @@
       });
     }
     var removes = [];
-    if (off + 4 <= buf.length) {
+    if (off + 4 <= len) {
       var remN = buf.getUint32(off, true) >>> 0;
       off += 4;
-      var maxByBytes = Math.floor((buf.length - off) / 4);
+      var maxByBytes = Math.floor((len - off) / 4);
       if (remN > maxByBytes) remN = maxByBytes;
-      for (var j = 0; j < remN && off + 4 <= buf.length; j++) {
+      for (var j = 0; j < remN && off + 4 <= len; j++) {
         removes.push(buf.getUint32(off, true) >>> 0);
         off += 4;
       }
@@ -389,6 +382,8 @@
     match: function (host) {
       return /buble\.am|bubble\.am/i.test(String(host || ""));
     },
+    /** Bubble needs ~150ms after JWT before spawn is accepted. */
+    spawnDelayMs: 150,
     openSocket: function (wsUrl) {
       // Plain WS — no agar.su subprotocol, no query tokens.
       var ws = new WebSocket(String(wsUrl).split("?")[0]);
@@ -407,7 +402,6 @@
         ownerBorderOk: false,
         borderOwnerSent: 0,
         mapBorderSent: false,
-        playNick: "",
       };
     },
     onOpen: function (send) {
@@ -425,9 +419,8 @@
       else console.warn("[bubble] no project token — server will kick guest");
     },
     /** Always public nick only — strips #pass / agar credentials. */
-    encodeNick: function (rawNick, S) {
+    encodeNick: function (rawNick) {
       var nick = publicNick(rawNick) || "agar.su";
-      if (S && S.protocolState) S.protocolState.playNick = nick;
       return [utf16Packet(0, nick)];
     },
     encodeSpectate: function () {
@@ -545,11 +538,9 @@
           if (isOwn && owner) {
             row.type = 0;
             row.playerId = owner;
-            if (state.playNick) row.name = state.playNick;
           } else if (row.type === 0) {
             row.playerId = (c.id >>> 0) || 1;
             if (owner && row.playerId === owner) row.playerId = (row.playerId ^ 0x00ffffff) >>> 0 || 1;
-            if (state.playNick && isBubbleAccountNick(row.name)) row.name = state.playNick;
           }
           cells.push(row);
         }
@@ -578,10 +569,7 @@
             if (!ch2) break;
             name += String.fromCharCode(ch2);
           }
-          items.push({ id: id, name: publicNick(name) });
-        }
-        for (var li2 = 0; li2 < items.length; li2++) {
-          if (state.playNick && isBubbleAccountNick(items[li2].name)) items[li2].name = state.playNick;
+          items.push({ id: id, name: name });
         }
         return [buildAgarLb(items)];
       }
@@ -607,9 +595,7 @@
           ctext += String.fromCharCode(ct);
         }
         if (flags & 0x80) return [];
-        var chatName = publicNick(cname) || "player";
-        if (state.playNick && isBubbleAccountNick(chatName)) chatName = state.playNick;
-        return [buildAgarChat(r || 100, g || 200, b || 255, chatName, ctext)];
+        return [buildAgarChat(r || 100, g || 200, b || 255, cname || "player", ctext)];
       }
 
       // 90 and others — ignore

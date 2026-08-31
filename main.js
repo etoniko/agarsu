@@ -2721,7 +2721,14 @@
       clearSpectReconnectTimer();
       hideConnectVerifyOverlay();
       hideReconnectPanel();
-      (_a = hooks.sendNickName) == null ? void 0 : _a.call(hooks);
+      const proto = S.activeProtocol;
+      const nickDelay = proto && proto.spawnDelayMs ? proto.spawnDelayMs | 0 : 0;
+      const sendNick = () => {
+        var _a2;
+        (_a2 = hooks.sendNickName) == null ? void 0 : _a2.call(hooks);
+      };
+      if (nickDelay > 0) setTimeout(sendNick, nickDelay);
+      else sendNick();
       if (isSpectMode() && S.userNickName == null) {
         const spect = prepareData(1);
         spect.setUint8(0, ClientOpcode.SPECTATE);
@@ -8512,7 +8519,7 @@ function initServers(S) {
         for (let i = 0; i < packets.length; i++) {
           const p = packets[i];
           const view = p instanceof DataView ? p : new DataView(p.buffer || p, p.byteOffset || 0, p.byteLength || p.length);
-          wsBridge.onRawDataView(view);
+          handlers.handleWsMessage(view);
         }
         return;
       }
