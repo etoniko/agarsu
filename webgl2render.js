@@ -5,9 +5,34 @@
 (function (global) {
   "use strict";
 
-  /** Limited glow (Russia only). TR/EU disabled. megasplit5k 32400/32300, else 22400/22300 */
+  /** Limited glow (Russia only). TR/EU disabled. buble.am 35000/34900, megasplit5k 32400/32300, else 22400/22300 */
+  function isBubbleBridgeHost(host) {
+    return /sixz\.ru:6017|:6017\b|buble\.am|bubble\.am/i.test(String(host || ""));
+  }
+  function isBridgeSkinHost(host) {
+    return /sixz\.ru:6011|:6011\/|megasplit|hardcore9|sixz\.ru:6013|:6013\/|sixz\.ru:6017|:6017\/|buble\.am|bubble\.am/i.test(String(host || ""));
+  }
+  function bubbleNickDisplay(raw) {
+    let s = String(raw || "");
+    if (s.indexOf("\n") >= 0) s = s.slice(s.indexOf("\n") + 1);
+    if (s.charCodeAt(0) === 4) s = s.slice(1);
+    if (s.indexOf(":::") >= 0) s = s.split(":::")[0];
+    return s.split("#")[0].replace(/<[^>]*>/g, "").trim();
+  }
+  function bubbleSkinDirectUrl(skinPath) {
+    let s = String(skinPath || "").trim();
+    if (!s) return null;
+    if (s.startsWith("%")) s = s.slice(1);
+    if (s.startsWith("i/")) {
+      const id = s.slice(2).split(/[\s\n/]/)[0];
+      if (id) return "https://i.imgur.com/" + id + ".png";
+    }
+    const rel = s.replace(/^\//, "").replace(/\.png$/i, "").split("/").map(encodeURIComponent).join("/");
+    return "https://buble.am/skins/" + rel + ".png";
+  }
   function getLimitGlowMassBounds(host) {
     const h = String(host || "");
+    if (/buble\.am|bubble\.am|\/hc\b/i.test(h)) return { on: 35000, off: 34900 };
     if (/:6013\b|sixz\.ru:6013/i.test(h)) return null; // Turkey
     if (/:6014\b|:6015\b|:6017\b|xn--bdk\.pw|\/d(?:ffa|rookery|arctida)/i.test(h)) return null; // Europe
     if (/megasplit5k|\/ms5k/i.test(h)) return { on: 32400, off: 32300 };
@@ -560,6 +585,7 @@ void main() {
     const pickSkinLodByMass = deps && deps.pickSkinLodByMass;
     const getSkinLodSource = deps && deps.getSkinLodSource;
     const isAnimatedSkinImage = deps && deps.isAnimatedSkinImage;
+    const getBridgeSkinUrl = deps && deps.getPetriSkinUrl;
 
     const transparent = S.transparent || new Set();
     const invisible = S.invisible || new Set();
@@ -685,27 +711,32 @@ void main() {
           skinImg = ownedSkinImg;
         } else if (skinId && getSkinImage) {
           skinImg = getSkinImage(skinId);
-        } else if (!skinId && loadCachedImage && /sixz\.ru:6011|:6011\/|megasplit|hardcore9|sixz\.ru:6013|:6013\/|sixz\.ru:6017|:6017\//i.test(host) && cell.name) {
-          let skinUrl = null;
-          if (/sixz\.ru:6017|:6017\b/i.test(String(host || ""))) {
-            const raw = String(cell.name || "");
-            const nl = raw.indexOf("\n");
-            if (nl > 0) {
-              const skinPath = raw.slice(0, nl).trim();
-              let display = raw.slice(nl + 1);
-              if (display.charCodeAt(0) === 4) display = display.slice(1);
-              display = display.split("#")[0].replace(/<[^>]*>/g, "").trim();
-              if (skinPath && display) {
-                petriSkinKey = (skinPath + "|" + display).toLowerCase();
-                skinUrl = "https://xn--bdk.pw:6016/api/getSkin?bridge=bubble&username=" + encodeURIComponent(display) + "&skin=" + encodeURIComponent(skinPath);
+        } else if (!skinId && loadCachedImage && cell.name) {
+          let skinUrl = typeof getBridgeSkinUrl === "function" ? getBridgeSkinUrl(cell.name, host) : null;
+          if (!skinUrl && isBridgeSkinHost(host)) {
+            if (isBubbleBridgeHost(host)) {
+              const raw = String(cell.name || "");
+              const nl = raw.indexOf("\n");
+              if (nl > 0) {
+                const skinPath = raw.slice(0, nl).trim();
+                const display = bubbleNickDisplay(raw);
+                if (skinPath && display) {
+                  petriSkinKey = (skinPath + "|" + display).toLowerCase();
+                  skinUrl =
+                    bubbleSkinDirectUrl(skinPath) ||
+                    "https://xn--bdk.pw:6016/api/getSkin?bridge=bubble&username=" +
+                      encodeURIComponent(display) +
+                      "&skin=" +
+                      encodeURIComponent(skinPath);
+                }
               }
-            }
-          } else {
-            const bare = String(cell.name).split("#")[0].replace(/<[^>]*>/g, "").trim();
-            if (bare) {
-              petriSkinKey = bare.toLowerCase();
-              const bridge = /sixz\.ru:6013|:6013\b/i.test(String(host || "")) ? "agarz" : "petri";
-              skinUrl = "https://xn--bdk.pw:6016/api/getSkin?bridge=" + bridge + "&username=" + encodeURIComponent(bare);
+            } else {
+              const bare = String(cell.name).split("#")[0].replace(/<[^>]*>/g, "").trim();
+              if (bare) {
+                petriSkinKey = bare.toLowerCase();
+                const bridge = /sixz\.ru:6013|:6013\b/i.test(String(host || "")) ? "agarz" : "petri";
+                skinUrl = "https://xn--bdk.pw:6016/api/getSkin?bridge=" + bridge + "&username=" + encodeURIComponent(bare);
+              }
             }
           }
           if (skinUrl) skinImg = loadCachedImage(skinUrl);
@@ -834,11 +865,8 @@ void main() {
 
       if (S.showName && cell.name && cell.nameCache && cell.size > 10) {
         let displayName = cell.name;
-        if (/sixz\.ru:6017|:6017\b/i.test(host)) {
-          const raw = String(cell.name || "");
-          if (raw.indexOf("\n") >= 0) displayName = raw.slice(raw.indexOf("\n") + 1);
-          if (displayName.charCodeAt(0) === 4) displayName = displayName.slice(1);
-          displayName = displayName.split("#")[0].replace(/<[^>]*>/g, "").trim();
+        if (isBubbleBridgeHost(host)) {
+          displayName = bubbleNickDisplay(cell.name);
         } else if (!/sixz\.ru:6011|:6011\/|megasplit|hardcore9/i.test(host) && invisible.has(cell._nameLower)) {
           displayName = "";
         }
