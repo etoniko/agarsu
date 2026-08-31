@@ -1774,7 +1774,7 @@
     if (!(S == null ? void 0 : S.ctx)) return;
     const tPre = perfEnabled ? performance.now() : 0;
     S.frameId = (S.frameId || 0) + 1;
-    S.timestamp = nowMs();
+    S.timestamp = Date.now();
     const playerCount = S.playerCells.length;
     if (playerCount > 0) {
       if (S.spectateFollowNick || S.spectateFollowPid) {
@@ -2833,18 +2833,7 @@
           scheduleHiddenTabDisconnect();
         } else {
           clearHiddenTabDisconnectTimer();
-          S._forceMouseSend = true;
-          S.oldX = -999;
-          S.oldY = -999;
-          try {
-            if (S.api && typeof S.api.sendMouseMove === "function") S.api.sendMouseMove({ force: true });
-          } catch (e) {}
         }
-      });
-      window.addEventListener("focus", () => {
-        S._forceMouseSend = true;
-        S.oldX = -999;
-        S.oldY = -999;
       });
     }
     return {
@@ -2886,8 +2875,7 @@
     }
     function sendMouseMove(opts) {
       if (!wsIsOpen()) return;
-      const force = !!(opts && opts.force) || !!S._forceMouseSend;
-      if (S._forceMouseSend) S._forceMouseSend = false;
+      const force = !!(opts && opts.force);
       const spectating = !S.playerCells.length;
       const host = S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl;
       const bubbleSpectate = spectating && isBubbleSkinHost(host);
@@ -2899,16 +2887,12 @@
           S.posY = main.y;
         }
       }
-      if (force) {
-        S.oldX = S.posX - 999;
-        S.oldY = S.posY - 999;
-      }
       // Bubble overview is server-driven (op 17). Echoing posX back every 50ms fights
       // the camera and makes it jitter — only send mouse on explicit click.
       if (bubbleSpectate && !force) return;
       // Spectate: overview follows camera aim (posX), not free cursor
       if (S.freeze || spectating) {
-        if (force || !(Math.abs(S.oldX - S.posX) < .05 && Math.abs(S.oldY - S.posY) < .05)) {
+        if (!(Math.abs(S.oldX - S.posX) < .05 && Math.abs(S.oldY - S.posY) < .05)) {
           S.oldX = S.posX;
           S.oldY = S.posY;
           const proto = S.activeProtocol;
@@ -2927,22 +2911,20 @@
       } else {
         const msgX = S.rawMouseX - S.canvasWidth / 2;
         const msgY = S.rawMouseY - S.canvasHeight / 2;
-        if (force || 64 <= msgX * msgX + msgY * msgY) {
-          if (force || !(Math.abs(S.oldX - S.X) < .1 && Math.abs(S.oldY - S.Y) < .1)) {
-            S.oldX = S.X;
-            S.oldY = S.Y;
-            const proto = S.activeProtocol;
-            if (proto && typeof proto.encodeMouse === "function") {
-              const packets = proto.encodeMouse(S.X, S.Y, S) || [];
-              for (let i = 0; i < packets.length; i++) wsSend(packets[i]);
-            } else {
-              const msg = prepareData(21);
-              msg.setUint8(0, ClientOpcode.MOUSE);
-              msg.setFloat64(1, S.X, true);
-              msg.setFloat64(9, S.Y, true);
-              msg.setUint32(17, 0, true);
-              wsSend(msg);
-            }
+        if (64 <= msgX * msgX + msgY * msgY && !(Math.abs(S.oldX - S.X) < .1 && Math.abs(S.oldY - S.Y) < .1)) {
+          S.oldX = S.X;
+          S.oldY = S.Y;
+          const proto = S.activeProtocol;
+          if (proto && typeof proto.encodeMouse === "function") {
+            const packets = proto.encodeMouse(S.X, S.Y, S) || [];
+            for (let i = 0; i < packets.length; i++) wsSend(packets[i]);
+          } else {
+            const msg = prepareData(21);
+            msg.setUint8(0, ClientOpcode.MOUSE);
+            msg.setFloat64(1, S.X, true);
+            msg.setFloat64(9, S.Y, true);
+            msg.setUint32(17, 0, true);
+            wsSend(msg);
           }
         }
       }
@@ -3104,34 +3086,9 @@
       y: S.topPos + S.bottomPos * 2 * normalizeFractlPart(nodeid * nodeid)
     };
   }
-  function nowMs() {
-    return typeof performance !== "undefined" && performance.now ? performance.now() : Date.now();
-  }
-  /** Hard cell/food move transition (ms). */
-  var CELL_LERP_MS = 110;
-  function cellUpdatePos(cell, timestamp) {
-    if (cell.id === 0) return 1;
-    let a = (timestamp - cell.updateTime) / CELL_LERP_MS;
-    if (a < 0) a = 0;
-    const dx = cell.nx - cell.ox;
-    const dy = cell.ny - cell.oy;
-    const ds = cell.nSize - cell.oSize;
-    if (a <= 1) {
-      cell.x = cell.ox + dx * a;
-      cell.y = cell.oy + dy * a;
-      cell.size = cell.oSize + ds * a;
-      return a;
-    }
-    const excess = Math.min(a - 1, .5);
-    const k = excess * Math.exp(-excess * 2.5);
-    cell.x = cell.nx + dx * k;
-    cell.y = cell.ny + dy * k;
-    cell.size = cell.nSize;
-    return 1;
-  }
   function repositionFoodNodes(S) {
     if (!S.mapBoundsReady) return;
-    const now = nowMs();
+    const now = Date.now();
     for (let i = 0; i < S.nodelist.length; i++) {
       const node = S.nodelist[i];
       if (!(node == null ? void 0 : node.isFood)) continue;
@@ -3266,7 +3223,7 @@
   }
   function updateNodes(S, reader, hooks) {
     const {Cell: Cell2, onPlayerDeath} = hooks;
-    S.timestamp = nowMs();
+    S.timestamp = Date.now();
     S.ua = false;
     S.nodesSortDirty = true;
     for (let killedId; killedId = reader.uint32(); ) {
@@ -3385,7 +3342,7 @@
     const kills = packet.kills || [];
     const upserts = packet.upserts || [];
     const destroys = packet.destroys || [];
-    S.timestamp = nowMs();
+    S.timestamp = Date.now();
     S.ua = false;
     S.nodesSortDirty = true;
     for (let i = 0; i < kills.length; i++) {
@@ -3457,7 +3414,7 @@
     }
   }
   function fixDead(S) {
-    const now = nowMs();
+    const now = Date.now();
     for (let i = S.nodelist.length - 1; i >= 0; i--) {
       const node = S.nodelist[i];
       if (!node || node.destroyed) continue;
@@ -4335,7 +4292,15 @@
     movePoints() {},
 
     updatePos() {
-      return cellUpdatePos(this, deps3.S.timestamp);
+      const S = deps3.S;
+      if (this.id === 0) return 1;
+      let a = (S.timestamp - this.updateTime) / 120;
+      a = Math.max(0, Math.min(1, a));
+      const b = a;
+      this.x = a * (this.nx - this.ox) + this.ox;
+      this.y = a * (this.ny - this.oy) + this.oy;
+      this.size = b * (this.nSize - this.oSize) + this.oSize;
+      return b;
     },
     shouldRender() {
       const S = deps3.S;
