@@ -199,6 +199,12 @@
       case OP.UPDATE_NODES:
         return parseUpdateNodes(view);
       case OP.UPDATE_CAMERA:
+        if (view.byteLength >= offset + 12) {
+          const x = view.getFloat32(offset, true);
+          const y = view.getFloat32(offset + 4, true);
+          const size = view.getFloat32(offset + 8, true);
+          return { type: "updateCamera", x, y, size };
+        }
         return { type: "updateCamera" };
       case OP.CLEAR_NODES:
         return { type: "clearNodes" };

@@ -1072,15 +1072,20 @@
    * Limited-glow mass thresholds by server (Russia only).
    * Turkey / Europe servers: disabled.
    * Default RU (ffa / ms / pvp / tournament): 22400 / 22300
+   * buble.am hardcore: 35000 / 34900
    */
   function isLimitGlowDisabledHost(host) {
     const h = String(host || "");
+    if (/buble\.am|bubble\.am/i.test(h)) return false;
     if (/:6013\b|sixz\.ru:6013/i.test(h)) return true; // Turkey
     if (/:6014\b|:6015\b|:6017\b|xn--bdk\.pw|\/d(?:ffa|rookery|arctida)/i.test(h)) return true; // Europe
     return false;
   }
   function getLimitGlowMassBounds(host) {
+    const h = String(host || "");
+    if (/buble\.am|bubble\.am|\/hc\b/i.test(h)) return { on: 35000, off: 34900 };
     if (isLimitGlowDisabledHost(host)) return null;
+    if (/megasplit5k|\/ms5k/i.test(h)) return { on: 32400, off: 32300 };
     return { on: 22400, off: 22300 };
   }
   window.getLimitGlowMassBounds = getLimitGlowMassBounds;
@@ -1090,6 +1095,41 @@
   var BUBBLE_SKIN_CDN = "https://buble.am/skins";
   function isBubbleSkinHost(host) {
     return /sixz\.ru:6017|:6017\b|buble\.am|bubble\.am/i.test(String(host || ""));
+  }
+  /**
+   * Bubble overview camera: snap if target jumped far, else smooth follow via posX/posY.
+   * Far = new overview area; near = keep tracking coordinates smoothly.
+   */
+  function applyServerSpectateCamera(S, x, y, size) {
+    const host = S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl;
+    const sizeOk = typeof size === "number" && size > 0;
+    if (!isBubbleSkinHost(host) || (S.playerCells && S.playerCells.length)) {
+      S.posX = x;
+      S.posY = y;
+      if (sizeOk) S.posSize = size;
+      return;
+    }
+    const curX = Number.isFinite(S.nodeX) ? S.nodeX : S.posX;
+    const curY = Number.isFinite(S.nodeY) ? S.nodeY : S.posY;
+    const dist = Math.hypot(x - curX, y - curY);
+    const vz = Math.max(S.viewZoom || 0.1, 0.05);
+    const viewW = (S.canvasWidth || 1920) / vz;
+    const viewH = (S.canvasHeight || 1080) / vz;
+    const snapDist = Math.max(1400, Math.hypot(viewW, viewH) * 0.6);
+    if (!Number.isFinite(curX) || !Number.isFinite(curY) || dist >= snapDist) {
+      S.posX = x;
+      S.posY = y;
+      S.nodeX = x;
+      S.nodeY = y;
+      if (sizeOk) {
+        S.posSize = size;
+        S.viewZoom = size * viewRange(S);
+      }
+    } else {
+      S.posX = x;
+      S.posY = y;
+      if (sizeOk) S.posSize = size;
+    }
   }
   function bubbleSkinLine(nick) {
     const s = String(nick || "");
@@ -2754,10 +2794,14 @@
       };
       if (nickDelay > 0) setTimeout(sendNick, nickDelay);
       else sendNick();
-      if (isSpectMode() && S.userNickName == null) {
-        const spect = prepareData(1);
-        spect.setUint8(0, ClientOpcode.SPECTATE);
-        wsSend(spect);
+      // Button «Наблюдать» sets userNickName=null — must enter spectate (not only ?spect URL).
+      if (S.userNickName == null) {
+        if (typeof hooks.sendSpectate === "function") hooks.sendSpectate();
+        else {
+          const spect = prepareData(1);
+          spect.setUint8(0, ClientOpcode.SPECTATE);
+          wsSend(spect);
+        }
       }
       if (S.wsPingInterval) clearInterval(S.wsPingInterval);
       S.wsPingInterval = setInterval(() => {
@@ -2829,9 +2873,12 @@
       const index = colors.indexOf(hex);
       return index === -1 ? 0 : index + 1;
     }
-    function sendMouseMove() {
+    function sendMouseMove(opts) {
       if (!wsIsOpen()) return;
+      const force = !!(opts && opts.force);
       const spectating = !S.playerCells.length;
+      const host = S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl;
+      const bubbleSpectate = spectating && isBubbleSkinHost(host);
       // Freeze: mouse on main cell center (0,0 of primary cell)
       if (S.freeze && !spectating && S.playerCells.length) {
         const main = S.playerCells[0];
@@ -2840,6 +2887,9 @@
           S.posY = main.y;
         }
       }
+      // Bubble overview is server-driven (op 17). Echoing posX back every 50ms fights
+      // the camera and makes it jitter — only send mouse on explicit click.
+      if (bubbleSpectate && !force) return;
       // Spectate: overview follows camera aim (posX), not free cursor
       if (S.freeze || spectating) {
         if (!(Math.abs(S.oldX - S.posX) < .05 && Math.abs(S.oldY - S.posY) < .05)) {
@@ -2884,6 +2934,18 @@
       const msg = prepareData(1);
       msg.setUint8(0, a);
       wsSend(msg);
+    }
+    function sendSpectate() {
+      if (!wsIsOpen()) return;
+      const proto = S.activeProtocol;
+      if (proto && typeof proto.encodeSpectate === "function") {
+        const packets = proto.encodeSpectate(S) || [];
+        for (let i = 0; i < packets.length; i++) wsSend(packets[i]);
+        return;
+      }
+      const spect = prepareData(1);
+      spect.setUint8(0, ClientOpcode.SPECTATE);
+      wsSend(spect);
     }
     function sendNickName() {
       if (!wsIsOpen() || S.userNickName == null) return;
@@ -2957,6 +3019,7 @@
       wsIsOpen,
       sendMouseMove,
       sendUint8,
+      sendSpectate,
       sendNickName,
       sendChat,
       sendAccountToken,
@@ -3419,7 +3482,19 @@
         }
 
        case ServerOpcode.UPDATE_CAMERA:
-        S.posSize = .15;
+        // Agar.su stub: bare opcode → default spectate zoom.
+        // Full packet (Bubble): float32 x/y/size — snap if far, smooth if near.
+        if (msg.byteLength >= offset + 12) {
+          const cx = msg.getFloat32(offset, true);
+          offset += 4;
+          const cy = msg.getFloat32(offset, true);
+          offset += 4;
+          const csize = msg.getFloat32(offset, true);
+          offset += 4;
+          applyServerSpectateCamera(S, cx, cy, csize);
+        } else {
+          S.posSize = .15;
+        }
         break;
 
        case ServerOpcode.CLEAR_NODES:
@@ -3589,7 +3664,11 @@
         else if (hooks.updateNodesParsed) hooks.updateNodesParsed(packet);
         break;
       case "updateCamera":
-        S.posSize = 0.15;
+        if (typeof packet.x === "number" && typeof packet.y === "number") {
+          applyServerSpectateCamera(S, packet.x, packet.y, packet.size);
+        } else {
+          S.posSize = 0.15;
+        }
         break;
       case "clearNodes":
         if (S.playerCells.length > 0) {
@@ -4819,7 +4898,7 @@
       if (S.playerCells.length) return;
       S.oldX = S.posX - 999;
       S.oldY = S.posY - 999;
-      if (typeof hooks.sendMouseMove === "function") hooks.sendMouseMove();
+      if (typeof hooks.sendMouseMove === "function") hooks.sendMouseMove({ force: true });
       const pid = S.spectateFollowPid | 0;
       if (pid && hooks.prepareData && hooks.wsSend) {
         const msg = hooks.prepareData(5);
@@ -8473,6 +8552,7 @@ function initServers(S) {
     const connectionHooks = {
       onMessage: null,
       sendNickName: () => outbound.sendNickName(),
+      sendSpectate: () => outbound.sendSpectate(),
       sendChat: t => outbound.sendChat(t),
       sendAccountToken: () => outbound.sendAccountToken(),
       clearWorld: () => {
@@ -8626,6 +8706,8 @@ function initServers(S) {
         clearInterval(S._spectateFollowTimer);
         S._spectateFollowTimer = null;
       }
+      // Already connected → enter overview now (otherwise only canvas click sent op 1).
+      outbound.sendSpectate();
       hideGameOverlays();
       hideStatics();
       if (typeof wHandle.refreshCenterTop === "function") wHandle.refreshCenterTop();
