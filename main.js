@@ -327,7 +327,7 @@
   }
   function findRegionForHost(hostOrUrl) {
     if (!hostOrUrl) return null;
-    const host = String(hostOrUrl).replace(/^wss?:\/\//i, "");
+    const host = String(hostOrUrl).replace(/^ws?:\/\//i, "");
     for (const [region, cfg] of Object.entries(REGION_CONFIGS || {})) {
       for (const server of Object.values(cfg.servers || {})) {
         if (server.host === host) return region;
@@ -370,16 +370,16 @@
   function getPowApiBase(hostOrUrl) {
     const entry = findGameServer(hostOrUrl);
     let host = entry ? entry.host : hostOrUrl || "ffa.agar.su";
-    host = String(host || "").replace(/^wss?:\/\//i, "");
+    host = String(host || "").replace(/^ws?:\/\//i, "");
     // strip room path: xn--bdk.pw:6014/dparty → xn--bdk.pw:6014
     const slash = host.indexOf("/");
     if (slash > 0) host = host.slice(0, slash);
     if (/^https?:\/\//i.test(host)) return String(host).replace(/\/$/, "");
     return "https://" + host;
   }
-  function getGameServerWssUrl(host) {
+  function getGameServerwsUrl(host) {
     const h = host || "ffa.agar.su";
-    return "wss://" + String(h).replace(/^wss?:\/\//i, "");
+    return "ws://" + String(h).replace(/^ws?:\/\//i, "");
   }
   /** Multi-protocol resolver (protocols.js). Fallback = native agar.su. */
   function resolveGameProtocol(host) {
@@ -1774,7 +1774,7 @@
     if (!(S == null ? void 0 : S.ctx)) return;
     const tPre = perfEnabled ? performance.now() : 0;
     S.frameId = (S.frameId || 0) + 1;
-    S.timestamp = Date.now();
+    S.timestamp = nowMs();
     const playerCount = S.playerCells.length;
     if (playerCount > 0) {
       if (S.spectateFollowNick || S.spectateFollowPid) {
@@ -2664,7 +2664,7 @@
       });
     }
     function showConnecting() {
-      const wsUrl = getGameServerWssUrl(S.CONNECTION_URL);
+      const wsUrl = getGameServerwsUrl(S.CONNECTION_URL);
       if (S.ws && S.ws.readyState === WebSocket.OPEN && S.currentWebSocketUrl === wsUrl) {
         return;
       }
@@ -2687,7 +2687,7 @@
       }
       const host = S.CONNECTION_URL;
       const proto = bindProtocolForHost(S, host);
-      S.wsUrl = wsUrlArg || getGameServerWssUrl(host);
+      S.wsUrl = wsUrlArg || getGameServerwsUrl(host);
       (_a = hooks.clearWorld) == null ? void 0 : _a.call(hooks);
       try {
         let connectToken = null;
@@ -2756,7 +2756,7 @@
         }
       }
     }
-    function wsSend(dataViewOrTyped) {
+    function wsend(dataViewOrTyped) {
       var _a;
       if (!S.ws) return;
       const buf = (_a = dataViewOrTyped.buffer) != null ? _a : dataViewOrTyped;
@@ -2770,14 +2770,14 @@
       if (proto && typeof proto.onOpen === "function") {
         // Foreign protocol handshake (no agar.su account token).
         proto.onOpen(function (pkt) {
-          wsSend(pkt);
+          wsend(pkt);
         });
         return;
       }
       (_a = hooks.sendAccountToken) == null ? void 0 : _a.call(hooks);
       const [p, key] = encodeHandshake();
-      wsSend(p);
-      wsSend(key);
+      wsend(p);
+      wsend(key);
     }
     function onGameHandshakeReady() {
       var _a, _b;
@@ -2800,13 +2800,13 @@
         else {
           const spect = prepareData(1);
           spect.setUint8(0, ClientOpcode.SPECTATE);
-          wsSend(spect);
+          wsend(spect);
         }
       }
       if (S.wsPingInterval) clearInterval(S.wsPingInterval);
       S.wsPingInterval = setInterval(() => {
         S.pingstamp = Date.now();
-        wsSend(encodePing());
+        wsend(encodePing());
       }, 3e3);
       (_b = hooks.sendChat) == null ? void 0 : _b.call(hooks, "вoшёл в игру!");
     }
@@ -2833,7 +2833,18 @@
           scheduleHiddenTabDisconnect();
         } else {
           clearHiddenTabDisconnectTimer();
+          S._forceMouseSend = true;
+          S.oldX = -999;
+          S.oldY = -999;
+          try {
+            if (S.api && typeof S.api.sendMouseMove === "function") S.api.sendMouseMove({ force: true });
+          } catch (e) {}
         }
+      });
+      window.addEventListener("focus", () => {
+        S._forceMouseSend = true;
+        S.oldX = -999;
+        S.oldY = -999;
       });
     }
     return {
@@ -2847,7 +2858,7 @@
       fetchConnectToken: fetchConnectToken2,
       showConnecting,
       wsConnect,
-      wsSend,
+      wsend,
       onWsOpen,
       onGameHandshakeReady,
       onWsClose,
@@ -2863,7 +2874,7 @@
     function wsIsOpen() {
       return S.ws != null && S.ws.readyState === WebSocket.OPEN;
     }
-    function wsSend(view) {
+    function wsend(view) {
       if (!S.ws) return;
       S.ws.send(view.buffer);
     }
@@ -2875,7 +2886,8 @@
     }
     function sendMouseMove(opts) {
       if (!wsIsOpen()) return;
-      const force = !!(opts && opts.force);
+      const force = !!(opts && opts.force) || !!S._forceMouseSend;
+      if (S._forceMouseSend) S._forceMouseSend = false;
       const spectating = !S.playerCells.length;
       const host = S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl;
       const bubbleSpectate = spectating && isBubbleSkinHost(host);
@@ -2887,44 +2899,50 @@
           S.posY = main.y;
         }
       }
+      if (force) {
+        S.oldX = S.posX - 999;
+        S.oldY = S.posY - 999;
+      }
       // Bubble overview is server-driven (op 17). Echoing posX back every 50ms fights
       // the camera and makes it jitter — only send mouse on explicit click.
       if (bubbleSpectate && !force) return;
       // Spectate: overview follows camera aim (posX), not free cursor
       if (S.freeze || spectating) {
-        if (!(Math.abs(S.oldX - S.posX) < .05 && Math.abs(S.oldY - S.posY) < .05)) {
+        if (force || !(Math.abs(S.oldX - S.posX) < .05 && Math.abs(S.oldY - S.posY) < .05)) {
           S.oldX = S.posX;
           S.oldY = S.posY;
           const proto = S.activeProtocol;
           if (proto && typeof proto.encodeMouse === "function") {
             const packets = proto.encodeMouse(S.posX, S.posY, S) || [];
-            for (let i = 0; i < packets.length; i++) wsSend(packets[i]);
+            for (let i = 0; i < packets.length; i++) wsend(packets[i]);
           } else {
             const msg = prepareData(21);
             msg.setUint8(0, ClientOpcode.MOUSE);
             msg.setFloat64(1, S.posX, true);
             msg.setFloat64(9, S.posY, true);
             msg.setUint32(17, 0, true);
-            wsSend(msg);
+            wsend(msg);
           }
         }
       } else {
         const msgX = S.rawMouseX - S.canvasWidth / 2;
         const msgY = S.rawMouseY - S.canvasHeight / 2;
-        if (64 <= msgX * msgX + msgY * msgY && !(Math.abs(S.oldX - S.X) < .1 && Math.abs(S.oldY - S.Y) < .1)) {
-          S.oldX = S.X;
-          S.oldY = S.Y;
-          const proto = S.activeProtocol;
-          if (proto && typeof proto.encodeMouse === "function") {
-            const packets = proto.encodeMouse(S.X, S.Y, S) || [];
-            for (let i = 0; i < packets.length; i++) wsSend(packets[i]);
-          } else {
-            const msg = prepareData(21);
-            msg.setUint8(0, ClientOpcode.MOUSE);
-            msg.setFloat64(1, S.X, true);
-            msg.setFloat64(9, S.Y, true);
-            msg.setUint32(17, 0, true);
-            wsSend(msg);
+        if (force || 64 <= msgX * msgX + msgY * msgY) {
+          if (force || !(Math.abs(S.oldX - S.X) < .1 && Math.abs(S.oldY - S.Y) < .1)) {
+            S.oldX = S.X;
+            S.oldY = S.Y;
+            const proto = S.activeProtocol;
+            if (proto && typeof proto.encodeMouse === "function") {
+              const packets = proto.encodeMouse(S.X, S.Y, S) || [];
+              for (let i = 0; i < packets.length; i++) wsend(packets[i]);
+            } else {
+              const msg = prepareData(21);
+              msg.setUint8(0, ClientOpcode.MOUSE);
+              msg.setFloat64(1, S.X, true);
+              msg.setFloat64(9, S.Y, true);
+              msg.setUint32(17, 0, true);
+              wsend(msg);
+            }
           }
         }
       }
@@ -2933,19 +2951,19 @@
       if (!wsIsOpen()) return;
       const msg = prepareData(1);
       msg.setUint8(0, a);
-      wsSend(msg);
+      wsend(msg);
     }
     function sendSpectate() {
       if (!wsIsOpen()) return;
       const proto = S.activeProtocol;
       if (proto && typeof proto.encodeSpectate === "function") {
         const packets = proto.encodeSpectate(S) || [];
-        for (let i = 0; i < packets.length; i++) wsSend(packets[i]);
+        for (let i = 0; i < packets.length; i++) wsend(packets[i]);
         return;
       }
       const spect = prepareData(1);
       spect.setUint8(0, ClientOpcode.SPECTATE);
-      wsSend(spect);
+      wsend(spect);
     }
     function sendNickName() {
       if (!wsIsOpen() || S.userNickName == null) return;
@@ -2953,7 +2971,7 @@
       if (proto && typeof proto.encodeNick === "function") {
         // Always public nick only on foreign protocols (strips #pass).
         const packets = proto.encodeNick(S.userNickName, S) || [];
-        for (let i = 0; i < packets.length; i++) wsSend(packets[i]);
+        for (let i = 0; i < packets.length; i++) wsend(packets[i]);
         return;
       }
       const nick = S.userNickName;
@@ -2963,7 +2981,7 @@
       for (let i = 0; i < nick.length; ++i) {
         msg.setUint16(1 + 2 * i + 1, nick.charCodeAt(i), true);
       }
-      wsSend(msg);
+      wsend(msg);
     }
     function isIncompletePrivateChat(str) {
       const s = String(str || "").trim();
@@ -2980,7 +2998,7 @@
       if (!wsIsOpen() || !(str.length < 200) || !(str.length > 0) || S.hideChat) return;
       if (proto && typeof proto.encodeChat === "function") {
         const packets = proto.encodeChat(str, S) || [];
-        for (let i = 0; i < packets.length; i++) wsSend(packets[i]);
+        for (let i = 0; i < packets.length; i++) wsend(packets[i]);
         return;
       }
       const msg = prepareData(2 + 2 * str.length);
@@ -2991,7 +3009,7 @@
         msg.setUint16(offset, str.charCodeAt(i), true);
         offset += 2;
       }
-      wsSend(msg);
+      wsend(msg);
     }
     function sendAccountToken() {
       const proto = S.activeProtocol;
@@ -3005,7 +3023,7 @@
       for (let i = 0; i < token.length; ++i) {
         msg.setUint16(1 + 2 * i, token.charCodeAt(i), true);
       }
-      wsSend(msg);
+      wsend(msg);
     }
     function sendSticker(stickerId, action) {
       if (!wsIsOpen()) return;
@@ -3013,7 +3031,7 @@
       msg.setUint8(0, ClientOpcode.STICKER);
       msg.setUint8(1, stickerId);
       msg.setUint8(2, action ? 1 : 0);
-      wsSend(msg);
+      wsend(msg);
     }
     return {
       wsIsOpen,
@@ -3086,9 +3104,34 @@
       y: S.topPos + S.bottomPos * 2 * normalizeFractlPart(nodeid * nodeid)
     };
   }
+  function nowMs() {
+    return typeof performance !== "undefined" && performance.now ? performance.now() : Date.now();
+  }
+  /** Hard cell/food move transition (ms). */
+  var CELL_LERP_MS = 110;
+  function cellUpdatePos(cell, timestamp) {
+    if (cell.id === 0) return 1;
+    let a = (timestamp - cell.updateTime) / CELL_LERP_MS;
+    if (a < 0) a = 0;
+    const dx = cell.nx - cell.ox;
+    const dy = cell.ny - cell.oy;
+    const ds = cell.nSize - cell.oSize;
+    if (a <= 1) {
+      cell.x = cell.ox + dx * a;
+      cell.y = cell.oy + dy * a;
+      cell.size = cell.oSize + ds * a;
+      return a;
+    }
+    const excess = Math.min(a - 1, .5);
+    const k = excess * Math.exp(-excess * 2.5);
+    cell.x = cell.nx + dx * k;
+    cell.y = cell.ny + dy * k;
+    cell.size = cell.nSize;
+    return 1;
+  }
   function repositionFoodNodes(S) {
     if (!S.mapBoundsReady) return;
-    const now = Date.now();
+    const now = nowMs();
     for (let i = 0; i < S.nodelist.length; i++) {
       const node = S.nodelist[i];
       if (!(node == null ? void 0 : node.isFood)) continue;
@@ -3223,7 +3266,7 @@
   }
   function updateNodes(S, reader, hooks) {
     const {Cell: Cell2, onPlayerDeath} = hooks;
-    S.timestamp = Date.now();
+    S.timestamp = nowMs();
     S.ua = false;
     S.nodesSortDirty = true;
     for (let killedId; killedId = reader.uint32(); ) {
@@ -3342,7 +3385,7 @@
     const kills = packet.kills || [];
     const upserts = packet.upserts || [];
     const destroys = packet.destroys || [];
-    S.timestamp = Date.now();
+    S.timestamp = nowMs();
     S.ua = false;
     S.nodesSortDirty = true;
     for (let i = 0; i < kills.length; i++) {
@@ -3414,7 +3457,7 @@
     }
   }
   function fixDead(S) {
-    const now = Date.now();
+    const now = nowMs();
     for (let i = S.nodelist.length - 1; i >= 0; i--) {
       const node = S.nodelist[i];
       if (!node || node.destroyed) continue;
@@ -4292,15 +4335,7 @@
     movePoints() {},
 
     updatePos() {
-      const S = deps3.S;
-      if (this.id === 0) return 1;
-      let a = (S.timestamp - this.updateTime) / 120;
-      a = Math.max(0, Math.min(1, a));
-      const b = a;
-      this.x = a * (this.nx - this.ox) + this.ox;
-      this.y = a * (this.ny - this.oy) + this.oy;
-      this.size = b * (this.nSize - this.oSize) + this.oSize;
-      return b;
+      return cellUpdatePos(this, deps3.S.timestamp);
     },
     shouldRender() {
       const S = deps3.S;
@@ -4900,11 +4935,11 @@
       S.oldY = S.posY - 999;
       if (typeof hooks.sendMouseMove === "function") hooks.sendMouseMove({ force: true });
       const pid = S.spectateFollowPid | 0;
-      if (pid && hooks.prepareData && hooks.wsSend) {
+      if (pid && hooks.prepareData && hooks.wsend) {
         const msg = hooks.prepareData(5);
         msg.setUint8(0, 1);
         msg.setUint32(1, pid, true);
-        hooks.wsSend(msg);
+        hooks.wsend(msg);
       } else if (typeof hooks.sendUint8 === "function") {
         hooks.sendUint8(1);
       }
@@ -4992,7 +5027,7 @@
         msg.setUint8(0, 200);
         msg.setUint8(1, stickerId);
         msg.setUint8(2, action ? 1 : 0);
-        hooks.wsSend(msg);
+        hooks.wsend(msg);
       }
     }
     function showStickerOverCell(stickerId) {
@@ -5608,7 +5643,7 @@
   var STATS_FEED_STORAGE_KEY = "agar_stats_feed_since";
 
   function resolveOfficialServerId(connectionUrl) {
-    const host = String(connectionUrl || "").toLowerCase().replace(/^wss?:\/\//, "");
+    const host = String(connectionUrl || "").toLowerCase().replace(/^ws?:\/\//, "");
     if (!host) return null;
     if (host.includes("ffa.agar.su")) return "ffa";
     if (host.includes("ms.agar.su:6001") || host === "ms.agar.su" || host.startsWith("ms.agar.su/")) return "ms";
@@ -8664,7 +8699,7 @@ function initServers(S) {
         console.warn("Серверы ещё не загружены. Подождите...");
         return;
       }
-      const wsUrl = getGameServerWssUrl(arg);
+      const wsUrl = getGameServerwsUrl(arg);
       const alreadyConnected = S.ws && S.ws.readyState === WebSocket.OPEN && S.currentWebSocketUrl === wsUrl;
       if (arg !== S.CONNECTION_URL) {
         S.CONNECTION_URL = arg;
@@ -8799,7 +8834,7 @@ onReady(() => {
         },
         reconnectToServer: () => connection.reconnectToServer(),
         prepareData,
-        wsSend: v => connection.wsSend(v),
+        wsend: v => connection.wsend(v),
         wsIsOpen: () => outbound.wsIsOpen(),
         showConnecting: () => connection.showConnecting()
       });
