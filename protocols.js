@@ -120,18 +120,44 @@
   var BUBBLE_FOOD_MAX_U16 = 125;
   var PID_PLACEHOLDER = 0xfffffffe;
 
+  /** Embedded Bubble project JWT. Login API is CORS-blocked from agar.su. */
+  var BUBBLE_TOKEN_DEFAULT =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MjYxNTMsImlhdCI6MTc4Nzk1MzgwOSwiZXhwIjoxNzg4NTU4NjA5fQ.UuaFOzhOrc_adwJ2bqOvhp5Vb-OcGKxKYjeYTJR7Vg8";
+
   function bubbleProjectToken() {
     try {
-      if (global.BUBBLE_TOKEN) return String(global.BUBBLE_TOKEN);
+      if (global.BUBBLE_TOKEN) return String(global.BUBBLE_TOKEN).trim();
       var t = localStorage.getItem("bubble_token");
-      return t ? String(t) : "";
-    } catch (e) {
-      return "";
-    }
+      if (t) return String(t).trim();
+    } catch (e) {}
+    return BUBBLE_TOKEN_DEFAULT;
+  }
+
+  function saveBubbleToken(tok) {
+    var clean = String(tok || "").trim();
+    try {
+      if (clean) localStorage.setItem("bubble_token", clean);
+    } catch (e) {}
+    global.BUBBLE_TOKEN = clean;
+  }
+
+  /** Bubble requires project JWT — guests are kicked. Never uses agar.su LK. */
+  function ensureBubbleAuth() {
+    var existing = bubbleProjectToken();
+    saveBubbleToken(existing);
+    return Promise.resolve(existing);
+  }
+
+  function isBubbleAccountNick(name) {
+    var d = publicNick(name).toLowerCase().replace(/\s+/g, " ");
+    if (!d) return false;
+    if (d === "player agarsu" || d === "[su] player agarsu") return true;
+    if (/^\[su\]\s*player\s*aga/i.test(d)) return true;
+    return false;
   }
 
   function bubbleAuthPacket(token) {
-    var t = String(token || "");
+    var t = String(token || "").trim();
     var bytes = new Uint8Array(1 + t.length + 1);
     bytes[0] = 200;
     for (var i = 0; i < t.length; i++) bytes[1 + i] = t.charCodeAt(i) & 255;
@@ -369,6 +395,10 @@
       ws.binaryType = "arraybuffer";
       return ws;
     },
+    /** Prefetch Bubble JWT before WS open (required — guest get kicked). */
+    ensureAuth: function () {
+      return ensureBubbleAuth();
+    },
     createState: function () {
       return {
         ownCells: new Set(),
@@ -377,6 +407,7 @@
         ownerBorderOk: false,
         borderOwnerSent: 0,
         mapBorderSent: false,
+        playNick: "",
       };
     },
     onOpen: function (send) {
@@ -388,13 +419,15 @@
       key.setUint8(0, 255);
       key.setUint32(1, 0, true);
       send(key);
-      // Bubble's own JWT only (never agar.su LK). Optional — guests can play without chat XP.
+      // Required Bubble project JWT (not agar.su LK).
       var tok = bubbleProjectToken();
       if (tok) send(bubbleAuthPacket(tok));
+      else console.warn("[bubble] no project token — server will kick guest");
     },
     /** Always public nick only — strips #pass / agar credentials. */
-    encodeNick: function (rawNick) {
+    encodeNick: function (rawNick, S) {
       var nick = publicNick(rawNick) || "agar.su";
+      if (S && S.protocolState) S.protocolState.playNick = nick;
       return [utf16Packet(0, nick)];
     },
     encodeSpectate: function () {
@@ -512,9 +545,11 @@
           if (isOwn && owner) {
             row.type = 0;
             row.playerId = owner;
+            if (state.playNick) row.name = state.playNick;
           } else if (row.type === 0) {
             row.playerId = (c.id >>> 0) || 1;
             if (owner && row.playerId === owner) row.playerId = (row.playerId ^ 0x00ffffff) >>> 0 || 1;
+            if (state.playNick && isBubbleAccountNick(row.name)) row.name = state.playNick;
           }
           cells.push(row);
         }
@@ -545,6 +580,9 @@
           }
           items.push({ id: id, name: publicNick(name) });
         }
+        for (var li2 = 0; li2 < items.length; li2++) {
+          if (state.playNick && isBubbleAccountNick(items[li2].name)) items[li2].name = state.playNick;
+        }
         return [buildAgarLb(items)];
       }
 
@@ -569,8 +607,9 @@
           ctext += String.fromCharCode(ct);
         }
         if (flags & 0x80) return [];
-        // Drop Bubble custom color tail if present — agar chat doesn't need it.
-        return [buildAgarChat(r || 100, g || 200, b || 255, publicNick(cname) || "player", ctext)];
+        var chatName = publicNick(cname) || "player";
+        if (state.playNick && isBubbleAccountNick(chatName)) chatName = state.playNick;
+        return [buildAgarChat(r || 100, g || 200, b || 255, chatName, ctext)];
       }
 
       // 90 and others — ignore

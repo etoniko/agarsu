@@ -2628,6 +2628,18 @@
         let connectToken = null;
         const usePow = !proto || proto.usePow !== false;
         const useAgarToken = !proto || proto.useAgarAccountToken === true || proto.trusted === true;
+        if (proto && typeof proto.ensureAuth === "function") {
+          try {
+            setConnectVerifyText("Авторизация игрового сервера…");
+            await proto.ensureAuth();
+          } catch (authErr) {
+            if (attemptId !== S.connectAttemptId) return;
+            console.error("Project auth error:", authErr);
+            showReconnectPanel("Не удалось авторизоваться на игровом сервере. Нажмите, чтобы повторить.");
+            return;
+          }
+          if (attemptId !== S.connectAttemptId) return;
+        }
         if (usePow) {
           try {
             connectToken = await fetchConnectToken2(host);
