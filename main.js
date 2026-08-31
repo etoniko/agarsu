@@ -335,63 +335,37 @@
     }
     // Fallback by port/path when list miss
     if (/:6013\b|sixz\.ru:6013/i.test(host)) return "tr";
-    if (/:6014\b|xn--bdk\.pw|\/d(?:ffa|rookery|arctida)/i.test(host)) return "eu";
+    // hardcore (6017) + darctida live under RU list in HTML
+    if (/sixz\.ru:6017|:6017\b|buble\.am|bubble\.am|\/hc\b|\/darctida\b/i.test(host)) return "ru";
+    if (/:6014\b|:6015\b|xn--bdk\.pw|\/d(?:ffa|rookery)/i.test(host)) return "eu";
     return null;
   }
+  function isForeignStyleHost(host) {
+    return /:6014\b|:6015\b|:6017\b|xn--bdk\.pw|sixz\.ru:6017|\/darctida\b|\/hc\b/i.test(String(host || ""));
+  }
   /**
-   * Full mass (no k). Quantized by magnitude so labels do not rebuild every tick.
+   * EN(EU) + TR servers: mass as 1.2k / 1,2k.
+   * Quantized so the label does not rebuild every tick (less GPU/text load).
+   * hardcore/darctida stay on RU tab but keep foreign mass style by host.
    */
-  function formatMassLabel(mass) {
+  function formatMassLabel(mass, regionKey, host) {
+    const h = String(host || "");
+    const fullMass = /sixz\.ru:6017|:6017\b|buble\.am|bubble\.am/i.test(h);
+    const useK = !fullMass && (regionKey === "tr" || regionKey === "eu" || regionKey === "en" || isForeignStyleHost(h));
     let m = mass | 0;
-    if (m >= 10000) return String(Math.round(m / 100) * 100);
-    if (m >= 1000) return String(Math.round(m / 50) * 50);
-    if (m >= 100) return String(Math.round(m / 10) * 10);
-    if (m >= 10) return String(Math.round(m / 5) * 5);
+    if (!useK) return String(m);
+    if (m >= 1000) {
+      m = Math.round(m / 100) * 100;
+      let s = (m / 1000).toFixed(1);
+      if (regionKey === "tr") s = s.replace(".", ",");
+      return s + "k";
+    }
+    m = Math.round(m / 10) * 10;
     return String(m);
   }
-  var skinLodCache = new Map();
-  var SKIN_LOD_CACHE_MAX = 384;
-  function isAnimatedSkinImage(img) {
-    if (!img) return false;
-    const fw = img.naturalWidth || img.width || 0;
-    const fh = img.naturalHeight || img.height || 0;
-    return fw > fh;
-  }
-  /** Static skins: mass < 100 → 128px, mass >= 100 → 512px. */
-  function pickSkinLodByMass(mass) {
-    return (mass | 0) >= 100 ? 512 : 128;
-  }
-  function getSkinLodSource(img, lodSize, cacheKey) {
-    if (!img) return img;
-    const fw = img.naturalWidth || img.width || 0;
-    const fh = img.naturalHeight || img.height || 0;
-    if (!fw || !fh) return img;
-    lodSize = lodSize === 512 ? 512 : 128;
-    const srcSide = Math.max(fw, fh);
-    if (lodSize >= srcSide) return img;
-    const key = (cacheKey || img.src || img.currentSrc || "img") + "|lod" + lodSize;
-    let cached = skinLodCache.get(key);
-    if (cached) {
-      skinLodCache.delete(key);
-      skinLodCache.set(key, cached);
-      return cached;
-    }
-    const c = document.createElement("canvas");
-    c.width = lodSize;
-    c.height = lodSize;
-    const ctx = c.getContext("2d");
-    if (!ctx) return img;
-    ctx.drawImage(img, 0, 0, fw, fh, 0, 0, lodSize, lodSize);
-    if (skinLodCache.size >= SKIN_LOD_CACHE_MAX) {
-      skinLodCache.delete(skinLodCache.keys().next().value);
-    }
-    skinLodCache.set(key, c);
-    return c;
-  }
-
-  /** TR / EU(EN): lighter Arial labels, no black outline */
-  function isLightLabelRegion(regionKey) {
-    return regionKey === "tr" || regionKey === "eu" || regionKey === "en";
+  /** TR / EU(EN): lighter Arial labels, no black outline (incl. hardcore/darctida by host) */
+  function isLightLabelRegion(regionKey, host) {
+    return regionKey === "tr" || regionKey === "eu" || regionKey === "en" || isForeignStyleHost(host);
   }
   function getPowApiBase(hostOrUrl) {
     const entry = findGameServer(hostOrUrl);
@@ -406,6 +380,25 @@
   function getGameServerWssUrl(host) {
     const h = host || "ffa.agar.su";
     return "wss://" + String(h).replace(/^wss?:\/\//i, "");
+  }
+  /** Multi-protocol resolver (protocols.js). Fallback = native agar.su. */
+  function resolveGameProtocol(host) {
+    const api = typeof window !== "undefined" ? window.AgarProtocols : null;
+    if (api && typeof api.resolve === "function") {
+      return api.resolve(host) || api.get("agar");
+    }
+    return null;
+  }
+  function protocolPublicNick(raw) {
+    const api = typeof window !== "undefined" ? window.AgarProtocols : null;
+    if (api && typeof api.publicNick === "function") return api.publicNick(raw);
+    return String(raw || "").split("#")[0].trim().slice(0, 15);
+  }
+  function bindProtocolForHost(S, host) {
+    const proto = resolveGameProtocol(host);
+    S.activeProtocol = proto;
+    S.protocolState = proto && typeof proto.createState === "function" ? proto.createState() : null;
+    return proto;
   }
   var KEYBIND_DEFAULTS = {
     split: 32,
@@ -1095,7 +1088,7 @@
   /** Bridge skins via unified xn--bdk.pw skinsbot. skinlist.txt still wins (agar.su only). */
   var SKINS_BOT_BASE = "https://xn--bdk.pw:6016";
   function isBubbleSkinHost(host) {
-    return /sixz\.ru:6017|:6017\b/i.test(String(host || ""));
+    return /sixz\.ru:6017|:6017\b|buble\.am|bubble\.am/i.test(String(host || ""));
   }
   function bubbleSkinLine(nick) {
     const s = String(nick || "");
@@ -1112,11 +1105,11 @@
   }
   /** AgarZ / Bubble skin bridges only (no Petri / :6011). */
   function isPetriSkinHost(host) {
-    return /sixz\.ru:6013|:6013\/|sixz\.ru:6017|:6017\//i.test(String(host || ""));
+    return /sixz\.ru:6013|:6013\/|sixz\.ru:6017|:6017\/|buble\.am|bubble\.am/i.test(String(host || ""));
   }
   function getSkinBridge(host) {
     const h = String(host || "");
-    if (/sixz\.ru:6017|:6017\b/i.test(h)) return "bubble";
+    if (/sixz\.ru:6017|:6017\b|buble\.am|bubble\.am/i.test(h)) return "bubble";
     if (/sixz\.ru:6013|:6013\b/i.test(h)) return "agarz";
     return null;
   }
@@ -2455,7 +2448,10 @@
     (_c = ui.setText) == null ? void 0 : _c.call(ui, "Подключение к серверу…");
     return token;
   }
-  function openGameSocket(wsUrl, {accountToken, connectToken} = {}) {
+  function openGameSocket(wsUrl, {accountToken, connectToken, protocol} = {}) {
+    if (protocol && typeof protocol.openSocket === "function") {
+      return protocol.openSocket(wsUrl);
+    }
     const qs = new URLSearchParams;
     if (accountToken) qs.set("accountToken", accountToken);
     if (connectToken) qs.set("connectToken", connectToken);
@@ -2625,37 +2621,43 @@
         S.ws = null;
       }
       const host = S.CONNECTION_URL;
+      const proto = bindProtocolForHost(S, host);
       S.wsUrl = wsUrlArg || getGameServerWssUrl(host);
       (_a = hooks.clearWorld) == null ? void 0 : _a.call(hooks);
       try {
         let connectToken = null;
-        try {
-          connectToken = await fetchConnectToken2(host);
-        } catch (err) {
+        const usePow = !proto || proto.usePow !== false;
+        const useAgarToken = !proto || proto.useAgarAccountToken === true || proto.trusted === true;
+        if (usePow) {
+          try {
+            connectToken = await fetchConnectToken2(host);
+          } catch (err) {
+            if (attemptId !== S.connectAttemptId) return;
+            console.error("Connect token error:", err);
+            if (isSpectMode()) {
+              scheduleSpectReconnect();
+            } else {
+              showReconnectPanel("Ошибка подключения. Нажмите, чтобы повторить.");
+            }
+            return;
+          }
           if (attemptId !== S.connectAttemptId) return;
-          console.error("Connect token error:", err);
-          if (isSpectMode()) {
-            scheduleSpectReconnect();
-          } else {
-            showReconnectPanel("Ошибка подключения. Нажмите, чтобы повторить.");
+          if (serverPowSupportCache.get(getPowApiBase(host)) === true && !connectToken) {
+            if (isSpectMode()) {
+              scheduleSpectReconnect();
+            } else {
+              showReconnectPanel("Не удалось пройти проверку сервера. Нажмите, чтобы повторить.");
+            }
+            return;
           }
-          return;
-        }
-        if (attemptId !== S.connectAttemptId) return;
-        if (serverPowSupportCache.get(getPowApiBase(host)) === true && !connectToken) {
-          if (isSpectMode()) {
-            scheduleSpectReconnect();
-          } else {
-            showReconnectPanel("Не удалось пройти проверку сервера. Нажмите, чтобы повторить.");
-          }
-          return;
         }
         if (connectToken === null) {
           hideConnectVerifyOverlay();
         }
         S.ws = openGameSocket(S.wsUrl, {
-          accountToken: getAccountToken() || null,
-          connectToken: connectToken || null
+          accountToken: useAgarToken ? getAccountToken() || null : null,
+          connectToken: usePow ? connectToken || null : null,
+          protocol: proto
         });
         S.ws.onopen = onWsOpen;
         S.ws.onmessage = msg => {
@@ -2687,9 +2689,17 @@
       var _a;
       setConnectVerifyText("Синхронизация с сервером…");
       S.gameHandshakeDone = false;
+      const proto = S.activeProtocol;
+      if (proto && typeof proto.onOpen === "function") {
+        // Foreign protocol handshake (no agar.su account token).
+        proto.onOpen(function (pkt) {
+          wsSend(pkt);
+        });
+        return;
+      }
       (_a = hooks.sendAccountToken) == null ? void 0 : _a.call(hooks);
-      const [proto, key] = encodeHandshake();
-      wsSend(proto);
+      const [p, key] = encodeHandshake();
+      wsSend(p);
       wsSend(key);
     }
     function onGameHandshakeReady() {
@@ -2791,12 +2801,18 @@
         if (!(Math.abs(S.oldX - S.posX) < .05 && Math.abs(S.oldY - S.posY) < .05)) {
           S.oldX = S.posX;
           S.oldY = S.posY;
-          const msg = prepareData(21);
-          msg.setUint8(0, ClientOpcode.MOUSE);
-          msg.setFloat64(1, S.posX, true);
-          msg.setFloat64(9, S.posY, true);
-          msg.setUint32(17, 0, true);
-          wsSend(msg);
+          const proto = S.activeProtocol;
+          if (proto && typeof proto.encodeMouse === "function") {
+            const packets = proto.encodeMouse(S.posX, S.posY, S) || [];
+            for (let i = 0; i < packets.length; i++) wsSend(packets[i]);
+          } else {
+            const msg = prepareData(21);
+            msg.setUint8(0, ClientOpcode.MOUSE);
+            msg.setFloat64(1, S.posX, true);
+            msg.setFloat64(9, S.posY, true);
+            msg.setUint32(17, 0, true);
+            wsSend(msg);
+          }
         }
       } else {
         const msgX = S.rawMouseX - S.canvasWidth / 2;
@@ -2804,12 +2820,18 @@
         if (64 <= msgX * msgX + msgY * msgY && !(Math.abs(S.oldX - S.X) < .1 && Math.abs(S.oldY - S.Y) < .1)) {
           S.oldX = S.X;
           S.oldY = S.Y;
-          const msg = prepareData(21);
-          msg.setUint8(0, ClientOpcode.MOUSE);
-          msg.setFloat64(1, S.X, true);
-          msg.setFloat64(9, S.Y, true);
-          msg.setUint32(17, 0, true);
-          wsSend(msg);
+          const proto = S.activeProtocol;
+          if (proto && typeof proto.encodeMouse === "function") {
+            const packets = proto.encodeMouse(S.X, S.Y, S) || [];
+            for (let i = 0; i < packets.length; i++) wsSend(packets[i]);
+          } else {
+            const msg = prepareData(21);
+            msg.setUint8(0, ClientOpcode.MOUSE);
+            msg.setFloat64(1, S.X, true);
+            msg.setFloat64(9, S.Y, true);
+            msg.setUint32(17, 0, true);
+            wsSend(msg);
+          }
         }
       }
     }
@@ -2821,6 +2843,13 @@
     }
     function sendNickName() {
       if (!wsIsOpen() || S.userNickName == null) return;
+      const proto = S.activeProtocol;
+      if (proto && typeof proto.encodeNick === "function") {
+        // Always public nick only on foreign protocols (strips #pass).
+        const packets = proto.encodeNick(S.userNickName, S) || [];
+        for (let i = 0; i < packets.length; i++) wsSend(packets[i]);
+        return;
+      }
       const nick = S.userNickName;
       const msg = prepareData(1 + 2 * nick.length + 1);
       msg.setUint8(0, ClientOpcode.NICK);
@@ -2840,6 +2869,12 @@
       if (isIncompletePrivateChat(str)) return;
       str = appendChatLangTag(str);
       if (!wsIsOpen() || !(str.length < 200) || !(str.length > 0) || S.hideChat) return;
+      const proto = S.activeProtocol;
+      if (proto && typeof proto.encodeChat === "function") {
+        const packets = proto.encodeChat(str, S) || [];
+        for (let i = 0; i < packets.length; i++) wsSend(packets[i]);
+        return;
+      }
       const msg = prepareData(2 + 2 * str.length);
       let offset = 0;
       msg.setUint8(offset++, ClientOpcode.CHAT);
@@ -2851,6 +2886,10 @@
       wsSend(msg);
     }
     function sendAccountToken() {
+      const proto = S.activeProtocol;
+      // Never leak agar.su LK token to third-party game servers.
+      if (proto && proto.useAgarAccountToken === false) return;
+      if (proto && proto.trusted === false) return;
       const token = getAccountToken();
       if (!wsIsOpen() || !token) return;
       const msg = prepareData(1 + 2 * token.length);
@@ -3178,7 +3217,7 @@
       const node = S.nodes[reader.uint32()];
       if (node) node.destroy();
     }
-    if (S.ua) {
+    if (S.ua && S.playerCells.length === 0) {
       if (typeof onPlayerDeath === "function") {
         onPlayerDeath(S);
       } else {
@@ -3256,7 +3295,7 @@
       const node = S.nodes[destroys[i]];
       if (node) node.destroy();
     }
-    if (S.ua) {
+    if (S.ua && S.playerCells.length === 0) {
       if (typeof onPlayerDeath === "function") onPlayerDeath(S);
       else {
         showStatics();
@@ -3901,7 +3940,7 @@
   }
   function getClientCellColor(cell) {
     const S = deps3.S;
-    if (cell.isVirus && /sixz\.ru:6017|:6017\b/i.test(String(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl || ""))) {
+    if (cell.isVirus && /sixz\.ru:6017|:6017\b|buble\.am|bubble\.am/i.test(String(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl || ""))) {
       return "#ff9900";
     }
     if (!S.customClientColors) return null;
@@ -4219,12 +4258,6 @@
               this.skinPhase = 0;
             }
             const sz = simpleRender ? this.size * this.skinZoom : bigPointSize * this.skinZoom;
-            let drawSkinImg = skinImg;
-            if (!isAnimatedSkinImage(skinImg)) {
-              const skinMass = Math.floor(this.size * this.size * 0.01);
-              const skinLod = pickSkinLodByMass(skinMass);
-              drawSkinImg = getSkinLodSource(skinImg, skinLod, skinId || skinName || skinImg.src);
-            }
             if (rotation.has(skinName)) {
               if (!this._rot) {
                 this._rot = {
@@ -4255,9 +4288,9 @@
               this._rot.current += (this._rot.target - this._rot.current) * .12;
               ctx.translate(this.x, this.y);
               ctx.rotate(this._rot.current);
-              drawSkinStripImage(ctx, drawSkinImg, -sz, -sz, sz * 2, sz * 2);
+              drawSkinStripImage(ctx, skinImg, -sz, -sz, sz * 2, sz * 2);
             } else {
-              drawSkinStripImage(ctx, drawSkinImg, this.x - sz, this.y - sz, sz * 2, sz * 2);
+              drawSkinStripImage(ctx, skinImg, this.x - sz, this.y - sz, sz * 2, sz * 2);
             }
             ctx.restore();
           }
@@ -4320,7 +4353,8 @@
           }
           if (displayName) {
             const nameSize = this.getNameSize();
-            const light = isLightLabelRegion(S.playRegion);
+            const playHost = S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl;
+            const light = isLightLabelRegion(S.playRegion, playHost);
             const wantsStroke = !light && S.renderQuality !== "low";
             const labelFont = light ? "Arial" : "Ubuntu";
             if (displayName !== this._txtNameVal) {
@@ -4358,7 +4392,8 @@
             this._txtMassSize = sizeHalf;
             if (this._txtZoom) this.sizeCache.setScale(this._txtZoom);
           }
-          const light = isLightLabelRegion(S.playRegion);
+          const playHost = S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl;
+          const light = isLightLabelRegion(S.playRegion, playHost);
           const massFont = light ? "Arial" : "Ubuntu";
           const wantsMassStroke = !light;
           if (this._txtMassStroke !== wantsMassStroke) {
@@ -4369,7 +4404,7 @@
             this._txtMassFont = massFont;
             this.sizeCache.setFont(massFont);
           }
-          const massLabel = formatMassLabel(mass);
+          const massLabel = formatMassLabel(mass, S.playRegion || "ru", playHost);
           if (massLabel !== this._txtMassVal) {
             this._txtMassVal = massLabel;
             this.sizeCache.setValue(massLabel);
@@ -4692,10 +4727,7 @@
           isSkinImageReady,
           loadCachedImage,
           normalizeNick,
-          getStickerUrl,
-          pickSkinLodByMass,
-          getSkinLodSource,
-          isAnimatedSkinImage
+          getStickerUrl
         };
         if (S.webglRenderer && S.webglRenderer.canvas) {
           const stage = document.getElementById("canvas-stage") || S.mainCanvas.parentElement;
@@ -7920,7 +7952,7 @@ function updateRegionOnlineTotals(totals) {
     return sz > S.foodMaxSize && sz <= Math.max(55, S.foodMaxSize + 20);
   }
   function getClientCellColor2(S, cell) {
-    if (cell.isVirus && /sixz\.ru:6017|:6017\b/i.test(String(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl || ""))) {
+    if (cell.isVirus && /sixz\.ru:6017|:6017\b|buble\.am|bubble\.am/i.test(String(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl || ""))) {
       return "#ff9900";
     }
     if (!S.customClientColors) return null;
@@ -8452,7 +8484,28 @@ function initServers(S) {
     };
     const wsBridge = createWsParseBridge(S, wsBridgeHooks, (dv) => handlers.handleWsMessage(dv));
     S.wsParseBridge = wsBridge;
-    connectionHooks.onMessage = (dv) => wsBridge.onRawDataView(dv);
+    connectionHooks.onMessage = (dv) => {
+      const proto = S.activeProtocol;
+      if (proto && typeof proto.translateInbound === "function") {
+        let packets;
+        try {
+          packets = proto.translateInbound(dv, S.protocolState, S) || [];
+        } catch (err) {
+          console.warn("[protocol]", proto.id, err);
+          return;
+        }
+        if (S.protocolState && S.protocolState.ownerPid) {
+          S.ownerPlayerId = S.protocolState.ownerPid >>> 0;
+        }
+        for (let i = 0; i < packets.length; i++) {
+          const p = packets[i];
+          const view = p instanceof DataView ? p : new DataView(p.buffer || p, p.byteOffset || 0, p.byteLength || p.length);
+          wsBridge.onRawDataView(view);
+        }
+        return;
+      }
+      wsBridge.onRawDataView(dv);
+    };
     if (wsBridge.isEnabled()) {
       console.debug("[ws-worker] parse offloaded to Worker");
     }
