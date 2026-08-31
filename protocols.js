@@ -119,6 +119,54 @@
   var BUBBLE_FOOD_MIN_U16 = 12;
   var BUBBLE_FOOD_MAX_U16 = 125;
   var PID_PLACEHOLDER = 0xfffffffe;
+  var BUBBLE_SKIN_CDN = "https://buble.am/skins";
+
+  function bubbleNickDisplay(rawName) {
+    var s = String(rawName || "");
+    if (s.indexOf("\n") >= 0) s = s.slice(s.indexOf("\n") + 1);
+    if (s.charCodeAt(0) === 4) s = s.slice(1);
+    if (s.indexOf(":::") >= 0) s = s.split(":::")[0];
+    return s.split("#")[0].replace(/<[^>]*>/g, "").trim();
+  }
+
+  function extractBubbleSkin(rawName, skinFromFlags) {
+    var sk = String(skinFromFlags || "").trim();
+    if (sk && sk.charCodeAt(0) !== 1) return sk.replace(/^%/, "");
+    var s = String(rawName || "");
+    if (s.indexOf("\n") >= 0) {
+      var first = s.split("\n")[0].trim();
+      if (first && first.charCodeAt(0) !== 4) return first.replace(/^%/, "");
+    }
+    return "";
+  }
+
+  /** Wire form for agar.su skin loader: "skinPath\\nNick". */
+  function bubbleWireName(rawName, skinFromFlags) {
+    var skinKey = extractBubbleSkin(rawName, skinFromFlags);
+    var display = bubbleNickDisplay(rawName);
+    if (skinKey && display) return skinKey + "\n" + display;
+    if (display) return display;
+    return skinKey || String(rawName || "");
+  }
+
+  function rememberBubbleSkin(state, displayNick, skinPath) {
+    if (!state || !displayNick || !skinPath) return;
+    if (!state.skinByNick) state.skinByNick = Object.create(null);
+    state.skinByNick[String(displayNick).trim().toLowerCase()] = String(skinPath).trim();
+  }
+
+  function chatBubbleWireName(state, rawName) {
+    var display = bubbleNickDisplay(rawName) || "player";
+    var skin = extractBubbleSkin(rawName, "");
+    if (!skin && state && state.skinByNick) {
+      skin = state.skinByNick[String(display).trim().toLowerCase()] || "";
+    }
+    if (skin) {
+      rememberBubbleSkin(state, display, skin);
+      return skin + "\n" + display;
+    }
+    return display;
+  }
 
   /** Embedded Bubble project JWT. Login API is CORS-blocked from agar.su. */
   var BUBBLE_TOKEN_DEFAULT =
@@ -316,10 +364,6 @@
       else if (isEjected) type = 3;
       else if (!String(name || "").trim()) type = 4;
 
-      var display = name;
-      if (skin && display) display = skin + "\n" + display;
-      else if (skin && !display) display = skin;
-
       cells.push({
         id: id,
         x: x,
@@ -329,7 +373,8 @@
         g: g,
         b: b,
         flags: flags,
-        name: display,
+        name: name,
+        skin: skin,
         type: type,
       });
     }
@@ -402,6 +447,7 @@
         ownerBorderOk: false,
         borderOwnerSent: 0,
         mapBorderSent: false,
+        skinByNick: Object.create(null),
       };
     },
     onOpen: function (send) {
@@ -517,6 +563,13 @@
           var c = parsed.cells[i];
           var size = c.size | 0;
           if (size < 1 || size > 8000) continue;
+          var rawName = c.name || "";
+          var skinKey = extractBubbleSkin(rawName, c.skin || "");
+          var displayNick = bubbleNickDisplay(rawName);
+          var wireName = bubbleWireName(rawName, c.skin || "");
+          if (skinKey && displayNick && c.type === 0) {
+            rememberBubbleSkin(state, displayNick, skinKey);
+          }
           var isOwn = state.ownCells.has(c.id >>> 0);
           var spiked = 0;
           if (c.type === 2 || (c.flags & 1)) spiked |= 1;
@@ -532,7 +585,7 @@
             g: c.type === 2 ? 153 : c.g,
             b: c.type === 2 ? 0 : c.b,
             spiked: spiked,
-            name: c.name || "",
+            name: wireName,
             playerId: 0,
           };
           if (isOwn && owner) {
@@ -595,7 +648,7 @@
           ctext += String.fromCharCode(ct);
         }
         if (flags & 0x80) return [];
-        return [buildAgarChat(r || 100, g || 200, b || 255, cname || "player", ctext)];
+        return [buildAgarChat(r || 100, g || 200, b || 255, chatBubbleWireName(state, cname), ctext)];
       }
 
       // 90 and others — ignore

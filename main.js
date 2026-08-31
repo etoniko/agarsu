@@ -1087,6 +1087,7 @@
   window.isLimitGlowDisabledHost = isLimitGlowDisabledHost;
   /** Bridge skins via unified xn--bdk.pw skinsbot. skinlist.txt still wins (agar.su only). */
   var SKINS_BOT_BASE = "https://xn--bdk.pw:6016";
+  var BUBBLE_SKIN_CDN = "https://buble.am/skins";
   function isBubbleSkinHost(host) {
     return /sixz\.ru:6017|:6017\b|buble\.am|bubble\.am/i.test(String(host || ""));
   }
@@ -1101,7 +1102,19 @@
     let s = String(nick || "");
     if (s.indexOf("\n") >= 0) s = s.slice(s.indexOf("\n") + 1);
     if (s.charCodeAt(0) === 4) s = s.slice(1);
+    if (s.indexOf(":::") >= 0) s = s.split(":::")[0];
     return s.split("#")[0].replace(/<[^>]*>/g, "").trim();
+  }
+  function bubbleSkinDirectUrl(skinPath) {
+    let s = String(skinPath || "").trim();
+    if (!s) return null;
+    if (s.startsWith("%")) s = s.slice(1);
+    if (s.startsWith("i/")) {
+      const id = s.slice(2).split(/[\s\n/]/)[0];
+      if (id) return "https://i.imgur.com/" + id + ".png";
+    }
+    const rel = s.replace(/^\//, "").replace(/\.png$/i, "");
+    return BUBBLE_SKIN_CDN + "/" + rel + ".png";
   }
   /** AgarZ / Bubble skin bridges only (no Petri / :6011). */
   function isPetriSkinHost(host) {
@@ -1117,8 +1130,11 @@
     const h = String(host || "");
     if (isBubbleSkinHost(h)) {
       const skinPath = bubbleSkinLine(nick);
+      if (!skinPath) return null;
+      const direct = bubbleSkinDirectUrl(skinPath);
+      if (direct) return direct;
       const display = bubbleNickDisplay(nick);
-      if (!skinPath || !display) return null;
+      if (!display) return null;
       return SKINS_BOT_BASE + "/api/getSkin?bridge=bubble&username=" + encodeURIComponent(display) + "&skin=" + encodeURIComponent(skinPath);
     }
     const bridge = getSkinBridge(host);
@@ -4159,8 +4175,13 @@
       } else {
         this.nameCache.setSize(size);
       }
-      this.nameCache.setValue(name);
-      this._txtNameVal = name;
+      let labelName = name;
+      const playHost = S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl;
+      if (isBubbleSkinHost(playHost)) {
+        labelName = bubbleNickDisplay(name) || name;
+      }
+      this.nameCache.setValue(labelName);
+      this._txtNameVal = labelName;
       this._txtNameSize = size;
     },
     setSize(size) {
