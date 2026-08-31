@@ -2255,6 +2255,11 @@
       if (tip) tip.textContent = "XP: " + (entry.xp || 0);
     });
   }
+  function formatLeaderBoardName(S, raw) {
+    const host = S && (S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl) || "";
+    const n = String(raw || "");
+    return isBubbleSkinHost(host) ? bubbleNickDisplay(n) || n : n;
+  }
   function drawCustomLeaderBoard() {
     var _a, _b;
     const S = deps2.S;
@@ -2270,7 +2275,7 @@
     toplistDiv.innerHTML = "";
     if (!((_a = S.leaderBoard) == null ? void 0 : _a.length)) return;
     for (let b = 0; b < S.leaderBoard.length; ++b) {
-      let name = S.leaderBoard[b].name || "Игрок";
+      let name = formatLeaderBoardName(S, S.leaderBoard[b].name || "Игрок");
       const isSystemLine = S.leaderBoard[b].id == null;
       let isMe = false;
       if (S.noRanking && S.leaderBoard[b].name) {
@@ -2281,7 +2286,7 @@
       }
       if (isMe) {
         const myCell = S.playerCells.find(cell => cell.id === S.leaderBoard[b].id);
-        if (myCell == null ? void 0 : myCell.name) name = myCell.name;
+        if (myCell == null ? void 0 : myCell.name) name = formatLeaderBoardName(S, myCell.name);
       }
       if (b < 10) {
         const entryDiv = createLeaderboardEntry(name, S.leaderBoard[b].level, isMe, isSystemLine, b);
@@ -2307,7 +2312,7 @@
     let myRank = null;
     if (!((_a = S.leaderBoard) == null ? void 0 : _a.length)) return;
     for (let b = 0; b < S.leaderBoard.length; ++b) {
-      let name = S.leaderBoard[b].name || "Игрок";
+      let name = formatLeaderBoardName(S, S.leaderBoard[b].name || "Игрок");
       const level = S.leaderBoard[b].level;
       const isSystemLine = S.leaderBoard[b].id == null;
       let isMe = false;
@@ -2323,7 +2328,7 @@
       if (isMe) {
         const myCell = S.playerCells.find(cell => cell.id === S.leaderBoard[b].id);
         if (myCell == null ? void 0 : myCell.name) {
-          name = myCell.name;
+          name = formatLeaderBoardName(S, myCell.name);
           myRank = b + 1;
         }
       }
@@ -2334,7 +2339,7 @@
     }
     if (myRank && myRank > displayedPlayers) {
       const level = S.accountData && hooks.getLevel ? hooks.getLevel(S.accountData.xp) : -1;
-      const myName = (_c = S.playerCells[0]) == null ? void 0 : _c.name;
+      const myName = (_c = S.playerCells[0]) == null ? void 0 : formatLeaderBoardName(S, _c.name);
       if (myName) {
         const myRankDiv = createLeaderboardEntry(myName, level, true, false, myRank - 1);
         myRankDiv.style.color = "#FFAAAA";
@@ -4767,7 +4772,8 @@
           isSkinImageReady,
           loadCachedImage,
           normalizeNick,
-          getStickerUrl
+          getStickerUrl,
+          getPetriSkinUrl
         };
         if (S.webglRenderer && S.webglRenderer.canvas) {
           const stage = document.getElementById("canvas-stage") || S.mainCanvas.parentElement;
