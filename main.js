@@ -339,23 +339,56 @@
     return null;
   }
   /**
-   * EN(EU) + TR servers: mass as 1.2k / 1,2k.
-   * Quantized so the label does not rebuild every tick (less GPU/text load).
+   * Full mass (no k). Quantized by magnitude so labels do not rebuild every tick.
    */
-  function formatMassLabel(mass, regionKey, host) {
-    const fullMass = /sixz\.ru:6017|:6017\b/i.test(String(host || ""));
-    const useK = !fullMass && (regionKey === "tr" || regionKey === "eu" || regionKey === "en");
+  function formatMassLabel(mass) {
     let m = mass | 0;
-    if (!useK) return String(m);
-    if (m >= 1000) {
-      m = Math.round(m / 100) * 100;
-      let s = (m / 1000).toFixed(1);
-      if (regionKey === "tr") s = s.replace(".", ",");
-      return s + "k";
-    }
-    m = Math.round(m / 10) * 10;
+    if (m >= 10000) return String(Math.round(m / 100) * 100);
+    if (m >= 1000) return String(Math.round(m / 50) * 50);
+    if (m >= 100) return String(Math.round(m / 10) * 10);
+    if (m >= 10) return String(Math.round(m / 5) * 5);
     return String(m);
   }
+  var skinLodCache = new Map();
+  var SKIN_LOD_CACHE_MAX = 384;
+  function isAnimatedSkinImage(img) {
+    if (!img) return false;
+    const fw = img.naturalWidth || img.width || 0;
+    const fh = img.naturalHeight || img.height || 0;
+    return fw > fh;
+  }
+  /** Static skins: mass < 100 → 128px, mass >= 100 → 512px. */
+  function pickSkinLodByMass(mass) {
+    return (mass | 0) >= 100 ? 512 : 128;
+  }
+  function getSkinLodSource(img, lodSize, cacheKey) {
+    if (!img) return img;
+    const fw = img.naturalWidth || img.width || 0;
+    const fh = img.naturalHeight || img.height || 0;
+    if (!fw || !fh) return img;
+    lodSize = lodSize === 512 ? 512 : 128;
+    const srcSide = Math.max(fw, fh);
+    if (lodSize >= srcSide) return img;
+    const key = (cacheKey || img.src || img.currentSrc || "img") + "|lod" + lodSize;
+    let cached = skinLodCache.get(key);
+    if (cached) {
+      skinLodCache.delete(key);
+      skinLodCache.set(key, cached);
+      return cached;
+    }
+    const c = document.createElement("canvas");
+    c.width = lodSize;
+    c.height = lodSize;
+    const ctx = c.getContext("2d");
+    if (!ctx) return img;
+    ctx.drawImage(img, 0, 0, fw, fh, 0, 0, lodSize, lodSize);
+    if (skinLodCache.size >= SKIN_LOD_CACHE_MAX) {
+      skinLodCache.delete(skinLodCache.keys().next().value);
+    }
+    skinLodCache.set(key, c);
+    return c;
+  }
+
   /** TR / EU(EN): lighter Arial labels, no black outline */
   function isLightLabelRegion(regionKey) {
     return regionKey === "tr" || regionKey === "eu" || regionKey === "en";
@@ -3145,7 +3178,7 @@
       const node = S.nodes[reader.uint32()];
       if (node) node.destroy();
     }
-    if (S.ua && S.playerCells.length === 0) {
+    if (S.ua) {
       if (typeof onPlayerDeath === "function") {
         onPlayerDeath(S);
       } else {
@@ -3223,7 +3256,7 @@
       const node = S.nodes[destroys[i]];
       if (node) node.destroy();
     }
-    if (S.ua && S.playerCells.length === 0) {
+    if (S.ua) {
       if (typeof onPlayerDeath === "function") onPlayerDeath(S);
       else {
         showStatics();
@@ -4186,6 +4219,12 @@
               this.skinPhase = 0;
             }
             const sz = simpleRender ? this.size * this.skinZoom : bigPointSize * this.skinZoom;
+            let drawSkinImg = skinImg;
+            if (!isAnimatedSkinImage(skinImg)) {
+              const skinMass = Math.floor(this.size * this.size * 0.01);
+              const skinLod = pickSkinLodByMass(skinMass);
+              drawSkinImg = getSkinLodSource(skinImg, skinLod, skinId || skinName || skinImg.src);
+            }
             if (rotation.has(skinName)) {
               if (!this._rot) {
                 this._rot = {
@@ -4216,9 +4255,9 @@
               this._rot.current += (this._rot.target - this._rot.current) * .12;
               ctx.translate(this.x, this.y);
               ctx.rotate(this._rot.current);
-              drawSkinStripImage(ctx, skinImg, -sz, -sz, sz * 2, sz * 2);
+              drawSkinStripImage(ctx, drawSkinImg, -sz, -sz, sz * 2, sz * 2);
             } else {
-              drawSkinStripImage(ctx, skinImg, this.x - sz, this.y - sz, sz * 2, sz * 2);
+              drawSkinStripImage(ctx, drawSkinImg, this.x - sz, this.y - sz, sz * 2, sz * 2);
             }
             ctx.restore();
           }
@@ -4330,7 +4369,7 @@
             this._txtMassFont = massFont;
             this.sizeCache.setFont(massFont);
           }
-          const massLabel = formatMassLabel(mass, S.playRegion || "ru", S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl);
+          const massLabel = formatMassLabel(mass);
           if (massLabel !== this._txtMassVal) {
             this._txtMassVal = massLabel;
             this.sizeCache.setValue(massLabel);
@@ -4653,7 +4692,10 @@
           isSkinImageReady,
           loadCachedImage,
           normalizeNick,
-          getStickerUrl
+          getStickerUrl,
+          pickSkinLodByMass,
+          getSkinLodSource,
+          isAnimatedSkinImage
         };
         if (S.webglRenderer && S.webglRenderer.canvas) {
           const stage = document.getElementById("canvas-stage") || S.mainCanvas.parentElement;

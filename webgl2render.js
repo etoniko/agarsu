@@ -30,6 +30,12 @@ out vec4 outColor;
 void main() {
   float d = length(vLocal);
   if (d > 1.0) discard;
+  if (vStrokeNorm > 0.001 && d >= 1.0 - vStrokeNorm) {
+    if (vStroke.a < 0.01) discard;
+    outColor = vStroke;
+    return;
+  }
+  if (vFill.a < 0.01) discard;
   outColor = vFill;
 }`;
 
@@ -551,6 +557,9 @@ void main() {
     const loadCachedImage = deps && deps.loadCachedImage;
     const normalizeNick = (deps && deps.normalizeNick) || ((x) => (x || "").toLowerCase());
     const getStickerUrl = deps && deps.getStickerUrl;
+    const pickSkinLodByMass = deps && deps.pickSkinLodByMass;
+    const getSkinLodSource = deps && deps.getSkinLodSource;
+    const isAnimatedSkinImage = deps && deps.isAnimatedSkinImage;
 
     const transparent = S.transparent || new Set();
     const invisible = S.invisible || new Set();
@@ -566,7 +575,7 @@ void main() {
     // but behind any larger cell that covers them (same as canvas draw order).
     const layerStep = 1.0 / (total + 2);
     const depthFill = (i) => 1.0 - (i + 1) * layerStep;
-    const depthSkin = (i) => depthFill(i) - layerStep * 0.25;
+    const depthSkin = (i, transp) => depthFill(i) - layerStep * (transp ? 0.45 : 0.25);
     const depthGlow = (i) => depthFill(i) - layerStep * 0.35;
     const depthLabel = (i) => depthFill(i) - layerStep * 0.5;
     const skinFrameBase = ((S.timestamp || Date.now()) / 100) | 0;
@@ -623,7 +632,7 @@ void main() {
         fill[3] = 0;
       }
 
-      if (cN < MAX_CIRCLES) {
+      if (!isTransp && cN < MAX_CIRCLES) {
         const o = cN * stride;
         const rad = renderSize + 1 / Math.max(viewZoom, 0.001);
         data[o] = cell.x;
@@ -661,7 +670,7 @@ void main() {
 
     for (let v = 0; v < visible.length; v++) {
       const { i, cell, renderSize, isTransp, skipFill, skinName, skinId, ownedSkinImg } = visible[v];
-      const dSkin = depthSkin(i);
+      const dSkin = depthSkin(i, isTransp);
 
       if (skipFill && S.virusBgImage) {
         const half = renderSize * 1.15;
@@ -714,7 +723,8 @@ void main() {
             }
             const fw = skinImg.naturalWidth || skinImg.width;
             const fh = skinImg.naturalHeight || skinImg.height;
-            const frame = fw > fh ? skinFrameBase % Math.floor(fw / fh) : 0;
+            const isStrip = fw > fh;
+            const frame = isStrip ? skinFrameBase % Math.floor(fw / fh) : 0;
             // Keep cell radius fixed; zoom UVs like old canvas clip+oversized draw
             const sz = cell.size;
             const z = Math.max(1, cell.skinZoom || 1);
@@ -740,9 +750,36 @@ void main() {
               cell._rot.current += (cell._rot.target - cell._rot.current) * 0.12;
               rot = cell._rot.current;
             }
-            const gpu = prepareSkinGpuSource(gl, skinImg, frame);
+            const gpu = (() => {
+              const animated = isStrip || (isAnimatedSkinImage && isAnimatedSkinImage(skinImg));
+              if (!animated && pickSkinLodByMass && getSkinLodSource) {
+                const skinMass = Math.floor(cell.size * cell.size * 0.01);
+                const skinLod = pickSkinLodByMass(skinMass);
+                const lodImg = getSkinLodSource(
+                  skinImg,
+                  skinLod,
+                  skinId || petriSkinKey || skinName || skinImg.src
+                );
+                const lw = lodImg.width | 0;
+                const lh = lodImg.height | 0;
+                return {
+                  source: lodImg,
+                  u0: 0,
+                  u1: 1,
+                  version: lw * 1009 + lh + skinLod * 7919,
+                  texSuffix: ":lod" + skinLod
+                };
+              }
+              const prepared = prepareSkinGpuSource(gl, skinImg, frame);
+              if (!prepared) return null;
+              return { ...prepared, texSuffix: ":f" + frame };
+            })();
             if (gpu) {
-              const entry = this.texMedia.get("skin:" + (skinId || ("petri:" + (petriSkinKey || cell.name || "x"))) + ":f" + frame, gpu.source, gpu.version);
+              const entry = this.texMedia.get(
+                "skin:" + (skinId || ("petri:" + (petriSkinKey || cell.name || "x"))) + gpu.texSuffix,
+                gpu.source,
+                gpu.version
+              );
               if (entry) {
                 const uMid = (gpu.u0 + gpu.u1) * 0.5;
                 const vMid = 0.5;
@@ -777,7 +814,7 @@ void main() {
           const stickerImg = loadCachedImage(stickerUrl);
           if (stickerImg && stickerImg.complete && stickerImg.width > 0) {
             const entry = this.texMedia.get("stk:" + stickerUrl, stickerImg, stickerImg.width);
-            this._queueTex(entry, cell.x, cell.y, cell.size, 0, 0, 0, 1, 1, depthSkin(i), true);
+            this._queueTex(entry, cell.x, cell.y, cell.size, 0, 0, 0, 1, 1, dSkin, true);
           }
         }
       }
@@ -876,7 +913,7 @@ void main() {
           if (typeof cell.sizeCache.setFont === "function") cell.sizeCache.setFont(massFont);
         }
         const massLabel = (typeof S.formatMassLabel === "function")
-          ? S.formatMassLabel(mass, region, host)
+          ? S.formatMassLabel(mass)
           : String(mass | 0);
         if (massLabel !== cell._txtMassVal) {
           cell._txtMassVal = massLabel;
