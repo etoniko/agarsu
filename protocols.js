@@ -552,7 +552,13 @@
       return [utf16Packet(0, nick)];
     },
     encodeSpectate: function () {
-      return [new Uint8Array([1])];
+      // Bubble: op 2 (spectate nick) + op 1 (enter overview) — same as buble.am client.
+      var nick = "Spectator";
+      try {
+        var el = typeof document !== "undefined" ? document.getElementById("nick") : null;
+        if (el && el.value) nick = publicNick(el.value) || nick;
+      } catch (e) {}
+      return [utf16Packet(2, nick), new Uint8Array([1])];
     },
     encodeChat: function (text) {
       var s = stripBubbleChatLangTag(String(text || "")).slice(0, 200);
