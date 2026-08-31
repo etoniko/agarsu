@@ -116,11 +116,18 @@
   });
 
   // —— Bubble.am (classic Ogar protocol 5) ——
+  //
+  // Skins (see buble.am main_out.js updateNodes):
+  //   flags&0x04 → UTF-8/Latin-1 skin path + 0x00 (NOT in the name field)
+  //   name       → UTF-16LE display nick + 0x0000
+  // Native draw: node._skin → ./skins/{path}.png  (% prefix stripped at load)
+  // Agar.su bridge: merge to "skinPath\nNick" in cell UTF-8 name for our skin loader.
   var BUBBLE_FOOD_MIN_U16 = 12;
   var BUBBLE_FOOD_MAX_U16 = 125;
   var PID_PLACEHOLDER = 0xfffffffe;
   var BUBBLE_SKIN_CDN = "https://buble.am/skins";
 
+  /** buble.am display nick from UTF-16 name field (or legacy skin\\nnick in name). */
   function bubbleNickDisplay(rawName) {
     var s = String(rawName || "");
     if (s.indexOf("\n") >= 0) s = s.slice(s.indexOf("\n") + 1);
@@ -129,18 +136,45 @@
     return s.split("#")[0].replace(/<[^>]*>/g, "").trim();
   }
 
+  /** Normalize skin bytes from flags&4 (buble: mask 0x7F, skip \\x01 sentinel). */
+  function normalizeBubbleSkin(rawSkin) {
+    var sk = String(rawSkin || "").replace(/\0/g, "").trim();
+    if (!sk || sk.charCodeAt(0) === 1) return "";
+    if (sk.charCodeAt(0) === 2) return "";
+    return sk.replace(/^\/+/, "");
+  }
+
+  /** Skin path for CDN — mirrors buble Cell.draw (% stripped, i/ → imgur). */
+  function bubbleSkinLoadKey(skinPath) {
+    var sk = normalizeBubbleSkin(skinPath);
+    if (!sk) return "";
+    if (sk.charCodeAt(0) === 37) sk = sk.slice(1);
+    return sk.trim();
+  }
+
+  function bubbleSkinCdnUrl(skinPath) {
+    var key = bubbleSkinLoadKey(skinPath);
+    if (!key) return "";
+    if (/^i\//i.test(key)) {
+      var id = key.slice(2).split(/[\s\n/]/)[0];
+      return id ? "https://i.imgur.com/" + id + ".png" : "";
+    }
+    return BUBBLE_SKIN_CDN + "/" + key.replace(/\.png$/i, "") + ".png";
+  }
+
+  /** Prefer flags&4 skin; fallback: legacy first line of name. */
   function extractBubbleSkin(rawName, skinFromFlags) {
-    var sk = String(skinFromFlags || "").trim();
-    if (sk && sk.charCodeAt(0) !== 1) return sk.replace(/^%/, "");
+    var fromFlags = bubbleSkinLoadKey(skinFromFlags);
+    if (fromFlags) return fromFlags;
     var s = String(rawName || "");
     if (s.indexOf("\n") >= 0) {
       var first = s.split("\n")[0].trim();
-      if (first && first.charCodeAt(0) !== 4) return first.replace(/^%/, "");
+      if (first && first.charCodeAt(0) !== 4) return bubbleSkinLoadKey(first);
     }
     return "";
   }
 
-  /** Wire form for agar.su skin loader: "skinPath\\nNick". */
+  /** Agar.su cell wire name: "{skinPath}\\n{DisplayNick}" (skin from flags, nick from UTF-16). */
   function bubbleWireName(rawName, skinFromFlags) {
     var skinKey = extractBubbleSkin(rawName, skinFromFlags);
     var display = bubbleNickDisplay(rawName);
@@ -150,14 +184,16 @@
   }
 
   function rememberBubbleSkin(state, displayNick, skinPath) {
-    if (!state || !displayNick || !skinPath) return;
+    var key = bubbleSkinLoadKey(skinPath);
+    var nick = String(displayNick || "").trim().toLowerCase();
+    if (!state || !nick || !key) return;
     if (!state.skinByNick) state.skinByNick = Object.create(null);
-    state.skinByNick[String(displayNick).trim().toLowerCase()] = String(skinPath).trim();
+    state.skinByNick[nick] = key;
   }
 
-  function chatBubbleWireName(state, rawName) {
+  function chatBubbleWireName(state, rawName, skinFromFlags) {
     var display = bubbleNickDisplay(rawName) || "player";
-    var skin = extractBubbleSkin(rawName, "");
+    var skin = extractBubbleSkin(rawName, skinFromFlags);
     if (!skin && state && state.skinByNick) {
       skin = state.skinByNick[String(display).trim().toLowerCase()] || "";
     }
@@ -239,7 +275,7 @@
       var idv = prep(4);
       idv.setUint32(0, (it.id || 0) >>> 0, true);
       parts.push(idv);
-      var name = publicNick(it.name || "");
+      var name = bubbleNickDisplay(it.name || "");
       var nv = prep(2 * name.length + 2);
       writeUtf16(nv, 0, name);
       parts.push(nv);
@@ -345,7 +381,7 @@
       var skin = "";
       if (flags & 4) {
         while (off < len) {
-          var ch = buf.getUint8(off++);
+          var ch = buf.getUint8(off++) & 0x7f;
           if (!ch) break;
           skin += String.fromCharCode(ch);
         }
@@ -384,6 +420,7 @@
       off += 4;
       var maxByBytes = Math.floor((len - off) / 4);
       if (remN > maxByBytes) remN = maxByBytes;
+      if (remN > 20000) remN = 20000;
       for (var j = 0; j < remN && off + 4 <= len; j++) {
         removes.push(buf.getUint32(off, true) >>> 0);
         off += 4;
@@ -564,9 +601,10 @@
           var size = c.size | 0;
           if (size < 1 || size > 8000) continue;
           var rawName = c.name || "";
-          var skinKey = extractBubbleSkin(rawName, c.skin || "");
+          var skinRaw = c.skin || "";
+          var skinKey = extractBubbleSkin(rawName, skinRaw);
           var displayNick = bubbleNickDisplay(rawName);
-          var wireName = bubbleWireName(rawName, c.skin || "");
+          var wireName = bubbleWireName(rawName, skinRaw);
           if (skinKey && displayNick && c.type === 0) {
             rememberBubbleSkin(state, displayNick, skinKey);
           }
@@ -622,7 +660,7 @@
             if (!ch2) break;
             name += String.fromCharCode(ch2);
           }
-          items.push({ id: id, name: name });
+          items.push({ id: id, name: bubbleNickDisplay(name) || name });
         }
         return [buildAgarLb(items)];
       }
@@ -661,6 +699,10 @@
     resolve: resolve,
     publicNick: publicNick,
     splitSkinNick: splitSkinNick,
+    bubbleNickDisplay: bubbleNickDisplay,
+    bubbleSkinLoadKey: bubbleSkinLoadKey,
+    bubbleSkinCdnUrl: bubbleSkinCdnUrl,
+    bubbleWireName: bubbleWireName,
     get: function (id) {
       return byId.get(id) || null;
     },
