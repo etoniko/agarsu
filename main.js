@@ -1625,12 +1625,11 @@
     var _a, _b, _c;
     if (!perfEnabled) return;
     ensurePerfOverlay();
-    perfOverlayEl.textContent = `FPS ${S.fps}\nnodes ${perfStats.nodes} drawn ${perfStats.drawn}\npre ${perfStats.preMs.toFixed(2)}ms grid ${perfStats.gridMs.toFixed(2)}ms\nsort ${perfStats.sortMs.toFixed(2)}ms draw ${perfStats.drawMs.toFixed(2)}ms\nqtree ${perfStats.qtreeMs.toFixed(2)}ms movePts ${perfStats.movePoints}\nminimap ${perfStats.miniMapMs.toFixed(2)}ms\nzoom ${(_a = S.viewZoom) == null ? void 0 : _a.toFixed(2)} cells ${((_b = S.playerCells) == null ? void 0 : _b.length) || 0}\nwebgl ${((_c = S.webglRenderer) == null ? void 0 : _c.ready) ? "on" : "off"} ws ${S.wsParseBridge && S.wsParseBridge.isEnabled() ? "worker" : "main"}`;
+    perfOverlayEl.textContent = `FPS ${S.fps}\nnodes ${perfStats.nodes} drawn ${perfStats.drawn}\npre ${perfStats.preMs.toFixed(2)}ms grid ${perfStats.gridMs.toFixed(2)}ms\nsort ${perfStats.sortMs.toFixed(2)}ms draw ${perfStats.drawMs.toFixed(2)}ms\nqtree ${perfStats.qtreeMs.toFixed(2)}ms movePts ${perfStats.movePoints}\nminimap ${perfStats.miniMapMs.toFixed(2)}ms\nzoom ${(_a = S.viewZoom) == null ? void 0 : _a.toFixed(2)} cells ${((_b = S.playerCells) == null ? void 0 : _b.length) || 0}\nws main`;
     window.__perfStats = {
       ...perfStats,
       fps: S.fps,
-      viewZoom: S.viewZoom,
-      webgl: !!((_c = S.webglRenderer) == null ? void 0 : _c.ready)
+      viewZoom: S.viewZoom
     };
   }
   var isBackgroundLoaded = false;
@@ -1853,42 +1852,15 @@
     ctx.scale(viewZoom, viewZoom);
     ctx.translate(-nodeX, -nodeY);
     drawCustomMapBackground(ctx);
+    let drawn = 0;
+    for (let i = 0; i < S.Cells.length; i++) S.Cells[i].drawOneCell(ctx);
+    for (let i = 0; i < S.nodelist.length; i++) {
+      S.nodelist[i].drawOneCell(ctx);
+      drawn++;
+    }
     ctx.restore();
-    const webgl = S.webglRenderer;
-    let usedWebgl = false;
-    if (webgl && webgl.ready) {
-      usedWebgl = !!webgl.renderCells(S, S.nodelist, S.webglDeps);
-      if (usedWebgl) {
-        // Overlay canvas composites in DOM; only blit when not mounted.
-        if (!S.webglOverlay) {
-          ctx.setTransform(1, 0, 0, 1, 0, 0);
-          ctx.drawImage(webgl.canvas, 0, 0);
-        }
-        if (perfEnabled) perfStats.drawn = webgl.drawn || 0;
-      } else if (S.webglOverlay && webgl.canvas) {
-        webgl.canvas.style.visibility = "hidden";
-      }
-      if (usedWebgl && S.webglOverlay && webgl.canvas) {
-        webgl.canvas.style.visibility = "visible";
-      }
-    }
-    if (!usedWebgl) {
-      if (S.webglOverlay && S.webglRenderer && S.webglRenderer.canvas) {
-        S.webglRenderer.canvas.style.visibility = "hidden";
-      }
-      ctx.save();
-      ctx.translate(canvasWidth / 2, canvasHeight / 2);
-      ctx.scale(viewZoom, viewZoom);
-      ctx.translate(-nodeX, -nodeY);
-      let drawn = 0;
-      for (let i = 0; i < S.nodelist.length; i++) {
-        S.nodelist[i].drawOneCell(ctx);
-        drawn++;
-      }
-      ctx.restore();
-      if (perfEnabled) perfStats.drawn = drawn;
-    }
     if (perfEnabled) {
+      perfStats.drawn = drawn;
       perfStats.drawMs = performance.now() - tDraw;
       perfStats.movePoints = S._perfMovePoints || 0;
       perfStats.frame = S.frameId;
@@ -3338,83 +3310,6 @@
       }
     }
   }
-  /** Apply worker-parsed UPDATE_NODES (no BinaryReader on main). */
-  function applyUpdateNodesParsed(S, packet, hooks) {
-    const {Cell: Cell2, onPlayerDeath} = hooks;
-    const kills = packet.kills || [];
-    const upserts = packet.upserts || [];
-    const destroys = packet.destroys || [];
-    S.timestamp = Date.now();
-    S.ua = false;
-    S.nodesSortDirty = true;
-    for (let i = 0; i < kills.length; i++) {
-      const {killedId, killerId} = kills[i];
-      const killer = S.nodes[killerId];
-      const killedNode = S.nodes[killedId];
-      if (killer && killedNode) {
-        killedNode.destroy();
-        killedNode.ox = killedNode.x;
-        killedNode.oy = killedNode.y;
-        killedNode.oSize = killedNode.size;
-        killedNode.nx = killer.x;
-        killedNode.ny = killer.y;
-        killedNode.nSize = killedNode.size;
-        killedNode.updateTime = S.timestamp;
-      }
-    }
-    for (let i = 0; i < upserts.length; i++) {
-      const u = upserts[i];
-      const nodeid = u.id;
-      let node = S.nodes[nodeid];
-      if (node) {
-        node.updatePos();
-        node.ox = node.x;
-        node.oy = node.y;
-        node.oSize = node.size;
-        node.color = u.color;
-      } else {
-        node = new Cell2(nodeid, u.x, u.y, u.size, u.color, u.name);
-        S.nodelist.push(node);
-        S.nodes[nodeid] = node;
-        node.ka = u.x;
-        node.la = u.y;
-        if (u.playerId === S.ownerPlayerId) {
-          const overlays = document.getElementById("overlays");
-          if (overlays) overlays.style.display = "none";
-          node.isOwn = true;
-          S.playerCells.push(node);
-          if (1 == S.playerCells.length) {
-            S.nodeX = node.x;
-            S.nodeY = node.y;
-          }
-        }
-      }
-      if (node) syncNodeStickerFromUpdate(S, node, u.name, u.stickerFromUpdate);
-      node.isVirus = u.flagVirus;
-      node.isEjected = u.flagEjected;
-      node.isAgitated = u.flagAgitated;
-      if (u.isFood) node.isFood = true;
-      if (u.type === 0 && u.playerId) node.playerId = u.playerId >>> 0;
-      node.nx = u.x;
-      node.ny = u.y;
-      node.setSize(u.size);
-      node.updateTime = S.timestamp;
-      node.flag = u.spiked;
-      if (u.name) node.setName(u.name);
-    }
-    for (let i = 0; i < destroys.length; i++) {
-      const node = S.nodes[destroys[i]];
-      if (node) node.destroy();
-    }
-    if (S.ua && S.playerCells.length === 0) {
-      if (typeof onPlayerDeath === "function") onPlayerDeath(S);
-      else {
-        showStatics();
-        if (typeof window.updateShareText === "function") window.updateShareText();
-        if (typeof window.renderDeathBanner === "function") window.renderDeathBanner();
-      }
-    }
-  }
   function fixDead(S) {
     const now = Date.now();
     for (let i = S.nodelist.length - 1; i >= 0; i--) {
@@ -3636,214 +3531,6 @@
     }
     return {
       handleWsMessage
-    };
-  }
-
-  /** Apply structured packet from ws-parse-worker (Version A). */
-  function applyParsedWsPacket(S, packet, hooks, bridge) {
-    if (!packet || !packet.type) return;
-    switch (packet.type) {
-      case "ban":
-        hideConnectVerifyOverlay();
-        showBanBanner(packet.banRemaining, packet.banReason);
-        S.connectInProgress = false;
-        S.gameHandshakeDone = false;
-        if (S.wsPingInterval) {
-          clearInterval(S.wsPingInterval);
-          S.wsPingInterval = null;
-        }
-        if (S.ws) {
-          safeCloseSocket(S.ws);
-          S.ws = null;
-        }
-        break;
-      case "ping":
-        S.ping = Date.now() - S.pingstamp;
-        if (hooks.setPingDisplay) hooks.setPingDisplay(S.ping);
-        break;
-      case "updateNodes":
-        if (hooks.applyUpdateNodesParsed) hooks.applyUpdateNodesParsed(packet);
-        else if (hooks.updateNodesParsed) hooks.updateNodesParsed(packet);
-        break;
-      case "updateCamera":
-        if (typeof packet.x === "number" && typeof packet.y === "number") {
-          applyServerSpectateCamera(S, packet.x, packet.y, packet.size);
-        } else {
-          S.posSize = 0.15;
-        }
-        break;
-      case "clearNodes":
-        if (S.playerCells.length > 0) {
-          S.ua = true;
-          S.freeze = false;
-          try {
-            const freezeEl = document.querySelector("#freeze");
-            if (freezeEl) freezeEl.style.display = "none";
-          } catch (_) {}
-          S.playerCells = [];
-          if (S._spectateFollowTimer) {
-            clearInterval(S._spectateFollowTimer);
-            S._spectateFollowTimer = null;
-          }
-          S.spectateFollowNick = null;
-          S.spectateFollowPid = 0;
-          showStatics();
-          if (typeof window.updateShareText === "function") {
-            try { window.updateShareText(S); } catch (_) {
-              try { window.updateShareText(); } catch (_) {}
-            }
-          }
-          if (typeof window.renderDeathBanner === "function") window.renderDeathBanner();
-        } else {
-          S.playerCells = [];
-        }
-        break;
-      case "customLb":
-        S.noRanking = true;
-        S.leaderBoard = packet.entries || [];
-        if (hooks.drawCustomLeaderBoard) hooks.drawCustomLeaderBoard();
-        break;
-      case "ffaLb": {
-        S.noRanking = false;
-        const entries = packet.entries || [];
-        S.leaderBoard = entries.map((e) => ({
-          id: e.id,
-          name: e.name,
-          level: e.xp && hooks.getLevel ? hooks.getLevel(e.xp) : -1,
-          xp: e.xp || 0
-        }));
-        if (hooks.drawLeaderBoard) hooks.drawLeaderBoard();
-        break;
-      }
-      case "borders":
-        S.leftPos = packet.left;
-        S.topPos = packet.top;
-        S.rightPos = packet.right;
-        S.bottomPos = packet.bottom;
-        S.foodMinSize = packet.foodMinSize;
-        S.foodMaxSize = packet.foodMaxSize;
-        S.ownerPlayerId = packet.ownerPlayerId;
-        S.mapBoundsReady = true;
-        repositionFoodNodes(S);
-        S.mapWidth = (S.rightPos + S.leftPos) / 2;
-        S.mapHeight = (S.bottomPos + S.topPos) / 2;
-        S.posX = (S.rightPos + S.leftPos) / 2;
-        S.posY = (S.bottomPos + S.topPos) / 2;
-        S.posSize = 1;
-        if (S.playerCells.length === 0) {
-          S.nodeX = S.posX;
-          S.nodeY = S.posY;
-          S.viewZoom = S.posSize;
-          S.oldX = S.posX - 999;
-          S.oldY = S.posY - 999;
-        }
-        if (bridge && bridge.syncBounds) bridge.syncBounds();
-        if (hooks.onGameHandshakeReady) hooks.onGameHandshakeReady();
-        break;
-      case "chat":
-        if (hooks.addChatParsed) hooks.addChatParsed(packet);
-        break;
-      case "xp":
-        if (hooks.onUpdateXp) hooks.onUpdateXp(packet.xp);
-        break;
-      case "sticker":
-        if (S.showStickers) {
-          applyStickerPacket(S, packet.stickerPlayerId, packet.stickerId, !!packet.enabled);
-        }
-        break;
-      default:
-        break;
-    }
-  }
-
-  /**
-   * Version A: parse WS binaries off-main via Worker; apply in order on main.
-   * Falls back to sync handleWsMessage if Worker unavailable.
-   */
-  function createWsParseBridge(S, hooks, syncFallback) {
-    let worker = null;
-    let enabled = false;
-    let nextId = 0;
-    let nextApply = 0;
-    const pending = new Map();
-
-    function syncBounds() {
-      if (!worker || !enabled) return;
-      try {
-        worker.postMessage({
-          cmd: "setBounds",
-          ready: !!S.mapBoundsReady,
-          left: S.leftPos,
-          top: S.topPos,
-          right: S.rightPos,
-          bottom: S.bottomPos
-        });
-      } catch (_) {}
-    }
-
-    function flushPending() {
-      while (pending.has(nextApply)) {
-        const packet = pending.get(nextApply);
-        pending.delete(nextApply);
-        nextApply++;
-        try {
-          applyParsedWsPacket(S, packet, hooks, { syncBounds });
-        } catch (err) {
-          console.error("[ws-worker] apply failed", err);
-        }
-      }
-    }
-
-    try {
-      worker = new Worker("ws-parse-worker.js");
-      worker.onmessage = (ev) => {
-        const msg = ev.data || {};
-        if (msg.id == null) return;
-        if (!msg.ok) {
-          console.warn("[ws-worker] parse error", msg.error);
-          pending.set(msg.id, { type: "unknown" });
-          flushPending();
-          return;
-        }
-        pending.set(msg.id, msg.packet);
-        flushPending();
-      };
-      worker.onerror = (err) => {
-        console.warn("[ws-worker] disabled, sync fallback", err);
-        enabled = false;
-      };
-      enabled = true;
-      syncBounds();
-    } catch (err) {
-      console.warn("[ws-worker] unavailable", err);
-      enabled = false;
-      worker = null;
-    }
-
-    function onRawDataView(dv) {
-      if (!enabled || !worker) {
-        syncFallback(dv);
-        return;
-      }
-      const id = nextId++;
-      let buffer;
-      try {
-        buffer = dv.buffer.slice(dv.byteOffset, dv.byteOffset + dv.byteLength);
-      } catch (_) {
-        syncFallback(dv);
-        return;
-      }
-      try {
-        worker.postMessage({ cmd: "parse", id, buffer }, [buffer]);
-      } catch (_) {
-        syncFallback(dv);
-      }
-    }
-
-    return {
-      onRawDataView,
-      syncBounds,
-      isEnabled: () => enabled
     };
   }
 
@@ -4850,32 +4537,6 @@
     }
     S.mainCanvas = S.nCanvas = document.getElementById("canvas");
     S.ctx = S.mainCanvas.getContext("2d");
-    if (typeof createWebGL2Renderer === "function" && !S.webglRenderer) {
-      try {
-        S.webglRenderer = createWebGL2Renderer();
-        S.webglDeps = {
-          getSkinImage,
-          getOwnedSkinDrawable,
-          isSkinImageReady,
-          loadCachedImage,
-          normalizeNick,
-          getStickerUrl,
-          getPetriSkinUrl
-        };
-        if (S.webglRenderer && S.webglRenderer.canvas) {
-          const stage = document.getElementById("canvas-stage") || S.mainCanvas.parentElement;
-          const glCanvas = S.webglRenderer.canvas;
-          if (stage && !glCanvas.parentElement) {
-            glCanvas.style.cssText = "position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;";
-            stage.appendChild(glCanvas);
-            S.webglOverlay = true;
-          }
-        }
-      } catch (e) {
-        S.webglRenderer = null;
-        console.warn("WebGL2 renderer disabled", e);
-      }
-    }
     function syncMouseFromEvent(event2) {
       const dpr = S.dpr || getEffectiveDpr(S);
       S.rawMouseX = event2.clientX * dpr;
@@ -8587,41 +8248,6 @@ function initServers(S) {
       getLevel,
       setPingDisplay
     });
-    const onPlayerDeath = () => {
-      S.freeze = false;
-      try {
-        const freezeEl = document.querySelector("#freeze");
-        if (freezeEl) freezeEl.style.display = "none";
-      } catch (_) {}
-      showStatics();
-      updateShareText(S);
-      if (typeof window.renderDeathBanner === "function") window.renderDeathBanner();
-    };
-    const wsBridgeHooks = {
-      applyUpdateNodesParsed: (packet) => applyUpdateNodesParsed(S, packet, { Cell, onPlayerDeath }),
-      addChatParsed: (packet) => {
-        S.chatBoard.push({
-          pId: packet.pId,
-          playerXp: packet.playerXp,
-          playerLevel: packet.playerXp ? getLevel(packet.playerXp) : -1,
-          name: packet.name,
-          color: packet.color,
-          message: packet.message,
-          time: formatTime(new Date)
-        });
-        if (typeof chatApi.drawChatBoard === "function") chatApi.drawChatBoard();
-      },
-      drawLeaderBoard: () => lbApi.drawLeaderBoard(),
-      drawCustomLeaderBoard: () => lbApi.drawCustomLeaderBoard(),
-      onUpdateXp: xp => {
-        if (typeof wHandle.onUpdateXp === "function") wHandle.onUpdateXp(xp);
-      },
-      onGameHandshakeReady: () => connection.onGameHandshakeReady(),
-      getLevel,
-      setPingDisplay
-    };
-    const wsBridge = createWsParseBridge(S, wsBridgeHooks, (dv) => handlers.handleWsMessage(dv));
-    S.wsParseBridge = wsBridge;
     connectionHooks.onMessage = (dv) => {
       const proto = S.activeProtocol;
       if (proto && typeof proto.translateInbound === "function") {
@@ -8642,11 +8268,8 @@ function initServers(S) {
         }
         return;
       }
-      wsBridge.onRawDataView(dv);
+      handlers.handleWsMessage(dv);
     };
-    if (wsBridge.isEnabled()) {
-      console.debug("[ws-worker] parse offloaded to Worker");
-    }
     attachSettings(S, {
       fixDead: () => fixDead(S)
     });
