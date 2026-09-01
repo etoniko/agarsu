@@ -830,12 +830,9 @@
   function isAnimatedSkinImage(img) {
     return !!(img && getSkinStripInfo(img).isStrip);
   }
-  /** Static skins: 128/512 by how large the cell is on screen (size × viewZoom). */
-  function pickSkinLodForCell(cellSize, viewZoom, prevLod) {
-    const screenDiam = cellSize * Math.max(viewZoom || 0.001, 0.001) * 2;
-    if (prevLod === 512) return screenDiam < 85 ? 128 : 512;
-    if (prevLod === 128) return screenDiam >= 110 ? 512 : 128;
-    return screenDiam >= 100 ? 512 : 128;
+  /** Static skins: mass <= 50 → 128px, else 512px. */
+  function pickSkinLodByMass(mass) {
+    return (mass | 0) <= 50 ? 128 : 512;
   }
   function getSkinLodSource(img, lodSize, cacheKey) {
     if (!img) return img;
@@ -4114,9 +4111,8 @@
             const sz = simpleRender ? this.size * this.skinZoom : bigPointSize * this.skinZoom;
             let drawSkinImg = skinImg;
             if (!isAnimatedSkinImage(skinImg)) {
-              const skinLod = pickSkinLodForCell(this.size, S.viewZoom, this._skinLod);
-              this._skinLod = skinLod;
-              drawSkinImg = getSkinLodSource(skinImg, skinLod, skinId || skinName || skinImg.src);
+              const skinMass = Math.floor(this.size * this.size * .01);
+              drawSkinImg = getSkinLodSource(skinImg, pickSkinLodByMass(skinMass), skinId || skinName || skinImg.src);
             }
             if (rotation.has(skinName)) {
               if (!this._rot) {
