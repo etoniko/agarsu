@@ -825,6 +825,41 @@
     if (r.sw <= 0 || r.sh <= 0) return;
     ctx.drawImage(img, r.sx, r.sy, r.sw, r.sh, dx, dy, dw, dh);
   }
+  var skinLodCache = new Map;
+  var SKIN_LOD_CACHE_MAX = 384;
+  function isAnimatedSkinImage(img) {
+    return !!(img && getSkinStripInfo(img).isStrip);
+  }
+  /** Static skins: 128/512 by how large the cell is on screen (size × viewZoom). */
+  function pickSkinLodForCell(cellSize, viewZoom, prevLod) {
+    const screenDiam = cellSize * Math.max(viewZoom || 0.001, 0.001) * 2;
+    if (prevLod === 512) return screenDiam < 85 ? 128 : 512;
+    if (prevLod === 128) return screenDiam >= 110 ? 512 : 128;
+    return screenDiam >= 100 ? 512 : 128;
+  }
+  function getSkinLodSource(img, lodSize, cacheKey) {
+    if (!img) return img;
+    const fw = img.naturalWidth || img.width || 0;
+    const fh = img.naturalHeight || img.height || 0;
+    if (!fw || !fh) return img;
+    lodSize = lodSize === 512 ? 512 : 128;
+    const frameSize = getSkinStripInfo(img).isStrip ? fh : Math.min(fw, fh);
+    if (lodSize >= frameSize) return img;
+    const key = String(cacheKey || img.src || "x") + ":lod" + lodSize;
+    let cached = skinLodCache.get(key);
+    if (cached) return cached;
+    const c = document.createElement("canvas");
+    c.width = lodSize;
+    c.height = lodSize;
+    const cctx = c.getContext("2d");
+    if (cctx) cctx.drawImage(img, 0, 0, frameSize, frameSize, 0, 0, lodSize, lodSize);
+    if (skinLodCache.size >= SKIN_LOD_CACHE_MAX) {
+      const firstKey = skinLodCache.keys().next().value;
+      if (firstKey !== void 0) skinLodCache.delete(firstKey);
+    }
+    skinLodCache.set(key, c);
+    return c;
+  }
   function extractCssUrl(value) {
     if (!value || value === "none") return "";
     var m = String(value).match(/url\(\s*['"]?([^'")]+)['"]?\s*\)/i);
@@ -4077,6 +4112,12 @@
               this.skinPhase = 0;
             }
             const sz = simpleRender ? this.size * this.skinZoom : bigPointSize * this.skinZoom;
+            let drawSkinImg = skinImg;
+            if (!isAnimatedSkinImage(skinImg)) {
+              const skinLod = pickSkinLodForCell(this.size, S.viewZoom, this._skinLod);
+              this._skinLod = skinLod;
+              drawSkinImg = getSkinLodSource(skinImg, skinLod, skinId || skinName || skinImg.src);
+            }
             if (rotation.has(skinName)) {
               if (!this._rot) {
                 this._rot = {
@@ -4107,9 +4148,9 @@
               this._rot.current += (this._rot.target - this._rot.current) * .12;
               ctx.translate(this.x, this.y);
               ctx.rotate(this._rot.current);
-              drawSkinStripImage(ctx, skinImg, -sz, -sz, sz * 2, sz * 2);
+              drawSkinStripImage(ctx, drawSkinImg, -sz, -sz, sz * 2, sz * 2);
             } else {
-              drawSkinStripImage(ctx, skinImg, this.x - sz, this.y - sz, sz * 2, sz * 2);
+              drawSkinStripImage(ctx, drawSkinImg, this.x - sz, this.y - sz, sz * 2, sz * 2);
             }
             ctx.restore();
           }
