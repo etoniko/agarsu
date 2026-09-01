@@ -2671,6 +2671,7 @@
       if (S.ma) {
         S.connectAttemptId++;
         S.currentWebSocketUrl = wsUrl;
+        S.gameHandshakeDone = false;
         wsConnect(wsUrl);
       }
     }
@@ -2678,6 +2679,7 @@
       var _a;
       const attemptId = S.connectAttemptId;
       S.connectInProgress = true;
+      S.gameHandshakeDone = false;
       hideBanBanner();
       hideReconnectPanel();
       showConnectVerifyOverlay("Подключение к серверу…");
