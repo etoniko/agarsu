@@ -2279,7 +2279,7 @@
     }
     if (!isSystemLine && isWinner) {
       const winnerIcon = document.createElement("div");
-      winnerIcon.title = "🏆 ПОБЕДИТЕЛЬ ТУРНИРА 🏆";
+      winnerIcon.title = "Дважды подряд, победитель турнира FFA 2x2";
       winnerIcon.style.width = "18px";
       winnerIcon.style.height = "18px";
       winnerIcon.style.backgroundImage = "url(/photo/trophy.png)";
