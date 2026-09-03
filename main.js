@@ -336,7 +336,7 @@
     // Fallback by port/path when list miss
     if (/:6013\b|sixz\.ru:6013/i.test(host)) return "tr";
     // hardcore (6017) + darctida live under RU list in HTML
-    if (/sixz\.ru:6017|:6017\b|buble\.am|bubble\.am|\/hc\b|\/darctida\b/i.test(host)) return "ru";
+    if (/sixz\.ru:6017|:6017\b|\/hc\b|\/darctida\b/i.test(host)) return "ru";
     if (/:6014\b|:6015\b|xn--bdk\.pw|\/d(?:ffa|rookery)/i.test(host)) return "eu";
     return null;
   }
@@ -350,7 +350,7 @@
    */
   function formatMassLabel(mass, regionKey, host) {
     const h = String(host || "");
-    const fullMass = /sixz\.ru:6017|:6017\b|buble\.am|bubble\.am/i.test(h);
+    const fullMass = /sixz\.ru:6017|:6017\b/i.test(h);
     const useK = !fullMass && (regionKey === "tr" || regionKey === "eu" || regionKey === "en" || isForeignStyleHost(h));
     let m = mass | 0;
     if (!useK) return String(m);
@@ -380,25 +380,6 @@
   function getGameServerWssUrl(host) {
     const h = host || "ffa.agar.su";
     return "wss://" + String(h).replace(/^wss?:\/\//i, "");
-  }
-  /** Multi-protocol resolver (protocols.js). Fallback = native agar.su. */
-  function resolveGameProtocol(host) {
-    const api = typeof window !== "undefined" ? window.AgarProtocols : null;
-    if (api && typeof api.resolve === "function") {
-      return api.resolve(host) || api.get("agar");
-    }
-    return null;
-  }
-  function protocolPublicNick(raw) {
-    const api = typeof window !== "undefined" ? window.AgarProtocols : null;
-    if (api && typeof api.publicNick === "function") return api.publicNick(raw);
-    return String(raw || "").split("#")[0].trim().slice(0, 15);
-  }
-  function bindProtocolForHost(S, host) {
-    const proto = resolveGameProtocol(host);
-    S.activeProtocol = proto;
-    S.protocolState = proto && typeof proto.createState === "function" ? proto.createState() : null;
-    return proto;
   }
   var KEYBIND_DEFAULTS = {
     split: 32,
@@ -1104,18 +1085,17 @@
    * Limited-glow mass thresholds by server (Russia only).
    * Turkey / Europe servers: disabled.
    * Default RU (ffa / ms / pvp / tournament): 22400 / 22300
-   * buble.am hardcore: 35000 / 34900
+   * hardcore (/hc): 35000 / 34900
    */
   function isLimitGlowDisabledHost(host) {
     const h = String(host || "");
-    if (/buble\.am|bubble\.am/i.test(h)) return false;
     if (/:6013\b|sixz\.ru:6013/i.test(h)) return true; // Turkey
     if (/:6014\b|:6015\b|:6017\b|xn--bdk\.pw|\/d(?:ffa|rookery|arctida)/i.test(h)) return true; // Europe
     return false;
   }
   function getLimitGlowMassBounds(host) {
     const h = String(host || "");
-    if (/buble\.am|bubble\.am|\/hc\b/i.test(h)) return { on: 35000, off: 34900 };
+    if (/\/hc\b/i.test(h)) return { on: 35000, off: 34900 };
     if (isLimitGlowDisabledHost(host)) return null;
     if (/megasplit5k|\/ms5k/i.test(h)) return { on: 32400, off: 32300 };
     return { on: 22400, off: 22300 };
@@ -1124,95 +1104,21 @@
   window.isLimitGlowDisabledHost = isLimitGlowDisabledHost;
   /** Bridge skins via unified xn--bdk.pw skinsbot. skinlist.txt still wins (agar.su only). */
   var SKINS_BOT_BASE = "https://xn--bdk.pw:6016";
-  var BUBBLE_SKIN_CDN = "https://buble.am/skins";
-  function isBubbleSkinHost(host) {
-    return /sixz\.ru:6017|:6017\b|buble\.am|bubble\.am/i.test(String(host || ""));
-  }
-  /**
-   * Bubble overview camera: snap if target jumped far, else smooth follow via posX/posY.
-   * Far = new overview area; near = keep tracking coordinates smoothly.
-   */
   function applyServerSpectateCamera(S, x, y, size) {
-    const host = S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl;
     const sizeOk = typeof size === "number" && size > 0;
-    if (!isBubbleSkinHost(host) || (S.playerCells && S.playerCells.length)) {
-      S.posX = x;
-      S.posY = y;
-      if (sizeOk) S.posSize = size;
-      return;
-    }
-    const curX = Number.isFinite(S.nodeX) ? S.nodeX : S.posX;
-    const curY = Number.isFinite(S.nodeY) ? S.nodeY : S.posY;
-    const dist = Math.hypot(x - curX, y - curY);
-    const vz = Math.max(S.viewZoom || 0.1, 0.05);
-    const viewW = (S.canvasWidth || 1920) / vz;
-    const viewH = (S.canvasHeight || 1080) / vz;
-    const snapDist = Math.max(1400, Math.hypot(viewW, viewH) * 0.6);
-    if (!Number.isFinite(curX) || !Number.isFinite(curY) || dist >= snapDist) {
-      S.posX = x;
-      S.posY = y;
-      S.nodeX = x;
-      S.nodeY = y;
-      if (sizeOk) {
-        S.posSize = size;
-        S.viewZoom = size * viewRange(S);
-      }
-    } else {
-      S.posX = x;
-      S.posY = y;
-      if (sizeOk) S.posSize = size;
-    }
+    S.posX = x;
+    S.posY = y;
+    if (sizeOk) S.posSize = size;
   }
-  function bubbleSkinLine(nick) {
-    const s = String(nick || "");
-    const i = s.indexOf("\n");
-    if (i < 0) return null;
-    const line = s.slice(0, i).trim();
-    return line || null;
-  }
-  function bubbleNickDisplay(nick) {
-    let s = String(nick || "");
-    if (s.indexOf("\n") >= 0) s = s.slice(s.indexOf("\n") + 1);
-    if (s.charCodeAt(0) === 4) s = s.slice(1);
-    if (s.indexOf(":::") >= 0) s = s.split(":::")[0];
-    return s.split("#")[0].replace(/<[^>]*>/g, "").trim();
-  }
-  function bubbleSkinDirectUrl(skinPath) {
-    let s = String(skinPath || "").trim();
-    if (!s) return null;
-    if (s.startsWith("%")) s = s.slice(1);
-    if (s.startsWith("i/")) {
-      const id = s.slice(2).split(/[\s\n/]/)[0];
-      if (id) return "https://i.imgur.com/" + id + ".png";
-    }
-    const rel = s.replace(/^\//, "").replace(/\.png$/i, "").split("/").map(encodeURIComponent).join("/");
-    return BUBBLE_SKIN_CDN + "/" + rel + ".png";
-  }
-  /** AgarZ / Bubble skin bridges only (no Petri / :6011). */
+  /** AgarZ skin bridge (sixz.ru:6013). */
   function isPetriSkinHost(host) {
-    return /sixz\.ru:6013|:6013\/|sixz\.ru:6017|:6017\/|buble\.am|bubble\.am/i.test(String(host || ""));
+    return /sixz\.ru:6013|:6013\//i.test(String(host || ""));
   }
   function getSkinBridge(host) {
-    const h = String(host || "");
-    if (/sixz\.ru:6017|:6017\b|buble\.am|bubble\.am/i.test(h)) return "bubble";
-    if (/sixz\.ru:6013|:6013\b/i.test(h)) return "agarz";
+    if (/sixz\.ru:6013|:6013\b/i.test(String(host || ""))) return "agarz";
     return null;
   }
   function getPetriSkinUrl(nick, host) {
-    const h = String(host || "");
-    if (isBubbleSkinHost(h)) {
-      const skinPath = bubbleSkinLine(nick);
-      if (skinPath) {
-        const direct = bubbleSkinDirectUrl(skinPath);
-        if (direct) return direct;
-        const display = bubbleNickDisplay(nick);
-        if (display) {
-          return SKINS_BOT_BASE + "/api/getSkin?bridge=bubble&username=" + encodeURIComponent(display) + "&skin=" + encodeURIComponent(skinPath);
-        }
-      }
-      const displayOnly = bubbleNickDisplay(nick);
-      if (displayOnly) return bubbleSkinDirectUrl(displayOnly);
-    }
     const bridge = getSkinBridge(host);
     if (!bridge) return null;
     const bare = String(nick || "").split("#")[0].replace(/<[^>]*>/g, "").trim();
@@ -2304,9 +2210,7 @@
     });
   }
   function formatLeaderBoardName(S, raw) {
-    const host = S && (S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl) || "";
-    const n = String(raw || "");
-    return isBubbleSkinHost(host) ? bubbleNickDisplay(n) || n : n;
+    return String(raw || "");
   }
   function drawCustomLeaderBoard() {
     var _a, _b;
@@ -2517,10 +2421,7 @@
     (_c = ui.setText) == null ? void 0 : _c.call(ui, "Подключение к серверу…");
     return token;
   }
-  function openGameSocket(wsUrl, {accountToken, connectToken, protocol} = {}) {
-    if (protocol && typeof protocol.openSocket === "function") {
-      return protocol.openSocket(wsUrl);
-    }
+  function openGameSocket(wsUrl, {accountToken, connectToken} = {}) {
     const qs = new URLSearchParams;
     if (accountToken) qs.set("accountToken", accountToken);
     if (connectToken) qs.set("connectToken", connectToken);
@@ -2692,55 +2593,37 @@
         S.ws = null;
       }
       const host = S.CONNECTION_URL;
-      const proto = bindProtocolForHost(S, host);
       S.wsUrl = wsUrlArg || getGameServerWssUrl(host);
       (_a = hooks.clearWorld) == null ? void 0 : _a.call(hooks);
       try {
         let connectToken = null;
-        const usePow = !proto || proto.usePow !== false;
-        const useAgarToken = !proto || proto.useAgarAccountToken === true || proto.trusted === true;
-        if (proto && typeof proto.ensureAuth === "function") {
-          try {
-            setConnectVerifyText("Авторизация игрового сервера…");
-            await proto.ensureAuth();
-          } catch (authErr) {
-            if (attemptId !== S.connectAttemptId) return;
-            console.error("Project auth error:", authErr);
-            showReconnectPanel("Не удалось авторизоваться на игровом сервере. Нажмите, чтобы повторить.");
-            return;
-          }
+        try {
+          connectToken = await fetchConnectToken2(host);
+        } catch (err) {
           if (attemptId !== S.connectAttemptId) return;
+          console.error("Connect token error:", err);
+          if (isSpectMode()) {
+            scheduleSpectReconnect();
+          } else {
+            showReconnectPanel("Ошибка подключения. Нажмите, чтобы повторить.");
+          }
+          return;
         }
-        if (usePow) {
-          try {
-            connectToken = await fetchConnectToken2(host);
-          } catch (err) {
-            if (attemptId !== S.connectAttemptId) return;
-            console.error("Connect token error:", err);
-            if (isSpectMode()) {
-              scheduleSpectReconnect();
-            } else {
-              showReconnectPanel("Ошибка подключения. Нажмите, чтобы повторить.");
-            }
-            return;
+        if (attemptId !== S.connectAttemptId) return;
+        if (serverPowSupportCache.get(getPowApiBase(host)) === true && !connectToken) {
+          if (isSpectMode()) {
+            scheduleSpectReconnect();
+          } else {
+            showReconnectPanel("Не удалось пройти проверку сервера. Нажмите, чтобы повторить.");
           }
-          if (attemptId !== S.connectAttemptId) return;
-          if (serverPowSupportCache.get(getPowApiBase(host)) === true && !connectToken) {
-            if (isSpectMode()) {
-              scheduleSpectReconnect();
-            } else {
-              showReconnectPanel("Не удалось пройти проверку сервера. Нажмите, чтобы повторить.");
-            }
-            return;
-          }
+          return;
         }
         if (connectToken === null) {
           hideConnectVerifyOverlay();
         }
         S.ws = openGameSocket(S.wsUrl, {
-          accountToken: useAgarToken ? getAccountToken() || null : null,
-          connectToken: usePow ? connectToken || null : null,
-          protocol: proto
+          accountToken: getAccountToken() || null,
+          connectToken: connectToken || null
         });
         S.ws.onopen = onWsOpen;
         S.ws.onmessage = msg => {
@@ -2772,14 +2655,6 @@
       var _a;
       setConnectVerifyText("Синхронизация с сервером…");
       S.gameHandshakeDone = false;
-      const proto = S.activeProtocol;
-      if (proto && typeof proto.onOpen === "function") {
-        // Foreign protocol handshake (no agar.su account token).
-        proto.onOpen(function (pkt) {
-          wsSend(pkt);
-        });
-        return;
-      }
       (_a = hooks.sendAccountToken) == null ? void 0 : _a.call(hooks);
       const [p, key] = encodeHandshake();
       wsSend(p);
@@ -2792,14 +2667,7 @@
       clearSpectReconnectTimer();
       hideConnectVerifyOverlay();
       hideReconnectPanel();
-      const proto = S.activeProtocol;
-      const nickDelay = proto && proto.spawnDelayMs ? proto.spawnDelayMs | 0 : 0;
-      const sendNick = () => {
-        var _a2;
-        (_a2 = hooks.sendNickName) == null ? void 0 : _a2.call(hooks);
-      };
-      if (nickDelay > 0) setTimeout(sendNick, nickDelay);
-      else sendNick();
+      (_a = hooks.sendNickName) == null ? void 0 : _a.call(hooks);
       // Button «Наблюдать» sets userNickName=null — must enter spectate (not only ?spect URL).
       if (S.userNickName == null) {
         if (typeof hooks.sendSpectate === "function") hooks.sendSpectate();
@@ -2881,10 +2749,7 @@
     }
     function sendMouseMove(opts) {
       if (!wsIsOpen()) return;
-      const force = !!(opts && opts.force);
       const spectating = !S.playerCells.length;
-      const host = S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl;
-      const bubbleSpectate = spectating && isBubbleSkinHost(host);
       // Freeze: mouse on main cell center (0,0 of primary cell)
       if (S.freeze && !spectating && S.playerCells.length) {
         const main = S.playerCells[0];
@@ -2893,26 +2758,17 @@
           S.posY = main.y;
         }
       }
-      // Bubble overview is server-driven (op 17). Echoing posX back every 50ms fights
-      // the camera and makes it jitter — only send mouse on explicit click.
-      if (bubbleSpectate && !force) return;
       // Spectate: overview follows camera aim (posX), not free cursor
       if (S.freeze || spectating) {
         if (!(Math.abs(S.oldX - S.posX) < .05 && Math.abs(S.oldY - S.posY) < .05)) {
           S.oldX = S.posX;
           S.oldY = S.posY;
-          const proto = S.activeProtocol;
-          if (proto && typeof proto.encodeMouse === "function") {
-            const packets = proto.encodeMouse(S.posX, S.posY, S) || [];
-            for (let i = 0; i < packets.length; i++) wsSend(packets[i]);
-          } else {
-            const msg = prepareData(21);
-            msg.setUint8(0, ClientOpcode.MOUSE);
-            msg.setFloat64(1, S.posX, true);
-            msg.setFloat64(9, S.posY, true);
-            msg.setUint32(17, 0, true);
-            wsSend(msg);
-          }
+          const msg = prepareData(21);
+          msg.setUint8(0, ClientOpcode.MOUSE);
+          msg.setFloat64(1, S.posX, true);
+          msg.setFloat64(9, S.posY, true);
+          msg.setUint32(17, 0, true);
+          wsSend(msg);
         }
       } else {
         const msgX = S.rawMouseX - S.canvasWidth / 2;
@@ -2920,18 +2776,12 @@
         if (64 <= msgX * msgX + msgY * msgY && !(Math.abs(S.oldX - S.X) < .1 && Math.abs(S.oldY - S.Y) < .1)) {
           S.oldX = S.X;
           S.oldY = S.Y;
-          const proto = S.activeProtocol;
-          if (proto && typeof proto.encodeMouse === "function") {
-            const packets = proto.encodeMouse(S.X, S.Y, S) || [];
-            for (let i = 0; i < packets.length; i++) wsSend(packets[i]);
-          } else {
-            const msg = prepareData(21);
-            msg.setUint8(0, ClientOpcode.MOUSE);
-            msg.setFloat64(1, S.X, true);
-            msg.setFloat64(9, S.Y, true);
-            msg.setUint32(17, 0, true);
-            wsSend(msg);
-          }
+          const msg = prepareData(21);
+          msg.setUint8(0, ClientOpcode.MOUSE);
+          msg.setFloat64(1, S.X, true);
+          msg.setFloat64(9, S.Y, true);
+          msg.setUint32(17, 0, true);
+          wsSend(msg);
         }
       }
     }
@@ -2943,25 +2793,12 @@
     }
     function sendSpectate() {
       if (!wsIsOpen()) return;
-      const proto = S.activeProtocol;
-      if (proto && typeof proto.encodeSpectate === "function") {
-        const packets = proto.encodeSpectate(S) || [];
-        for (let i = 0; i < packets.length; i++) wsSend(packets[i]);
-        return;
-      }
       const spect = prepareData(1);
       spect.setUint8(0, ClientOpcode.SPECTATE);
       wsSend(spect);
     }
     function sendNickName() {
       if (!wsIsOpen() || S.userNickName == null) return;
-      const proto = S.activeProtocol;
-      if (proto && typeof proto.encodeNick === "function") {
-        // Always public nick only on foreign protocols (strips #pass).
-        const packets = proto.encodeNick(S.userNickName, S) || [];
-        for (let i = 0; i < packets.length; i++) wsSend(packets[i]);
-        return;
-      }
       const nick = S.userNickName;
       const msg = prepareData(1 + 2 * nick.length + 1);
       msg.setUint8(0, ClientOpcode.NICK);
@@ -2979,16 +2816,8 @@
     }
     function sendChat(str) {
       if (isIncompletePrivateChat(str)) return;
-      const proto = S.activeProtocol;
-      if (!(proto && typeof proto.encodeChat === "function")) {
-        str = appendChatLangTag(str);
-      }
+      str = appendChatLangTag(str);
       if (!wsIsOpen() || !(str.length < 200) || !(str.length > 0) || S.hideChat) return;
-      if (proto && typeof proto.encodeChat === "function") {
-        const packets = proto.encodeChat(str, S) || [];
-        for (let i = 0; i < packets.length; i++) wsSend(packets[i]);
-        return;
-      }
       const msg = prepareData(2 + 2 * str.length);
       let offset = 0;
       msg.setUint8(offset++, ClientOpcode.CHAT);
@@ -3000,10 +2829,6 @@
       wsSend(msg);
     }
     function sendAccountToken() {
-      const proto = S.activeProtocol;
-      // Never leak agar.su LK token to third-party game servers.
-      if (proto && proto.useAgarAccountToken === false) return;
-      if (proto && proto.trusted === false) return;
       const token = getAccountToken();
       if (!wsIsOpen() || !token) return;
       const msg = prepareData(1 + 2 * token.length);
@@ -3411,8 +3236,7 @@
         }
 
        case ServerOpcode.UPDATE_CAMERA:
-        // Agar.su stub: bare opcode → default spectate zoom.
-        // Full packet (Bubble): float32 x/y/size — snap if far, smooth if near.
+        // Agar.su: full packet float32 x/y/size, or bare opcode → default spectate zoom.
         if (msg.byteLength >= offset + 12) {
           const cx = msg.getFloat32(offset, true);
           offset += 4;
@@ -3786,7 +3610,7 @@
   }
   function getClientCellColor(cell) {
     const S = deps3.S;
-    if (cell.isVirus && /sixz\.ru:6017|:6017\b|buble\.am|bubble\.am/i.test(String(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl || ""))) {
+    if (cell.isVirus && /sixz\.ru:6017|:6017\b/i.test(String(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl || ""))) {
       return "#ff9900";
     }
     if (!S.customClientColors) return null;
@@ -3987,10 +3811,6 @@
         this.nameCache.setSize(size);
       }
       let labelName = name;
-      const playHost = S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl;
-      if (isBubbleSkinHost(playHost)) {
-        labelName = bubbleNickDisplay(name) || name;
-      }
       this.nameCache.setValue(labelName);
       this._txtNameVal = labelName;
       this._txtNameSize = size;
@@ -4202,9 +4022,7 @@
         }
         if (S.showName && this.name && this.nameCache && this.size > 10) {
           let displayName = this.name;
-          if (isBubbleSkinHost(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl)) {
-            displayName = bubbleNickDisplay(this.name);
-          } else if (!isPetriSkinHost(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl) && invisible.has(this._nameLower)) {
+          if (!isPetriSkinHost(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl) && invisible.has(this._nameLower)) {
             displayName = "";
           }
           if (displayName) {
@@ -7239,8 +7057,7 @@ function updateRegionOnlineTotals(totals) {
       simpleDiv.className = "chatexit";
       const nameSpan = document.createElement("span");
       nameSpan.style.color = lastMessage.color || "#b8c0cc";
-      const enterHost = S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl;
-      const enterName = isBubbleSkinHost(enterHost) ? bubbleNickDisplay(lastMessage.name) || lastMessage.name : lastMessage.name;
+      const enterName = lastMessage.name;
       nameSpan.textContent = `${enterName}:`;
       simpleDiv.appendChild(nameSpan);
       simpleDiv.append(` ${lastMessage.message}`);
@@ -7348,8 +7165,7 @@ function updateRegionOnlineTotals(totals) {
     }
     const nameDiv = document.createElement("div");
     nameDiv.className = "chatX_nick";
-    const chatHost = S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl;
-    const chatDisplayName = isBubbleSkinHost(chatHost) ? bubbleNickDisplay(lastMessage.name) || lastMessage.name : lastMessage.name;
+    const chatDisplayName = lastMessage.name;
     const safeName = censorMessage(S, chatDisplayName);
     nameDiv.textContent = safeName + ":";
     if (targetDialogId) {
@@ -7787,7 +7603,7 @@ function updateRegionOnlineTotals(totals) {
     return sz > S.foodMaxSize && sz <= Math.max(55, S.foodMaxSize + 20);
   }
   function getClientCellColor2(S, cell) {
-    if (cell.isVirus && /sixz\.ru:6017|:6017\b|buble\.am|bubble\.am/i.test(String(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl || ""))) {
+    if (cell.isVirus && /sixz\.ru:6017|:6017\b/i.test(String(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl || ""))) {
       return "#ff9900";
     }
     if (!S.customClientColors) return null;
@@ -8286,25 +8102,6 @@ function initServers(S) {
       setPingDisplay
     });
     connectionHooks.onMessage = (dv) => {
-      const proto = S.activeProtocol;
-      if (proto && typeof proto.translateInbound === "function") {
-        let packets;
-        try {
-          packets = proto.translateInbound(dv, S.protocolState, S) || [];
-        } catch (err) {
-          console.warn("[protocol]", proto.id, err);
-          return;
-        }
-        if (S.protocolState && S.protocolState.ownerPid) {
-          S.ownerPlayerId = S.protocolState.ownerPid >>> 0;
-        }
-        for (let i = 0; i < packets.length; i++) {
-          const p = packets[i];
-          const view = p instanceof DataView ? p : new DataView(p.buffer || p, p.byteOffset || 0, p.byteLength || p.length);
-          handlers.handleWsMessage(view);
-        }
-        return;
-      }
       handlers.handleWsMessage(dv);
     };
     attachSettings(S, {
