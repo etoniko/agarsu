@@ -498,12 +498,13 @@
     skinlist: SKINLIST_URL,
     stickerlist: STICKERLIST_URL,
     pass: "https://api.agar.su/pass.txt",
+    bannick: "https://api.agar.su/bannick.txt",
     invisible: "https://api.agar.su/invisible.txt",
     rotation: "https://api.agar.su/rotation.txt",
     word: "https://api.agar.su/word.txt"
   };
   /** Purchased skins / passes — never cache in browser or nginx. */
-  var NO_CACHE_URLS = new Set([ STATIC_URLS.skinlist, STATIC_URLS.stickerlist, STATIC_URLS.pass, STATIC_URLS.invisible, STATIC_URLS.rotation ]);
+  var NO_CACHE_URLS = new Set([ STATIC_URLS.skinlist, STATIC_URLS.stickerlist, STATIC_URLS.pass, STATIC_URLS.bannick, STATIC_URLS.invisible, STATIC_URLS.rotation ]);
   var cache = new Map;
   var inflight = new Map;
   var SESSION_PREFIX = "agar_static_v1:";
@@ -668,7 +669,15 @@
     return new Set(String(text || "").split("\n").map(l => l.trim().toLowerCase().replace(/ё/g, "е")).filter(Boolean));
   }
   async function loadPassData(force = false) {
-    const text = await fetchStaticText(STATIC_URLS.pass, force);
+    const [text, banText] = await Promise.all([
+      fetchStaticText(STATIC_URLS.pass, force),
+      fetchStaticText(STATIC_URLS.bannick, force).catch(() => "")
+    ]);
+    const banned = new Set();
+    for (const line of String(banText || "").split("\n")) {
+      const norm = normalizeNick(line.trim());
+      if (norm) banned.add(norm);
+    }
     const passPlayerNickToId = new Map;
     const passClanNickToId = new Map;
     const passUsers = [];
@@ -679,13 +688,13 @@
       lineNum += 1;
       const norm = normalizeNick(trimmed);
       if (!norm) continue;
-      passUsers.push(norm);
       const passId = String(lineNum);
       if (norm.startsWith("[") && norm.endsWith("]")) {
         if (!passClanNickToId.has(norm)) passClanNickToId.set(norm, passId);
       } else if (!passPlayerNickToId.has(norm)) {
         passPlayerNickToId.set(norm, passId);
       }
+      if (!banned.has(norm)) passUsers.push(norm);
     }
     return {
       passUsers,
@@ -2819,13 +2828,18 @@
       str = appendChatLangTag(str);
       if (!wsIsOpen() || !(str.length < 200) || !(str.length > 0) || S.hideChat) return;
       if (!isExemptFromShadowChat(str)) {
-        const isDup = S.lastChatSent != null && str === S.lastChatSent;
-        if (isDup || isShadowBannedChatMessage(str)) {
+        const banned = isShadowBannedChatMessage(str);
+        if (S.lastChatSent === str) {
+          S.lastChatRepeat = (S.lastChatRepeat || 1) + 1;
+        } else {
           S.lastChatSent = str;
+          S.lastChatRepeat = 1;
+        }
+        // Spam: only from the 4th identical message in a row. Banned words: always shadow.
+        if (banned || S.lastChatRepeat >= 4) {
           echoShadowChat(S, str);
           return;
         }
-        S.lastChatSent = str;
       }
       const msg = prepareData(2 + 2 * str.length);
       let offset = 0;
@@ -6780,17 +6794,42 @@ function updateRegionOnlineTotals(totals) {
     }
     return false;
   }
+  function displayNickFromState(S) {
+    const cells = S && S.playerCells;
+    const alive = cells && cells.length > 0;
+    // Same as server Chat.js: no cells → spectator
+    if (!alive) {
+      if (S && S.userNickName == null) return "Наблюдатель";
+    }
+    const cell = alive ? cells[0] : null;
+    let name = cell && cell.name || S && S.userNickName || "Игрок";
+    // userNickName is often "nick#password" for pass auth — never show the password in chat
+    name = String(name || "").split("#")[0].replace(/<[^>]*>/g, "").trim();
+    return name || "Игрок";
+  }
+  function displayColorFromState(S) {
+    const cells = S && S.playerCells;
+    const alive = cells && cells.length > 0;
+    // Server default for spectators / no cells: rgb(120,120,120)
+    if (!alive) return "#787878";
+    const cell = cells[0];
+    if (cell && typeof cell.color === "string" && cell.color) return cell.color;
+    if (cell && cell.color && typeof cell.color === "object") {
+      const r = cell.color.r | 0;
+      const g = cell.color.g | 0;
+      const b = cell.color.b | 0;
+      return "#" + (r << 16 | g << 8 | b).toString(16).padStart(6, "0");
+    }
+    try {
+      const saved = localStorage.getItem("selectedColor");
+      if (saved) return saved;
+    } catch (_) {}
+    return "#787878";
+  }
   function echoShadowChat(S, message) {
     if (!S || !Array.isArray(S.chatBoard)) return;
-    const cell = S.playerCells && S.playerCells[0];
-    const name = cell && cell.name || S.userNickName || "Игрок";
-    let color = "#787878";
-    if (cell && cell.color) color = cell.color; else {
-      try {
-        const saved = localStorage.getItem("selectedColor");
-        if (saved) color = saved;
-      } catch (_) {}
-    }
+    const name = displayNickFromState(S);
+    const color = displayColorFromState(S);
     const playerXp = S.accountData && S.accountData.xp ? S.accountData.xp + 1 : 0;
     const pId = S.ownerPlayerId > 0 ? S.ownerPlayerId & 65535 : 0;
     S.chatBoard.push({
