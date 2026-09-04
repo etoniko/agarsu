@@ -406,7 +406,7 @@
   var KEYBIND_LABELS = {
     split: "Split",
     eject: "Eject (масса W)",
-    freeze: "Заморозка",
+    freeze: "Пауза (F)",
     chat: "Чат",
     coord: "Координаты (C)",
     macroQ: "Q",
@@ -441,6 +441,7 @@
     MACRO_P: 25,
     CHAT: 99,
     STICKER: 200,
+    ADMIN_PANEL: 169,
     HANDSHAKE_PROTO: 254,
     HANDSHAKE_KEY: 255
   };
@@ -455,6 +456,7 @@
     BAN: 91,
     CHAT: 99,
     XP: 114,
+    ADMIN_PANEL: 169,
     STICKER: 200
   };
   function prepareData(byteLength) {
@@ -1326,6 +1328,12 @@
     hideElement(byId("statics"));
   }
   function mouseCoordinateChange(S) {
+    if (S.freeze && S.playerCells && S.playerCells[0]) {
+      const main = S.playerCells[0];
+      S.X = main.x;
+      S.Y = main.y;
+      return;
+    }
     S.X = (S.rawMouseX - S.canvasWidth / 2) / S.viewZoom + S.nodeX;
     S.Y = (S.rawMouseY - S.canvasHeight / 2) / S.viewZoom + S.nodeY;
   }
@@ -2742,12 +2750,126 @@
     Object.assign(S.api, api);
     return api;
   }
+  /** Pause (F toggle): mouse locked to main cell center. No flip/mirror. */
+  function setFreezeUi(visible) {
+    try {
+      const el = document.querySelector("#freeze");
+      if (el) el.style.display = visible ? "flex" : "none";
+    } catch (_) {}
+  }
+  function clearAimFlipResidue(S) {
+    if (!S) return;
+    S._aimFlipForced = null;
+    S._aimFlipLoopToken = (S._aimFlipLoopToken || 0) + 1;
+    if (!S.ws) return;
+    // Drop old AimFlip wrappers only; do not touch active freeze hook
+    if (S.ws.__freezeHooked) {
+      S.ws.__aimFlipHooked = false;
+      S.ws.__aimFlipRawSend = null;
+      S.ws.__aimFlipSend = null;
+      return;
+    }
+    if (S.ws.__aimFlipRawSend) {
+      try { S.ws.send = S.ws.__aimFlipRawSend; } catch (_) {}
+      S.ws.__aimFlipRawSend = null;
+    } else if (S.ws.__aimFlipSend) {
+      try { S.ws.send = S.ws.__aimFlipSend; } catch (_) {}
+      S.ws.__aimFlipSend = null;
+    }
+    S.ws.__aimFlipHooked = false;
+  }
+  function mainCellCenter(S) {
+    const main = S.playerCells && S.playerCells[0];
+    if (!main) return null;
+    return { x: main.x, y: main.y };
+  }
+  function updateFreezeAim(S) {
+    const c = mainCellCenter(S);
+    if (!c) {
+      S._freezeAim = null;
+      return null;
+    }
+    S._freezeAim = c;
+    S.X = c.x;
+    S.Y = c.y;
+    return c;
+  }
+  function ensureFreezeWsHook(S) {
+    if (!S || !S.ws) return;
+    if (S.ws.__freezeHooked && S.ws.__freezeRawSend) return;
+    clearAimFlipResidue(S);
+    const rawSend = (S.ws.__freezeRawSend || S.ws.send).bind(S.ws);
+    S.ws.__freezeRawSend = rawSend;
+    S.ws.__freezeHooked = true;
+    S.ws.send = function(data) {
+      if (S.freeze && S._freezeAim) {
+        let view = null;
+        if (data instanceof ArrayBuffer && data.byteLength >= 21) {
+          view = new DataView(data);
+        } else if (ArrayBuffer.isView(data) && data.byteLength >= 21) {
+          view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+        }
+        if (view && view.getUint8(0) === ClientOpcode.MOUSE) {
+          view.setFloat64(1, S._freezeAim.x, true);
+          view.setFloat64(9, S._freezeAim.y, true);
+        }
+      }
+      return rawSend(data);
+    };
+  }
+  function stopFreezePauseLoop(S) {
+    S._freezeLoopToken = (S._freezeLoopToken || 0) + 1;
+    S._freezeAim = null;
+  }
+  function startFreezePauseLoop(S, hooks) {
+    ensureFreezeWsHook(S);
+    const token = (S._freezeLoopToken = (S._freezeLoopToken || 0) + 1);
+    (function freezeLoop() {
+      if (!S.freeze || S._freezeLoopToken !== token) {
+        if (S._freezeLoopToken === token) S._freezeAim = null;
+        return;
+      }
+      try {
+        if (S.playerCells && S.playerCells.length) {
+          ensureFreezeWsHook(S);
+          updateFreezeAim(S);
+          if (hooks && typeof hooks.sendMouseMove === "function") {
+            hooks.sendMouseMove({ force: true });
+          }
+        }
+      } catch (_) {}
+      setTimeout(freezeLoop, 40);
+    })();
+  }
+  function enablePause(S, hooks) {
+    if (S.freeze) return;
+    clearAimFlipResidue(S);
+    S.freeze = true;
+    setFreezeUi(true);
+    updateFreezeAim(S);
+    startFreezePauseLoop(S, hooks || S.api || {});
+  }
+  function disablePause(S) {
+    if (!S.freeze && !S._freezeAim) {
+      setFreezeUi(false);
+      return;
+    }
+    S.freeze = false;
+    stopFreezePauseLoop(S);
+    clearAimFlipResidue(S);
+    setFreezeUi(false);
+  }
+  function togglePause(S, hooks) {
+    if (S.freeze) disablePause(S);
+    else enablePause(S, hooks);
+  }
   function createOutbound(S, hooks = {}) {
     function wsIsOpen() {
       return S.ws != null && S.ws.readyState === WebSocket.OPEN;
     }
     function wsSend(view) {
       if (!S.ws) return;
+      ensureFreezeWsHook(S);
       S.ws.send(view.buffer);
     }
     function getColorId(hex) {
@@ -2758,18 +2880,27 @@
     }
     function sendMouseMove(opts) {
       if (!wsIsOpen()) return;
+      ensureFreezeWsHook(S);
       const spectating = !S.playerCells.length;
-      // Freeze: mouse on main cell center (0,0 of primary cell)
-      if (S.freeze && !spectating && S.playerCells.length) {
-        const main = S.playerCells[0];
-        if (main) {
-          S.posX = main.x;
-          S.posY = main.y;
+      const force = opts && opts.force;
+      // Pause: lock mouse to main cell center (0,0 of primary cell)
+      if (S.freeze && !spectating) {
+        const aim = updateFreezeAim(S);
+        if (aim && (force || !(Math.abs(S.oldX - aim.x) < .05 && Math.abs(S.oldY - aim.y) < .05))) {
+          S.oldX = aim.x;
+          S.oldY = aim.y;
+          const msg = prepareData(21);
+          msg.setUint8(0, ClientOpcode.MOUSE);
+          msg.setFloat64(1, aim.x, true);
+          msg.setFloat64(9, aim.y, true);
+          msg.setUint32(17, 0, true);
+          wsSend(msg);
         }
+        return;
       }
-      // Spectate: overview follows camera aim (posX), not free cursor
-      if (S.freeze || spectating) {
-        if (!(Math.abs(S.oldX - S.posX) < .05 && Math.abs(S.oldY - S.posY) < .05)) {
+      // Spectate: overview follows camera aim (posX)
+      if (spectating) {
+        if (force || !(Math.abs(S.oldX - S.posX) < .05 && Math.abs(S.oldY - S.posY) < .05)) {
           S.oldX = S.posX;
           S.oldY = S.posY;
           const msg = prepareData(21);
@@ -2861,6 +2992,12 @@
       }
       wsSend(msg);
     }
+    function sendAdminPanel() {
+      if (!wsIsOpen()) return;
+      const msg = prepareData(1);
+      msg.setUint8(0, ClientOpcode.ADMIN_PANEL);
+      wsSend(msg);
+    }
     function sendSticker(stickerId, action) {
       if (!wsIsOpen()) return;
       const msg = prepareData(6);
@@ -2877,6 +3014,7 @@
       sendNickName,
       sendChat,
       sendAccountToken,
+      sendAdminPanel,
       sendSticker,
       getColorId
     };
@@ -3277,11 +3415,7 @@
         // CLEAR alone wiped playerCells without S.ua → death screen skipped (AgarZ)
         if (S.playerCells.length > 0) {
           S.ua = true;
-          S.freeze = false;
-          try {
-            const freezeEl = document.querySelector("#freeze");
-            if (freezeEl) freezeEl.style.display = "none";
-          } catch (_) {}
+          disablePause(S);
           S.playerCells = [];
           if (S._spectateFollowTimer) {
             clearInterval(S._spectateFollowTimer);
@@ -3401,6 +3535,16 @@
           const stickerId = msg.getUint8(offset++);
           const stickerAction = msg.getUint8(offset++);
           applyStickerPacket(S, stickerPlayerId, stickerId, stickerAction === 1);
+          break;
+        }
+
+       case ServerOpcode.ADMIN_PANEL:
+        {
+          if (window.AgarAdmin && typeof window.AgarAdmin.onAdminPacket === "function") {
+            window.AgarAdmin.onAdminPacket(msg, offset);
+          } else if (hooks.onAdminPanel) {
+            hooks.onAdminPanel(msg, offset);
+          }
           break;
         }
 
@@ -4665,19 +4809,10 @@
       }
       if (isTyping) return;
       if (code === getBind(S, "freeze")) {
+        // Toggle pause: mouse → main cell center + #freeze UI
         if (!keyPressed.freeze && S.playerCells.length > 0) {
-          S.freeze = !S.freeze;
-          if (S.freeze) {
-            const main = S.playerCells[0];
-            if (main) {
-              S.posX = main.x;
-              S.posY = main.y;
-            }
-            document.querySelector("#freeze").style.display = "flex";
-          } else {
-            document.querySelector("#freeze").style.display = "none";
-          }
           keyPressed.freeze = true;
+          togglePause(S, hooks);
         }
         return;
       }
@@ -7954,13 +8089,8 @@ function updateRegionOnlineTotals(totals) {
         return S.freeze;
       },
       set(v) {
-        S.freeze = !!v;
-        if (!S.freeze) {
-          try {
-            const freezeEl = document.querySelector("#freeze");
-            if (freezeEl) freezeEl.style.display = "none";
-          } catch (_) {}
-        }
+        if (v) enablePause(S, S.api || {});
+        else disablePause(S);
       },
       configurable: true
     });
@@ -8173,11 +8303,7 @@ function initServers(S) {
       updateNodes: reader => updateNodes(S, reader, {
         Cell,
         onPlayerDeath: () => {
-          S.freeze = false;
-          try {
-            const freezeEl = document.querySelector("#freeze");
-            if (freezeEl) freezeEl.style.display = "none";
-          } catch (_) {}
+          disablePause(S);
           showStatics();
           updateShareText(S);
           if (typeof window.renderDeathBanner === "function") window.renderDeathBanner();
@@ -8361,6 +8487,18 @@ onReady(() => {
     }
     wHandle.__gameState = S;
     wHandle.__gameApi = S.api;
+    if (window.AgarAdmin && typeof window.AgarAdmin.attach === "function") {
+      try {
+        window.AgarAdmin.attach(S, {
+          sendChat: (t) => outbound.sendChat(t),
+          sendAdminPanel: () => outbound.sendAdminPanel(),
+          sendUint8: (n) => outbound.sendUint8(n),
+          wsIsOpen: () => outbound.wsIsOpen()
+        });
+      } catch (err) {
+        console.warn("AgarAdmin attach failed:", err);
+      }
+    }
     return S;
   }
   var actionInterval = 500;
