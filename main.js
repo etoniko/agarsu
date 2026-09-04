@@ -2818,6 +2818,15 @@
       if (isIncompletePrivateChat(str)) return;
       str = appendChatLangTag(str);
       if (!wsIsOpen() || !(str.length < 200) || !(str.length > 0) || S.hideChat) return;
+      if (!isExemptFromShadowChat(str)) {
+        const isDup = S.lastChatSent != null && str === S.lastChatSent;
+        if (isDup || isShadowBannedChatMessage(str)) {
+          S.lastChatSent = str;
+          echoShadowChat(S, str);
+          return;
+        }
+        S.lastChatSent = str;
+      }
       const msg = prepareData(2 + 2 * str.length);
       let offset = 0;
       msg.setUint8(offset++, ClientOpcode.CHAT);
@@ -6752,6 +6761,49 @@ function updateRegionOnlineTotals(totals) {
   var ADMINS = ["нико", "banshee"];
   var YOUTUBERS = ["salruz", "morcov", "sealand"];
   var URL_YOUTUBERS = [ "https://youtube.com/@SalRuzO", "https://www.youtube.com/@MORCCVA", "https://www.youtube.com/@sealandv" ];
+  var SHADOW_CHAT_TERMS = [ "agartime", "агартайм", "kotov.fun", "kotovfun", "agartime.ru", "petridish.pw", "petridish", "чашка петри" ];
+  function normalizeShadowChatText(text) {
+    return String(text || "").toLowerCase().replace(/ё/g, "е");
+  }
+  function isExemptFromShadowChat(str) {
+    const s = String(str || "");
+    if (/вoшёл в игру/i.test(s)) return true;
+    if (/^!ls\d+\s+PvPInvite;/i.test(s)) return true;
+    return false;
+  }
+  function isShadowBannedChatMessage(message) {
+    const raw = String(message || "");
+    if (/https:\/\//i.test(raw)) return true;
+    const lower = normalizeShadowChatText(raw);
+    for (let i = 0; i < SHADOW_CHAT_TERMS.length; i++) {
+      if (lower.includes(normalizeShadowChatText(SHADOW_CHAT_TERMS[i]))) return true;
+    }
+    return false;
+  }
+  function echoShadowChat(S, message) {
+    if (!S || !Array.isArray(S.chatBoard)) return;
+    const cell = S.playerCells && S.playerCells[0];
+    const name = cell && cell.name || S.userNickName || "Игрок";
+    let color = "#787878";
+    if (cell && cell.color) color = cell.color; else {
+      try {
+        const saved = localStorage.getItem("selectedColor");
+        if (saved) color = saved;
+      } catch (_) {}
+    }
+    const playerXp = S.accountData && S.accountData.xp ? S.accountData.xp + 1 : 0;
+    const pId = S.ownerPlayerId > 0 ? S.ownerPlayerId & 65535 : 0;
+    S.chatBoard.push({
+      pId,
+      playerXp,
+      playerLevel: playerXp ? getLevel(playerXp) : -1,
+      name,
+      color,
+      message: String(message),
+      time: formatTime(new Date)
+    });
+    if (typeof S.__drawChatBoard === "function") S.__drawChatBoard(); else drawChatBoard(S, {});
+  }
   function formatTime(date) {
     const hours = String(date.getHours()).padStart(2, "0");
     const minutes = String(date.getMinutes()).padStart(2, "0");
@@ -7364,6 +7416,7 @@ function updateRegionOnlineTotals(totals) {
       setserver: hooks.setserver,
       drawChatBoard: () => drawChatBoard(S, hooks)
     };
+    S.__drawChatBoard = () => drawChatBoard(S, chatHooks);
     startStatsRecordFeed(S, chatHooks);
     return {
       addChat: (view, offset) => addChat(S, chatHooks, view, offset),
