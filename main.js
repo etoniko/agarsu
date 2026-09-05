@@ -1116,6 +1116,8 @@
   /** Bridge skins via unified xn--bdk.pw skinsbot. skinlist.txt still wins (agar.su only). */
   var SKINS_BOT_BASE = "https://xn--bdk.pw:6016";
   function applyServerSpectateCamera(S, x, y, size) {
+    // Playing own cells — never let server spectate camera override
+    if (S.playerCells && S.playerCells.length > 0) return;
     const sizeOk = typeof size === "number" && size > 0;
     S.posX = x;
     S.posY = y;
@@ -1731,13 +1733,8 @@
     S.timestamp = Date.now();
     const playerCount = S.playerCells.length;
     if (playerCount > 0) {
-      if (S.spectateFollowNick || S.spectateFollowPid) {
-        S.spectateFollowNick = null;
-        S.spectateFollowPid = 0;
-        if (S._spectateFollowTimer) {
-          clearInterval(S._spectateFollowTimer);
-          S._spectateFollowTimer = null;
-        }
+      if (S.spectateFollowNick || S.spectateFollowPid || S._spectateFollowTimer) {
+        clearSpectateFollow(S);
       }
       calcViewZoom(S);
       let sumX = 0;
@@ -2682,6 +2679,8 @@
       if (S.gameHandshakeDone) return;
       S.gameHandshakeDone = true;
       clearSpectReconnectTimer();
+      // New socket: never keep previous server's follow target / auto-click timer
+      clearSpectateFollow(S);
       hideConnectVerifyOverlay();
       hideReconnectPanel();
       (_a = hooks.sendNickName) == null ? void 0 : _a.call(hooks);
@@ -2881,6 +2880,8 @@
     function sendMouseMove(opts) {
       if (!wsIsOpen()) return;
       ensureFreezeWsHook(S);
+      // Until borders arrive, never aim — old default (5000,5000) clamped to map corner (D4/E5)
+      if (!S.mapBoundsReady) return;
       const spectating = !S.playerCells.length;
       const force = opts && opts.force;
       // Pause: lock mouse to main cell center (0,0 of primary cell)
@@ -2898,7 +2899,7 @@
         }
         return;
       }
-      // Spectate: overview follows camera aim (posX)
+      // Spectate: overview follows camera aim (posX) — keep server view at map center until user aims
       if (spectating) {
         if (force || !(Math.abs(S.oldX - S.posX) < .05 && Math.abs(S.oldY - S.posY) < .05)) {
           S.oldX = S.posX;
@@ -3072,11 +3073,30 @@
     }
   };
   var normalizeFractlPart = n => n % (Math.PI * 2) / (Math.PI * 2);
+  /** Food placeholder positions from node id — must use map width/height, not rightPos alone. */
   function computeFoodPosition(S, nodeid) {
+    const w = (S.rightPos - S.leftPos) || 1;
+    const h = (S.bottomPos - S.topPos) || 1;
     return {
-      x: S.leftPos + S.rightPos * 2 * normalizeFractlPart(nodeid),
-      y: S.topPos + S.bottomPos * 2 * normalizeFractlPart(nodeid * nodeid)
+      x: S.leftPos + w * normalizeFractlPart(nodeid),
+      y: S.topPos + h * normalizeFractlPart(nodeid * nodeid)
     };
+  }
+  /** Same mass/size formula as GameServer.spawnFood / entity/Food.js */
+  function computeFoodSize(S, nodeid) {
+    let minMass = S.foodMass | 0;
+    let maxMass = S.foodMaxMass | 0;
+    if (!(minMass > 0)) {
+      // Fallback from size fields if mass not stored yet
+      if (S.foodMinSize > 0) minMass = Math.max(1, Math.round(S.foodMinSize * S.foodMinSize / 100));
+      else minMass = 1;
+    }
+    if (!(maxMass >= minMass)) {
+      if (S.foodMaxSize > 0) maxMass = Math.max(minMass, Math.round(S.foodMaxSize * S.foodMaxSize / 100));
+      else maxMass = minMass;
+    }
+    const mass = minMass + nodeid % (maxMass - minMass + 1);
+    return Math.ceil(Math.sqrt(100 * mass));
   }
   function repositionFoodNodes(S) {
     if (!S.mapBoundsReady) return;
@@ -3085,12 +3105,16 @@
       const node = S.nodelist[i];
       if (!(node == null ? void 0 : node.isFood)) continue;
       const {x, y} = computeFoodPosition(S, node.id);
+      const sz = computeFoodSize(S, node.id);
       node.ox = x;
       node.oy = y;
       node.nx = x;
       node.ny = y;
       node.x = x;
       node.y = y;
+      node.setSize(sz);
+      node.oSize = sz;
+      node.size = sz;
       node.updateTime = now;
     }
     S.nodesSortDirty = true;
@@ -3239,11 +3263,12 @@
       let size = 0;
       let playerId = 0;
       if (type === 1) {
-        if (S.mapBoundsReady) {
-          const foodPos = computeFoodPosition(S, nodeid);
-          posX = foodPos.x;
-          posY = foodPos.y;
-        }
+        // Always place food (even before borders). Discarding here is fatal on server-hop:
+        // server marks food as already sent and never re-sends the full set.
+        const foodPos = computeFoodPosition(S, nodeid);
+        posX = foodPos.x;
+        posY = foodPos.y;
+        size = computeFoodSize(S, nodeid);
       } else {
         if (type === 0) playerId = reader.uint32();
         posX = reader.int32();
@@ -3270,9 +3295,6 @@
         } else if (marker === 0) {
           stickerFromUpdate = false;
         }
-      }
-      if (type === 1 && !S.mapBoundsReady) {
-        continue;
       }
       let node = S.nodes[nodeid];
       if (node) {
@@ -3336,7 +3358,17 @@
       if (now - node.updateTime > 3e3) node.destroy();
     }
   }
+  function clearSpectateFollow(S) {
+    if (!S) return;
+    S.spectateFollowNick = null;
+    S.spectateFollowPid = 0;
+    if (S._spectateFollowTimer) {
+      clearInterval(S._spectateFollowTimer);
+      S._spectateFollowTimer = null;
+    }
+  }
   function clearWorld(S) {
+    clearSpectateFollow(S);
     S.playerCells = [];
     S.nodes = {};
     S.activeStickersByNode = Object.create(null);
@@ -3345,6 +3377,13 @@
     S.Cells = [];
     S.leaderBoard = [];
     S.mapBoundsReady = false;
+    // Free camera — do not keep previous follow target / map position across hops
+    if (typeof S.leftPos === "number" && typeof S.rightPos === "number") {
+      S.posX = (S.leftPos + S.rightPos) / 2;
+      S.posY = (S.topPos + S.bottomPos) / 2;
+      S.nodeX = S.posX;
+      S.nodeY = S.posY;
+    }
   }
   function createHandlers(S, hooks = {}) {
     function handleWsMessage(msg) {
@@ -3417,12 +3456,7 @@
           S.ua = true;
           disablePause(S);
           S.playerCells = [];
-          if (S._spectateFollowTimer) {
-            clearInterval(S._spectateFollowTimer);
-            S._spectateFollowTimer = null;
-          }
-          S.spectateFollowNick = null;
-          S.spectateFollowPid = 0;
+          clearSpectateFollow(S);
           showStatics();
           if (typeof window.updateShareText === "function") {
             try { window.updateShareText(S); } catch (_) {
@@ -3492,10 +3526,12 @@
           offset += 8;
           S.bottomPos = msg.getFloat64(offset, true);
           offset += 8;
-          S.foodMinSize = (msg.getUint16(offset, true) * 100) ** .5;
+          S.foodMass = msg.getUint16(offset, true);
           offset += 2;
-          S.foodMaxSize = (msg.getUint16(offset, true) * 100) ** .5;
+          S.foodMaxMass = msg.getUint16(offset, true);
           offset += 2;
+          S.foodMinSize = Math.ceil(Math.sqrt(100 * S.foodMass));
+          S.foodMaxSize = Math.ceil(Math.sqrt(100 * S.foodMaxMass));
           S.ownerPlayerId = msg.getUint32(offset, true);
           offset += 4;
           S.mapBoundsReady = true;
@@ -3509,10 +3545,18 @@
             S.nodeX = S.posX;
             S.nodeY = S.posY;
             S.viewZoom = S.posSize;
+            S.X = S.posX;
+            S.Y = S.posY;
             S.oldX = S.posX - 999;
             S.oldY = S.posY - 999;
           }
           (_g = hooks.onGameHandshakeReady) == null ? void 0 : _g.call(hooks);
+          // Sync server overview to map center (C3) — avoids D4 lock from pre-border mouse (5000,5000)
+          if (S.playerCells.length === 0 && typeof hooks.sendMouseMove === "function") {
+            try {
+              hooks.sendMouseMove({ force: true });
+            } catch (_) {}
+          }
           break;
         }
 
@@ -3587,8 +3631,8 @@
       pingstamp: 0,
       wsPingInterval: null,
       gameHandshakeDone: false,
-      nodeX: 5e3,
-      nodeY: 5e3,
+      nodeX: 0,
+      nodeY: 0,
       playerCells: [],
       nodes: {},
       nodelist: [],
@@ -3597,26 +3641,28 @@
       chatBoard: [],
       rawMouseX: 0,
       rawMouseY: 0,
-      X: -1,
-      Y: -1,
+      X: 0,
+      Y: 0,
       timestamp: 0,
       userNickName: null,
-      leftPos: 0,
-      topPos: 0,
-      rightPos: 1e4,
-      bottomPos: 1e4,
+      leftPos: -5e3,
+      topPos: -5e3,
+      rightPos: 5e3,
+      bottomPos: 5e3,
       mapBoundsReady: false,
       foodMinSize: 0,
       foodMaxSize: 0,
+      foodMass: 1,
+      foodMaxMass: 4,
       ownerPlayerId: -1,
       spectateFollowNick: null,
       spectateFollowPid: 0,
-      mapWidth: 5e3,
-      mapHeight: 5e3,
+      mapWidth: 0,
+      mapHeight: 0,
       viewZoom: 1,
       ua: false,
-      posX: 5e3,
-      posY: 5e3,
+      posX: 0,
+      posY: 0,
       posSize: 1,
       ma: false,
       freeze: false,
@@ -8015,14 +8061,7 @@ function updateRegionOnlineTotals(totals) {
     wHandle.setSpectateAutoFollow = function(arg) {
       S.spectateAutoFollow = !!arg;
       persistCheckbox(17, S.spectateAutoFollow);
-      if (!S.spectateAutoFollow) {
-        S.spectateFollowNick = null;
-        S.spectateFollowPid = 0;
-        if (S._spectateFollowTimer) {
-          clearInterval(S._spectateFollowTimer);
-          S._spectateFollowTimer = null;
-        }
-      }
+      if (!S.spectateAutoFollow) clearSpectateFollow(S);
     };
     wHandle.setShowMass = function(arg) {
       S.showMass = arg;
@@ -8316,6 +8355,7 @@ function initServers(S) {
         if (typeof wHandle.onUpdateXp === "function") wHandle.onUpdateXp(xp);
       },
       onGameHandshakeReady: () => connection.onGameHandshakeReady(),
+      sendMouseMove: opts => outbound.sendMouseMove(opts),
       getLevel,
       setPingDisplay
     });
