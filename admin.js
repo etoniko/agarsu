@@ -25,6 +25,7 @@
     timer: null,
     el: null,
     filter: "",
+    showIps: false,
   };
 
   function normalizeStaffNick(nick) {
@@ -117,7 +118,16 @@
 .aa-list tr.sel{background:rgba(60,110,220,.28)}
 .aa-list .pid,.aa-list .score{font-variant-numeric:tabular-nums}
 .aa-list .pid{opacity:.65}
-.aa-filter{width:100%;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.3);color:#eaf1ff;padding:6px 8px;border-radius:7px;font:inherit;margin-bottom:8px}
+.aa-list .aa-nick-cell{display:flex;align-items:center;gap:8px;min-width:0}
+.aa-list .aa-nick{overflow:hidden;text-overflow:ellipsis;max-width:140px}
+.aa-list .aa-kick{flex-shrink:0;font:inherit;border:1px solid rgba(255,140,80,.4);background:rgba(180,70,20,.28);color:#ffe8d8;padding:3px 8px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600}
+.aa-list .aa-kick:hover{background:rgba(220,90,30,.45)}
+.aa-list .aa-ip{font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.aa-list .aa-ip.masked{opacity:.55}
+.aa-ip-toggle{font:inherit;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#eaf1ff;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:11px;margin-left:auto}
+.aa-ip-toggle.on{background:rgba(36,86,180,.55);border-color:rgba(140,180,255,.45)}
+.aa-list-tools{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.aa-filter{flex:1;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.3);color:#eaf1ff;padding:6px 8px;border-radius:7px;font:inherit;margin-bottom:0}
 .aa-hint{font-size:11px;opacity:.5;margin-top:4px}
 #agarAdminFoot{padding:8px 12px;font-size:11px;opacity:.5}
 `;
@@ -198,24 +208,23 @@
 
         <div class="aa-sec">
           <h4>Игроки онлайн</h4>
-          <input class="aa-filter" id="aaFilter" type="search" placeholder="Фильтр: ник или ID…" />
+          <div class="aa-list-tools">
+            <input class="aa-filter" id="aaFilter" type="search" placeholder="Фильтр: ник или ID…" />
+            <button type="button" class="aa-ip-toggle" id="aaIpToggle" title="Показать / скрыть IP">IP: скрыты</button>
+          </div>
           <div class="aa-list" id="agarAdminList">
             <table>
-              <thead><tr><th>ID</th><th>Ник</th><th>Cells</th><th>Score</th><th>IP</th></tr></thead>
+              <thead><tr><th>ID</th><th>Ник</th><th></th><th>Cells</th><th>Score</th><th>IP</th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
-          <div class="aa-hint">Клик по строке — выбрать игрока</div>
+          <div class="aa-hint">Kick рядом с ником · клик по строке — выбрать для ban/mute/…</div>
         </div>
 
         <div class="aa-sel" id="agarAdminSel">Игрок не выбран</div>
 
         <div class="aa-sec" id="aaPlayerSec">
           <h4 id="aaPlayerTitle">Действия с игроком</h4>
-
-          <div class="aa-row">
-            <div class="aa-btns" id="aaPlayerQuick"></div>
-          </div>
 
           <div class="aa-row">
             <label>Бан сек</label>
@@ -275,6 +284,24 @@
     root.querySelector("#aaFilter").addEventListener("input", (e) => {
       state.filter = String(e.target.value || "").trim().toLowerCase();
       renderList();
+    });
+
+    root.querySelector("#aaIpToggle").addEventListener("click", () => {
+      state.showIps = !state.showIps;
+      syncIpToggleUi();
+      renderList();
+      renderPlayerChrome();
+    });
+
+    root.querySelector("#agarAdminList").addEventListener("click", (e) => {
+      const kickBtn = e.target.closest("[data-kick-pid]");
+      if (kickBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const pid = Number(kickBtn.getAttribute("data-kick-pid"));
+        if (Number.isFinite(pid)) sendCmd(`/kick ${pid}`);
+        return;
+      }
     });
 
     root.querySelector("#aaPlayerSec").addEventListener("click", (e) => {
@@ -444,17 +471,24 @@
     });
   }
 
+  function formatIp(ip) {
+    if (!isAdmin()) return "—";
+    if (!ip || ip === "null") return "—";
+    if (ip === "BOT" || ip === "***") return ip;
+    if (!state.showIps) return "****";
+    return ip;
+  }
+
+  function syncIpToggleUi() {
+    const btn = document.getElementById("aaIpToggle");
+    if (!btn) return;
+    btn.classList.toggle("on", !!state.showIps);
+    btn.textContent = state.showIps ? "IP: показаны" : "IP: скрыты";
+    btn.style.display = isAdmin() ? "" : "none";
+  }
+
   function renderPlayerChrome() {
-    const quick = document.getElementById("aaPlayerQuick");
-    if (quick) {
-      quick.innerHTML = "";
-      const kick = document.createElement("button");
-      kick.type = "button";
-      kick.textContent = "Kick";
-      kick.className = "warn";
-      kick.setAttribute("data-act", "kick");
-      quick.appendChild(kick);
-    }
+    syncIpToggleUi();
 
     const adminRows = document.getElementById("aaAdminPlayerRows");
     const tpRow = document.getElementById("aaTpRow");
@@ -472,7 +506,11 @@
     if (sel) {
       if (!p) sel.innerHTML = "Игрок не выбран";
       else {
-        const ip = isAdmin() && p.ip && p.ip !== "null" ? ` · IP ${escapeHtml(p.ip)}` : "";
+        const ipRaw = isAdmin() && p.ip && p.ip !== "null" ? p.ip : "";
+        const ip =
+          ipRaw
+            ? ` · IP ${escapeHtml(state.showIps ? ipRaw : "****")}`
+            : "";
         sel.innerHTML = `Выбран: <strong>${escapeHtml(p.nick || "?")}</strong> · #${p.pid} · cells ${p.cells} · score ${p.score}${ip}`;
       }
     }
@@ -499,10 +537,51 @@
     rows.forEach((p) => {
       const tr = document.createElement("tr");
       if (p.pid === state.selectedPid) tr.className = "sel";
-      const ip = isAdmin() ? p.ip || "—" : "—";
-      tr.innerHTML = `<td class="pid">${p.pid}</td><td></td><td>${p.cells}</td><td class="score">${p.score}</td><td>${escapeHtml(ip)}</td>`;
-      tr.children[1].textContent = p.nick || "?";
-      tr.addEventListener("click", () => {
+      const ipText = formatIp(p.ip);
+      const ipClass = state.showIps ? "aa-ip" : "aa-ip masked";
+
+      const tdPid = document.createElement("td");
+      tdPid.className = "pid";
+      tdPid.textContent = String(p.pid);
+
+      const tdNick = document.createElement("td");
+      const nickWrap = document.createElement("div");
+      nickWrap.className = "aa-nick-cell";
+      const nickSpan = document.createElement("span");
+      nickSpan.className = "aa-nick";
+      nickSpan.textContent = p.nick || "?";
+      nickWrap.appendChild(nickSpan);
+      tdNick.appendChild(nickWrap);
+
+      const tdKick = document.createElement("td");
+      const kick = document.createElement("button");
+      kick.type = "button";
+      kick.className = "aa-kick";
+      kick.textContent = "Kick";
+      kick.title = `Кик ${p.nick || p.pid}`;
+      kick.setAttribute("data-kick-pid", String(p.pid));
+      tdKick.appendChild(kick);
+
+      const tdCells = document.createElement("td");
+      tdCells.textContent = String(p.cells);
+
+      const tdScore = document.createElement("td");
+      tdScore.className = "score";
+      tdScore.textContent = String(p.score);
+
+      const tdIp = document.createElement("td");
+      tdIp.className = ipClass;
+      tdIp.textContent = ipText;
+
+      tr.appendChild(tdPid);
+      tr.appendChild(tdNick);
+      tr.appendChild(tdKick);
+      tr.appendChild(tdCells);
+      tr.appendChild(tdScore);
+      tr.appendChild(tdIp);
+
+      tr.addEventListener("click", (e) => {
+        if (e.target.closest("[data-kick-pid]")) return;
         state.selectedPid = p.pid;
         renderList();
         renderPlayerChrome();
