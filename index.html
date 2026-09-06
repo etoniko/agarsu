@@ -17,7 +17,7 @@
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="canonical" href="https://agar.su">
     <link rel="stylesheet" href="/fonts/fonts.css?v=1">
-    <link rel="stylesheet" href="style.css?v=11">
+    <link rel="stylesheet" href="style.css?v=12">
     <script>
       window.renderDeathBanner = window.renderDeathBanner || function () {};
       window.yaContextCb = window.yaContextCb || [];
@@ -295,7 +295,9 @@
 </script>
 
     <script>
-      // Яндекс Игры: детект iframe / ?yandex=1 без отдельной папки /yandex
+      // Яндекс Игры: только явный query/referrer Яндекса.
+      // НЕ считать любой cross-origin iframe (например wgl.su) режимом Яндекса —
+      // иначе появляется белая колонка .add-yandex и ломается mobile UI.
       window.__AGARSU_YANDEX_CANDIDATE__ = (function () {
         try {
           var q = new URLSearchParams(location.search);
@@ -305,10 +307,18 @@
         try {
           if (/yandex\.[a-z.]+\/(?:games|app)|games\.yandex\./i.test(String(document.referrer || ""))) return true;
         } catch (e2) {}
-        if (window !== window.top) {
-          try { void window.top.location.href; } catch (e3) { return true; }
-        }
         return false;
+      })();
+      // Встройка с каталога: прячем юридический footer-strip
+      (function () {
+        try {
+          var q = new URLSearchParams(location.search);
+          var emb = q.get("embed") === "1" || q.get("wgl") === "1";
+          var ref = String(document.referrer || "");
+          if (emb || /wgl\.su|etoniko\.github\.io/i.test(ref) || window !== window.top) {
+            document.documentElement.classList.add("wgl-embed");
+          }
+        } catch (e) {}
       })();
     </script>
     <script src="protocols.js?v=10" defer></script>
