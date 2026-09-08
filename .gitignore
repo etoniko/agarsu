@@ -36,3 +36,5 @@ server/public/
 /rotation.txt
 /word.txt
 /allowtxt.txt
+
+server/_remote/
