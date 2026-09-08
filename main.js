@@ -2510,14 +2510,56 @@
   function showBanBanner(remainingSec, reason) {
     const banner = document.getElementById("ban-banner");
     if (!banner) return;
+    const titleEl = banner.querySelector(".ban-banner-title");
     const msgEl = document.getElementById("ban-banner-message");
+    if (titleEl) titleEl.textContent = "Доступ заблокирован";
     const text = `Осталось: ${formatBanDuration(remainingSec)}` + (reason ? `\n${reason}` : "");
     if (msgEl) msgEl.textContent = text;
+    banner.dataset.mode = "ban";
     banner.style.display = "block";
   }
   function hideBanBanner() {
     const banner = document.getElementById("ban-banner");
-    if (banner) banner.style.display = "none";
+    if (!banner) return;
+    // Don't clear VIP server-restrict panel
+    if (banner.dataset.mode === "restrict") return;
+    banner.style.display = "none";
+    banner.dataset.mode = "";
+  }
+  function applyServerRestrictState(state) {
+    const banner = document.getElementById("ban-banner");
+    if (!banner) return;
+    // Real ban wins over restrict UI
+    if (banner.dataset.mode === "ban" && banner.style.display === "block") return;
+    const titleEl = banner.querySelector(".ban-banner-title");
+    const msgEl = document.getElementById("ban-banner-message");
+    const serverOn = !!(state && state.server);
+    const chatOn = !!(state && state.chat);
+    if (!serverOn && !chatOn) {
+      if (banner.dataset.mode === "restrict") {
+        banner.style.display = "none";
+        banner.dataset.mode = "";
+      }
+      return;
+    }
+    let title = "Сервер ограничен";
+    let text = "Вход под ЛК от 30 уровня";
+    if (serverOn) {
+      const leftMs = Math.max(0, (state.serverUntil || 0) - Date.now());
+      if (leftMs > 0) text += "\nОсталось: ~" + Math.ceil(leftMs / 60000) + " мин";
+    } else if (chatOn) {
+      title = "Чат ограничен";
+      text = "Чат под ЛК от 30 уровня";
+      const leftMs = Math.max(0, (state.chatUntil || 0) - Date.now());
+      if (leftMs > 0) text += "\nОсталось: ~" + Math.ceil(leftMs / 60000) + " мин";
+    }
+    if (titleEl) titleEl.textContent = title;
+    if (msgEl) msgEl.textContent = text;
+    banner.dataset.mode = "restrict";
+    banner.style.display = "block";
+  }
+  function hideServerRestrictBanner() {
+    applyServerRestrictState(null);
   }
   function createConnection(S, hooks = {}) {
     function isSpectMode() {
@@ -2571,7 +2613,11 @@
       }, S.HIDDEN_TAB_DISCONNECT_MS);
     }
     function reconnectToServer() {
-      hideBanBanner();
+      const banner = document.getElementById("ban-banner");
+      if (banner) {
+        banner.dataset.mode = "";
+        banner.style.display = "none";
+      }
       hideReconnectPanel();
       showConnecting();
     }
@@ -7599,13 +7645,23 @@ function updateRegionOnlineTotals(totals) {
     const pId = view.getUint16(offset, true);
     offset += 2;
     color = "#" + color;
+    const name = getString();
+    const message = getString();
+    // Server VIP close sync (§PCLOSE§{...}) — red center panel, not chat spam
+    if (typeof message === "string" && message.indexOf("§PCLOSE§") === 0) {
+      try {
+        const state = JSON.parse(message.slice("§PCLOSE§".length));
+        applyServerRestrictState(state);
+      } catch (_) {}
+      return offset;
+    }
     S.chatBoard.push({
       pId,
       playerXp,
       playerLevel: playerXp ? getLevel(playerXp) : -1,
-      name: getString(),
+      name,
       color,
-      message: getString(),
+      message,
       time: formatTime(new Date)
     });
     drawChatBoard(S, hooks);
