@@ -7647,13 +7647,36 @@ function updateRegionOnlineTotals(totals) {
     color = "#" + color;
     const name = getString();
     const message = getString();
-    // Server VIP close sync (§PCLOSE§{...}) — red center panel, not chat spam
-    if (typeof message === "string" && message.indexOf("§PCLOSE§") === 0) {
-      try {
-        const state = JSON.parse(message.slice("§PCLOSE§".length));
-        applyServerRestrictState(state);
-      } catch (_) {}
-      return offset;
+    // Hide protocol / roster spam from chat; drive restrict banner from Console text
+    if (typeof message === "string") {
+      if (message.indexOf("§PCLOSE§") === 0) {
+        try {
+          applyServerRestrictState(JSON.parse(message.slice("§PCLOSE§".length)));
+        } catch (_) {}
+        return offset;
+      }
+      if (/НАБОР\s*ЗАВЕРШЕН/i.test(message)) {
+        return offset;
+      }
+      if (/Сервер ограничен/i.test(message)) {
+        applyServerRestrictState({
+          server: 1,
+          chat: 0,
+          minXp: 45000,
+          serverUntil: Date.now() + 30 * 60 * 1000,
+          chatUntil: 0
+        });
+      } else if (/Чат ограничен/i.test(message)) {
+        applyServerRestrictState({
+          server: 0,
+          chat: 1,
+          minXp: 45000,
+          serverUntil: 0,
+          chatUntil: Date.now() + 30 * 60 * 1000
+        });
+      } else if (/Ограничение (входа |чата )?снято/i.test(message)) {
+        applyServerRestrictState(null);
+      }
     }
     S.chatBoard.push({
       pId,
