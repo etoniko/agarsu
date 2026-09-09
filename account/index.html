@@ -752,11 +752,13 @@
 <script>
 const API = 'https://api.agar.su';
 const GUEST_KEY = 'shopGuest';
+const SESSION_KEY = 'accountSessionId';
 const paymentRules = { maxFileSize: 5 * 1024 * 1024 };
 const ALLOWED_CHARS = new Set();
 const errorCache = new Map();
 let isNicknameTaken = false;
 let accountProfile = null;
+let sessionWatchTimer = null;
 
 const $ = id => document.getElementById(id);
 const nicknameInput = $('nickname');
@@ -771,6 +773,60 @@ const gifPreview = $('previewGif');
 
 function isAuth() { return !!localStorage.accountToken; }
 function isGuest() { return sessionStorage.getItem(GUEST_KEY) === '1'; }
+
+function getSessionId() {
+  return sessionStorage.getItem(SESSION_KEY) || localStorage.getItem(SESSION_KEY) || '';
+}
+function setSessionId(sid) {
+  if (!sid) {
+    sessionStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(SESSION_KEY);
+    return;
+  }
+  sessionStorage.setItem(SESSION_KEY, sid);
+  localStorage.setItem(SESSION_KEY, sid);
+}
+
+function stopSessionWatch() {
+  if (sessionWatchTimer) {
+    clearInterval(sessionWatchTimer);
+    sessionWatchTimer = null;
+  }
+}
+
+function startSessionWatch() {
+  stopSessionWatch();
+  if (!isAuth() || !getSessionId()) return;
+  sessionWatchTimer = setInterval(checkSessionAlive, 10000);
+}
+
+async function checkSessionAlive() {
+  if (!isAuth()) return stopSessionWatch();
+  const sid = getSessionId();
+  if (!sid) return;
+  try {
+    const res = await fetch(API + '/api/me/session', {
+      headers: {
+        Authorization: 'Game ' + localStorage.accountToken,
+        'X-Session-Id': sid
+      }
+    });
+    if (res.status === 401) {
+      const data = await res.json().catch(() => ({}));
+      forceSessionKick(data.message || 'Вход выполнен с другого устройства');
+    }
+  } catch (_) {}
+}
+
+function forceSessionKick(msg) {
+  stopSessionWatch();
+  localStorage.removeItem('accountToken');
+  setSessionId('');
+  accountProfile = null;
+  try { toast(msg || 'Сессия завершена', 'err'); } catch (_) {}
+  showGate();
+  syncShell();
+}
 
 function showApp() {
   $('gate').classList.add('hidden');
@@ -817,14 +873,21 @@ function enterGuest() {
   showApp();
 }
 
-function enterAuth(token) {
+function enterAuth(token, sessionId) {
   sessionStorage.removeItem(GUEST_KEY);
   localStorage.accountToken = token;
-  loadProfile().then(showApp);
+  if (sessionId) setSessionId(sessionId);
+  else setSessionId('');
+  loadProfile().then(() => {
+    showApp();
+    startSessionWatch();
+  });
 }
 
 function leaveSession() {
+  stopSessionWatch();
   localStorage.removeItem('accountToken');
+  setSessionId('');
   sessionStorage.removeItem(GUEST_KEY);
   accountProfile = null;
   showGate();
@@ -833,7 +896,10 @@ function leaveSession() {
 async function logoutAccount() {
   if (isAuth()) {
     try {
-      await fetch(API + '/api/me/logout', { headers: { Authorization: 'Game ' + localStorage.accountToken } });
+      const h = { Authorization: 'Game ' + localStorage.accountToken };
+      const sid = getSessionId();
+      if (sid) h['X-Session-Id'] = sid;
+      await fetch(API + '/api/me/logout', { headers: h });
     } catch {}
   }
   leaveSession();
@@ -842,6 +908,8 @@ async function logoutAccount() {
 function api(tag, method = 'GET', body = null) {
   const h = {};
   if (localStorage.accountToken) h.Authorization = 'Game ' + localStorage.accountToken;
+  const sid = getSessionId();
+  if (sid) h['X-Session-Id'] = sid;
   if (body) h['Content-Type'] = 'application/json';
   return fetch(API + '/api/' + tag, { method, headers: h, body: body ? JSON.stringify(body) : null });
 }
@@ -858,25 +926,36 @@ async function handleLogin(payload, provider) {
     });
     const data = await res.json();
     if (data.error || !data.token) return alert(data.error || 'Ошибка входа');
-    enterAuth(data.token);
+    enterAuth(data.token, data.session_id || '');
   } catch { alert('Ошибка сети'); }
 }
 
 async function loadProfile() {
   if (!isAuth()) return;
   const res = await api('me/login');
+  if (res.status === 401) {
+    const data = await res.json().catch(() => ({}));
+    forceSessionKick(data.message || 'Вход выполнен с другого устройства');
+    return;
+  }
   if (!res.ok) return;
   const data = await res.json();
   if (data.error) {
-    if (data.status === 401) { leaveSession(); return; }
+    if (data.status === 401 || data.error === 'session_replaced') {
+      forceSessionKick(data.message || 'Вход выполнен с другого устройства');
+      return;
+    }
     return;
   }
+  if (data.session_id) setSessionId(data.session_id);
+  if (data.token) localStorage.accountToken = data.token;
   accountProfile = data;
   $('sidebarName').textContent = data.account_name || '—';
   $('sidebarMeta').textContent = 'ID ' + (data.uid || '—');
   $('sidebarAvatar').src = data.account_avatar || 'https://agar.su/icon.svg';
   await loadNicks();
   syncShell();
+  startSessionWatch();
 }
 
 async function loadNicks() {
