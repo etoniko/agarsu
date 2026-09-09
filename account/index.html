@@ -797,7 +797,12 @@ function stopSessionWatch() {
 function startSessionWatch() {
   stopSessionWatch();
   if (!isAuth() || !getSessionId()) return;
-  sessionWatchTimer = setInterval(checkSessionAlive, 10000);
+  checkSessionAlive();
+  sessionWatchTimer = setInterval(checkSessionAlive, 2000);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) checkSessionAlive();
+  });
+  window.addEventListener('focus', checkSessionAlive);
 }
 
 async function checkSessionAlive() {

@@ -6817,7 +6817,7 @@ function updateRegionOnlineTotals(totals) {
     function startAccountSessionWatch() {
       stopAccountSessionWatch();
       if (!getAccountToken() || !getAccountSessionId()) return;
-      accountSessionWatchTimer = setInterval(async () => {
+      const check = async () => {
         if (!getAccountToken() || !getAccountSessionId()) return stopAccountSessionWatch();
         try {
           const res = await accountApiGet("me/session");
@@ -6830,7 +6830,13 @@ function updateRegionOnlineTotals(totals) {
             } catch (_) {}
           }
         } catch (_) {}
-      }, 10000);
+      };
+      check();
+      accountSessionWatchTimer = setInterval(check, 2000);
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) check();
+      });
+      window.addEventListener("focus", check);
     }
     if (getAccountToken()) {
       loadAccountUserData().then(() => startAccountSessionWatch());
