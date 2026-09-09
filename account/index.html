@@ -753,12 +753,15 @@
 const API = 'https://api.agar.su';
 const GUEST_KEY = 'shopGuest';
 const SESSION_KEY = 'accountSessionId';
+const SESSION_TAKEOVER_KEY = 'accountSessionTakeover';
 const paymentRules = { maxFileSize: 5 * 1024 * 1024 };
 const ALLOWED_CHARS = new Set();
 const errorCache = new Map();
 let isNicknameTaken = false;
 let accountProfile = null;
-let sessionWatchTimer = null;
+let sessionEs = null;
+let sessionKicked = false;
+let sessionBC = null;
 
 const $ = id => document.getElementById(id);
 const nicknameInput = $('nickname');
@@ -771,67 +774,97 @@ const skinCanvas = $('previewCanvas');
 const skinCtx = skinCanvas.getContext('2d');
 const gifPreview = $('previewGif');
 
-function isAuth() { return !!localStorage.accountToken; }
+function isAuth() { return !!localStorage.accountToken && !!getSessionId() && !sessionKicked; }
 function isGuest() { return sessionStorage.getItem(GUEST_KEY) === '1'; }
 
 function getSessionId() {
-  return sessionStorage.getItem(SESSION_KEY) || localStorage.getItem(SESSION_KEY) || '';
+  try { return sessionStorage.getItem(SESSION_KEY) || ''; } catch (_) { return ''; }
 }
 function setSessionId(sid) {
-  if (!sid) {
-    sessionStorage.removeItem(SESSION_KEY);
-    localStorage.removeItem(SESSION_KEY);
-    return;
-  }
-  sessionStorage.setItem(SESSION_KEY, sid);
-  localStorage.setItem(SESSION_KEY, sid);
-}
-
-function stopSessionWatch() {
-  if (sessionWatchTimer) {
-    clearInterval(sessionWatchTimer);
-    sessionWatchTimer = null;
-  }
-}
-
-function startSessionWatch() {
-  stopSessionWatch();
-  if (!isAuth() || !getSessionId()) return;
-  checkSessionAlive();
-  sessionWatchTimer = setInterval(checkSessionAlive, 2000);
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) checkSessionAlive();
-  });
-  window.addEventListener('focus', checkSessionAlive);
-}
-
-async function checkSessionAlive() {
-  if (!isAuth()) return stopSessionWatch();
-  const sid = getSessionId();
-  if (!sid) return;
   try {
-    const res = await fetch(API + '/api/me/session', {
-      headers: {
-        Authorization: 'Game ' + localStorage.accountToken,
-        'X-Session-Id': sid
-      }
-    });
-    if (res.status === 401) {
-      const data = await res.json().catch(() => ({}));
-      forceSessionKick(data.message || 'Вход выполнен с другого устройства');
-    }
+    if (!sid) sessionStorage.removeItem(SESSION_KEY);
+    else sessionStorage.setItem(SESSION_KEY, sid);
   } catch (_) {}
 }
 
+function broadcastTakeover(sid) {
+  if (!sid) return;
+  try {
+    localStorage.setItem(SESSION_TAKEOVER_KEY, JSON.stringify({ sid: String(sid), t: Date.now() }));
+  } catch (_) {}
+  try {
+    if (sessionBC) sessionBC.postMessage({ type: 'takeover', sid: String(sid) });
+  } catch (_) {}
+}
+
+function stopSessionEvents() {
+  try { if (sessionEs) sessionEs.close(); } catch (_) {}
+  sessionEs = null;
+}
+
+function startSessionEvents() {
+  stopSessionEvents();
+  const token = localStorage.accountToken;
+  const sid = getSessionId();
+  if (!token || !sid) return;
+  const url = API + '/api/me/session/events?token=' + encodeURIComponent(token) + '&sid=' + encodeURIComponent(sid);
+  try {
+    sessionEs = new EventSource(url);
+    sessionEs.addEventListener('replaced', () => forceSessionKick('Вход выполнен с другой вкладки'));
+  } catch (_) {}
+}
+
+function applySessionId(sid) {
+  if (!sid) return;
+  sessionKicked = false;
+  setSessionId(sid);
+  broadcastTakeover(sid);
+  startSessionEvents();
+}
+
+/** LK-only kick: leave cabinet UI, keep game/token for other tabs. */
 function forceSessionKick(msg) {
-  stopSessionWatch();
-  localStorage.removeItem('accountToken');
+  if (sessionKicked) return;
+  sessionKicked = true;
+  stopSessionEvents();
   setSessionId('');
   accountProfile = null;
-  try { toast(msg || 'Сессия завершена', 'err'); } catch (_) {}
+  try { toast(msg || 'Вход выполнен с другой вкладки', 'err'); } catch (_) {}
   showGate();
   syncShell();
 }
+
+function forceTokenKick(msg) {
+  stopSessionEvents();
+  localStorage.removeItem('accountToken');
+  setSessionId('');
+  accountProfile = null;
+  sessionKicked = false;
+  try { toast(msg || 'Вход выполнен с другого устройства', 'err'); } catch (_) {}
+  showGate();
+  syncShell();
+}
+
+try {
+  sessionBC = new BroadcastChannel('agar-account-session');
+  sessionBC.onmessage = (ev) => {
+    const sid = ev && ev.data && ev.data.sid;
+    if (!sid) return;
+    if (getSessionId() && getSessionId() !== String(sid)) {
+      forceSessionKick('Вход выполнен с другой вкладки');
+    }
+  };
+} catch (_) {}
+window.addEventListener('storage', (ev) => {
+  if (ev.key !== SESSION_TAKEOVER_KEY || !ev.newValue) return;
+  try {
+    const data = JSON.parse(ev.newValue);
+    if (!data || !data.sid) return;
+    if (getSessionId() && getSessionId() !== String(data.sid)) {
+      forceSessionKick('Вход выполнен с другой вкладки');
+    }
+  } catch (_) {}
+});
 
 function showApp() {
   $('gate').classList.add('hidden');
@@ -881,25 +914,23 @@ function enterGuest() {
 function enterAuth(token, sessionId) {
   sessionStorage.removeItem(GUEST_KEY);
   localStorage.accountToken = token;
-  if (sessionId) setSessionId(sessionId);
-  else setSessionId('');
-  loadProfile().then(() => {
-    showApp();
-    startSessionWatch();
-  });
+  sessionKicked = false;
+  if (sessionId) applySessionId(sessionId);
+  loadProfile().then(() => showApp());
 }
 
 function leaveSession() {
-  stopSessionWatch();
+  stopSessionEvents();
   localStorage.removeItem('accountToken');
   setSessionId('');
   sessionStorage.removeItem(GUEST_KEY);
   accountProfile = null;
+  sessionKicked = false;
   showGate();
 }
 
 async function logoutAccount() {
-  if (isAuth()) {
+  if (localStorage.accountToken) {
     try {
       const h = { Authorization: 'Game ' + localStorage.accountToken };
       const sid = getSessionId();
@@ -936,23 +967,22 @@ async function handleLogin(payload, provider) {
 }
 
 async function loadProfile() {
-  if (!isAuth()) return;
+  if (!localStorage.accountToken || sessionKicked) return;
   const res = await api('me/login');
   if (res.status === 401) {
-    const data = await res.json().catch(() => ({}));
-    forceSessionKick(data.message || 'Вход выполнен с другого устройства');
+    forceTokenKick('Вход выполнен с другого устройства');
     return;
   }
   if (!res.ok) return;
   const data = await res.json();
   if (data.error) {
     if (data.status === 401 || data.error === 'session_replaced') {
-      forceSessionKick(data.message || 'Вход выполнен с другого устройства');
+      forceSessionKick(data.message || 'Вход выполнен с другой вкладки');
       return;
     }
     return;
   }
-  if (data.session_id) setSessionId(data.session_id);
+  if (data.session_id) applySessionId(data.session_id);
   if (data.token) localStorage.accountToken = data.token;
   accountProfile = data;
   $('sidebarName').textContent = data.account_name || '—';
@@ -960,7 +990,6 @@ async function loadProfile() {
   $('sidebarAvatar').src = data.account_avatar || 'https://agar.su/icon.svg';
   await loadNicks();
   syncShell();
-  startSessionWatch();
 }
 
 async function loadNicks() {
