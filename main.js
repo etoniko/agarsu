@@ -181,28 +181,6 @@
     document.cookie = name + "=; Max-Age=0" + cookieSecurityFlags();
   }
   var TOKEN_KEY = "accountToken";
-  var SESSION_KEY = "accountSessionId";
-  var ACCOUNT_API = "https://api.agar.su";
-  /** Per-tab only — never share session id via localStorage (one active LK). */
-  function getAccountSessionId() {
-    try {
-      return sessionStorage.getItem(SESSION_KEY) || "";
-    } catch (e) {
-      return "";
-    }
-  }
-  function setAccountSessionId(sid) {
-    try {
-      localStorage.removeItem(SESSION_KEY);
-    } catch (e) {}
-    try {
-      if (!sid) {
-        sessionStorage.removeItem(SESSION_KEY);
-        return;
-      }
-      sessionStorage.setItem(SESSION_KEY, sid);
-    } catch (e) {}
-  }
   var memory = Object.create(null);
   function canUseStorage(store) {
     try {
@@ -272,9 +250,8 @@
     try {
       sessionStorage.setItem(TOKEN_KEY, token);
     } catch (e) {}
-    // Do not mirror account token into document.cookie (XSS / logs).
     try {
-      deleteCookie(TOKEN_KEY);
+      setCookie(TOKEN_KEY, token, 30);
     } catch (e) {}
   }
   function clearTokenEverywhere() {
@@ -308,7 +285,6 @@
   }
   function clearAccountToken() {
     clearTokenEverywhere();
-    setAccountSessionId("");
   }
   function hydrateAccountToken() {
     const token = readTokenCandidates();
@@ -6509,8 +6485,6 @@ function updateRegionOnlineTotals(totals) {
       const headers = {
         Authorization: `Game ${getAccountToken() || ""}`
       };
-      const sid = getAccountSessionId();
-      if (sid) headers["X-Session-Id"] = sid;
       if (body) headers["Content-Type"] = "application/json";
       return fetch("https://api.agar.su/api/" + tag, {
         method,
@@ -6556,29 +6530,10 @@ function updateRegionOnlineTotals(totals) {
       if (authlogEl) authlogEl.style.display = "none";
       hideAuthButtons();
     };
-    const stopAccountSessionStream = () => {
-      try {
-        if (S.__accountSessionAbort) {
-          S.__accountSessionAbort.abort();
-          S.__accountSessionAbort = null;
-        }
-      } catch (_) {}
-      try {
-        if (S.__accountSessionEs) {
-          S.__accountSessionEs.close();
-          S.__accountSessionEs = null;
-        }
-      } catch (_) {}
-    };
-    const onLogout = (opts = {}) => {
+    const onLogout = () => {
       S.accountData = null;
       localStorage.removeItem("accountData");
-      stopAccountSessionStream();
-      if (!(opts && opts.keepToken)) {
-        clearAccountToken();
-      } else {
-        setAccountSessionId("");
-      }
+      clearAccountToken();
       clearRestoreTimestamp();
       const block = document.getElementById("myNicknamesBlock");
       if (block) block.style.display = "none";
@@ -6614,109 +6569,13 @@ function updateRegionOnlineTotals(totals) {
         window.updateAccountMenuLabel();
       }
     };
-    const forceAccountSessionKick = message => {
-      if (S.__accountSessionKicked) return;
-      S.__accountSessionKicked = true;
-      stopAccountSessionWatch();
-      stopAccountSessionStream();
-      // Token stays — only this tab loses LK while another holder is active.
-      onLogout({ keepToken: true });
-      try {
-        alert(message || "Аккаунт уже открыт в другом месте");
-      } catch (_) {}
-    };
-    const startAccountSessionEvents = () => {
-      const token = getAccountToken();
-      const sid = getAccountSessionId();
-      if (!token || !sid) return;
-      stopAccountSessionStream();
-      const ac = new AbortController();
-      S.__accountSessionAbort = ac;
-      // fetch + headers — never put account token in the URL (EventSource cannot).
-      (async () => {
-        try {
-          const res = await fetch(ACCOUNT_API + "/api/me/session/events", {
-            method: "GET",
-            headers: {
-              Authorization: `Game ${token}`,
-              "X-Session-Id": sid,
-              Accept: "text/event-stream"
-            },
-            signal: ac.signal
-          });
-          if (res.status === 409 || res.status === 401) {
-            let msg = "Аккаунт уже открыт в другом месте";
-            try {
-              const data = await res.json();
-              if (data && data.message) msg = data.message;
-            } catch (_) {}
-            forceAccountSessionKick(msg);
-            return;
-          }
-          if (!res.ok || !res.body) return;
-          const reader = res.body.getReader();
-          const decoder = new TextDecoder();
-          let buf = "";
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            buf += decoder.decode(value, { stream: true });
-            let sep;
-            while ((sep = buf.indexOf("\n\n")) >= 0) {
-              const chunk = buf.slice(0, sep);
-              buf = buf.slice(sep + 2);
-              let eventName = "message";
-              let dataLine = "";
-              for (const line of chunk.split(/\r?\n/)) {
-                if (line.startsWith("event:")) eventName = line.slice(6).trim();
-                else if (line.startsWith("data:")) dataLine += line.slice(5).trim();
-              }
-              if (eventName === "busy" || eventName === "replaced") {
-                let msg = "Аккаунт уже открыт в другом месте";
-                try {
-                  const parsed = JSON.parse(dataLine || "{}");
-                  if (parsed && parsed.message) msg = parsed.message;
-                } catch (_) {}
-                forceAccountSessionKick(msg);
-                return;
-              }
-            }
-          }
-        } catch (e) {
-          if (e && e.name === "AbortError") return;
-        }
-      })();
-    };
-    const applySessionId = sid => {
-      if (!sid) return;
-      S.__accountSessionKicked = false;
-      setAccountSessionId(sid);
-      startAccountSessionEvents();
-      startAccountSessionWatch();
-    };
     const loadAccountUserData = async () => {
-      if (S.__accountSessionKicked) return;
       const res = await accountApiGet("me/login");
-      let data = null;
-      try {
-        data = await res.json();
-      } catch (_) {}
-      if (res.status === 409 || (data && data.error === "session_busy")) {
-        forceAccountSessionKick(
-          (data && data.message) || "Аккаунт уже открыт. Второй вход запрещён."
-        );
-        return;
-      }
-      if (res.status === 401 || (data && (data.error === "session_replaced" || data.status === 401))) {
-        forceAccountSessionKick((data && data.message) || "Сессия недействительна");
-        return;
-      }
-      if (res.ok && data && !data.error) {
-        if (data.session_id) applySessionId(data.session_id);
-        if (data.token) setAccountToken(data.token);
-        setAccountData(data);
-      } else if (data && data.error) {
-        alert(data.error);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.error) {
+          if (401 == data.status) clearAccountToken(); else alert(data.error);
+        } else setAccountData(data);
       }
     };
     async function handleLogin(tokenOrUser, provider) {
@@ -6740,7 +6599,6 @@ function updateRegionOnlineTotals(totals) {
         return alert("Ошибка ответа сервера авторизации");
       }
       if (data.error || !data.token) return alert(data.error || "Ошибка авторизации");
-      if (data.session_id) applySessionId(data.session_id);
       wHandle.onAccountLoggedIn(data.token);
     }
     wHandle.onVkAuth = function(payload) {
@@ -6892,15 +6750,13 @@ function updateRegionOnlineTotals(totals) {
       hooks.sendAccountToken();
     };
     wHandle.logoutAccount = async () => {
-      stopAccountSessionWatch();
-      stopAccountSessionStream();
       if (getAccountToken()) {
         const res = await accountApiGet("me/logout");
         if (res.ok) {
           const data = await res.json();
           if (data.ok || 401 == data.status) onLogout();
           if (data.error) alert(data.error);
-        } else onLogout();
+        }
       } else onLogout();
     };
     wHandle.onUpdateXp = xp => {
@@ -6909,36 +6765,7 @@ function updateRegionOnlineTotals(totals) {
         displayAccountData();
       }
     };
-    let accountSessionWatchTimer = null;
-    function stopAccountSessionWatch() {
-      if (accountSessionWatchTimer) {
-        clearInterval(accountSessionWatchTimer);
-        accountSessionWatchTimer = null;
-      }
-    }
-    function startAccountSessionWatch() {
-      stopAccountSessionWatch();
-      if (!getAccountToken() || !getAccountSessionId()) return;
-      const check = async () => {
-        if (S.__accountSessionKicked) return stopAccountSessionWatch();
-        if (!getAccountToken() || !getAccountSessionId()) return stopAccountSessionWatch();
-        try {
-          const res = await accountApiGet("me/session");
-          if (res.status === 401 || res.status === 409) {
-            forceAccountSessionKick("Аккаунт уже открыт в другом месте");
-          }
-        } catch (_) {}
-      };
-      check();
-      accountSessionWatchTimer = setInterval(check, 10000);
-    }
-    // Drop legacy shared sid so this tab cannot inherit another tab's session.
-    try {
-      localStorage.removeItem(SESSION_KEY);
-    } catch (_) {}
-    if (getAccountToken()) {
-      loadAccountUserData();
-    }
+    if (getAccountToken()) loadAccountUserData();
     if (typeof window.updateAccountMenuLabel === "function") {
       window.updateAccountMenuLabel();
     }
