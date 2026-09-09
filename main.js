@@ -181,6 +181,25 @@
     document.cookie = name + "=; Max-Age=0" + cookieSecurityFlags();
   }
   var TOKEN_KEY = "accountToken";
+  var SESSION_KEY = "accountSessionId";
+  function getAccountSessionId() {
+    try {
+      return sessionStorage.getItem(SESSION_KEY) || localStorage.getItem(SESSION_KEY) || "";
+    } catch (e) {
+      return "";
+    }
+  }
+  function setAccountSessionId(sid) {
+    try {
+      if (!sid) {
+        sessionStorage.removeItem(SESSION_KEY);
+        localStorage.removeItem(SESSION_KEY);
+        return;
+      }
+      sessionStorage.setItem(SESSION_KEY, sid);
+      localStorage.setItem(SESSION_KEY, sid);
+    } catch (e) {}
+  }
   var memory = Object.create(null);
   function canUseStorage(store) {
     try {
@@ -285,6 +304,7 @@
   }
   function clearAccountToken() {
     clearTokenEverywhere();
+    setAccountSessionId("");
   }
   function hydrateAccountToken() {
     const token = readTokenCandidates();
@@ -2510,56 +2530,14 @@
   function showBanBanner(remainingSec, reason) {
     const banner = document.getElementById("ban-banner");
     if (!banner) return;
-    const titleEl = banner.querySelector(".ban-banner-title");
     const msgEl = document.getElementById("ban-banner-message");
-    if (titleEl) titleEl.textContent = "Доступ заблокирован";
     const text = `Осталось: ${formatBanDuration(remainingSec)}` + (reason ? `\n${reason}` : "");
     if (msgEl) msgEl.textContent = text;
-    banner.dataset.mode = "ban";
     banner.style.display = "block";
   }
   function hideBanBanner() {
     const banner = document.getElementById("ban-banner");
-    if (!banner) return;
-    // Don't clear VIP server-restrict panel
-    if (banner.dataset.mode === "restrict") return;
-    banner.style.display = "none";
-    banner.dataset.mode = "";
-  }
-  function applyServerRestrictState(state) {
-    const banner = document.getElementById("ban-banner");
-    if (!banner) return;
-    // Real ban wins over restrict UI
-    if (banner.dataset.mode === "ban" && banner.style.display === "block") return;
-    const titleEl = banner.querySelector(".ban-banner-title");
-    const msgEl = document.getElementById("ban-banner-message");
-    const serverOn = !!(state && state.server);
-    const chatOn = !!(state && state.chat);
-    if (!serverOn && !chatOn) {
-      if (banner.dataset.mode === "restrict") {
-        banner.style.display = "none";
-        banner.dataset.mode = "";
-      }
-      return;
-    }
-    let title = "Сервер ограничен";
-    let text = "Вход под ЛК от 30 уровня";
-    if (serverOn) {
-      const leftMs = Math.max(0, (state.serverUntil || 0) - Date.now());
-      if (leftMs > 0) text += "\nОсталось: ~" + Math.ceil(leftMs / 60000) + " мин";
-    } else if (chatOn) {
-      title = "Чат ограничен";
-      text = "Чат под ЛК от 30 уровня";
-      const leftMs = Math.max(0, (state.chatUntil || 0) - Date.now());
-      if (leftMs > 0) text += "\nОсталось: ~" + Math.ceil(leftMs / 60000) + " мин";
-    }
-    if (titleEl) titleEl.textContent = title;
-    if (msgEl) msgEl.textContent = text;
-    banner.dataset.mode = "restrict";
-    banner.style.display = "block";
-  }
-  function hideServerRestrictBanner() {
-    applyServerRestrictState(null);
+    if (banner) banner.style.display = "none";
   }
   function createConnection(S, hooks = {}) {
     function isSpectMode() {
@@ -2613,11 +2591,7 @@
       }, S.HIDDEN_TAB_DISCONNECT_MS);
     }
     function reconnectToServer() {
-      const banner = document.getElementById("ban-banner");
-      if (banner) {
-        banner.dataset.mode = "";
-        banner.style.display = "none";
-      }
+      hideBanBanner();
       hideReconnectPanel();
       showConnecting();
     }
@@ -6531,6 +6505,8 @@ function updateRegionOnlineTotals(totals) {
       const headers = {
         Authorization: `Game ${getAccountToken() || ""}`
       };
+      const sid = getAccountSessionId();
+      if (sid) headers["X-Session-Id"] = sid;
       if (body) headers["Content-Type"] = "application/json";
       return fetch("https://api.agar.su/api/" + tag, {
         method,
@@ -6617,11 +6593,29 @@ function updateRegionOnlineTotals(totals) {
     };
     const loadAccountUserData = async () => {
       const res = await accountApiGet("me/login");
+      if (res.status === 401) {
+        clearAccountToken();
+        onLogout();
+        try {
+          alert("Вход выполнен с другого устройства");
+        } catch (_) {}
+        return;
+      }
       if (res.ok) {
         const data = await res.json();
         if (data.error) {
-          if (401 == data.status) clearAccountToken(); else alert(data.error);
-        } else setAccountData(data);
+          if (401 == data.status || data.error === "session_replaced") {
+            clearAccountToken();
+            onLogout();
+            try {
+              alert(data.message || "Вход выполнен с другого устройства");
+            } catch (_) {}
+          } else alert(data.error);
+        } else {
+          if (data.session_id) setAccountSessionId(data.session_id);
+          if (data.token) setAccountToken(data.token);
+          setAccountData(data);
+        }
       }
     };
     async function handleLogin(tokenOrUser, provider) {
@@ -6645,6 +6639,7 @@ function updateRegionOnlineTotals(totals) {
         return alert("Ошибка ответа сервера авторизации");
       }
       if (data.error || !data.token) return alert(data.error || "Ошибка авторизации");
+      if (data.session_id) setAccountSessionId(data.session_id);
       wHandle.onAccountLoggedIn(data.token);
     }
     wHandle.onVkAuth = function(payload) {
@@ -6791,11 +6786,12 @@ function updateRegionOnlineTotals(totals) {
       if (typeof window.updateAccountMenuLabel === "function") {
         window.updateAccountMenuLabel();
       }
-      loadAccountUserData();
+      loadAccountUserData().then(() => startAccountSessionWatch());
       loadMyNicknames(S, nickHooks);
       hooks.sendAccountToken();
     };
     wHandle.logoutAccount = async () => {
+      stopAccountSessionWatch();
       if (getAccountToken()) {
         const res = await accountApiGet("me/logout");
         if (res.ok) {
@@ -6811,7 +6807,34 @@ function updateRegionOnlineTotals(totals) {
         displayAccountData();
       }
     };
-    if (getAccountToken()) loadAccountUserData();
+    let accountSessionWatchTimer = null;
+    function stopAccountSessionWatch() {
+      if (accountSessionWatchTimer) {
+        clearInterval(accountSessionWatchTimer);
+        accountSessionWatchTimer = null;
+      }
+    }
+    function startAccountSessionWatch() {
+      stopAccountSessionWatch();
+      if (!getAccountToken() || !getAccountSessionId()) return;
+      accountSessionWatchTimer = setInterval(async () => {
+        if (!getAccountToken() || !getAccountSessionId()) return stopAccountSessionWatch();
+        try {
+          const res = await accountApiGet("me/session");
+          if (res.status === 401) {
+            stopAccountSessionWatch();
+            clearAccountToken();
+            onLogout();
+            try {
+              alert("Вход выполнен с другого устройства");
+            } catch (_) {}
+          }
+        } catch (_) {}
+      }, 10000);
+    }
+    if (getAccountToken()) {
+      loadAccountUserData().then(() => startAccountSessionWatch());
+    }
     if (typeof window.updateAccountMenuLabel === "function") {
       window.updateAccountMenuLabel();
     }
@@ -7645,46 +7668,13 @@ function updateRegionOnlineTotals(totals) {
     const pId = view.getUint16(offset, true);
     offset += 2;
     color = "#" + color;
-    const name = getString();
-    const message = getString();
-    // Hide protocol / roster spam from chat; drive restrict banner from Console text
-    if (typeof message === "string") {
-      if (message.indexOf("§PCLOSE§") === 0) {
-        try {
-          applyServerRestrictState(JSON.parse(message.slice("§PCLOSE§".length)));
-        } catch (_) {}
-        return offset;
-      }
-      if (/НАБОР\s*ЗАВЕРШЕН/i.test(message)) {
-        return offset;
-      }
-      if (/Сервер ограничен/i.test(message)) {
-        applyServerRestrictState({
-          server: 1,
-          chat: 0,
-          minXp: 45000,
-          serverUntil: Date.now() + 30 * 60 * 1000,
-          chatUntil: 0
-        });
-      } else if (/Чат ограничен/i.test(message)) {
-        applyServerRestrictState({
-          server: 0,
-          chat: 1,
-          minXp: 45000,
-          serverUntil: 0,
-          chatUntil: Date.now() + 30 * 60 * 1000
-        });
-      } else if (/Ограничение (входа |чата )?снято/i.test(message)) {
-        applyServerRestrictState(null);
-      }
-    }
     S.chatBoard.push({
       pId,
       playerXp,
       playerLevel: playerXp ? getLevel(playerXp) : -1,
-      name,
+      name: getString(),
       color,
-      message,
+      message: getString(),
       time: formatTime(new Date)
     });
     drawChatBoard(S, hooks);
