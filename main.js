@@ -182,9 +182,8 @@
   }
   var TOKEN_KEY = "accountToken";
   var SESSION_KEY = "accountSessionId";
-  var SESSION_TAKEOVER_KEY = "accountSessionTakeover";
   var ACCOUNT_API = "https://api.agar.su";
-  /** Per-tab only — never share session id via localStorage. */
+  /** Per-tab only — never share session id via localStorage (one active LK). */
   function getAccountSessionId() {
     try {
       return sessionStorage.getItem(SESSION_KEY) || "";
@@ -194,25 +193,14 @@
   }
   function setAccountSessionId(sid) {
     try {
+      localStorage.removeItem(SESSION_KEY);
+    } catch (e) {}
+    try {
       if (!sid) {
         sessionStorage.removeItem(SESSION_KEY);
         return;
       }
       sessionStorage.setItem(SESSION_KEY, sid);
-    } catch (e) {}
-  }
-  function broadcastSessionTakeover(sid) {
-    if (!sid) return;
-    try {
-      localStorage.setItem(
-        SESSION_TAKEOVER_KEY,
-        JSON.stringify({ sid: String(sid), t: Date.now() })
-      );
-    } catch (e) {}
-    try {
-      if (window.__agarSessionBC) {
-        window.__agarSessionBC.postMessage({ type: "takeover", sid: String(sid) });
-      }
     } catch (e) {}
   }
   var memory = Object.create(null);
@@ -284,8 +272,9 @@
     try {
       sessionStorage.setItem(TOKEN_KEY, token);
     } catch (e) {}
+    // Do not mirror account token into document.cookie (XSS / logs).
     try {
-      setCookie(TOKEN_KEY, token, 30);
+      deleteCookie(TOKEN_KEY);
     } catch (e) {}
   }
   function clearTokenEverywhere() {
@@ -320,85 +309,6 @@
   function clearAccountToken() {
     clearTokenEverywhere();
     setAccountSessionId("");
-  }
-  function forceAccountSessionKick(S, hooks, message) {
-    if (S && S.__accountSessionKicked) return;
-    if (S) S.__accountSessionKicked = true;
-    setAccountSessionId("");
-    try {
-      if (S && S.__accountSessionEs) {
-        S.__accountSessionEs.close();
-        S.__accountSessionEs = null;
-      }
-    } catch (_) {}
-    // LK only — do not close game WebSocket.
-    try {
-      if (hooks && typeof hooks.onLogout === "function") hooks.onLogout({ keepToken: true });
-      else if (S) {
-        S.accountData = null;
-        showAuthButtons();
-      }
-    } catch (_) {}
-    try {
-      if (typeof window.updateAccountMenuLabel === "function") window.updateAccountMenuLabel();
-    } catch (_) {}
-    try {
-      alert(message || "Вход выполнен с другой вкладки");
-    } catch (_) {}
-  }
-  function startAccountSessionEvents(S, hooks) {
-    const token = getAccountToken();
-    const sid = getAccountSessionId();
-    if (!token || !sid || !S) return;
-    try {
-      if (S.__accountSessionEs) {
-        S.__accountSessionEs.close();
-        S.__accountSessionEs = null;
-      }
-    } catch (_) {}
-    const url =
-      ACCOUNT_API +
-      "/api/me/session/events?token=" +
-      encodeURIComponent(token) +
-      "&sid=" +
-      encodeURIComponent(sid);
-    let es;
-    try {
-      es = new EventSource(url);
-    } catch (_) {
-      return;
-    }
-    S.__accountSessionEs = es;
-    es.addEventListener("replaced", () => {
-      forceAccountSessionKick(S, hooks, "Вход выполнен с другой вкладки");
-    });
-    es.onerror = () => {
-      /* browser will retry EventSource; 401 ends stream */
-    };
-  }
-  function wireAccountSessionTakeoverListeners(S, hooks) {
-    if (window.__agarSessionTakeoverWired) return;
-    window.__agarSessionTakeoverWired = true;
-    try {
-      window.__agarSessionBC = new BroadcastChannel("agar-account-session");
-      window.__agarSessionBC.onmessage = ev => {
-        const sid = ev && ev.data && ev.data.sid;
-        if (!sid) return;
-        if (getAccountSessionId() && getAccountSessionId() !== String(sid)) {
-          forceAccountSessionKick(S, hooks, "Вход выполнен с другой вкладки");
-        }
-      };
-    } catch (_) {}
-    window.addEventListener("storage", ev => {
-      if (ev.key !== SESSION_TAKEOVER_KEY || !ev.newValue) return;
-      try {
-        const data = JSON.parse(ev.newValue);
-        if (!data || !data.sid) return;
-        if (getAccountSessionId() && getAccountSessionId() !== String(data.sid)) {
-          forceAccountSessionKick(S, hooks, "Вход выполнен с другой вкладки");
-        }
-      } catch (_) {}
-    });
   }
   function hydrateAccountToken() {
     const token = readTokenCandidates();
@@ -6646,20 +6556,29 @@ function updateRegionOnlineTotals(totals) {
       if (authlogEl) authlogEl.style.display = "none";
       hideAuthButtons();
     };
-    const onLogout = (opts = {}) => {
-      S.accountData = null;
-      localStorage.removeItem("accountData");
-      if (!(opts && opts.keepToken)) {
-        clearAccountToken();
-      } else {
-        setAccountSessionId("");
-      }
+    const stopAccountSessionStream = () => {
+      try {
+        if (S.__accountSessionAbort) {
+          S.__accountSessionAbort.abort();
+          S.__accountSessionAbort = null;
+        }
+      } catch (_) {}
       try {
         if (S.__accountSessionEs) {
           S.__accountSessionEs.close();
           S.__accountSessionEs = null;
         }
       } catch (_) {}
+    };
+    const onLogout = (opts = {}) => {
+      S.accountData = null;
+      localStorage.removeItem("accountData");
+      stopAccountSessionStream();
+      if (!(opts && opts.keepToken)) {
+        clearAccountToken();
+      } else {
+        setAccountSessionId("");
+      }
       clearRestoreTimestamp();
       const block = document.getElementById("myNicknamesBlock");
       if (block) block.style.display = "none";
@@ -6695,38 +6614,109 @@ function updateRegionOnlineTotals(totals) {
         window.updateAccountMenuLabel();
       }
     };
+    const forceAccountSessionKick = message => {
+      if (S.__accountSessionKicked) return;
+      S.__accountSessionKicked = true;
+      stopAccountSessionWatch();
+      stopAccountSessionStream();
+      // Token stays — only this tab loses LK while another holder is active.
+      onLogout({ keepToken: true });
+      try {
+        alert(message || "Аккаунт уже открыт в другом месте");
+      } catch (_) {}
+    };
+    const startAccountSessionEvents = () => {
+      const token = getAccountToken();
+      const sid = getAccountSessionId();
+      if (!token || !sid) return;
+      stopAccountSessionStream();
+      const ac = new AbortController();
+      S.__accountSessionAbort = ac;
+      // fetch + headers — never put account token in the URL (EventSource cannot).
+      (async () => {
+        try {
+          const res = await fetch(ACCOUNT_API + "/api/me/session/events", {
+            method: "GET",
+            headers: {
+              Authorization: `Game ${token}`,
+              "X-Session-Id": sid,
+              Accept: "text/event-stream"
+            },
+            signal: ac.signal
+          });
+          if (res.status === 409 || res.status === 401) {
+            let msg = "Аккаунт уже открыт в другом месте";
+            try {
+              const data = await res.json();
+              if (data && data.message) msg = data.message;
+            } catch (_) {}
+            forceAccountSessionKick(msg);
+            return;
+          }
+          if (!res.ok || !res.body) return;
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          let buf = "";
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buf += decoder.decode(value, { stream: true });
+            let sep;
+            while ((sep = buf.indexOf("\n\n")) >= 0) {
+              const chunk = buf.slice(0, sep);
+              buf = buf.slice(sep + 2);
+              let eventName = "message";
+              let dataLine = "";
+              for (const line of chunk.split(/\r?\n/)) {
+                if (line.startsWith("event:")) eventName = line.slice(6).trim();
+                else if (line.startsWith("data:")) dataLine += line.slice(5).trim();
+              }
+              if (eventName === "busy" || eventName === "replaced") {
+                let msg = "Аккаунт уже открыт в другом месте";
+                try {
+                  const parsed = JSON.parse(dataLine || "{}");
+                  if (parsed && parsed.message) msg = parsed.message;
+                } catch (_) {}
+                forceAccountSessionKick(msg);
+                return;
+              }
+            }
+          }
+        } catch (e) {
+          if (e && e.name === "AbortError") return;
+        }
+      })();
+    };
     const applySessionId = sid => {
       if (!sid) return;
       S.__accountSessionKicked = false;
       setAccountSessionId(sid);
-      broadcastSessionTakeover(sid);
-      startAccountSessionEvents(S, { onLogout });
+      startAccountSessionEvents();
+      startAccountSessionWatch();
     };
     const loadAccountUserData = async () => {
+      if (S.__accountSessionKicked) return;
       const res = await accountApiGet("me/login");
-      if (res.status === 401) {
-        clearAccountToken();
-        onLogout();
-        try {
-          alert("Вход выполнен с другого устройства");
-        } catch (_) {}
+      let data = null;
+      try {
+        data = await res.json();
+      } catch (_) {}
+      if (res.status === 409 || (data && data.error === "session_busy")) {
+        forceAccountSessionKick(
+          (data && data.message) || "Аккаунт уже открыт. Второй вход запрещён."
+        );
         return;
       }
-      if (res.ok) {
-        const data = await res.json();
-        if (data.error) {
-          if (401 == data.status || data.error === "session_replaced") {
-            clearAccountToken();
-            onLogout();
-            try {
-              alert(data.message || "Вход выполнен с другого устройства");
-            } catch (_) {}
-          } else alert(data.error);
-        } else {
-          if (data.session_id) applySessionId(data.session_id);
-          if (data.token) setAccountToken(data.token);
-          setAccountData(data);
-        }
+      if (res.status === 401 || (data && (data.error === "session_replaced" || data.status === 401))) {
+        forceAccountSessionKick((data && data.message) || "Сессия недействительна");
+        return;
+      }
+      if (res.ok && data && !data.error) {
+        if (data.session_id) applySessionId(data.session_id);
+        if (data.token) setAccountToken(data.token);
+        setAccountData(data);
+      } else if (data && data.error) {
+        alert(data.error);
       }
     };
     async function handleLogin(tokenOrUser, provider) {
@@ -6894,7 +6884,6 @@ function updateRegionOnlineTotals(totals) {
     }
     wHandle.onAccountLoggedIn = token => {
       setAccountToken(token);
-      S.__accountSessionKicked = false;
       if (typeof window.updateAccountMenuLabel === "function") {
         window.updateAccountMenuLabel();
       }
@@ -6903,19 +6892,15 @@ function updateRegionOnlineTotals(totals) {
       hooks.sendAccountToken();
     };
     wHandle.logoutAccount = async () => {
-      try {
-        if (S.__accountSessionEs) {
-          S.__accountSessionEs.close();
-          S.__accountSessionEs = null;
-        }
-      } catch (_) {}
+      stopAccountSessionWatch();
+      stopAccountSessionStream();
       if (getAccountToken()) {
         const res = await accountApiGet("me/logout");
         if (res.ok) {
           const data = await res.json();
           if (data.ok || 401 == data.status) onLogout();
           if (data.error) alert(data.error);
-        }
+        } else onLogout();
       } else onLogout();
     };
     wHandle.onUpdateXp = xp => {
@@ -6924,7 +6909,33 @@ function updateRegionOnlineTotals(totals) {
         displayAccountData();
       }
     };
-    wireAccountSessionTakeoverListeners(S, { onLogout });
+    let accountSessionWatchTimer = null;
+    function stopAccountSessionWatch() {
+      if (accountSessionWatchTimer) {
+        clearInterval(accountSessionWatchTimer);
+        accountSessionWatchTimer = null;
+      }
+    }
+    function startAccountSessionWatch() {
+      stopAccountSessionWatch();
+      if (!getAccountToken() || !getAccountSessionId()) return;
+      const check = async () => {
+        if (S.__accountSessionKicked) return stopAccountSessionWatch();
+        if (!getAccountToken() || !getAccountSessionId()) return stopAccountSessionWatch();
+        try {
+          const res = await accountApiGet("me/session");
+          if (res.status === 401 || res.status === 409) {
+            forceAccountSessionKick("Аккаунт уже открыт в другом месте");
+          }
+        } catch (_) {}
+      };
+      check();
+      accountSessionWatchTimer = setInterval(check, 10000);
+    }
+    // Drop legacy shared sid so this tab cannot inherit another tab's session.
+    try {
+      localStorage.removeItem(SESSION_KEY);
+    } catch (_) {}
     if (getAccountToken()) {
       loadAccountUserData();
     }
@@ -8651,9 +8662,6 @@ onReady(() => {
         return selectSkin(nick);
       }
     });
-    try {
-      window.__agarGameS = S;
-    } catch (_) {}
     initShareHandlers(S);
     connection.bindVisibilityHandlers();
     hideReconnectPanel();
@@ -9156,11 +9164,7 @@ onReady(() => {
   function updateAccountMenuLabel() {
     const label = document.getElementById("accountMenuLabel");
     if (!label) return;
-    const active =
-      getAccountToken() &&
-      getAccountSessionId() &&
-      !(window.__agarGameS && window.__agarGameS.__accountSessionKicked);
-    label.textContent = active ? "ЛК" : "Войти";
+    label.textContent = getAccountToken() ? "ЛК" : "Войти";
   }
   function initChatResize() {
     const chatWindow = document.getElementById("chatX_window");
@@ -9899,13 +9903,10 @@ onReady(() => {
       });
       const data = await res.json();
       if (getAccountToken() && data.taken) {
-        const meHeaders = {
-          Authorization: `Game ${getAccountToken()}`
-        };
-        const sid = getAccountSessionId();
-        if (sid) meHeaders["X-Session-Id"] = sid;
         const meRes = await fetch("https://api.agar.su/api/me/nicknames", {
-          headers: meHeaders
+          headers: {
+            Authorization: `Game ${getAccountToken()}`
+          }
         });
         if (meRes.ok) {
           const meData = await meRes.json();
