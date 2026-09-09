@@ -752,11 +752,16 @@
 <script>
 const API = 'https://api.agar.su';
 const GUEST_KEY = 'shopGuest';
+const SESSION_KEY = 'accountSessionId';
+const SESSION_TAKEOVER_KEY = 'accountSessionTakeover';
 const paymentRules = { maxFileSize: 5 * 1024 * 1024 };
 const ALLOWED_CHARS = new Set();
 const errorCache = new Map();
 let isNicknameTaken = false;
 let accountProfile = null;
+let sessionEs = null;
+let sessionKicked = false;
+let sessionBC = null;
 
 const $ = id => document.getElementById(id);
 const nicknameInput = $('nickname');
@@ -769,8 +774,97 @@ const skinCanvas = $('previewCanvas');
 const skinCtx = skinCanvas.getContext('2d');
 const gifPreview = $('previewGif');
 
-function isAuth() { return !!localStorage.accountToken; }
+function isAuth() { return !!localStorage.accountToken && !!getSessionId() && !sessionKicked; }
 function isGuest() { return sessionStorage.getItem(GUEST_KEY) === '1'; }
+
+function getSessionId() {
+  try { return sessionStorage.getItem(SESSION_KEY) || ''; } catch (_) { return ''; }
+}
+function setSessionId(sid) {
+  try {
+    if (!sid) sessionStorage.removeItem(SESSION_KEY);
+    else sessionStorage.setItem(SESSION_KEY, sid);
+  } catch (_) {}
+}
+
+function broadcastTakeover(sid) {
+  if (!sid) return;
+  try {
+    localStorage.setItem(SESSION_TAKEOVER_KEY, JSON.stringify({ sid: String(sid), t: Date.now() }));
+  } catch (_) {}
+  try {
+    if (sessionBC) sessionBC.postMessage({ type: 'takeover', sid: String(sid) });
+  } catch (_) {}
+}
+
+function stopSessionEvents() {
+  try { if (sessionEs) sessionEs.close(); } catch (_) {}
+  sessionEs = null;
+}
+
+function startSessionEvents() {
+  stopSessionEvents();
+  const token = localStorage.accountToken;
+  const sid = getSessionId();
+  if (!token || !sid) return;
+  const url = API + '/api/me/session/events?token=' + encodeURIComponent(token) + '&sid=' + encodeURIComponent(sid);
+  try {
+    sessionEs = new EventSource(url);
+    sessionEs.addEventListener('replaced', () => forceSessionKick('Вход выполнен с другой вкладки'));
+  } catch (_) {}
+}
+
+function applySessionId(sid) {
+  if (!sid) return;
+  sessionKicked = false;
+  setSessionId(sid);
+  broadcastTakeover(sid);
+  startSessionEvents();
+}
+
+/** LK-only kick: leave cabinet UI, keep game/token for other tabs. */
+function forceSessionKick(msg) {
+  if (sessionKicked) return;
+  sessionKicked = true;
+  stopSessionEvents();
+  setSessionId('');
+  accountProfile = null;
+  try { toast(msg || 'Вход выполнен с другой вкладки', 'err'); } catch (_) {}
+  showGate();
+  syncShell();
+}
+
+function forceTokenKick(msg) {
+  stopSessionEvents();
+  localStorage.removeItem('accountToken');
+  setSessionId('');
+  accountProfile = null;
+  sessionKicked = false;
+  try { toast(msg || 'Вход выполнен с другого устройства', 'err'); } catch (_) {}
+  showGate();
+  syncShell();
+}
+
+try {
+  sessionBC = new BroadcastChannel('agar-account-session');
+  sessionBC.onmessage = (ev) => {
+    const sid = ev && ev.data && ev.data.sid;
+    if (!sid) return;
+    if (getSessionId() && getSessionId() !== String(sid)) {
+      forceSessionKick('Вход выполнен с другой вкладки');
+    }
+  };
+} catch (_) {}
+window.addEventListener('storage', (ev) => {
+  if (ev.key !== SESSION_TAKEOVER_KEY || !ev.newValue) return;
+  try {
+    const data = JSON.parse(ev.newValue);
+    if (!data || !data.sid) return;
+    if (getSessionId() && getSessionId() !== String(data.sid)) {
+      forceSessionKick('Вход выполнен с другой вкладки');
+    }
+  } catch (_) {}
+});
 
 function showApp() {
   $('gate').classList.add('hidden');
@@ -817,23 +911,31 @@ function enterGuest() {
   showApp();
 }
 
-function enterAuth(token) {
+function enterAuth(token, sessionId) {
   sessionStorage.removeItem(GUEST_KEY);
   localStorage.accountToken = token;
-  loadProfile().then(showApp);
+  sessionKicked = false;
+  if (sessionId) applySessionId(sessionId);
+  loadProfile().then(() => showApp());
 }
 
 function leaveSession() {
+  stopSessionEvents();
   localStorage.removeItem('accountToken');
+  setSessionId('');
   sessionStorage.removeItem(GUEST_KEY);
   accountProfile = null;
+  sessionKicked = false;
   showGate();
 }
 
 async function logoutAccount() {
-  if (isAuth()) {
+  if (localStorage.accountToken) {
     try {
-      await fetch(API + '/api/me/logout', { headers: { Authorization: 'Game ' + localStorage.accountToken } });
+      const h = { Authorization: 'Game ' + localStorage.accountToken };
+      const sid = getSessionId();
+      if (sid) h['X-Session-Id'] = sid;
+      await fetch(API + '/api/me/logout', { headers: h });
     } catch {}
   }
   leaveSession();
@@ -842,6 +944,8 @@ async function logoutAccount() {
 function api(tag, method = 'GET', body = null) {
   const h = {};
   if (localStorage.accountToken) h.Authorization = 'Game ' + localStorage.accountToken;
+  const sid = getSessionId();
+  if (sid) h['X-Session-Id'] = sid;
   if (body) h['Content-Type'] = 'application/json';
   return fetch(API + '/api/' + tag, { method, headers: h, body: body ? JSON.stringify(body) : null });
 }
@@ -858,19 +962,28 @@ async function handleLogin(payload, provider) {
     });
     const data = await res.json();
     if (data.error || !data.token) return alert(data.error || 'Ошибка входа');
-    enterAuth(data.token);
+    enterAuth(data.token, data.session_id || '');
   } catch { alert('Ошибка сети'); }
 }
 
 async function loadProfile() {
-  if (!isAuth()) return;
+  if (!localStorage.accountToken || sessionKicked) return;
   const res = await api('me/login');
+  if (res.status === 401) {
+    forceTokenKick('Вход выполнен с другого устройства');
+    return;
+  }
   if (!res.ok) return;
   const data = await res.json();
   if (data.error) {
-    if (data.status === 401) { leaveSession(); return; }
+    if (data.status === 401 || data.error === 'session_replaced') {
+      forceSessionKick(data.message || 'Вход выполнен с другой вкладки');
+      return;
+    }
     return;
   }
+  if (data.session_id) applySessionId(data.session_id);
+  if (data.token) localStorage.accountToken = data.token;
   accountProfile = data;
   $('sidebarName').textContent = data.account_name || '—';
   $('sidebarMeta').textContent = 'ID ' + (data.uid || '—');
