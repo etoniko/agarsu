@@ -260,6 +260,10 @@ nicknameInput.addEventListener("blur", async () => {
     const headers = { 'Content-Type': 'application/json' };
     if (localStorage.accountToken) {
       headers['Authorization'] = `Game ${localStorage.accountToken}`;
+      try {
+        const sid = sessionStorage.getItem('accountSessionId');
+        if (sid) headers['X-Session-Id'] = sid;
+      } catch (_) {}
     }
     const res = await fetch('https://api.agar.su/check-nickname', {
       method: 'POST',
@@ -272,7 +276,14 @@ nicknameInput.addEventListener("blur", async () => {
     if (localStorage.accountToken && data.taken) {
       // Запросим список своих ников
       const meRes = await fetch('https://api.agar.su/api/me/nicknames', {
-        headers: { 'Authorization': `Game ${localStorage.accountToken}` }
+        headers: (() => {
+          const h = { 'Authorization': `Game ${localStorage.accountToken}` };
+          try {
+            const sid = sessionStorage.getItem('accountSessionId');
+            if (sid) h['X-Session-Id'] = sid;
+          } catch (_) {}
+          return h;
+        })()
       });
       if (meRes.ok) {
         const meData = await meRes.json();

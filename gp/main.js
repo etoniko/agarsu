@@ -1929,14 +1929,51 @@
   function showBanBanner(remainingSec, reason) {
     const banner = document.getElementById("ban-banner");
     if (!banner) return;
+    const titleEl = banner.querySelector(".ban-banner-title");
     const msgEl = document.getElementById("ban-banner-message");
+    if (titleEl) titleEl.textContent = "Доступ заблокирован";
     const text = `Осталось: ${formatBanDuration(remainingSec)}` + (reason ? `\n${reason}` : "");
     if (msgEl) msgEl.textContent = text;
+    banner.dataset.mode = "ban";
     banner.style.display = "block";
   }
   function hideBanBanner() {
     const banner = document.getElementById("ban-banner");
-    if (banner) banner.style.display = "none";
+    if (!banner) return;
+    if (banner.dataset.mode === "restrict") return;
+    banner.style.display = "none";
+    banner.dataset.mode = "";
+  }
+  function applyServerRestrictState(state) {
+    const banner = document.getElementById("ban-banner");
+    if (!banner) return;
+    if (banner.dataset.mode === "ban" && banner.style.display === "block") return;
+    const titleEl = banner.querySelector(".ban-banner-title");
+    const msgEl = document.getElementById("ban-banner-message");
+    const serverOn = !!(state && state.server);
+    const chatOn = !!(state && state.chat);
+    if (!serverOn && !chatOn) {
+      if (banner.dataset.mode === "restrict") {
+        banner.style.display = "none";
+        banner.dataset.mode = "";
+      }
+      return;
+    }
+    let title = "Сервер ограничен";
+    let text = "Вход под ЛК от 30 уровня";
+    if (serverOn) {
+      const leftMs = Math.max(0, (state.serverUntil || 0) - Date.now());
+      if (leftMs > 0) text += "\nОсталось: ~" + Math.ceil(leftMs / 60000) + " мин";
+    } else if (chatOn) {
+      title = "Чат ограничен";
+      text = "Чат под ЛК от 30 уровня";
+      const leftMs = Math.max(0, (state.chatUntil || 0) - Date.now());
+      if (leftMs > 0) text += "\nОсталось: ~" + Math.ceil(leftMs / 60000) + " мин";
+    }
+    if (titleEl) titleEl.textContent = title;
+    if (msgEl) msgEl.textContent = text;
+    banner.dataset.mode = "restrict";
+    banner.style.display = "block";
   }
   function createConnection(S, hooks = {}) {
     function isSpectMode() {
@@ -6170,13 +6207,45 @@ function updateRegionOnlineTotals(totals) {
     const pId = view.getUint16(offset, true);
     offset += 2;
     color = "#" + color;
+    const name = getString();
+    const message = getString();
+    if (typeof message === "string") {
+      if (message.indexOf("§PCLOSE§") === 0) {
+        try {
+          applyServerRestrictState(JSON.parse(message.slice("§PCLOSE§".length)));
+        } catch (_) {}
+        return offset;
+      }
+      if (/НАБОР\s*ЗАВЕРШЕН/i.test(message)) {
+        return offset;
+      }
+      if (/Сервер ограничен/i.test(message)) {
+        applyServerRestrictState({
+          server: 1,
+          chat: 0,
+          minXp: 45000,
+          serverUntil: Date.now() + 30 * 60 * 1000,
+          chatUntil: 0
+        });
+      } else if (/Чат ограничен/i.test(message)) {
+        applyServerRestrictState({
+          server: 0,
+          chat: 1,
+          minXp: 45000,
+          serverUntil: 0,
+          chatUntil: Date.now() + 30 * 60 * 1000
+        });
+      } else if (/Ограничение (входа |чата )?снято/i.test(message)) {
+        applyServerRestrictState(null);
+      }
+    }
     S.chatBoard.push({
       pId,
       playerXp,
       playerLevel: playerXp ? getLevel(playerXp) : -1,
-      name: getString(),
+      name,
       color,
-      message: getString(),
+      message,
       time: formatTime(new Date)
     });
     drawChatBoard(S, hooks);
