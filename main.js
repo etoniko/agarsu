@@ -503,10 +503,11 @@
     bannick: "https://api.agar.su/bannick.txt",
     invisible: "https://api.agar.su/invisible.txt",
     rotation: "https://api.agar.su/rotation.txt",
+    statsbglist: "https://api.agar.su/statsbglist.txt",
     word: "https://api.agar.su/word.txt"
   };
   /** Purchased skins / passes — never cache in browser or nginx. */
-  var NO_CACHE_URLS = new Set([ STATIC_URLS.skinlist, STATIC_URLS.stickerlist, STATIC_URLS.pass, STATIC_URLS.bannick, STATIC_URLS.invisible, STATIC_URLS.rotation ]);
+  var NO_CACHE_URLS = new Set([ STATIC_URLS.skinlist, STATIC_URLS.stickerlist, STATIC_URLS.pass, STATIC_URLS.bannick, STATIC_URLS.invisible, STATIC_URLS.rotation, STATIC_URLS.statsbglist ]);
   var cache = new Map;
   var inflight = new Map;
   var SESSION_PREFIX = "agar_static_v1:";
@@ -709,6 +710,24 @@
   }
   async function loadRotationSet(force = false) {
     return toLowerSet(await fetchStaticText(STATIC_URLS.rotation, force));
+  }
+  async function loadStatsBgMap(force = false) {
+    const text = await fetchStaticText(STATIC_URLS.statsbglist, force).catch(() => "");
+    const map = {};
+    for (const line of String(text || "").split("\n")) {
+      const idx = line.indexOf(":");
+      if (idx < 0) continue;
+      const nick = line.slice(0, idx).trim().toLowerCase();
+      const file = line.slice(idx + 1).trim();
+      if (nick && file) map[nick] = file;
+    }
+    return map;
+  }
+  function statsBgUrlForNick(nickname, statsBgMap) {
+    const lower = String(nickname || "").toLowerCase();
+    const clean = lower.replace(/\[|\]/g, "").trim();
+    const file = (statsBgMap && (statsBgMap[lower] || statsBgMap[clean] || statsBgMap[`[${clean}]`])) || null;
+    return file ? `https://api.agar.su/statsbg/${file}` : null;
   }
   async function loadBadWordsSet(force = false) {
     return toLowerSet(await fetchStaticText(STATIC_URLS.word, force));
@@ -6080,7 +6099,13 @@ function updateRegionOnlineTotals(totals) {
   async function fetchNickPerksLists(S) {
     if (S.nickPerksLists) return S.nickPerksLists;
     try {
-      const [passData, invisible, rotation, skin] = await Promise.all([ loadPassData(), loadInvisibleSet(), loadRotationSet(), loadSkinListMap() ]);
+      const [passData, invisible, rotation, skin, statsBgMap] = await Promise.all([
+        loadPassData(),
+        loadInvisibleSet(),
+        loadRotationSet(),
+        loadSkinListMap(),
+        loadStatsBgMap()
+      ]);
       const skinMap = {};
       for (const [key, val] of Object.entries(skin.obj || {})) {
         skinMap[String(key).toLowerCase()] = val;
@@ -6089,7 +6114,8 @@ function updateRegionOnlineTotals(totals) {
         pass: new Set(passData.passUsers),
         invisible,
         rotation,
-        skinMap
+        skinMap,
+        statsBgMap
       };
     } catch (e) {
       console.error("Ошибка загрузки списков покупок:", e);
@@ -6097,7 +6123,8 @@ function updateRegionOnlineTotals(totals) {
         pass: new Set,
         invisible: new Set,
         rotation: new Set,
-        skinMap: {}
+        skinMap: {},
+        statsBgMap: {}
       };
     }
     return S.nickPerksLists;
@@ -6132,11 +6159,14 @@ function updateRegionOnlineTotals(totals) {
   }
   function getNickPerks(S, nickname, password, lists) {
     const pass = String(password != null ? password : "").trim();
+    const statsBgUrl = statsBgUrlForNick(nickname, lists.statsBgMap || {});
     return {
       hasSkinPass: nickInPublicSet(lists.pass, nickname) || !!pass,
       hasSkin: nickHasPurchasedSkin(S, nickname, lists.skinMap),
       invisible: nickInPublicSet(lists.invisible, nickname),
-      rotation: nickInPublicSet(lists.rotation, nickname)
+      rotation: nickInPublicSet(lists.rotation, nickname),
+      statsBg: !!statsBgUrl,
+      statsBgUrl
     };
   }
   function makePerkBadge(label, active, hoverText, onBuy) {
@@ -6239,10 +6269,15 @@ function updateRegionOnlineTotals(totals) {
       hasSkinPass: false,
       hasSkin: false,
       invisible: false,
-      rotation: false
+      rotation: false,
+      statsBg: false,
+      statsBgUrl: null
     };
     const li = document.createElement("li");
-    li.className = "nick-card";
+    li.className = "nick-card" + (p.statsBgUrl ? " nick-card--statsbg" : "");
+    if (p.statsBgUrl) {
+      li.style.setProperty("--nick-card-bg", `url("${p.statsBgUrl}")`);
+    }
     const skinUrl = getSkinUrlForNick2(S, cleanNick);
     const avatar = skinUrl ? Object.assign(document.createElement("img"), {
       className: "skin",
@@ -6302,6 +6337,8 @@ function updateRegionOnlineTotals(totals) {
       invisible: true
     })), makePerkBadge("Поворот", p.rotation, p.rotation ? null : "Купить", p.rotation ? null : shop({
       rotation: true
+    })), makePerkBadge("Фон статы", p.statsBg, p.statsBg ? "Сменить" : "Купить", shop({
+      statsBg: true
     })));
     body.append(name, perksRow);
     const passBox = makePasswordBox(pass);
@@ -9770,6 +9807,8 @@ onReady(() => {
   });
   var invisibleNickCheckbox = document.getElementById("invisibleNick");
   var rotationNickCheckbox = document.getElementById("rotationNick");
+  var statsBgNickCheckbox = document.getElementById("statsBgNick");
+  var statsBgInput = document.getElementById("statsBgInput");
   passwordInput.addEventListener("input", () => {
     if (passwordInput.value.length > 5) {
       passwordInput.value = passwordInput.value.substring(0, 5);
@@ -9855,10 +9894,13 @@ onReady(() => {
     const nickname = nicknameInput.value.trim();
     const password = passwordInput.value.trim();
     const file = fileInput.files[0];
+    const statsBgFile = statsBgInput && statsBgInput.files[0];
     const multiplier = getMultiplier();
     const buyButton = document.getElementById("buyButton");
     const totalEl = document.getElementById("totalAmount");
-    const hasOrderItem = !!(password || file || invisibleNickCheckbox.checked || rotationNickCheckbox.checked);
+    const wantsStatsBg = !!(statsBgNickCheckbox && statsBgNickCheckbox.checked);
+    const hasStatsBg = wantsStatsBg && !!statsBgFile;
+    const hasOrderItem = !!(password || file || invisibleNickCheckbox.checked || rotationNickCheckbox.checked || hasStatsBg);
     if (!nickname || isNicknameTaken || !hasOrderItem) {
       setReceiptVisible(false);
       buyButton.disabled = true;
@@ -9868,13 +9910,14 @@ onReady(() => {
     const passwordCost = password ? 150 : 0;
     const invisibleCost = invisibleNickCheckbox.checked ? 500 : 0;
     const rotationCost = rotationNickCheckbox.checked ? 500 : 0;
+    const statsBgCost = hasStatsBg ? 100 : 0;
     let skinCost = 0;
     let skinLabel = "Скин";
     if (file) {
       skinCost = file.type === "image/gif" ? 4500 : 150;
       skinLabel = file.type === "image/gif" ? "Скин GIF" : "Скин PNG";
     }
-    const total = (passwordCost + skinCost + invisibleCost + rotationCost) * multiplier;
+    const total = (passwordCost + skinCost + invisibleCost + rotationCost + statsBgCost) * multiplier;
     setReceiptVisible(true);
     document.getElementById("multiplierText").textContent = multiplier === 2 ? "2x" : "1x";
     setPriceRow("passwordCost", "Пароль", password ? `${passwordCost * multiplier} ₽` : "0 ₽");
@@ -9892,6 +9935,15 @@ onReady(() => {
       rotationRow.style.display = "flex";
     } else {
       rotationRow.style.display = "none";
+    }
+    const statsBgRow = document.getElementById("statsBgCost");
+    if (statsBgRow) {
+      if (hasStatsBg) {
+        setPriceRow("statsBgCost", "Фон статистики", `${statsBgCost * multiplier} ₽`);
+        statsBgRow.style.display = "flex";
+      } else {
+        statsBgRow.style.display = "none";
+      }
     }
     if (total > 0) {
       totalEl.textContent = `${total} ₽`;
@@ -9925,8 +9977,8 @@ onReady(() => {
       showError("formError", "Ник занят");
       return;
     }
-    if (!password && !file && !invisibleNickCheckbox.checked && !rotationNickCheckbox.checked) {
-      showError("formError", "Выберите хотя бы пароль или скин для оплаты");
+    if (!password && !file && !invisibleNickCheckbox.checked && !rotationNickCheckbox.checked && !(statsBgNickCheckbox && statsBgNickCheckbox.checked && statsBgInput && statsBgInput.files[0])) {
+      showError("formError", "Выберите хотя бы пароль, скин или фон статистики");
       return;
     }
     openPayStep();
@@ -9943,6 +9995,7 @@ onReady(() => {
     const password = passwordInput.value.trim().toLowerCase();
     const email = getShopEmail();
     const file = fileInput.files[0];
+    const statsBgFile = statsBgInput && statsBgInput.files[0];
     const serviceType = ((_a = document.querySelector('input[name="serviceType"]:checked')) == null ? void 0 : _a.value) || "";
     if (!nickname) {
       showError("formError", "Введите ник/клан.");
@@ -9959,8 +10012,14 @@ onReady(() => {
       emailInput == null ? void 0 : emailInput.focus();
       return;
     }
-    if (!password && !file && !invisibleNickCheckbox.checked && !rotationNickCheckbox.checked) {
-      showError("formError", "Выберите хотя бы пароль или скин для оплаты");
+    const hasStatsBg = !!(statsBgNickCheckbox && statsBgNickCheckbox.checked && statsBgFile);
+    if (statsBgNickCheckbox && statsBgNickCheckbox.checked && !statsBgFile) {
+      showError("formError", "Загрузите картинку фона статистики");
+      closePayStep();
+      return;
+    }
+    if (!password && !file && !invisibleNickCheckbox.checked && !rotationNickCheckbox.checked && !hasStatsBg) {
+      showError("formError", "Выберите хотя бы пароль, скин или фон статистики");
       closePayStep();
       return;
     }
@@ -9976,6 +10035,10 @@ onReady(() => {
     if (password) formData.append("password", password);
     if (invisibleNickCheckbox.checked) formData.append("invisible", "1");
     if (rotationNickCheckbox.checked) formData.append("rotation", "1");
+    if (hasStatsBg) {
+      formData.append("statsbg", "1");
+      formData.append("statsbgImage", statsBgFile, statsBgFile.name);
+    }
     const headers = {};
     if (getAccountToken()) {
       headers["Authorization"] = `Game ${getAccountToken()}`;
@@ -10071,6 +10134,44 @@ onReady(() => {
   });
   invisibleNickCheckbox.addEventListener("change", calculateCost);
   rotationNickCheckbox.addEventListener("change", calculateCost);
+  if (statsBgNickCheckbox) {
+    statsBgNickCheckbox.addEventListener("change", () => {
+      if (statsBgNickCheckbox.checked) {
+        if (statsBgInput && !statsBgInput.files[0]) statsBgInput.click();
+      } else if (statsBgInput) {
+        statsBgInput.value = "";
+      }
+      calculateCost();
+    });
+  }
+  if (statsBgInput) {
+    statsBgInput.addEventListener("change", () => {
+      const file = statsBgInput.files[0];
+      if (!file) {
+        if (statsBgNickCheckbox) statsBgNickCheckbox.checked = false;
+        calculateCost();
+        return;
+      }
+      if (file.size > paymentRules.maxFileSize) {
+        statsBgInput.value = "";
+        if (statsBgNickCheckbox) statsBgNickCheckbox.checked = false;
+        showError("fileError", "Фон слишком большой (макс. 5MB)");
+        calculateCost();
+        return;
+      }
+      const okTypes = ["image/png", "image/jpeg", "image/webp", "image/gif"];
+      if (!okTypes.includes(file.type)) {
+        statsBgInput.value = "";
+        if (statsBgNickCheckbox) statsBgNickCheckbox.checked = false;
+        showError("fileError", "Фон: только PNG, JPG, WEBP или GIF");
+        calculateCost();
+        return;
+      }
+      if (statsBgNickCheckbox) statsBgNickCheckbox.checked = true;
+      hideError("fileError");
+      calculateCost();
+    });
+  }
   window.addEventListener("storage", event => {
     if (event.key === "accountToken") updateShopAuthNotice();
   });
@@ -10090,6 +10191,7 @@ onReady(() => {
     isNicknameTaken = false;
     invisibleNickCheckbox.checked = !!options.invisible;
     rotationNickCheckbox.checked = !!options.rotation;
+    if (statsBgNickCheckbox) statsBgNickCheckbox.checked = !!options.statsBg;
     if (options.focusPassword) {
       passwordInput.focus();
     } else {
@@ -10098,6 +10200,9 @@ onReady(() => {
     }
     if (options.focusSkin) {
       fileInput.click();
+    }
+    if (options.statsBg && statsBgInput) {
+      statsBgInput.click();
     }
     calculateCost();
     nicknameInput.scrollIntoView({

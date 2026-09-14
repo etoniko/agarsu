@@ -91,11 +91,17 @@ const UPLOAD_DIR = path.join(process.cwd(), "upload");
 const SKINS_DIR = path.join(process.cwd(), "public/skins");
 const INVISIBLE_FILE = path.join(process.cwd(), "public/invisible.txt");
 const ROTATION_FILE = path.join(process.cwd(), "public/rotation.txt");
+const STATSBG_DIR = path.join(process.cwd(), "public/statsbg");
+const STATSBG_LIST_FILE = path.join(process.cwd(), "public/statsbglist.txt");
 const ID_JSON_FILE = path.join(process.cwd(), "id.json");
 
 
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR);
 if (!fs.existsSync(SKINS_DIR)) fs.mkdirSync(SKINS_DIR);
+if (!fs.existsSync(STATSBG_DIR)) fs.mkdirSync(STATSBG_DIR);
+if (!fs.existsSync(STATSBG_LIST_FILE)) {
+  fs.writeFileSync(STATSBG_LIST_FILE, "", "utf-8");
+}
 if (!fs.existsSync(PENDING_FILE)) {
   fs.writeFileSync(PENDING_FILE, JSON.stringify([], null, 2), "utf-8");
 }
@@ -897,23 +903,43 @@ app.get("/api/avatar", async (req, res) => {
 });
 
 // === НОВАЯ ЛОГИКА: Покупка без авторизации ===
-app.post("/create-payment", upload.single("image"), async (req, res) => {
+app.post("/create-payment", upload.fields([
+  { name: "image", maxCount: 1 },
+  { name: "statsbgImage", maxCount: 1 },
+]), async (req, res) => {
   try {
     const { name, password, email: rawEmail } = req.body;
     const email = String(rawEmail || "").trim().toLowerCase();
     const invisible = req.body.invisible === "1";
 	const rotation = req.body.rotation === "1";
-    const file = req.file;
+    const statsbgWanted = req.body.statsbg === "1";
+    const file = req.files?.image?.[0] || null;
+    const statsBgFile = req.files?.statsbgImage?.[0] || null;
+    const statsbg = statsbgWanted || !!statsBgFile;
     const token = getValidAuthToken(req.headers.authorization);
     let uid = null;
+
+    const unlinkUploads = () => {
+      for (const f of [file, statsBgFile]) {
+        if (!f?.path) continue;
+        try { fs.unlinkSync(f.path); } catch {}
+      }
+    };
 
 if (file) {
   const filePath = path.join(UPLOAD_DIR, file.filename);
   
   // Проверка: файл существует и не пустой
   if (!fs.existsSync(filePath) || fs.statSync(filePath).size === 0) {
-    if (file) fs.unlinkSync(filePath);
+    unlinkUploads();
     return res.status(400).json({ error: "Файл не загрузился, попробуйте ещё раз" });
+  }
+}
+if (statsBgFile) {
+  const bgPath = path.join(UPLOAD_DIR, statsBgFile.filename);
+  if (!fs.existsSync(bgPath) || fs.statSync(bgPath).size === 0) {
+    unlinkUploads();
+    return res.status(400).json({ error: "Фон не загрузился, попробуйте ещё раз" });
   }
 }
 
@@ -927,7 +953,7 @@ if (file) {
         );
       });
       if (!result || result.length !== 1) {
-        if (file) fs.unlinkSync(file.path);
+        unlinkUploads();
         return res.status(401).json({ error: "Неверный токен" });
       }
       uid = String(result[0].uid);
@@ -935,19 +961,30 @@ if (file) {
 
     // === Валидация входных данных ===
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      if (file) fs.unlinkSync(file.path);
+      unlinkUploads();
       return res.status(400).json({ error: "Введите корректный email" });
     }
-    if (!name) return res.status(400).json({ error: "Введите ник" });
-    if (!password && !file && !invisible && !rotation)
-      return res.status(400).json({ error: "Выберите хотя бы пароль или скин" });
-    if (password && password.length > 5)
+    if (!name) {
+      unlinkUploads();
+      return res.status(400).json({ error: "Введите ник" });
+    }
+    if (!password && !file && !invisible && !rotation && !statsbg) {
+      unlinkUploads();
+      return res.status(400).json({ error: "Выберите хотя бы пароль, скин или фон статистики" });
+    }
+    if (statsbg && !statsBgFile) {
+      unlinkUploads();
+      return res.status(400).json({ error: "Загрузите картинку фона статистики" });
+    }
+    if (password && password.length > 5) {
+      unlinkUploads();
       return res.status(400).json({ error: "Пароль до 5 символов" });
+    }
 
     const nameOk = isAllowedNickname(name, true);
     const passwordOk = !password || isAllowedNickname(password);
     if (!nameOk || !passwordOk) {
-      if (file) fs.unlinkSync(file.path);
+      unlinkUploads();
       return res.status(400).json({ error: "Ник содержит недопустимые символы" });
     }
 
@@ -955,7 +992,7 @@ if (file) {
     const nicknameLower = nickKey(nickname);
     const regex = /^\[[^\[\]]+\]$/;
     if (nickname.includes("[") && !regex.test(nickname)) {
-      if (file) fs.unlinkSync(file.path);
+      unlinkUploads();
       return res.status(400).json({ error: "Некорректный ник. Допустим только формат [тег]" });
     }
 
@@ -972,13 +1009,14 @@ if (file) {
 
     // Если ник занят и НЕ твой — запрещаем
     if (isTakenGlobally && !isOwnNickname) {
-      if (file) fs.unlinkSync(file.path);
+      unlinkUploads();
       return res.status(400).json({ error: "Этот ник уже занят" });
     }
 
     // === Расчёт цены ===
     let price = 0;
     let ext = null;
+    let statsBgExt = null;
     const receiptParts = [];
 
     if (file) {
@@ -990,8 +1028,8 @@ if (file) {
         price += 4500;
         receiptParts.push("Скин GIF");
       } else {
-        fs.unlinkSync(file.path);
-        return res.status(400).json({ error: "Неверный формат файла" });
+        unlinkUploads();
+        return res.status(400).json({ error: "Неверный формат файла скина" });
       }
     }
     if (password) {
@@ -1005,6 +1043,16 @@ if (file) {
 	if (rotation) {
       price += 500;
       receiptParts.push("Поворот скина");
+    }
+    if (statsbg && statsBgFile) {
+      statsBgExt = statsBgFile.originalname.split(".").pop().toLowerCase();
+      if (!["png", "jpg", "jpeg", "webp", "gif"].includes(statsBgExt)) {
+        unlinkUploads();
+        return res.status(400).json({ error: "Фон: только PNG, JPG, WEBP или GIF" });
+      }
+      if (statsBgExt === "jpeg") statsBgExt = "jpg";
+      price += 100;
+      receiptParts.push("Фон статистики");
     }
     if (regex.test(nickname)) price *= 2;
     price = Number(price).toFixed(2);
@@ -1022,6 +1070,7 @@ if (file) {
       description: receiptDescription,
     });
     const internalId = Math.round(Math.random() * 1e9);
+    const statsBgInternalId = Math.round(Math.random() * 1e9);
 
     // Сохраняем в pending
     const tempData = {
@@ -1030,6 +1079,10 @@ if (file) {
       file: file ? file.filename : null,
       ext,
       internal_id: internalId,
+      statsbg: !!statsbg,
+      statsbg_file: statsBgFile ? statsBgFile.filename : null,
+      statsbg_ext: statsBgExt,
+      statsbg_internal_id: statsBgFile ? statsBgInternalId : null,
       payment_id: paymentId,          // совпадает с тем, что придёт в MERCHANT_ORDER_ID
       uid: uid || null,
       invisible: invisible,
@@ -1054,8 +1107,10 @@ if (file) {
 
   } catch (err) {
     console.error("Ошибка в /create-payment:", err);
-    if (req.file) {
-      try { fs.unlinkSync(req.file.path); } catch {}
+    for (const f of [req.files?.image?.[0], req.files?.statsbgImage?.[0]]) {
+      if (f?.path) {
+        try { fs.unlinkSync(f.path); } catch {}
+      }
     }
     res.status(500).json({ error: "Ошибка сервера" });
   }
@@ -1167,6 +1222,32 @@ function fulfillPayment(paymentId, meta = {}) {
     }
   }
 
+  if (pendingItem.statsbg && pendingItem.statsbg_file && pendingItem.statsbg_ext) {
+    if (!fs.existsSync(STATSBG_DIR)) fs.mkdirSync(STATSBG_DIR, { recursive: true });
+    const oldPath = path.join(UPLOAD_DIR, pendingItem.statsbg_file);
+    const fileName = `${pendingItem.statsbg_internal_id}.${pendingItem.statsbg_ext}`;
+    const newPath = path.join(STATSBG_DIR, fileName);
+    if (fs.existsSync(oldPath)) fs.renameSync(oldPath, newPath);
+
+    let bglist = [];
+    if (fs.existsSync(STATSBG_LIST_FILE)) {
+      bglist = fs.readFileSync(STATSBG_LIST_FILE, "utf-8").split("\n").filter(Boolean);
+    }
+    let replaced = false;
+    bglist = bglist.map((line) => {
+      const idx = line.indexOf(":");
+      if (idx < 0) return line;
+      const nick = line.slice(0, idx);
+      if (nicksEqual(nick, pendingItem.nickname)) {
+        replaced = true;
+        return `${pendingItem.nickname}:${fileName}`;
+      }
+      return line;
+    });
+    if (!replaced) bglist.push(`${pendingItem.nickname}:${fileName}`);
+    safeWriteLines(STATSBG_LIST_FILE, bglist, { label: "statsbglist.txt" });
+  }
+
   if (pendingItem.uid && pendingItem.nickname) {
     addNicknameToId(pendingItem.uid, pendingItem.nickname);
   }
@@ -1181,9 +1262,14 @@ function fulfillPayment(paymentId, meta = {}) {
     has_skin: !!pendingItem.file,
     skin_file: pendingItem.file ? `https://api.agar.su/skins/${pendingItem.internal_id}.${pendingItem.ext}` : null,
     skin_ext: pendingItem.ext || null,
+    has_statsbg: !!pendingItem.statsbg,
+    statsbg_file: pendingItem.statsbg_file
+      ? `https://api.agar.su/statsbg/${pendingItem.statsbg_internal_id}.${pendingItem.statsbg_ext}`
+      : null,
     uid: pendingItem.uid,
     invisible: pendingItem.invisible,
     rotation: pendingItem.rotation,
+    statsbg: !!pendingItem.statsbg,
     email: pendingItem.email || null,
     ip: pendingItem.ip,
     timestamp: new Date().toISOString()

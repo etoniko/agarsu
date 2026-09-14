@@ -5,6 +5,8 @@ window.STATS_API = "https://api.agar.su/stats-api";
 window.SKINLIST_URL = "https://api.agar.su/skinlist.txt";
 window.SKINS_BASE = "https://api.agar.su/skins";
 window.DEFAULT_SKIN_URL = "https://api.agar.su/skins/4.png";
+window.STATSBGLIST_URL = "https://api.agar.su/statsbglist.txt";
+window.STATSBG_BASE = "https://api.agar.su/statsbg";
 
 /** Корень stats/ — через pathname, без ложных совпадений с C:/Users/ */
 window.statsBaseUrl = function () {

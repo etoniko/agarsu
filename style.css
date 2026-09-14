@@ -701,6 +701,12 @@ i:hover{cursor:pointer;}
       margin-bottom: 4px;
       background: rgba(255,255,255,0.015);
     }
+    #myNicknamesBlock .list li.nick-card.nick-card--statsbg {
+      background:
+        linear-gradient(105deg, rgba(8, 12, 22, 0.82), rgba(8, 12, 22, 0.55)),
+        var(--nick-card-bg) center / cover no-repeat;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
     #myNicknamesBlock .list li.nick-card:last-child { margin-bottom: 0; }
     #myNicknamesBlock .nick-card-body {
       flex: 1;
