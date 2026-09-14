@@ -10415,16 +10415,15 @@ onReady(() => {
     const frag = document.createDocumentFragment();
     (xstats || []).forEach(player => {
       const level = getLevel2(player.xp);
-      const avatar = resolveAccountAvatar(player.account_avatar);
-      const uid = player.uid != null ? String(player.uid) : "";
-      const name = escapeHtmlRating(player.account_name || "—");
+      const uid = player.uid != null ? String(player.uid) : "—";
       const playerDiv = document.createElement("div");
       playerDiv.classList.add("top-player");
+      // только игровой ID — без ФИО/никнеймов соцсетей
       playerDiv.innerHTML =
         `<div class="time">${player.position}</div>` +
-        `<div class="nick">${name}${uid ? `<span class="account-uid">ID ${escapeHtmlRating(uid)}</span>` : ""}</div>` +
+        `<div class="nick"><span class="account-uid">ID ${escapeHtmlRating(uid)}</span></div>` +
         `<div class="score">${level}</div>` +
-        `<div class="skkinn"><img src="${avatar.replace(/"/g, "%22")}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"></div>`;
+        `<div class="skkinn"><img src="${SKIN_FALLBACK_URL}" alt="" loading="lazy" decoding="async"></div>`;
       frag.appendChild(playerDiv);
     });
     container.innerHTML = "";

@@ -857,19 +857,17 @@ app.get("/api/me/logout", (req, res) => {
 
 app.get("/api/top100", (req, res) => {
   const query = `
-        SELECT uid, account_name, account_avatar, xp
+        SELECT uid, xp
         FROM ${TABLE_NAME}
         ORDER BY xp DESC
         LIMIT 100
     `;
   mysqlConnection.query(query, (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
-    // прямые URL аватаров — без /api/avatar на каждую строку (иначе топ грузится очень долго)
+    // без имён/аватаров соцсетей — только игровой uid
     const top100 = results.map((user, index) => ({
       position: index + 1,
       uid: user.uid,
-      account_name: user.account_name,
-      account_avatar: user.account_avatar || null,
       xp: user.xp,
     }));
     res.set("Cache-Control", "public, max-age=60");
