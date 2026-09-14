@@ -174,10 +174,9 @@
     </div>
   </div>
 
-  <script>window.STATS_API="https://api.agar.su/stats-api";window.SKINLIST_URL="https://api.agar.su/skinlist.txt";window.SKINS_BASE="https://api.agar.su/skins";window.DEFAULT_SKIN_URL="https://api.agar.su/skins/4.png";</script>
-  <script src="https://agar.su/stats/config.js?v=5"></script>
+  <script src="../config.js"></script>
   <script>
-    const API = window.STATS_API || "https://api.agar.su/stats-api";
+    const API = window.STATS_API || "https://agar.su/stats-api";
     const REFRESH_MS = window.STATS_REFRESH_MS || 300000;
     const TOP_COLLAPSED = 10;
     const profileUrl = window.statsProfileUrl;
@@ -215,14 +214,14 @@
     function nickCell(row) {
       const label = esc(row.nick);
       return row.id
-        ? `<a href="${esc(profileUrl(row.id, state.period))}" class="nick-link">${label}</a>`
+        ? `<a href="${esc(profileUrl(row.id))}" class="nick-link">${label}</a>`
         : label;
     }
 
     function clanCell(row) {
       const label = esc(row.clan);
       return row.id
-        ? `<a href="${esc(clanProfileUrl(row.id, state.period))}" class="nick-link clan-tag">${label}</a>`
+        ? `<a href="${esc(clanProfileUrl(row.id))}" class="nick-link clan-tag">${label}</a>`
         : `<span class="clan-tag">${label}</span>`;
     }
 

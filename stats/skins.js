@@ -1,6 +1,6 @@
 (function () {
-  const SKINLIST_URL = window.SKINLIST_URL || "https://api.agar.su/skinlist.txt";
-  const SKINS_BASE = (window.SKINS_BASE || "https://api.agar.su/skins").replace(/\/$/, "");
+  const SKINLIST_URL = window.SKINLIST_URL || "https://agar.su/skinlist.txt";
+  const SKINS_BASE = (window.SKINS_BASE || "https://agar.su/skins").replace(/\/$/, "");
   const DEFAULT_SKIN = window.DEFAULT_SKIN_URL || SKINS_BASE + "/4.png";
   const STRIP_MS = 100;
   const STRIP_SELECTOR = ".avatar, img.avatar, .skin-avatar";
@@ -68,7 +68,7 @@
   async function loadSkins(force) {
     if (!force && skinMap) return skinMap;
     if (!force && loadPromise) return loadPromise;
-    loadPromise = fetch(SKINLIST_URL, { cache: "no-store" })
+    loadPromise = fetch(SKINLIST_URL + "?v=" + Date.now(), { cache: "no-store" })
       .then((r) => {
         if (!r.ok) throw new Error("skinlist");
         return r.text();
