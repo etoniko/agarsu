@@ -4603,6 +4603,7 @@ import { drawCellGL } from '../render/cell-draw-gl.js';
   var STATS_PROFILE_BASE = "https://agar.su/stats/users/?id=";
   var STATS_CLAN_PROFILE_BASE = "https://agar.su/stats/clans/?id=";
   var STATS_RECORDS_FEED = STATS_API + "/api/records/feed";
+  var STATS_FEED_ENABLED = false;
   var STATS_FEED_POLL_MS = 10000;
   var STATS_FEED_STORAGE_KEY = "agar_stats_feed_since";
 
@@ -4699,6 +4700,7 @@ import { drawCellGL } from '../render/cell-draw-gl.js';
   }
 
   function startStatsRecordFeed(S, hooks) {
+    if (!STATS_FEED_ENABLED) return;
     if (S.__statsFeedStarted) return;
     S.__statsFeedStarted = true;
     let sinceId = "";
@@ -5152,7 +5154,6 @@ function updateRegionOnlineTotals(totals) {
   }
 
   function installGlobalRatingHome(S) {
-    let loadGlobalRatingTimer = null;
     let lastGlobalRatingKey = "";
     const ratingHome = document.getElementById("ratinghome");
     updateOfficialStatsVisibility(S);
@@ -5167,11 +5168,11 @@ function updateRegionOnlineTotals(totals) {
     function currentHomePeriod() {
       return (homePeriodSelect && homePeriodSelect.value) || "alltime";
     }
-    function loadGlobalRatingHome() {
+    function loadGlobalRatingHome(force) {
       updateOfficialStatsVisibility(S);
       const period = currentHomePeriod();
       fetch(STATS_API + "/rankings?limit=3&period=" + encodeURIComponent(period) + "&metric=points", {
-        cache: "no-store"
+        cache: "default"
       }).then(res => res.ok ? res.json() : Promise.reject()).then(data => {
         const key = JSON.stringify({
           period,
@@ -5179,7 +5180,7 @@ function updateRegionOnlineTotals(totals) {
           c: data.clans,
           u: data.updatedAt
         });
-        if (key === lastGlobalRatingKey) return;
+        if (!force && key === lastGlobalRatingKey) return;
         lastGlobalRatingKey = key;
         return refreshGlobalRatingHome(S, data);
       }).catch(e => console.error("Global rating load error:", e));
@@ -5187,30 +5188,11 @@ function updateRegionOnlineTotals(totals) {
     if (homePeriodSelect) {
       homePeriodSelect.addEventListener("change", () => {
         lastGlobalRatingKey = "";
-        loadGlobalRatingHome();
+        loadGlobalRatingHome(true);
       });
     }
-    function scheduleLoadGlobalRatingHome() {
-      clearTimeout(loadGlobalRatingTimer);
-      loadGlobalRatingTimer = setTimeout(() => {
-        loadGlobalRatingTimer = null;
-        if (isOverlaysVisible()) loadGlobalRatingHome();
-      }, 300);
-    }
-    if (isOverlaysVisible()) {
-      loadGlobalRatingHome();
-    }
-    const overlayEl = document.getElementById("overlays");
-    if (overlayEl) {
-      const observer = new MutationObserver(() => scheduleLoadGlobalRatingHome());
-      observer.observe(overlayEl, {
-        attributes: true,
-        attributeFilter: [ "style" ]
-      });
-    }
-    setInterval(() => {
-      if (isOverlaysVisible()) loadGlobalRatingHome();
-    }, 3e5);
+    window.__agarsuRefreshHomeRating = () => loadGlobalRatingHome(true);
+    loadGlobalRatingHome(true);
   }
   function setActiveFromHash(S) {
     const hash = location.hash.replace("#", "") || "ffa";
@@ -9568,19 +9550,7 @@ onReady(() => {
     if (isEmbedMode()) {
       document.documentElement.classList.add("agarsu-embed");
     }
-    const run = () => {
-      setupYandexAds();
-      if (!isAuthorized()) {
-        setupMailRuCounter();
-      }
-    };
-    if (typeof requestIdleCallback === "function") {
-      requestIdleCallback(run, {
-        timeout: 2500
-      });
-    } else {
-      setTimeout(run, 1200);
-    }
+    // Яндекс/Mail.ru отключены
   }
   function loadScript2(src) {
     return new Promise((resolve, reject) => {

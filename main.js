@@ -5345,6 +5345,8 @@
   var STATS_PROFILE_BASE = "https://agar.su/stats/users/?id=";
   var STATS_CLAN_PROFILE_BASE = "https://agar.su/stats/clans/?id=";
   var STATS_RECORDS_FEED = STATS_API + "/api/records/feed";
+  // feed раньше поллился каждые 10с на главной — лишний трафик; рекорды смотреть на /stats
+  var STATS_FEED_ENABLED = false;
   var STATS_FEED_POLL_MS = 10000;
   var STATS_FEED_STORAGE_KEY = "agar_stats_feed_since";
 
@@ -5441,6 +5443,7 @@
   }
 
   function startStatsRecordFeed(S, hooks) {
+    if (!STATS_FEED_ENABLED) return;
     if (S.__statsFeedStarted) return;
     S.__statsFeedStarted = true;
     let sinceId = "";
@@ -5898,7 +5901,6 @@ function updateRegionOnlineTotals(totals) {
   }
 
   function installGlobalRatingHome(S) {
-    let loadGlobalRatingTimer = null;
     let lastGlobalRatingKey = "";
     const ratingHome = document.getElementById("ratinghome");
     updateOfficialStatsVisibility(S);
@@ -5913,25 +5915,19 @@ function updateRegionOnlineTotals(totals) {
     function currentHomePeriod() {
       return (homePeriodSelect && homePeriodSelect.value) || "alltime";
     }
-    function isHomePanelActive() {
-      const home = document.getElementById("home");
-      return !!(home && home.classList.contains("active"));
-    }
-    function loadGlobalRatingHome() {
-      if (!isOverlaysVisible() || !isHomePanelActive()) return;
+    function loadGlobalRatingHome(force) {
       updateOfficialStatsVisibility(S);
       const period = currentHomePeriod();
       fetch(STATS_API + "/rankings?limit=3&period=" + encodeURIComponent(period) + "&metric=points", {
         cache: "default"
       }).then(res => res.ok ? res.json() : Promise.reject()).then(data => {
-        if (!isHomePanelActive()) return;
         const key = JSON.stringify({
           period,
           p: data.players,
           c: data.clans,
           u: data.updatedAt
         });
-        if (key === lastGlobalRatingKey) return;
+        if (!force && key === lastGlobalRatingKey) return;
         lastGlobalRatingKey = key;
         return refreshGlobalRatingHome(S, data);
       }).catch(e => console.error("Global rating load error:", e));
@@ -5939,32 +5935,12 @@ function updateRegionOnlineTotals(totals) {
     if (homePeriodSelect) {
       homePeriodSelect.addEventListener("change", () => {
         lastGlobalRatingKey = "";
-        loadGlobalRatingHome();
+        loadGlobalRatingHome(true);
       });
     }
-    function scheduleLoadGlobalRatingHome() {
-      clearTimeout(loadGlobalRatingTimer);
-      loadGlobalRatingTimer = setTimeout(() => {
-        loadGlobalRatingTimer = null;
-        loadGlobalRatingHome();
-      }, 400);
-    }
-    window.__agarsuRefreshHomeRating = scheduleLoadGlobalRatingHome;
-    // только когда открыт Home в меню — не тянем rankings при старте на других вкладках
-    if (isOverlaysVisible() && isHomePanelActive()) {
-      scheduleLoadGlobalRatingHome();
-    }
-    const overlayEl = document.getElementById("overlays");
-    if (overlayEl) {
-      const observer = new MutationObserver(() => scheduleLoadGlobalRatingHome());
-      observer.observe(overlayEl, {
-        attributes: true,
-        attributeFilter: [ "style" ]
-      });
-    }
-    setInterval(() => {
-      loadGlobalRatingHome();
-    }, 3e5);
+    window.__agarsuRefreshHomeRating = () => loadGlobalRatingHome(true);
+    // один раз при загрузке системы (+ смена периода) — без MutationObserver и без 5-мин поллинга
+    loadGlobalRatingHome(true);
   }
   function setActiveFromHash(S) {
     const hash = location.hash.replace("#", "") || "ffa";
@@ -10470,10 +10446,17 @@ onReady(() => {
     fetchTop100();
   }
   function initVkAuthModule() {
-    var _a;
     const PKCE_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-";
     const VK_VERIFIER_KEY = "vk_code_verifier";
     const VK_STATE_KEY = "vk_state";
+    const OAUTH_MAP = {
+      vk: "VK",
+      mail: "MAIL",
+      ok: "OK"
+    };
+    let authBusy = false;
+    let configReady = false;
+
     function randomString(len) {
       const bytes = new Uint8Array(len);
       crypto.getRandomValues(bytes);
@@ -10523,19 +10506,33 @@ onReady(() => {
         } catch (e) {}
       }
     }
+    function setAuthHint(text, show) {
+      const hint = document.getElementById("socAuthHint");
+      if (!hint) return;
+      if (text) hint.textContent = text;
+      hint.hidden = !show;
+    }
+    function setButtonsBusy(busy) {
+      authBusy = busy;
+      document.querySelectorAll(".soc-auth-btn").forEach(btn => {
+        btn.disabled = !!busy;
+      });
+    }
     function vkidOnError(error) {
       console.error("VK ID error:", error);
-      const msg = (error == null ? void 0 : error.error_description) || (error == null ? void 0 : error.error) || (error == null ? void 0 : error.text) || (typeof error === "string" ? error : "Ошибка входа VK");
-      alert("VK: " + msg);
+      setButtonsBusy(false);
+      setAuthHint("", false);
+      const msg = (error == null ? void 0 : error.error_description) || (error == null ? void 0 : error.error) || (error == null ? void 0 : error.text) || (typeof error === "string" ? error : "Ошибка входа");
+      alert("Вход: " + msg);
     }
     function sendCodeToServer(code, deviceId) {
       const {codeVerifier, state} = readPkce();
       if (!codeVerifier || !state) {
-        alert("VK: сессия истекла, обновите страницу");
+        alert("Вход: сессия истекла, обновите страницу");
         return;
       }
       if (typeof window.onVkAuth !== "function") {
-        alert("VK: страница ещё не готова, обновите и попробуйте снова");
+        alert("Вход: страница ещё не готова, обновите и попробуйте снова");
         return;
       }
       clearPkce();
@@ -10546,20 +10543,13 @@ onReady(() => {
         state
       });
     }
-    function initVkAuth() {
+    function handleAuthPayload(payload) {
+      if (!payload || !payload.code) return;
+      sendCodeToServer(payload.code, payload.device_id);
+    }
+    function ensureVkConfig(VKID) {
       var _a2;
-      if (!("VKIDSDK" in window)) return;
-      const VKID = window.VKIDSDK;
-      const container = document.getElementById("VkIdSdkOAuthList") || document.getElementById("VkIdSdkOneTap");
-      if (!container) return;
-      const urlParams = new URLSearchParams(window.location.search);
-      const codeFromUrl = urlParams.get("code");
-      const deviceFromUrl = urlParams.get("device_id");
-      if (codeFromUrl && deviceFromUrl) {
-        sendCodeToServer(codeFromUrl, deviceFromUrl);
-        window.history.replaceState({}, "", window.location.pathname + window.location.hash);
-        return;
-      }
+      if (configReady && window.VKIDSDK) return true;
       const codeVerifier = randomString(64);
       const state = randomString(32);
       persistPkce(codeVerifier, state);
@@ -10577,6 +10567,14 @@ onReady(() => {
         config.mode = VKID.ConfigAuthMode.Redirect;
       }
       VKID.Config.init(config);
+      configReady = true;
+      return true;
+    }
+    function showFallbackWidget(VKID) {
+      const container = document.getElementById("VkIdSdkOAuthList");
+      if (!container || container.dataset.rendered === "1") return;
+      container.hidden = false;
+      container.dataset.rendered = "1";
       const oauthListNames = [ VKID.OAuthName.VK, VKID.OAuthName.MAIL, VKID.OAuthName.OK ];
       (new VKID.OAuthList).render({
         container,
@@ -10588,14 +10586,72 @@ onReady(() => {
           borderRadius: 8
         }
       }).on(VKID.WidgetEvents.ERROR, vkidOnError).on(VKID.OAuthListInternalEvents.LOGIN_SUCCESS, function(payload) {
-        sendCodeToServer(payload.code, payload.device_id);
+        handleAuthPayload(payload);
       });
     }
-    if ("VKIDSDK" in window) {
-      initVkAuth();
-    } else {
-      (_a = document.querySelector('script[src*="vkid-sdk"]')) == null ? void 0 : _a.addEventListener("load", initVkAuth);
+    async function startOAuth(providerKey) {
+      if (authBusy) return;
+      if (isEmbedMode()) {
+        alert("Вход недоступен во встроенном режиме");
+        return;
+      }
+      setButtonsBusy(true);
+      setAuthHint("Загрузка входа…", true);
+      try {
+        const ok = await ensureVkSdk();
+        if (!ok || !window.VKIDSDK) {
+          setAuthHint("Не удалось загрузить SDK", true);
+          setButtonsBusy(false);
+          return;
+        }
+        const VKID = window.VKIDSDK;
+        ensureVkConfig(VKID);
+        const oauthKey = OAUTH_MAP[providerKey] || "VK";
+        const provider = VKID.OAuthName && VKID.OAuthName[oauthKey];
+        setAuthHint("Открываем окно входа…", true);
+        if (typeof VKID.Auth.login === "function") {
+          const opts = provider ? {
+            provider
+          } : undefined;
+          const result = VKID.Auth.login(opts);
+          if (result && typeof result.then === "function") {
+            result.then(handleAuthPayload).catch(vkidOnError).finally(() => {
+              setButtonsBusy(false);
+              setAuthHint("", false);
+            });
+            return;
+          }
+        }
+        // fallback: виджет 3-в-1 от SDK
+        showFallbackWidget(VKID);
+        setAuthHint("Выберите способ входа ниже", true);
+        setButtonsBusy(false);
+      } catch (err) {
+        vkidOnError(err);
+      }
     }
+    function bindSocButtons() {
+      const root = document.getElementById("socAuthBtns");
+      if (!root || root.dataset.bound === "1") return;
+      root.dataset.bound = "1";
+      root.addEventListener("click", ev => {
+        const btn = ev.target && ev.target.closest ? ev.target.closest("[data-oauth]") : null;
+        if (!btn) return;
+        ev.preventDefault();
+        startOAuth(btn.getAttribute("data-oauth") || "vk");
+      });
+    }
+    function consumeRedirectCode() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const codeFromUrl = urlParams.get("code");
+      const deviceFromUrl = urlParams.get("device_id");
+      if (codeFromUrl && deviceFromUrl) {
+        sendCodeToServer(codeFromUrl, deviceFromUrl);
+        window.history.replaceState({}, "", window.location.pathname + window.location.hash);
+      }
+    }
+    bindSocButtons();
+    consumeRedirectCode();
   }
   window.initVkAuthModule = initVkAuthModule;
   function isEmbedMode() {
@@ -10630,22 +10686,6 @@ onReady(() => {
       document.head.appendChild(s);
     });
   }
-  function setupYandexAds() {
-    // Banners disabled — keep empty layout slots (.add-yandex / .death)
-    window.renderDeathBanner = function() {};
-    return Promise.resolve();
-  }
-  function setupMailRuCounter() {
-    window._tmr = window._tmr || [];
-    window._tmr.push({
-      id: "3773988",
-      type: "pageView",
-      start: (new Date).getTime()
-    });
-    return loadScript("https://top-fwz1.mail.ru/js/code.js", {
-      id: "tmr-code"
-    }).catch(() => {});
-  }
   function scheduleDeferredExternals() {
     if (!window.renderDeathBanner) {
       window.renderDeathBanner = function() {};
@@ -10653,19 +10693,7 @@ onReady(() => {
     if (isEmbedMode()) {
       document.documentElement.classList.add("agarsu-embed");
     }
-    const run = () => {
-      setupYandexAds();
-      if (!isAuthorized()) {
-        setupMailRuCounter();
-      }
-    };
-    if (typeof requestIdleCallback === "function") {
-      requestIdleCallback(run, {
-        timeout: 2500
-      });
-    } else {
-      setTimeout(run, 1200);
-    }
+    // Яндекс/Mail.ru счётчики и реклама отключены — без лишнего трафика
   }
   function loadScript2(src) {
     return new Promise((resolve, reject) => {
@@ -10700,12 +10728,10 @@ onReady(() => {
   async function boot() {
     window.renderDeathBanner = window.renderDeathBanner || function() {};
     hydrateAccountToken();
-    const vkOk = await ensureVkSdk();
+    // VK SDK грузим только по клику на кнопку входа — не на каждый визит
+    initVkAuthModule();
     initGame(window);
     initLobbyUi();
-    if (vkOk) {
-      initVkAuthModule();
-    }
     bus.emit(Events.SHOW_CONTENT, {
       id: "home"
     });

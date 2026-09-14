@@ -12,37 +12,16 @@
     <meta property="og:image" content="https://agar.su/photo/og.png?1">
     <meta property="og:url" content="https://agar.su">
     <meta property="og:type" content="website">
-	<meta name="yandex-verification" content="a454c4468218ca1c" />
     <title data-en="Agar.io - total clone .su" data-tr="Agar.su - Çevrimiçi Oyna" data-zh="Agar.su - 在线游戏" data-ar="Agar.su - العب عبر الإنترنت" data-es="Agar.su - Jugar en línea" data-pl="Agar.su - Graj online" data-de="Agar.su - Online spielen" data-uk="Agar.su - Гра онлайн">Agar.su - Игра Онлайн</title>
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="canonical" href="https://agar.su">
     <link rel="stylesheet" href="/fonts/fonts.css?v=1">
-    <link rel="stylesheet" href="style.css?v=16">
+    <link rel="stylesheet" href="style.css?v=18">
     <script>
       window.renderDeathBanner = window.renderDeathBanner || function () {};
-      window.yaContextCb = window.yaContextCb || [];
+      window.trackPlayGoal = window.trackPlayGoal || function () {};
     </script>
-    <!-- Yandex.Metrika counter -->
-    <script type="text/javascript">
-      (function(m,e,t,r,i,k,a){
-        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
-        m[i].l=1*new Date();
-        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
-        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
-      })(window, document,'script','https://mc.yandex.ru/metrika/tag.js', 'ym');
-      ym(102289504, 'init', {clickmap:true, trackLinks:true, accurateTrackBounce:true, webvisor:true});
-      // Цель «Играть» — 1 раз на браузер (localStorage), чтобы постоянные игроки не накручивали конверсии
-      window.trackPlayGoal = function () {
-        try {
-          if (localStorage.getItem('ym_play_goal')) return;
-          ym(102289504, 'reachGoal', 'play');
-          localStorage.setItem('ym_play_goal', '1');
-        } catch (e) {}
-      };
-    </script>
-    <noscript><div><img src="https://mc.yandex.ru/watch/102289504" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
-    <!-- /Yandex.Metrika counter -->
-    
+
 <style id="i18n-lang-style">
   .lang-selector{align-items:flex-start;}
   .lang-flags{display:flex;flex-wrap:wrap;gap:6px;max-width:220px;justify-content:flex-end;}
@@ -295,21 +274,7 @@
 </script>
 
     <script>
-      // Яндекс Игры: только явный query/referrer Яндекса.
-      // НЕ считать любой cross-origin iframe (например wgl.su) режимом Яндекса —
-      // иначе появляется белая колонка .add-yandex и ломается mobile UI.
-      window.__AGARSU_YANDEX_CANDIDATE__ = (function () {
-        try {
-          var q = new URLSearchParams(location.search);
-          if (q.get("yandex") === "1" || q.get("yg") === "1") return true;
-          if (q.has("app-id") || q.has("app_id") || q.has("draft")) return true;
-        } catch (e) {}
-        try {
-          if (/yandex\.[a-z.]+\/(?:games|app)|games\.yandex\./i.test(String(document.referrer || ""))) return true;
-        } catch (e2) {}
-        return false;
-      })();
-      // Встройка с каталога: прячем юридический footer-strip
+      // Встройка с каталога wgl: прячем юр.полоску
       (function () {
         try {
           var q = new URLSearchParams(location.search);
@@ -323,14 +288,13 @@
     </script>
     <script src="protocols.js?v=10" defer></script>
     <script src="admin.js?v=10" defer></script>
-    <script src="main.js?v=71" defer></script>
-    <script src="main-yandex.js?v=7" defer></script>
+    <script src="main.js?v=73" defer></script>
 </head>
 <body>
   <div id="overlays" class="overlays">
     <div class="social"><a href="https://t.me/agarsu" target="_blank" class="tg"><i class="fab fa-telegram tg-icon"></i></a><a href="https://vk.com/club233723574" target="_blank" class="soc"><i class="fab fa-vk"></i></a><a href="#" class="soc"><i class="fab fa-discord discord-disabled"></i></a></div>
-    <!-- невидимый спейсер = бывший рекламный блок, держит .center по центру -->
-    <div class="add-yandex" aria-hidden="true"></div>
+    <!-- спейсер макета (раньше рекламный слот) -->
+    <div class="layout-gutter" aria-hidden="true"></div>
 	  <div class="center">
       <div class="sidebar">
         <div class="menu-item inl-1" onclick="showContent('shop')">
@@ -882,9 +846,24 @@
               <div class="store-auth-card">
                 <div class="store-auth-icon"><i class="fas fa-user-lock"></i></div>
                 <h3 class="store-auth-title" data-en="Account sign-in" data-tr="Hesaba giriş" data-zh="账户登录" data-ar="تسجيل الدخول للحساب" data-es="Acceso a la cuenta" data-pl="Logowanie do konta" data-de="Konto-Anmeldung" data-uk="Вхід до кабінету">Вход в кабинет</h3>
-                <p class="store-auth-text" data-en="Sign in with VK to see nicks, clans and progress." data-tr="Nick, klan ve ilerleme için VK ile giriş yapın." data-zh="通过 VK 登录查看昵称、氏族和进度。" data-ar="سجّل الدخول عبر VK لرؤية الألقاب والتقدم." data-es="Inicia sesión con VK para ver nicks y progreso." data-pl="Zaloguj się przez VK, aby zobaczyć nicki i postęp." data-de="Melde dich mit VK an, um Nicks und Fortschritt zu sehen." data-uk="Увійдіть через VK, щоб бачити ніки, клани та прогрес.">Войдите через VK, чтобы видеть купленные ники, кланы, пароли и прогресс.</p>
+                <p class="store-auth-text" data-en="Sign in with VK, Mail or OK to see nicks, clans and progress." data-tr="Nick, klan ve ilerleme için VK, Mail veya OK ile giriş yapın." data-zh="通过 VK / Mail / OK 登录查看昵称、氏族和进度。" data-ar="سجّل الدخول عبر VK أو Mail أو OK لرؤية الألقاب والتقدم." data-es="Inicia sesión con VK, Mail u OK para ver nicks y progreso." data-pl="Zaloguj się przez VK, Mail lub OK, aby zobaczyć nicki i postęp." data-de="Melde dich mit VK, Mail oder OK an, um Nicks und Fortschritt zu sehen." data-uk="Увійдіть через VK, Mail або OK, щоб бачити ніки, клани та прогрес.">Войдите через VK, Mail или OK — увидите ники, кланы и прогресс.</p>
                 <div id="vkAuthContainer" class="auth-block auth-block-vk">
-                  <div id="VkIdSdkOAuthList"></div>
+                  <div class="soc-auth-btns" id="socAuthBtns" role="group" aria-label="Вход через соцсети">
+                    <button type="button" class="soc-auth-btn soc-auth-btn--vk" data-oauth="vk" aria-label="Войти через VK">
+                      <img src="/assets/auth/vk.svg" alt="" width="22" height="22" decoding="async">
+                      <span>VK</span>
+                    </button>
+                    <button type="button" class="soc-auth-btn soc-auth-btn--mail" data-oauth="mail" aria-label="Войти через Mail">
+                      <img src="/assets/auth/mail.svg" alt="" width="22" height="22" decoding="async">
+                      <span>Mail</span>
+                    </button>
+                    <button type="button" class="soc-auth-btn soc-auth-btn--ok" data-oauth="ok" aria-label="Войти через OK">
+                      <img src="/assets/auth/ok.svg" alt="" width="22" height="22" decoding="async">
+                      <span>OK</span>
+                    </button>
+                  </div>
+                  <div id="VkIdSdkOAuthList" class="soc-auth-fallback" hidden></div>
+                  <p class="soc-auth-hint" id="socAuthHint" hidden>Загрузка входа…</p>
                 </div>
               </div>
             </div>
