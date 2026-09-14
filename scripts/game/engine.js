@@ -9543,44 +9543,9 @@ onReady(() => {
     });
   }
   function setupYandexAds() {
-    window.yaContextCb = window.yaContextCb || [];
-    function renderHomeBanner() {
-      if (!document.getElementById("yandex_rtb_R-A-15699059-13")) {
-        if (document.readyState === "loading") {
-          document.addEventListener("DOMContentLoaded", renderHomeBanner, {
-            once: true
-          });
-        }
-        return;
-      }
-      try {
-        Ya.Context.AdvManager.render({
-          blockId: "R-A-15699059-13",
-          renderTo: "yandex_rtb_R-A-15699059-13"
-        });
-      } catch (e) {}
-    }
-    window.renderDeathBanner = function() {
-      const el = document.getElementById("yandex_rtb_R-A-15699059-14");
-      if (!el) return;
-      const doRender = () => {
-        try {
-          el.innerHTML = "";
-          Ya.Context.AdvManager.render({
-            blockId: "R-A-15699059-14",
-            renderTo: "yandex_rtb_R-A-15699059-14"
-          });
-        } catch (e) {}
-      };
-      if (window.Ya && Ya.Context && Ya.Context.AdvManager) {
-        doRender();
-      } else {
-        window.yaContextCb = window.yaContextCb || [];
-        window.yaContextCb.push(doRender);
-      }
-    };
-    window.yaContextCb.push(renderHomeBanner);
-    return loadScript("https://yandex.ru/ads/system/context.js").catch(() => {});
+    // Реклама отключена
+    window.renderDeathBanner = function() {};
+    return Promise.resolve();
   }
   function setupMailRuCounter() {
     window._tmr = window._tmr || [];

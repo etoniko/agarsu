@@ -89,11 +89,12 @@ html.wgl-embed .add-yandex {
     }
 }
 .add-yandex {
-    width: 240px;
-    background: white;
+    display: none !important;
+    width: 0;
+    height: 0;
     overflow: hidden;
     font-family: Arial, sans-serif;
-    height: 400px;
+}
 }
 .rating-home {
     width: 300px;
@@ -467,7 +468,7 @@ i:hover{cursor:pointer;}
 .clozs{width: 50px;justify-self: center;}
 .crown{position:absolute;top:-10px;right:50%;transform:translateX(50%);font-size:24px;color:gold;text-shadow:0 0 5px #000;}
 .death{width:300px;height:250px;max-width:300px;max-height:250px;overflow:hidden;flex-shrink:0;position:relative;}
-.death > div,#yandex_rtb_R-A-15699059-14{width:300px!important;height:250px!important;max-width:100%;max-height:100%;overflow:hidden;}
+.death > div{width:300px!important;height:250px!important;max-width:100%;max-height:100%;overflow:hidden;}
 .death iframe{max-width:100%!important;max-height:100%!important;}
 #gradient-settings {
   margin-top: 8px;
@@ -1150,7 +1151,11 @@ i:hover{cursor:pointer;}
 }
 .cell{width:100px;font-weight:400;color:#8fa8d4;font-size:12px;}
 .rank{width:100px;margin-top:10px;}
-.nick{width:150px;margin-top:10px;text-overflow:ellipsis;overflow:hidden;height:20px;font-weight:400;}
+.nick{width:150px;margin-top:10px;text-overflow:ellipsis;overflow:hidden;height:auto;min-height:20px;font-weight:400;line-height:1.25;}
+.nick .account-uid{display:block;margin-top:2px;font-size:11px;font-weight:500;color:#8b93a7;letter-spacing:.02em;}
+.top-player:nth-child(1) .account-uid,
+.top-player:nth-child(2) .account-uid,
+.top-player:nth-child(3) .account-uid{color:inherit;opacity:.7;}
 .score{width:100px;margin-top:10px;font-weight:400;}
 .header-row{
   display:flex;

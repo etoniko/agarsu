@@ -864,13 +864,15 @@ app.get("/api/top100", (req, res) => {
     `;
   mysqlConnection.query(query, (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
+    // прямые URL аватаров — без /api/avatar на каждую строку (иначе топ грузится очень долго)
     const top100 = results.map((user, index) => ({
       position: index + 1,
       uid: user.uid,
       account_name: user.account_name,
-      account_avatar: avatarProxyUrl(user.account_avatar, req),
+      account_avatar: user.account_avatar || null,
       xp: user.xp,
     }));
+    res.set("Cache-Control", "public, max-age=60");
     res.json(top100);
   });
 });
