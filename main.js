@@ -10134,12 +10134,39 @@ onReady(() => {
   });
   invisibleNickCheckbox.addEventListener("change", calculateCost);
   rotationNickCheckbox.addEventListener("change", calculateCost);
+  let statsBgPreviewUrl = null;
+  function clearStatsBgPreview() {
+    const box = document.querySelector("#shop .shop-container");
+    if (statsBgPreviewUrl) {
+      try { URL.revokeObjectURL(statsBgPreviewUrl); } catch (e) {}
+      statsBgPreviewUrl = null;
+    }
+    if (box) {
+      box.classList.remove("has-stats-bg-preview");
+      box.style.removeProperty("--shop-stats-bg");
+    }
+  }
+  function setStatsBgPreview(file) {
+    const box = document.querySelector("#shop .shop-container");
+    if (!box || !file) {
+      clearStatsBgPreview();
+      return;
+    }
+    if (statsBgPreviewUrl) {
+      try { URL.revokeObjectURL(statsBgPreviewUrl); } catch (e) {}
+    }
+    statsBgPreviewUrl = URL.createObjectURL(file);
+    box.style.setProperty("--shop-stats-bg", `url("${statsBgPreviewUrl}")`);
+    box.classList.add("has-stats-bg-preview");
+  }
   if (statsBgNickCheckbox) {
     statsBgNickCheckbox.addEventListener("change", () => {
       if (statsBgNickCheckbox.checked) {
         if (statsBgInput && !statsBgInput.files[0]) statsBgInput.click();
+        else if (statsBgInput && statsBgInput.files[0]) setStatsBgPreview(statsBgInput.files[0]);
       } else if (statsBgInput) {
         statsBgInput.value = "";
+        clearStatsBgPreview();
       }
       calculateCost();
     });
@@ -10149,12 +10176,14 @@ onReady(() => {
       const file = statsBgInput.files[0];
       if (!file) {
         if (statsBgNickCheckbox) statsBgNickCheckbox.checked = false;
+        clearStatsBgPreview();
         calculateCost();
         return;
       }
       if (file.size > paymentRules.maxFileSize) {
         statsBgInput.value = "";
         if (statsBgNickCheckbox) statsBgNickCheckbox.checked = false;
+        clearStatsBgPreview();
         showError("fileError", "Фон слишком большой (макс. 5MB)");
         calculateCost();
         return;
@@ -10163,11 +10192,13 @@ onReady(() => {
       if (!okTypes.includes(file.type)) {
         statsBgInput.value = "";
         if (statsBgNickCheckbox) statsBgNickCheckbox.checked = false;
+        clearStatsBgPreview();
         showError("fileError", "Фон: только PNG, JPG, WEBP или GIF");
         calculateCost();
         return;
       }
       if (statsBgNickCheckbox) statsBgNickCheckbox.checked = true;
+      setStatsBgPreview(file);
       hideError("fileError");
       calculateCost();
     });
@@ -10192,6 +10223,10 @@ onReady(() => {
     invisibleNickCheckbox.checked = !!options.invisible;
     rotationNickCheckbox.checked = !!options.rotation;
     if (statsBgNickCheckbox) statsBgNickCheckbox.checked = !!options.statsBg;
+    if (!options.statsBg) {
+      if (statsBgInput) statsBgInput.value = "";
+      clearStatsBgPreview();
+    }
     if (options.focusPassword) {
       passwordInput.focus();
     } else {
