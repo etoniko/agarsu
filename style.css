@@ -2339,6 +2339,12 @@ img.skin-strip-anim{max-width:none !important;object-fit:fill !important;flex-sh
   border-radius:18px;
   box-shadow:0 12px 40px #00000040;
 }
+#shop .shop-container.has-stats-bg-preview{
+  background:
+    linear-gradient(180deg, rgba(12, 18, 32, 0.72), rgba(12, 18, 32, 0.82)),
+    var(--shop-stats-bg) center / cover no-repeat;
+  border-color:rgba(91, 140, 255, 0.35);
+}
 #shop .shop-float-alert{
   display:none;
   max-width:100%;
