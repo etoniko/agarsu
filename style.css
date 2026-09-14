@@ -52,6 +52,7 @@
     border-radius: 0 0 0 4px;
 }
 html.wgl-embed .footer,
+html.wgl-embed .layout-gutter,
 html.wgl-embed .add-yandex {
     display: none !important;
 }
@@ -88,7 +89,8 @@ html.wgl-embed .add-yandex {
         border-radius: 0 0 0 4px;
     }
 }
-.add-yandex {
+.add-yandex,
+.layout-gutter {
     width: 240px;
     height: 400px;
     flex-shrink: 0;
@@ -385,7 +387,8 @@ html.wgl-embed .add-yandex {
         margin: 3px 0;
     }
     .rating-home .rating-foot { display: none; }
-    .add-yandex { display: none; }
+    .add-yandex,
+    .layout-gutter { display: none; }
 }
 #captcha-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background-color:rgba(0, 0, 0, 0.5);display:flex;justify-content:center;align-items:center;z-index:9999;}
 #captcha-container{z-index:10;}
@@ -3115,6 +3118,57 @@ img.skin-strip-anim{max-width:none !important;object-fit:fill !important;flex-sh
   max-width: 360px;
   overflow: hidden;
 }
+.soc-auth-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  width: 100%;
+  max-width: 360px;
+}
+.soc-auth-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 104px;
+  flex: 1 1 100px;
+  height: 44px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: transform .15s ease, filter .15s ease, opacity .15s ease;
+}
+.soc-auth-btn img {
+  width: 20px;
+  height: 20px;
+  display: block;
+  flex-shrink: 0;
+}
+.soc-auth-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+}
+.soc-auth-btn:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+.soc-auth-btn--vk { background: #0077ff; }
+.soc-auth-btn--mail { background: #168de2; }
+.soc-auth-btn--ok { background: #ee8208; }
+.soc-auth-hint {
+  margin: 10px 0 0;
+  text-align: center;
+  color: #9fb3d9;
+  font-size: 12px;
+}
+.soc-auth-fallback[hidden],
+.soc-auth-hint[hidden] { display: none !important; }
 .restore-progress-block {
   margin-top: 2px;
   padding-top: 10px;
