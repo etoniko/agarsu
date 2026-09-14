@@ -7523,57 +7523,7 @@ function updateRegionOnlineTotals(totals) {
     timeDiv.className = "chatX_time";
     timeDiv.textContent = lastMessage.time || "";
     msgDiv.appendChild(timeDiv);
-    msgDiv.addEventListener("contextmenu", e => {
-      e.preventDefault();
-      const playerId = lastMessage.pId;
-      const menuItems = [];
-      if (resolveStatsForName(S, lastMessage.name)) {
-        menuItems.push({
-          label: "Статистика",
-          onClick: () => openStatsForName(S, lastMessage.name)
-        });
-      }
-      menuItems.push({
-        label: "Позвать на PvP",
-        onClick: () => openPvPModal(S, hooks, lastMessage.pId, lastMessage.name)
-      });
-      menuItems.push({
-        label: "Личное сообщение",
-        onClick: () => {
-          createDialog(S, hooks, playerId, lastMessage.name, S.skinList[normalizeNick(lastMessage.name)] ? `https://api.agar.su/skins/${S.skinList[normalizeNick(lastMessage.name)]}.png` : "https://api.agar.su/skins/4.png");
-          switchToDialog(S, `!ls${playerId}`);
-        }
-      });
-      menuItems.push({
-        label: "Игнорировать",
-        onClick: () => {
-          S.ignoredPlayers.add(playerId);
-          msgDiv.remove();
-        }
-      });
-      menuItems.push({
-        label: "Удалить всех из игнора",
-        onClick: () => {
-          S.ignoredPlayers.clear();
-        }
-      });
-      menuItems.push({
-        label: "Удалить сообщение",
-        onClick: () => {
-          msgDiv.remove();
-        }
-      });
-      menuItems.push({
-        label: "Удалить все сообщения игрока",
-        onClick: () => {
-          [ ...targetDiv.children ].forEach(c => {
-            var _a2;
-            if ((_a2 = c.querySelector(".chatX_nick")) == null ? void 0 : _a2.title.includes(playerId)) c.remove();
-          });
-        }
-      });
-      showUiContextMenu(menuItems, e.clientX, e.clientY);
-    });
+    bindChatMsgContextMenu(msgDiv, () => buildChatMsgMenuItems(S, hooks, lastMessage, msgDiv, targetDiv));
     targetDiv.appendChild(msgDiv);
     if (targetDialogId && S.dialogs[targetDialogId]) {
       S.dialogMessages[targetDialogId].push(msgDiv);
@@ -7725,6 +7675,7 @@ function updateRegionOnlineTotals(totals) {
     items.forEach(item => {
       const el = document.createElement("div");
       el.textContent = item.label;
+      if (item.className) el.className = item.className;
       el.style.cursor = "pointer";
       el.onclick = () => {
         try {
@@ -7736,14 +7687,127 @@ function updateRegionOnlineTotals(totals) {
       menu.appendChild(el);
     });
     document.body.appendChild(menu);
+    // Keep menu on screen
+    requestAnimationFrame(() => {
+      const rect = menu.getBoundingClientRect();
+      let left = x;
+      let top = y;
+      if (rect.right > window.innerWidth - 8) left = Math.max(8, window.innerWidth - rect.width - 8);
+      if (rect.bottom > window.innerHeight - 8) top = Math.max(8, window.innerHeight - rect.height - 8);
+      menu.style.left = left + "px";
+      menu.style.top = top + "px";
+    });
     const closeMenu = event => {
       if (!menu.contains(event.target)) {
         menu.remove();
         document.removeEventListener("click", closeMenu);
+        document.removeEventListener("touchstart", closeMenu);
       }
     };
-    setTimeout(() => document.addEventListener("click", closeMenu), 0);
+    setTimeout(() => {
+      document.addEventListener("click", closeMenu);
+      document.addEventListener("touchstart", closeMenu, { passive: true });
+    }, 0);
     return menu;
+  }
+  function buildChatMsgMenuItems(S, hooks, lastMessage, msgDiv, targetDiv) {
+    const playerId = lastMessage.pId;
+    const menuItems = [];
+    menuItems.push({
+      label: `pid: ${playerId || 0}`,
+      className: "chat-context-pid",
+      onClick: () => {
+        const text = String(playerId || 0);
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text);
+          }
+        } catch (e) {}
+      }
+    });
+    if (resolveStatsForName(S, lastMessage.name)) {
+      menuItems.push({
+        label: "Статистика",
+        onClick: () => openStatsForName(S, lastMessage.name)
+      });
+    }
+    menuItems.push({
+      label: "Позвать на PvP",
+      onClick: () => openPvPModal(S, hooks, lastMessage.pId, lastMessage.name)
+    });
+    menuItems.push({
+      label: "Личное сообщение",
+      onClick: () => {
+        createDialog(S, hooks, playerId, lastMessage.name, S.skinList[normalizeNick(lastMessage.name)] ? `https://api.agar.su/skins/${S.skinList[normalizeNick(lastMessage.name)]}.png` : "https://api.agar.su/skins/4.png");
+        switchToDialog(S, `!ls${playerId}`);
+      }
+    });
+    menuItems.push({
+      label: "Игнорировать",
+      onClick: () => {
+        S.ignoredPlayers.add(playerId);
+        msgDiv.remove();
+      }
+    });
+    menuItems.push({
+      label: "Удалить всех из игнора",
+      onClick: () => {
+        S.ignoredPlayers.clear();
+      }
+    });
+    menuItems.push({
+      label: "Удалить сообщение",
+      onClick: () => {
+        msgDiv.remove();
+      }
+    });
+    menuItems.push({
+      label: "Удалить все сообщения игрока",
+      onClick: () => {
+        [ ...targetDiv.children ].forEach(c => {
+          var _a2;
+          if ((_a2 = c.querySelector(".chatX_nick")) == null ? void 0 : _a2.title.includes(playerId)) c.remove();
+        });
+      }
+    });
+    return menuItems;
+  }
+  function bindChatMsgContextMenu(msgDiv, getItems) {
+    msgDiv.addEventListener("contextmenu", e => {
+      e.preventDefault();
+      e.stopPropagation();
+      showUiContextMenu(getItems(), e.clientX, e.clientY);
+    });
+    let pressTimer = null;
+    let startX = 0;
+    let startY = 0;
+    msgDiv.addEventListener("touchstart", e => {
+      if (!e.touches || !e.touches[0]) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      pressTimer = setTimeout(() => {
+        pressTimer = null;
+        showUiContextMenu(getItems(), startX, startY);
+      }, 450);
+    }, {
+      passive: true
+    });
+    const cancelPress = () => {
+      if (pressTimer) {
+        clearTimeout(pressTimer);
+        pressTimer = null;
+      }
+    };
+    msgDiv.addEventListener("touchmove", e => {
+      if (!pressTimer || !e.touches || !e.touches[0]) return;
+      const dx = Math.abs(e.touches[0].clientX - startX);
+      const dy = Math.abs(e.touches[0].clientY - startY);
+      if (dx > 14 || dy > 14) cancelPress();
+    }, {
+      passive: true
+    });
+    msgDiv.addEventListener("touchend", cancelPress);
+    msgDiv.addEventListener("touchcancel", cancelPress);
   }
   var CUSTOM_BG_STORAGE_MAX = 9e5;
   function loadBgImageFromDataUrl(dataUrl, onReady2) {
