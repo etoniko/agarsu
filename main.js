@@ -5913,12 +5913,18 @@ function updateRegionOnlineTotals(totals) {
     function currentHomePeriod() {
       return (homePeriodSelect && homePeriodSelect.value) || "alltime";
     }
+    function isHomePanelActive() {
+      const home = document.getElementById("home");
+      return !!(home && home.classList.contains("active"));
+    }
     function loadGlobalRatingHome() {
+      if (!isOverlaysVisible() || !isHomePanelActive()) return;
       updateOfficialStatsVisibility(S);
       const period = currentHomePeriod();
       fetch(STATS_API + "/rankings?limit=3&period=" + encodeURIComponent(period) + "&metric=points", {
-        cache: "no-store"
+        cache: "default"
       }).then(res => res.ok ? res.json() : Promise.reject()).then(data => {
+        if (!isHomePanelActive()) return;
         const key = JSON.stringify({
           period,
           p: data.players,
@@ -5940,11 +5946,13 @@ function updateRegionOnlineTotals(totals) {
       clearTimeout(loadGlobalRatingTimer);
       loadGlobalRatingTimer = setTimeout(() => {
         loadGlobalRatingTimer = null;
-        if (isOverlaysVisible()) loadGlobalRatingHome();
-      }, 300);
+        loadGlobalRatingHome();
+      }, 400);
     }
-    if (isOverlaysVisible()) {
-      loadGlobalRatingHome();
+    window.__agarsuRefreshHomeRating = scheduleLoadGlobalRatingHome;
+    // только когда открыт Home в меню — не тянем rankings при старте на других вкладках
+    if (isOverlaysVisible() && isHomePanelActive()) {
+      scheduleLoadGlobalRatingHome();
     }
     const overlayEl = document.getElementById("overlays");
     if (overlayEl) {
@@ -5955,7 +5963,7 @@ function updateRegionOnlineTotals(totals) {
       });
     }
     setInterval(() => {
-      if (isOverlaysVisible()) loadGlobalRatingHome();
+      loadGlobalRatingHome();
     }, 3e5);
   }
   function setActiveFromHash(S) {
@@ -9084,6 +9092,7 @@ onReady(() => {
       try {
         bindHomeAvatarUi();
       } catch (e) {}
+      if (typeof window.__agarsuRefreshHomeRating === "function") window.__agarsuRefreshHomeRating();
     }
     bus.emit(Events.SHOW_CONTENT, {
       id
@@ -10391,6 +10400,9 @@ onReady(() => {
     });
   });
   var getLevel2 = xp => ~~((xp / 100 * 2) ** .5);
+  function escapeHtmlRating(s) {
+    return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
   function resolveAccountAvatar(raw) {
     if (!raw) return SKIN_FALLBACK_URL;
     const url = String(raw).trim();
@@ -10400,39 +10412,58 @@ onReady(() => {
   function xpStats(xstats) {
     const container = document.getElementById("table-container");
     if (!container) return;
-    container.innerHTML = "";
-    xstats.forEach(player => {
+    const frag = document.createDocumentFragment();
+    (xstats || []).forEach(player => {
       const level = getLevel2(player.xp);
       const avatar = resolveAccountAvatar(player.account_avatar);
+      const uid = player.uid != null ? String(player.uid) : "";
+      const name = escapeHtmlRating(player.account_name || "—");
       const playerDiv = document.createElement("div");
       playerDiv.classList.add("top-player");
-      playerDiv.innerHTML = `\n<div class="time">${player.position}</div>\n<div class="nick">${player.account_name}</div>\n<div class="score">${level}</div>\n<div class="skkinn"><img src="${avatar.replace(/'/g, "%27")}" alt="" loading="lazy" decoding="async"></div>\n                `;
-      container.appendChild(playerDiv);
+      playerDiv.innerHTML =
+        `<div class="time">${player.position}</div>` +
+        `<div class="nick">${name}${uid ? `<span class="account-uid">ID ${escapeHtmlRating(uid)}</span>` : ""}</div>` +
+        `<div class="score">${level}</div>` +
+        `<div class="skkinn"><img src="${avatar.replace(/"/g, "%22")}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"></div>`;
+      frag.appendChild(playerDiv);
     });
+    container.innerHTML = "";
+    container.appendChild(frag);
   }
   async function fetchTop100() {
     if (fetchTop100._loading) return fetchTop100._loading;
+    const panel = document.getElementById("rating");
+    if (!panel || !panel.classList.contains("active")) return null;
     fetchTop100._loading = (async () => {
       try {
+        const container = document.getElementById("table-container");
+        if (container && !fetchTop100._loaded) {
+          container.innerHTML = `<div class="top-player"><div class="time"></div><div class="nick">Загрузка…</div><div class="score"></div><div class="skkinn"></div></div>`;
+        }
         const res = await fetch(TOP100_URL, {
-          cache: "no-store"
+          cache: "default"
         });
         if (!res.ok) throw new Error("top100 " + res.status);
+        // если пользователь уже ушёл с вкладки — не рисуем
+        if (!panel.classList.contains("active")) return;
         const data = await res.json();
+        if (!panel.classList.contains("active")) return;
         xpStats(data);
         fetchTop100._loaded = true;
       } catch (err) {
         console.error("Error fetching top 100:", err);
+        const container = document.getElementById("table-container");
+        if (container && panel.classList.contains("active")) {
+          container.innerHTML = `<div class="top-player"><div class="time"></div><div class="nick">Не удалось загрузить</div><div class="score"></div><div class="skkinn"></div></div>`;
+        }
       } finally {
         fetchTop100._loading = null;
       }
     })();
     return fetchTop100._loading;
   }
-  // Lazy: rating tab only — do not fetch 100 avatars on Home
-  // fetchTop100();
-  function ensureTop100Loaded() {
-    if (fetchTop100._loaded) return;
+  function ensureTop100Loaded(force) {
+    if (fetchTop100._loaded && !force) return;
     fetchTop100();
   }
   function initVkAuthModule() {
