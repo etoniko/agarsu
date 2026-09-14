@@ -93,6 +93,48 @@
 #agarAdminHead{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.08);position:sticky;top:0;background:rgba(10,14,22,.98);z-index:2}
 #agarAdminHead b{font-size:14px}
 #agarAdminRole{margin-left:auto;opacity:.7;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+@media (max-width:760px){
+  #agarAdminToggle{
+    position:fixed !important;
+    right:10px !important;
+    left:auto !important;
+    top:auto !important;
+    bottom:96px !important;
+    z-index:10060 !important;
+    padding:12px 16px;
+    font-size:15px;
+    border:2px solid rgba(150,190,255,.85);
+    background:rgba(28,72,170,.98);
+    box-shadow:0 6px 22px rgba(0,0,0,.55), 0 0 0 3px rgba(60,120,255,.25);
+  }
+  #agarAdminToggle.on{
+    background:rgba(48,110,230,.98);
+    border-color:#fff;
+  }
+  #agarAdminRoot{
+    position:fixed !important;
+    right:8px !important;
+    left:8px !important;
+    top:auto !important;
+    bottom:148px !important;
+    width:auto !important;
+    max-width:none !important;
+    z-index:10060 !important;
+  }
+  #agarAdminPanel{
+    max-height:min(58vh,520px);
+    border-width:2px;
+    border-color:rgba(140,180,255,.35);
+    -webkit-overflow-scrolling:touch;
+  }
+  .aa-btns button,.aa-row button,.aa-list .aa-kick{
+    min-height:34px;
+    padding:8px 12px;
+    font-size:13px;
+  }
+  .aa-list th,.aa-list td{padding:8px 8px;font-size:13px}
+  .aa-list .aa-nick{max-width:42vw}
+}
 .aa-sec{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.07)}
 .aa-sec h4{margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.55}
 .aa-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:6px}
@@ -147,6 +189,22 @@
     const toggle = document.getElementById("agarAdminToggle");
     const root = document.getElementById("agarAdminRoot");
     if (!toggle) return;
+
+    // На телефонах позицию задаёт CSS (fixed), не перебиваем inline.
+    if (window.innerWidth <= 760) {
+      toggle.style.right = "";
+      toggle.style.top = "";
+      toggle.style.left = "";
+      toggle.style.bottom = "";
+      if (root) {
+        root.style.right = "";
+        root.style.top = "";
+        root.style.left = "";
+        root.style.bottom = "";
+        root.style.width = "";
+      }
+      return;
+    }
 
     let right = 178;
     let top = 10;

@@ -2844,6 +2844,15 @@ img.skin-strip-anim{max-width:none !important;object-fit:fill !important;flex-sh
 .chat-context-menu {position: absolute;background: rgb(0 0 0 / 74%);color: rgb(255, 255, 255);padding: 5px;border-radius: 5px;z-index: 1000;}
 .chat-context-menu div {padding: 3px 8px;cursor: pointer;user-select: none;}
 .chat-context-menu div:hover {background: rgb(194 13 13 / 74%);}
+.chat-context-menu .chat-context-pid {
+  font-weight: 700;
+  color: #9ec1ff;
+  border-bottom: 1px solid rgba(255,255,255,.18);
+  margin-bottom: 3px;
+  padding-bottom: 7px;
+  letter-spacing: .02em;
+}
+.chat-context-menu .chat-context-pid:hover {background: rgba(80,130,220,.4);}
 .avatar-context-menu {
   position: fixed;
   min-width: 160px;
