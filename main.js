@@ -10417,12 +10417,16 @@ onReady(() => {
       const level = getLevel2(player.xp);
       const avatar = resolveAccountAvatar(player.account_avatar);
       const uid = player.uid != null ? String(player.uid) : "—";
+      const nicks = Math.max(0, Number(player.nicks_count) || 0);
+      const clans = Math.max(0, Number(player.clans_count) || 0);
       const playerDiv = document.createElement("div");
       playerDiv.classList.add("top-player");
       playerDiv.innerHTML =
         `<div class="time">${player.position}</div>` +
         `<div class="nick"><span class="account-uid">ID ${escapeHtmlRating(uid)}</span></div>` +
         `<div class="score">${level}</div>` +
+        `<div class="count" title="Ники">${nicks}</div>` +
+        `<div class="count" title="Кланы">${clans}</div>` +
         `<div class="skkinn"><img src="${avatar.replace(/"/g, "%22")}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"></div>`;
       frag.appendChild(playerDiv);
     });
@@ -10437,7 +10441,7 @@ onReady(() => {
       try {
         const container = document.getElementById("table-container");
         if (container && !fetchTop100._loaded) {
-          container.innerHTML = `<div class="top-player"><div class="time"></div><div class="nick">Загрузка…</div><div class="score"></div><div class="skkinn"></div></div>`;
+          container.innerHTML = `<div class="top-player"><div class="time"></div><div class="nick">Загрузка…</div><div class="score"></div><div class="count"></div><div class="count"></div><div class="skkinn"></div></div>`;
         }
         const res = await fetch(TOP100_URL, {
           cache: "default"
@@ -10453,7 +10457,7 @@ onReady(() => {
         console.error("Error fetching top 100:", err);
         const container = document.getElementById("table-container");
         if (container && panel.classList.contains("active")) {
-          container.innerHTML = `<div class="top-player"><div class="time"></div><div class="nick">Не удалось загрузить</div><div class="score"></div><div class="skkinn"></div></div>`;
+          container.innerHTML = `<div class="top-player"><div class="time"></div><div class="nick">Не удалось загрузить</div><div class="score"></div><div class="count"></div><div class="count"></div><div class="skkinn"></div></div>`;
         }
       } finally {
         fetchTop100._loading = null;

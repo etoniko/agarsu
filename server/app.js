@@ -864,13 +864,42 @@ app.get("/api/top100", (req, res) => {
     `;
   mysqlConnection.query(query, (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
-    // ID + аватар; имена соцсетей не отдаём
-    const top100 = results.map((user, index) => ({
-      position: index + 1,
-      uid: user.uid,
-      account_avatar: user.account_avatar || null,
-      xp: user.xp,
-    }));
+
+    // Только публичные счётчики из id.json. Никаких паролей, токенов, списков ников/кланов.
+    let idMap = {};
+    try {
+      idMap = readIdJson() || {};
+    } catch (e) {
+      console.error("[top100] id.json read failed:", e.message);
+      idMap = {};
+    }
+
+    const countOwned = (uid) => {
+      const list = idMap[String(uid)] || idMap[Number(uid)] || [];
+      let nicks = 0;
+      let clans = 0;
+      if (!Array.isArray(list)) return { nicks_count: 0, clans_count: 0 };
+      for (const raw of list) {
+        const nickPart = String(raw || "").split("#", 2)[0].trim();
+        if (!nickPart) continue;
+        if (/\[[^\]]+\]/.test(nickPart)) clans += 1;
+        else nicks += 1;
+      }
+      return { nicks_count: nicks, clans_count: clans };
+    };
+
+    // ID + аватар + XP + counts; имена соцсетей / пароли ников не отдаём
+    const top100 = results.map((user, index) => {
+      const counts = countOwned(user.uid);
+      return {
+        position: index + 1,
+        uid: user.uid,
+        account_avatar: user.account_avatar || null,
+        xp: user.xp,
+        nicks_count: counts.nicks_count,
+        clans_count: counts.clans_count,
+      };
+    });
     res.set("Cache-Control", "public, max-age=60");
     res.json(top100);
   });
