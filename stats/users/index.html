@@ -4,84 +4,169 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Profile — Agar.su</title>
-  <link id="pageIcon" rel="icon" type="image/png" href="https://api.agar.su/skins/4.png">
+  <link id="pageIcon" rel="icon" type="image/png" href="https://agar.su/skins/4.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0f1118; --panel: #1a1d28; --panel2: #222633; --text: #e8ecf4;
-      --muted: #8b93a7; --accent: #5b8cff; --border: #2d3345; --gold: #ffd54f;
+      --bg0: #0a0d14;
+      --bg1: #121722;
+      --panel: rgba(22, 28, 42, 0.88);
+      --panel2: rgba(30, 38, 56, 0.95);
+      --text: #eef2fb;
+      --muted: #939cb3;
+      --accent: #4f8cff;
+      --accent2: #36d6b2;
+      --border: rgba(120, 140, 180, 0.18);
+      --gold: #ffd54f;
+      --danger: #ff5c7a;
+      --danger-bg: rgba(255, 92, 122, 0.12);
+      --ok: #6fe3a1;
+      --shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+      --radius: 18px;
     }
     * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
     body {
-      margin: 0; font-family: "Segoe UI", system-ui, sans-serif;
-      background: radial-gradient(ellipse at top, #1a2240 0%, var(--bg) 55%);
-      color: var(--text); min-height: 100vh;
+      font-family: "Manrope", system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(79, 140, 255, 0.22), transparent 55%),
+        radial-gradient(900px 500px at 100% 0%, rgba(54, 214, 178, 0.12), transparent 50%),
+        linear-gradient(180deg, var(--bg1), var(--bg0));
+      background-attachment: fixed;
     }
-    .wrap { max-width: 900px; margin: 0 auto; padding: 24px 16px 48px; }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 28px 16px 64px; }
     a { color: var(--accent); text-decoration: none; }
     a:hover { text-decoration: underline; }
+    a.back {
+      color: var(--muted); text-decoration: none; font-size: 0.92rem;
+      display: inline-flex; align-items: center; gap: 8px; margin-bottom: 18px;
+    }
+    a.back:hover { color: var(--text); }
+    .hero {
+      position: relative; overflow: hidden;
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: calc(var(--radius) + 4px); box-shadow: var(--shadow);
+      padding: 22px; margin-bottom: 18px;
+      backdrop-filter: blur(10px);
+    }
+    .hero::before {
+      content: ""; position: absolute; inset: -40% auto auto -20%;
+      width: 320px; height: 320px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(79,140,255,.25), transparent 70%);
+      pointer-events: none;
+    }
+    .profile-head {
+      position: relative; z-index: 1;
+      display: flex; flex-wrap: wrap; gap: 16px; align-items: center;
+    }
+    .avatar {
+      width: 84px; height: 84px; border-radius: 50%;
+      border: 2px solid rgba(255,255,255,.12);
+      object-fit: cover; flex-shrink: 0; background: var(--panel2);
+      background-size: cover; background-position: center;
+      box-shadow: 0 8px 24px rgba(0,0,0,.35);
+    }
+    .profile-nick {
+      font-size: clamp(1.35rem, 3vw, 1.85rem); font-weight: 800; letter-spacing: -0.02em;
+    }
+    .profile-nick.rank-gold { color: var(--gold); }
+    .profile-nick.rank-silver { color: #c9c8c4; }
+    .profile-nick.rank-bronze { color: #d0893d; }
+    .profile-nick-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .profile-meta { color: var(--muted); font-size: 0.92rem; margin-top: 4px; }
+    .profile-trophy { display: inline-flex; width: 26px; height: 26px; flex-shrink: 0; }
+    .profile-trophy img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .profile-actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn {
+      padding: 10px 14px; border-radius: 12px; border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      color: var(--text); cursor: pointer; font-size: 0.9rem; font-weight: 600;
+      font-family: inherit; transition: .15s ease;
+    }
+    .btn:hover { border-color: rgba(79,140,255,.55); transform: translateY(-1px); }
+    .btn.ok { border-color: rgba(111,227,161,.55); color: var(--ok); }
+    .ban-banner {
+      position: relative; z-index: 1; margin-top: 16px;
+      display: flex; gap: 12px; align-items: flex-start;
+      padding: 14px 16px; border-radius: 14px;
+      background: var(--danger-bg); border: 1px solid rgba(255,92,122,.4);
+      color: #ffd0d9;
+    }
+    .ban-banner strong { color: #fff; display: block; font-size: 1.02rem; margin-bottom: 2px; }
+    .ban-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 700;
+      letter-spacing: .04em; text-transform: uppercase;
+      background: rgba(255,92,122,.2); color: #ff9aaf; border: 1px solid rgba(255,92,122,.35);
+    }
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 18px;
+    }
+    @media (max-width: 720px) {
+      .stats-grid { grid-template-columns: 1fr; }
+      .profile-actions { margin-left: 0; width: 100%; }
+      .profile-actions .btn { flex: 1; }
+    }
+    .stat-tile {
+      background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 16px 18px; box-shadow: var(--shadow);
+    }
+    .stat-tile .label { color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: .06em; }
+    .stat-tile .value {
+      margin-top: 8px; font-family: "JetBrains Mono", ui-monospace, monospace;
+      font-size: 1.45rem; font-weight: 700;
+    }
+    .stat-tile .value.pts { color: var(--accent); }
+    .stat-tile .value.pts.rank-gold { color: var(--gold); }
+    .stat-tile .value.pts.rank-silver { color: #c9c8c4; }
+    .stat-tile .value.pts.rank-bronze { color: #d0893d; }
+    .stat-tile .value.ban { color: var(--danger); }
+    .stat-tile .hint { margin-top: 4px; color: var(--muted); font-size: 0.82rem; }
     .card {
       background: var(--panel); border: 1px solid var(--border);
-      border-radius: 14px; overflow: hidden; margin-bottom: 18px;
+      border-radius: var(--radius); overflow: hidden; margin-bottom: 16px;
+      box-shadow: var(--shadow); backdrop-filter: blur(8px);
     }
     .card h2 {
-      margin: 0; padding: 16px 18px; background: var(--panel2);
-      border-bottom: 1px solid var(--border); font-size: 1rem;
+      margin: 0; padding: 14px 18px; background: var(--panel2);
+      border-bottom: 1px solid var(--border); font-size: 0.95rem; font-weight: 700;
     }
-    .card-body { padding: 16px 18px; }
+    .card-body { padding: 8px 6px 10px; }
     table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
-    th { color: var(--muted); font-size: 0.78rem; text-transform: uppercase; }
-    .pts { color: var(--accent); font-weight: 700; }
-    .pts.rank-gold { color: gold; }
-    .pts.rank-silver { color: #a8a7a4; }
-    .pts.rank-bronze { color: #cb7821; }
+    th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: .05em; }
+    tr:last-child td { border-bottom: none; }
+    .pts { color: var(--accent); font-weight: 700; font-family: "JetBrains Mono", ui-monospace, monospace; }
+    .pts.rank-gold { color: var(--gold); }
+    .pts.rank-silver { color: #c9c8c4; }
+    .pts.rank-bronze { color: #d0893d; }
     .muted { color: var(--muted); }
     .err {
       color: #ffcdd2; background: rgba(239,83,80,.12);
-      border: 1px solid rgba(239,83,80,.35); padding: 12px; border-radius: 10px;
+      border: 1px solid rgba(239,83,80,.35); padding: 14px 16px; border-radius: 14px;
     }
-    .profile-head { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin-bottom: 8px; }
-    .avatar {
-      width: 72px; height: 72px; border-radius: 50%; border: 2px solid var(--border);
-      object-fit: cover; flex-shrink: 0; background: var(--panel2);
-      background-size: cover; background-position: center; background-repeat: no-repeat;
-      overflow: hidden;
-    }
-    .profile-nick { font-size: 1.4rem; font-weight: 700; color: var(--text); }
-    .profile-nick.rank-gold { color: gold; }
-    .profile-nick.rank-silver { color: #a8a7a4; }
-    .profile-nick.rank-bronze { color: #cb7821; }
-    .profile-nick-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .profile-trophy {
-      display: inline-flex; width: 26px; height: 26px; flex-shrink: 0;
-    }
-    .profile-trophy img { width: 100%; height: 100%; object-fit: contain; display: block; }
-    .profile-trophy:hover { filter: brightness(1.15); }
-    .btn {
-      padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border);
-      background: var(--panel2); color: var(--text); cursor: pointer; font-size: 0.9rem;
-    }
-    .btn:hover { border-color: var(--accent); }
-    .btn.ok { border-color: #4caf50; color: #a5d6a7; }
     .period-row {
       display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
       margin: 0 0 16px;
     }
-    .period-row label { color: var(--muted); font-size: 0.9rem; }
+    .period-row label { color: var(--muted); font-size: 0.9rem; font-weight: 600; }
     .period-row select {
       background: var(--panel2); color: var(--text); border: 1px solid var(--border);
-      border-radius: 8px; padding: 8px 12px; font-size: 0.9rem;
+      border-radius: 12px; padding: 10px 12px; font-size: 0.9rem; font-family: inherit;
     }
-    .srv-link { color: var(--text); text-decoration: none; }
+    .srv-link { color: var(--text); text-decoration: none; font-weight: 600; }
     .srv-link:hover { color: var(--accent); text-decoration: none; }
-    a.back { color: var(--muted); text-decoration: none; font-size: 0.95rem; display: inline-block; margin-bottom: 16px; }
-    a.back:hover { color: var(--accent); }
+    .pill-ok { color: var(--ok); font-weight: 600; }
+    .pill-no { color: var(--muted); }
   </style>
 </head>
 <body>
   <div class="wrap">
     <a href="../" class="back">← Глобальный рейтинг</a>
-    <div id="head"><h1>Профиль</h1></div>
+    <div id="head"><div class="hero"><h1 style="margin:0;font-size:1.4rem">Профиль</h1></div></div>
     <div class="period-row">
       <label for="profilePeriod">Период</label>
       <select id="profilePeriod">
@@ -95,19 +180,12 @@
     <div id="content"><p class="muted">Загрузка…</p></div>
   </div>
 
-  <script>window.STATS_API="https://api.agar.su/stats-api";window.SKINLIST_URL="https://api.agar.su/skinlist.txt";window.SKINS_BASE="https://api.agar.su/skins";window.DEFAULT_SKIN_URL="https://api.agar.su/skins/4.png";</script>
-  <script src="https://agar.su/stats/config.js?v=5"></script>
-  <script src="https://agar.su/stats/skins.js?v=5"></script>
+  <script src="../config.js"></script>
+  <script src="../skins.js?v=3"></script>
   <script>
-    const statsSkinsApi = window.statsSkins;
-    if (!statsSkinsApi) {
-      document.getElementById("content").innerHTML =
-        '<div class="err">Не удалось загрузить /stats/skins.js</div>';
-      throw new Error("statsSkins missing");
-    }
-    const API = window.STATS_API || "https://api.agar.su/stats-api";
+    const API = window.STATS_API || "https://agar.su/stats-api";
     const REFRESH_MS = window.STATS_REFRESH_MS || 300000;
-    const { loadSkins, resolveAvatar, avatarHtml, setFavicon } = statsSkinsApi;
+    const { loadSkins, resolveAvatar, avatarHtml, setFavicon } = window.statsSkins;
     const serverUrl = window.statsServerUrl;
 
     function esc(s) {
@@ -121,8 +199,7 @@
     }
 
     function currentProfileLink(id) {
-      const period = document.getElementById("profilePeriod")?.value || "alltime";
-      return window.statsProfileUrl(id, period);
+      return window.statsProfileUrl(id);
     }
 
     async function copyLink(id) {
@@ -130,13 +207,16 @@
       try {
         await navigator.clipboard.writeText(url);
         const btn = document.getElementById("copyBtn");
-        if (btn) { btn.textContent = "Скопировано!"; btn.classList.add("ok"); setTimeout(() => { btn.textContent = "Копировать ссылку"; btn.classList.remove("ok"); }, 2000); }
+        if (btn) {
+          btn.textContent = "Скопировано!";
+          btn.classList.add("ok");
+          setTimeout(() => { btn.textContent = "Копировать ссылку"; btn.classList.remove("ok"); }, 2000);
+        }
       } catch {
         prompt("Скопируйте ссылку:", url);
       }
     }
 
-    /** Золото/серебро/бронза — только топ-3 по очкам глобального рейтинга */
     function nickRankClass(stats) {
       const r = Number(stats && stats.globalRank);
       if (r < 1 || r > 3) return "";
@@ -154,14 +234,15 @@
 
     function setPageMeta(stats, nick, avatarUrl) {
       const rank = stats.globalRank;
+      const banPart = stats.banned ? "BAN · " : "";
       const rankPart = rank ? "#" + rank + " " : "";
-      document.title = rankPart + nick + " — Profile · Agar.su";
-
-      const iconUrl = avatarUrl || window.DEFAULT_SKIN_URL || "https://api.agar.su/skins/4.png";
+      document.title = banPart + rankPart + nick + " — Profile · Agar.su";
+      const iconUrl = avatarUrl || window.DEFAULT_SKIN_URL || "https://agar.su/skins/4.png";
       setFavicon(iconUrl);
     }
 
     function formatGlobalRank(stats) {
+      if (stats.banned) return '<span class="pts ban">—</span>';
       if (!stats.globalRank) return '<span class="muted">—</span>';
       const boardLabel = stats.rankBoard === "clans" ? "кланов" : "игроков";
       const total = stats.globalRankTotal ? ` <span class="muted">из ${stats.globalRankTotal} ${boardLabel}</span>` : "";
@@ -182,37 +263,80 @@
       const ava = resolveAvatar(stats) || resolveAvatar({ nick });
       setPageMeta(stats, nick, ava);
       const period = stats.period || "alltime";
-
-      document.getElementById("head").innerHTML = "";
-      const head = document.getElementById("head");
+      const banned = !!stats.banned;
       const rankCls = nickRankClass(stats);
+      const maxPts = Number(stats.maxPoints) || 150;
+      const points = banned ? -1 : (Number(stats.points) || 0);
+
+      const head = document.getElementById("head");
       head.innerHTML = `
-        <div class="profile-head">
-          ${avatarHtml(ava)}
-          <div>
-            <div class="profile-nick-row">
-              <div class="profile-nick ${rankCls}">${esc(nick)}</div>
-              ${vaasTrophyHtml(nick)}
+        <div class="hero">
+          <div class="profile-head">
+            ${avatarHtml(ava)}
+            <div>
+              <div class="profile-nick-row">
+                <div class="profile-nick ${banned ? "" : rankCls}">${esc(nick)}</div>
+                ${vaasTrophyHtml(nick)}
+                ${banned ? '<span class="ban-badge">BAN</span>' : ""}
+              </div>
+              <div class="profile-meta">ID ${esc(id)} · ${esc(PERIOD_LABELS[period] || period)}</div>
+            </div>
+            <div class="profile-actions">
+              <button class="btn" id="copyBtn" type="button">Копировать ссылку</button>
             </div>
           </div>
-          <button class="btn" id="copyBtn" type="button">Копировать ссылку</button>
+          ${banned ? `
+            <div class="ban-banner">
+              <div>
+                <strong>${esc(stats.banMessage || "Данный игрок в бане")}</strong>
+                <div>Ник заблокирован в статистике. Очки зафиксированы как −1.</div>
+              </div>
+            </div>` : ""}
         </div>`;
       document.getElementById("copyBtn").onclick = () => copyLink(id);
 
-      const recs = Object.values(stats.records || {});
-      // Сохраняем порядок серверов из API (официальный список)
-      const recList = recs.length
-        ? recs
-        : [];
-      let html = `<div class="card"><h2>Статистика · ${esc(PERIOD_LABELS[period] || period)}</h2><div class="card-body">`;
-      html += `<p><strong>Место в рейтинге (${esc(PERIOD_LABELS[period] || period)}):</strong> ${formatGlobalRank(stats)}</p>`;
-      const maxPts = Number(stats.maxPoints) || 150;
-      html += `<p><strong>Очки за период:</strong> <span class="pts">${Number(stats.points) || 0}</span> <span class="muted">из ${maxPts}</span></p>`;
-      html += `<p><strong>Лучший рекорд за период:</strong> ${Number(stats.bestScore) || 0}</p></div></div>`;
+      let html = `<div class="stats-grid">
+        <div class="stat-tile">
+          <div class="label">Место</div>
+          <div class="value pts ${banned ? "ban" : rankCls}">${banned ? "—" : (stats.globalRank || "—")}</div>
+          <div class="hint">${esc(PERIOD_LABELS[period] || period)}</div>
+        </div>
+        <div class="stat-tile">
+          <div class="label">Очки</div>
+          <div class="value pts ${banned ? "ban" : ""}">${points}</div>
+          <div class="hint">${banned ? "бан в статистике" : "из " + maxPts + " за опрос"}</div>
+        </div>
+        <div class="stat-tile">
+          <div class="label">Лучший рекорд</div>
+          <div class="value">${banned ? "—" : (Number(stats.bestScore) || 0)}</div>
+          <div class="hint">за выбранный период</div>
+        </div>
+      </div>`;
 
+      if (banned) {
+        html += `<div class="card"><h2>Статус</h2><div class="card-body" style="padding:16px 18px">
+          <p style="margin:0">Данный ник в бане. Профиль сохранён, но очки и рейтинг отключены.</p>
+        </div></div>`;
+        return html;
+      }
+
+      if (stats.lastPoll && stats.lastPoll.servers) {
+        const rows = Object.entries(stats.lastPoll.servers);
+        if (rows.length) {
+          html += `<div class="card"><h2>Последнее обновление</h2><div class="card-body"><table>
+            <thead><tr><th>Сервер</th><th>Место</th><th>Рекорд</th><th>Очки</th></tr></thead><tbody>`;
+          rows.forEach(([sid, r]) => {
+            html += `<tr><td>${serverCell(sid, r.serverName || sid)}</td><td>${r.rank || "—"}</td>
+              <td class="pts">${r.score || 0}</td><td>${r.points || 0}</td></tr>`;
+          });
+          html += "</tbody></table></div></div>";
+        }
+      }
+
+      const recList = Object.values(stats.records || {});
       html += `<div class="card"><h2>Рекорды по серверам · ${esc(PERIOD_LABELS[period] || period)}</h2><div class="card-body">`;
       if (!recList.length) {
-        html += '<p class="muted">Нет данных по серверам за этот период.</p>';
+        html += '<p class="muted" style="padding:12px 14px">Нет данных по серверам за этот период.</p>';
       } else {
         html += '<table><thead><tr><th>Сервер</th><th>Тип</th><th>Рекорд</th><th>Ник</th><th>Место</th><th>Статус</th></tr></thead><tbody>';
         recList.forEach((r) => {
@@ -224,7 +348,7 @@
             <td class="pts">${has ? (r.score || 0) : "—"}</td>
             <td>${has ? esc(r.nick || "—") : '<span class="muted">—</span>'}</td>
             <td>${has && r.rank ? r.rank : "—"}</td>
-            <td>${has ? '<span style="color:#a5d6a7">есть</span>' : '<span class="muted">нет</span>'}</td>
+            <td>${has ? '<span class="pill-ok">есть</span>' : '<span class="pill-no">нет</span>'}</td>
           </tr>`;
         });
         html += "</tbody></table>";

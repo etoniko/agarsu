@@ -51,15 +51,24 @@ function emptyUserStats(passId, nicks) {
     polls: 0,
     bestScore: 0,
     records: {},
+    scoreProgress: {},
     lastPoll: null,
     lastCycleAt: null,
     updatedAt: null,
   };
 }
 
+function isScoreKind(rec) {
+  if (!rec) return false;
+  if (rec.kind === "score") return true;
+  const sid = String(rec.serverId || "").toLowerCase();
+  return sid.startsWith("pvp") || sid.startsWith("tournament");
+}
+
 function updateUserFromPoll(root, uid, payload, registry) {
   const safe = safeUid(uid);
   if (!safe) return null;
+  if (registry?.isBannedPassId?.(safe)) return null;
 
   const knownNicks = registry ? registry.getNicksForPassId(safe) : [];
   let stats = readUserStats(root, safe) || emptyUserStats(safe, knownNicks);
@@ -78,13 +87,58 @@ function updateUserFromPoll(root, uid, payload, registry) {
   stats.updatedAt = payload.at || new Date().toISOString();
   if (payload.cycleId) stats.lastCycleAt = payload.cycleId;
   if (payload.lastPoll) stats.lastPoll = payload.lastPoll;
+  if (!stats.scoreProgress || typeof stats.scoreProgress !== "object") stats.scoreProgress = {};
+
+  const dayKey = payload.dayKey || null;
 
   for (const rec of payload.records || []) {
     const sid = normalizeServerId(rec.serverId);
     if (!sid) continue;
     const score = toNum(rec.score);
+    if (score <= 0) continue;
     const prev = stats.records[sid];
-    if (!prev || score > toNum(prev.score)) {
+
+    if (isScoreKind({ ...rec, serverId: sid })) {
+      let prog = stats.scoreProgress[sid];
+      if (!prog || (dayKey && prog.dayKey !== dayKey)) {
+        // После смены дня — счётчик с нуля. После деплоя / первого касания:
+        // если рекорд уже был (старый Math.max), не задваиваем сегодняшний день.
+        const firstTouch = !prog;
+        prog = {
+          dayKey: dayKey || prog?.dayKey || null,
+          counted: firstTouch && prev ? score : 0,
+        };
+        stats.scoreProgress[sid] = prog;
+        if (firstTouch && prev) {
+          prev.rank = rec.rank || prev.rank;
+          prev.points = toNum(rec.points);
+          prev.nick = rec.nick || prev.nick;
+          prev.kind = "score";
+          continue;
+        }
+      }
+      const add = Math.max(0, score - toNum(prog.counted));
+      if (add > 0) {
+        const nextScore = toNum(prev?.score) + add;
+        stats.records[sid] = {
+          serverId: sid,
+          serverName: rec.serverName || sid,
+          score: nextScore,
+          nick: rec.nick,
+          rank: rec.rank || null,
+          points: toNum(rec.points),
+          kind: "score",
+          updatedAt: payload.at || new Date().toISOString(),
+        };
+        prog.counted = score;
+        if (dayKey) prog.dayKey = dayKey;
+        stats.bestScore = Math.max(stats.bestScore, nextScore);
+      } else if (prev) {
+        prev.rank = rec.rank || prev.rank;
+        prev.points = toNum(rec.points);
+        prev.nick = rec.nick || prev.nick;
+      }
+    } else if (!prev || score > toNum(prev.score)) {
       stats.records[sid] = {
         serverId: sid,
         serverName: rec.serverName || sid,
@@ -92,10 +146,11 @@ function updateUserFromPoll(root, uid, payload, registry) {
         nick: rec.nick,
         rank: rec.rank || null,
         points: toNum(rec.points),
+        kind: "mass",
         updatedAt: payload.at || new Date().toISOString(),
       };
+      stats.bestScore = Math.max(stats.bestScore, score);
     }
-    stats.bestScore = Math.max(stats.bestScore, score);
   }
 
   stats.records = mergeProfileRecords(stats.records);
@@ -117,13 +172,14 @@ function getOrCreateEntry(byUid, passId, pollAt) {
   return byUid.get(passId);
 }
 
-function applySnapshotToUsers(root, snapshot, registry, serverMeta, pollAt, cycleId) {
+function applySnapshotToUsers(root, snapshot, registry, serverMeta, pollAt, cycleId, dayKey = null) {
   if (!registry) return;
 
   const byUid = new Map();
 
   for (const player of snapshot.players || []) {
     if (!player.id) continue;
+    if (registry.isBannedPassId?.(String(player.id))) continue;
     const entry = getOrCreateEntry(byUid, player.id, pollAt);
     entry.nicks.add(player.nick);
     entry.pointsDelta = toNum(entry.pointsDelta) + toNum(player.points);
@@ -133,9 +189,14 @@ function applySnapshotToUsers(root, snapshot, registry, serverMeta, pollAt, cycl
   for (const srv of snapshot.perServer || []) {
     if (!srv.ok) continue;
     const meta = serverMeta.get(srv.id) || { id: srv.id, name: srv.name };
+    const kind =
+      meta.kind === "score" || srv.kind === "score" || srv.noClans
+        ? "score"
+        : "mass";
 
     for (const row of srv.allSolo || []) {
       if (!row.id) continue;
+      if (registry.isBannedPassId?.(String(row.id))) continue;
       const entry = getOrCreateEntry(byUid, row.id, pollAt);
       entry.nicks.add(row.nick);
       entry.bestScore = Math.max(toNum(entry.bestScore), toNum(row.score));
@@ -154,21 +215,38 @@ function applySnapshotToUsers(root, snapshot, registry, serverMeta, pollAt, cycl
         nick: row.nick,
         rank: row.rank,
         points: toNum(row.points),
+        kind,
       });
     }
-
   }
 
   for (const [uid, data] of byUid) {
-    updateUserFromPoll(root, uid, {
-      at: pollAt,
-      cycleId,
-      nicks: [...data.nicks],
-      pointsDelta: data.pointsDelta,
-      bestScore: data.bestScore,
-      lastPoll: data.lastPoll,
-      records: data.records,
-    }, registry);
+    updateUserFromPoll(
+      root,
+      uid,
+      {
+        at: pollAt,
+        cycleId,
+        dayKey,
+        nicks: [...data.nicks],
+        pointsDelta: data.pointsDelta,
+        bestScore: data.bestScore,
+        lastPoll: data.lastPoll,
+        records: data.records,
+      },
+      registry
+    );
+  }
+}
+
+function deleteUserStats(root, uid) {
+  const dir = userDir(root, uid);
+  if (!dir || !fs.existsSync(dir)) return false;
+  try {
+    fs.rmSync(dir, { recursive: true, force: true });
+    return true;
+  } catch {
+    return false;
   }
 }
 
@@ -176,6 +254,7 @@ export {
   safeUid,
   readUserStats,
   writeUserStats,
+  deleteUserStats,
   updateUserFromPoll,
   applySnapshotToUsers,
 };

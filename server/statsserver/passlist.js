@@ -19,8 +19,22 @@ function isClanNorm(norm) {
   return !!norm && norm.startsWith("[") && norm.endsWith("]");
 }
 
-/** ID = номер строки в pass.txt (1, 2, 3 …). Одна строка = один ник. */
-function buildPassRegistry(passText) {
+function parseBanSet(banText) {
+  const bannedNorms = new Set();
+  for (const line of String(banText || "").split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const norm = normalizeNick(trimmed);
+    if (norm) bannedNorms.add(norm);
+  }
+  return bannedNorms;
+}
+
+/** ID = номер строки в pass.txt (1, 2, 3 …). Одна строка = один ник.
+ *  Забаненные ники остаются в pass.txt (чтобы id не съезжали),
+ *  но не попадают в allowed* и не копят очки. */
+function buildPassRegistry(passText, banText = "") {
+  const bannedNorms = parseBanSet(banText);
   const allowedPlayerNicks = new Set();
   const allowedClanNicks = new Set();
   const playerNickToPassId = new Map();
@@ -32,15 +46,16 @@ function buildPassRegistry(passText) {
     const norm = normalizeNick(rawNick);
     if (!norm) return;
     const isClan = isClanNorm(norm);
-    const entry = { id: passId, nick: rawNick, norm, isClan };
+    const banned = bannedNorms.has(norm);
+    const entry = { id: passId, nick: rawNick, norm, isClan, banned };
     passIdToEntry.set(passId, entry);
 
     if (isClan) {
-      allowedClanNicks.add(norm);
       if (!clanNickToPassId.has(norm)) clanNickToPassId.set(norm, passId);
+      if (!banned) allowedClanNicks.add(norm);
     } else {
-      allowedPlayerNicks.add(norm);
       if (!playerNickToPassId.has(norm)) playerNickToPassId.set(norm, passId);
+      if (!banned) allowedPlayerNicks.add(norm);
     }
   };
 
@@ -52,24 +67,41 @@ function buildPassRegistry(passText) {
     linkNick(passId, trimmed);
   }
 
+  function isBannedNorm(norm) {
+    return !!norm && bannedNorms.has(norm);
+  }
+
+  function isBannedPassId(passId) {
+    const e = passIdToEntry.get(String(passId));
+    return !!(e && e.banned);
+  }
+
+  function isBannedNick(nick) {
+    return isBannedNorm(normalizeNick(nick));
+  }
+
   function resolveClanPassId(clanKey) {
     if (!clanKey) return null;
     const clanNorm = normalizeNick(clanKey);
-    return clanNickToPassId.get(clanNorm) || null;
+    const id = clanNickToPassId.get(clanNorm) || null;
+    if (id && isBannedPassId(id)) return null;
+    return id;
   }
 
   function resolveNickPassId(parsed) {
     if (!parsed || parsed.clanKey) return null;
     const norm = normalizeNick(parsed.playerKey);
     if (!norm || isClanNorm(norm)) return null;
-    if (playerNickToPassId.has(norm)) return playerNickToPassId.get(norm);
-    if (parsed.baseNick) {
+    let id = null;
+    if (playerNickToPassId.has(norm)) id = playerNickToPassId.get(norm);
+    else if (parsed.baseNick) {
       const base = normalizeNick(parsed.baseNick);
       if (base && !isClanNorm(base) && playerNickToPassId.has(base)) {
-        return playerNickToPassId.get(base);
+        id = playerNickToPassId.get(base);
       }
     }
-    return null;
+    if (id && isBannedPassId(id)) return null;
+    return id;
   }
 
   /** Рекорды/очки: [клан]ник → только клан; без клана → только ник */
@@ -87,12 +119,14 @@ function buildPassRegistry(passText) {
     if (!parsed || !parsed.playerKey || parsed.clanKey) return false;
     const norm = normalizeNick(parsed.playerKey);
     if (!norm || isClanNorm(norm)) return false;
+    if (isBannedNorm(norm)) return false;
     return allowedPlayerNicks.has(norm);
   }
 
   function isClanAllowed(clanKey) {
     if (!clanKey) return false;
     const norm = normalizeNick(clanKey);
+    if (isBannedNorm(norm)) return false;
     return allowedClanNicks.has(norm);
   }
 
@@ -108,6 +142,8 @@ function buildPassRegistry(passText) {
   return {
     lineCount: lineNum,
     allowedCount: allowedPlayerNicks.size + allowedClanNicks.size,
+    bannedCount: bannedNorms.size,
+    bannedNorms,
     passIdToEntry,
     allowedNicks: new Set([...allowedPlayerNicks, ...allowedClanNicks]),
     allowedPlayerNicks,
@@ -121,9 +157,11 @@ function buildPassRegistry(passText) {
     resolveStatsPassId,
     isPlayerAllowed,
     isClanAllowed,
+    isBannedPassId,
+    isBannedNick,
+    isBannedNorm,
     getPassEntry,
     getNicksForPassId,
-    // совместимость со старым кодом
     resolveUid: resolvePassId,
     getNicksForUid: getNicksForPassId,
     get uidCount() {
@@ -135,5 +173,6 @@ function buildPassRegistry(passText) {
 export {
   normalizeNick,
   isClanNorm,
+  parseBanSet,
   buildPassRegistry,
 };

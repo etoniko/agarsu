@@ -9,8 +9,8 @@ import {
   maxPointsPerPoll,
   RANK_POINTS,
 } from "./scoring.js";
-import { buildPassRegistry } from "./passlist.js";
-import { safeUid, readUserStats, applySnapshotToUsers } from "./users.js";
+import { buildPassRegistry, normalizeNick } from "./passlist.js";
+import { safeUid, readUserStats, applySnapshotToUsers, deleteUserStats } from "./users.js";
 import { readClanStats, applySnapshotToClans } from "./clans.js";
 import { httpGet } from "./fetchHttp.js";
 import { toNum } from "./num.js";
@@ -24,6 +24,8 @@ import {
   getEntityPeriodStats,
   getEntityPeriodRecords,
   getFeedSince,
+  purgeBannedFromPeriodsState,
+  savePeriodsState,
   PERIOD_KEYS,
 } from "./periods.js";
 
@@ -57,8 +59,11 @@ const HOST = process.env.STATS_HOST || config.host || "0.0.0.0";
 const SSL_KEY = process.env.SSL_KEY || config.sslKey;
 const SSL_CERT = process.env.SSL_CERT || config.sslCert;
 const PASS_URL = process.env.PASS_URL || config.passUrl || "https://api.agar.su/pass.txt";
+const BAN_FILE = process.env.BAN_NICK_FILE || path.join(ROOT, "..", "public", "bannick.txt");
+const BAN_FILE_DATA = path.join(DATA_DIR, "bannick.txt");
 const FETCH_TIMEOUT_MS = Number(config.fetchTimeoutMs || 15000);
 const INSECURE_GAME_TLS = config.insecureGameTls !== false;
+const BAN_PROFILE_MESSAGE = "Данный игрок в бане";
 
 let totals = sanitizeTotals(readJson(TOTALS_PATH, { players: {}, clans: {} }));
 let state = readJson(STATE_PATH, {
@@ -135,14 +140,80 @@ async function fetchText(url) {
   return body;
 }
 
+function readBanText() {
+  for (const file of [BAN_FILE, BAN_FILE_DATA]) {
+    try {
+      if (fs.existsSync(file)) return fs.readFileSync(file, "utf8");
+    } catch {
+      /* ignore */
+    }
+  }
+  return "";
+}
+
+function purgeBannedEverywhere(registry) {
+  if (!registry) return { periods: 0, totals: 0, profiles: 0 };
+
+  const periodsRemoved = purgeBannedFromPeriodsState(periodsState, registry);
+  if (periodsRemoved > 0) savePeriodsState(periodsState);
+
+  let totalsRemoved = 0;
+  for (const [key, row] of Object.entries(totals.players || {})) {
+    if (
+      (row?.id && registry.isBannedPassId?.(String(row.id))) ||
+      (row?.nick && registry.isBannedNick?.(row.nick))
+    ) {
+      delete totals.players[key];
+      totalsRemoved += 1;
+    }
+  }
+  for (const [key, row] of Object.entries(totals.clans || {})) {
+    if (
+      (row?.id && registry.isBannedPassId?.(String(row.id))) ||
+      (row?.clan && registry.isBannedNick?.(row.clan))
+    ) {
+      delete totals.clans[key];
+      totalsRemoved += 1;
+    }
+  }
+  if (totalsRemoved > 0) writeJson(TOTALS_PATH, totals);
+
+  let profilesRemoved = 0;
+  for (const [passId, entry] of registry.passIdToEntry || []) {
+    if (!entry?.banned) continue;
+    if (deleteUserStats(ROOT, passId)) profilesRemoved += 1;
+    const clanDir = path.join(CLANS_DIR, String(passId));
+    if (fs.existsSync(clanDir)) {
+      try {
+        fs.rmSync(clanDir, { recursive: true, force: true });
+        profilesRemoved += 1;
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
+  // Ники из bannick, которых уже нет в pass — всё равно вычищаем доски по нику
+  // (уже сделано в purgeBannedFromPeriodsState через isBannedNick).
+
+  return { periods: periodsRemoved, totals: totalsRemoved, profiles: profilesRemoved };
+}
+
 async function refreshPassList() {
   try {
     const passText = await fetchText(PASS_URL);
-    passRegistry = buildPassRegistry(passText);
+    const banText = readBanText();
+    passRegistry = buildPassRegistry(passText, banText);
     state.lastPassFetchAt = new Date().toISOString();
-    state.passHolders = passRegistry.lineCount;
+    state.passHolders = passRegistry.allowedCount;
     state.passUids = passRegistry.lineCount;
-    console.log(`whitelist loaded: ${passRegistry.lineCount} entries`);
+    state.bannedNicks = passRegistry.bannedCount;
+    const purged = purgeBannedEverywhere(passRegistry);
+    console.log(
+      `whitelist loaded: ${passRegistry.lineCount} entries` +
+        ` (allowed=${passRegistry.allowedCount}, banned=${passRegistry.bannedCount})` +
+        ` purged periods=${purged.periods} totals=${purged.totals} profiles=${purged.profiles}`
+    );
   } catch (err) {
     console.error("whitelist fetch failed:", err.message || err);
   }
@@ -197,7 +268,15 @@ async function pollAll() {
   periodsState = periodResult.state;
 
   const serverMeta = new Map(servers.map((s) => [s.id, s]));
-  applySnapshotToUsers(ROOT, snapshot, passRegistry, serverMeta, pollAt, pollAt);
+  applySnapshotToUsers(
+    ROOT,
+    snapshot,
+    passRegistry,
+    serverMeta,
+    pollAt,
+    pollAt,
+    periodsState.dayKey
+  );
   applySnapshotToClans(ROOT, snapshot, passRegistry, serverMeta, pollAt, pollAt);
 
   state = {
@@ -281,6 +360,31 @@ function handleRequest(req, res) {
 
     const period = String(url.searchParams.get("period") || "alltime").toLowerCase();
     const usePeriod = PERIOD_KEYS.includes(period);
+    const banned = !!(entry.banned || (passRegistry.isBannedPassId && passRegistry.isBannedPassId(passId)));
+    if (banned) {
+      return sendJson(res, 200, {
+        id: passId,
+        uid: passId,
+        line: Number(passId),
+        nick: entry.nick,
+        nicks: [entry.nick],
+        banned: true,
+        banMessage: BAN_PROFILE_MESSAGE,
+        points: -1,
+        lastPoints: 0,
+        bestScore: 0,
+        polls: 0,
+        records: {},
+        maxPoints: maxPointsPerPoll(massServerCount()),
+        period: usePeriod ? period : "alltime",
+        periods: PERIOD_KEYS,
+        dayKey: periodsState.dayKey,
+        yearKey: periodsState.yearKey,
+        globalRank: null,
+        globalRankTotal: null,
+        rankBoard: "players",
+      });
+    }
     const stats = readUserStats(ROOT, passId);
     const nicks = [...new Set([entry.nick, ...((stats && stats.nicks) || [])])];
     const rankPts = rankingPointsForPassId(passId, false);
@@ -328,6 +432,7 @@ function handleRequest(req, res) {
       line: Number(passId),
       nick: entry.nick,
       nicks,
+      banned: false,
       points: periodStats ? periodStats.points : rankPts.points,
       lastPoints: rankPts.lastPoints,
       bestScore: periodStats ? periodStats.bestScore : toNum(base.bestScore),
@@ -554,6 +659,40 @@ function handleRequest(req, res) {
       error: snap?.error || null,
       players,
       clans,
+    });
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/search") {
+    const qRaw = String(url.searchParams.get("q") || url.searchParams.get("nick") || "").trim();
+    const q = normalizeNick(qRaw) || qRaw.toLowerCase();
+    const limit = Math.min(30, Math.max(1, Number(url.searchParams.get("limit") || 15)));
+    if (!q || q.length < 1) {
+      return sendJson(res, 200, { q: qRaw, items: [] });
+    }
+
+    const items = [];
+    for (const [, entry] of passRegistry.passIdToEntry || []) {
+      if (!entry || entry.banned) continue;
+      const nick = String(entry.nick || "");
+      const norm = entry.norm || normalizeNick(nick);
+      if (!norm) continue;
+      if (!norm.includes(q) && !nick.toLowerCase().includes(qRaw.toLowerCase())) continue;
+      let rank = 3;
+      if (norm === q) rank = 0;
+      else if (norm.startsWith(q)) rank = 1;
+      else if (norm.includes(q)) rank = 2;
+      items.push({
+        id: entry.id,
+        nick,
+        isClan: !!entry.isClan,
+        rank,
+      });
+    }
+    items.sort((a, b) => a.rank - b.rank || a.nick.localeCompare(b.nick, "ru"));
+    return sendJson(res, 200, {
+      q: qRaw,
+      count: Math.min(items.length, limit),
+      items: items.slice(0, limit).map(({ id, nick, isClan }) => ({ id, nick, isClan })),
     });
   }
 

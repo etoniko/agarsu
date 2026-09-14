@@ -159,7 +159,7 @@ function mergeLegacyIntoRecords(records) {
  * - all-time обновляется только если score стал больше прошлого рекорда;
  * - в today попадают только те, кто действительно побил исторический рекорд;
  * - повторные опросы не дублируют запись в today (первая запись дня сохраняется);
- * - новый дневной JSON начинается автоматически при смене todayKey (06:00).
+ * - новый дневной JSON начинается автоматически при смене todayKey (06:05 MSK, см. periods.partsInTz).
  */
 function updateRecordsFromSnapshot(records, snapshot, pollAt, todayKey) {
   let updated = 0;

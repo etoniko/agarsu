@@ -16,16 +16,52 @@ const CONFIG_PATH = path.join(ROOT, "servers.json");
 const USERS_DIR = path.join(ROOT, "users");
 const CLANS_DIR = path.join(ROOT, "clans");
 const PASS_FILE = path.join(ROOT, "..", "public", "pass.txt");
+const BAN_FILE = path.join(ROOT, "..", "public", "bannick.txt");
+const BAN_FILE_DATA = path.join(DATA_DIR, "bannick.txt");
 
 let cachedPassRegistry = null;
 let cachedPassRegistryMtime = 0;
+let cachedBanMtime = 0;
+
+function readBanTextLocal() {
+  for (const file of [BAN_FILE, BAN_FILE_DATA]) {
+    try {
+      if (fs.existsSync(file)) return fs.readFileSync(file, "utf8");
+    } catch {
+      /* ignore */
+    }
+  }
+  return "";
+}
+
+function banMtime() {
+  for (const file of [BAN_FILE, BAN_FILE_DATA]) {
+    try {
+      if (fs.existsSync(file)) return fs.statSync(file).mtimeMs;
+    } catch {
+      /* ignore */
+    }
+  }
+  return 0;
+}
 
 function getPassRegistry() {
   try {
     const st = fs.statSync(PASS_FILE);
-    if (cachedPassRegistry && st.mtimeMs === cachedPassRegistryMtime) return cachedPassRegistry;
-    cachedPassRegistry = buildPassRegistry(fs.readFileSync(PASS_FILE, "utf8"));
+    const banMt = banMtime();
+    if (
+      cachedPassRegistry &&
+      st.mtimeMs === cachedPassRegistryMtime &&
+      banMt === cachedBanMtime
+    ) {
+      return cachedPassRegistry;
+    }
+    cachedPassRegistry = buildPassRegistry(
+      fs.readFileSync(PASS_FILE, "utf8"),
+      readBanTextLocal()
+    );
     cachedPassRegistryMtime = st.mtimeMs;
+    cachedBanMtime = banMt;
     return cachedPassRegistry;
   } catch {
     return null;
@@ -197,13 +233,17 @@ function writeJson(file, data) {
 }
 
 function partsInTz(date = new Date(), timeZone = TZ) {
+  // Stats day rolls at 06:05 MSK:
+  // game servers reboot ~06:00 (fresh players.json), api ~05:50.
+  // Until 06:05 keep previous dayKey so overnight checkStats cannot seed "today".
+  const shifted = new Date(date.getTime() - (6 * 60 + 5) * 60 * 1000);
   const fmt = new Intl.DateTimeFormat("en-CA", {
     timeZone,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
   });
-  const parts = Object.fromEntries(fmt.formatToParts(date).map((p) => [p.type, p.value]));
+  const parts = Object.fromEntries(fmt.formatToParts(shifted).map((p) => [p.type, p.value]));
   return {
     dayKey: `${parts.year}-${parts.month}-${parts.day}`,
     yearKey: parts.year,
@@ -249,32 +289,71 @@ function ensureServerBoard(state, serverId) {
   return board;
 }
 
+function isScoreServerMeta(srv) {
+  if (!srv) return false;
+  if (srv.kind === "score" || srv.noClans === true) return true;
+  const id = String(srv.id || "").toLowerCase();
+  return id.startsWith("pvp") || id.startsWith("tournament");
+}
+
+function isScoreServerId(serverId) {
+  const id = String(serverId || "").toLowerCase();
+  if (id.startsWith("pvp") || id.startsWith("tournament")) return true;
+  try {
+    const cfg = readJson(CONFIG_PATH, { servers: [] });
+    const meta = (cfg.servers || []).find((s) => s.id === serverId);
+    return !!(meta && (meta.kind === "score" || meta.noClans === true));
+  } catch {
+    return false;
+  }
+}
+
+function isBannedBoardRow(row, registry) {
+  if (!row || !registry) return false;
+  if (row.id && registry.isBannedPassId?.(String(row.id))) return true;
+  if (row.nick && registry.isBannedNick?.(row.nick)) return true;
+  if (row.clan && registry.isBannedNick?.(row.clan)) return true;
+  return false;
+}
+
 function resolveRowPassId(row, registry) {
   const reg = registry || getPassRegistry();
-  if (!row?.nick) return row?.id ? String(row.id) : null;
+  if (!row?.nick) {
+    const id = row?.id ? String(row.id) : null;
+    if (id && reg?.isBannedPassId?.(id)) return null;
+    return id;
+  }
   const norm = normalizeNick(row.nick);
   if (!norm) return row?.id ? String(row.id) : null;
+  if (reg?.isBannedNick?.(row.nick) || reg?.isBannedNorm?.(norm)) return null;
   if (reg) {
     if (isClanNorm(norm)) {
       const clanId = reg.resolveClanPassId(row.clan || norm);
       if (clanId) return String(clanId);
     } else {
       const byNick = reg.playerNickToPassId?.get(norm);
-      if (byNick) return String(byNick);
+      if (byNick) {
+        if (reg.isBannedPassId?.(String(byNick))) return null;
+        return String(byNick);
+      }
     }
     const entry = reg.getPassEntry?.(String(row.id));
+    if (entry?.banned) return null;
     if (entry && normalizeNick(entry.nick) === norm) return String(row.id);
   }
   return row.id ? String(row.id) : null;
 }
 
+/** Масса / дневные победы: только если score строго больше. */
 function upsertServerRecord(map, row, pollAt, registry) {
   if (!row || !row.nick) return;
   const score = toNum(row.score);
   if (score <= 0) return;
   const nickKey = normalizeNick(row.nick);
   if (!nickKey) return;
+  if (registry && isBannedBoardRow(row, registry)) return;
   const passId = resolveRowPassId(row, registry);
+  if (!passId && registry) return;
   const key = passId ? `id:${passId}` : `nick:${nickKey}`;
   const prev = map[key];
   if (prev && toNum(prev.score) >= score) return;
@@ -291,6 +370,36 @@ function upsertServerRecord(map, row, pollAt, registry) {
       if (normalizeNick(v?.nick) === nickKey) delete map[k];
     }
   }
+}
+
+/** Победы PVP/tournament: прибавляем delta к year/alltime. */
+function addWinsToServerRecord(map, row, delta, pollAt, registry) {
+  if (!row || !row.nick || delta <= 0) return;
+  const nickKey = normalizeNick(row.nick);
+  if (!nickKey) return;
+  if (registry && isBannedBoardRow(row, registry)) return;
+  const passId = resolveRowPassId(row, registry);
+  if (!passId) return;
+  const key = `id:${passId}`;
+  const prev = map[key];
+  map[key] = {
+    nick: row.nick,
+    score: toNum(prev?.score) + delta,
+    id: passId,
+    clan: row.clan || null,
+    time: pollAt,
+  };
+  for (const [k, v] of Object.entries(map)) {
+    if (k === key) continue;
+    if (normalizeNick(v?.nick) === nickKey) delete map[k];
+  }
+}
+
+function ensureScoreProgress(state) {
+  if (!state.scoreProgress || typeof state.scoreProgress !== "object") {
+    state.scoreProgress = {};
+  }
+  return state.scoreProgress;
 }
 
 /** Один ник = одна строка на доске (лучший score). */
@@ -381,16 +490,52 @@ function dedupeScoreRankingRows(list) {
 }
 
 function updateServerBoardsFromSnapshot(state, snapshot, pollAt, registry) {
+  const progressRoot = ensureScoreProgress(state);
+  const dayKey = state.dayKey;
+
   for (const srv of snapshot.perServer || []) {
     if (!srv.ok) continue;
     const board = ensureServerBoard(state, srv.id);
-    for (const row of srv.allSolo || []) {
-      upsertServerRecord(board.today, row, pollAt, registry);
-      upsertServerRecord(board.year, row, pollAt, registry);
-      upsertServerRecord(board.alltime, row, pollAt, registry);
+    const scoreMode = isScoreServerMeta(srv);
+    if (!progressRoot[srv.id] || typeof progressRoot[srv.id] !== "object") {
+      progressRoot[srv.id] = {};
     }
-    if (!srv.noClans) {
+    const srvProgress = progressRoot[srv.id];
+
+    for (const row of srv.allSolo || []) {
+      if (registry && isBannedBoardRow(row, registry)) continue;
+
+      if (scoreMode) {
+        // Сегодня: победы за день с GS (max / текущий счётчик).
+        upsertServerRecord(board.today, row, pollAt, registry);
+
+        // Год / всё время: сумма дельт (счётчик GS сбрасывается каждый день).
+        const nickKey = normalizeNick(row.nick);
+        const passId = resolveRowPassId(row, registry);
+        if (!passId || !nickKey) continue;
+        const pkey = `id:${passId}`;
+        let prog = srvProgress[pkey];
+        if (!prog || prog.dayKey !== dayKey) {
+          prog = { dayKey, counted: 0 };
+          srvProgress[pkey] = prog;
+        }
+        const current = toNum(row.score);
+        const delta = Math.max(0, current - toNum(prog.counted));
+        if (delta > 0) {
+          addWinsToServerRecord(board.year, row, delta, pollAt, registry);
+          addWinsToServerRecord(board.alltime, row, delta, pollAt, registry);
+          prog.counted = current;
+        }
+      } else {
+        // FFA/MS: рекорд по массе — только лучший score, без сложения.
+        upsertServerRecord(board.today, row, pollAt, registry);
+        upsertServerRecord(board.year, row, pollAt, registry);
+        upsertServerRecord(board.alltime, row, pollAt, registry);
+      }
+    }
+    if (!srv.noClans && !scoreMode) {
       for (const row of srv.allClans || []) {
+        if (registry && isBannedBoardRow(row, registry)) continue;
         const clanRow = {
           nick: row.nick || row.clan,
           score: row.score,
@@ -405,6 +550,7 @@ function updateServerBoardsFromSnapshot(state, snapshot, pollAt, registry) {
     for (const period of ["today", "year", "alltime"]) {
       board[period] = dedupeBoardMap(board[period] || {}, registry);
       const entries = Object.entries(board[period] || {})
+        .filter(([, row]) => !isBannedBoardRow(row, registry))
         .sort((a, b) => toNum(b[1].score) - toNum(a[1].score))
         .slice(0, MAX_STORED);
       board[period] = Object.fromEntries(entries);
@@ -422,9 +568,10 @@ function formatServerPeriodBoard(state, serverId, period, limit = 100) {
   const p = PERIOD_KEYS.includes(period) ? period : "today";
   const board = ensureServerBoard(state, serverId);
   const lim = Math.min(MAX_STORED, Math.max(1, Number(limit) || 100));
+  const reg = getPassRegistry();
   // Рекорды игроков за период (без клановых строк) + очки за место
-  return dedupeBoardRows(Object.values(board[p] || {}))
-    .filter((row) => row && row.nick && !isClanBoardRow(row))
+  return dedupeBoardRows(Object.values(board[p] || {}), reg)
+    .filter((row) => row && row.nick && !isClanBoardRow(row) && !isBannedBoardRow(row, reg))
     .sort((a, b) => toNum(b.score) - toNum(a.score))
     .slice(0, lim)
     .map((row, i) => {
@@ -445,8 +592,9 @@ function formatServerPeriodClans(state, serverId, period, limit = 100) {
   const p = PERIOD_KEYS.includes(period) ? period : "today";
   const board = ensureServerBoard(state, serverId);
   const lim = Math.min(MAX_STORED, Math.max(1, Number(limit) || 100));
-  return dedupeBoardRows(Object.values(board[p] || {}))
-    .filter((row) => row && isClanBoardRow(row))
+  const reg = getPassRegistry();
+  return dedupeBoardRows(Object.values(board[p] || {}), reg)
+    .filter((row) => row && isClanBoardRow(row) && !isBannedBoardRow(row, reg))
     .sort((a, b) => toNum(b.score) - toNum(a.score))
     .slice(0, lim)
     .map((row, i) => {
@@ -999,6 +1147,8 @@ function formatScoreRankings(state, period, limit = 100) {
 
   function upsert(row, serverId) {
     if (!row || !row.nick) return;
+    const reg = getPassRegistry();
+    if (isBannedBoardRow(row, reg)) return;
     const score = toNum(row.score ?? row.bestScore);
     if (score <= 0) return;
     const id = row.id || null;
@@ -1109,7 +1259,9 @@ function formatPointsRankingsFromBoards(state, period, limit = 100) {
   for (const [serverId, board] of Object.entries(state.serverBoards || {})) {
     const reg = getPassRegistry();
     const rows = dedupeBoardRows(
-      Object.values(board?.[p] || {}).filter((row) => row && row.nick && toNum(row.score) > 0),
+      Object.values(board?.[p] || {}).filter(
+        (row) => row && row.nick && toNum(row.score) > 0 && !isBannedBoardRow(row, reg)
+      ),
       reg
     );
     const players = rows.filter((r) => !isClanRow(r)).sort((a, b) => toNum(b.score) - toNum(a.score));
@@ -1262,7 +1414,91 @@ function migrateRecordsLogic(state) {
     }
     state.recordsLogicVersion = 8;
   }
+  // v9: победы PVP/tournament суммируются (дельты), масса остаётся max;
+  // инициализируем scoreProgress из сегодняшних досок, чтобы не задвоить день.
+  if (Number(state.recordsLogicVersion) < 9) {
+    const progress = ensureScoreProgress(state);
+    for (const [sid, board] of Object.entries(state.serverBoards || {})) {
+      if (!isScoreServerId(sid)) continue;
+      if (!progress[sid] || typeof progress[sid] !== "object") progress[sid] = {};
+      for (const [key, row] of Object.entries(board.today || {})) {
+        progress[sid][key] = {
+          dayKey: state.dayKey,
+          counted: toNum(row?.score),
+        };
+      }
+    }
+    state.recordsLogicVersion = 9;
+    state.suppressNotifyUntil = new Date(Date.now() + 2 * 60 * 1000).toISOString();
+  }
   return state;
+}
+
+/**
+ * Полностью вычищает забаненных из периодов / досок / best / scoreProgress.
+ * Возвращает число удалённых записей.
+ */
+function purgeBannedFromPeriodsState(state, registry) {
+  if (!state || !registry) return 0;
+  let removed = 0;
+
+  function dropMap(map) {
+    if (!map || typeof map !== "object") return;
+    for (const [k, row] of Object.entries(map)) {
+      if (isBannedBoardRow(row, registry)) {
+        delete map[k];
+        removed += 1;
+      }
+    }
+  }
+
+  function dropBucket(bucket) {
+    if (!bucket) return;
+    dropMap(bucket.players);
+    dropMap(bucket.clans);
+  }
+
+  for (const period of PERIOD_KEYS) dropBucket(state[period]);
+
+  for (const board of Object.values(state.serverBoards || {})) {
+    for (const period of PERIOD_KEYS) dropMap(board[period]);
+  }
+
+  if (state.best?.todayByServer) {
+    for (const [sid, best] of Object.entries(state.best.todayByServer)) {
+      if (
+        (best?.passId && registry.isBannedPassId?.(String(best.passId))) ||
+        (best?.nick && registry.isBannedNick?.(best.nick))
+      ) {
+        delete state.best.todayByServer[sid];
+        removed += 1;
+      }
+    }
+  }
+  for (const key of ["year", "alltime"]) {
+    const best = state.best?.[key];
+    if (
+      best &&
+      ((best.passId && registry.isBannedPassId?.(String(best.passId))) ||
+        (best.nick && registry.isBannedNick?.(best.nick)))
+    ) {
+      state.best[key] = null;
+      removed += 1;
+    }
+  }
+
+  for (const [sid, prog] of Object.entries(state.scoreProgress || {})) {
+    if (!prog || typeof prog !== "object") continue;
+    for (const [k, row] of Object.entries(prog)) {
+      const passId = k.startsWith("id:") ? k.slice(3) : null;
+      if (passId && registry.isBannedPassId?.(passId)) {
+        delete prog[k];
+        removed += 1;
+      }
+    }
+  }
+
+  return removed;
 }
 
 function migrateProfileRecordFiles() {
@@ -1316,4 +1552,7 @@ export {
   getFeedSince,
   partsInTz,
   rotatePeriodsIfNeeded,
+  purgeBannedFromPeriodsState,
+  isScoreServerMeta,
+  isScoreServerId,
 };
