@@ -17,6 +17,11 @@
       background: radial-gradient(ellipse at top, #1a2240 0%, var(--bg) 55%);
       color: var(--text); min-height: 100vh;
     }
+    body.has-stats-bg {
+      background:
+        linear-gradient(180deg, rgba(10, 13, 20, 0.62), rgba(10, 13, 20, 0.82)),
+        var(--stats-bg-image) center / cover no-repeat fixed;
+    }
     .wrap { max-width: 900px; margin: 0 auto; padding: 24px 16px 48px; }
     a { color: var(--accent); text-decoration: none; }
     a:hover { text-decoration: underline; }
@@ -92,6 +97,7 @@
 
   <script src="../config.js"></script>
   <script src="../skins.js?v=3"></script>
+  <script src="../statsbg.js?v=1"></script>
   <script>
     const API = window.STATS_API || "https://agar.su/stats-api";
     const REFRESH_MS = window.STATS_REFRESH_MS || 300000;
@@ -234,7 +240,13 @@
           { cache: "no-store" }
         );
         if (!res.ok) throw new Error(res.status === 404 ? "Клан не найден" : "HTTP " + res.status);
-        box.innerHTML = render(await res.json());
+        const data = await res.json();
+        box.innerHTML = render(data);
+        if (typeof applyStatsBgForNick === "function") {
+          await applyStatsBgForNick(data.clan || data.nick || "");
+        } else if (data.statsBgUrl && typeof applyStatsBodyBackground === "function") {
+          applyStatsBodyBackground(data.statsBgUrl);
+        }
         box.dataset.loaded = "1";
       } catch (e) {
         box.innerHTML = '<div class="err">' + esc(e.message) + '</div>';

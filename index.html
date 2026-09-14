@@ -323,7 +323,7 @@
     </script>
     <script src="protocols.js?v=10" defer></script>
     <script src="admin.js?v=8" defer></script>
-    <script src="main.js?v=64" defer></script>
+    <script src="main.js?v=65" defer></script>
     <script src="main-yandex.js?v=7" defer></script>
 </head>
 <body>
@@ -398,6 +398,11 @@
                       <input type="checkbox" id="rotationNick" autocomplete="off">
                       <span class="fas fa-sync-alt" aria-hidden="true"></span>
                     </label>
+                    <label class="shop-addon-toggle" id="statsBgToggleLabel" data-en-title="Stats profile background — 100 ₽" data-tr-title="İstatistik arka planı — 100 ₽" data-zh-title="统计资料背景 — 100 ₽" data-ar-title="خلفية ملف الإحصائيات — 100 ₽" data-es-title="Fondo del perfil de stats — 100 ₽" data-pl-title="Tło profilu stats — 100 ₽" data-de-title="Stats-Profilhintergrund — 100 ₽" data-uk-title="Фон профілю статистики — 100 ₽" title="Фон статистики — 100 ₽">
+                      <input type="checkbox" id="statsBgNick" autocomplete="off">
+                      <span class="fas fa-image" aria-hidden="true"></span>
+                    </label>
+                    <input type="file" id="statsBgInput" accept=".png,.jpg,.jpeg,.webp,.gif" autocomplete="off" hidden>
                   </div>
                 </div>
               </div>
@@ -414,6 +419,7 @@
             <li id="skinCost"><span data-en="Skin" data-tr="Skin" data-zh="皮肤" data-ar="الجلد" data-es="Skin" data-pl="Skin" data-de="Skin" data-uk="Скін">Скин</span><strong>0 ₽</strong></li>
             <li id="invisibleCost" class="inl-2"><span data-en="Invisible nick" data-tr="Görünmez nick" data-zh="隐身昵称" data-ar="لقب مخفي" data-es="Nick invisible" data-pl="Niewidoczny nick" data-de="Unsichtbarer Nick" data-uk="Невидимий нік">Невидимый ник</span><strong>0 ₽</strong></li>
             <li id="rotationCost" class="inl-3"><span data-en="Skin rotation" data-tr="Skin döndürme" data-zh="皮肤旋转" data-ar="دوران الجلد" data-es="Rotación de skin" data-pl="Obrót skina" data-de="Skin-Rotation" data-uk="Обертання скіна">Поворот скина</span><strong>0 ₽</strong></li>
+            <li id="statsBgCost" class="inl-4" style="display:none"><span data-en="Stats background" data-tr="İstatistik arka planı" data-zh="统计背景" data-ar="خلفية الإحصائيات" data-es="Fondo de stats" data-pl="Tło stats" data-de="Stats-Hintergrund" data-uk="Фон статистики">Фон статистики</span><strong>0 ₽</strong></li>
           </ul>
           <div class="shop-receipt-total">
             <span data-en="Total" data-tr="Toplam" data-zh="应付" data-ar="الإجمالي" data-es="Total" data-pl="Do zapłaty" data-de="Zu zahlen" data-uk="До сплати">К оплате</span>
