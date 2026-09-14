@@ -9362,9 +9362,12 @@ onReady(() => {
     xstats.forEach(player => {
       const level = getLevel2(player.xp);
       const avatar = resolveAccountAvatar(player.account_avatar);
+      const uid = player.uid != null ? String(player.uid) : "—";
+      const nicks = Math.max(0, Number(player.nicks_count) || 0);
+      const clans = Math.max(0, Number(player.clans_count) || 0);
       const playerDiv = document.createElement("div");
       playerDiv.classList.add("top-player");
-      playerDiv.innerHTML = `\n<div class="time">${player.position}</div>\n<div class="nick">${player.account_name}</div>\n<div class="score">${level}</div>\n<div class="skkinn" style="background-image: url('${avatar.replace(/'/g, "%27")}');"></div>\n                `;
+      playerDiv.innerHTML = `${""}<div class="time">${player.position}</div><div class="nick"><span class="account-uid">ID ${uid}</span></div><div class="score">${level}</div><div class="count">${nicks}</div><div class="count">${clans}</div><div class="skkinn" style="background-image: url('${avatar.replace(/'/g, "%27")}');"></div>`;
       container.appendChild(playerDiv);
     });
   }
