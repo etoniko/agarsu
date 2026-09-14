@@ -262,6 +262,11 @@
           <div class="aa-row" style="margin-top:8px">
             <div class="aa-btns" id="aaGlobalActs"></div>
           </div>
+          <div class="aa-row" style="margin-top:8px">
+            <label>ChatLock</label>
+            <input class="aa-inp" id="aaChatLockSec" type="number" min="0" value="1000" title="Секунды chatlock" />
+            <button type="button" id="aaChatLockBtn">ChatLock</button>
+          </div>
         </div>
 
         <div class="aa-sec">
@@ -512,7 +517,7 @@
     ref.addEventListener("click", () => requestPanel());
     lists.appendChild(ref);
 
-    const serverActs = [{ label: "ChatLock", cmd: "/chatlock", admin: false }];
+    const serverActs = [];
     if (isAdmin()) {
       serverActs.push(
         { label: "Status", cmd: "/status", admin: true },
@@ -527,6 +532,17 @@
       b.addEventListener("click", () => sendCmd(a.cmd));
       acts.appendChild(b);
     });
+
+    const chatLockBtn = document.getElementById("aaChatLockBtn");
+    if (chatLockBtn && !chatLockBtn._aaBound) {
+      chatLockBtn._aaBound = true;
+      chatLockBtn.addEventListener("click", () => {
+        const sec = Math.max(0, val("aaChatLockSec", 1000) | 0);
+        const inp = document.getElementById("aaChatLockSec");
+        if (inp) inp.value = String(sec);
+        sendCmd(`/chatlock ${sec}`);
+      });
+    }
   }
 
   function formatIp(ip) {
