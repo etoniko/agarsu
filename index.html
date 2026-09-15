@@ -16,7 +16,7 @@
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="canonical" href="https://agar.su">
     <link rel="stylesheet" href="/fonts/fonts.css?v=1">
-    <link rel="stylesheet" href="style.css?v=19">
+    <link rel="stylesheet" href="style.css?v=20">
     <script>
       window.renderDeathBanner = window.renderDeathBanner || function () {};
       window.trackPlayGoal = window.trackPlayGoal || function () {};
@@ -288,7 +288,7 @@
     </script>
     <script src="protocols.js?v=10" defer></script>
     <script src="admin.js?v=10" defer></script>
-    <script src="assets/scripts/friends.js?v=4" defer></script>
+    <script src="assets/scripts/friends.js?v=5" defer></script>
     <script src="main.js?v=74" defer></script>
 </head>
 <body>
@@ -306,7 +306,7 @@
         <div class="menu-item" onclick="showContent('skinslist')"><i class="fas fa-image"></i><span class="label" data-en="Skins" data-tr="Skinler" data-zh="皮肤" data-ar="الجلود" data-es="Skins" data-pl="Skiny" data-de="Skins" data-uk="Скіни">Скины</span></div>
         <div class="menu-item active" onclick="showContent('home')"><i class="fas fa-home"></i><span class="label" data-en="Home" data-tr="Ana Sayfa" data-zh="主页" data-ar="الرئيسية" data-es="Inicio" data-pl="Strona główna" data-de="Start" data-uk="Головна">Главная</span></div>
         <div class="menu-item" onclick="showContent('rating')"><i class="fas fa-star"></i><span class="label" data-en="Rating" data-tr="Sıralama" data-zh="排行" data-ar="التصنيف" data-es="Clasificación" data-pl="Ranking" data-de="Rangliste" data-uk="Рейтинг">Рейтинг</span></div>
-        <div class="menu-item" onclick="showContent('store')"><i class="fas fa-user"></i><span class="label" id="accountMenuLabel" data-en="Sign in" data-tr="Giriş" data-zh="登录" data-ar="تسجيل الدخول" data-es="Iniciar sesión" data-pl="Zaloguj" data-de="Anmelden" data-uk="Увійти">Войти</span></div>
+        <div class="menu-item" id="accountMenuItem" onclick="showContent('store')"><i class="fas fa-user"></i><span class="label" id="accountMenuLabel" data-en="Sign in" data-tr="Giriş" data-zh="登录" data-ar="تسجيل الدخول" data-es="Iniciar sesión" data-pl="Zaloguj" data-de="Anmelden" data-uk="Увійти">Войти</span><span class="friends-alert-dot" id="accountFriendsAlert" hidden aria-hidden="true"></span></div>
       </div>
       <div class="main-content">
 <div id="shop" class="content">
@@ -806,6 +806,7 @@
                     <i class="fas fa-user-group"></i>
                     <span data-en="Friends" data-tr="Arkadaşlar" data-zh="好友" data-ar="أصدقاء" data-es="Amigos" data-pl="Znajomi" data-de="Freunde" data-uk="Друзі">Друзья</span>
                     <span class="badge" id="badgeFriends">0</span>
+                    <span class="friends-alert-dot friends-alert-dot--tab" id="tabFriendsAlert" hidden aria-hidden="true"></span>
                   </button>
                   <button id="tabSettings" type="button" class="tab">
                     <i class="fas fa-gear"></i>
