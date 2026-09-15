@@ -449,6 +449,24 @@
     return li;
   }
 
+  function clearSearchResults(uid) {
+    const box = document.getElementById("friendsSearchResults");
+    const inp = document.getElementById("friendsSearchInput");
+    if (box) {
+      if (uid != null) {
+        const id = String(uid);
+        Array.from(box.querySelectorAll(".friends-result")).forEach((row) => {
+          if (String(row.getAttribute("data-uid") || "") === id) row.remove();
+        });
+        if (!box.querySelector(".friends-result")) box.innerHTML = "";
+      } else {
+        box.innerHTML = "";
+      }
+    }
+    if (inp && uid == null) inp.value = "";
+    if (inp && uid != null && String(inp.value || "").trim() === String(uid)) inp.value = "";
+  }
+
   async function act(path, uid) {
     try {
       const res = await api(path, "POST", { uid });
@@ -456,6 +474,9 @@
       if (!res.ok) {
         alert(data.message || data.error || "Ошибка");
         return;
+      }
+      if (path === "friends/request" || path === "friends/accept") {
+        clearSearchResults(uid);
       }
       await loadFriendsPanel();
       await refreshPlayData();
@@ -558,9 +579,14 @@
         box.textContent = data.message || data.error || "Ошибка";
         return;
       }
-      (data.results || []).forEach((f) => {
+      const results = (data.results || []).filter((f) => {
+        // Already friends / already sent — don't keep visible in search
+        return f.relation !== "friends" && f.relation !== "outgoing";
+      });
+      results.forEach((f) => {
         const row = document.createElement("div");
         row.className = "friends-result";
+        row.setAttribute("data-uid", String(f.uid));
         const left = document.createElement("div");
         const hasName = !!String(f?.account_name || "").trim();
         left.innerHTML = hasName
@@ -575,6 +601,7 @@
         box.appendChild(row);
       });
       if (!(data.results || []).length) box.textContent = "Игрок с таким ID не найден";
+      else if (!results.length) box.innerHTML = "";
     } catch (_) {
       box.textContent = "Ошибка сети";
     }
