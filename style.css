@@ -4197,12 +4197,12 @@ img.skin-strip-anim{max-width:none !important;object-fit:fill !important;flex-sh
 .friends-alert-dot{
   position:absolute;
   top:4px;
-  right:8px;
-  width:10px;
-  height:10px;
+  right:18px;
+  width:5px;
+  height:5px;
   border-radius:50%;
   background:#ff3b3b;
-  box-shadow:0 0 0 2px #0b0b0b,0 0 8px rgba(255,59,59,.85);
+  box-shadow:0 0 0 2px #e91e1e,0 0 8px rgba(255,59,59,.85);
   pointer-events:none;
 }
 .friends-alert-dot[hidden]{display:none!important;}
