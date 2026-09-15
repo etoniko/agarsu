@@ -78,14 +78,6 @@
       return "";
     }
   }
-  function getSessionId() {
-    try {
-      return sessionStorage.getItem("accountSessionId") || "";
-    } catch (_) {
-      return "";
-    }
-  }
-
   async function api(tag, method, body) {
     if (typeof accountApiGet === "function") {
       return accountApiGet(tag, method || "GET", body || null);
@@ -93,8 +85,6 @@
     const headers = {};
     const token = getToken();
     if (token) headers.Authorization = "Game " + token;
-    const sid = getSessionId();
-    if (sid) headers["X-Session-Id"] = sid;
     if (body) headers["Content-Type"] = "application/json";
     return fetch(API + tag, {
       method: method || "GET",
