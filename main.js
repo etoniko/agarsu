@@ -2158,6 +2158,7 @@
     const nameSpan = document.createElement("span");
     nameSpan.className = "Lednick-name";
     renderLeaderboardName(nameSpan, name);
+    appendFriendLbMark(nameSpan, cleanName);
     if (!isSystemLine && isTournamentPlayer && !isWinner) {
       nameSpan.title = "Участник турнира";
     }
@@ -2244,6 +2245,17 @@
   }
   function formatLeaderBoardName(S, raw) {
     return String(raw || "");
+  }
+  function appendFriendLbMark(nameSpan, name) {
+    try {
+      if (window.AgarFriends && window.AgarFriends.isFriendName(name)) {
+        const mark = document.createElement("span");
+        mark.className = "lb-friend-mark";
+        mark.title = "Друг";
+        mark.textContent = "★";
+        nameSpan.appendChild(mark);
+      }
+    } catch (_) {}
   }
   function drawCustomLeaderBoard() {
     var _a, _b;
@@ -6460,27 +6472,38 @@ function updateRegionOnlineTotals(totals) {
   function showNickClanTab(S, which) {
     const tabN = document.getElementById("tabNicknames");
     const tabC = document.getElementById("tabClans");
+    const tabF = document.getElementById("tabFriends");
     const tabS = document.getElementById("tabSettings");
     const nick = document.getElementById("nickWrap");
     const clan = document.getElementById("clanWrap");
+    const friends = document.getElementById("friendsWrap");
     const settings = document.getElementById("settingsWrap");
     if (!tabN || !tabC || !tabS || !nick || !clan || !settings) return;
     tabN.classList.toggle("active", which === "nicks");
     tabC.classList.toggle("active", which === "clans");
+    if (tabF) tabF.classList.toggle("active", which === "friends");
     tabS.classList.toggle("active", which === "settings");
     nick.style.display = which === "nicks" ? "" : "none";
     clan.style.display = which === "clans" ? "" : "none";
+    if (friends) friends.style.display = which === "friends" ? "" : "none";
     settings.style.display = which === "settings" ? "" : "none";
     updateRestoreBlockVisibility(S);
+    if (which === "friends" && window.AgarFriends) {
+      try {
+        window.AgarFriends.loadFriendsPanel();
+      } catch (_) {}
+    }
   }
   function wireTabsOnce(S) {
     const wrap = document.getElementById("myNickClanTabs");
     const tabN = document.getElementById("tabNicknames");
     const tabC = document.getElementById("tabClans");
+    const tabF = document.getElementById("tabFriends");
     const tabS = document.getElementById("tabSettings");
     if (!wrap || !tabN || !tabC || !tabS || wrap.dataset.wired) return;
     tabN.onclick = () => showNickClanTab(S, "nicks");
     tabC.onclick = () => showNickClanTab(S, "clans");
+    if (tabF) tabF.onclick = () => showNickClanTab(S, "friends");
     tabS.onclick = () => showNickClanTab(S, "settings");
     wrap.dataset.wired = "1";
   }
@@ -6545,6 +6568,9 @@ function updateRegionOnlineTotals(totals) {
       if (typeof window.updateAccountMenuLabel === "function") {
         window.updateAccountMenuLabel();
       }
+      try {
+        if (window.AgarFriends) window.AgarFriends.onAccount(data);
+      } catch (_) {}
       const logoutBtn = document.getElementById("logoutButton");
       const authlogEl = document.getElementById("authlog");
       if (logoutBtn) logoutBtn.style.display = "";
@@ -6555,6 +6581,9 @@ function updateRegionOnlineTotals(totals) {
       S.accountData = null;
       localStorage.removeItem("accountData");
       clearAccountToken();
+      try {
+        if (window.AgarFriends) window.AgarFriends.onLogout();
+      } catch (_) {}
       clearRestoreTimestamp();
       const block = document.getElementById("myNicknamesBlock");
       if (block) block.style.display = "none";
@@ -6789,6 +6818,16 @@ function updateRegionOnlineTotals(totals) {
     if (getAccountToken()) loadAccountUserData();
     if (typeof window.updateAccountMenuLabel === "function") {
       window.updateAccountMenuLabel();
+    }
+    try {
+      if (window.AgarFriends && typeof window.AgarFriends.init === "function") {
+        window.AgarFriends.init(S, {
+          accountApiGet,
+          resolveServerId: resolveOfficialServerId
+        });
+      }
+    } catch (err) {
+      console.warn("AgarFriends init failed:", err);
     }
     return {
       displayAccountData,
@@ -10395,6 +10434,7 @@ onReady(() => {
       const uid = player.uid != null ? String(player.uid) : "—";
       const nicks = Math.max(0, Number(player.nicks_count) || 0);
       const clans = Math.max(0, Number(player.clans_count) || 0);
+      const friends = Math.max(0, Number(player.friends) || 0);
       const playerDiv = document.createElement("div");
       playerDiv.classList.add("top-player");
       playerDiv.innerHTML =
@@ -10403,6 +10443,7 @@ onReady(() => {
         `<div class="score">${level}</div>` +
         `<div class="count" title="Ники">${nicks}</div>` +
         `<div class="count" title="Кланы">${clans}</div>` +
+        `<div class="count friends-count" title="Друзья">${friends}</div>` +
         `<div class="skkinn"><img src="${avatar.replace(/"/g, "%22")}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"></div>`;
       frag.appendChild(playerDiv);
     });
@@ -10417,7 +10458,7 @@ onReady(() => {
       try {
         const container = document.getElementById("table-container");
         if (container && !fetchTop100._loaded) {
-          container.innerHTML = `<div class="top-player"><div class="time"></div><div class="nick">Загрузка…</div><div class="score"></div><div class="count"></div><div class="count"></div><div class="skkinn"></div></div>`;
+          container.innerHTML = `<div class="top-player"><div class="time"></div><div class="nick">Загрузка…</div><div class="score"></div><div class="count"></div><div class="count"></div><div class="count"></div><div class="skkinn"></div></div>`;
         }
         const res = await fetch(TOP100_URL, {
           cache: "default"
