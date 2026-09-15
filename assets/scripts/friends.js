@@ -314,6 +314,7 @@
     return "ID " + (f?.uid ?? "?");
   }
 
+  function renderFriendRow(f, mode) {
     const li = document.createElement("li");
     li.className = "friends-row";
     const left = document.createElement("div");
