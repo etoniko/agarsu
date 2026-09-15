@@ -288,7 +288,7 @@
     </script>
     <script src="protocols.js?v=10" defer></script>
     <script src="admin.js?v=10" defer></script>
-    <script src="assets/scripts/friends.js?v=2" defer></script>
+    <script src="assets/scripts/friends.js?v=3" defer></script>
     <script src="main.js?v=74" defer></script>
 </head>
 <body>
@@ -822,7 +822,7 @@
               <div class="list-wrap store-list" id="friendsWrap" style="display:none;">
                 <div class="friends-panel" id="friendsPanel">
                   <div class="friends-search-row">
-                    <input type="text" id="friendsSearchInput" maxlength="48" placeholder="ID или имя ЛК…" autocomplete="off">
+                    <input type="text" id="friendsSearchInput" maxlength="12" inputmode="numeric" pattern="[0-9]*" placeholder="ID личного кабинета…" autocomplete="off">
                     <button type="button" id="friendsSearchBtn" class="friends-btn">Найти</button>
                   </div>
                   <div id="friendsSearchResults" class="friends-search-results"></div>
@@ -840,7 +840,7 @@
                   <div class="friends-pane" data-friends-pane="incoming" hidden>
                     <ul id="friendsIncomingList" class="list friends-list"></ul>
                   </div>
-                  <p class="friends-hint" id="friendsHint">Друзья доступны от 1000 XP. Статус «в сети» и сервер видны только друзьям.</p>
+                  <p class="friends-hint" id="friendsHint">Поиск только по ID ЛК. До 15 заявок в сутки, до 100 друзей. Имя видно после добавления или если вам кинули заявку.</p>
                 </div>
               </div>
               <div id="settingsWrap" class="store-settings-panel" style="display:none;">

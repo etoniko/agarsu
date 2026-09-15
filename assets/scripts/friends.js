@@ -308,19 +308,27 @@
     });
   }
 
-  function renderFriendRow(f, mode) {
+  function displayFriendName(f) {
+    const name = String(f?.account_name || "").trim();
+    if (name) return name;
+    return "ID " + (f?.uid ?? "?");
+  }
+
     const li = document.createElement("li");
     li.className = "friends-row";
     const left = document.createElement("div");
     left.className = "friends-row-main";
     const title = document.createElement("div");
     title.className = "friends-row-title";
+    const shown = displayFriendName(f);
+    const hasName = !!String(f?.account_name || "").trim();
     title.innerHTML =
       '<span class="friends-row-name">' +
-      esc(f.account_name || "Игрок") +
-      '</span><span class="friends-row-id">ID ' +
-      esc(f.uid) +
-      "</span>";
+      esc(shown) +
+      "</span>" +
+      (hasName
+        ? '<span class="friends-row-id">ID ' + esc(f.uid) + "</span>"
+        : "");
     left.appendChild(title);
     if (mode === "friends") {
       const meta = document.createElement("div");
@@ -459,10 +467,22 @@
       if (outgoing && !outgoingRows.length) outgoing.innerHTML = "<li class='empty'>Нет исходящих заявок</li>";
       updateFriendsCounts(friends.length, outgoingRows.length, incomingRows.length);
       if (hint) {
+        const leftReq = Math.max(
+          0,
+          (Number(data.maxRequestsPerDay) || 15) - (Number(data.requestsToday) || 0)
+        );
         hint.textContent =
           "Друзья: " +
           friends.length +
-          ". Координаты и онлайн передаются, если включено в Настройках ЛК.";
+          "/" +
+          (data.maxFriends || 100) +
+          ". Заявок сегодня: " +
+          (data.requestsToday || 0) +
+          "/" +
+          (data.maxRequestsPerDay || 15) +
+          " (осталось " +
+          leftReq +
+          "). Имя видно только у друзей и во входящих.";
       }
       if (data.privacy) {
         const sc = document.getElementById("optFriendShareCoords");
@@ -487,6 +507,10 @@
     if (!box) return;
     box.innerHTML = "";
     if (!q) return;
+    if (!/^\d{1,12}$/.test(q)) {
+      box.textContent = "Введите только ID личного кабинета (цифры)";
+      return;
+    }
     try {
       const res = await api("friends/search?q=" + encodeURIComponent(q));
       const data = await res.json();
@@ -498,7 +522,10 @@
         const row = document.createElement("div");
         row.className = "friends-result";
         const left = document.createElement("div");
-        left.innerHTML = esc(f.account_name) + " <small>ID " + esc(f.uid) + "</small>";
+        const hasName = !!String(f?.account_name || "").trim();
+        left.innerHTML = hasName
+          ? esc(displayFriendName(f)) + " <small>ID " + esc(f.uid) + "</small>"
+          : esc(displayFriendName(f));
         const actions = document.createElement("div");
         actions.className = "friends-actions";
         const fakeLi = renderFriendRow(f, "search");
@@ -507,7 +534,7 @@
         row.append(left, actions);
         box.appendChild(row);
       });
-      if (!(data.results || []).length) box.textContent = "Никого не найдено";
+      if (!(data.results || []).length) box.textContent = "Игрок с таким ID не найден";
     } catch (_) {
       box.textContent = "Ошибка сети";
     }
