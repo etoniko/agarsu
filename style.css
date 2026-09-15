@@ -4159,12 +4159,19 @@ img.skin-strip-anim{max-width:none !important;object-fit:fill !important;flex-sh
 
 /* Friends feature (rollback: remove this block + friends.js + API friends*) */
 .friend-arrows{position:fixed;inset:0;pointer-events:none;z-index:40;overflow:hidden;}
-.friend-arrow{position:absolute;width:0;height:0;transform-origin:center center;opacity:.9;}
-.friend-arrow-inner{position:absolute;left:50%;top:50%;width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-bottom:18px solid #4c9aff;transform:translate(-50%,-50%);filter:drop-shadow(0 0 2px #000);}
-.friend-arrow-label{position:absolute;left:50%;top:calc(50% + 16px);transform:translateX(-50%);font:12px/1 Ubuntu,sans-serif;color:#9fd0ff;text-shadow:0 0 3px #000;white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis;}
+.friend-arrow{position:absolute;width:0;height:0;transform-origin:center center;opacity:.85;}
+.friend-arrow-inner{
+  position:absolute;left:50%;top:50%;width:0;height:0;
+  border-left:9px solid transparent;border-right:9px solid transparent;
+  border-bottom:16px solid rgba(255,255,255,.72);
+  transform:translate(-50%,-50%);
+  filter:drop-shadow(0 0 3px rgba(0,0,0,.35));
+}
 .friend-map-dots{position:absolute;inset:0;pointer-events:none;z-index:5;}
-.friend-map-dot{position:absolute;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;background:#4c9aff;border:1px solid #fff;box-shadow:0 0 4px #000;}
-.friends-panel{padding:8px 4px 12px;display:flex;flex-direction:column;gap:10px;}
+.friend-map-dot{
+  position:absolute;width:8px;height:8px;margin:-4px 0 0 -4px;
+  border-radius:50%;background:#2ecc71;border:0;box-shadow:none;
+}.friends-panel{padding:8px 4px 12px;display:flex;flex-direction:column;gap:10px;}
 .friends-search-row{display:flex;gap:6px;}
 .friends-search-row input{flex:1;min-width:0;padding:8px 10px;border-radius:8px;border:1px solid #ffffff22;background:#0e172c;color:#fff;}
 .friends-btn{padding:7px 11px;border-radius:8px;border:1px solid #2f6fed;background:#2f6fed;color:#fff;cursor:pointer;font-size:12px;line-height:1.2;white-space:nowrap;}
