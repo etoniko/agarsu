@@ -24,6 +24,34 @@
   let playData = { friends: [], privacy: { shareCoords: false, sharePresence: true } };
   let friendNickSet = new Set();
   let wiredUi = false;
+  let friendsTab = "friends";
+
+  function setFriendsTab(which) {
+    friendsTab = which === "incoming" || which === "outgoing" ? which : "friends";
+    document.querySelectorAll(".friends-subtab").forEach((btn) => {
+      const on = btn.getAttribute("data-friends-tab") === friendsTab;
+      btn.classList.toggle("active", on);
+      btn.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    document.querySelectorAll(".friends-pane").forEach((pane) => {
+      const on = pane.getAttribute("data-friends-pane") === friendsTab;
+      pane.classList.toggle("active", on);
+      if (on) pane.removeAttribute("hidden");
+      else pane.setAttribute("hidden", "");
+    });
+  }
+
+  function updateFriendsCounts(friendsN, outgoingN, incomingN) {
+    const set = (id, n) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = String(n);
+    };
+    set("friendsCountFriends", friendsN);
+    set("friendsCountOutgoing", outgoingN);
+    set("friendsCountIncoming", incomingN);
+    const badge = document.getElementById("badgeFriends");
+    if (badge) badge.textContent = String(friendsN + incomingN);
+  }
 
   function lsBool(key, def) {
     try {
@@ -47,7 +75,7 @@
     return lsBool(LS.minimap, true);
   }
   function optShareCoords() {
-    return lsBool(LS.shareCoords, false);
+    return lsBool(LS.shareCoords, true);
   }
   function optSharePresence() {
     return lsBool(LS.sharePresence, true);
@@ -282,39 +310,70 @@
 
   function renderFriendRow(f, mode) {
     const li = document.createElement("li");
+    li.className = "friends-row";
     const left = document.createElement("div");
-    const name = esc(f.account_name || "Игрок") + " <small>ID " + esc(f.uid) + "</small>";
-    let meta = "";
+    left.className = "friends-row-main";
+    const title = document.createElement("div");
+    title.className = "friends-row-title";
+    title.innerHTML =
+      '<span class="friends-row-name">' +
+      esc(f.account_name || "Игрок") +
+      '</span><span class="friends-row-id">ID ' +
+      esc(f.uid) +
+      "</span>";
+    left.appendChild(title);
     if (mode === "friends") {
-      if (f.hidden) meta = '<div class="friends-meta online">в сети (скрыто)</div>';
-      else if (f.online && f.playing && f.serverKey)
-        meta =
-          '<div class="friends-meta online">в игре · ' + esc(f.serverKey) + "</div>";
-      else if (f.online) meta = '<div class="friends-meta online">в сети</div>';
-      else meta = '<div class="friends-meta offline">не в сети</div>';
+      const meta = document.createElement("div");
+      if (f.hidden) {
+        meta.className = "friends-meta online";
+        meta.textContent = "в сети (скрыто)";
+      } else if (f.online && f.playing && f.serverKey) {
+        meta.className = "friends-meta online";
+        meta.textContent = "в игре · " + String(f.serverKey);
+      } else if (f.online) {
+        meta.className = "friends-meta online";
+        meta.textContent = "в сети";
+      } else {
+        meta.className = "friends-meta offline";
+        meta.textContent = "не в сети";
+      }
+      left.appendChild(meta);
+    } else if (mode === "incoming") {
+      const meta = document.createElement("div");
+      meta.className = "friends-meta";
+      meta.textContent = "хочет добавить вас";
+      left.appendChild(meta);
+    } else if (mode === "outgoing") {
+      const meta = document.createElement("div");
+      meta.className = "friends-meta";
+      meta.textContent = "ожидает ответа";
+      left.appendChild(meta);
     }
-    left.innerHTML = "<div>" + name + "</div>" + meta;
     const actions = document.createElement("div");
     actions.className = "friends-actions";
     if (mode === "incoming") {
       const a = document.createElement("button");
       a.className = "friends-btn";
+      a.type = "button";
       a.textContent = "Принять";
       a.onclick = () => act("friends/accept", f.uid);
       const r = document.createElement("button");
       r.className = "friends-btn secondary";
+      r.type = "button";
       r.textContent = "Отклонить";
       r.onclick = () => act("friends/reject", f.uid);
       actions.append(a, r);
     } else if (mode === "outgoing") {
       const c = document.createElement("button");
       c.className = "friends-btn secondary";
+      c.type = "button";
       c.textContent = "Отменить";
       c.onclick = () => act("friends/remove", f.uid);
       actions.append(c);
     } else if (mode === "friends") {
       const c = document.createElement("button");
       c.className = "friends-btn danger";
+      c.type = "button";
       c.textContent = "Удалить";
       c.onclick = () => {
         if (confirm("Удалить из друзей?")) act("friends/remove", f.uid);
@@ -323,6 +382,7 @@
     } else if (mode === "search") {
       const b = document.createElement("button");
       b.className = "friends-btn";
+      b.type = "button";
       if (f.relation === "friends") {
         b.textContent = "Друзья";
         b.disabled = true;
@@ -361,11 +421,11 @@
     const list = document.getElementById("friendsList");
     const incoming = document.getElementById("friendsIncomingList");
     const outgoing = document.getElementById("friendsOutgoingList");
-    const badge = document.getElementById("badgeFriends");
     const hint = document.getElementById("friendsHint");
     if (!list) return;
     if (!getToken()) {
       list.innerHTML = "<li class='empty'>Войдите в ЛК</li>";
+      updateFriendsCounts(0, 0, 0);
       return;
     }
     const xp = Number(S?.accountData?.xp) || 0;
@@ -373,8 +433,8 @@
       list.innerHTML = "";
       if (incoming) incoming.innerHTML = "";
       if (outgoing) outgoing.innerHTML = "";
+      updateFriendsCounts(0, 0, 0);
       if (hint) hint.textContent = "Друзья доступны от " + MIN_XP + " XP (сейчас " + xp + ").";
-      if (badge) badge.textContent = "0";
       return;
     }
     try {
@@ -385,23 +445,25 @@
         return;
       }
       if (!res.ok) throw new Error("fail");
+      const friends = data.friends || [];
+      const incomingRows = data.incoming || [];
+      const outgoingRows = data.outgoing || [];
       list.innerHTML = "";
-      incoming.innerHTML = "";
-      outgoing.innerHTML = "";
-      (data.friends || []).forEach((f) => list.appendChild(renderFriendRow(f, "friends")));
-      (data.incoming || []).forEach((f) => incoming.appendChild(renderFriendRow(f, "incoming")));
-      (data.outgoing || []).forEach((f) => outgoing.appendChild(renderFriendRow(f, "outgoing")));
-      if (!(data.friends || []).length) list.innerHTML = "<li class='empty'>—</li>";
-      if (!(data.incoming || []).length) incoming.innerHTML = "<li class='empty'>—</li>";
-      if (!(data.outgoing || []).length) outgoing.innerHTML = "<li class='empty'>—</li>";
-      if (badge) badge.textContent = String((data.friends || []).length);
+      if (incoming) incoming.innerHTML = "";
+      if (outgoing) outgoing.innerHTML = "";
+      friends.forEach((f) => list.appendChild(renderFriendRow(f, "friends")));
+      incomingRows.forEach((f) => incoming && incoming.appendChild(renderFriendRow(f, "incoming")));
+      outgoingRows.forEach((f) => outgoing && outgoing.appendChild(renderFriendRow(f, "outgoing")));
+      if (!friends.length) list.innerHTML = "<li class='empty'>Пока нет друзей — найдите игрока выше</li>";
+      if (incoming && !incomingRows.length) incoming.innerHTML = "<li class='empty'>Нет входящих заявок</li>";
+      if (outgoing && !outgoingRows.length) outgoing.innerHTML = "<li class='empty'>Нет исходящих заявок</li>";
+      updateFriendsCounts(friends.length, outgoingRows.length, incomingRows.length);
       if (hint) {
         hint.textContent =
           "Друзья: " +
-          (data.friends || []).length +
-          ". Координаты передаются только если вы включили это в настройках.";
+          friends.length +
+          ". Координаты и онлайн передаются, если включено в Настройках ЛК.";
       }
-      // reflect privacy checkboxes from server if present
       if (data.privacy) {
         const sc = document.getElementById("optFriendShareCoords");
         const sp = document.getElementById("optFriendSharePresence");
@@ -410,7 +472,7 @@
           lsSet(LS.shareCoords, !!data.privacy.shareCoords);
         }
         if (sp && typeof data.privacy.sharePresence === "boolean") {
-          sp.checked = !!data.privacy.sharePresence;
+          sp.checked = data.privacy.sharePresence !== false;
           lsSet(LS.sharePresence, data.privacy.sharePresence !== false);
         }
       }
@@ -462,7 +524,10 @@
         if (e.key === "Enter") searchFriends();
       });
     }
-    // restore settings checkboxes
+    document.querySelectorAll(".friends-subtab").forEach((tab) => {
+      tab.addEventListener("click", () => setFriendsTab(tab.getAttribute("data-friends-tab")));
+    });
+    setFriendsTab(friendsTab);
     const map = [
       ["optFriendArrows", optArrows()],
       ["optFriendMinimap", optMinimap()],
