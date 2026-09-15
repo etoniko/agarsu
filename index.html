@@ -16,7 +16,7 @@
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="canonical" href="https://agar.su">
     <link rel="stylesheet" href="/fonts/fonts.css?v=1">
-    <link rel="stylesheet" href="style.css?v=18">
+    <link rel="stylesheet" href="style.css?v=19">
     <script>
       window.renderDeathBanner = window.renderDeathBanner || function () {};
       window.trackPlayGoal = window.trackPlayGoal || function () {};
@@ -288,7 +288,7 @@
     </script>
     <script src="protocols.js?v=10" defer></script>
     <script src="admin.js?v=10" defer></script>
-    <script src="assets/scripts/friends.js?v=1" defer></script>
+    <script src="assets/scripts/friends.js?v=2" defer></script>
     <script src="main.js?v=74" defer></script>
 </head>
 <body>
@@ -579,11 +579,6 @@
                 <label><input type="checkbox" class="save" data-box-id="8" onchange="setChatHide(this.checked);"><span data-en="Disable chat" data-tr="Sohbeti kapat" data-zh="禁用聊天" data-ar="تعطيل الدردشة" data-es="Desactivar chat" data-pl="Wyłącz czat" data-de="Chat deaktivieren" data-uk="Вимкнути чат">Отключить чат</span></label>
                 <label><input type="checkbox" class="save" data-box-id="10" onchange="setAdultContent(this.checked);"><span data-en="+18 (no filter/blur)" data-tr="+18 (filtre/bulanıklık kapalı)" data-zh="+18（无过滤）" data-ar="+18 (بدون فلتر)" data-es="+18 (sin filtro)" data-pl="+18 (bez filtra)" data-de="+18 (ohne Filter)" data-uk="+18 (без фільтра)">+18 (убрать антимат и блюр)</span></label>
                 <label><input type="checkbox" class="save" data-box-id="11" onchange="setConfirmCloseTab(this.checked);"><span data-en="Confirm exit" data-tr="Çıkışı onayla" data-zh="确认退出" data-ar="تأكيد الخروج" data-es="Confirmar salida" data-pl="Potwierdź wyjście" data-de="Verlassen bestätigen" data-uk="Підтвердити вихід">Подтверждение выхода из игры</span></label>
-                <h3 class="settings-panel-title">Друзья</h3>
-                <label><input type="checkbox" class="save" id="optFriendArrows" data-box-id="40" checked onchange="setFriendArrows(this.checked);"><span>Стрелки к друзьям вне экрана</span></label>
-                <label><input type="checkbox" class="save" id="optFriendMinimap" data-box-id="41" checked onchange="setFriendMinimap(this.checked);"><span>Друзья на миникарте</span></label>
-                <label><input type="checkbox" class="save" id="optFriendShareCoords" data-box-id="42" onchange="setFriendShareCoords(this.checked);"><span>Передавать друзьям мои координаты</span></label>
-                <label><input type="checkbox" class="save" id="optFriendSharePresence" data-box-id="43" checked onchange="setFriendSharePresence(this.checked);"><span>Показывать друзьям онлайн / сервер</span></label>
                 <div class="settings-field">
                   <button type="button" id="hud-editor-open" class="settings-action-btn" data-en="Customize HUD layout" data-tr="Arayüz düzenini özelleştir" data-zh="自定义界面布局" data-ar="تخصيص تخطيط الواجهة" data-es="Personalizar diseño de interfaz" data-pl="Dostosuj układ interfejsu" data-de="HUD-Layout anpassen" data-uk="Налаштувати розкладку інтерфейсу">Настроить расположение интерфейса</button>
                 </div>
@@ -831,16 +826,32 @@
                     <button type="button" id="friendsSearchBtn" class="friends-btn">Найти</button>
                   </div>
                   <div id="friendsSearchResults" class="friends-search-results"></div>
-                  <div class="friends-section-title">Входящие</div>
-                  <ul id="friendsIncomingList" class="list friends-list"></ul>
-                  <div class="friends-section-title">Друзья</div>
-                  <ul id="friendsList" class="list friends-list"></ul>
-                  <div class="friends-section-title">Исходящие</div>
-                  <ul id="friendsOutgoingList" class="list friends-list"></ul>
+                  <div class="friends-subtabs" id="friendsSubtabs" role="tablist">
+                    <button type="button" class="friends-subtab active" data-friends-tab="friends" role="tab" aria-selected="true">Друзья <span class="friends-count-pill" id="friendsCountFriends">0</span></button>
+                    <button type="button" class="friends-subtab" data-friends-tab="outgoing" role="tab" aria-selected="false">Исходящие <span class="friends-count-pill" id="friendsCountOutgoing">0</span></button>
+                    <button type="button" class="friends-subtab" data-friends-tab="incoming" role="tab" aria-selected="false">Входящие <span class="friends-count-pill" id="friendsCountIncoming">0</span></button>
+                  </div>
+                  <div class="friends-pane active" data-friends-pane="friends">
+                    <ul id="friendsList" class="list friends-list"></ul>
+                  </div>
+                  <div class="friends-pane" data-friends-pane="outgoing" hidden>
+                    <ul id="friendsOutgoingList" class="list friends-list"></ul>
+                  </div>
+                  <div class="friends-pane" data-friends-pane="incoming" hidden>
+                    <ul id="friendsIncomingList" class="list friends-list"></ul>
+                  </div>
                   <p class="friends-hint" id="friendsHint">Друзья доступны от 1000 XP. Статус «в сети» и сервер видны только друзьям.</p>
                 </div>
               </div>
               <div id="settingsWrap" class="store-settings-panel" style="display:none;">
+                <div class="lk-friends-settings" id="lkFriendsSettings">
+                  <div class="restore-title">Друзья</div>
+                  <p class="restore-note">Настройки видимости и подсказок в игре. По умолчанию всё включено.</p>
+                  <label class="lk-friends-opt"><input type="checkbox" id="optFriendArrows" checked onchange="setFriendArrows(this.checked);"><span>Стрелки к друзьям вне экрана</span></label>
+                  <label class="lk-friends-opt"><input type="checkbox" id="optFriendMinimap" checked onchange="setFriendMinimap(this.checked);"><span>Друзья на миникарте</span></label>
+                  <label class="lk-friends-opt"><input type="checkbox" id="optFriendShareCoords" checked onchange="setFriendShareCoords(this.checked);"><span>Передавать друзьям мои координаты</span></label>
+                  <label class="lk-friends-opt"><input type="checkbox" id="optFriendSharePresence" checked onchange="setFriendSharePresence(this.checked);"><span>Показывать друзьям онлайн / сервер</span></label>
+                </div>
                 <div id="restoreProgressBlock" class="restore-progress-block">
                   <div class="restore-head">
                     <div>

@@ -4160,20 +4160,36 @@ img.skin-strip-anim{max-width:none !important;object-fit:fill !important;flex-sh
 .friend-arrow-label{position:absolute;left:50%;top:calc(50% + 16px);transform:translateX(-50%);font:12px/1 Ubuntu,sans-serif;color:#9fd0ff;text-shadow:0 0 3px #000;white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis;}
 .friend-map-dots{position:absolute;inset:0;pointer-events:none;z-index:5;}
 .friend-map-dot{position:absolute;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;background:#4c9aff;border:1px solid #fff;box-shadow:0 0 4px #000;}
-.friends-panel{padding:8px 4px 12px;display:flex;flex-direction:column;gap:8px;}
+.friends-panel{padding:8px 4px 12px;display:flex;flex-direction:column;gap:10px;}
 .friends-search-row{display:flex;gap:6px;}
 .friends-search-row input{flex:1;min-width:0;padding:8px 10px;border-radius:8px;border:1px solid #ffffff22;background:#0e172c;color:#fff;}
-.friends-btn{padding:8px 12px;border-radius:8px;border:1px solid #2f6fed;background:#2f6fed;color:#fff;cursor:pointer;font-size:12px;}
-.friends-btn.secondary{background:transparent;border-color:#ffffff33;}
-.friends-btn.danger{background:#922;border-color:#a33;}
-.friends-section-title{font-size:12px;color:#8fa8d4;margin-top:4px;}
-.friends-hint{font-size:11px;opacity:.7;margin:4px 0 0;}
-.friends-list li{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
-.friends-meta{font-size:11px;opacity:.8;}
+.friends-btn{padding:7px 11px;border-radius:8px;border:1px solid #2f6fed;background:#2f6fed;color:#fff;cursor:pointer;font-size:12px;line-height:1.2;white-space:nowrap;}
+.friends-btn:disabled{opacity:.55;cursor:default;}
+.friends-btn.secondary{background:transparent;border-color:#ffffff33;color:#d7e4ff;}
+.friends-btn.danger{background:#7a1f2a;border-color:#a33;}
+.friends-btn.secondary:hover,.friends-btn:hover:not(:disabled){filter:brightness(1.08);}
+.friends-subtabs{display:flex;gap:4px;padding:3px;border-radius:10px;background:#0a1220;border:1px solid #ffffff12;}
+.friends-subtab{flex:1;min-width:0;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 6px;border:0;border-radius:8px;background:transparent;color:#8fa8d4;font-size:12px;cursor:pointer;}
+.friends-subtab.active{background:#1a2740;color:#e8f0ff;box-shadow:inset 0 0 0 1px #2f6fed66;}
+.friends-count-pill{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#ffffff14;font-size:11px;line-height:1;}
+.friends-subtab.active .friends-count-pill{background:#2f6fed55;color:#fff;}
+.friends-pane[hidden]{display:none!important;}
+.friends-hint{font-size:11px;opacity:.7;margin:0;}
+.friends-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px;}
+.friends-list li.friends-row,.friends-list li.empty{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 10px;border-radius:10px;background:#ffffff08;border:1px solid #ffffff0d;}
+.friends-list li.empty{justify-content:center;color:#8fa8d4;font-size:12px;}
+.friends-row-main{min-width:0;display:flex;flex-direction:column;gap:3px;}
+.friends-row-title{display:flex;align-items:baseline;gap:8px;min-width:0;flex-wrap:wrap;}
+.friends-row-name{font-size:13px;color:#eef4ff;font-weight:600;}
+.friends-row-id{font-size:11px;color:#8fa8d4;}
+.friends-meta{font-size:11px;opacity:.85;}
 .friends-meta.online{color:#6dffa3;}
 .friends-meta.offline{color:#888;}
-.friends-actions{display:flex;gap:4px;}
+.friends-actions{display:flex;gap:4px;flex-shrink:0;}
 .lb-friend-mark{color:#4c9aff;font-size:11px;margin-left:4px;}
 .cell.friends-count,.friends-count{width:80px;margin-top:10px;text-align:center;font-weight:400;}
 .friends-search-results{display:flex;flex-direction:column;gap:4px;}
-.friends-search-results .friends-result{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;background:#ffffff08;}
+.friends-search-results .friends-result{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;background:#ffffff08;border:1px solid #ffffff0d;}
+.lk-friends-settings{margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #ffffff12;display:flex;flex-direction:column;gap:8px;}
+.lk-friends-opt{display:flex;align-items:center;gap:10px;font-size:13px;color:#d7e4ff;cursor:pointer;}
+.lk-friends-opt input{width:16px;height:16px;accent-color:#2f6fed;}
