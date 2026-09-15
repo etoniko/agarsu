@@ -8,7 +8,11 @@
   const API = "https://api.agar.su/api/";
   const MIN_XP = 1000;
   const PLAY_POLL_MS = 4000;
-  const PRESENCE_MS = 3000;
+  const PRESENCE_MS = 2000;
+  const DRAW_MS = 200;
+  // ~1.25 sectors on a 5×5 minimap (E1↔C1 ≈ 2 sectors)
+  const ARROW_MAP_DIST = 0.25;
+  const ARROW_EDGE = 0.47;
   const LS = {
     arrows: "friends_show_arrows",
     minimap: "friends_show_minimap",
@@ -21,10 +25,12 @@
   let resolveServerId = null;
   let playTimer = null;
   let presenceTimer = null;
+  let drawTimer = null;
   let playData = { friends: [], privacy: { shareCoords: false, sharePresence: true } };
   let friendNickSet = new Set();
   let wiredUi = false;
   let friendsTab = "friends";
+  let lastPlayingSent = null;
 
   function setFriendsTab(which) {
     friendsTab = which === "incoming" || which === "outgoing" ? which : "friends";
@@ -198,13 +204,37 @@
 
   function isPlaying() {
     if (!S) return false;
-    return !!(S.playerCells && S.playerCells.length && S.ws && S.ws.readyState === 1);
+    // Dead / spectating: 0 own cells → no arrows for me, and presence playing=false
+    return !!(S.playerCells && S.playerCells.length > 0 && S.ws && S.ws.readyState === 1);
+  }
+
+  function mapNorm(x, y) {
+    if (!S) return null;
+    const tw = Number(S.rightPos) - Number(S.leftPos);
+    const th = Number(S.bottomPos) - Number(S.topPos);
+    if (!(tw > 0) || !(th > 0)) return null;
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+    return {
+      nx: (x - S.leftPos) / tw,
+      ny: (y - S.topPos) / th,
+    };
+  }
+
+  function canvasSize() {
+    const canvas = document.getElementById("canvas");
+    const w = (canvas && (canvas.clientWidth || canvas.width)) || window.innerWidth || 1;
+    const h = (canvas && (canvas.clientHeight || canvas.height)) || window.innerHeight || 1;
+    return { w, h, cx: w / 2, cy: h / 2 };
   }
 
   async function sendPresence(force) {
     if (!getToken()) return;
     if ((Number(S?.accountData?.xp) || 0) < MIN_XP && !force) return;
     const playing = isPlaying();
+    if (!force && lastPlayingSent === playing && !playing) {
+      // already reported death; skip spam while dead
+      return;
+    }
     const body = {
       playing,
       serverKey: playing ? currentServerKey() : "",
@@ -217,7 +247,18 @@
     }
     try {
       await api("friends/presence", "POST", body);
+      lastPlayingSent = playing;
     } catch (_) {}
+  }
+
+  function tickPresence() {
+    const playing = isPlaying();
+    // Immediate push on death / respawn
+    if (lastPlayingSent !== null && lastPlayingSent !== playing) {
+      sendPresence(true);
+      return;
+    }
+    sendPresence(false);
   }
 
   async function refreshPlayData() {
@@ -250,38 +291,35 @@
   function startLoops() {
     stopLoops();
     playTimer = setInterval(refreshPlayData, PLAY_POLL_MS);
-    presenceTimer = setInterval(() => sendPresence(false), PRESENCE_MS);
+    presenceTimer = setInterval(tickPresence, PRESENCE_MS);
+    drawTimer = setInterval(() => {
+      tickPresence();
+      drawArrows();
+      drawMinimapDots();
+    }, DRAW_MS);
     refreshPlayData();
     sendPresence(true);
   }
   function stopLoops() {
     if (playTimer) clearInterval(playTimer);
     if (presenceTimer) clearInterval(presenceTimer);
+    if (drawTimer) clearInterval(drawTimer);
     playTimer = null;
     presenceTimer = null;
+    drawTimer = null;
+    lastPlayingSent = null;
   }
 
   function sameServerFriendCoords() {
     const key = currentServerKey();
-    if (!key || !optArrows() && !optMinimap()) return [];
+    if (!key || (!optArrows() && !optMinimap())) return [];
+    if (!isPlaying()) return [];
     return (playData.friends || []).filter((f) => {
+      // Friend died (0 cells → playing false) → hide until they play again
       if (!f.playing || !f.online) return false;
       if (!f.serverKey || String(f.serverKey) !== String(key)) return false;
       return Number.isFinite(f.x) && Number.isFinite(f.y);
     });
-  }
-
-  function worldToScreen(wx, wy) {
-    if (!S) return null;
-    const canvas = document.getElementById("canvas");
-    if (!canvas) return null;
-    const w = canvas.width || window.innerWidth;
-    const h = canvas.height || window.innerHeight;
-    // Approximate using view: same as typical agar clients
-    const zoom = S.viewZoom || 1;
-    const sx = (wx - S.nodeX) * zoom + w / 2;
-    const sy = (wy - S.nodeY) * zoom + h / 2;
-    return { x: sx, y: sy, w, h };
   }
 
   function drawArrows() {
@@ -289,34 +327,30 @@
     if (!root) return;
     root.innerHTML = "";
     if (!optArrows() || !isPlaying()) return;
-    const friends = sameServerFriendCoords();
-    friends.forEach((f) => {
-      const scr = worldToScreen(f.x, f.y);
-      if (!scr) return;
-      const margin = 40;
-      const onScreen =
-        scr.x >= margin &&
-        scr.y >= margin &&
-        scr.x <= scr.w - margin &&
-        scr.y <= scr.h - margin;
-      if (onScreen) return;
-      const cx = scr.w / 2;
-      const cy = scr.h / 2;
-      const dx = scr.x - cx;
-      const dy = scr.y - cy;
+    const me = mapNorm(S.nodeX, S.nodeY);
+    if (!me) return;
+    const { w, h, cx, cy } = canvasSize();
+    const edge = Math.min(w, h) * ARROW_EDGE;
+
+    sameServerFriendCoords().forEach((f) => {
+      const them = mapNorm(f.x, f.y);
+      if (!them) return;
+      const dx = them.nx - me.nx;
+      const dy = them.ny - me.ny;
+      const dist = Math.hypot(dx, dy);
+      // Far enough on minimap (≈ >1 sector; E1↔C1 ≈ 0.4)
+      if (!(dist >= ARROW_MAP_DIST)) return;
+
       const ang = Math.atan2(dy, dx);
-      const edge = Math.min(scr.w, scr.h) * 0.42;
       const ax = cx + Math.cos(ang) * edge;
       const ay = cy + Math.sin(ang) * edge;
       const el = document.createElement("div");
       el.className = "friend-arrow";
       el.style.left = ax + "px";
       el.style.top = ay + "px";
-      el.style.transform = "translate(-50%,-50%) rotate(" + (ang + Math.PI / 2) + "rad)";
-      el.innerHTML =
-        '<div class="friend-arrow-inner"></div><div class="friend-arrow-label">' +
-        esc(f.account_name || "Друг") +
-        "</div>";
+      el.style.transform =
+        "translate(-50%,-50%) rotate(" + (ang + Math.PI / 2) + "rad)";
+      el.innerHTML = '<div class="friend-arrow-inner"></div>';
       root.appendChild(el);
     });
   }
@@ -331,17 +365,16 @@
     const mw = map.offsetWidth || 0;
     const mh = map.offsetHeight || 0;
     if (!mw || !mh) return;
-    const tw = S.rightPos - S.leftPos;
-    const th = S.bottomPos - S.topPos;
-    if (tw <= 0 || th <= 0) return;
     sameServerFriendCoords().forEach((f) => {
-      const mx = ((f.x - S.leftPos) / tw) * mw;
-      const my = ((f.y - S.topPos) / th) * mh;
+      const them = mapNorm(f.x, f.y);
+      if (!them) return;
+      const mx = them.nx * mw;
+      const my = them.ny * mh;
+      if (!Number.isFinite(mx) || !Number.isFinite(my)) return;
       const dot = document.createElement("span");
       dot.className = "friend-map-dot";
       dot.style.left = mx + "px";
       dot.style.top = my + "px";
-      dot.title = f.account_name || "Друг";
       root.appendChild(dot);
     });
   }
@@ -653,11 +686,6 @@
     resolveServerId = hooks?.resolveServerId || null;
     wireUi();
     if (getToken() && (Number(S?.accountData?.xp) || 0) >= MIN_XP) startLoops();
-    // redraw loop
-    setInterval(() => {
-      drawArrows();
-      drawMinimapDots();
-    }, 500);
   }
 
   function onAccount(data) {
