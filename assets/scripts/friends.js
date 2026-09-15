@@ -50,7 +50,33 @@
     set("friendsCountOutgoing", outgoingN);
     set("friendsCountIncoming", incomingN);
     const badge = document.getElementById("badgeFriends");
-    if (badge) badge.textContent = String(friendsN + incomingN);
+    if (badge) {
+      badge.textContent = String(friendsN);
+      badge.classList.toggle("badge--alert", incomingN > 0);
+      if (incomingN > 0) badge.textContent = String(incomingN);
+    }
+    setIncomingAlerts(incomingN);
+  }
+
+  function setIncomingAlerts(incomingN) {
+    const n = Math.max(0, Number(incomingN) || 0);
+    const show = n > 0;
+    const accountDot = document.getElementById("accountFriendsAlert");
+    const tabDot = document.getElementById("tabFriendsAlert");
+    const tab = document.getElementById("tabFriends");
+    const accountItem = document.getElementById("accountMenuItem");
+    if (accountDot) {
+      accountDot.hidden = !show;
+      accountDot.setAttribute("aria-hidden", show ? "false" : "true");
+      if (show) accountDot.title = "Входящие заявки в друзья: " + n;
+    }
+    if (tabDot) {
+      tabDot.hidden = !show;
+      tabDot.setAttribute("aria-hidden", show ? "false" : "true");
+      if (show) tabDot.title = "Входящие: " + n;
+    }
+    if (tab) tab.classList.toggle("has-friends-alert", show);
+    if (accountItem) accountItem.classList.toggle("has-friends-alert", show);
   }
 
   function lsBool(key, def) {
@@ -206,6 +232,18 @@
       rebuildNickSet();
       drawArrows();
       drawMinimapDots();
+      if (typeof data.incomingCount === "number") {
+        setIncomingAlerts(data.incomingCount);
+        const badge = document.getElementById("badgeFriends");
+        if (badge && data.incomingCount > 0) {
+          badge.textContent = String(data.incomingCount);
+          badge.classList.add("badge--alert");
+        } else if (badge && data.incomingCount === 0) {
+          badge.classList.remove("badge--alert");
+          const friendsPaneCount = document.getElementById("friendsCountFriends");
+          if (friendsPaneCount) badge.textContent = friendsPaneCount.textContent || "0";
+        }
+      }
     } catch (_) {}
   }
 
@@ -467,6 +505,7 @@
       if (incoming && !incomingRows.length) incoming.innerHTML = "<li class='empty'>Нет входящих заявок</li>";
       if (outgoing && !outgoingRows.length) outgoing.innerHTML = "<li class='empty'>Нет исходящих заявок</li>";
       updateFriendsCounts(friends.length, outgoingRows.length, incomingRows.length);
+      if (incomingRows.length) setFriendsTab("incoming");
       if (hint) {
         const leftReq = Math.max(
           0,
@@ -606,6 +645,8 @@
     stopLoops();
     playData = { friends: [], privacy: {} };
     friendNickSet = new Set();
+    updateFriendsCounts(0, 0, 0);
+    setIncomingAlerts(0);
     const root = document.getElementById("friendArrows");
     if (root) root.innerHTML = "";
     const map = document.getElementById("friendMapDots");
