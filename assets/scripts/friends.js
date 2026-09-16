@@ -188,8 +188,8 @@
   }
 
   function decorateLbName(name) {
-    if (!isFriendName(name)) return name;
-    return String(name) + ' <span class="lb-friend-mark" title="Друг">★</span>';
+    // In-game leaderboard stays plain (no friend marks).
+    return String(name || "");
   }
 
   function currentServerKey() {
