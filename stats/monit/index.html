@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Мониторинг серверов — Agar.su</title>
+  <link rel="icon" href="https://agar.su/icon.svg" type="image/x-icon">
+  <style>
+    :root {
+      --bg: #0f1118; --panel: #1a1d28; --panel2: #222633; --text: #e8ecf4;
+      --muted: #8b93a7; --accent: #5b8cff; --ok: #4caf50; --bad: #ef5350;
+      --border: #2d3345; --up: #66bb6a; --down: #ef5350; --flat: #8b93a7;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: "Segoe UI", system-ui, sans-serif;
+      background: radial-gradient(ellipse at top, #1a2240 0%, var(--bg) 55%);
+      color: var(--text); min-height: 100vh;
+    }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 24px 16px 48px; }
+    a.back { color: var(--muted); text-decoration: none; font-size: 0.95rem; display: inline-block; margin-bottom: 16px; }
+    a.back:hover { color: var(--accent); }
+    h1 { margin: 0 0 8px; font-size: 1.7rem; }
+    .sub { color: var(--muted); margin-bottom: 18px; font-size: 0.95rem; line-height: 1.55; max-width: 720px; }
+    .toolbar {
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+      margin-bottom: 18px;
+    }
+    .toolbar label { color: var(--muted); font-size: 0.9rem; }
+    .hours {
+      display: inline-flex; flex-wrap: wrap; gap: 6px;
+    }
+    .hours button {
+      border: 1px solid var(--border); background: var(--panel); color: var(--muted);
+      border-radius: 999px; padding: 7px 12px; font-size: 0.85rem; cursor: pointer;
+    }
+    .hours button:hover { border-color: var(--accent); color: var(--text); }
+    .hours button.active {
+      background: rgba(91,140,255,.14); border-color: rgba(91,140,255,.55);
+      color: var(--text); font-weight: 600;
+    }
+    .meta { color: var(--muted); font-size: 0.82rem; margin-left: auto; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+    .card {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+      overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,.25);
+    }
+    .card-head {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
+      padding: 14px 16px; background: var(--panel2); border-bottom: 1px solid var(--border);
+    }
+    .card-head h2 { margin: 0; font-size: 1rem; }
+    .card-head .kind { color: var(--muted); font-size: 0.78rem; margin-top: 4px; }
+    .trend {
+      font-size: 0.82rem; font-weight: 700; white-space: nowrap;
+      padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border);
+    }
+    .trend.up { color: var(--up); border-color: rgba(102,187,106,.35); background: rgba(102,187,106,.08); }
+    .trend.down { color: var(--down); border-color: rgba(239,83,80,.35); background: rgba(239,83,80,.08); }
+    .trend.flat { color: var(--flat); }
+    .chart-wrap { position: relative; padding: 8px 8px 4px; }
+    canvas.chart {
+      width: 100%; height: 160px; display: block; cursor: crosshair;
+    }
+    .foot {
+      display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+      padding: 0 16px 14px; color: var(--muted); font-size: 0.8rem;
+    }
+    .foot strong { color: var(--text); }
+    .tip {
+      position: absolute; pointer-events: none; z-index: 2;
+      background: rgba(15,17,24,.94); border: 1px solid var(--border);
+      border-radius: 10px; padding: 8px 10px; font-size: 0.78rem;
+      color: var(--text); max-width: 220px; display: none;
+      box-shadow: 0 8px 24px rgba(0,0,0,.35);
+    }
+    .tip .t-time { color: var(--muted); margin-bottom: 4px; }
+    .tip .t-nick { font-weight: 700; }
+    .tip .t-score { color: var(--accent); }
+    .empty { padding: 28px 16px; text-align: center; color: var(--muted); font-size: 0.9rem; }
+    .err { color: #ffcdd2; background: rgba(239,83,80,.1); border: 1px solid rgba(239,83,80,.3);
+      padding: 12px 14px; border-radius: 10px; margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="back" id="back" href="../">← К глобальной статистике</a>
+    <h1>Мониторинг серверов</h1>
+    <p class="sub">
+      Виджет на каждый сервер: по оси X — время (от / до), по Y — лидер доски
+      (масса или победы). Подсказка по наведению показывает ник и топ-3 на этот момент.
+      Данные копятся с каждого опроса API (~5 мин).
+    </p>
+
+    <div class="toolbar">
+      <label>Окно:</label>
+      <div class="hours" id="hours">
+        <button type="button" data-h="6">6ч</button>
+        <button type="button" data-h="12">12ч</button>
+        <button type="button" data-h="24" class="active">24ч</button>
+        <button type="button" data-h="48">48ч</button>
+      </div>
+      <div class="meta" id="meta">загрузка…</div>
+    </div>
+
+    <div id="err" class="err" hidden></div>
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <script src="../config.js"></script>
+  <script>
+    (function () {
+      const API = window.STATS_API || "https://api.agar.su/stats-api";
+      const grid = document.getElementById("grid");
+      const metaEl = document.getElementById("meta");
+      const errEl = document.getElementById("err");
+      const hoursEl = document.getElementById("hours");
+      const back = document.getElementById("back");
+      if (typeof window.statsBaseUrl === "function") {
+        back.href = window.statsBaseUrl();
+      }
+
+      let hours = 24;
+      let refreshTimer = null;
+
+      function fmtTime(iso) {
+        if (!iso) return "—";
+        const d = new Date(iso);
+        if (isNaN(d)) return "—";
+        return d.toLocaleString("ru-RU", {
+          timeZone: "Europe/Moscow",
+          day: "2-digit", month: "2-digit",
+          hour: "2-digit", minute: "2-digit",
+        });
+      }
+
+      function fmtScore(n, kind) {
+        const v = Number(n) || 0;
+        if (kind === "score") return String(v);
+        return v.toLocaleString("ru-RU");
+      }
+
+      function trendLabel(srv) {
+        const d = Number(srv.delta) || 0;
+        const sign = d > 0 ? "+" : "";
+        const arrow = srv.trend === "up" ? "↑" : srv.trend === "down" ? "↓" : "→";
+        return arrow + " " + sign + fmtScore(d, srv.kind);
+      }
+
+      function drawChart(canvas, srv) {
+        const pts = srv.points || [];
+        const tip = canvas.parentElement.querySelector(".tip");
+        const dpr = Math.max(1, window.devicePixelRatio || 1);
+        const cssW = canvas.clientWidth || 400;
+        const cssH = canvas.clientHeight || 160;
+        canvas.width = Math.floor(cssW * dpr);
+        canvas.height = Math.floor(cssH * dpr);
+        const ctx = canvas.getContext("2d");
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        const pad = { l: 8, r: 8, t: 18, b: 22 };
+        const w = cssW - pad.l - pad.r;
+        const h = cssH - pad.t - pad.b;
+
+        ctx.clearRect(0, 0, cssW, cssH);
+        ctx.fillStyle = "rgba(255,255,255,0.03)";
+        ctx.fillRect(pad.l, pad.t, w, h);
+
+        if (pts.length < 1) {
+          ctx.fillStyle = "#8b93a7";
+          ctx.font = "13px Segoe UI, sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText("Пока нет точек — подождите первый poll", cssW / 2, cssH / 2);
+          return;
+        }
+
+        const times = pts.map((p) => Date.parse(p.t));
+        const scores = pts.map((p) => Number(p.score) || 0);
+        let minS = Math.min(...scores);
+        let maxS = Math.max(...scores);
+        if (minS === maxS) { minS = Math.max(0, minS - 1); maxS = maxS + 1; }
+        const minT = times[0];
+        const maxT = times[times.length - 1] || minT + 1;
+
+        const xAt = (t) => pad.l + ((t - minT) / (maxT - minT || 1)) * w;
+        const yAt = (s) => pad.t + h - ((s - minS) / (maxS - minS || 1)) * h;
+
+        // grid
+        ctx.strokeStyle = "rgba(45,51,69,.9)";
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 3; i++) {
+          const y = pad.t + (h * i) / 3;
+          ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + w, y); ctx.stroke();
+        }
+
+        // area + line
+        const grad = ctx.createLinearGradient(0, pad.t, 0, pad.t + h);
+        const up = (Number(srv.delta) || 0) >= 0;
+        grad.addColorStop(0, up ? "rgba(102,187,106,.28)" : "rgba(239,83,80,.28)");
+        grad.addColorStop(1, "rgba(91,140,255,0)");
+
+        ctx.beginPath();
+        pts.forEach((p, i) => {
+          const x = xAt(times[i]);
+          const y = yAt(scores[i]);
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.strokeStyle = up ? "#66bb6a" : "#ef5350";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.lineTo(xAt(times[times.length - 1]), pad.t + h);
+        ctx.lineTo(xAt(times[0]), pad.t + h);
+        ctx.closePath();
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // nick labels when leader changes (max ~5)
+        const labels = [];
+        let prevNick = null;
+        for (let i = 0; i < pts.length; i++) {
+          const nick = pts[i].nick;
+          if (!nick) continue;
+          if (nick !== prevNick) {
+            labels.push(i);
+            prevNick = nick;
+          }
+        }
+        const pick = labels.length <= 5
+          ? labels
+          : [labels[0], labels[Math.floor(labels.length / 2)], labels[labels.length - 1]];
+        ctx.font = "11px Segoe UI, sans-serif";
+        ctx.textAlign = "center";
+        for (const i of pick) {
+          const x = xAt(times[i]);
+          const y = yAt(scores[i]);
+          ctx.fillStyle = "#e8ecf4";
+          ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = "#8b93a7";
+          const text = String(pts[i].nick).slice(0, 14);
+          ctx.fillText(text, Math.min(cssW - 30, Math.max(30, x)), Math.max(12, y - 8));
+        }
+
+        // time axis ends
+        ctx.fillStyle = "#8b93a7";
+        ctx.font = "11px Segoe UI, sans-serif";
+        ctx.textAlign = "left";
+        ctx.fillText(fmtTime(pts[0].t), pad.l, cssH - 6);
+        ctx.textAlign = "right";
+        ctx.fillText(fmtTime(pts[pts.length - 1].t), pad.l + w, cssH - 6);
+
+        canvas.onmousemove = (ev) => {
+          const rect = canvas.getBoundingClientRect();
+          const mx = ev.clientX - rect.left;
+          let best = 0;
+          let bestDist = Infinity;
+          for (let i = 0; i < times.length; i++) {
+            const dx = Math.abs(xAt(times[i]) - mx);
+            if (dx < bestDist) { bestDist = dx; best = i; }
+          }
+          const p = pts[best];
+          const x = xAt(times[best]);
+          const y = yAt(scores[best]);
+          // crosshair
+          drawChart._last = { best }; // noop marker
+          tip.style.display = "block";
+          tip.style.left = Math.min(cssW - 180, Math.max(8, x + 10)) + "px";
+          tip.style.top = Math.max(8, y - 10) + "px";
+          const topLines = (p.top || [])
+            .map((r, idx) => (idx + 1) + ". " + r.nick + " — " + fmtScore(r.score, srv.kind))
+            .join("<br>");
+          tip.innerHTML =
+            '<div class="t-time">' + fmtTime(p.t) + "</div>" +
+            '<div><span class="t-nick">' + (p.nick || "—") + "</span> · " +
+            '<span class="t-score">' + fmtScore(p.score, srv.kind) + "</span> " +
+            (srv.scoreLabel || "") + "</div>" +
+            (topLines ? '<div style="margin-top:6px;color:#8b93a7">' + topLines + "</div>" : "");
+        };
+        canvas.onmouseleave = () => { tip.style.display = "none"; };
+      }
+
+      function render(data) {
+        errEl.hidden = true;
+        metaEl.textContent =
+          "с " + fmtTime(data.from) + " по " + fmtTime(data.to) +
+          " · точек на сервер до ~" + Math.round((data.hours || hours) * 12);
+
+        const servers = data.servers || [];
+        if (!servers.length) {
+          grid.innerHTML = '<div class="empty">История ещё пустая — после ближайших опросов API появятся графики.</div>';
+          return;
+        }
+
+        // Prefer config order if present
+        const order = ["ffa", "ms", "pvp1", "pvp2", "tournament", "tournament2"];
+        servers.sort((a, b) => {
+          const ia = order.indexOf(a.id); const ib = order.indexOf(b.id);
+          return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+        });
+
+        grid.innerHTML = "";
+        for (const srv of servers) {
+          const card = document.createElement("div");
+          card.className = "card";
+          card.innerHTML =
+            '<div class="card-head">' +
+              "<div><h2>" + escapeHtml(srv.name || srv.id) + "</h2>" +
+              '<div class="kind">' + escapeHtml(srv.scoreLabel || "") +
+              (srv.lastNick ? " · сейчас: " + escapeHtml(srv.lastNick) : "") +
+              "</div></div>" +
+              '<div class="trend ' + escapeHtml(srv.trend || "flat") + '">' +
+                escapeHtml(trendLabel(srv)) +
+              "</div>" +
+            "</div>" +
+            '<div class="chart-wrap"><canvas class="chart"></canvas><div class="tip"></div></div>' +
+            '<div class="foot">' +
+              "<span>лидер: <strong>" + escapeHtml(fmtScore(srv.lastScore, srv.kind)) + "</strong></span>" +
+              "<span>на доске: <strong>" + escapeHtml(String(srv.lastN || 0)) + "</strong></span>" +
+              "<span>точек: <strong>" + escapeHtml(String((srv.points || []).length)) + "</strong></span>" +
+            "</div>";
+          grid.appendChild(card);
+          const canvas = card.querySelector("canvas");
+          requestAnimationFrame(() => drawChart(canvas, srv));
+        }
+      }
+
+      function escapeHtml(s) {
+        return String(s ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      async function load() {
+        try {
+          const res = await fetch(API + "/api/monit?hours=" + hours, { cache: "no-store" });
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          const data = await res.json();
+          render(data);
+        } catch (e) {
+          errEl.hidden = false;
+          errEl.textContent = "Не удалось загрузить monit: " + (e.message || e);
+        }
+      }
+
+      hoursEl.addEventListener("click", (ev) => {
+        const btn = ev.target.closest("button[data-h]");
+        if (!btn) return;
+        hours = Number(btn.dataset.h) || 24;
+        hoursEl.querySelectorAll("button").forEach((b) => b.classList.toggle("active", b === btn));
+        load();
+      });
+
+      window.addEventListener("resize", () => {
+        // soft redraw by reloading lightweight payload
+        clearTimeout(window.__monitResize);
+        window.__monitResize = setTimeout(load, 200);
+      });
+
+      load();
+      const ms = Number(window.STATS_REFRESH_MS) || 300000;
+      refreshTimer = setInterval(load, ms);
+    })();
+  </script>
+</body>
+</html>
