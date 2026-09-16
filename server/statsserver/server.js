@@ -28,6 +28,14 @@ import {
   savePeriodsState,
   PERIOD_KEYS,
 } from "./periods.js";
+import {
+  saveDailyFromSnapshot,
+  listDays,
+  listDayServers,
+  loadDailyServer,
+  dayKeyToLabel,
+} from "./dailyLogs.js";
+import { appendMonitFromSnapshot, getMonitOverview } from "./pollHistory.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = __dirname;
@@ -268,6 +276,10 @@ async function pollAll() {
   periodsState = periodResult.state;
 
   const serverMeta = new Map(servers.map((s) => [s.id, s]));
+  // Дневные файлы: data/days/{dayKey}/{serverId}.json — по файлу на сервер на сутки.
+  const daily = saveDailyFromSnapshot(snapshot, pollAt, periodsState.dayKey, serverMeta);
+  // История для monit-графиков (кольцо ~48ч).
+  appendMonitFromSnapshot(snapshot, pollAt, serverMeta);
   applySnapshotToUsers(
     ROOT,
     snapshot,
@@ -299,6 +311,7 @@ async function pollAll() {
     `[${state.lastPollAt}] poll #${state.pollCount} ok=${state.lastPollOk}` +
       ` servers=${okN}/${servers.length}` +
       ` pass=${passRegistry.lineCount}` +
+      ` day=${daily.dayKey || "?"} files=${daily.saved}` +
       (top ? ` leader=${top.nick} (${top.points} pts)` : "")
   );
   if (okN < results.length) {
@@ -608,6 +621,60 @@ function handleRequest(req, res) {
         alltime: periodsState.best?.alltime || null,
         todayServers: Object.keys(periodsState.best?.todayByServer || {}),
       },
+    });
+  }
+
+  // Мониторинг: GET /api/monit?hours=24
+  if (req.method === "GET" && url.pathname === "/api/monit") {
+    const hours = Number(url.searchParams.get("hours") || 24);
+    const idsRaw = url.searchParams.get("servers") || "";
+    const serverIds = idsRaw
+      ? idsRaw.split(",").map((s) => s.trim()).filter(Boolean)
+      : null;
+    return sendJson(res, 200, getMonitOverview({ hours, serverIds }));
+  }
+
+  // Архив дневных файлов: GET /api/days  |  /api/days/2026-09-17  |  /api/days/2026-09-17/pvp2
+  if (req.method === "GET" && url.pathname === "/api/days") {
+    const days = listDays().map((dayKey) => ({
+      dayKey,
+      dateLabel: dayKeyToLabel(dayKey),
+      servers: listDayServers(dayKey),
+    }));
+    return sendJson(res, 200, {
+      currentDayKey: periodsState.dayKey,
+      count: days.length,
+      days,
+    });
+  }
+
+  const dayServerMatch = url.pathname.match(/^\/api\/days\/(\d{4}-\d{2}-\d{2})\/([^/]+)$/);
+  if (req.method === "GET" && dayServerMatch) {
+    const dayKey = dayServerMatch[1];
+    const serverId = decodeURIComponent(dayServerMatch[2]);
+    const file = loadDailyServer(dayKey, serverId);
+    if (!file) return sendJson(res, 404, { error: "not found", dayKey, serverId });
+    return sendJson(res, 200, file);
+  }
+
+  const dayMatch = url.pathname.match(/^\/api\/days\/(\d{4}-\d{2}-\d{2})$/);
+  if (req.method === "GET" && dayMatch) {
+    const dayKey = dayMatch[1];
+    const servers = listDayServers(dayKey);
+    if (!servers.length) return sendJson(res, 404, { error: "not found", dayKey });
+    return sendJson(res, 200, {
+      dayKey,
+      dateLabel: dayKeyToLabel(dayKey),
+      servers: servers.map((id) => {
+        const f = loadDailyServer(dayKey, id);
+        return {
+          id,
+          ok: f?.ok !== false,
+          kind: f?.kind || null,
+          count: f?.count || 0,
+          updatedAt: f?.updatedAt || null,
+        };
+      }),
     });
   }
 
