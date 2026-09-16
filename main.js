@@ -2158,7 +2158,6 @@
     const nameSpan = document.createElement("span");
     nameSpan.className = "Lednick-name";
     renderLeaderboardName(nameSpan, name);
-    appendFriendLbMark(nameSpan, cleanName);
     if (!isSystemLine && isTournamentPlayer && !isWinner) {
       nameSpan.title = "Участник турнира";
     }
@@ -2245,17 +2244,6 @@
   }
   function formatLeaderBoardName(S, raw) {
     return String(raw || "");
-  }
-  function appendFriendLbMark(nameSpan, name) {
-    try {
-      if (window.AgarFriends && window.AgarFriends.isFriendName(name)) {
-        const mark = document.createElement("span");
-        mark.className = "lb-friend-mark";
-        mark.title = "Друг";
-        mark.textContent = "★";
-        nameSpan.appendChild(mark);
-      }
-    } catch (_) {}
   }
   function drawCustomLeaderBoard() {
     var _a, _b;
