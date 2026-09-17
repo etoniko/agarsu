@@ -333,15 +333,56 @@
         if (server.host === host) return region;
       }
     }
-    // Fallback by port/path when list miss
-    if (/:6013\b|sixz\.ru:6013/i.test(host)) return "tr";
-    // hardcore (6017) + darctida live under RU list in HTML
-    if (/sixz\.ru:6017|:6017\b|\/hc\b|\/darctida\b/i.test(host)) return "ru";
-    if (/:6014\b|:6015\b|xn--bdk\.pw|\/d(?:ffa|rookery)/i.test(host)) return "eu";
+    // AgarZ → Turkey, Delta / Agar.live → Europe, native agar.su stays RU via list
+    if (/ws\.agarz\.com|agarz\.com/i.test(host)) return "tr";
+    if (/delt\.io|agar\.live/i.test(host)) return "eu";
     return null;
   }
   function isForeignStyleHost(host) {
-    return /:6014\b|:6015\b|:6017\b|xn--bdk\.pw|sixz\.ru:6017|\/darctida\b|\/hc\b/i.test(String(host || ""));
+    return /ws\.agarz\.com|agarz\.com|delt\.io|agar\.live/i.test(String(host || ""));
+  }
+  /** Third-party game protocol (Bubble, AgarZ, …). Native agar.su → null. */
+  function resolveForeignProtocol(host) {
+    try {
+      const AP = typeof AgarProtocols !== "undefined" ? AgarProtocols : null;
+      if (!AP || typeof AP.resolve !== "function") return null;
+      const p = AP.resolve(host);
+      if (!p || p.trusted || p.id === "agar") return null;
+      return p;
+    } catch (_) {
+      return null;
+    }
+  }
+  function clearForeignProtocol(S) {
+    if (!S) return;
+    try {
+      if (S.foreignState && typeof S.foreignState.destroy === "function") S.foreignState.destroy();
+    } catch (_) {}
+    S.foreignProto = null;
+    S.foreignState = null;
+  }
+  /** Client→server packet; foreign protos may side-send upstream and return local-only agar packets. */
+  function sendGamePacket(S, dataViewOrTyped) {
+    if (!S || !S.ws) return;
+    const proto = S.foreignProto;
+    const state = S.foreignState;
+    if (proto && state && typeof proto.encodeOutbound === "function") {
+      let local = [];
+      try {
+        local = proto.encodeOutbound(dataViewOrTyped, state) || [];
+      } catch (err) {
+        console.error("[multiprotocol] encodeOutbound", err);
+        return;
+      }
+      for (let i = 0; i < local.length; i++) {
+        const pkt = local[i];
+        if (!pkt) continue;
+        if (typeof S._deliverForeignLocal === "function") S._deliverForeignLocal(pkt);
+      }
+      return;
+    }
+    const buf = dataViewOrTyped && dataViewOrTyped.buffer != null ? dataViewOrTyped.buffer : dataViewOrTyped;
+    S.ws.send(buf);
   }
   /**
    * EN(EU) + TR servers: mass as 1.2k / 1,2k.
@@ -1119,8 +1160,7 @@
    */
   function isLimitGlowDisabledHost(host) {
     const h = String(host || "");
-    if (/:6013\b|sixz\.ru:6013/i.test(h)) return true; // Turkey
-    if (/:6014\b|:6015\b|:6017\b|xn--bdk\.pw|\/d(?:ffa|rookery|arctida)/i.test(h)) return true; // Europe
+    if (/ws\.agarz\.com|agarz\.com|delt\.io|agar\.live/i.test(h)) return true; // TR / EU foreign
     return false;
   }
   function getLimitGlowMassBounds(host) {
@@ -1142,12 +1182,12 @@
     S.posY = y;
     if (sizeOk) S.posSize = size;
   }
-  /** AgarZ skin bridge (sixz.ru:6013). */
+  /** AgarZ skins via skinsbot (direct ws.agarz.com). */
   function isPetriSkinHost(host) {
-    return /sixz\.ru:6013|:6013\//i.test(String(host || ""));
+    return /ws\.agarz\.com|agarz\.com/i.test(String(host || ""));
   }
   function getSkinBridge(host) {
-    if (/sixz\.ru:6013|:6013\b/i.test(String(host || ""))) return "agarz";
+    if (/ws\.agarz\.com|agarz\.com/i.test(String(host || ""))) return "agarz";
     return null;
   }
   function getPetriSkinUrl(nick, host) {
@@ -2454,7 +2494,10 @@
     (_c = ui.setText) == null ? void 0 : _c.call(ui, "Подключение к серверу…");
     return token;
   }
-  function openGameSocket(wsUrl, {accountToken, connectToken} = {}) {
+  function openGameSocket(wsUrl, {accountToken, connectToken, foreignProto} = {}) {
+    if (foreignProto && typeof foreignProto.openSocket === "function") {
+      return foreignProto.openSocket(wsUrl);
+    }
     const qs = new URLSearchParams;
     if (accountToken) qs.set("accountToken", accountToken);
     if (connectToken) qs.set("connectToken", connectToken);
@@ -2625,43 +2668,76 @@
         safeCloseSocket(S.ws);
         S.ws = null;
       }
+      clearForeignProtocol(S);
       const host = S.CONNECTION_URL;
       S.wsUrl = wsUrlArg || getGameServerWssUrl(host);
+      const foreignProto = resolveForeignProtocol(host);
+      if (foreignProto) {
+        S.foreignProto = foreignProto;
+        S.foreignState = typeof foreignProto.createState === "function" ? foreignProto.createState() : {};
+      }
       (_a = hooks.clearWorld) == null ? void 0 : _a.call(hooks);
       try {
         let connectToken = null;
-        try {
-          connectToken = await fetchConnectToken2(host);
-        } catch (err) {
+        const skipPow = !!(foreignProto && foreignProto.usePow === false);
+        if (!skipPow) {
+          try {
+            connectToken = await fetchConnectToken2(host);
+          } catch (err) {
+            if (attemptId !== S.connectAttemptId) return;
+            console.error("Connect token error:", err);
+            if (isSpectMode()) {
+              scheduleSpectReconnect();
+            } else {
+              showReconnectPanel("Ошибка подключения. Нажмите, чтобы повторить.");
+            }
+            return;
+          }
           if (attemptId !== S.connectAttemptId) return;
-          console.error("Connect token error:", err);
-          if (isSpectMode()) {
-            scheduleSpectReconnect();
-          } else {
-            showReconnectPanel("Ошибка подключения. Нажмите, чтобы повторить.");
+          if (serverPowSupportCache.get(getPowApiBase(host)) === true && !connectToken) {
+            if (isSpectMode()) {
+              scheduleSpectReconnect();
+            } else {
+              showReconnectPanel("Не удалось пройти проверку сервера. Нажмите, чтобы повторить.");
+            }
+            return;
           }
-          return;
-        }
-        if (attemptId !== S.connectAttemptId) return;
-        if (serverPowSupportCache.get(getPowApiBase(host)) === true && !connectToken) {
-          if (isSpectMode()) {
-            scheduleSpectReconnect();
-          } else {
-            showReconnectPanel("Не удалось пройти проверку сервера. Нажмите, чтобы повторить.");
-          }
-          return;
         }
         if (connectToken === null) {
           hideConnectVerifyOverlay();
         }
+        if (foreignProto && typeof foreignProto.ensureAuth === "function") {
+          try {
+            await foreignProto.ensureAuth();
+          } catch (authErr) {
+            console.warn("[multiprotocol] ensureAuth", authErr);
+          }
+          if (attemptId !== S.connectAttemptId) return;
+        }
+        const useAgarToken = !(foreignProto && foreignProto.useAgarAccountToken === false);
         S.ws = openGameSocket(S.wsUrl, {
-          accountToken: getAccountToken() || null,
-          connectToken: connectToken || null
+          accountToken: useAgarToken ? getAccountToken() || null : null,
+          connectToken: connectToken || null,
+          foreignProto: foreignProto || null
         });
         S.ws.onopen = onWsOpen;
         S.ws.onmessage = msg => {
           var _a2;
-          (_a2 = hooks.onMessage) == null ? void 0 : _a2.call(hooks, new DataView(msg.data));
+          const dv = new DataView(msg.data);
+          if (S.foreignProto && S.foreignState && typeof S.foreignProto.translateInbound === "function") {
+            let packets = [];
+            try {
+              packets = S.foreignProto.translateInbound(dv, S.foreignState) || [];
+            } catch (err) {
+              console.error("[multiprotocol] translateInbound", err);
+              return;
+            }
+            for (let i = 0; i < packets.length; i++) {
+              if (packets[i]) (_a2 = hooks.onMessage) == null ? void 0 : _a2.call(hooks, packets[i]);
+            }
+            return;
+          }
+          (_a2 = hooks.onMessage) == null ? void 0 : _a2.call(hooks, dv);
         };
         S.ws.onclose = onWsClose;
       } catch (err) {
@@ -2679,15 +2755,41 @@
       }
     }
     function wsSend(dataViewOrTyped) {
-      var _a;
-      if (!S.ws) return;
-      const buf = (_a = dataViewOrTyped.buffer) != null ? _a : dataViewOrTyped;
-      S.ws.send(buf);
+      sendGamePacket(S, dataViewOrTyped);
     }
     function onWsOpen() {
       var _a;
       setConnectVerifyText("Синхронизация с сервером…");
       S.gameHandshakeDone = false;
+      S._deliverForeignLocal = function (pkt) {
+        if (!pkt) return;
+        try {
+          if (typeof hooks.onMessage === "function") hooks.onMessage(pkt);
+        } catch (err) {
+          console.error("[multiprotocol] local packet", err);
+        }
+      };
+      if (S.foreignProto) {
+        const rawSend = buf => {
+          if (!S.ws || S.ws.readyState !== WebSocket.OPEN) return;
+          const payload = buf && buf.buffer != null && !(buf instanceof ArrayBuffer) ? buf.buffer : buf;
+          try {
+            S.ws.send(payload);
+          } catch (_) {}
+        };
+        if (S.foreignState) S.foreignState._deliver = S._deliverForeignLocal;
+        if (typeof S.foreignProto.onOpen === "function") {
+          try {
+            S.foreignProto.onOpen(rawSend, S.foreignState);
+          } catch (err) {
+            console.error("[multiprotocol] onOpen", err);
+          }
+        }
+        const [p, key] = encodeHandshake();
+        wsSend(p);
+        wsSend(key);
+        return;
+      }
       (_a = hooks.sendAccountToken) == null ? void 0 : _a.call(hooks);
       const [p, key] = encodeHandshake();
       wsSend(p);
@@ -2698,12 +2800,10 @@
       if (S.gameHandshakeDone) return;
       S.gameHandshakeDone = true;
       clearSpectReconnectTimer();
-      // New socket: never keep previous server's follow target / auto-click timer
       clearSpectateFollow(S);
       hideConnectVerifyOverlay();
       hideReconnectPanel();
       (_a = hooks.sendNickName) == null ? void 0 : _a.call(hooks);
-      // Button «Наблюдать» sets userNickName=null — must enter spectate (not only ?spect URL).
       if (S.userNickName == null) {
         if (typeof hooks.sendSpectate === "function") hooks.sendSpectate();
         else {
@@ -2713,14 +2813,20 @@
         }
       }
       if (S.wsPingInterval) clearInterval(S.wsPingInterval);
-      S.wsPingInterval = setInterval(() => {
-        S.pingstamp = Date.now();
-        wsSend(encodePing());
-      }, 3e3);
-      (_b = hooks.sendChat) == null ? void 0 : _b.call(hooks, "вoшёл в игру!");
+      if (!(S.foreignProto && (S.foreignProto.id === "agarz" || S.foreignProto.id === "delta" || S.foreignProto.id === "agarlive"))) {
+        S.wsPingInterval = setInterval(() => {
+          S.pingstamp = Date.now();
+          wsSend(encodePing());
+        }, 3e3);
+      }
+      if (!(S.foreignProto && (S.foreignProto.id === "agarz" || S.foreignProto.id === "delta" || S.foreignProto.id === "agarlive"))) {
+        (_b = hooks.sendChat) == null ? void 0 : _b.call(hooks, "вoшёл в игру!");
+      }
     }
     function onWsClose() {
       S.gameHandshakeDone = false;
+      clearForeignProtocol(S);
+      S._deliverForeignLocal = null;
       if (S.wsPingInterval) {
         clearInterval(S.wsPingInterval);
         S.wsPingInterval = null;
@@ -2888,7 +2994,7 @@
     function wsSend(view) {
       if (!S.ws) return;
       ensureFreezeWsHook(S);
-      S.ws.send(view.buffer);
+      sendGamePacket(S, view);
     }
     function getColorId(hex) {
       const colors = S.cellColors;
@@ -4640,6 +4746,17 @@
         S.posY = S.Y;
         return;
       }
+      // Delta (and similar): allow cursor a bit past the wall — native clients do this.
+      const foreignOvershoot = S.foreignProto && (S.foreignProto.id === "delta" || S.foreignProto.id === "agarz");
+      if (foreignOvershoot) {
+        const bw = Math.max(0, S.rightPos - S.leftPos);
+        const bh = Math.max(0, S.bottomPos - S.topPos);
+        const ox = Math.max(400, bw * 0.04);
+        const oy = Math.max(400, bh * 0.04);
+        S.posX = Math.max(S.leftPos - ox, Math.min(S.rightPos + ox, S.X));
+        S.posY = Math.max(S.topPos - oy, Math.min(S.bottomPos + oy, S.Y));
+        return;
+      }
       S.posX = Math.max(S.leftPos, Math.min(S.rightPos, S.X));
       S.posY = Math.max(S.topPos, Math.min(S.bottomPos, S.Y));
     };
@@ -4873,6 +4990,19 @@
         return;
       }
       if (isTyping) return;
+      // Delta Tab: same-socket multibox (requestUnit / rotate) — not a second WS
+      if (code === 9 && S.foreignProto && S.foreignProto.id === "delta") {
+        event2.preventDefault();
+        if (typeof S.foreignProto.onSwitchPlayer === "function") {
+          S.foreignProto.onSwitchPlayer(S.foreignState, {
+            deliver: function (pkt) {
+              if (typeof S._deliverForeignLocal === "function") S._deliverForeignLocal(pkt);
+              else if (typeof hooks.onMessage === "function") hooks.onMessage(pkt);
+            },
+          });
+        }
+        return;
+      }
       if (code === getBind(S, "freeze")) {
         // Toggle pause: mouse → main cell center + #freeze UI
         if (!keyPressed.freeze && S.playerCells.length > 0) {
