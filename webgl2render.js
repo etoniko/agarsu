@@ -10,7 +10,7 @@
     return /sixz\.ru:6017|:6017\b|buble\.am|bubble\.am/i.test(String(host || ""));
   }
   function isBridgeSkinHost(host) {
-    return /sixz\.ru:6011|:6011\/|megasplit|hardcore9|sixz\.ru:6013|:6013\/|sixz\.ru:6017|:6017\/|buble\.am|bubble\.am/i.test(String(host || ""));
+    return /sixz\.ru:6011|:6011\/|megasplit|hardcore9|sixz\.ru:6013|:6013\/|ws\.agarz\.com|agarz\.com|sixz\.ru:6017|:6017\/|buble\.am|bubble\.am/i.test(String(host || ""));
   }
   function bubbleNickDisplay(raw) {
     let s = String(raw || "");
@@ -33,7 +33,7 @@
   function getLimitGlowMassBounds(host) {
     const h = String(host || "");
     if (/buble\.am|bubble\.am|\/hc\b/i.test(h)) return { on: 35000, off: 34900 };
-    if (/:6013\b|sixz\.ru:6013/i.test(h)) return null; // Turkey
+    if (/:6013\b|sixz\.ru:6013|ws\.agarz\.com|agarz\.com/i.test(h)) return null; // Turkey / AgarZ
     if (/:6014\b|:6015\b|:6017\b|xn--bdk\.pw|\/d(?:ffa|rookery|arctida)/i.test(h)) return null; // Europe
     if (/megasplit5k|\/ms5k/i.test(h)) return { on: 32400, off: 32300 };
     return { on: 22400, off: 22300 };
@@ -734,7 +734,7 @@ void main() {
               const bare = String(cell.name).split("#")[0].replace(/<[^>]*>/g, "").trim();
               if (bare) {
                 petriSkinKey = bare.toLowerCase();
-                const bridge = /sixz\.ru:6013|:6013\b/i.test(String(host || "")) ? "agarz" : "petri";
+                const bridge = /sixz\.ru:6013|:6013\b|ws\.agarz\.com|agarz\.com/i.test(String(host || "")) ? "agarz" : "petri";
                 skinUrl = "https://xn--bdk.pw:6016/api/getSkin?bridge=" + bridge + "&username=" + encodeURIComponent(bare);
               }
             }
