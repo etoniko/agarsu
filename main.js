@@ -2821,13 +2821,13 @@
         }
       }
       if (S.wsPingInterval) clearInterval(S.wsPingInterval);
-      if (!(S.foreignProto && (S.foreignProto.id === "agarz" || S.foreignProto.id === "delta" || S.foreignProto.id === "agarlive"))) {
+      if (!(S.foreignProto && (S.foreignProto.id === "agarz" || S.foreignProto.id === "delta"))) {
         S.wsPingInterval = setInterval(() => {
           S.pingstamp = Date.now();
           wsSend(encodePing());
         }, 3e3);
       }
-      if (!(S.foreignProto && (S.foreignProto.id === "agarz" || S.foreignProto.id === "delta" || S.foreignProto.id === "agarlive"))) {
+      if (!(S.foreignProto && (S.foreignProto.id === "agarz" || S.foreignProto.id === "delta"))) {
         (_b = hooks.sendChat) == null ? void 0 : _b.call(hooks, "вoшёл в игру!");
       }
     }

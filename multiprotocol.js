@@ -3,13 +3,13 @@
  *
  * - Native agar.su: trusted marker (main.js default path)
  * - Bubble.am: classic Ogar protocol 5
- * - Agar.live Bomb: direct wss://pop*.agar.live (protocol1/2) ↔ agar.su
+ * - Agar.live Bomb: UI pop*.agar.live → bridge xn--bdk.pw:6015 (agar.su wire pass-through)
  * - AgarZ: direct wss://ws.agarz.com — binary translated ↔ agar.su
  * - Delta: direct wss://*.delt.io — XOR crypto + modern agar ↔ agar.su
  *
  * Security:
  * - nick#pass → only public nick to foreign servers
- * - never send agar.su LK / accountToken / connectToken to AgarZ / Delta / Agar.live
+ * - never send agar.su LK / accountToken / connectToken to AgarZ / Delta
  */
 (function (global) {
   "use strict";
@@ -3685,11 +3685,11 @@ class MultiProtocol {
     },
   });
 
-  // —— Agar.live Bomb (classic Ogar 5) ——
-  // Direct wss://*.agar.live rejects non-agar.live Origin (agar.su → no game).
-  // Transport: thin sixz forwarder xn--bdk.pw:6015/{room} (Origin ok, raw classic bytes).
-  // Captured native client uses ["protocol1","protocol2"] + key 1332175218.
-  var AGARLIVE_PROTO_KEY = 1332175218;
+  // —— Agar.live via agarlivebot bridge (xn--bdk.pw:6015) ——
+  // Bot speaks live upstream (proto v4, nick 107, token 200, subprotocol binary)
+  // and already converts ↔ agar.su. Browser must NOT re-parse as classic Ogar —
+  // that caused RangeError in updateNodes / parseClassicUpdate.
+  // Client: remap UI host pop1.agar.live → wss://xn--bdk.pw:6015/pop1, pass-through wire.
   var AGARLIVE_PROXY = "wss://xn--bdk.pw:6015";
 
   function agarliveRoomFromHost(hostOrUrl) {
@@ -3704,30 +3704,11 @@ class MultiProtocol {
     return "";
   }
 
-  /** UI may show pop1.agar.live; browser WS must go through Origin-safe proxy. */
   function agarliveWsUrl(wsUrl) {
     var room = agarliveRoomFromHost(wsUrl);
     if (room) return AGARLIVE_PROXY + "/" + room;
     var h = String(wsUrl || "").replace(/^wss?:\/\//i, "").split("?")[0];
     return "wss://" + h;
-  }
-
-  function agarliveSend(state, buf) {
-    if (!state || typeof state._send !== "function" || !buf) return;
-    try {
-      state._send(toSendBytes(buf));
-    } catch (e) {}
-  }
-
-  function agarliveParseAgarNick(packet) {
-    var text = "";
-    // agar.su: [0][color u8][utf16…]
-    for (var p = 2; p + 1 < packet.length; p += 2) {
-      var c = packet[p] | (packet[p + 1] << 8);
-      if (!c) break;
-      text += String.fromCharCode(c);
-    }
-    return publicNick(text) || "agar.su";
   }
 
   register({
@@ -3741,76 +3722,20 @@ class MultiProtocol {
       return /(?:^|[.\/])agar\.live(?::|\/|$)/i.test(h) || /xn--bdk\.pw:6015\b/i.test(h);
     },
     openSocket: function (wsUrl) {
-      var url = agarliveWsUrl(wsUrl);
-      // Proxy speaks classic bytes; no agar.live subprotocols required.
-      var ws = new WebSocket(url);
+      // Bridge accepts plain WS (no agar.su subprotocol) — same as bot smoke tests.
+      var ws = new WebSocket(agarliveWsUrl(wsUrl));
       ws.binaryType = "arraybuffer";
       return ws;
     },
     createState: function () {
       return {
-        ownCells: new Set(),
-        ownerPid: 0,
-        border: null,
-        ownerBorderOk: false,
-        borderOwnerSent: 0,
-        mapBorderSent: false,
-        skinByNick: Object.create(null),
-        _send: null,
-        destroy: function () {
-          this._send = null;
-        },
+        destroy: function () {},
       };
     },
-    onOpen: function (send, state) {
-      if (state) state._send = send;
-      var proto = prep(5);
-      proto.setUint8(0, 254);
-      proto.setUint32(1, 5, true);
-      send(proto);
-      var key = prep(5);
-      key.setUint8(0, 255);
-      key.setUint32(1, AGARLIVE_PROTO_KEY, true);
-      send(key);
-    },
-    encodeNick: function (rawNick, state) {
-      var nick = publicNick(rawNick) || "agar.su";
-      agarliveSend(state, utf16Packet(0, nick));
-      return [];
-    },
-    encodeSpectate: function (state) {
-      agarliveSend(state, new Uint8Array([1]));
-      return [];
-    },
-    encodeOutbound: function (buf, state) {
-      if (!state || !buf) return [];
-      var u8 =
-        buf instanceof DataView
-          ? new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength)
-          : buf instanceof ArrayBuffer
-            ? new Uint8Array(buf)
-            : buf;
-      if (!u8.length) return [];
-      var op = u8[0];
-      // main.js still emits agar.su handshake after foreign onOpen — drop it.
-      if (op === 254 || op === 255) return [];
-      if (op === 0) {
-        this.encodeNick(agarliveParseAgarNick(u8), state);
-        return [];
-      }
-      if (op === 1) {
-        this.encodeSpectate(state);
-        return [];
-      }
-      // Classic mouse / split / eject / chat match agar.su wire layout closely enough.
-      agarliveSend(state, u8);
-      return [];
-    },
-    translateInbound: function (dataView, state) {
-      var bubble = byId.get("bubble");
-      if (!bubble || typeof bubble.translateInbound !== "function") return [];
-      return bubble.translateInbound(dataView, state);
-    },
+    // Pass-through: main.js agar handshake + packets; bridge translates to live.
+    onOpen: null,
+    encodeOutbound: null,
+    translateInbound: null,
   });
 
 
