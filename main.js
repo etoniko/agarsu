@@ -333,13 +333,13 @@
         if (server.host === host) return region;
       }
     }
-    // AgarZ → Turkey, Delta / Agar.live → Europe, native agar.su stays RU via list
+    // AgarZ → Turkey, Delta / agar.live proxy → Europe, native agar.su stays RU via list
     if (/ws\.agarz\.com|agarz\.com/i.test(host)) return "tr";
-    if (/delt\.io|agar\.live/i.test(host)) return "eu";
+    if (/delt\.io|agar\.live|xn--bdk\.pw:6015\b|:6015\b/i.test(host)) return "eu";
     return null;
   }
   function isForeignStyleHost(host) {
-    return /ws\.agarz\.com|agarz\.com|delt\.io|agar\.live/i.test(String(host || ""));
+    return /ws\.agarz\.com|agarz\.com|delt\.io|agar\.live|xn--bdk\.pw:6015\b|:6015\b/i.test(String(host || ""));
   }
   /** Third-party game protocol (Bubble, AgarZ, …). Native agar.su → null. */
   function resolveForeignProtocol(host) {
@@ -534,6 +534,9 @@
   var STICKERLIST_URL = "https://api.agar.su/stickerlist.txt";
   var SKIN_CDN = "https://api.agar.su/skins";
   var STICKER_CDN = "https://api.agar.su/stickers";
+  var DEFAULT_SKIN_ID = "PPFtwqH";
+  /** Default skin is shipped with the client, not api skins CDN. */
+  var DEFAULT_SKIN_URL = "/photo/PPFtwqH.png";
   var SKIN_FALLBACK_URL = "https://api.agar.su/skins/4.png";
   var WS_SUBPROTOCOL = "eSejeKSVdysQvZs0ES1H";
   var TTL_MS = 3e5;
@@ -696,15 +699,20 @@
     if (code) return `${STICKER_CDN}/${encodeURIComponent(code)}/${id}.png`;
     return `${STICKER_CDN}/${id}.png`;
   }
-  function getSkinIdForNick(skinSource, nick, fallback = "PPFtwqH") {
+  function getSkinIdForNick(skinSource, nick, fallback = DEFAULT_SKIN_ID) {
     const key = normalizeNick(String(nick || "").replace(/<[^>]*>/g, ""));
     if (!key) return fallback;
     if (skinSource instanceof Map) return skinSource.get(key) || fallback;
     return (skinSource == null ? void 0 : skinSource[key]) || fallback;
   }
+  function skinUrlForId(skinId) {
+    const id = String(skinId || "").trim();
+    if (!id || id === DEFAULT_SKIN_ID) return DEFAULT_SKIN_URL;
+    return `${SKIN_CDN}/${id}.png`;
+  }
   function getSkinUrlForNick(skinSource, nick, fallback = "4") {
     const id = getSkinIdForNick(skinSource, nick, fallback);
-    return `https://api.agar.su/skins/${id}.png`;
+    return skinUrlForId(id);
   }
   function invalidateStatsRenderCaches(S) {
     if (S) S.lastStatsRenderKey = "";
@@ -788,7 +796,7 @@
   var skinPetriFailAt = new Map;
   function getSkinImageUrl(skinId, fallbackId = "4") {
     const id = skinId && String(skinId).trim() || fallbackId;
-    return `${SKIN_CDN}/${id}.png`;
+    return skinUrlForId(id);
   }
   function resolveAssetUrl(url) {
     try {
@@ -1160,7 +1168,7 @@
    */
   function isLimitGlowDisabledHost(host) {
     const h = String(host || "");
-    if (/ws\.agarz\.com|agarz\.com|delt\.io|agar\.live/i.test(h)) return true; // TR / EU foreign
+    if (/ws\.agarz\.com|agarz\.com|delt\.io|agar\.live|xn--bdk\.pw:6015\b|:6015\b/i.test(h)) return true; // TR / EU foreign
     return false;
   }
   function getLimitGlowMassBounds(host) {
@@ -6254,12 +6262,10 @@ function updateRegionOnlineTotals(totals) {
       if (typeof S.skinList !== "object" || !S.skinList) return null;
       const cleanKey = nickname.replace(/\[|\]/g, "").trim().toLowerCase();
       const code = S.skinList[cleanKey];
-      if (code) {
-        return `https://api.agar.su/skins/${code}.png`;
-      }
+      if (code) return skinUrlForId(code);
       const withBrackets = `[${cleanKey}]`;
       const code2 = S.skinList[withBrackets];
-      return code2 ? `https://api.agar.su/skins/${code2}.png` : null;
+      return code2 ? skinUrlForId(code2) : null;
     } catch (e) {
       console.error("Skin error:", e);
       return null;
@@ -7540,7 +7546,7 @@ function updateRegionOnlineTotals(totals) {
       messageContent = privateMatch[2];
       if (!messageContent.startsWith("PvPInvite;")) {
         targetDialogId = `!ls${number}`;
-        createDialog(S, hooks, number, lastMessage.name, S.skinList[normalizedName] ? `https://api.agar.su/skins/${S.skinList[normalizedName]}.png` : "https://api.agar.su/skins/4.png");
+        createDialog(S, hooks, number, lastMessage.name, skinUrlForId(S.skinList[normalizedName] || "4"));
         targetDiv = ((_b = S.dialogs[targetDialogId]) == null ? void 0 : _b.div) || targetDiv;
       }
     }
@@ -7879,7 +7885,7 @@ function updateRegionOnlineTotals(totals) {
     menuItems.push({
       label: "Личное сообщение",
       onClick: () => {
-        createDialog(S, hooks, playerId, lastMessage.name, S.skinList[normalizeNick(lastMessage.name)] ? `https://api.agar.su/skins/${S.skinList[normalizeNick(lastMessage.name)]}.png` : "https://api.agar.su/skins/4.png");
+        createDialog(S, hooks, playerId, lastMessage.name, skinUrlForId(S.skinList[normalizeNick(lastMessage.name)] || "4"));
         switchToDialog(S, `!ls${playerId}`);
       }
     });
@@ -8801,7 +8807,7 @@ onReady(() => {
   var cachedSkinsMapAt = 0;
   var avatarCtxMenu = null;
   function getSkinPreviewUrl(skinId) {
-    return skinId ? `https://api.agar.su/skins/${skinId}.png` : "";
+    return skinId ? skinUrlForId(skinId) : "";
   }
   function setBackgroundImageIfChanged(el, skinId) {
     if (!el) return;
@@ -8943,7 +8949,7 @@ onReady(() => {
       const card = document.createElement("button");
       card.type = "button";
       card.className = "skins-gallery-card";
-      card.innerHTML = `\n            <img src="https://api.agar.su/skins/${skin.code}.png" alt="" loading="lazy">\n            <h4>${escapeHtml(skin.nick)}</h4>\n        `;
+      card.innerHTML = `\n            <img src="${skinUrlForId(skin.code)}" alt="" loading="lazy">\n            <h4>${escapeHtml(skin.nick)}</h4>\n        `;
       card.addEventListener("click", async () => {
         await selectSkin(skin.nick);
         showContent("home");
