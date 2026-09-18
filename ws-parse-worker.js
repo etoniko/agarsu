@@ -16,7 +16,6 @@
     BAN: 91,
     CHAT: 99,
     XP: 114,
-    ADMIN_PANEL: 169,
     STICKER: 200
   };
 
@@ -200,6 +199,12 @@
       case OP.UPDATE_NODES:
         return parseUpdateNodes(view);
       case OP.UPDATE_CAMERA:
+        if (view.byteLength >= offset + 12) {
+          const x = view.getFloat32(offset, true);
+          const y = view.getFloat32(offset + 4, true);
+          const size = view.getFloat32(offset + 8, true);
+          return { type: "updateCamera", x, y, size };
+        }
         return { type: "updateCamera" };
       case OP.CLEAR_NODES:
         return { type: "clearNodes" };
@@ -269,53 +274,6 @@
       }
       case OP.XP:
         return { type: "xp", xp: view.getUint32(offset, true) };
-      case OP.ADMIN_PANEL: {
-        const reader = new BinaryReader(view);
-        reader.offset = 1;
-        let role = null;
-        let count = -1;
-        const mark = reader.offset;
-        if (reader.canRead) {
-          const maybeRole = reader.view.getUint8(reader.offset);
-          if (maybeRole >= 1 && maybeRole <= 3 && reader.offset + 3 <= reader.view.byteLength) {
-            const maybeCount = reader.view.getUint16(reader.offset + 1, true);
-            if (maybeCount <= 512) {
-              role = maybeRole === 1 ? "admin" : maybeRole === 2 ? "moder" : "jmod";
-              reader.offset += 1;
-              count = reader.uint16();
-            }
-          }
-        }
-        if (count < 0) reader.offset = mark;
-        const players = [];
-        const readOne = () => {
-          if (!reader.canRead) return false;
-          const ip = reader.utf8();
-          if (!reader.canRead) return false;
-          const pid = reader.uint32();
-          const nick = reader.utf8();
-          const cells = reader.uint32();
-          const mx = reader.int32();
-          const my = reader.int32();
-          const score = reader.uint32();
-          players.push({ ip, pid, nick, cells, mx, my, score });
-          return true;
-        };
-        if (count >= 0) {
-          for (let i = 0; i < count; i++) {
-            if (!readOne()) break;
-          }
-        } else {
-          while (reader.canRead) {
-            if (!readOne()) break;
-          }
-        }
-        if (!role) {
-          const hasRealIp = players.some((p) => p.ip && p.ip !== "null" && p.ip !== "***" && p.ip !== "BOT");
-          role = hasRealIp ? "admin" : "moder";
-        }
-        return { type: "adminPanel", role, players };
-      }
       case OP.STICKER: {
         const stickerPlayerId = view.getUint32(offset, true); offset += 4;
         const stickerId = view.getUint8(offset++);
