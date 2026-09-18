@@ -1877,8 +1877,8 @@ img.skin-strip-anim{max-width:none !important;object-fit:fill !important;flex-sh
     font-size: 10px;
   }
 }
-.homemenu{position:absolute;left:10px;top:10px;border:solid #ffffff26 1px;border-radius:25px;background:rgba(0, 0, 0, .3);width:40px;height:40px;padding:5px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;z-index:20;}
-.homestats{position:absolute;left:56px;top:10px;border:solid #ffffff26 1px;border-radius:25px;background:rgba(0, 0, 0, .3);width:40px;height:40px;padding:5px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:#ffffff;z-index:20;}
+.homemenu{position:absolute;left:10px;top:10px;border:solid #ffffff26 1px;border-radius:25px;background:rgba(0, 0, 0, .3);width:40px;height:40px;padding:5px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;}
+.homestats{position:absolute;left:56px;top:10px;border:solid #ffffff26 1px;border-radius:25px;background:rgba(0, 0, 0, .3);width:40px;height:40px;padding:5px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:#ffffff;}
 .homestats:hover,.homemenu:hover{background:rgba(0,0,0,.45);}
 .monit-widget{
   position:absolute;left:10px;top:56px;z-index:30;width:min(380px,calc(100vw - 20px));
