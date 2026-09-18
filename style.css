@@ -4216,7 +4216,7 @@ img.skin-strip-anim{max-width:none !important;object-fit:fill !important;flex-sh
 .friend-map-dot{
   position:absolute;width:8px;height:8px;margin:-4px 0 0 -4px;
   border-radius:50%;background:#2ecc71;border:0;box-shadow:none;
-}.friends-panel{padding:8px 4px 12px;display:flex;flex-direction:column;gap:10px;}
+}.friends-panel{padding:8px 4px 12px;display:flex;flex-direction:column;gap:10px;height: 140px; overflow-x: hidden;}
 .friends-search-row{display:flex;gap:6px;}
 .friends-search-row input{flex:1;min-width:0;padding:8px 10px;border-radius:8px;border:1px solid #ffffff22;background:#0e172c;color:#fff;}
 .friends-btn{padding:7px 11px;border-radius:8px;border:1px solid #2f6fed;background:#2f6fed;color:#fff;cursor:pointer;font-size:12px;line-height:1.2;white-space:nowrap;}
