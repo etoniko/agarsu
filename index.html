@@ -16,7 +16,7 @@
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="canonical" href="https://agar.su">
     <link rel="stylesheet" href="/fonts/fonts.css?v=1">
-    <link rel="stylesheet" href="style.css?v=23">
+    <link rel="stylesheet" href="style.css?v=29">
     <script>
       window.renderDeathBanner = window.renderDeathBanner || function () {};
       window.trackPlayGoal = window.trackPlayGoal || function () {};
@@ -286,10 +286,10 @@
         } catch (e) {}
       })();
     </script>
-    <script src="protocols.js?v=12" defer></script>
+    <script src="protocols.js?v=11" defer></script>
     <script src="admin.js?v=10" defer></script>
     <script src="assets/scripts/friends.js?v=8" defer></script>
-    <script src="main.js?v=78" defer></script>
+    <script src="main.js?v=91" defer></script>
 </head>
 <body>
   <div id="overlays" class="overlays">
@@ -1041,6 +1041,30 @@
   </div>
   <div id="onchat"><i class="fa fa-message"></i></div>
   <div class="homemenu"><i class="fas fa-home"></i></div>
+  <div class="homestats" id="homestats" title="Статистика сервера"><i class="fas fa-trophy"></i></div>
+  <div id="monit-widget" class="monit-widget" hidden>
+    <div class="monit-widget-head">
+      <div>
+        <div class="monit-widget-title" id="monitWidgetTitle">Топ сегодня</div>
+        <div class="monit-widget-sub" id="monitWidgetSub"></div>
+      </div>
+      <button type="button" class="monit-widget-close" id="monitWidgetClose" aria-label="Закрыть"><i class="fa fa-close"></i></button>
+    </div>
+    <div class="monit-widget-hours" id="monitWidgetHours">
+      <button type="button" data-h="today" class="active">Сегодня</button>
+      <button type="button" data-h="6">6ч</button>
+      <button type="button" data-h="12">12ч</button>
+      <button type="button" data-h="24">24ч</button>
+      <button type="button" data-h="48">48ч</button>
+    </div>
+    <div class="monit-widget-err" id="monitWidgetErr" hidden></div>
+    <div class="monit-widget-chart-wrap">
+      <canvas id="monitWidgetChart" width="340" height="170"></canvas>
+    </div>
+    <div class="monit-widget-top-head">Топ 10 сейчас · клик → статистика</div>
+    <div class="monit-widget-top" id="monitWidgetTop"></div>
+    <div class="monit-widget-foot" id="monitWidgetFoot"></div>
+  </div>
   <div class="score-info" id="score-info">
     <div class="scorr" id="score-max">0</div>
     <div class="scorr" id="score-new">0</div>
