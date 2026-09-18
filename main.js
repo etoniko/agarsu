@@ -5478,6 +5478,538 @@
   var STATS_FEED_POLL_MS = 10000;
   var STATS_FEED_STORAGE_KEY = "agar_stats_feed_since";
 
+  // ── In-game monit widget (like /stats/monit, current server only) ─────────
+  // Chart = #1 mass/wins over time (up/down). List = places now. Click → /stats/users.
+  var monitWidgetState = { hoursMode: "today", hours: 24, loading: false, srv: null, hitPts: [] };
+
+  function monitEscapeHtml(s) {
+    return String(s ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function monitFmtTime(iso) {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    if (isNaN(d)) return "—";
+    return d.toLocaleString("ru-RU", {
+      timeZone: "Europe/Moscow",
+      day: "2-digit",
+      month: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  }
+
+  function monitFmtScore(n, kind) {
+    const v = Number(n) || 0;
+    if (kind === "score") return String(v);
+    return v.toLocaleString("ru-RU");
+  }
+
+  function monitMoscowParts(date = new Date()) {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Europe/Moscow",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false
+    }).formatToParts(date);
+    const get = t => Number(parts.find(p => p.type === t)?.value || 0);
+    return {
+      y: get("year"),
+      m: get("month"),
+      d: get("day"),
+      hour: get("hour"),
+      minute: get("minute"),
+      second: get("second")
+    };
+  }
+
+  /** Hours since 00:00 Europe/Moscow (for "Сегодня" window). */
+  function monitTodayHours() {
+    const p = monitMoscowParts();
+    const h = p.hour + p.minute / 60 + p.second / 3600;
+    return Math.min(48, Math.max(1, Math.ceil(h + .05)));
+  }
+
+  function monitMoscowTodayStartMs() {
+    const p = monitMoscowParts();
+    const y = String(p.y).padStart(4, "0");
+    const m = String(p.m).padStart(2, "0");
+    const d = String(p.d).padStart(2, "0");
+    return Date.parse(`${y}-${m}-${d}T00:00:00+03:00`);
+  }
+
+  function monitResolveHours() {
+    if (monitWidgetState.hoursMode === "today") return monitTodayHours();
+    return Number(monitWidgetState.hours) || 24;
+  }
+
+  function openMonitPlayerProfile(id, nick) {
+    if (id) {
+      window.open(STATS_PROFILE_BASE + encodeURIComponent(id), "_blank", "noopener");
+      return;
+    }
+    if (nick) {
+      window.open(STATS_PAGE_URL + "?q=" + encodeURIComponent(nick), "_blank", "noopener");
+    }
+  }
+
+  var monitStatsBgMap = null;
+  var monitStatsBgPromise = null;
+  async function ensureMonitStatsBgMap() {
+    if (monitStatsBgMap) return monitStatsBgMap;
+    if (!monitStatsBgPromise) {
+      monitStatsBgPromise = loadStatsBgMap(false)
+        .then(m => {
+          monitStatsBgMap = m || {};
+          return monitStatsBgMap;
+        })
+        .catch(() => {
+          monitStatsBgMap = {};
+          return monitStatsBgMap;
+        });
+    }
+    return monitStatsBgPromise;
+  }
+
+  async function renderMonitTopList(srv) {
+    const box = document.getElementById("monitWidgetTop");
+    if (!box) return;
+    const pts = srv && srv.points || [];
+    const last = pts[pts.length - 1];
+    const rows = last && Array.isArray(last.top) && last.top.length
+      ? last.top
+      : last && last.nick
+        ? [{ nick: last.nick, score: last.score, id: last.id }]
+        : [];
+    // Widget shows top-10 only.
+    const top10 = rows.slice(0, 10);
+    if (!top10.length) {
+      box.innerHTML = '<div class="monit-widget-row" style="cursor:default;color:#8b93a7">Пока нет топа за окно</div>';
+      return;
+    }
+    box.innerHTML = "";
+    for (let idx = 0; idx < top10.length; idx++) {
+      const r = top10[idx];
+      const row = document.createElement("div");
+      row.className = "monit-widget-row";
+      row.dataset.id = r.id != null ? String(r.id) : "";
+      row.dataset.nick = r.nick || "—";
+      row.innerHTML =
+        '<span class="monit-widget-place">#' + (idx + 1) + "</span>" +
+        '<span class="monit-widget-nick-slot"><span class="monit-widget-nick">' + monitEscapeHtml(r.nick || "—") + "</span></span>" +
+        '<span class="monit-widget-mass">' + monitEscapeHtml(monitFmtScore(r.score, srv.kind)) + "</span>";
+      box.appendChild(row);
+    }
+  }
+
+  var monitBgImgCache = new Map();
+  function loadMonitBgImage(url) {
+    if (!url) return Promise.resolve(null);
+    if (monitBgImgCache.has(url)) return Promise.resolve(monitBgImgCache.get(url));
+    return new Promise(resolve => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        monitBgImgCache.set(url, img);
+        resolve(img);
+      };
+      img.onerror = () => {
+        monitBgImgCache.set(url, null);
+        resolve(null);
+      };
+      img.src = url;
+    });
+  }
+
+  async function drawMonitWidgetChart(canvas, srv) {
+    if (!canvas || !srv) return;
+    let pts = srv.points || [];
+    if (monitWidgetState.hoursMode === "today") {
+      const start = monitMoscowTodayStartMs();
+      pts = pts.filter(p => {
+        const ms = Date.parse(p.t);
+        return Number.isFinite(ms) && ms >= start;
+      });
+    }
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    const cssW = canvas.clientWidth || 340;
+    const cssH = canvas.clientHeight || 170;
+    canvas.width = Math.floor(cssW * dpr);
+    canvas.height = Math.floor(cssH * dpr);
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const pad = { l: 8, r: 8, t: 22, b: 22 };
+    const w = cssW - pad.l - pad.r;
+    const h = cssH - pad.t - pad.b;
+    ctx.clearRect(0, 0, cssW, cssH);
+    ctx.fillStyle = "rgba(255,255,255,0.018)";
+    ctx.fillRect(pad.l, pad.t, w, h);
+    monitWidgetState.hitPts = [];
+    if (pts.length < 1) {
+      ctx.fillStyle = "#8b93a7";
+      ctx.font = "12px Arial,sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("Нет точек за сегодня — подождите poll", cssW / 2, cssH / 2);
+      return;
+    }
+    const times = pts.map(p => Date.parse(p.t));
+    const scores = pts.map(p => Number(p.score) || 0);
+    let minS = Math.min(...scores);
+    let maxS = Math.max(...scores);
+    if (minS === maxS) {
+      minS = Math.max(0, minS - 1);
+      maxS = maxS + 1;
+    }
+    const minT = times[0];
+    const maxT = times[times.length - 1] || minT + 1;
+    const xAt = t => pad.l + (t - minT) / (maxT - minT || 1) * w;
+    const yAt = s => pad.t + h - (s - minS) / (maxS - minS || 1) * h;
+
+    // Hairline grid
+    ctx.strokeStyle = "rgba(255,255,255,0.05)";
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 3; i++) {
+      const y = pad.t + h * i / 3;
+      ctx.beginPath();
+      ctx.moveTo(pad.l, y);
+      ctx.lineTo(pad.l + w, y);
+      ctx.stroke();
+    }
+
+    const up = scores[scores.length - 1] >= scores[0];
+    const lineColor = up ? "rgba(120, 200, 150, 0.95)" : "rgba(239, 140, 140, 0.95)";
+    const bottomY = pad.t + h;
+
+    // Split timeline into leader segments — each #1 gets their statsbg only on their span.
+    const segments = [];
+    let segStart = 0;
+    for (let i = 1; i <= pts.length; i++) {
+      const prevNick = String((pts[segStart] && pts[segStart].nick) || "");
+      const curNick = i < pts.length ? String((pts[i] && pts[i].nick) || "") : null;
+      if (i === pts.length || curNick !== prevNick) {
+        segments.push({ nick: prevNick, from: segStart, to: i - 1 });
+        segStart = i;
+      }
+    }
+
+    const map = await ensureMonitStatsBgMap();
+    const uniqueNicks = [...new Set(segments.map(s => s.nick).filter(Boolean))];
+    const bgByNick = {};
+    await Promise.all(uniqueNicks.map(async nick => {
+      bgByNick[nick] = await loadMonitBgImage(statsBgUrlForNick(nick, map));
+    }));
+
+    monitWidgetState.hitPts = [];
+    for (let i = 0; i < pts.length; i++) {
+      monitWidgetState.hitPts.push({
+        x: xAt(times[i]),
+        y: yAt(scores[i]),
+        p: pts[i],
+        i
+      });
+    }
+
+    function fillSegment(from, to, bgImg) {
+      if (from > to) return;
+      ctx.beginPath();
+      for (let i = from; i <= to; i++) {
+        const x = xAt(times[i]);
+        const y = yAt(scores[i]);
+        if (i === from) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.lineTo(xAt(times[to]), bottomY);
+      ctx.lineTo(xAt(times[from]), bottomY);
+      ctx.closePath();
+
+      if (bgImg) {
+        ctx.save();
+        ctx.clip();
+        const x0 = xAt(times[from]);
+        const x1 = xAt(times[to]);
+        const segW = Math.max(1, x1 - x0);
+        const iw = bgImg.naturalWidth || bgImg.width || 1;
+        const ih = bgImg.naturalHeight || bgImg.height || 1;
+        const scale = Math.max(segW / iw, h / ih);
+        const dw = iw * scale;
+        const dh = ih * scale;
+        const dx = x0 + (segW - dw) / 2;
+        const dy = pad.t + (h - dh) / 2;
+        ctx.globalAlpha = 0.75;
+        ctx.drawImage(bgImg, dx, dy, dw, dh);
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = "rgba(8,12,22,0.4)";
+        ctx.fillRect(x0, pad.t, segW, h);
+        ctx.restore();
+      } else {
+        const grad = ctx.createLinearGradient(0, pad.t, 0, bottomY);
+        grad.addColorStop(0, up ? "rgba(102,187,106,.10)" : "rgba(239,83,80,.10)");
+        grad.addColorStop(1, "rgba(91,140,255,0)");
+        ctx.fillStyle = grad;
+        ctx.fill();
+      }
+    }
+
+    for (const seg of segments) {
+      fillSegment(seg.from, seg.to, seg.nick ? bgByNick[seg.nick] : null);
+    }
+
+    // Thin line on top of fills
+    ctx.beginPath();
+    pts.forEach((p, i) => {
+      const x = xAt(times[i]);
+      const y = yAt(scores[i]);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = lineColor;
+    ctx.lineWidth = 1.15;
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+    ctx.stroke();
+
+    const labelIdx = [];
+    let prevNick = null;
+    for (let i = 0; i < pts.length; i++) {
+      const nick = pts[i].nick || "";
+      if (nick && nick !== prevNick) {
+        labelIdx.push(i);
+        prevNick = nick;
+      }
+    }
+    ctx.font = "10px Arial,sans-serif";
+    ctx.textAlign = "center";
+    const pick = labelIdx.length <= 6
+      ? labelIdx
+      : labelIdx.filter((_, n) => n === 0 || n === labelIdx.length - 1 || n % Math.ceil(labelIdx.length / 5) === 0);
+    for (const i of pick) {
+      const p = pts[i];
+      const x = xAt(times[i]);
+      const y = yAt(scores[i]);
+      const label = String(p.nick || "").slice(0, 12);
+      const mass = monitFmtScore(p.score, srv.kind);
+      ctx.fillStyle = "rgba(220,226,240,0.9)";
+      ctx.fillText(label, Math.min(cssW - 36, Math.max(36, x)), Math.max(12, y - 12));
+      ctx.fillStyle = "rgba(140,175,255,0.95)";
+      ctx.fillText(mass, Math.min(cssW - 36, Math.max(36, x)), Math.max(22, y - 2));
+    }
+
+    ctx.fillStyle = "rgba(139,147,167,0.85)";
+    ctx.font = "10px Arial,sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText(monitFmtTime(pts[0].t), pad.l, cssH - 5);
+    ctx.textAlign = "right";
+    ctx.fillText(monitFmtTime(pts[pts.length - 1].t), pad.l + w, cssH - 5);
+
+    function nearestHit(mx, my) {
+      let best = null;
+      let bestDist = 16;
+      const hits = monitWidgetState.hitPts || [];
+      for (let i = 0; i < hits.length; i++) {
+        const ht = hits[i];
+        const d = Math.hypot(ht.x - mx, ht.y - my);
+        if (d < bestDist) {
+          bestDist = d;
+          best = ht;
+        }
+      }
+      return best;
+    }
+
+    canvas.onmousemove = null;
+    canvas.onmouseleave = null;
+    canvas.onclick = ev => {
+      const rect = canvas.getBoundingClientRect();
+      const mx = ev.clientX - rect.left;
+      const my = ev.clientY - rect.top;
+      let hit = nearestHit(mx, my);
+      if (!hit) {
+        let best = 0;
+        let bestDist = Infinity;
+        for (let i = 0; i < times.length; i++) {
+          const dx = Math.abs(xAt(times[i]) - mx);
+          if (dx < bestDist) {
+            bestDist = dx;
+            best = i;
+          }
+        }
+        if (bestDist < 20) hit = { p: pts[best] };
+      }
+      if (hit && hit.p) openMonitPlayerProfile(hit.p.id, hit.p.nick);
+    };
+  }
+
+  function currentMonitServerId() {
+    if (deps && deps.S) {
+      const fromGame = resolveOfficialServerId(
+        deps.S.CONNECTION_URL || deps.S.SELECTED_SERVER || deps.S.wsUrl || ""
+      );
+      if (fromGame) return fromGame;
+    }
+    const active = document.querySelector(".server-item.active[id], .server-item.active");
+    if (active && active.id && /^(ffa|ms|pvp1|pvp2|tournament2?)$/i.test(active.id)) {
+      return active.id.toLowerCase();
+    }
+    if (active && active.dataset && active.dataset.ip) {
+      return resolveOfficialServerId(active.dataset.ip);
+    }
+    return null;
+  }
+
+  async function loadMonitWidget() {
+    const panel = document.getElementById("monit-widget");
+    const errEl = document.getElementById("monitWidgetErr");
+    const titleEl = document.getElementById("monitWidgetTitle");
+    const subEl = document.getElementById("monitWidgetSub");
+    const footEl = document.getElementById("monitWidgetFoot");
+    const canvas = document.getElementById("monitWidgetChart");
+    if (!panel || panel.hidden) return;
+    const serverId = currentMonitServerId();
+    if (!serverId) {
+      if (titleEl) titleEl.textContent = "Топ сегодня";
+      if (subEl) subEl.textContent = "Только официальные серверы agar.su (FFA / MS / PVP / Tournament)";
+      if (footEl) footEl.textContent = "";
+      renderMonitTopList(null);
+      if (errEl) {
+        errEl.hidden = false;
+        errEl.textContent = "Сейчас выбран не официальный сервер — график недоступен.";
+      }
+      if (canvas) {
+        const ctx = canvas.getContext("2d");
+        ctx && ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+      return;
+    }
+    if (monitWidgetState.loading) return;
+    monitWidgetState.loading = true;
+    if (errEl) errEl.hidden = true;
+    if (subEl) subEl.textContent = "загрузка…";
+    try {
+      const hours = monitResolveHours();
+      const url = STATS_API + "/api/monit?hours=" + encodeURIComponent(hours) +
+        "&servers=" + encodeURIComponent(serverId);
+      const res = await fetch(url, { cache: "no-store" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      let srv = (data.servers || []).find(s => s.id === serverId) || (data.servers || [])[0] || null;
+      if (srv && monitWidgetState.hoursMode === "today") {
+        const start = monitMoscowTodayStartMs();
+        const filtered = (srv.points || []).filter(p => {
+          const ms = Date.parse(p.t);
+          return Number.isFinite(ms) && ms >= start;
+        });
+        srv = Object.assign({}, srv, { points: filtered });
+        const first = filtered[0];
+        const last = filtered[filtered.length - 1];
+        srv.delta = first && last ? (Number(last.score) || 0) - (Number(first.score) || 0) : 0;
+        srv.lastNick = last?.nick || null;
+        srv.lastScore = last ? Number(last.score) || 0 : 0;
+        srv.lastN = last ? Number(last.n) || 0 : 0;
+      }
+      monitWidgetState.srv = srv;
+      if (!srv) {
+        if (titleEl) titleEl.textContent = serverId;
+        if (subEl) subEl.textContent = "история ещё пустая";
+        if (footEl) footEl.innerHTML = "";
+        renderMonitTopList(null);
+        drawMonitWidgetChart(canvas, { points: [], delta: 0 });
+        return;
+      }
+      if (titleEl) titleEl.textContent = (srv.name || serverId) + " · топ";
+      if (subEl) {
+        subEl.textContent =
+          (srv.scoreLabel || "Масса") + " #1 за окно" +
+          (srv.lastNick ? " · сейчас: " + srv.lastNick : "") +
+          (monitWidgetState.hoursMode === "today" ? " · сегодня (МСК)" : "");
+      }
+      if (footEl) {
+        footEl.innerHTML =
+          "<span>лидер: <strong>" + monitEscapeHtml(monitFmtScore(srv.lastScore, srv.kind)) + "</strong></span>" +
+          "<span>на доске: <strong>" + monitEscapeHtml(String(srv.lastN || 0)) + "</strong></span>" +
+          "<span>точек: <strong>" + monitEscapeHtml(String((srv.points || []).length)) + "</strong></span>";
+      }
+      await renderMonitTopList(srv);
+      await drawMonitWidgetChart(canvas, srv);
+    } catch (e) {
+      if (errEl) {
+        errEl.hidden = false;
+        errEl.textContent = "Не удалось загрузить monit: " + (e.message || e);
+      }
+    } finally {
+      monitWidgetState.loading = false;
+    }
+  }
+
+  function openMonitWidget() {
+    const panel = document.getElementById("monit-widget");
+    if (!panel) return;
+    panel.hidden = false;
+    loadMonitWidget();
+  }
+
+  function closeMonitWidget() {
+    const panel = document.getElementById("monit-widget");
+    if (panel) panel.hidden = true;
+  }
+
+  function toggleMonitWidget() {
+    const panel = document.getElementById("monit-widget");
+    if (!panel) return;
+    if (panel.hidden) openMonitWidget();
+    else closeMonitWidget();
+  }
+
+  function initMonitWidget() {
+    const btn = document.getElementById("homestats");
+    const closeBtn = document.getElementById("monitWidgetClose");
+    const hoursEl = document.getElementById("monitWidgetHours");
+    const topBox = document.getElementById("monitWidgetTop");
+    if (btn) btn.addEventListener("click", e => {
+      e.stopPropagation();
+      toggleMonitWidget();
+    });
+    if (closeBtn) closeBtn.addEventListener("click", e => {
+      e.stopPropagation();
+      closeMonitWidget();
+    });
+    if (hoursEl) {
+      hoursEl.addEventListener("click", ev => {
+        const b = ev.target.closest("button[data-h]");
+        if (!b) return;
+        const mode = b.dataset.h;
+        if (mode === "today") {
+          monitWidgetState.hoursMode = "today";
+        } else {
+          monitWidgetState.hoursMode = "fixed";
+          monitWidgetState.hours = Number(mode) || 24;
+        }
+        hoursEl.querySelectorAll("button").forEach(x => x.classList.toggle("active", x === b));
+        loadMonitWidget();
+      });
+    }
+    if (topBox && !topBox._monitBound) {
+      topBox._monitBound = true;
+      topBox.addEventListener("click", ev => {
+        const row = ev.target.closest(".monit-widget-row[data-nick]");
+        if (!row) return;
+        openMonitPlayerProfile(row.getAttribute("data-id"), row.getAttribute("data-nick"));
+      });
+    }
+    document.querySelectorAll(".server-item[data-ip]").forEach(item => {
+      item.addEventListener("click", () => {
+        const panel = document.getElementById("monit-widget");
+        if (panel && !panel.hidden) setTimeout(loadMonitWidget, 0);
+      });
+    });
+  }
+
   function resolveOfficialServerId(connectionUrl) {
     const host = String(connectionUrl || "").toLowerCase().replace(/^wss?:\/\//, "");
     if (!host) return null;
@@ -9364,6 +9896,7 @@ onReady(() => {
         showOverlays();
       });
     });
+    initMonitWidget();
     const closeStats = document.getElementById("closeStats");
     if (closeStats) {
       closeStats.addEventListener("click", () => {
