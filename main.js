@@ -1825,10 +1825,23 @@
     drawCustomMapBackground(ctx);
     let drawn = 0;
     for (let i = 0; i < S.Cells.length; i++) S.Cells[i].drawOneCell(ctx);
+    // ── FOOD BATCH (2026-09) ──────────────────────────────────────────────
+    // Was: every food pellet called drawOneCell → beginPath+arc+fill each.
+    // Now: drawBatchedFood groups visible food by color → one path + one fill
+    // per color. Non-food still uses drawOneCell below (skips isFood).
+    // If food missing / wrong z-order / color bugs → disable foodBatchDraw or
+    // revert this block to: for (nodelist) nodelist[i].drawOneCell(ctx);
+    // Chat/agent context: "food batch fill" / this comment.
+    // ─────────────────────────────────────────────────────────────────────
+    S.foodBatchDraw = true;
+    drawn += drawBatchedFood(ctx, S);
     for (let i = 0; i < S.nodelist.length; i++) {
-      S.nodelist[i].drawOneCell(ctx);
+      const node = S.nodelist[i];
+      if (node && node.isFood) continue;
+      node.drawOneCell(ctx);
       drawn++;
     }
+    S.foodBatchDraw = false;
     ctx.restore();
     if (perfEnabled) {
       perfStats.drawn = drawn;
@@ -1838,6 +1851,52 @@
       updatePerfOverlay(S);
     }
     drawTouch(ctx);
+  }
+  // ── FOOD BATCH helper (see drawGameScene foodBatchDraw block) ────────────
+  // Pre-batch: food went through Cell.drawOneCell like players (per-pellet fill).
+  // Bugs (invisible food, wrong colors, food above players): turn off batch in
+  // drawGameScene or remove early-return in drawOneCell for isFood.
+  /** One beginPath + many arcs + one fill per food color (cheaper than per-pellet fill). */
+  function drawBatchedFood(ctx, S) {
+    const list = S.nodelist;
+    if (!list || !list.length) return 0;
+    const byColor = new Map();
+    let drawn = 0;
+    const frameId = S.frameId;
+    const ts = S.timestamp;
+    for (let i = 0; i < list.length; i++) {
+      const node = list[i];
+      if (!node || !node.isFood || node.destroyed) continue;
+      if (node._posFrame !== frameId) {
+        node.updatePos();
+        node._posFrame = frameId;
+      }
+      if (!node.shouldRender()) continue;
+      node.drawTime = ts;
+      let r = node.size;
+      if (!r) r = 20;
+      const color = typeof node.getEffectiveColor === "function" ? node.getEffectiveColor() : node.color || "#FFFFFF";
+      let bucket = byColor.get(color);
+      if (!bucket) {
+        bucket = [];
+        byColor.set(color, bucket);
+      }
+      bucket.push(node.x, node.y, r);
+      drawn++;
+    }
+    byColor.forEach(function (coords, color) {
+      ctx.beginPath();
+      for (let i = 0; i < coords.length; i += 3) {
+        const x = coords[i];
+        const y = coords[i + 1];
+        const r = coords[i + 2];
+        ctx.moveTo(x + r, y);
+        ctx.arc(x, y, r, 0, 2 * Math.PI);
+      }
+      ctx.fillStyle = color;
+      ctx.fill();
+    });
+    return drawn;
   }
   function drawGrid() {
     const S = deps.S;
@@ -3179,6 +3238,28 @@
    * Свои клетки — только пока зажата клавиша (анти-мерцание/залипание у себя).
    * Чужие: 00 обязательно гасит (иначе 2-я вкладка видит стикер после отпускания).
    */
+  /** playerId → canonical nick (skin API still resolves by nick). */
+  function rememberPlayerNick(S, playerId, name) {
+    if (!S || !playerId || !name) return false;
+    if (!S.playerNicks) S.playerNicks = Object.create(null);
+    const pid = playerId >>> 0;
+    if (S.playerNicks[pid] === name) return false;
+    S.playerNicks[pid] = name;
+    return true;
+  }
+  function nickForPlayerId(S, playerId) {
+    if (!S || !playerId || !S.playerNicks) return "";
+    return S.playerNicks[playerId >>> 0] || "";
+  }
+  /** When nick changes for a pid, push to all linked cells once. */
+  function applyPlayerNickToCells(S, playerId, name) {
+    if (!S || !S.nodelist || !playerId || !name) return;
+    const pid = playerId >>> 0;
+    for (let i = 0; i < S.nodelist.length; i++) {
+      const n = S.nodelist[i];
+      if (n && !n.isFood && (n.playerId >>> 0) === pid && n.name !== name) n.setName(name);
+    }
+  }
   function syncNodeStickerFromUpdate(S, node, name, stickerFromUpdate) {
     if (!node) return;
     const n = name || node.name || "";
@@ -3302,7 +3383,7 @@
       const flagVirus = !!(spiked & 1);
       const flagEjected = !!(spiked & 32) || !!(spiked & 64);
       const flagAgitated = !!(spiked & 16);
-      const name = reader.utf8();
+      const packetName = reader.utf8();
       // Хвост протокола: FF+id (стикер есть) или 00 (в этом апдекте нет).
       // Источник истины — пакет STICKER + карта activeStickers*: байт 00 НЕ сбрасывает
       // активный стикер (иначе у всех мерцает главная клетка на каждом тике).
@@ -3315,6 +3396,10 @@
           stickerFromUpdate = false;
         }
       }
+      const pid = type === 0 && playerId ? playerId >>> 0 : 0;
+      // Canonical nick lives on playerId; cells inherit. Skin API still keys by nick.
+      let resolvedName = packetName || "";
+      if (!resolvedName && pid) resolvedName = nickForPlayerId(S, pid);
       let node = S.nodes[nodeid];
       if (node) {
         node = S.nodes[nodeid];
@@ -3324,12 +3409,12 @@
         node.oSize = node.size;
         node.color = color;
       } else {
-        node = new Cell2(nodeid, posX, posY, size, color, name);
+        node = new Cell2(nodeid, posX, posY, size, color, resolvedName);
         S.nodelist.push(node);
         S.nodes[nodeid] = node;
         node.ka = posX;
         node.la = posY;
-        if (playerId === S.ownerPlayerId) {
+        if (pid && pid === S.ownerPlayerId) {
           const overlays = document.getElementById("overlays");
           if (overlays) overlays.style.display = "none";
           node.isOwn = true;
@@ -3340,20 +3425,25 @@
           }
         }
       }
+      if (pid) node.playerId = pid;
       if (node) {
-        syncNodeStickerFromUpdate(S, node, name, stickerFromUpdate);
+        syncNodeStickerFromUpdate(S, node, resolvedName || node.name, stickerFromUpdate);
       }
       node.isVirus = flagVirus;
       node.isEjected = flagEjected;
       node.isAgitated = flagAgitated;
       if (type === 1 || type === 4) node.isFood = true; // type4 = AgarZ food w/ coords
-      if (type === 0 && playerId) node.playerId = playerId >>> 0;
       node.nx = posX;
       node.ny = posY;
       node.setSize(size);
       node.updateTime = S.timestamp;
       node.flag = spiked;
-      if (name) node.setName(name);
+      if (pid && packetName) {
+        if (rememberPlayerNick(S, pid, packetName)) applyPlayerNickToCells(S, pid, packetName);
+        else if (node.name !== packetName) node.setName(packetName);
+      } else if (resolvedName && node.name !== resolvedName) {
+        node.setName(resolvedName);
+      }
     }
     while (reader.canRead) {
       const node = S.nodes[reader.uint32()];
@@ -3390,6 +3480,7 @@
     clearSpectateFollow(S);
     S.playerCells = [];
     S.nodes = {};
+    S.playerNicks = Object.create(null);
     S.activeStickersByNode = Object.create(null);
     S.activeStickersByName = Object.create(null);
     S.nodelist = [];
@@ -3674,6 +3765,7 @@
       foodMass: 1,
       foodMaxMass: 4,
       ownerPlayerId: -1,
+      playerNicks: Object.create(null),
       spectateFollowNick: null,
       spectateFollowPid: 0,
       mapWidth: 0,
@@ -3873,6 +3965,35 @@
     this._stroke = !!ustroke;
     ustrokecolor && (this._strokeColor = ustrokecolor);
   }
+  /** Stable font px for UText; visual size follows cell via drawImage scale (no re-raster every frame).
+   * LOD is chosen by on-screen px (world label size × viewZoom): zoom in / big ball → sharp. */
+  var LABEL_RASTER_LODS = [16, 24, 32, 48, 64, 96, 128, 192, 256];
+  function pickLabelRasterLod(targetPx, prevLod) {
+    const t = Math.max(1, Number(targetPx) || 1);
+    let closest = LABEL_RASTER_LODS[0];
+    let bestDist = Math.abs(t - closest);
+    for (let i = 1; i < LABEL_RASTER_LODS.length; i++) {
+      const lod = LABEL_RASTER_LODS[i];
+      const d = Math.abs(t - lod);
+      if (d < bestDist) {
+        bestDist = d;
+        closest = lod;
+      }
+    }
+    if (prevLod) {
+      const idx = LABEL_RASTER_LODS.indexOf(prevLod);
+      if (idx >= 0) {
+        if (idx < LABEL_RASTER_LODS.length - 1 && t > prevLod * 1.38) return LABEL_RASTER_LODS[idx + 1];
+        if (idx > 0 && t < prevLod * 0.7) return LABEL_RASTER_LODS[idx - 1];
+        return prevLod;
+      }
+    }
+    return closest;
+  }
+  /** Screen-pixel budget for a label (what you actually see). */
+  function labelScreenPx(worldSize, viewZoom) {
+    return Math.max(1, (Number(worldSize) || 1) * (Number(viewZoom) || 1));
+  }
   UText.prototype = {
     _value: "",
     _color: "#000000",
@@ -4027,35 +4148,31 @@
       } else {
         this.fixedName = null;
       }
+      // Same nick → keep skin/text caches (split/merge spam used to rebuild every tick).
+      if (name === this.name && this.nameCache && this._txtNameVal === name) return;
       this.name = name;
       this._skinNameKey = null;
       this._skinId = null;
       this._nameLower = name ? name.toLowerCase() : "";
       this._txtNameVal = void 0;
-      this._txtNameSize = 0;
       this._txtMassVal = -1;
-      this._txtZoom = 0;
       this._txtNameStroke = null;
-      const size = this.getNameSize();
+      // Raster size is LOD-stable; per-frame visual size is drawImage scale.
+      // Initial LOD from screen px so first paint matches zoom.
+      const viewZ = (deps3.S && deps3.S.viewZoom) || 1;
+      const raster = this._txtRasterSize || pickLabelRasterLod(labelScreenPx(this.getNameSize(), viewZ), 0);
+      this._txtRasterSize = raster;
       if (!this.nameCache) {
-        this.nameCache = new UText(size, "#FFFFFF", true, "#000000");
-      } else {
-        this.nameCache.setSize(size);
+        this.nameCache = new UText(raster, "#FFFFFF", true, "#000000");
+        this.nameCache.setScale(1);
       }
       let labelName = name;
       this.nameCache.setValue(labelName);
       this._txtNameVal = labelName;
-      this._txtNameSize = size;
     },
     setSize(size) {
       this.nSize = size;
-      const sizeHalf = this.getNameSize() * .5;
-      if (!this.sizeCache) {
-        this.sizeCache = new UText(sizeHalf, "#FFFFFF", true, "#000000");
-      } else {
-        this.sizeCache.setSize(sizeHalf);
-      }
-      this._txtMassSize = sizeHalf;
+      // Mass label font size is no longer rebuilt here — scaled in drawOneCell.
     },
     getNumPoints() {
       return 0;
@@ -4108,6 +4225,9 @@
       var _a, _b;
       if (!this.shouldRender()) return;
       const S = deps3.S;
+      // FOOD BATCH: when foodBatchDraw is set, food is painted in drawBatchedFood —
+      // skip here. If batch disabled/reverted, delete this guard.
+      if (this.isFood && S.foodBatchDraw) return;
       const getSkinImage2 = deps3.getSkinImage || getSkinImage;
       const getOwnedSkinDrawable2 = deps3.getOwnedSkinDrawable || getOwnedSkinDrawable;
       const loadCachedImage2 = deps3.loadCachedImage || loadCachedImage;
@@ -4243,22 +4363,21 @@
       if (this.id !== 0) {
         const x = this.x;
         const y = this.y;
-        const zoomRatio = S.textZoomRatio;
-        const invZoom = S.textInvZoom;
-        const screenSize = this.size * S.viewZoom;
+        const viewZ = S.viewZoom || 1;
+        const screenSize = this.size * viewZ;
         const showMassLabels = screenSize > 28;
-        if (zoomRatio !== this._txtZoom) {
-          this._txtZoom = zoomRatio;
-          if (this.nameCache) this.nameCache.setScale(zoomRatio);
-          if (this.sizeCache) this.sizeCache.setScale(zoomRatio);
-        }
+        // Cell labels: scale=1 always; sharpness from screen-space LOD (size × zoom).
+        if (this.nameCache && this.nameCache._scale !== 1) this.nameCache.setScale(1);
+        if (this.sizeCache && this.sizeCache._scale !== 1) this.sizeCache.setScale(1);
         if (S.showName && this.name && this.nameCache && this.size > 10) {
           let displayName = this.name;
           if (!isPetriSkinHost(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl) && invisible.has(this._nameLower)) {
             displayName = "";
           }
           if (displayName) {
-            const nameSize = this.getNameSize();
+            const targetSize = this.getNameSize();
+            const screenPx = labelScreenPx(targetSize, viewZ);
+            const rasterSize = pickLabelRasterLod(screenPx, this._txtRasterSize || 0);
             const playHost = S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl;
             const light = isLightLabelRegion(S.playRegion, playHost);
             const wantsStroke = !light && S.renderQuality !== "low";
@@ -4267,9 +4386,9 @@
               this._txtNameVal = displayName;
               this.nameCache.setValue(displayName);
             }
-            if (nameSize !== this._txtNameSize) {
-              this._txtNameSize = nameSize;
-              this.nameCache.setSize(nameSize);
+            if (rasterSize !== this._txtRasterSize) {
+              this._txtRasterSize = rasterSize;
+              this.nameCache.setSize(rasterSize);
             }
             if (wantsStroke !== this._txtNameStroke) {
               this._txtNameStroke = wantsStroke;
@@ -4280,8 +4399,11 @@
               this.nameCache.setFont(labelFont);
             }
             const img = this.nameCache.render();
-            let drawWidth = img.width * invZoom;
-            let drawHeight = img.height * invZoom;
+            // World draw size tracks cell; ctx.scale(viewZoom) → screen ≈ targetSize×zoom.
+            // Bitmap px ≈ LOD(screen) so zoom-in / big ball stays sharp.
+            const scaleToTarget = targetSize / (this._txtRasterSize || rasterSize);
+            let drawWidth = img.width * scaleToTarget;
+            let drawHeight = img.height * scaleToTarget;
             const maxAllowedWidth = this.size * 2;
             if (drawWidth > maxAllowedWidth) {
               const shrink = maxAllowedWidth / drawWidth;
@@ -4292,11 +4414,16 @@
           }
         }
         if (S.renderQuality !== "low" && S.showMass && showMassLabels && !this.isVirus && !this.isEjected && !this.isAgitated && this.size > 100) {
+          const targetMassSize = this.getNameSize() * .5;
+          const massScreenPx = labelScreenPx(targetMassSize, viewZ);
+          const massRaster = pickLabelRasterLod(massScreenPx, this._txtMassRasterSize || 0);
           if (!this.sizeCache) {
-            const sizeHalf = this.getNameSize() * .5;
-            this.sizeCache = new UText(sizeHalf, "#FFFFFF", true, "#000000");
-            this._txtMassSize = sizeHalf;
-            if (this._txtZoom) this.sizeCache.setScale(this._txtZoom);
+            this.sizeCache = new UText(massRaster, "#FFFFFF", true, "#000000");
+            this.sizeCache.setScale(1);
+            this._txtMassRasterSize = massRaster;
+          } else if (massRaster !== this._txtMassRasterSize) {
+            this._txtMassRasterSize = massRaster;
+            this.sizeCache.setSize(massRaster);
           }
           const playHost = S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl;
           const light = isLightLabelRegion(S.playRegion, playHost);
@@ -4316,8 +4443,9 @@
             this.sizeCache.setValue(massLabel);
           }
           const img = this.sizeCache.render();
-          const massW = img.width * invZoom;
-          const massH = img.height * invZoom;
+          const massScale = targetMassSize / (this._txtMassRasterSize || massRaster);
+          const massW = img.width * massScale;
+          const massH = img.height * massScale;
           ctx.drawImage(img, x - massW / 2, y + massH * .9, massW, massH);
         }
       }
