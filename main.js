@@ -7664,7 +7664,7 @@ function updateRegionOnlineTotals(totals) {
   var ADMINS = ["нико", "banshee"];
   var YOUTUBERS = ["salruz", "morcov", "sealand"];
   var URL_YOUTUBERS = [ "https://youtube.com/@SalRuzO", "https://www.youtube.com/@MORCCVA", "https://www.youtube.com/@sealandv" ];
-  var SHADOW_CHAT_TERMS = [ "agartime", "агартайм", "kotov.fun", "kotovfun", "agartime.ru", "petridish.pw", "petridish", "чашка петри", "чашке", "чашку", "чашка", "петри"];
+  var SHADOW_CHAT_TERMS = [ "agartime", "агартайм", "kotov.fun", "kotovfun", "agartime.ru", "petridish.pw", "petridish", "чашка петри", "чашке", "чашку", "чашка", "петри", "чп"];
   function normalizeShadowChatText(text) {
     return String(text || "").toLowerCase().replace(/ё/g, "е");
   }
