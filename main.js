@@ -504,7 +504,7 @@
     invisible: "https://api.agar.su/invisible.txt",
     rotation: "https://api.agar.su/rotation.txt",
     statsbglist: "https://api.agar.su/statsbglist.txt",
-    word: "https://api.agar.su/word.txt"
+    word: "word.txt"
   };
   /** Purchased skins / passes — never cache in browser or nginx. */
   var NO_CACHE_URLS = new Set([ STATIC_URLS.skinlist, STATIC_URLS.stickerlist, STATIC_URLS.pass, STATIC_URLS.bannick, STATIC_URLS.invisible, STATIC_URLS.rotation, STATIC_URLS.statsbglist ]);
