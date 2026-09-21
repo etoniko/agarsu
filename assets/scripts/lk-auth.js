@@ -122,7 +122,7 @@
   }
 
   function resetRecover() {
-    recoverToken = null;
+    persistRecoverToken(null);
     stopTimer("rec");
     clearRecErr();
     hideAll([
@@ -155,9 +155,37 @@
     if (hint && hintText) hint.textContent = hintText;
   }
 
+  function persistRecoverToken(token) {
+    recoverToken = token || null;
+    try {
+      if (token) sessionStorage.setItem("lk_recover_token", token);
+      else sessionStorage.removeItem("lk_recover_token");
+    } catch (_) {}
+  }
+
+  function loadRecoverToken() {
+    if (recoverToken) return recoverToken;
+    try {
+      recoverToken = sessionStorage.getItem("lk_recover_token");
+    } catch (_) {}
+    return recoverToken;
+  }
+
   function showSetPassword() {
     clearRecErr();
     showRecOnly("authRecStepPass", "Придумайте новый пароль");
+  }
+
+  function openRecoverPassword(token) {
+    if (!token) return;
+    const login = $("authCardLogin");
+    const reg = $("authCardRegister");
+    const rec = $("authCardRecover");
+    if (login) login.hidden = true;
+    if (reg) reg.hidden = true;
+    if (rec) rec.hidden = false;
+    persistRecoverToken(token);
+    showSetPassword();
   }
 
   async function api(path, body) {
@@ -317,9 +345,8 @@
         setErr(err, data.error || "Неверный код");
         return;
       }
-      recoverToken = data.recoverToken;
       stopTimer("rec");
-      showSetPassword();
+      openRecoverPassword(data.recoverToken);
     } catch (_) {
       setErr(err, "Ошибка сети");
     }
@@ -327,6 +354,13 @@
 
   async function recSetPass() {
     const pass = $("authRecPass")?.value || "";
+    const token = loadRecoverToken();
+    if (!token) {
+      const hint = $("authRecHint");
+      if (hint) hint.textContent = "Сессия сброшена. Выберите способ заново.";
+      resetRecover();
+      return;
+    }
     if (!PASS_RE.test(pass)) {
       const hint = $("authRecHint");
       if (hint) hint.textContent = "Пароль: латиница, цифры и точка, 4–64";
@@ -334,7 +368,7 @@
     }
     try {
       const { res, data } = await api("/auth/recover/set-password", {
-        recoverToken,
+        recoverToken: token,
         pass,
       });
       if (!res.ok || data.error || !data.token) {
@@ -342,6 +376,7 @@
         if (hint) hint.textContent = data.error || "Не удалось сохранить";
         return;
       }
+      persistRecoverToken(null);
       alert("Пароль сохранён. ID ЛК: " + data.uid);
       finishLogin(data.token);
     } catch (_) {
@@ -361,8 +396,7 @@
         setErr($("authRecError"), data.error || "В ЛК нет связанного аккаунта");
         return;
       }
-      recoverToken = data.recoverToken;
-      showSetPassword();
+      openRecoverPassword(data.recoverToken);
     } catch (_) {
       resetRecover();
       setErr($("authRecError"), "Ошибка сети");
@@ -545,9 +579,8 @@
     document.addEventListener("lk-recover-ready", (ev) => {
       const token = ev.detail?.recoverToken;
       if (!token) return;
-      recoverToken = token;
-      showView("recover");
-      showSetPassword();
+      // НЕ вызывать showView("recover") — он делает resetRecover() и убивает токен
+      openRecoverPassword(token);
     });
   }
 
@@ -559,10 +592,7 @@
     },
     showView,
     applyRecoverToken(token) {
-      if (!token) return;
-      recoverToken = token;
-      showView("recover");
-      showSetPassword();
+      openRecoverPassword(token);
     },
   };
 })();
