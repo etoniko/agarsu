@@ -188,17 +188,32 @@
     showSetPassword();
   }
 
-  async function api(path, body) {
-    const res = await fetch(API + path, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body || {}),
-    });
-    let data = {};
+  async function api(path, body, timeoutMs = 25000) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
     try {
-      data = await res.json();
-    } catch (_) {}
-    return { res, data };
+      const res = await fetch(API + path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body || {}),
+        signal: ctrl.signal,
+      });
+      let data = {};
+      try {
+        data = await res.json();
+      } catch (_) {}
+      return { res, data };
+    } catch (e) {
+      if (e && e.name === "AbortError") {
+        return {
+          res: { ok: false, status: 408 },
+          data: { error: "Сервер не ответил. Попробуйте ещё раз." },
+        };
+      }
+      throw e;
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   async function loadProviders() {
@@ -250,8 +265,12 @@
     const email = ($("authRegEmail")?.value || "").trim();
     setErr(err, "");
     if (btn) btn.disabled = true;
+    if (err) {
+      err.hidden = false;
+      err.textContent = "Отправляем код…";
+    }
     try {
-      const { res, data } = await api("/auth/register/send-code", { email });
+      const { res, data } = await api("/auth/register/send-code", { email }, 28000);
       if (!res.ok || data.error) {
         setErr(err, data.error || "Не удалось отправить код");
         if (data.cooldownSec) startCooldown("reg", data.cooldownSec);
