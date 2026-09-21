@@ -16,7 +16,7 @@
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="canonical" href="https://agar.su">
     <link rel="stylesheet" href="/fonts/fonts.css?v=1">
-    <link rel="stylesheet" href="style.css?v=34">
+    <link rel="stylesheet" href="style.css?v=37">
     <script>
       window.renderDeathBanner = window.renderDeathBanner || function () {};
       window.trackPlayGoal = window.trackPlayGoal || function () {};
@@ -289,8 +289,8 @@
     <script src="protocols.js?v=11" defer></script>
     <script src="admin.js?v=10" defer></script>
     <script src="assets/scripts/friends.js?v=8" defer></script>
-    <script src="assets/scripts/lk-auth.js?v=2" defer></script>
-    <script src="main.js?v=96" defer></script>
+    <script src="assets/scripts/lk-auth.js?v=5" defer></script>
+    <script src="main.js?v=94" defer></script>
 </head>
 <body>
   <div id="overlays" class="overlays">
@@ -854,82 +854,139 @@
               </div>
             </div>
             <div id="authlog" class="store-auth">
+              <!-- LOGIN -->
               <div class="store-auth-card" id="authCardLogin">
-                <div class="store-auth-icon"><i class="fas fa-user-lock"></i></div>
-                <h3 class="store-auth-title">Вход в кабинет</h3>
-                <p class="store-auth-text">Войдите по ID личного кабинета и паролю.</p>
-                <form id="authLoginForm" class="lk-auth-form" autocomplete="on">
-                  <label class="lk-auth-label" for="authLoginId">ID ЛК</label>
-                  <input class="lk-auth-input" id="authLoginId" name="ulogin" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="12" placeholder="например 4321" required autocomplete="username">
-                  <label class="lk-auth-label" for="authLoginPass">Пароль</label>
-                  <input class="lk-auth-input" id="authLoginPass" name="pass" type="password" maxlength="64" placeholder="пароль" required autocomplete="current-password">
+                <div class="lk-auth-head">
+                  <h3 class="store-auth-title">Вход</h3>
+                </div>
+                <form id="authLoginForm" class="lk-auth-form" autocomplete="off">
+                  <label class="lk-auth-field">
+                    <span>ID</span>
+                    <input class="lk-auth-input" id="authLoginId" name="ulogin" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="12" placeholder="0000" required autocomplete="off" spellcheck="false">
+                  </label>
+                  <label class="lk-auth-field">
+                    <span>Пароль</span>
+                    <input class="lk-auth-input" id="authLoginPass" name="pass" type="password" maxlength="64" placeholder="pass" required autocomplete="current-password">
+                  </label>
                   <p class="lk-auth-error" id="authLoginError" hidden></p>
                   <button type="submit" class="lk-auth-btn" id="authLoginBtn">Войти</button>
                 </form>
-                <div class="lk-auth-links">
-                  <button type="button" class="lk-auth-link" data-auth-view="recover">Восстановить</button>
-                  <span class="lk-auth-sep">·</span>
-                  <button type="button" class="lk-auth-link" data-auth-view="register">Регистрация</button>
+                <div class="lk-auth-footer">
+                  <button type="button" class="lk-auth-textbtn" data-auth-view="recover">Восстановить</button>
+                  <span class="lk-auth-dot" aria-hidden="true"></span>
+                  <button type="button" class="lk-auth-textbtn" data-auth-view="register">Регистрация</button>
                 </div>
               </div>
 
+              <!-- REGISTER -->
               <div class="store-auth-card" id="authCardRegister" hidden>
-                <div class="store-auth-icon"><i class="fas fa-user-plus"></i></div>
-                <h3 class="store-auth-title">Регистрация</h3>
-                <p class="store-auth-text" id="authRegHint">Укажите почту — придёт код из 5 цифр.</p>
+                <div class="lk-auth-head">
+                  <h3 class="store-auth-title">Регистрация</h3>
+                  <div class="lk-auth-steps" id="authRegSteps" aria-hidden="true">
+                    <span class="lk-auth-step is-on" data-step="1"></span>
+                    <span class="lk-auth-step" data-step="2"></span>
+                    <span class="lk-auth-step" data-step="3"></span>
+                  </div>
+                  <p class="store-auth-text" id="authRegHint">Укажите почту</p>
+                </div>
                 <div id="authRegStepEmail" class="lk-auth-form">
-                  <label class="lk-auth-label" for="authRegEmail">Email</label>
-                  <input class="lk-auth-input" id="authRegEmail" type="email" maxlength="190" placeholder="test@mail.ru" autocomplete="email">
+                  <label class="lk-auth-field">
+                    <span>Email</span>
+                    <input class="lk-auth-input" id="authRegEmail" type="email" maxlength="190" placeholder="email@mail.ru" autocomplete="email">
+                  </label>
                   <p class="lk-auth-error" id="authRegError" hidden></p>
-                  <button type="button" class="lk-auth-btn" id="authRegSendBtn">Получить код</button>
+                  <button type="button" class="lk-auth-btn" id="authRegSendBtn">Далее</button>
                 </div>
                 <div id="authRegStepCode" class="lk-auth-form" hidden>
-                  <label class="lk-auth-label" for="authRegCode">Код из письма</label>
-                  <input class="lk-auth-input" id="authRegCode" type="text" inputmode="numeric" maxlength="5" placeholder="12345" autocomplete="one-time-code">
+                  <label class="lk-auth-field">
+                    <span>Код из письма</span>
+                    <input class="lk-auth-input" id="authRegCode" type="text" inputmode="numeric" maxlength="5" placeholder="12345" autocomplete="one-time-code">
+                  </label>
+                  <p class="lk-auth-error" id="authRegErrorCode" hidden></p>
                   <button type="button" class="lk-auth-btn" id="authRegVerifyBtn">Подтвердить</button>
+                  <p class="lk-auth-timer" id="authRegTimer">Новый код через <b>5:00</b></p>
+                  <button type="button" class="lk-auth-textbtn" id="authRegResendBtn" hidden>Новый код</button>
                 </div>
                 <div id="authRegStepPass" class="lk-auth-form" hidden>
-                  <label class="lk-auth-label" for="authRegPass">Придумайте пароль</label>
-                  <input class="lk-auth-input" id="authRegPass" type="password" maxlength="64" placeholder="a-z A-Z 0-9 ." autocomplete="new-password">
-                  <p class="lk-auth-hint">Только латиница, цифры и точка. Без пробелов.</p>
-                  <button type="button" class="lk-auth-btn" id="authRegCreateBtn">Создать</button>
+                  <label class="lk-auth-field">
+                    <span>Пароль</span>
+                    <input class="lk-auth-input" id="authRegPass" type="password" maxlength="64" placeholder="a-z A-Z 0-9 ." autocomplete="new-password">
+                  </label>
+                  <p class="lk-auth-hint">Латиница, цифры и точка · без пробелов</p>
+                  <p class="lk-auth-error" id="authRegErrorPass" hidden></p>
+                  <button type="button" class="lk-auth-btn" id="authRegCreateBtn">Создать ЛК</button>
                 </div>
-                <div class="lk-auth-links">
-                  <button type="button" class="lk-auth-link" data-auth-view="login">← Ко входу</button>
+                <div class="lk-auth-footer">
+                  <button type="button" class="lk-auth-textbtn" data-auth-view="login">Назад</button>
                 </div>
               </div>
 
+              <!-- RECOVER -->
               <div class="store-auth-card" id="authCardRecover" hidden>
-                <div class="store-auth-icon"><i class="fas fa-key"></i></div>
-                <h3 class="store-auth-title">Восстановление</h3>
-                <p class="store-auth-text" id="authRecHint">Через VK, Google, Telegram (VPN) или email.</p>
-                <div id="authRecMethods" class="lk-auth-form">
-                  <div class="lk-auth-social-row">
-                    <button type="button" class="soc-auth-btn soc-auth-btn--vk" id="authRecVkBtn">VK</button>
-                    <button type="button" class="soc-auth-btn soc-auth-btn--google" id="authRecGoogleBtn">Google</button>
-                    <button type="button" class="soc-auth-btn soc-auth-btn--tg" id="authRecTgBtn"><i class="fab fa-telegram"></i> Telegram</button>
-                  </div>
-                  <div id="authRecGoogleWrap" class="lk-auth-google-wrap"></div>
-                  <div id="authRecTgWrap" class="lk-auth-tg-wrap"></div>
-                  <div class="auth-divider"><span>или email</span></div>
-                  <label class="lk-auth-label" for="authRecEmail">Email аккаунта</label>
-                  <input class="lk-auth-input" id="authRecEmail" type="email" maxlength="190" placeholder="test@mail.ru" autocomplete="email">
+                <div class="lk-auth-head">
+                  <h3 class="store-auth-title">Восстановление</h3>
+                  <p class="store-auth-text" id="authRecHint">Выберите способ</p>
+                </div>
+
+                <div id="authRecPick" class="lk-auth-methods">
+                  <button type="button" class="lk-auth-row" data-rec-method="email">
+                    <span class="lk-ico lk-ico--mail" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="#fff" d="M4.2 5.5A1.7 1.7 0 0 1 5.9 3.8h12.2a1.7 1.7 0 0 1 1.7 1.7v11.5a1.7 1.7 0 0 1-1.7 1.7H5.9a1.7 1.7 0 0 1-1.7-1.7V5.5zm1.9.95 5.2 3.55c.45.3 1.05.3 1.5 0l5.2-3.55H6.1zm11.9 1.4-4.55 3.1a2.9 2.9 0 0 1-3.3 0L5.6 7.85v8.65h12.4V7.85z"/></svg></span>
+                    <span>Почта</span>
+                  </button>
+                  <button type="button" class="lk-auth-row" data-rec-method="vk">
+                    <span class="lk-ico lk-ico--vk" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="#fff" d="M15.07 2H8.93C3.33 2 2 3.33 2 8.93v6.14C2 20.67 3.33 22 8.93 22h6.14c5.6 0 6.93-1.33 6.93-6.93V8.93C22 3.33 20.67 2 15.07 2zm3.23 14.28h-1.47c-.55 0-.71-.44-1.7-1.45-.86-.88-1.24-1-1.45-1-.3-.03-.48.09-.48.53v1.33c0 .38-.12.6-1.1.6-1.62 0-3.41-.98-4.67-2.82C5.72 10.67 5.2 8.57 5.2 8.13c0-.21.09-.4.53-.4h1.47c.39 0 .54.18.69.6.75 2.15 1.99 4.02 2.5 4.02.19 0 .27-.09.27-.56V9.77c-.06-.98-.58-1.07-.58-1.41 0-.18.15-.37.48-.37h2.3c.33 0 .45.18.45.57v3.02c0 .33.15.45.24.45.19 0 .35-.12.7-.47 1.07-1.2 1.84-3.07 1.84-3.07.1-.21.28-.4.67-.4h1.47c.43 0 .53.23.43.56-.18.84-1.93 3.32-1.93 3.32-.16.25-.21.36 0 .64.15.21.65.64.99 1.04.62.73 1.09 1.33 1.22 1.74.14.41-.07.62-.48.62z"/></svg></span>
+                    <span>VK</span>
+                  </button>
+                  <button type="button" class="lk-auth-row" data-rec-method="google">
+                    <span class="lk-ico lk-ico--google" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="#4285F4" d="M21.6 12.23c0-.74-.07-1.45-.19-2.14H12v4.05h5.38a4.6 4.6 0 0 1-2 3.02v2.5h3.24c1.89-1.74 2.98-4.3 2.98-7.43z"/><path fill="#34A853" d="M12 22c2.7 0 4.97-.9 6.63-2.43l-3.24-2.5c-.9.6-2.05.96-3.39.96-2.61 0-4.82-1.76-5.61-4.13H3.06v2.58A10 10 0 0 0 12 22z"/><path fill="#FBBC05" d="M6.39 13.9A6 6 0 0 1 6.08 12c0-.66.11-1.3.31-1.9V7.52H3.06A10 10 0 0 0 2 12c0 1.61.39 3.14 1.06 4.48l3.33-2.58z"/><path fill="#EA4335" d="M12 5.98c1.47 0 2.79.5 3.83 1.5l2.87-2.87C16.96 2.99 14.7 2 12 2A10 10 0 0 0 3.06 7.52l3.33 2.58C7.18 7.74 9.39 5.98 12 5.98z"/></svg></span>
+                    <span>Google</span>
+                  </button>
+                  <button type="button" class="lk-auth-row" data-rec-method="telegram">
+                    <span class="lk-ico lk-ico--tg" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="#fff" d="M9.78 15.45 9.6 18.9c.27 0 .39-.11.53-.25l2.55-2.43 5.28 3.87c.97.53 1.66.25 1.92-.89l3.48-16.37h.01c.31-1.45-.52-2.02-1.47-1.67L1.6 9.74C.19 10.28.21 11.07 1.36 11.42l4.86 1.52L17.5 5.9c.56-.37 1.07-.17.65.21L9.78 15.45z"/></svg></span>
+                    <span>Telegram</span>
+                    <em>VPN</em>
+                  </button>
                   <p class="lk-auth-error" id="authRecError" hidden></p>
+                </div>
+
+                <div id="authRecStepEmail" class="lk-auth-form" hidden>
+                  <label class="lk-auth-field">
+                    <span>Email аккаунта</span>
+                    <input class="lk-auth-input" id="authRecEmail" type="email" maxlength="190" placeholder="email@mail.ru" autocomplete="email">
+                  </label>
+                  <p class="lk-auth-error" id="authRecErrorEmail" hidden></p>
                   <button type="button" class="lk-auth-btn" id="authRecSendBtn">Отправить код</button>
+                  <button type="button" class="lk-auth-textbtn" id="authRecBackPick">Другой способ</button>
                 </div>
+
+                <div id="authRecStepGoogle" class="lk-auth-form" hidden>
+                  <div id="authRecGoogleWrap" class="lk-auth-google-wrap"></div>
+                  <p class="lk-auth-hint">Нажмите кнопку Google</p>
+                  <button type="button" class="lk-auth-textbtn" data-rec-back>Другой способ</button>
+                </div>
+
                 <div id="authRecStepCode" class="lk-auth-form" hidden>
-                  <label class="lk-auth-label" for="authRecCode">Код из письма</label>
-                  <input class="lk-auth-input" id="authRecCode" type="text" inputmode="numeric" maxlength="5" placeholder="12345" autocomplete="one-time-code">
+                  <label class="lk-auth-field">
+                    <span>Код из письма</span>
+                    <input class="lk-auth-input" id="authRecCode" type="text" inputmode="numeric" maxlength="5" placeholder="12345" autocomplete="one-time-code">
+                  </label>
+                  <p class="lk-auth-error" id="authRecErrorCode" hidden></p>
                   <button type="button" class="lk-auth-btn" id="authRecVerifyBtn">Подтвердить</button>
+                  <p class="lk-auth-timer" id="authRecTimer">Новый код через <b>5:00</b></p>
+                  <button type="button" class="lk-auth-textbtn" id="authRecResendBtn" hidden>Новый код</button>
                 </div>
+
                 <div id="authRecStepPass" class="lk-auth-form" hidden>
-                  <label class="lk-auth-label" for="authRecPass">Новый пароль</label>
-                  <input class="lk-auth-input" id="authRecPass" type="password" maxlength="64" placeholder="a-z A-Z 0-9 ." autocomplete="new-password">
-                  <p class="lk-auth-hint">Только латиница, цифры и точка. Без пробелов.</p>
+                  <label class="lk-auth-field">
+                    <span>Новый пароль</span>
+                    <input class="lk-auth-input" id="authRecPass" type="password" maxlength="64" placeholder="a-z A-Z 0-9 ." autocomplete="new-password">
+                  </label>
+                  <p class="lk-auth-hint">Латиница, цифры и точка · без пробелов</p>
                   <button type="button" class="lk-auth-btn" id="authRecSetPassBtn">Сохранить пароль</button>
                 </div>
-                <div class="lk-auth-links">
-                  <button type="button" class="lk-auth-link" data-auth-view="login">← Ко входу</button>
+
+                <div class="lk-auth-footer">
+                  <button type="button" class="lk-auth-textbtn" data-auth-view="login">Назад</button>
                 </div>
               </div>
             </div>

@@ -1,6 +1,6 @@
 /**
  * ЛК: вход / регистрация / восстановление (клиент).
- * Покупки, pass.txt, NickPass — не трогает.
+ * Пошаговый UI — на экране только текущий шаг.
  */
 (function () {
   const API = "https://api.agar.su/api";
@@ -11,6 +11,9 @@
   let providers = null;
   let googleInited = false;
   let onLoggedIn = null;
+  let wired = false;
+  let regTimerId = null;
+  let recTimerId = null;
 
   function $(id) {
     return document.getElementById(id);
@@ -20,6 +23,73 @@
     if (!el) return;
     el.hidden = !text;
     el.textContent = text || "";
+  }
+
+  function clearRecErr() {
+    setErr($("authRecError"), "");
+    setErr($("authRecErrorEmail"), "");
+    setErr($("authRecErrorCode"), "");
+  }
+
+  function fmtTime(sec) {
+    const s = Math.max(0, Math.floor(sec));
+    const m = Math.floor(s / 60);
+    const r = s % 60;
+    return m + ":" + String(r).padStart(2, "0");
+  }
+
+  function stopTimer(kind) {
+    if (kind === "reg" && regTimerId) {
+      clearInterval(regTimerId);
+      regTimerId = null;
+    }
+    if (kind === "rec" && recTimerId) {
+      clearInterval(recTimerId);
+      recTimerId = null;
+    }
+  }
+
+  function startCooldown(kind, sec) {
+    const total = Math.max(1, Number(sec) || 300);
+    const timerEl = $(kind === "reg" ? "authRegTimer" : "authRecTimer");
+    const resendBtn = $(kind === "reg" ? "authRegResendBtn" : "authRecResendBtn");
+    stopTimer(kind);
+    if (timerEl) {
+      timerEl.hidden = false;
+      timerEl.innerHTML = "Новый код через <b>" + fmtTime(total) + "</b>";
+    }
+    if (resendBtn) resendBtn.hidden = true;
+
+    let left = total;
+    const tick = () => {
+      left -= 1;
+      if (left <= 0) {
+        stopTimer(kind);
+        if (timerEl) {
+          timerEl.hidden = true;
+          timerEl.innerHTML = "";
+        }
+        if (resendBtn) resendBtn.hidden = false;
+        return;
+      }
+      if (timerEl) timerEl.innerHTML = "Новый код через <b>" + fmtTime(left) + "</b>";
+    };
+    const id = setInterval(tick, 1000);
+    if (kind === "reg") regTimerId = id;
+    else recTimerId = id;
+  }
+
+  function setRegStep(n) {
+    document.querySelectorAll("#authRegSteps .lk-auth-step").forEach((el) => {
+      el.classList.toggle("is-on", Number(el.getAttribute("data-step")) <= n);
+    });
+  }
+
+  function hideAll(ids) {
+    ids.forEach((id) => {
+      const el = $(id);
+      if (el) el.hidden = true;
+    });
   }
 
   function showView(name) {
@@ -35,41 +105,59 @@
 
   function resetRegister() {
     registerToken = null;
+    stopTimer("reg");
     setErr($("authRegError"), "");
+    setErr($("authRegErrorCode"), "");
+    setErr($("authRegErrorPass"), "");
+    hideAll(["authRegStepCode", "authRegStepPass"]);
     const email = $("authRegStepEmail");
-    const code = $("authRegStepCode");
-    const pass = $("authRegStepPass");
     if (email) email.hidden = false;
-    if (code) code.hidden = true;
-    if (pass) pass.hidden = true;
+    setRegStep(1);
     const hint = $("authRegHint");
-    if (hint) hint.textContent = "Укажите почту — придёт код из 5 цифр.";
+    if (hint) hint.textContent = "Укажите почту";
+    const resend = $("authRegResendBtn");
+    if (resend) resend.hidden = true;
+    const timer = $("authRegTimer");
+    if (timer) timer.hidden = true;
   }
 
   function resetRecover() {
     recoverToken = null;
-    setErr($("authRecError"), "");
-    const methods = $("authRecMethods");
-    const code = $("authRecStepCode");
-    const pass = $("authRecStepPass");
-    if (methods) methods.hidden = false;
-    if (code) code.hidden = true;
-    if (pass) pass.hidden = true;
+    stopTimer("rec");
+    clearRecErr();
+    hideAll([
+      "authRecStepEmail",
+      "authRecStepGoogle",
+      "authRecStepCode",
+      "authRecStepPass",
+    ]);
+    const pick = $("authRecPick");
+    if (pick) pick.hidden = false;
     const hint = $("authRecHint");
-    if (hint) hint.textContent = "Через VK, Google, Telegram (VPN) или email.";
+    if (hint) hint.textContent = "Выберите способ";
+    const resend = $("authRecResendBtn");
+    if (resend) resend.hidden = true;
+    const timer = $("authRecTimer");
+    if (timer) timer.hidden = true;
   }
 
-  function showSetPassword(fromRecover) {
-    if (fromRecover) {
-      const methods = $("authRecMethods");
-      const code = $("authRecStepCode");
-      const pass = $("authRecStepPass");
-      if (methods) methods.hidden = true;
-      if (code) code.hidden = true;
-      if (pass) pass.hidden = false;
-      const hint = $("authRecHint");
-      if (hint) hint.textContent = "Придумайте новый пароль для входа по ID ЛК.";
-    }
+  function showRecOnly(stepId, hintText) {
+    hideAll([
+      "authRecPick",
+      "authRecStepEmail",
+      "authRecStepGoogle",
+      "authRecStepCode",
+      "authRecStepPass",
+    ]);
+    const step = $(stepId);
+    if (step) step.hidden = false;
+    const hint = $("authRecHint");
+    if (hint && hintText) hint.textContent = hintText;
+  }
+
+  function showSetPassword() {
+    clearRecErr();
+    showRecOnly("authRecStepPass", "Придумайте новый пароль");
   }
 
   async function api(path, body) {
@@ -128,9 +216,9 @@
     }
   }
 
-  async function regSend() {
-    const err = $("authRegError");
-    const btn = $("authRegSendBtn");
+  async function regSend(isResend) {
+    const err = isResend ? $("authRegErrorCode") : $("authRegError");
+    const btn = isResend ? $("authRegResendBtn") : $("authRegSendBtn");
     const email = ($("authRegEmail")?.value || "").trim();
     setErr(err, "");
     if (btn) btn.disabled = true;
@@ -138,11 +226,14 @@
       const { res, data } = await api("/auth/register/send-code", { email });
       if (!res.ok || data.error) {
         setErr(err, data.error || "Не удалось отправить код");
+        if (data.cooldownSec) startCooldown("reg", data.cooldownSec);
         return;
       }
       $("authRegStepEmail").hidden = true;
       $("authRegStepCode").hidden = false;
-      $("authRegHint").textContent = "Введите код из письма.";
+      setRegStep(2);
+      $("authRegHint").textContent = "Код из письма";
+      startCooldown("reg", data.cooldownSec || 300);
     } catch (_) {
       setErr(err, "Ошибка сети");
     } finally {
@@ -151,7 +242,7 @@
   }
 
   async function regVerify() {
-    const err = $("authRegError");
+    const err = $("authRegErrorCode") || $("authRegError");
     const email = ($("authRegEmail")?.value || "").trim();
     const code = ($("authRegCode")?.value || "").trim();
     setErr(err, "");
@@ -162,20 +253,22 @@
         return;
       }
       registerToken = data.registerToken;
+      stopTimer("reg");
       $("authRegStepCode").hidden = true;
       $("authRegStepPass").hidden = false;
-      $("authRegHint").textContent = "Придумайте пароль для ЛК.";
+      setRegStep(3);
+      $("authRegHint").textContent = "Придумайте пароль";
     } catch (_) {
       setErr(err, "Ошибка сети");
     }
   }
 
   async function regCreate() {
-    const err = $("authRegError");
+    const err = $("authRegErrorPass") || $("authRegError");
     const pass = $("authRegPass")?.value || "";
     setErr(err, "");
     if (!PASS_RE.test(pass)) {
-      return setErr(err, "Пароль: латиница, цифры и точка, 4–64 символа");
+      return setErr(err, "Пароль: латиница, цифры и точка, 4–64");
     }
     try {
       const { res, data } = await api("/auth/register/create", {
@@ -186,33 +279,35 @@
         setErr(err, data.error || "Не удалось создать");
         return;
       }
-      alert("ЛК создан! ID: " + data.uid + "\nДанные также отправлены на почту.");
+      alert("ЛК создан! ID: " + data.uid + "\nДанные также на почте.");
       finishLogin(data.token);
     } catch (_) {
       setErr(err, "Ошибка сети");
     }
   }
 
-  async function recSend() {
-    const err = $("authRecError");
+  async function recSend(isResend) {
+    const err = isResend
+      ? $("authRecErrorCode") || $("authRecError")
+      : $("authRecErrorEmail") || $("authRecError");
     const email = ($("authRecEmail")?.value || "").trim();
     setErr(err, "");
     try {
       const { res, data } = await api("/auth/recover/send-code", { email });
       if (!res.ok || data.error) {
         setErr(err, data.error || "Не удалось отправить код");
+        if (data.cooldownSec) startCooldown("rec", data.cooldownSec);
         return;
       }
-      $("authRecMethods").hidden = true;
-      $("authRecStepCode").hidden = false;
-      $("authRecHint").textContent = "Введите код из письма.";
+      showRecOnly("authRecStepCode", "Код из письма");
+      startCooldown("rec", data.cooldownSec || 300);
     } catch (_) {
       setErr(err, "Ошибка сети");
     }
   }
 
   async function recVerify() {
-    const err = $("authRecError");
+    const err = $("authRecErrorCode") || $("authRecError");
     const email = ($("authRecEmail")?.value || "").trim();
     const code = ($("authRecCode")?.value || "").trim();
     setErr(err, "");
@@ -223,18 +318,19 @@
         return;
       }
       recoverToken = data.recoverToken;
-      showSetPassword(true);
+      stopTimer("rec");
+      showSetPassword();
     } catch (_) {
       setErr(err, "Ошибка сети");
     }
   }
 
   async function recSetPass() {
-    const err = $("authRecError");
     const pass = $("authRecPass")?.value || "";
-    setErr(err, "");
     if (!PASS_RE.test(pass)) {
-      return setErr(err, "Пароль: латиница, цифры и точка, 4–64 символа");
+      const hint = $("authRecHint");
+      if (hint) hint.textContent = "Пароль: латиница, цифры и точка, 4–64";
+      return;
     }
     try {
       const { res, data } = await api("/auth/recover/set-password", {
@@ -242,30 +338,34 @@
         pass,
       });
       if (!res.ok || data.error || !data.token) {
-        setErr(err, data.error || "Не удалось сохранить");
+        const hint = $("authRecHint");
+        if (hint) hint.textContent = data.error || "Не удалось сохранить";
         return;
       }
       alert("Пароль сохранён. ID ЛК: " + data.uid);
       finishLogin(data.token);
     } catch (_) {
-      setErr(err, "Ошибка сети");
+      const hint = $("authRecHint");
+      if (hint) hint.textContent = "Ошибка сети";
     }
   }
 
   async function applySocialRecover(path, body) {
-    const err = $("authRecError");
-    setErr(err, "Проверяем…");
+    clearRecErr();
+    const hint = $("authRecHint");
+    if (hint) hint.textContent = "Проверяем…";
     try {
       const { res, data } = await api(path, body);
       if (!res.ok || data.error || !data.recoverToken) {
-        setErr(err, data.error || "В ЛК нет связанного аккаунта");
+        resetRecover();
+        setErr($("authRecError"), data.error || "В ЛК нет связанного аккаунта");
         return;
       }
       recoverToken = data.recoverToken;
-      setErr(err, "");
-      showSetPassword(true);
+      showSetPassword();
     } catch (_) {
-      setErr(err, "Ошибка сети");
+      resetRecover();
+      setErr($("authRecError"), "Ошибка сети");
     }
   }
 
@@ -285,7 +385,7 @@
     const cfg = await loadProviders();
     const clientId = cfg.googleClientId;
     const wrap = $("authRecGoogleWrap");
-    if (!clientId || !wrap || googleInited) return;
+    if (!clientId || !wrap) return;
     try {
       await loadScript("https://accounts.google.com/gsi/client");
       window.google.accounts.id.initialize({
@@ -298,30 +398,35 @@
           }
         },
       });
-      wrap.innerHTML = "";
-      window.google.accounts.id.renderButton(wrap, {
-        type: "standard",
-        size: "medium",
-        theme: "outline",
-        text: "continue_with",
-        shape: "rectangular",
-      });
-      googleInited = true;
+      if (!googleInited) {
+        wrap.innerHTML = "";
+        window.google.accounts.id.renderButton(wrap, {
+          type: "standard",
+          size: "medium",
+          theme: "outline",
+          text: "continue_with",
+          shape: "rectangular",
+          width: 280,
+        });
+        googleInited = true;
+      }
     } catch (_) {
       setErr($("authRecError"), "Не удалось загрузить Google");
+      resetRecover();
     }
   }
 
-  // VK recovery: reuse existing onVkAuth channel with mode flag
   function startVkRecover() {
     window._lkRecoverVkMode = true;
-    setErr($("authRecError"), "Откройте окно VK…");
-    // Prefer dedicated VK OneTap if available via initVkAuthModule path
-    if (typeof window.startVkOAuthForRecover === "function") {
-      window.startVkOAuthForRecover();
-      return;
-    }
-    // Fallback: click-like through VK ID Auth.login if SDK present
+    const hint = $("authRecHint");
+    if (hint) hint.textContent = "Откройте окно VK…";
+    hideAll([
+      "authRecPick",
+      "authRecStepEmail",
+      "authRecStepGoogle",
+      "authRecStepCode",
+      "authRecStepPass",
+    ]);
     (async () => {
       try {
         if (!window.VKIDSDK) {
@@ -329,10 +434,9 @@
         }
         const VKID = window.VKIDSDK;
         if (!VKID) throw new Error("no sdk");
-        const codeVerifier =
-          Array.from(crypto.getRandomValues(new Uint8Array(48)))
-            .map((b) => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"[b % 64])
-            .join("");
+        const codeVerifier = Array.from(crypto.getRandomValues(new Uint8Array(48)))
+          .map((b) => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"[b % 64])
+          .join("");
         const state = Array.from(crypto.getRandomValues(new Uint8Array(24)))
           .map((b) => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"[b % 64])
           .join("");
@@ -361,30 +465,74 @@
         }
       } catch (e) {
         window._lkRecoverVkMode = false;
+        resetRecover();
         setErr($("authRecError"), "Не удалось открыть VK");
       }
     })();
   }
 
+  function pickRecoverMethod(method) {
+    clearRecErr();
+    if (method === "email") {
+      showRecOnly("authRecStepEmail", "Email аккаунта");
+      return;
+    }
+    if (method === "google") {
+      showRecOnly("authRecStepGoogle", "Войдите через Google");
+      initGoogleRecover();
+      return;
+    }
+    if (method === "vk") {
+      startVkRecover();
+      return;
+    }
+    if (method === "telegram") {
+      const hint = $("authRecHint");
+      if (hint) hint.textContent = "Откройте Telegram…";
+      hideAll([
+        "authRecPick",
+        "authRecStepEmail",
+        "authRecStepGoogle",
+        "authRecStepCode",
+        "authRecStepPass",
+      ]);
+      window._telegramRecoverMode = true;
+      window.open("/telegram/", "tgAuth", "width=420,height=520");
+    }
+  }
+
   function wire() {
+    if (wired) return;
+    wired = true;
+
     document.querySelectorAll("[data-auth-view]").forEach((btn) => {
       btn.addEventListener("click", () => showView(btn.getAttribute("data-auth-view")));
     });
+
+    const idInput = $("authLoginId");
+    if (idInput) {
+      idInput.addEventListener("input", () => {
+        const digits = idInput.value.replace(/\D/g, "").slice(0, 12);
+        if (idInput.value !== digits) idInput.value = digits;
+      });
+    }
     $("authLoginForm")?.addEventListener("submit", doLogin);
-    $("authRegSendBtn")?.addEventListener("click", regSend);
+    $("authRegSendBtn")?.addEventListener("click", () => regSend(false));
+    $("authRegResendBtn")?.addEventListener("click", () => regSend(true));
     $("authRegVerifyBtn")?.addEventListener("click", regVerify);
     $("authRegCreateBtn")?.addEventListener("click", regCreate);
-    $("authRecSendBtn")?.addEventListener("click", recSend);
+    $("authRecSendBtn")?.addEventListener("click", () => recSend(false));
+    $("authRecResendBtn")?.addEventListener("click", () => recSend(true));
     $("authRecVerifyBtn")?.addEventListener("click", recVerify);
     $("authRecSetPassBtn")?.addEventListener("click", recSetPass);
-    $("authRecVkBtn")?.addEventListener("click", startVkRecover);
-    $("authRecGoogleBtn")?.addEventListener("click", () => {
-      initGoogleRecover();
-      setErr($("authRecError"), "Нажмите кнопку Google ниже");
+
+    document.querySelectorAll("[data-rec-method]").forEach((btn) => {
+      btn.addEventListener("click", () => pickRecoverMethod(btn.getAttribute("data-rec-method")));
     });
-    $("authRecTgBtn")?.addEventListener("click", () => {
-      window._telegramRecoverMode = true;
-      window.open("/telegram/", "tgAuth", "width=420,height=520");
+
+    $("authRecBackPick")?.addEventListener("click", resetRecover);
+    document.querySelectorAll("[data-rec-back]").forEach((btn) => {
+      btn.addEventListener("click", resetRecover);
     });
 
     window.addEventListener("message", (event) => {
@@ -399,19 +547,8 @@
       if (!token) return;
       recoverToken = token;
       showView("recover");
-      showSetPassword(true);
+      showSetPassword();
     });
-
-    // Hook VK auth for recover mode (main.js sets onVkAuth)
-    const prev = window.onVkAuth;
-    window.__lkAuthWrapVk = function (payload) {
-      if (window._lkRecoverVkMode) {
-        window._lkRecoverVkMode = false;
-        applySocialRecover("/auth/recover/vk", payload);
-        return;
-      }
-      if (typeof prev === "function") prev(payload);
-    };
   }
 
   window.AgarLkAuth = {
@@ -425,13 +562,7 @@
       if (!token) return;
       recoverToken = token;
       showView("recover");
-      showSetPassword(true);
+      showSetPassword();
     },
   };
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => {
-      /* wait for main.js hooks */
-    });
-  }
 })();
