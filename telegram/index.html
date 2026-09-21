@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Telegram — Agar.su</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0d1322;
+      color: #eef4ff;
+      font-family: system-ui, sans-serif;
+    }
+    .box { text-align: center; padding: 24px; }
+    .hint { color: #9fb3d9; font-size: 13px; margin-top: 12px; }
+    #tgMount { min-height: 44px; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h3>Войти через Telegram</h3>
+    <p class="hint">Нужен VPN, если Telegram недоступен.</p>
+    <div id="tgMount"></div>
+    <p class="hint" id="tgStatus">Загрузка…</p>
+  </div>
+  <script>
+    (async function () {
+      const status = document.getElementById("tgStatus");
+      const mount = document.getElementById("tgMount");
+      function done(user) {
+        try {
+          if (window.opener) {
+            window.opener.postMessage({ type: "telegram-auth", user }, "https://agar.su");
+            window.opener.postMessage({ type: "telegram-auth", user }, window.location.origin);
+          }
+        } catch (e) {}
+        status.textContent = "Готово, можно закрыть окно";
+        setTimeout(() => window.close(), 400);
+      }
+      window.onTelegramAuth = done;
+      try {
+        const res = await fetch("https://api.agar.su/api/auth/providers");
+        const data = await res.json();
+        const bot = data.telegramBot;
+        if (!bot) {
+          status.textContent = "Бот Telegram недоступен";
+          return;
+        }
+        const s = document.createElement("script");
+        s.async = true;
+        s.src = "https://telegram.org/js/telegram-widget.js?22";
+        s.setAttribute("data-telegram-login", bot);
+        s.setAttribute("data-size", "large");
+        s.setAttribute("data-radius", "8");
+        s.setAttribute("data-onauth", "onTelegramAuth(user)");
+        s.setAttribute("data-request-access", "write");
+        mount.appendChild(s);
+        status.textContent = "";
+      } catch (e) {
+        status.textContent = "Ошибка загрузки";
+      }
+    })();
+  </script>
+</body>
+</html>
