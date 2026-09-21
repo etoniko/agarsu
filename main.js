@@ -6698,6 +6698,17 @@ function updateRegionOnlineTotals(totals) {
       if (typeof wHandle.chekstats === "function") wHandle.chekstats();
     };
     wHandle.startGame = function() {
+      if (!getAccountToken()) {
+        if (typeof window.showContent === "function") window.showContent("home");
+        const authlogEl = document.getElementById("authlog");
+        if (authlogEl) authlogEl.style.display = "flex";
+        if (window.AgarLkAuth && typeof window.AgarLkAuth.showView === "function") {
+          window.AgarLkAuth.showView("login");
+        }
+        const idInput = document.getElementById("authLoginId");
+        if (idInput) setTimeout(() => idInput.focus(), 40);
+        return;
+      }
       let nickInput = document.getElementById("nick").value.trim();
       let passInput = document.getElementById("pass").value;
       const forbiddenRegex = new RegExp(FORBIDDEN_NICK_CHARS.join("|"), "g");
@@ -9734,6 +9745,10 @@ onReady(() => {
     startDomSkinStripAnimator();
   });
   function showContent2(id) {
+    if (id === "shop" && !getAccountToken()) {
+      showAuthRequiredForShop();
+      return;
+    }
     document.querySelectorAll(".menu-item").forEach(item => item.classList.remove("active"));
     document.querySelectorAll(".content").forEach(content => content.classList.remove("active"));
     const menuItem = document.querySelector(`.menu-item[onclick="showContent('${id}')"]`);
@@ -9749,10 +9764,72 @@ onReady(() => {
       } catch (e) {}
       if (typeof window.__agarsuRefreshHomeRating === "function") window.__agarsuRefreshHomeRating();
     }
+    if (id === "store") {
+      const authlogEl = document.getElementById("authlog");
+      if (authlogEl && !getAccountToken()) authlogEl.style.display = "flex";
+      if (!getAccountToken() && window.AgarLkAuth && typeof window.AgarLkAuth.showView === "function") {
+        window.AgarLkAuth.showView("login");
+      }
+    }
     bus.emit(Events.SHOW_CONTENT, {
       id
     });
   }
+
+  const AUTH_REQUIRED_I18N = {
+    ru: "Сначала войдите в личный кабинет",
+    en: "Please sign in to your account first",
+    uk: "Спочатку увійдіть в особистий кабінет",
+    tr: "Önce kişisel hesabınıza giriş yapın",
+    zh: "请先登录个人账号",
+    ar: "يرجى تسجيل الدخول إلى حسابك أولاً",
+    es: "Primero inicia sesión en tu cuenta",
+    pl: "Najpierw zaloguj się do konta",
+    de: "Bitte zuerst im Konto anmelden"
+  };
+  function getUiLangCode() {
+    try {
+      const lang = window.__uiLang || localStorage.getItem("ui_lang") || "ru";
+      return AUTH_REQUIRED_I18N[lang] ? lang : "en";
+    } catch (_) {
+      return "ru";
+    }
+  }
+  function tAuthRequired() {
+    return AUTH_REQUIRED_I18N[getUiLangCode()] || AUTH_REQUIRED_I18N.en;
+  }
+  function showUiToast(message, type) {
+    let container = document.getElementById("uiToastContainer");
+    if (!container) {
+      container = document.createElement("div");
+      container.id = "uiToastContainer";
+      container.className = "ui-toast-container";
+      container.setAttribute("aria-live", "polite");
+      document.body.appendChild(container);
+    }
+    const toast = document.createElement("div");
+    toast.className = "ui-toast ui-toast--" + (type || "warn");
+    toast.textContent = message || "";
+    container.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add("show"));
+    setTimeout(() => {
+      toast.classList.remove("show");
+      setTimeout(() => toast.remove(), 260);
+    }, 4500);
+  }
+  function showAuthRequiredForShop() {
+    showContent2("store");
+    const authlogEl = document.getElementById("authlog");
+    if (authlogEl) authlogEl.style.display = "flex";
+    if (window.AgarLkAuth && typeof window.AgarLkAuth.showView === "function") {
+      window.AgarLkAuth.showView("login");
+    }
+    const idInput = document.getElementById("authLoginId");
+    if (idInput) setTimeout(() => idInput.focus(), 40);
+    showUiToast(tAuthRequired(), "warn");
+  }
+  window.showAuthRequiredForShop = showAuthRequiredForShop;
+  window.tAuthRequired = tAuthRequired;
   function updateAccountMenuLabel() {
     const label = document.getElementById("accountMenuLabel");
     if (!label) return;
@@ -10308,7 +10385,7 @@ onReady(() => {
       notice.textContent = "";
       return;
     }
-    notice.innerHTML = "Вы не авторизованы.<br>Покупки не будут привязаны к аккаунту.";
+    notice.textContent = tAuthRequired();
     showShopFloatAlert(notice, 6e3);
   }
   function updateCharCount() {
@@ -10383,6 +10460,10 @@ onReady(() => {
     startPayment();
   }
   function openPayStep() {
+    if (!getAccountToken()) {
+      showAuthRequiredForShop();
+      return;
+    }
     if (!shopPayOverlay) return;
     const totalText = (document.getElementById("totalAmount") || {}).textContent || "0 ₽";
     if (shopPayAmount) shopPayAmount.textContent = totalText;
@@ -10630,7 +10711,7 @@ onReady(() => {
     const wantsStatsBg = !!(statsBgNickCheckbox && statsBgNickCheckbox.checked);
     const hasStatsBg = wantsStatsBg && !!statsBgFile;
     const hasOrderItem = !!(password || file || invisibleNickCheckbox.checked || rotationNickCheckbox.checked || hasStatsBg);
-    if (!nickname || isNicknameTaken || !hasOrderItem) {
+    if (!nickname || isNicknameTaken || !hasOrderItem || !getAccountToken()) {
       setReceiptVisible(false);
       buyButton.disabled = true;
       if (isPayStepOpen) closePayStep();
@@ -10695,6 +10776,10 @@ onReady(() => {
   updateShopAuthNotice();
   document.getElementById("buyButton").addEventListener("click", () => {
     if (document.getElementById("buyButton").disabled) return;
+    if (!getAccountToken()) {
+      showAuthRequiredForShop();
+      return;
+    }
     const nickname = nicknameInput.value.trim();
     const password = passwordInput.value.trim();
     const file = fileInput.files[0];
@@ -10714,11 +10799,20 @@ onReady(() => {
   });
   document.getElementById("paymentForm").addEventListener("submit", e => {
     e.preventDefault();
+    if (!getAccountToken()) {
+      showAuthRequiredForShop();
+      return;
+    }
     if (!document.getElementById("buyButton").disabled) openPayStep();
   });
   async function startPayment() {
     var _a;
     if (isSubmittingPayment) return;
+    if (!getAccountToken()) {
+      showAuthRequiredForShop();
+      closePayStep();
+      return;
+    }
     const rawNickname = nicknameInput.value.trim();
     const nickname = rawNickname.toLowerCase();
     const password = passwordInput.value.trim().toLowerCase();
