@@ -7096,10 +7096,10 @@ function updateRegionOnlineTotals(totals) {
   }
   function updateRestoreBlockVisibility(S) {
     const block = document.getElementById("restoreProgressBlock");
+    if (!block) return;
     const available = document.getElementById("restoreAvailableBlock");
     const done = document.getElementById("restoreDoneBlock");
     const badge = document.getElementById("restoreStateBadge");
-    if (!block) return;
     const restoredAt = getRestoreTimestamp(S.accountData);
     const restored = restoredAt != null;
     if (badge) {
@@ -7115,7 +7115,7 @@ function updateRegionOnlineTotals(totals) {
         done.textContent = dateLabel ? `Этот аккаунт уже был восстановлен ${dateLabel}. Повторное восстановление не требуется.` : "Этот аккаунт уже был восстановлен. Повторное восстановление не требуется.";
       }
     }
-    block.style.display = "";
+    block.style.display = "none";
   }
   function showNickClanTab(S, which) {
     const tabN = document.getElementById("tabNicknames");
@@ -7156,12 +7156,10 @@ function updateRegionOnlineTotals(totals) {
     wrap.dataset.wired = "1";
   }
   function hideAuthButtons() {
-    const vk = document.getElementById("vkAuthContainer");
-    if (vk) vk.style.display = "none";
+    /* login form lives in #authlog; hidden via setAccountData */
   }
   function showAuthButtons() {
-    const vk = document.getElementById("vkAuthContainer");
-    if (vk) vk.style.display = "flex";
+    /* login form lives in #authlog; shown via onLogout */
   }
   function setRestoreStatus(text, type = "info") {
     const el = document.getElementById("restoreStatus");
@@ -7235,11 +7233,7 @@ function updateRegionOnlineTotals(totals) {
       clearRestoreTimestamp();
       const block = document.getElementById("myNicknamesBlock");
       if (block) block.style.display = "none";
-      const restorePanel = document.getElementById("restorePanel");
-      const restoreToggle = document.getElementById("restoreToggle");
       const settingsWrap = document.getElementById("settingsWrap");
-      if (restorePanel) restorePanel.hidden = true;
-      if (restoreToggle) restoreToggle.setAttribute("aria-expanded", "false");
       if (settingsWrap) settingsWrap.style.display = "none";
       setRestoreStatus("");
       const nickList = document.getElementById("myNickList");
@@ -7263,6 +7257,9 @@ function updateRegionOnlineTotals(totals) {
       const logoutBtn = document.getElementById("logoutButton");
       if (logoutBtn) logoutBtn.style.display = "none";
       showAuthButtons();
+      if (window.AgarLkAuth && typeof window.AgarLkAuth.showView === "function") {
+        window.AgarLkAuth.showView("login");
+      }
       if (typeof window.updateAccountMenuLabel === "function") {
         window.updateAccountMenuLabel();
       }
@@ -7278,30 +7275,42 @@ function updateRegionOnlineTotals(totals) {
     };
     async function handleLogin(tokenOrUser, provider) {
       if (provider !== "vk") return;
-      let res;
-      try {
-        res = await fetch("https://api.agar.su/api/auth/vk", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(tokenOrUser)
-        });
-      } catch (e) {
-        return alert("Ошибка сети при авторизации");
-      }
-      let data;
-      try {
-        data = await res.json();
-      } catch (e) {
-        return alert("Ошибка ответа сервера авторизации");
-      }
-      if (data.error || !data.token) return alert(data.error || "Ошибка авторизации");
-      wHandle.onAccountLoggedIn(data.token);
+      // Primary auth is ID+password. VK only for recovery (see AgarLkAuth).
+      if (window._lkRecoverVkMode) return;
+      alert("Вход по ID ЛК и паролю. Если пароля нет — нажмите «Восстановить» и войдите через VK / Google / Telegram / email.");
     }
     wHandle.onVkAuth = function(payload) {
       if (!payload || !payload.code || !payload.device_id) {
         return alert("VK: не получен код авторизации");
+      }
+      if (window._lkRecoverVkMode) {
+        window._lkRecoverVkMode = false;
+        const codeVerifier = sessionStorage.getItem("vk_code_verifier") || payload.code_verifier;
+        const state = sessionStorage.getItem("vk_state") || payload.state;
+        fetch("https://api.agar.su/api/auth/recover/vk", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            code: payload.code,
+            device_id: payload.device_id,
+            code_verifier: payload.code_verifier || codeVerifier,
+            state: payload.state || state
+          })
+        })
+          .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
+          .then(({ ok, d }) => {
+            if (!ok || d.error || !d.recoverToken) {
+              alert(d.error || "В ЛК нет связанного аккаунта");
+              return;
+            }
+            window.__lkRecoverToken = d.recoverToken;
+            if (window.AgarLkAuth && typeof window.AgarLkAuth.showView === "function") {
+              // show recover + password step via custom event
+              document.dispatchEvent(new CustomEvent("lk-recover-ready", { detail: { recoverToken: d.recoverToken, uid: d.uid } }));
+            }
+          })
+          .catch(() => alert("Ошибка сети VK"));
+        return;
       }
       handleLogin(payload, "vk");
     };
@@ -7317,7 +7326,7 @@ function updateRegionOnlineTotals(totals) {
         setRestoreStatus(data.error || "Не удалось восстановить прогресс", "error");
         return;
       }
-      setRestoreStatus(data.message || "Аккаунт привязан к VK", "success");
+      setRestoreStatus(data.message || "Аккаунт привязан", "success");
       const restoredAt = data.restored_at || data.restoredAt || Date.now();
       persistRestoreTimestamp(restoredAt);
       if (S.accountData) S.accountData.restored_at = restoredAt;
@@ -7332,9 +7341,6 @@ function updateRegionOnlineTotals(totals) {
       updateRestoreBlockVisibility(S);
     };
     async function restoreProgressFromTelegram(user) {
-      if (!getAccountToken()) {
-        return alert("Сначала войдите через VK");
-      }
       setRestoreStatus("Привязываем аккаунт…", "info");
       try {
         const res = await accountApiGet("me/restore/telegram", "POST", user);
@@ -7344,9 +7350,6 @@ function updateRegionOnlineTotals(totals) {
       }
     }
     async function restoreProgressFromGoogle(credential) {
-      if (!getAccountToken()) {
-        return alert("Сначала войдите через VK");
-      }
       setRestoreStatus("Привязываем аккаунт…", "info");
       try {
         const res = await accountApiGet("me/restore/google", "POST", {
@@ -7405,26 +7408,10 @@ function updateRegionOnlineTotals(totals) {
       }
     }
     function wireRestoreProgressUI() {
-      const toggle = document.getElementById("restoreToggle");
-      const panel = document.getElementById("restorePanel");
-      const tgBtn = document.getElementById("restoreTelegramBtn");
-      if (!toggle || !panel || toggle.dataset.wired) return;
-      toggle.dataset.wired = "1";
-      toggle.addEventListener("click", () => {
-        const open = panel.hidden;
-        panel.hidden = !open;
-        toggle.setAttribute("aria-expanded", open ? "true" : "false");
-        if (open) initRestoreGoogleButton();
-      });
-      if (tgBtn) {
-        tgBtn.addEventListener("click", () => {
-          window._telegramRestoreMode = true;
-          window.open("https://agar.su/telegram/", "tgRestore", "width=400,height=200");
-        });
-      }
+      /* settings restore UI removed — recovery is on auth screen */
     }
     window.addEventListener("message", function(event) {
-      if (event.origin !== "https://agar.su") return;
+      if (event.origin !== "https://agar.su" && event.origin !== window.location.origin) return;
       if (event.data.type === "telegram-auth" && window._telegramRestoreMode) {
         window._telegramRestoreMode = false;
         restoreProgressFromTelegram(event.data.user);
@@ -7447,6 +7434,11 @@ function updateRegionOnlineTotals(totals) {
       loadMyNicknames(S, nickHooks);
       hooks.sendAccountToken();
     };
+    if (window.AgarLkAuth && typeof window.AgarLkAuth.init === "function") {
+      window.AgarLkAuth.init({
+        onLoggedIn: token => wHandle.onAccountLoggedIn(token)
+      });
+    }
     wHandle.logoutAccount = async () => {
       if (getAccountToken()) {
         const res = await accountApiGet("me/logout");

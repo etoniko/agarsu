@@ -16,7 +16,7 @@
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="canonical" href="https://agar.su">
     <link rel="stylesheet" href="/fonts/fonts.css?v=1">
-    <link rel="stylesheet" href="style.css?v=32">
+    <link rel="stylesheet" href="style.css?v=33">
     <script>
       window.renderDeathBanner = window.renderDeathBanner || function () {};
       window.trackPlayGoal = window.trackPlayGoal || function () {};
@@ -289,7 +289,8 @@
     <script src="protocols.js?v=11" defer></script>
     <script src="admin.js?v=10" defer></script>
     <script src="assets/scripts/friends.js?v=8" defer></script>
-    <script src="main.js?v=93" defer></script>
+    <script src="assets/scripts/lk-auth.js?v=1" defer></script>
+    <script src="main.js?v=94" defer></script>
 </head>
 <body>
   <div id="overlays" class="overlays">
@@ -785,9 +786,6 @@
           <div id="table-container"></div>
         </div>
         <div id="store" class="content">
-          <div class="top-info">
-            <div><span data-en="Account" data-tr="Hesap" data-zh="账户" data-ar="الحساب" data-es="Cuenta" data-pl="Konto" data-de="Konto" data-uk="Кабінет">Кабинет</span></div>
-          </div>
           <div class="store-shell">
             <div id="myNicknamesBlock" class="store-cabinet" style="display:none;">
               <div class="store-toolbar tabs" id="myNickClanTabs" data-ready="1">
@@ -853,57 +851,85 @@
                   <label class="lk-friends-opt"><input type="checkbox" id="optFriendShareCoords" checked onchange="setFriendShareCoords(this.checked);"><span>Передавать друзьям мои координаты</span></label>
                   <label class="lk-friends-opt"><input type="checkbox" id="optFriendSharePresence" checked onchange="setFriendSharePresence(this.checked);"><span>Показывать друзьям онлайн / сервер</span></label>
                 </div>
-                <div id="restoreProgressBlock" class="restore-progress-block">
-                  <div class="restore-head">
-                    <div>
-                      <div class="restore-title" data-en="Account recovery" data-tr="Hesap kurtarma" data-zh="账户恢复" data-ar="استعادة الحساب" data-es="Recuperación de cuenta" data-pl="Odzyskiwanie konta" data-de="Kontowiederherstellung" data-uk="Відновлення акаунта">Восстановление аккаунта</div>
-                      <p class="restore-note" data-en="If you played via Google or Telegram — confirm your old account. Your previous ID, XP and nicks will remain; login will be via VK." data-tr="Google veya Telegram ile oynadıysanız — eski hesabı doğrulayın. Eski ID, XP ve nickleriniz kalır; giriş VK ile olur." data-zh="如果您通过 Google 或 Telegram 游玩——请确认旧账户。原有 ID、经验和昵称将保留，之后通过 VK 登录。" data-ar="إذا لعبت عبر Google أو Telegram — أكد حسابك القديم. سيبقى معرّفك وخبرتك وألقابك، وسيكون الدخول عبر VK." data-es="Si jugaste con Google o Telegram — confirma tu cuenta anterior. Tu ID, XP y nicks se conservarán; el acceso será por VK." data-pl="Jeśli grałeś przez Google lub Telegram — potwierdź stare konto. Poprzednie ID, XP i nicki zostaną; logowanie będzie przez VK." data-de="Falls du über Google oder Telegram gespielt hast — bestätige dein altes Konto. ID, XP und Nicks bleiben; Login erfolgt über VK." data-uk="Якщо ви грали через Google або Telegram — підтвердіть старий акаунт. Попередні ID, досвід і ніки залишаться, вхід буде через VK.">Если вы играли через Google или Telegram — подтвердите старый аккаунт. Ваш прежний ID, опыт и ники останутся, вход будет через VK.</p>
-                    </div>
-                    <span id="restoreStateBadge" class="restore-state-badge" data-en="Not restored" data-tr="Kurtarılmadı" data-zh="未恢复" data-ar="غير مستعاد" data-es="No restaurado" data-pl="Nie przywrócono" data-de="Nicht wiederhergestellt" data-uk="Не відновлено">Не восстановлен</span>
-                  </div>
-                  <div id="restoreAvailableBlock">
-                    <button type="button" id="restoreToggle" class="restore-toggle" aria-expanded="false">
-                      <i class="fas fa-link"></i>
-                      <span data-en="Restore from Google / Telegram" data-tr="Google / Telegram kurtar" data-zh="从 Google / Telegram 恢复" data-ar="استعادة من Google / Telegram" data-es="Restaurar Google / Telegram" data-pl="Przywróć Google / Telegram" data-de="Google / Telegram wiederherstellen" data-uk="Відновити з Google / Telegram">Восстановить прогресс с Google / Telegram</span>
-                    </button>
-                    <div id="restorePanel" class="restore-panel" hidden>
-                      <div class="restore-actions">
-                        <div id="restoreGoogleContainer" class="restore-google-wrap"></div>
-                        <button type="button" class="auth-telegram-btn restore-telegram-btn" id="restoreTelegramBtn">
-                          <i class="fab fa-telegram"></i><span data-en="Restore via Telegram" data-tr="Telegram ile kurtar" data-zh="通过 Telegram 恢复" data-ar="الاستعادة عبر Telegram" data-es="Restaurar con Telegram" data-pl="Przywróć przez Telegram" data-de="Über Telegram wiederherstellen" data-uk="Відновити через Telegram"> Восстановить через Telegram</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  <div id="restoreDoneBlock" class="restore-done-block" style="display:none;" data-en="This account was already restored. No further recovery is needed." data-tr="Bu hesap zaten kurtarıldı. Tekrar kurtarma gerekmez." data-zh="此账户已恢复，无需再次操作。" data-ar="تمت استعادة هذا الحساب بالفعل. لا حاجة لاستعادة أخرى." data-es="Esta cuenta ya fue restaurada. No se necesita otra recuperación." data-pl="To konto zostało już przywrócone. Ponowne odzyskiwanie nie jest potrzebne." data-de="Dieses Konto wurde bereits wiederhergestellt. Keine erneute Wiederherstellung nötig." data-uk="Цей акаунт уже відновлено. Повторне відновлення не потрібне.">
-                    Этот аккаунт уже был восстановлен. Повторное восстановление не требуется.
-                  </div>
-                  <div id="restoreStatus" class="restore-status" role="status" hidden></div>
-                </div>
               </div>
             </div>
             <div id="authlog" class="store-auth">
-              <div class="store-auth-card">
+              <div class="store-auth-card" id="authCardLogin">
                 <div class="store-auth-icon"><i class="fas fa-user-lock"></i></div>
-                <h3 class="store-auth-title" data-en="Account sign-in" data-tr="Hesaba giriş" data-zh="账户登录" data-ar="تسجيل الدخول للحساب" data-es="Acceso a la cuenta" data-pl="Logowanie do konta" data-de="Konto-Anmeldung" data-uk="Вхід до кабінету">Вход в кабинет</h3>
-                <p class="store-auth-text" data-en="Sign in with VK, Mail or OK to see nicks, clans and progress." data-tr="Nick, klan ve ilerleme için VK, Mail veya OK ile giriş yapın." data-zh="通过 VK / Mail / OK 登录查看昵称、氏族和进度。" data-ar="سجّل الدخول عبر VK أو Mail أو OK لرؤية الألقاب والتقدم." data-es="Inicia sesión con VK, Mail u OK para ver nicks y progreso." data-pl="Zaloguj się przez VK, Mail lub OK, aby zobaczyć nicki i postęp." data-de="Melde dich mit VK, Mail oder OK an, um Nicks und Fortschritt zu sehen." data-uk="Увійдіть через VK, Mail або OK, щоб бачити ніки, клани та прогрес.">Войдите через VK, Mail или OK — увидите ники, кланы и прогресс.</p>
-                <div id="vkAuthContainer" class="auth-block auth-block-vk">
-                  <div class="soc-auth-btns" id="socAuthBtns" role="group" aria-label="Вход через соцсети">
-                    <button type="button" class="soc-auth-btn soc-auth-btn--vk" data-oauth="vk" aria-label="Войти через VK">
-                      <img src="/assets/auth/vk.svg" alt="" width="22" height="22" decoding="async">
-                      <span>VK</span>
-                    </button>
-                    <button type="button" class="soc-auth-btn soc-auth-btn--mail" data-oauth="mail" aria-label="Войти через Mail">
-                      <img src="/assets/auth/mail.svg" alt="" width="22" height="22" decoding="async">
-                      <span>Mail</span>
-                    </button>
-                    <button type="button" class="soc-auth-btn soc-auth-btn--ok" data-oauth="ok" aria-label="Войти через OK">
-                      <img src="/assets/auth/ok.svg" alt="" width="22" height="22" decoding="async">
-                      <span>OK</span>
-                    </button>
+                <h3 class="store-auth-title">Вход в кабинет</h3>
+                <p class="store-auth-text">Войдите по ID личного кабинета и паролю.</p>
+                <form id="authLoginForm" class="lk-auth-form" autocomplete="on">
+                  <label class="lk-auth-label" for="authLoginId">ID ЛК</label>
+                  <input class="lk-auth-input" id="authLoginId" name="ulogin" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="12" placeholder="например 4321" required autocomplete="username">
+                  <label class="lk-auth-label" for="authLoginPass">Пароль</label>
+                  <input class="lk-auth-input" id="authLoginPass" name="pass" type="password" maxlength="64" placeholder="пароль" required autocomplete="current-password">
+                  <p class="lk-auth-error" id="authLoginError" hidden></p>
+                  <button type="submit" class="lk-auth-btn" id="authLoginBtn">Войти</button>
+                </form>
+                <div class="lk-auth-links">
+                  <button type="button" class="lk-auth-link" data-auth-view="recover">Восстановить</button>
+                  <span class="lk-auth-sep">·</span>
+                  <button type="button" class="lk-auth-link" data-auth-view="register">Регистрация</button>
+                </div>
+              </div>
+
+              <div class="store-auth-card" id="authCardRegister" hidden>
+                <div class="store-auth-icon"><i class="fas fa-user-plus"></i></div>
+                <h3 class="store-auth-title">Регистрация</h3>
+                <p class="store-auth-text" id="authRegHint">Укажите почту — придёт код из 5 цифр.</p>
+                <div id="authRegStepEmail" class="lk-auth-form">
+                  <label class="lk-auth-label" for="authRegEmail">Email</label>
+                  <input class="lk-auth-input" id="authRegEmail" type="email" maxlength="190" placeholder="test@mail.ru" autocomplete="email">
+                  <p class="lk-auth-error" id="authRegError" hidden></p>
+                  <button type="button" class="lk-auth-btn" id="authRegSendBtn">Получить код</button>
+                </div>
+                <div id="authRegStepCode" class="lk-auth-form" hidden>
+                  <label class="lk-auth-label" for="authRegCode">Код из письма</label>
+                  <input class="lk-auth-input" id="authRegCode" type="text" inputmode="numeric" maxlength="5" placeholder="12345" autocomplete="one-time-code">
+                  <button type="button" class="lk-auth-btn" id="authRegVerifyBtn">Подтвердить</button>
+                </div>
+                <div id="authRegStepPass" class="lk-auth-form" hidden>
+                  <label class="lk-auth-label" for="authRegPass">Придумайте пароль</label>
+                  <input class="lk-auth-input" id="authRegPass" type="password" maxlength="64" placeholder="a-z A-Z 0-9 ." autocomplete="new-password">
+                  <p class="lk-auth-hint">Только латиница, цифры и точка. Без пробелов.</p>
+                  <button type="button" class="lk-auth-btn" id="authRegCreateBtn">Создать</button>
+                </div>
+                <div class="lk-auth-links">
+                  <button type="button" class="lk-auth-link" data-auth-view="login">← Ко входу</button>
+                </div>
+              </div>
+
+              <div class="store-auth-card" id="authCardRecover" hidden>
+                <div class="store-auth-icon"><i class="fas fa-key"></i></div>
+                <h3 class="store-auth-title">Восстановление</h3>
+                <p class="store-auth-text" id="authRecHint">Через VK, Google, Telegram (VPN) или email.</p>
+                <div id="authRecMethods" class="lk-auth-form">
+                  <div class="lk-auth-social-row">
+                    <button type="button" class="soc-auth-btn soc-auth-btn--vk" id="authRecVkBtn">VK</button>
+                    <button type="button" class="soc-auth-btn soc-auth-btn--google" id="authRecGoogleBtn">Google</button>
+                    <button type="button" class="soc-auth-btn soc-auth-btn--tg" id="authRecTgBtn"><i class="fab fa-telegram"></i> Telegram</button>
                   </div>
-                  <div id="VkIdSdkOAuthList" class="soc-auth-fallback" hidden></div>
-                  <p class="soc-auth-hint" id="socAuthHint" hidden>Загрузка входа…</p>
+                  <div id="authRecGoogleWrap" class="lk-auth-google-wrap"></div>
+                  <div id="authRecTgWrap" class="lk-auth-tg-wrap"></div>
+                  <div class="auth-divider"><span>или email</span></div>
+                  <label class="lk-auth-label" for="authRecEmail">Email аккаунта</label>
+                  <input class="lk-auth-input" id="authRecEmail" type="email" maxlength="190" placeholder="test@mail.ru" autocomplete="email">
+                  <p class="lk-auth-error" id="authRecError" hidden></p>
+                  <button type="button" class="lk-auth-btn" id="authRecSendBtn">Отправить код</button>
+                </div>
+                <div id="authRecStepCode" class="lk-auth-form" hidden>
+                  <label class="lk-auth-label" for="authRecCode">Код из письма</label>
+                  <input class="lk-auth-input" id="authRecCode" type="text" inputmode="numeric" maxlength="5" placeholder="12345" autocomplete="one-time-code">
+                  <button type="button" class="lk-auth-btn" id="authRecVerifyBtn">Подтвердить</button>
+                </div>
+                <div id="authRecStepPass" class="lk-auth-form" hidden>
+                  <label class="lk-auth-label" for="authRecPass">Новый пароль</label>
+                  <input class="lk-auth-input" id="authRecPass" type="password" maxlength="64" placeholder="a-z A-Z 0-9 ." autocomplete="new-password">
+                  <p class="lk-auth-hint">Только латиница, цифры и точка. Без пробелов.</p>
+                  <button type="button" class="lk-auth-btn" id="authRecSetPassBtn">Сохранить пароль</button>
+                </div>
+                <div class="lk-auth-links">
+                  <button type="button" class="lk-auth-link" data-auth-view="login">← Ко входу</button>
                 </div>
               </div>
             </div>
