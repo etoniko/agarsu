@@ -6698,17 +6698,6 @@ function updateRegionOnlineTotals(totals) {
       if (typeof wHandle.chekstats === "function") wHandle.chekstats();
     };
     wHandle.startGame = function() {
-      if (!getAccountToken()) {
-        if (typeof window.showContent === "function") window.showContent("home");
-        const authlogEl = document.getElementById("authlog");
-        if (authlogEl) authlogEl.style.display = "flex";
-        if (window.AgarLkAuth && typeof window.AgarLkAuth.showView === "function") {
-          window.AgarLkAuth.showView("login");
-        }
-        const idInput = document.getElementById("authLoginId");
-        if (idInput) setTimeout(() => idInput.focus(), 40);
-        return;
-      }
       let nickInput = document.getElementById("nick").value.trim();
       let passInput = document.getElementById("pass").value;
       const forbiddenRegex = new RegExp(FORBIDDEN_NICK_CHARS.join("|"), "g");
