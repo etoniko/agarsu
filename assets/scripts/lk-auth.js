@@ -14,6 +14,8 @@
   let wired = false;
   let regTimerId = null;
   let recTimerId = null;
+  /** @type {{ token: string, uid: string, pass: string, fromRegister: boolean } | null} */
+  let pendingDone = null;
 
   function $(id) {
     return document.getElementById(id);
@@ -96,9 +98,12 @@
     const login = $("authCardLogin");
     const reg = $("authCardRegister");
     const rec = $("authCardRecover");
+    const done = $("authCardDone");
     if (login) login.hidden = name !== "login";
     if (reg) reg.hidden = name !== "register";
     if (rec) rec.hidden = name !== "recover";
+    if (done) done.hidden = name !== "done";
+    if (name !== "done") pendingDone = null;
     if (name === "register") resetRegister();
     if (name === "recover") resetRecover();
   }
@@ -181,8 +186,10 @@
     const login = $("authCardLogin");
     const reg = $("authCardRegister");
     const rec = $("authCardRecover");
+    const done = $("authCardDone");
     if (login) login.hidden = true;
     if (reg) reg.hidden = true;
+    if (done) done.hidden = true;
     if (rec) rec.hidden = false;
     persistRecoverToken(token);
     showSetPassword();
@@ -229,10 +236,63 @@
 
   function finishLogin(token) {
     if (!token) return;
+    pendingDone = null;
     if (typeof onLoggedIn === "function") onLoggedIn(token);
     else if (window.wHandle && typeof window.wHandle.onAccountLoggedIn === "function") {
       window.wHandle.onAccountLoggedIn(token);
     }
+  }
+
+  /** LK login id from API (uid / ulogin / id) — never email. */
+  function resolveLkUid(data) {
+    const raw = data && (data.uid ?? data.ulogin ?? data.id);
+    const uid = String(raw == null ? "" : raw).trim();
+    return /^\d{1,12}$/.test(uid) ? uid : "";
+  }
+
+  /** Banner instead of alert: show ID + pass, then OK → login. No OS password save. */
+  function showDoneBanner(uid, pass, token, fromRegister) {
+    const id = resolveLkUid({ uid });
+    if (!token) return;
+    if (!id) {
+      finishLogin(token);
+      return;
+    }
+    pendingDone = {
+      token,
+      uid: id,
+      pass: String(pass || ""),
+      fromRegister: !!fromRegister,
+    };
+
+    const loginId = $("authLoginId");
+    if (loginId) loginId.value = id;
+
+    const title = $("authDoneTitle");
+    const hint = $("authDoneHint");
+    const idEl = $("authDoneId");
+    const passEl = $("authDonePass");
+    const mailHint = $("authDoneMailHint");
+
+    if (title) title.textContent = fromRegister ? "ЛК создан" : "Пароль сохранён";
+    if (hint) {
+      hint.textContent = fromRegister
+        ? "Запомните ID и пароль для входа"
+        : "Запомните ID и новый пароль для входа";
+    }
+    if (idEl) idEl.textContent = id;
+    if (passEl) passEl.textContent = String(pass || "");
+    if (mailHint) mailHint.hidden = !fromRegister;
+
+    showView("done");
+  }
+
+  function confirmDoneBanner() {
+    const pending = pendingDone;
+    if (!pending || !pending.token) return;
+    const loginId = $("authLoginId");
+    if (loginId) loginId.value = pending.uid;
+    finishLogin(pending.token);
   }
 
   async function doLogin(ev) {
@@ -326,8 +386,8 @@
         setErr(err, data.error || "Не удалось создать");
         return;
       }
-      alert("ЛК создан! ID: " + data.uid + "\nДанные также на почте.");
-      finishLogin(data.token);
+      const uid = resolveLkUid(data);
+      showDoneBanner(uid, pass, data.token, true);
     } catch (_) {
       setErr(err, "Ошибка сети");
     }
@@ -396,8 +456,8 @@
         return;
       }
       persistRecoverToken(null);
-      alert("Пароль сохранён. ID ЛК: " + data.uid);
-      finishLogin(data.token);
+      const uid = resolveLkUid(data);
+      showDoneBanner(uid, pass, data.token, false);
     } catch (_) {
       const hint = $("authRecHint");
       if (hint) hint.textContent = "Ошибка сети";
@@ -570,6 +630,7 @@
       });
     }
     $("authLoginForm")?.addEventListener("submit", doLogin);
+    $("authDoneOkBtn")?.addEventListener("click", confirmDoneBanner);
     $("authRegSendBtn")?.addEventListener("click", () => regSend(false));
     $("authRegResendBtn")?.addEventListener("click", () => regSend(true));
     $("authRegVerifyBtn")?.addEventListener("click", regVerify);
