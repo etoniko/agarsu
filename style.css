@@ -3209,6 +3209,11 @@ img.skin-strip-anim{max-width:none !important;object-fit:fill !important;flex-sh
   transform: translateY(-1px);
 }
 .lk-auth-btn:disabled { opacity: 0.6; cursor: wait; box-shadow: none; }
+.lk-auth-btn + .lk-auth-textbtn {
+  margin-top: 10px;
+  text-align: center;
+  width: 100%;
+}
 .lk-auth-footer {
   display: flex;
   align-items: center;

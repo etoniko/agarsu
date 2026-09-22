@@ -16,7 +16,7 @@
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="canonical" href="https://agar.su">
     <link rel="stylesheet" href="/fonts/fonts.css?v=1">
-    <link rel="stylesheet" href="style.css?v=38">
+    <link rel="stylesheet" href="style.css?v=39">
     <script>
       window.renderDeathBanner = window.renderDeathBanner || function () {};
       window.trackPlayGoal = window.trackPlayGoal || function () {};
@@ -289,7 +289,7 @@
     <script src="protocols.js?v=11" defer></script>
     <script src="admin.js?v=10" defer></script>
     <script src="assets/scripts/friends.js?v=8" defer></script>
-    <script src="assets/scripts/lk-auth.js?v=8" defer></script>
+    <script src="assets/scripts/lk-auth.js?v=9" defer></script>
     <script src="main.js?v=96" defer></script>
 </head>
 <body>
@@ -908,8 +908,6 @@
                   <button type="button" class="lk-auth-textbtn" id="authRegResendBtn" hidden>Новый код</button>
                 </div>
                 <div id="authRegStepPass" class="lk-auth-form" hidden>
-                  <!-- username = numeric LK id; filled after create so password managers don't save email -->
-                  <input type="text" id="authRegUsername" name="username" autocomplete="username" value="" tabindex="-1" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" readonly>
                   <label class="lk-auth-field">
                     <span>Пароль</span>
                     <input class="lk-auth-input" id="authRegPass" type="password" maxlength="64" placeholder="a-z A-Z 0-9 ." autocomplete="off">
@@ -921,6 +919,27 @@
                 <div class="lk-auth-footer">
                   <button type="button" class="lk-auth-textbtn" data-auth-view="login">Назад</button>
                 </div>
+              </div>
+
+              <!-- SAVE CREDENTIALS (official password manager: login=ID, password=pass) -->
+              <div class="store-auth-card" id="authCardSave" hidden>
+                <div class="lk-auth-head">
+                  <h3 class="store-auth-title">Сохранить вход</h3>
+                  <p class="store-auth-text" id="authSaveHint">Логин — ID ЛК, пароль — ваш пароль. Сохраните в менеджере паролей устройства.</p>
+                </div>
+                <form id="authSaveForm" class="lk-auth-form" method="post" action="/" autocomplete="on">
+                  <label class="lk-auth-field">
+                    <span>ID (логин)</span>
+                    <input class="lk-auth-input" id="authSaveId" name="username" type="text" inputmode="numeric" maxlength="12" required autocomplete="username" spellcheck="false">
+                  </label>
+                  <label class="lk-auth-field">
+                    <span>Пароль</span>
+                    <input class="lk-auth-input" id="authSavePass" name="password" type="password" maxlength="64" required autocomplete="new-password">
+                  </label>
+                  <p class="lk-auth-hint" id="authSaveMailHint" hidden>Дубликат также отправлен на почту.</p>
+                  <button type="submit" class="lk-auth-btn" id="authSaveBtn">Сохранить и войти</button>
+                  <button type="button" class="lk-auth-textbtn" id="authSaveSkipBtn">Войти без сохранения</button>
+                </form>
               </div>
 
               <!-- RECOVER -->
@@ -979,8 +998,6 @@
                 </div>
 
                 <div id="authRecStepPass" class="lk-auth-form" hidden>
-                  <!-- username = numeric LK id; filled after set-password so managers don't save email/nick -->
-                  <input type="text" id="authRecUsername" name="username" autocomplete="username" value="" tabindex="-1" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" readonly>
                   <label class="lk-auth-field">
                     <span>Новый пароль</span>
                     <input class="lk-auth-input" id="authRecPass" type="password" maxlength="64" placeholder="a-z A-Z 0-9 ." autocomplete="off">

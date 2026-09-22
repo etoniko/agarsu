@@ -14,6 +14,8 @@
   let wired = false;
   let regTimerId = null;
   let recTimerId = null;
+  /** @type {{ token: string, uid: string, pass: string, fromRegister: boolean } | null} */
+  let pendingSave = null;
 
   function $(id) {
     return document.getElementById(id);
@@ -96,9 +98,12 @@
     const login = $("authCardLogin");
     const reg = $("authCardRegister");
     const rec = $("authCardRecover");
+    const save = $("authCardSave");
     if (login) login.hidden = name !== "login";
     if (reg) reg.hidden = name !== "register";
     if (rec) rec.hidden = name !== "recover";
+    if (save) save.hidden = name !== "save";
+    if (name !== "save") pendingSave = null;
     if (name === "register") resetRegister();
     if (name === "recover") resetRecover();
   }
@@ -181,8 +186,10 @@
     const login = $("authCardLogin");
     const reg = $("authCardRegister");
     const rec = $("authCardRecover");
+    const save = $("authCardSave");
     if (login) login.hidden = true;
     if (reg) reg.hidden = true;
+    if (save) save.hidden = true;
     if (rec) rec.hidden = false;
     persistRecoverToken(token);
     showSetPassword();
@@ -229,6 +236,7 @@
 
   function finishLogin(token) {
     if (!token) return;
+    pendingSave = null;
     if (typeof onLoggedIn === "function") onLoggedIn(token);
     else if (window.wHandle && typeof window.wHandle.onAccountLoggedIn === "function") {
       window.wHandle.onAccountLoggedIn(token);
@@ -243,31 +251,106 @@
   }
 
   /**
-   * Browser save prompt after reg/recover often grabbed email or game nick,
-   * because password steps had no username = LK id. Fill login fields and
-   * store PasswordCredential with the real numeric uid.
+   * Show official save form: username=ID, password=pass.
+   * Triggers OS/browser password manager (Chrome/Edge/Safari/iOS/Android)
+   * on submit via PasswordCredential + autocomplete form — not alert().
    */
-  function offerSaveLkCredentials(uid, pass) {
+  function showSaveCredentials(uid, pass, token, fromRegister) {
     const id = resolveLkUid({ uid });
-    if (!id || !pass) return;
+    if (!token) return;
+    if (!id) {
+      finishLogin(token);
+      return;
+    }
+    pendingSave = { token, uid: id, pass: String(pass || ""), fromRegister: !!fromRegister };
+
     const loginId = $("authLoginId");
     const loginPass = $("authLoginPass");
     if (loginId) loginId.value = id;
-    if (loginPass) loginPass.value = pass;
-    ["authRegUsername", "authRecUsername"].forEach((hid) => {
-      const el = $(hid);
-      if (el) el.value = id;
-    });
+    if (loginPass) loginPass.value = String(pass || "");
+
+    const saveId = $("authSaveId");
+    const savePass = $("authSavePass");
+    if (saveId) saveId.value = id;
+    if (savePass) {
+      savePass.value = String(pass || "");
+      savePass.type = "password";
+    }
+
+    const mailHint = $("authSaveMailHint");
+    if (mailHint) mailHint.hidden = !fromRegister;
+
+    const hint = $("authSaveHint");
+    if (hint) {
+      hint.textContent = fromRegister
+        ? "ЛК создан. Логин — ID, пароль — ваш пароль. Сохраните в менеджере паролей."
+        : "Пароль обновлён. Логин — ID, пароль — новый пароль. Сохраните в менеджере паролей.";
+    }
+
+    showView("save");
+  }
+
+  async function storeOfficialPassword(uid, pass) {
+    const id = String(uid || "").trim();
+    const password = String(pass || "");
+    if (!id || !password) return false;
     try {
       if (typeof PasswordCredential === "function" && navigator.credentials?.store) {
         const cred = new PasswordCredential({
           id,
-          password: String(pass),
-          name: "ID " + id,
+          password,
+          name: id,
         });
-        navigator.credentials.store(cred).catch(() => {});
+        await navigator.credentials.store(cred);
+        return true;
       }
     } catch (_) {}
+    return false;
+  }
+
+  async function completeSaveAndLogin(ev) {
+    if (ev) ev.preventDefault();
+    const pending = pendingSave;
+    if (!pending || !pending.token) return;
+
+    const idEl = $("authSaveId");
+    const passEl = $("authSavePass");
+    const uid = resolveLkUid({ uid: (idEl && idEl.value) || pending.uid });
+    const pass = (passEl && passEl.value) || pending.pass;
+    if (!uid || !pass) {
+      finishLogin(pending.token);
+      return;
+    }
+
+    if (idEl) idEl.value = uid;
+    if (passEl) {
+      passEl.value = pass;
+      passEl.setAttribute("autocomplete", "new-password");
+    }
+
+    const loginId = $("authLoginId");
+    const loginPass = $("authLoginPass");
+    if (loginId) loginId.value = uid;
+    if (loginPass) loginPass.value = pass;
+
+    const btn = $("authSaveBtn");
+    if (btn) btn.disabled = true;
+    try {
+      // User-gesture → native save sheet (Windows Chrome/Edge, Android).
+      // iOS/Safari: same form with autocomplete=username + new-password.
+      await storeOfficialPassword(uid, pass);
+      // Give OS password UI a moment before hiding the auth panel.
+      await new Promise((r) => setTimeout(r, 120));
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+    finishLogin(pending.token);
+  }
+
+  function skipSaveAndLogin() {
+    const pending = pendingSave;
+    if (!pending || !pending.token) return;
+    finishLogin(pending.token);
   }
 
   async function doLogin(ev) {
@@ -362,13 +445,7 @@
         return;
       }
       const uid = resolveLkUid(data);
-      offerSaveLkCredentials(uid, pass);
-      alert(
-        uid
-          ? "ЛК создан! ID: " + uid + "\nДанные также на почте."
-          : "ЛК создан! Данные также на почте."
-      );
-      finishLogin(data.token);
+      showSaveCredentials(uid, pass, data.token, true);
     } catch (_) {
       setErr(err, "Ошибка сети");
     }
@@ -438,9 +515,7 @@
       }
       persistRecoverToken(null);
       const uid = resolveLkUid(data);
-      offerSaveLkCredentials(uid, pass);
-      alert(uid ? "Пароль сохранён. ID ЛК: " + uid : "Пароль сохранён.");
-      finishLogin(data.token);
+      showSaveCredentials(uid, pass, data.token, false);
     } catch (_) {
       const hint = $("authRecHint");
       if (hint) hint.textContent = "Ошибка сети";
@@ -613,6 +688,15 @@
       });
     }
     $("authLoginForm")?.addEventListener("submit", doLogin);
+    $("authSaveForm")?.addEventListener("submit", completeSaveAndLogin);
+    $("authSaveSkipBtn")?.addEventListener("click", skipSaveAndLogin);
+    const saveIdInput = $("authSaveId");
+    if (saveIdInput) {
+      saveIdInput.addEventListener("input", () => {
+        const digits = saveIdInput.value.replace(/\D/g, "").slice(0, 12);
+        if (saveIdInput.value !== digits) saveIdInput.value = digits;
+      });
+    }
     $("authRegSendBtn")?.addEventListener("click", () => regSend(false));
     $("authRegResendBtn")?.addEventListener("click", () => regSend(true));
     $("authRegVerifyBtn")?.addEventListener("click", regVerify);
