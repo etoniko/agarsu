@@ -3184,6 +3184,41 @@ img.skin-strip-anim{max-width:none !important;object-fit:fill !important;flex-sh
   box-sizing: border-box;
   transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
 }
+.lk-auth-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+.lk-auth-creds {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(1, 107, 239, 0.12);
+  border: 1px solid rgba(1, 107, 239, 0.28);
+}
+.lk-auth-cred {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.lk-auth-cred > span {
+  font-size: 12px;
+  font-weight: 600;
+  color: #9fb3d9;
+  letter-spacing: 0.02em;
+}
+.lk-auth-cred > b {
+  font-size: 16px;
+  font-weight: 700;
+  color: #e8eefc;
+  word-break: break-all;
+  text-align: right;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
 .lk-auth-input::placeholder { color: #5a6d8c; }
 /* Mask without type=password — avoids early OS/browser Save prompts */
 .lk-auth-input--secret {

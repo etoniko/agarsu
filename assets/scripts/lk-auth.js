@@ -15,7 +15,7 @@
   let regTimerId = null;
   let recTimerId = null;
   /** @type {{ token: string, uid: string, pass: string, fromRegister: boolean } | null} */
-  let pendingSave = null;
+  let pendingDone = null;
 
   function $(id) {
     return document.getElementById(id);
@@ -98,15 +98,12 @@
     const login = $("authCardLogin");
     const reg = $("authCardRegister");
     const rec = $("authCardRecover");
-    const save = $("authCardSave");
+    const done = $("authCardDone");
     if (login) login.hidden = name !== "login";
     if (reg) reg.hidden = name !== "register";
     if (rec) rec.hidden = name !== "recover";
-    if (save) save.hidden = name !== "save";
-    if (name !== "save") {
-      pendingSave = null;
-      disarmSaveForm();
-    }
+    if (done) done.hidden = name !== "done";
+    if (name !== "done") pendingDone = null;
     if (name === "register") resetRegister();
     if (name === "recover") resetRecover();
   }
@@ -189,10 +186,10 @@
     const login = $("authCardLogin");
     const reg = $("authCardRegister");
     const rec = $("authCardRecover");
-    const save = $("authCardSave");
+    const done = $("authCardDone");
     if (login) login.hidden = true;
     if (reg) reg.hidden = true;
-    if (save) save.hidden = true;
+    if (done) done.hidden = true;
     if (rec) rec.hidden = false;
     persistRecoverToken(token);
     showSetPassword();
@@ -239,8 +236,7 @@
 
   function finishLogin(token) {
     if (!token) return;
-    pendingSave = null;
-    disarmSaveForm();
+    pendingDone = null;
     if (typeof onLoggedIn === "function") onLoggedIn(token);
     else if (window.wHandle && typeof window.wHandle.onAccountLoggedIn === "function") {
       window.wHandle.onAccountLoggedIn(token);
@@ -254,150 +250,48 @@
     return /^\d{1,12}$/.test(uid) ? uid : "";
   }
 
-  /**
-   * Save form stays "disarmed" in DOM so Chrome/Safari/iOS don't prompt
-   * before the LK id exists. Arm only on the dedicated save step.
-   */
-  function disarmSaveForm() {
-    const form = $("authSaveForm");
-    const idEl = $("authSaveId");
-    const passEl = $("authSavePass");
-    if (form) form.setAttribute("autocomplete", "off");
-    if (idEl) {
-      idEl.value = "";
-      idEl.removeAttribute("name");
-      idEl.setAttribute("autocomplete", "off");
-      idEl.setAttribute("data-lpignore", "true");
-      idEl.setAttribute("data-1p-ignore", "true");
-      idEl.setAttribute("data-form-type", "other");
-    }
-    if (passEl) {
-      passEl.value = "";
-      passEl.type = "text";
-      passEl.removeAttribute("name");
-      passEl.setAttribute("autocomplete", "off");
-      passEl.setAttribute("data-lpignore", "true");
-      passEl.setAttribute("data-1p-ignore", "true");
-      passEl.setAttribute("data-form-type", "other");
-      passEl.classList.add("lk-auth-input--secret");
-    }
-  }
-
-  function armSaveForm(uid, pass) {
-    const form = $("authSaveForm");
-    const idEl = $("authSaveId");
-    const passEl = $("authSavePass");
-    if (form) form.setAttribute("autocomplete", "on");
-    if (idEl) {
-      idEl.name = "username";
-      idEl.setAttribute("autocomplete", "username");
-      idEl.removeAttribute("data-lpignore");
-      idEl.removeAttribute("data-1p-ignore");
-      idEl.removeAttribute("data-form-type");
-      idEl.value = String(uid);
-    }
-    if (passEl) {
-      passEl.name = "password";
-      passEl.type = "password";
-      passEl.setAttribute("autocomplete", "new-password");
-      passEl.removeAttribute("data-lpignore");
-      passEl.removeAttribute("data-1p-ignore");
-      passEl.removeAttribute("data-form-type");
-      passEl.classList.remove("lk-auth-input--secret");
-      passEl.value = String(pass || "");
-    }
-  }
-
-  /**
-   * Show official save form: username=ID, password=pass.
-   * Only here (after create/recover) we arm autocomplete for OS managers.
-   */
-  function showSaveCredentials(uid, pass, token, fromRegister) {
+  /** Banner instead of alert: show ID + pass, then OK → login. No OS password save. */
+  function showDoneBanner(uid, pass, token, fromRegister) {
     const id = resolveLkUid({ uid });
     if (!token) return;
     if (!id) {
       finishLogin(token);
       return;
     }
-    pendingSave = { token, uid: id, pass: String(pass || ""), fromRegister: !!fromRegister };
+    pendingDone = {
+      token,
+      uid: id,
+      pass: String(pass || ""),
+      fromRegister: !!fromRegister,
+    };
 
-    // Do NOT fill login password yet — that triggers early Save on some browsers.
     const loginId = $("authLoginId");
     if (loginId) loginId.value = id;
 
-    armSaveForm(id, pass);
+    const title = $("authDoneTitle");
+    const hint = $("authDoneHint");
+    const idEl = $("authDoneId");
+    const passEl = $("authDonePass");
+    const mailHint = $("authDoneMailHint");
 
-    const mailHint = $("authSaveMailHint");
-    if (mailHint) mailHint.hidden = !fromRegister;
-
-    const hint = $("authSaveHint");
+    if (title) title.textContent = fromRegister ? "ЛК создан" : "Пароль сохранён";
     if (hint) {
       hint.textContent = fromRegister
-        ? "ЛК создан. Логин — ID, пароль — ваш пароль. Сохраните в менеджере паролей."
-        : "Пароль обновлён. Логин — ID, пароль — новый пароль. Сохраните в менеджере паролей.";
+        ? "Запомните ID и пароль для входа"
+        : "Запомните ID и новый пароль для входа";
     }
+    if (idEl) idEl.textContent = id;
+    if (passEl) passEl.textContent = String(pass || "");
+    if (mailHint) mailHint.hidden = !fromRegister;
 
-    showView("save");
+    showView("done");
   }
 
-  async function storeOfficialPassword(uid, pass) {
-    const id = String(uid || "").trim();
-    const password = String(pass || "");
-    if (!id || !password) return false;
-    try {
-      if (typeof PasswordCredential === "function" && navigator.credentials?.store) {
-        const cred = new PasswordCredential({
-          id,
-          password,
-          name: id,
-        });
-        await navigator.credentials.store(cred);
-        return true;
-      }
-    } catch (_) {}
-    return false;
-  }
-
-  async function completeSaveAndLogin(ev) {
-    if (ev) ev.preventDefault();
-    const pending = pendingSave;
-    if (!pending || !pending.token) return;
-
-    const idEl = $("authSaveId");
-    const passEl = $("authSavePass");
-    const uid = resolveLkUid({ uid: (idEl && idEl.value) || pending.uid });
-    const pass = (passEl && passEl.value) || pending.pass;
-    if (!uid || !pass) {
-      disarmSaveForm();
-      finishLogin(pending.token);
-      return;
-    }
-
-    armSaveForm(uid, pass);
-
-    const loginId = $("authLoginId");
-    const loginPass = $("authLoginPass");
-    if (loginId) loginId.value = uid;
-    if (loginPass) loginPass.value = pass;
-
-    const btn = $("authSaveBtn");
-    if (btn) btn.disabled = true;
-    try {
-      await storeOfficialPassword(uid, pass);
-      await new Promise((r) => setTimeout(r, 120));
-    } finally {
-      if (btn) btn.disabled = false;
-    }
-    disarmSaveForm();
-    finishLogin(pending.token);
-  }
-
-  function skipSaveAndLogin() {
-    const pending = pendingSave;
+  function confirmDoneBanner() {
+    const pending = pendingDone;
     if (!pending || !pending.token) return;
     const loginId = $("authLoginId");
     if (loginId) loginId.value = pending.uid;
-    disarmSaveForm();
     finishLogin(pending.token);
   }
 
@@ -493,7 +387,7 @@
         return;
       }
       const uid = resolveLkUid(data);
-      showSaveCredentials(uid, pass, data.token, true);
+      showDoneBanner(uid, pass, data.token, true);
     } catch (_) {
       setErr(err, "Ошибка сети");
     }
@@ -563,7 +457,7 @@
       }
       persistRecoverToken(null);
       const uid = resolveLkUid(data);
-      showSaveCredentials(uid, pass, data.token, false);
+      showDoneBanner(uid, pass, data.token, false);
     } catch (_) {
       const hint = $("authRecHint");
       if (hint) hint.textContent = "Ошибка сети";
@@ -736,15 +630,7 @@
       });
     }
     $("authLoginForm")?.addEventListener("submit", doLogin);
-    $("authSaveForm")?.addEventListener("submit", completeSaveAndLogin);
-    $("authSaveSkipBtn")?.addEventListener("click", skipSaveAndLogin);
-    const saveIdInput = $("authSaveId");
-    if (saveIdInput) {
-      saveIdInput.addEventListener("input", () => {
-        const digits = saveIdInput.value.replace(/\D/g, "").slice(0, 12);
-        if (saveIdInput.value !== digits) saveIdInput.value = digits;
-      });
-    }
+    $("authDoneOkBtn")?.addEventListener("click", confirmDoneBanner);
     $("authRegSendBtn")?.addEventListener("click", () => regSend(false));
     $("authRegResendBtn")?.addEventListener("click", () => regSend(true));
     $("authRegVerifyBtn")?.addEventListener("click", regVerify);
@@ -782,7 +668,6 @@
     init(hooks) {
       onLoggedIn = hooks?.onLoggedIn || null;
       wire();
-      disarmSaveForm();
       showView("login");
     },
     showView,
