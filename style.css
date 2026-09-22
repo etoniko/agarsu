@@ -3185,6 +3185,11 @@ img.skin-strip-anim{max-width:none !important;object-fit:fill !important;flex-sh
   transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
 }
 .lk-auth-input::placeholder { color: #5a6d8c; }
+/* Mask without type=password — avoids early OS/browser Save prompts */
+.lk-auth-input--secret {
+  -webkit-text-security: disc;
+  text-security: disc;
+}
 .lk-auth-input:focus {
   border-color: rgba(1,107,239,0.55);
   box-shadow: 0 0 0 3px rgba(1,107,239,0.16);
