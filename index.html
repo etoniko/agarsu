@@ -289,7 +289,7 @@
     <script src="protocols.js?v=11" defer></script>
     <script src="admin.js?v=10" defer></script>
     <script src="assets/scripts/friends.js?v=8" defer></script>
-    <script src="assets/scripts/lk-auth.js?v=7" defer></script>
+    <script src="assets/scripts/lk-auth.js?v=8" defer></script>
     <script src="main.js?v=96" defer></script>
 </head>
 <body>
@@ -637,8 +637,8 @@
               <div class="next-skin" id="nextSkin" onclick="showNext()"></div>
             </div>
      <form class="from-send" autocomplete="on" onsubmit="return false">
-     <input type="text" data-en-placeholder="Nick" data-tr-placeholder="Nick" data-zh-placeholder="昵称" data-ar-placeholder="اللقب" data-es-placeholder="Nick" data-pl-placeholder="Nick" data-de-placeholder="Nick" data-uk-placeholder="Нік" placeholder="Ник" name="name" maxlength="16" class="noPress" id="nick" required="" autocomplete="username">
-     <input type="password" data-en-placeholder="Pass" data-tr-placeholder="Şifre" data-zh-placeholder="密码" data-ar-placeholder="كلمة المرور" data-es-placeholder="Pass" data-pl-placeholder="Hasło" data-de-placeholder="Pass" data-uk-placeholder="Пароль" placeholder="Пасс" name="pass" maxlength="6" class="noPress inl-4" id="pass" required="" autocomplete="current-password">
+     <input type="text" data-en-placeholder="Nick" data-tr-placeholder="Nick" data-zh-placeholder="昵称" data-ar-placeholder="اللقب" data-es-placeholder="Nick" data-pl-placeholder="Nick" data-de-placeholder="Nick" data-uk-placeholder="Нік" placeholder="Ник" name="name" maxlength="16" class="noPress" id="nick" required="" autocomplete="nickname">
+     <input type="password" data-en-placeholder="Pass" data-tr-placeholder="Şifre" data-zh-placeholder="密码" data-ar-placeholder="كلمة المرور" data-es-placeholder="Pass" data-pl-placeholder="Hasło" data-de-placeholder="Pass" data-uk-placeholder="Пароль" placeholder="Пасс" name="pass" maxlength="6" class="noPress inl-4" id="pass" required="" autocomplete="off">
 	<div class="selectedIcon">
 		<div id="selectedColor"></div>
 	</div>
@@ -859,10 +859,10 @@
                 <div class="lk-auth-head">
                   <h3 class="store-auth-title">Вход</h3>
                 </div>
-                <form id="authLoginForm" class="lk-auth-form" autocomplete="off">
+                <form id="authLoginForm" class="lk-auth-form" autocomplete="on">
                   <label class="lk-auth-field">
                     <span>ID</span>
-                    <input class="lk-auth-input" id="authLoginId" name="ulogin" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="12" placeholder="0000" required autocomplete="off" spellcheck="false">
+                    <input class="lk-auth-input" id="authLoginId" name="ulogin" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="12" placeholder="0000" required autocomplete="username" spellcheck="false">
                   </label>
                   <label class="lk-auth-field">
                     <span>Пароль</span>
@@ -908,9 +908,11 @@
                   <button type="button" class="lk-auth-textbtn" id="authRegResendBtn" hidden>Новый код</button>
                 </div>
                 <div id="authRegStepPass" class="lk-auth-form" hidden>
+                  <!-- username = numeric LK id; filled after create so password managers don't save email -->
+                  <input type="text" id="authRegUsername" name="username" autocomplete="username" value="" tabindex="-1" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" readonly>
                   <label class="lk-auth-field">
                     <span>Пароль</span>
-                    <input class="lk-auth-input" id="authRegPass" type="password" maxlength="64" placeholder="a-z A-Z 0-9 ." autocomplete="new-password">
+                    <input class="lk-auth-input" id="authRegPass" type="password" maxlength="64" placeholder="a-z A-Z 0-9 ." autocomplete="off">
                   </label>
                   <p class="lk-auth-hint">Латиница, цифры и точка · без пробелов</p>
                   <p class="lk-auth-error" id="authRegErrorPass" hidden></p>
@@ -977,9 +979,11 @@
                 </div>
 
                 <div id="authRecStepPass" class="lk-auth-form" hidden>
+                  <!-- username = numeric LK id; filled after set-password so managers don't save email/nick -->
+                  <input type="text" id="authRecUsername" name="username" autocomplete="username" value="" tabindex="-1" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" readonly>
                   <label class="lk-auth-field">
                     <span>Новый пароль</span>
-                    <input class="lk-auth-input" id="authRecPass" type="password" maxlength="64" placeholder="a-z A-Z 0-9 ." autocomplete="new-password">
+                    <input class="lk-auth-input" id="authRecPass" type="password" maxlength="64" placeholder="a-z A-Z 0-9 ." autocomplete="off">
                   </label>
                   <p class="lk-auth-hint">Латиница, цифры и точка · без пробелов</p>
                   <button type="button" class="lk-auth-btn" id="authRecSetPassBtn">Сохранить пароль</button>

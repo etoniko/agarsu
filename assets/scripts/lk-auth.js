@@ -235,6 +235,41 @@
     }
   }
 
+  /** LK login id from API (uid / ulogin / id) — never email. */
+  function resolveLkUid(data) {
+    const raw = data && (data.uid ?? data.ulogin ?? data.id);
+    const uid = String(raw == null ? "" : raw).trim();
+    return /^\d{1,12}$/.test(uid) ? uid : "";
+  }
+
+  /**
+   * Browser save prompt after reg/recover often grabbed email or game nick,
+   * because password steps had no username = LK id. Fill login fields and
+   * store PasswordCredential with the real numeric uid.
+   */
+  function offerSaveLkCredentials(uid, pass) {
+    const id = resolveLkUid({ uid });
+    if (!id || !pass) return;
+    const loginId = $("authLoginId");
+    const loginPass = $("authLoginPass");
+    if (loginId) loginId.value = id;
+    if (loginPass) loginPass.value = pass;
+    ["authRegUsername", "authRecUsername"].forEach((hid) => {
+      const el = $(hid);
+      if (el) el.value = id;
+    });
+    try {
+      if (typeof PasswordCredential === "function" && navigator.credentials?.store) {
+        const cred = new PasswordCredential({
+          id,
+          password: String(pass),
+          name: "ID " + id,
+        });
+        navigator.credentials.store(cred).catch(() => {});
+      }
+    } catch (_) {}
+  }
+
   async function doLogin(ev) {
     if (ev) ev.preventDefault();
     const err = $("authLoginError");
@@ -326,7 +361,13 @@
         setErr(err, data.error || "Не удалось создать");
         return;
       }
-      alert("ЛК создан! ID: " + data.uid + "\nДанные также на почте.");
+      const uid = resolveLkUid(data);
+      offerSaveLkCredentials(uid, pass);
+      alert(
+        uid
+          ? "ЛК создан! ID: " + uid + "\nДанные также на почте."
+          : "ЛК создан! Данные также на почте."
+      );
       finishLogin(data.token);
     } catch (_) {
       setErr(err, "Ошибка сети");
@@ -396,7 +437,9 @@
         return;
       }
       persistRecoverToken(null);
-      alert("Пароль сохранён. ID ЛК: " + data.uid);
+      const uid = resolveLkUid(data);
+      offerSaveLkCredentials(uid, pass);
+      alert(uid ? "Пароль сохранён. ID ЛК: " + uid : "Пароль сохранён.");
       finishLogin(data.token);
     } catch (_) {
       const hint = $("authRecHint");
