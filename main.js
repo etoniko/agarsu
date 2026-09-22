@@ -594,14 +594,13 @@
   }
 
   /**
-   * VK recover on PC: popup is blocked if Auth.login runs after await SDK load.
-   * - If SDK already loaded → Callback popup (stays on page)
-   * - If SDK had to load async → Redirect (same tab), mode kept in sessionStorage
+   * VK recover: always same-tab Redirect.
+   * Callback/popup hangs on "Allow" (returns to agar.su inside popup, parent waits forever).
    */
   function startVkRecover() {
     persistVkRecoverMode(true);
     const hint = $("authRecHint");
-    if (hint) hint.textContent = "Открываем VK…";
+    if (hint) hint.textContent = "Переход в VK…";
     hideAll([
       "authRecPick",
       "authRecStepEmail",
@@ -610,55 +609,28 @@
       "authRecStepPass",
     ]);
 
-    const sdkReady = !!window.VKIDSDK;
-
     (async () => {
       try {
-        const VKID = sdkReady ? window.VKIDSDK : await loadVkSdkLocal();
+        const VKID = window.VKIDSDK || (await loadVkSdkLocal());
         if (!VKID) throw new Error("no sdk");
 
         const { codeVerifier, state } = makePkcePair();
         persistVkPkce(codeVerifier, state);
-
-        // After async load, desktop Chrome blocks popups → use same-tab Redirect.
-        const useRedirect = !sdkReady;
-        if (useRedirect && hint) hint.textContent = "Переход в VK…";
 
         const config = {
           app: 54069355,
           redirectUrl: "https://agar.su",
           state,
           codeVerifier,
-          responseMode: useRedirect
-            ? VKID.ConfigResponseMode.Redirect
-            : VKID.ConfigResponseMode.Callback,
+          responseMode: VKID.ConfigResponseMode.Redirect,
           source: VKID.ConfigSource.LOWCODE,
           scope: "",
         };
-        if (useRedirect && VKID.ConfigAuthMode && VKID.ConfigAuthMode.Redirect) {
+        if (VKID.ConfigAuthMode && VKID.ConfigAuthMode.Redirect) {
           config.mode = VKID.ConfigAuthMode.Redirect;
         }
         VKID.Config.init(config);
-
-        const result = VKID.Auth.login({ provider: VKID.OAuthName.VK });
-        if (!useRedirect && result && typeof result.then === "function") {
-          const payload = await result;
-          if (payload && payload.code) {
-            persistVkRecoverMode(false);
-            window.onVkAuth &&
-              window.onVkAuth({
-                code: payload.code,
-                device_id: payload.device_id,
-                code_verifier: codeVerifier,
-                state,
-              });
-          } else {
-            persistVkRecoverMode(false);
-            resetRecover();
-            setErr($("authRecError"), "VK не вернул код");
-          }
-        }
-        // Redirect mode leaves the page; return handled by consumeRedirectCode + _lkRecoverVkMode
+        VKID.Auth.login({ provider: VKID.OAuthName.VK });
       } catch (e) {
         persistVkRecoverMode(false);
         resetRecover();
@@ -8047,40 +8019,73 @@ function updateRegionOnlineTotals(totals) {
       if (!payload || !payload.code || !payload.device_id) {
         return alert("VK: не получен код авторизации");
       }
-      if (window._lkRecoverVkMode) {
-        window._lkRecoverVkMode = false;
+      const isRecover = !!(window._lkRecoverVkMode || (function() {
         try {
-          sessionStorage.removeItem("lk_recover_vk_mode");
+          return sessionStorage.getItem("lk_recover_vk_mode") === "1";
+        } catch (_) {
+          return false;
+        }
+      })());
+      if (isRecover) {
+        let codeVerifier = payload.code_verifier;
+        let state = payload.state;
+        try {
+          codeVerifier = codeVerifier || sessionStorage.getItem("vk_code_verifier") || localStorage.getItem("vk_code_verifier");
+          state = state || sessionStorage.getItem("vk_state") || localStorage.getItem("vk_state");
         } catch (_) {}
-        const codeVerifier = sessionStorage.getItem("vk_code_verifier") || payload.code_verifier;
-        const state = sessionStorage.getItem("vk_state") || payload.state;
+        // Keep recover flag until API responds (redirect return needs it)
         fetch("https://api.agar.su/api/auth/recover/vk", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             code: payload.code,
             device_id: payload.device_id,
-            code_verifier: payload.code_verifier || codeVerifier,
-            state: payload.state || state
+            code_verifier: codeVerifier,
+            state: state
           })
         })
           .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
           .then(({ ok, d }) => {
+            window._lkRecoverVkMode = false;
+            try {
+              sessionStorage.removeItem("lk_recover_vk_mode");
+            } catch (_) {}
             if (!ok || d.error || !d.recoverToken) {
               alert(d.error || "В ЛК нет связанного аккаунта");
+              if (window.AgarLkAuth && typeof window.AgarLkAuth.showView === "function") {
+                window.AgarLkAuth.showView("recover");
+              }
               return;
             }
             window.__lkRecoverToken = d.recoverToken;
-            if (window.AgarLkAuth && typeof window.AgarLkAuth.showView === "function") {
-              // show recover + password step via custom event
-              document.dispatchEvent(new CustomEvent("lk-recover-ready", { detail: { recoverToken: d.recoverToken, uid: d.uid } }));
+            try {
+              if (typeof window.showContent === "function") window.showContent("store");
+              else if (typeof showContent === "function") showContent("store");
+            } catch (_) {}
+            if (window.AgarLkAuth) {
+              if (typeof window.AgarLkAuth.applyRecoverToken === "function") {
+                window.AgarLkAuth.applyRecoverToken(d.recoverToken);
+              } else {
+                document.dispatchEvent(new CustomEvent("lk-recover-ready", {
+                  detail: { recoverToken: d.recoverToken, uid: d.uid }
+                }));
+              }
             }
           })
-          .catch(() => alert("Ошибка сети VK"));
+          .catch(() => {
+            window._lkRecoverVkMode = false;
+            try {
+              sessionStorage.removeItem("lk_recover_vk_mode");
+            } catch (_) {}
+            alert("Ошибка сети VK");
+          });
         return;
       }
       handleLogin(payload, "vk");
     };
+    if (typeof window.flushPendingVkAuth === "function") {
+      window.flushPendingVkAuth();
+    }
     const handleRestoreResponse = async res => {
       let data;
       try {
@@ -8205,6 +8210,9 @@ function updateRegionOnlineTotals(totals) {
       window.AgarLkAuth.init({
         onLoggedIn: token => wHandle.onAccountLoggedIn(token)
       });
+    }
+    if (typeof window.flushPendingVkAuth === "function") {
+      window.flushPendingVkAuth();
     }
     wHandle.logoutAccount = async () => {
       if (getAccountToken()) {
@@ -12060,21 +12068,35 @@ onReady(() => {
     function sendCodeToServer(code, deviceId) {
       const {codeVerifier, state} = readPkce();
       if (!codeVerifier || !state) {
-        alert("Вход: сессия истекла, обновите страницу");
+        alert("Вход: сессия истекла, обновите страницу и войдите через VK снова");
         return;
       }
-      if (typeof window.onVkAuth !== "function") {
-        alert("Вход: страница ещё не готова, обновите и попробуйте снова");
-        return;
-      }
-      clearPkce();
-      window.onVkAuth({
+      const payload = {
         code,
         device_id: deviceId,
         code_verifier: codeVerifier,
         state
-      });
+      };
+      clearPkce();
+      deliverVkAuthPayload(payload);
     }
+    function deliverVkAuthPayload(payload) {
+      if (typeof window.onVkAuth === "function") {
+        window.__pendingVkAuthPayload = null;
+        window.onVkAuth(payload);
+        return;
+      }
+      // Boot race: redirect returns before onVkAuth is assigned
+      window.__pendingVkAuthPayload = payload;
+    }
+    function flushPendingVkAuth() {
+      const pending = window.__pendingVkAuthPayload;
+      if (!pending) return;
+      if (typeof window.onVkAuth !== "function") return;
+      window.__pendingVkAuthPayload = null;
+      window.onVkAuth(pending);
+    }
+    window.flushPendingVkAuth = flushPendingVkAuth;
     function handleAuthPayload(payload) {
       if (!payload || !payload.code) return;
       sendCodeToServer(payload.code, payload.device_id);
@@ -12085,13 +12107,14 @@ onReady(() => {
       const codeVerifier = randomString(64);
       const state = randomString(32);
       persistPkce(codeVerifier, state);
-      const sameWindow = forceRedirect || prefersSameWindowAuth();
+      // Always Redirect: Callback popup hangs after "Allow" (loads agar.su in popup).
+      const sameWindow = true;
       const config = {
         app: 54069355,
         redirectUrl: "https://agar.su",
         state,
         codeVerifier,
-        responseMode: sameWindow ? VKID.ConfigResponseMode.Redirect : VKID.ConfigResponseMode.Callback,
+        responseMode: VKID.ConfigResponseMode.Redirect,
         source: VKID.ConfigSource.LOWCODE,
         scope: ""
       };
@@ -12130,7 +12153,6 @@ onReady(() => {
       setButtonsBusy(true);
       setAuthHint("Загрузка входа…", true);
       try {
-        const sdkWasReady = !!window.VKIDSDK;
         const ok = await ensureVkSdk();
         if (!ok || !window.VKIDSDK) {
           setAuthHint("Не удалось загрузить SDK", true);
@@ -12138,25 +12160,18 @@ onReady(() => {
           return;
         }
         const VKID = window.VKIDSDK;
-        // After async SDK load, PC browsers block popup → same-tab Redirect
-        ensureVkConfig(VKID, !sdkWasReady);
+        ensureVkConfig(VKID, true);
         const oauthKey = OAUTH_MAP[providerKey] || "VK";
         const provider = VKID.OAuthName && VKID.OAuthName[oauthKey];
-        setAuthHint(sdkWasReady ? "Открываем окно входа…" : "Переход в VK…", true);
+        setAuthHint("Переход в VK…", true);
         if (typeof VKID.Auth.login === "function") {
           const opts = provider ? {
             provider
           } : undefined;
-          const result = VKID.Auth.login(opts);
-          if (result && typeof result.then === "function") {
-            result.then(handleAuthPayload).catch(vkidOnError).finally(() => {
-              setButtonsBusy(false);
-              setAuthHint("", false);
-            });
-            return;
-          }
+          VKID.Auth.login(opts);
+          // Redirect leaves the page; no promise to await
+          return;
         }
-        // fallback: виджет 3-в-1 от SDK
         showFallbackWidget(VKID);
         setAuthHint("Выберите способ входа ниже", true);
         setButtonsBusy(false);
@@ -12183,10 +12198,13 @@ onReady(() => {
       } catch (e) {}
       const urlParams = new URLSearchParams(window.location.search);
       const codeFromUrl = urlParams.get("code");
-      const deviceFromUrl = urlParams.get("device_id");
+      const deviceFromUrl = urlParams.get("device_id") || urlParams.get("deviceId") || "";
       if (codeFromUrl && deviceFromUrl) {
+        // Strip OAuth params immediately so reload won't re-process
+        try {
+          window.history.replaceState({}, "", window.location.pathname + window.location.hash);
+        } catch (e) {}
         sendCodeToServer(codeFromUrl, deviceFromUrl);
-        window.history.replaceState({}, "", window.location.pathname + window.location.hash);
       }
     }
     bindSocButtons();
@@ -12267,13 +12285,22 @@ onReady(() => {
   async function boot() {
     window.renderDeathBanner = window.renderDeathBanner || function() {};
     hydrateAccountToken();
-    // VK SDK грузим только по клику на кнопку входа — не на каждый визит
-    initVkAuthModule();
+    // Game first so onVkAuth exists before OAuth redirect code is consumed
     initGame(window);
+    initVkAuthModule();
+    if (typeof window.flushPendingVkAuth === "function") {
+      window.flushPendingVkAuth();
+    }
     initLobbyUi();
     bus.emit(Events.SHOW_CONTENT, {
       id: "home"
     });
+    // Returning from VK recover → open store auth UI
+    try {
+      if (sessionStorage.getItem("lk_recover_vk_mode") === "1" || window.__pendingVkAuthPayload) {
+        if (typeof window.showContent === "function") window.showContent("store");
+      }
+    } catch (e) {}
     scheduleDeferredExternals();
     log.info("Agar.su low-client ready");
   }
