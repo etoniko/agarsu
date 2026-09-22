@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Google — Agar.su</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0d1322;
+      color: #eef4ff;
+      font-family: system-ui, sans-serif;
+    }
+    .box { text-align: center; padding: 24px; max-width: 360px; }
+    .hint { color: #9fb3d9; font-size: 13px; margin-top: 12px; line-height: 1.4; }
+    #googleMount {
+      min-height: 44px;
+      display: flex;
+      justify-content: center;
+      margin-top: 8px;
+    }
+    .err { color: #ffb4ac; font-size: 13px; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h3>Войти через Google</h3>
+    <p class="hint">Выберите аккаунт Google, привязанный к ЛК.</p>
+    <div id="googleMount"></div>
+    <p class="hint" id="googleStatus">Загрузка…</p>
+    <p class="err" id="googleError" hidden></p>
+  </div>
+  <script>
+    (async function () {
+      const status = document.getElementById("googleStatus");
+      const errEl = document.getElementById("googleError");
+      const mount = document.getElementById("googleMount");
+      const FALLBACK_CLIENT =
+        "157257230972-4vh698jtf46c76sc7607oe1k9tr782je.apps.googleusercontent.com";
+
+      function showError(text) {
+        status.textContent = "";
+        errEl.hidden = false;
+        errEl.textContent = text || "Ошибка Google";
+      }
+
+      function done(credential) {
+        if (!credential) {
+          showError("Google не вернул токен");
+          return;
+        }
+        try {
+          if (window.opener) {
+            window.opener.postMessage(
+              { type: "google-auth", credential },
+              "https://agar.su"
+            );
+            window.opener.postMessage(
+              { type: "google-auth", credential },
+              window.location.origin
+            );
+          }
+        } catch (e) {}
+        status.textContent = "Готово, можно закрыть окно";
+        errEl.hidden = true;
+        setTimeout(function () {
+          try {
+            window.close();
+          } catch (e) {}
+        }, 400);
+      }
+
+      function loadScript(src) {
+        return new Promise(function (resolve, reject) {
+          if (document.querySelector('script[src="' + src + '"]')) {
+            resolve();
+            return;
+          }
+          var s = document.createElement("script");
+          s.src = src;
+          s.async = true;
+          s.onload = function () {
+            resolve();
+          };
+          s.onerror = function () {
+            reject(new Error("script"));
+          };
+          document.head.appendChild(s);
+        });
+      }
+
+      try {
+        var clientId = FALLBACK_CLIENT;
+        try {
+          var res = await fetch("https://api.agar.su/api/auth/providers");
+          var data = await res.json();
+          if (data && data.googleClientId) clientId = data.googleClientId;
+        } catch (e) {}
+
+        await loadScript("https://accounts.google.com/gsi/client");
+        if (!window.google || !window.google.accounts || !window.google.accounts.id) {
+          showError("Не удалось загрузить Google SDK");
+          return;
+        }
+
+        window.google.accounts.id.initialize({
+          client_id: clientId,
+          callback: function (response) {
+            done(response && response.credential);
+          },
+          auto_select: false,
+          cancel_on_tap_outside: true,
+          use_fedcm_for_prompt: false,
+        });
+
+        mount.innerHTML = "";
+        window.google.accounts.id.renderButton(mount, {
+          type: "standard",
+          size: "large",
+          theme: "outline",
+          text: "continue_with",
+          shape: "rectangular",
+          width: 280,
+          logo_alignment: "left",
+        });
+        status.textContent = "Нажмите кнопку Google ниже";
+      } catch (e) {
+        showError("Ошибка загрузки Google");
+      }
+    })();
+  </script>
+</body>
+</html>
