@@ -16,7 +16,7 @@
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="canonical" href="https://agar.su">
     <link rel="stylesheet" href="/fonts/fonts.css?v=1">
-    <link rel="stylesheet" href="style.css?v=39">
+    <link rel="stylesheet" href="style.css?v=41">
     <script>
       window.renderDeathBanner = window.renderDeathBanner || function () {};
       window.trackPlayGoal = window.trackPlayGoal || function () {};
@@ -289,8 +289,7 @@
     <script src="protocols.js?v=11" defer></script>
     <script src="admin.js?v=10" defer></script>
     <script src="assets/scripts/friends.js?v=8" defer></script>
-    <script src="assets/scripts/lk-auth.js?v=8" defer></script>
-    <script src="main.js?v=96" defer></script>
+    <script src="main.js?v=97" defer></script>
 </head>
 <body>
   <div id="overlays" class="overlays">
@@ -637,8 +636,8 @@
               <div class="next-skin" id="nextSkin" onclick="showNext()"></div>
             </div>
      <form class="from-send" autocomplete="on" onsubmit="return false">
-     <input type="text" data-en-placeholder="Nick" data-tr-placeholder="Nick" data-zh-placeholder="昵称" data-ar-placeholder="اللقب" data-es-placeholder="Nick" data-pl-placeholder="Nick" data-de-placeholder="Nick" data-uk-placeholder="Нік" placeholder="Ник" name="name" maxlength="16" class="noPress" id="nick" required="" autocomplete="username">
-     <input type="password" data-en-placeholder="Pass" data-tr-placeholder="Şifre" data-zh-placeholder="密码" data-ar-placeholder="كلمة المرور" data-es-placeholder="Pass" data-pl-placeholder="Hasło" data-de-placeholder="Pass" data-uk-placeholder="Пароль" placeholder="Пасс" name="pass" maxlength="6" class="noPress inl-4" id="pass" required="" autocomplete="current-password">
+     <input type="text" data-en-placeholder="Nick" data-tr-placeholder="Nick" data-zh-placeholder="昵称" data-ar-placeholder="اللقب" data-es-placeholder="Nick" data-pl-placeholder="Nick" data-de-placeholder="Nick" data-uk-placeholder="Нік" placeholder="Ник" name="name" maxlength="16" class="noPress" id="nick" required="" autocomplete="nickname">
+     <input type="password" data-en-placeholder="Pass" data-tr-placeholder="Şifre" data-zh-placeholder="密码" data-ar-placeholder="كلمة المرور" data-es-placeholder="Pass" data-pl-placeholder="Hasło" data-de-placeholder="Pass" data-uk-placeholder="Пароль" placeholder="Пасс" name="pass" maxlength="6" class="noPress inl-4" id="pass" required="" autocomplete="off">
 	<div class="selectedIcon">
 		<div id="selectedColor"></div>
 	</div>
@@ -866,7 +865,7 @@
                   </label>
                   <label class="lk-auth-field">
                     <span>Пароль</span>
-                    <input class="lk-auth-input" id="authLoginPass" name="pass" type="password" maxlength="64" placeholder="pass" required autocomplete="current-password">
+                    <input class="lk-auth-input" id="authLoginPass" name="pass" type="password" maxlength="64" placeholder="pass" required autocomplete="off">
                   </label>
                   <p class="lk-auth-error" id="authLoginError" hidden></p>
                   <button type="submit" class="lk-auth-btn" id="authLoginBtn">Войти</button>
@@ -910,7 +909,7 @@
                 <div id="authRegStepPass" class="lk-auth-form" hidden>
                   <label class="lk-auth-field">
                     <span>Пароль</span>
-                    <input class="lk-auth-input" id="authRegPass" type="password" maxlength="64" placeholder="a-z A-Z 0-9 ." autocomplete="new-password">
+                    <input class="lk-auth-input lk-auth-input--secret" id="authRegPass" type="text" maxlength="64" placeholder="a-z A-Z 0-9 ." autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other">
                   </label>
                   <p class="lk-auth-hint">Латиница, цифры и точка · без пробелов</p>
                   <p class="lk-auth-error" id="authRegErrorPass" hidden></p>
@@ -918,6 +917,27 @@
                 </div>
                 <div class="lk-auth-footer">
                   <button type="button" class="lk-auth-textbtn" data-auth-view="login">Назад</button>
+                </div>
+              </div>
+
+
+              <!-- DONE BANNER: show ID + pass, OK (no OS password manager) -->
+              <div class="store-auth-card" id="authCardDone" hidden>
+                <div class="lk-auth-banner" role="status">
+                  <h3 class="store-auth-title" id="authDoneTitle">Готово</h3>
+                  <p class="store-auth-text" id="authDoneHint">Запомните данные для входа</p>
+                  <div class="lk-auth-creds">
+                    <div class="lk-auth-cred">
+                      <span>ID</span>
+                      <b id="authDoneId">—</b>
+                    </div>
+                    <div class="lk-auth-cred">
+                      <span>Пароль</span>
+                      <b id="authDonePass">—</b>
+                    </div>
+                  </div>
+                  <p class="lk-auth-hint" id="authDoneMailHint" hidden>Данные также отправлены на почту.</p>
+                  <button type="button" class="lk-auth-btn" id="authDoneOkBtn">ОК</button>
                 </div>
               </div>
 
@@ -979,7 +999,7 @@
                 <div id="authRecStepPass" class="lk-auth-form" hidden>
                   <label class="lk-auth-field">
                     <span>Новый пароль</span>
-                    <input class="lk-auth-input" id="authRecPass" type="password" maxlength="64" placeholder="a-z A-Z 0-9 ." autocomplete="new-password">
+                    <input class="lk-auth-input lk-auth-input--secret" id="authRecPass" type="text" maxlength="64" placeholder="a-z A-Z 0-9 ." autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other">
                   </label>
                   <p class="lk-auth-hint">Латиница, цифры и точка · без пробелов</p>
                   <button type="button" class="lk-auth-btn" id="authRecSetPassBtn">Сохранить пароль</button>
