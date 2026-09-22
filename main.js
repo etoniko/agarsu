@@ -559,38 +559,45 @@
   }
 
   async function initGoogleRecover() {
-    const cfg = await loadProviders();
-    const clientId = cfg.googleClientId;
-    const wrap = $("authRecGoogleWrap");
-    if (!clientId || !wrap) return;
-    try {
-      await loadScript("https://accounts.google.com/gsi/client");
-      window.google.accounts.id.initialize({
-        client_id: clientId,
-        callback: (response) => {
-          if (response?.credential) {
-            applySocialRecover("/auth/recover/google", {
-              credential: response.credential,
-            });
-          }
-        },
-      });
-      if (!googleInited) {
-        wrap.innerHTML = "";
-        window.google.accounts.id.renderButton(wrap, {
-          type: "standard",
-          size: "medium",
-          theme: "outline",
-          text: "continue_with",
-          shape: "rectangular",
-          width: 280,
-        });
-        googleInited = true;
-      }
-    } catch (_) {
-      setErr($("authRecError"), "Не удалось загрузить Google");
+    // Prefer dedicated /google/ popup (same pattern as Telegram) —
+    // GIS button inside the store panel often fails (FedCM / COOP / blockers).
+    startGoogleRecoverPopup();
+  }
+
+  function startGoogleRecoverPopup() {
+    clearRecErr();
+    const hint = $("authRecHint");
+    if (hint) hint.textContent = "Откройте окно Google…";
+    hideAll([
+      "authRecPick",
+      "authRecStepEmail",
+      "authRecStepGoogle",
+      "authRecStepCode",
+      "authRecStepPass",
+    ]);
+    window._googleRecoverMode = true;
+    const popup = window.open("/google/", "googleAuth", "width=480,height=640");
+    if (!popup) {
+      window._googleRecoverMode = false;
       resetRecover();
+      setErr($("authRecError"), "Разрешите всплывающие окна для Google");
+      return;
     }
+    // If user closes popup without auth — restore pick after a while when focus returns
+    const poll = setInterval(() => {
+      if (!window._googleRecoverMode) {
+        clearInterval(poll);
+        return;
+      }
+      try {
+        if (popup.closed) {
+          clearInterval(poll);
+          window._googleRecoverMode = false;
+          resetRecover();
+          setErr($("authRecError"), "Окно Google закрыто");
+        }
+      } catch (_) {}
+    }, 800);
   }
 
   /**
@@ -646,8 +653,7 @@
       return;
     }
     if (method === "google") {
-      showRecOnly("authRecStepGoogle", "Войдите через Google");
-      initGoogleRecover();
+      startGoogleRecoverPopup();
       return;
     }
     if (method === "vk") {
@@ -705,10 +711,33 @@
     });
 
     window.addEventListener("message", (event) => {
-      if (event.data?.type !== "telegram-auth") return;
-      if (!window._telegramRecoverMode) return;
-      window._telegramRecoverMode = false;
-      applySocialRecover("/auth/recover/telegram", event.data.user);
+      const data = event && event.data;
+      if (!data || !data.type) return;
+      // Accept only our auth popups (agar.su / same origin / null for some browsers)
+      const okOrigin =
+        !event.origin ||
+        event.origin === "https://agar.su" ||
+        event.origin === window.location.origin;
+      if (!okOrigin) return;
+
+      if (data.type === "telegram-auth") {
+        if (!window._telegramRecoverMode) return;
+        window._telegramRecoverMode = false;
+        applySocialRecover("/auth/recover/telegram", data.user);
+        return;
+      }
+      if (data.type === "google-auth") {
+        if (!window._googleRecoverMode) return;
+        window._googleRecoverMode = false;
+        if (!data.credential) {
+          resetRecover();
+          setErr($("authRecError"), "Google не вернул токен");
+          return;
+        }
+        applySocialRecover("/auth/recover/google", {
+          credential: data.credential,
+        });
+      }
     });
 
     document.addEventListener("lk-recover-ready", (ev) => {
