@@ -7078,21 +7078,16 @@ async function updateOnlineCount() {
     const id = row.id;
     if (!id) continue;
     const online = rowOnline(row);
-    const observers = Number(row.no_playing) || 0;
     const label = rowOnlineLabel(row);
     totalOnline += online;
     
     const item = document.querySelector(`.server-item[data-server-key="${id}"]`) || document.getElementById(id);
     if (item) {
       const spans = item.querySelectorAll(".online-count");
-      if (spans.length === 1) {
-        spans[0].textContent = label;
-        paintOnlineSpan(spans[0], online);
-      } else if (spans.length >= 2) {
-        spans[0].textContent = observers;
-        spans[1].textContent = label;
-        paintOnlineSpan(spans[0], observers);
-        paintOnlineSpan(spans[1], online);
+      const span = spans[spans.length - 1];
+      if (span) {
+        span.textContent = label;
+        paintOnlineSpan(span, online);
       }
     }
   }
