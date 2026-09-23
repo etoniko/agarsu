@@ -4249,7 +4249,7 @@ img.skin-strip-anim{max-width:none !important;object-fit:fill !important;flex-sh
 }
 
 .server-stats .online-count {
-  min-width: 12px;
+  min-width: 28px;
   text-align: center;
   font-weight: 700;
   font-size: 10px;
