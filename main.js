@@ -7047,20 +7047,8 @@
       console.error("Ошибка обработки данных о топ-1 игроке:", error);
     }
   }
-function rowOnline(row) {
-  if (row.online != null) return Number(row.online) || 0;
-  return (Number(row.playing) || 0) + (Number(row.no_playing) || 0);
-}
-function rowOnlineLabel(row) {
-  const online = rowOnline(row);
-  const max = Number(row.max) || 0;
-  return max > 0 ? `${online}/${max}` : String(online);
-}
-function paintOnlineSpan(span, online) {
-  span.classList.remove("has-online", "no-online");
-  span.classList.add(online > 0 ? "has-online" : "no-online");
-}
 async function updateOnlineCount() {
+  var _a, _b, _c;
   let rows = [];
   try {
     const res = await fetch(ONLINE_HUB_URL, {
@@ -7077,17 +7065,25 @@ async function updateOnlineCount() {
   for (const row of rows) {
     const id = row.id;
     if (!id) continue;
-    const online = rowOnline(row);
-    const label = rowOnlineLabel(row);
-    totalOnline += online;
+    const playing = (_a = row.playing) != null ? _a : 0;
+    const observers = (_b = row.no_playing) != null ? _b : 0;
+    const max = (_c = row.max) != null ? _c : 0;
+    totalOnline += playing + observers;
     
     const item = document.querySelector(`.server-item[data-server-key="${id}"]`) || document.getElementById(id);
     if (item) {
       const spans = item.querySelectorAll(".online-count");
-      const span = spans[spans.length - 1];
-      if (span) {
-        span.textContent = label;
-        paintOnlineSpan(span, online);
+      if (spans.length >= 2) {
+        spans[0].textContent = observers;
+        spans[1].textContent = max > 0 ? `${playing}/${max}` : String(playing);
+        
+        spans.forEach(span => {
+          const num = parseInt(span.textContent, 10);
+          if (!isNaN(num)) {
+            span.classList.remove('has-online', 'no-online');
+            span.classList.add(num > 0 ? 'has-online' : 'no-online');
+          }
+        });
       }
     }
   }
@@ -7100,7 +7096,7 @@ function getRegionOnlineTotals(rows) {
   const totals = Object.fromEntries(Object.keys(REGION_CONFIGS).map(key => [key, 0]));
   for (const [key, config] of Object.entries(REGION_CONFIGS)) {
     const ids = new Set(Object.keys(config.servers));
-    totals[key] = rows.reduce((sum, row) => ids.has(row.id) ? sum + rowOnline(row) : sum, 0);
+    totals[key] = rows.reduce((sum, row) => ids.has(row.id) ? sum + (Number(row.playing) || 0) + (Number(row.no_playing) || 0) : sum, 0);
   }
   return totals;
 }
