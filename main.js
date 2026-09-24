@@ -1,3 +1,906 @@
+/* Moved from index.html */
+window.renderDeathBanner = window.renderDeathBanner || function () {};
+      window.trackPlayGoal = window.trackPlayGoal || function () {};
+
+(function () {
+  var LANGS = ['ru','en','uk','tr','zh','ar','es','pl','de'];
+  var STORE_KEY = 'ui_lang';
+  function detectLang() {
+    try {
+      var saved = localStorage.getItem(STORE_KEY);
+      if (saved && LANGS.indexOf(saved) !== -1) return saved;
+    } catch (e) {}
+    var nav = String((navigator.languages && navigator.languages[0]) || navigator.language || 'ru').toLowerCase();
+    if (nav.indexOf('ru') === 0) return 'ru';
+    if (nav.indexOf('uk') === 0) return 'uk';
+    if (nav.indexOf('en') === 0) return 'en';
+    if (nav.indexOf('tr') === 0) return 'tr';
+    if (nav.indexOf('zh') === 0) return 'zh';
+    if (nav.indexOf('ar') === 0) return 'ar';
+    if (nav.indexOf('es') === 0) return 'es';
+    if (nav.indexOf('pl') === 0) return 'pl';
+    if (nav.indexOf('de') === 0) return 'de';
+    return 'en';
+  }
+  function getText(el) {
+    var nodes = [];
+    for (var i = 0; i < el.childNodes.length; i++) {
+      var n = el.childNodes[i];
+      if (n.nodeType === 3 && n.textContent.trim()) nodes.push(n);
+    }
+    if (nodes.length) {
+      var t = '';
+      for (var j = 0; j < nodes.length; j++) t += nodes[j].textContent;
+      return t;
+    }
+    return el.textContent;
+  }
+  function setText(el, text) {
+    var nodes = [];
+    for (var i = 0; i < el.childNodes.length; i++) {
+      var n = el.childNodes[i];
+      if (n.nodeType === 3 && String(n.textContent).trim()) nodes.push(n);
+    }
+    if (nodes.length && el.children.length) {
+      nodes[0].textContent = text;
+      for (var k = 1; k < nodes.length; k++) nodes[k].textContent = '';
+      return;
+    }
+    if (nodes.length === 1 && !el.children.length) {
+      nodes[0].textContent = text;
+      return;
+    }
+    el.textContent = text;
+  }
+  function applyAttrLang(el, lang, base, prop) {
+    var key = lang === 'ru' ? 'data-ru' + (base ? '-' + base : '') : 'data-' + lang + (base ? '-' + base : '');
+    var val = el.getAttribute(key);
+    if (val == null && lang === 'ru') return;
+    if (val == null) return;
+    if (prop === 'text') setText(el, val);
+    else if (prop === 'placeholder') el.setAttribute('placeholder', val);
+    else if (prop === 'title') el.setAttribute('title', val);
+    else if (prop === 'aria') el.setAttribute('aria-label', val);
+  }
+  function ensureRu(el, base, getter) {
+    var key = 'data-ru' + (base ? '-' + base : '');
+    if (!el.hasAttribute(key)) el.setAttribute(key, getter(el));
+  }
+  function applyUiLang(lang) {
+    if (LANGS.indexOf(lang) === -1) lang = 'en';
+    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : lang;
+    document.documentElement.setAttribute('dir', 'ltr');
+    if (document.body) document.body.setAttribute('dir', 'ltr');
+    var nodes = document.querySelectorAll('[data-en]');
+    for (var i = 0; i < nodes.length; i++) {
+      var el = nodes[i];
+      if (el.id === 'accountMenuLabel') {
+        // keep dynamic login label unless it still looks like the default
+        var cur = getText(el).trim();
+        var ruLogin = 'Войти';
+        if (!el.hasAttribute('data-ru')) el.setAttribute('data-ru', ruLogin);
+        if (cur && cur !== ruLogin && cur !== el.getAttribute('data-en') &&
+            cur !== el.getAttribute('data-tr') && cur !== el.getAttribute('data-zh') &&
+            cur !== el.getAttribute('data-ar') && cur !== el.getAttribute('data-es') &&
+            cur !== el.getAttribute('data-pl') && cur !== el.getAttribute('data-de') &&
+            cur !== el.getAttribute('data-ru')) {
+          continue;
+        }
+      }
+      ensureRu(el, '', getText);
+      var val = lang === 'ru' ? el.getAttribute('data-ru') : el.getAttribute('data-' + lang);
+      if (val != null) setText(el, val);
+    }
+    var ph = document.querySelectorAll('[data-en-placeholder]');
+    for (var p = 0; p < ph.length; p++) {
+      ensureRu(ph[p], 'placeholder', function (e) { return e.getAttribute('placeholder') || ''; });
+      applyAttrLang(ph[p], lang, 'placeholder', 'placeholder');
+    }
+    var titles = document.querySelectorAll('[data-en-title]');
+    for (var t = 0; t < titles.length; t++) {
+      ensureRu(titles[t], 'title', function (e) { return e.getAttribute('title') || ''; });
+      applyAttrLang(titles[t], lang, 'title', 'title');
+    }
+    var arias = document.querySelectorAll('[data-en-aria-label]');
+    for (var a = 0; a < arias.length; a++) {
+      ensureRu(arias[a], 'aria-label', function (e) { return e.getAttribute('aria-label') || ''; });
+      applyAttrLang(arias[a], lang, 'aria-label', 'aria');
+    }
+    var btns = document.querySelectorAll('.lang-flag-btn');
+    for (var b = 0; b < btns.length; b++) {
+      btns[b].classList.toggle('active', btns[b].getAttribute('data-set-lang') === lang);
+    }
+    try { localStorage.setItem(STORE_KEY, lang); } catch (e) {}
+    window.__uiLang = lang;
+    try { document.dispatchEvent(new CustomEvent('ui-lang-changed', { detail: { lang: lang } })); } catch (e2) {}
+  }
+  function bindFlags() {
+    var root = document.getElementById('lang-flags');
+    if (!root || root.dataset.bound === '1') return;
+    root.dataset.bound = '1';
+    root.addEventListener('click', function (ev) {
+      var btn = ev.target.closest('[data-set-lang]');
+      if (!btn) return;
+      applyUiLang(btn.getAttribute('data-set-lang'));
+    });
+  }
+  window.setUiLang = applyUiLang;
+  window.getUiLang = function () { return window.__uiLang || detectLang(); };
+  function bindRatingHeader() {
+    var row = document.querySelector('#rating > .header-row');
+    if (!row || row.dataset.bound === '1') return;
+    row.dataset.bound = '1';
+    row.addEventListener('click', function (ev) {
+      var btn = ev.target.closest('.rating-col');
+      if (!btn) return;
+      var open = btn.classList.contains('is-open');
+      var opened = row.querySelectorAll('.rating-col.is-open');
+      for (var i = 0; i < opened.length; i++) opened[i].classList.remove('is-open');
+      if (!open) btn.classList.add('is-open');
+    });
+    document.addEventListener('click', function (ev) {
+      if (row.contains(ev.target)) return;
+      var opened = row.querySelectorAll('.rating-col.is-open');
+      for (var i = 0; i < opened.length; i++) opened[i].classList.remove('is-open');
+    });
+  }
+  function boot() {
+    bindFlags();
+    applyUiLang(detectLang());
+    bindRatingHeader();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+})();
+
+// Встройка с каталога wgl: прячем юр.полоску
+      (function () {
+        try {
+          var q = new URLSearchParams(location.search);
+          var emb = q.get("embed") === "1" || q.get("wgl") === "1";
+          var ref = String(document.referrer || "");
+          if (emb || /wgl\.su|etoniko\.github\.io/i.test(ref) || window !== window.top) {
+            document.documentElement.classList.add("wgl-embed");
+          }
+        } catch (e) {}
+      })();
+
+/* Friends, moved from assets/scripts/friends.js */
+/**
+ * Client Friends feature (agar.su). Rollback: remove this script + HTML/CSS hooks.
+ * Depends on API /api/friends* (file-backed). Does not touch game servers.
+ */
+(function (global) {
+  "use strict";
+
+  const API = "https://api.agar.su/api/";
+  const MIN_XP = 1000;
+  const PLAY_POLL_MS = 4000;
+  const PRESENCE_MS = 2000;
+  const DRAW_MS = 200;
+  // ~1.25 sectors on a 5×5 minimap (E1↔C1 ≈ 2 sectors)
+  const ARROW_MAP_DIST = 0.25;
+  const ARROW_EDGE = 0.47;
+  const LS = {
+    arrows: "friends_show_arrows",
+    minimap: "friends_show_minimap",
+    shareCoords: "friends_share_coords",
+    sharePresence: "friends_share_presence",
+  };
+
+  let S = null;
+  let accountApiGet = null;
+  let resolveServerId = null;
+  let playTimer = null;
+  let presenceTimer = null;
+  let drawTimer = null;
+  let playData = { friends: [], privacy: { shareCoords: false, sharePresence: true } };
+  let friendNickSet = new Set();
+  let wiredUi = false;
+  let friendsTab = "friends";
+  let lastPlayingSent = null;
+
+  function setFriendsTab(which) {
+    friendsTab = which === "incoming" || which === "outgoing" ? which : "friends";
+    document.querySelectorAll(".friends-subtab").forEach((btn) => {
+      const on = btn.getAttribute("data-friends-tab") === friendsTab;
+      btn.classList.toggle("active", on);
+      btn.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    document.querySelectorAll(".friends-pane").forEach((pane) => {
+      const on = pane.getAttribute("data-friends-pane") === friendsTab;
+      pane.classList.toggle("active", on);
+      if (on) pane.removeAttribute("hidden");
+      else pane.setAttribute("hidden", "");
+    });
+  }
+
+  function updateFriendsCounts(friendsN, outgoingN, incomingN) {
+    const set = (id, n) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = String(n);
+    };
+    set("friendsCountFriends", friendsN);
+    set("friendsCountOutgoing", outgoingN);
+    set("friendsCountIncoming", incomingN);
+    const badge = document.getElementById("badgeFriends");
+    if (badge) {
+      badge.textContent = String(friendsN);
+      badge.classList.toggle("badge--alert", incomingN > 0);
+      if (incomingN > 0) badge.textContent = String(incomingN);
+    }
+    setIncomingAlerts(incomingN);
+  }
+
+  function setIncomingAlerts(incomingN) {
+    const n = Math.max(0, Number(incomingN) || 0);
+    const show = n > 0;
+    const accountDot = document.getElementById("accountFriendsAlert");
+    const tabDot = document.getElementById("tabFriendsAlert");
+    const tab = document.getElementById("tabFriends");
+    const accountItem = document.getElementById("accountMenuItem");
+    if (accountDot) {
+      accountDot.hidden = !show;
+      accountDot.setAttribute("aria-hidden", show ? "false" : "true");
+      if (show) accountDot.title = "Входящие заявки в друзья: " + n;
+    }
+    if (tabDot) {
+      tabDot.hidden = !show;
+      tabDot.setAttribute("aria-hidden", show ? "false" : "true");
+      if (show) tabDot.title = "Входящие: " + n;
+    }
+    if (tab) tab.classList.toggle("has-friends-alert", show);
+    if (accountItem) accountItem.classList.toggle("has-friends-alert", show);
+  }
+
+  function lsBool(key, def) {
+    try {
+      const v = localStorage.getItem(key);
+      if (v === null || v === undefined) return def;
+      return v === "1" || v === "true";
+    } catch (_) {
+      return def;
+    }
+  }
+  function lsSet(key, val) {
+    try {
+      localStorage.setItem(key, val ? "1" : "0");
+    } catch (_) {}
+  }
+
+  function optArrows() {
+    return lsBool(LS.arrows, true);
+  }
+  function optMinimap() {
+    return lsBool(LS.minimap, true);
+  }
+  function optShareCoords() {
+    return lsBool(LS.shareCoords, true);
+  }
+  function optSharePresence() {
+    return lsBool(LS.sharePresence, true);
+  }
+
+  global.setFriendArrows = function (v) {
+    lsSet(LS.arrows, !!v);
+    drawArrows();
+  };
+  global.setFriendMinimap = function (v) {
+    lsSet(LS.minimap, !!v);
+    drawMinimapDots();
+  };
+  global.setFriendShareCoords = function (v) {
+    lsSet(LS.shareCoords, !!v);
+    syncPrivacyToServer();
+    sendPresence(true);
+  };
+  global.setFriendSharePresence = function (v) {
+    lsSet(LS.sharePresence, !!v);
+    syncPrivacyToServer();
+  };
+
+  function getToken() {
+    try {
+      return localStorage.getItem("accountToken") || "";
+    } catch (_) {
+      return "";
+    }
+  }
+  async function api(tag, method, body) {
+    if (typeof accountApiGet === "function") {
+      return accountApiGet(tag, method || "GET", body || null);
+    }
+    const headers = {};
+    const token = getToken();
+    if (token) headers.Authorization = "Game " + token;
+    if (body) headers["Content-Type"] = "application/json";
+    return fetch(API + tag, {
+      method: method || "GET",
+      headers,
+      body: body ? JSON.stringify(body) : null,
+      cache: "no-store",
+    });
+  }
+
+  async function syncPrivacyToServer() {
+    if (!getToken()) return;
+    try {
+      await api("friends/privacy", "POST", {
+        shareCoords: optShareCoords(),
+        sharePresence: optSharePresence(),
+      });
+    } catch (_) {}
+  }
+
+  function esc(s) {
+    return String(s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function rebuildNickSet() {
+    const set = new Set();
+    (playData.friends || []).forEach((f) => {
+      if (f.account_name) set.add(String(f.account_name).toLowerCase());
+      (f.nicks || []).forEach((n) => set.add(String(n).toLowerCase().split("#")[0]));
+    });
+    friendNickSet = set;
+  }
+
+  function isFriendName(name) {
+    if (!name) return false;
+    const n = String(name).toLowerCase().split("#")[0].trim();
+    return friendNickSet.has(n);
+  }
+
+  function decorateLbName(name) {
+    // In-game leaderboard stays plain (no friend marks).
+    return String(name || "");
+  }
+
+  function currentServerKey() {
+    if (!S) return "";
+    try {
+      if (typeof resolveServerId === "function") {
+        return resolveServerId(S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl || "") || "";
+      }
+    } catch (_) {}
+    return "";
+  }
+
+  function isPlaying() {
+    if (!S) return false;
+    // Dead / spectating: 0 own cells → no arrows for me, and presence playing=false
+    return !!(S.playerCells && S.playerCells.length > 0 && S.ws && S.ws.readyState === 1);
+  }
+
+  function mapNorm(x, y) {
+    if (!S) return null;
+    const tw = Number(S.rightPos) - Number(S.leftPos);
+    const th = Number(S.bottomPos) - Number(S.topPos);
+    if (!(tw > 0) || !(th > 0)) return null;
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+    return {
+      nx: (x - S.leftPos) / tw,
+      ny: (y - S.topPos) / th,
+    };
+  }
+
+  function canvasSize() {
+    const canvas = document.getElementById("canvas");
+    const w = (canvas && (canvas.clientWidth || canvas.width)) || window.innerWidth || 1;
+    const h = (canvas && (canvas.clientHeight || canvas.height)) || window.innerHeight || 1;
+    return { w, h, cx: w / 2, cy: h / 2 };
+  }
+
+  async function sendPresence(force) {
+    if (!getToken()) return;
+    if ((Number(S?.accountData?.xp) || 0) < MIN_XP && !force) return;
+    const playing = isPlaying();
+    if (!force && lastPlayingSent === playing && !playing) {
+      // already reported death; skip spam while dead
+      return;
+    }
+    const body = {
+      playing,
+      serverKey: playing ? currentServerKey() : "",
+      serverTitle: playing ? currentServerKey() : "",
+      shareCoords: optShareCoords(),
+    };
+    if (playing && optShareCoords() && S) {
+      body.x = S.nodeX;
+      body.y = S.nodeY;
+    }
+    try {
+      await api("friends/presence", "POST", body);
+      lastPlayingSent = playing;
+    } catch (_) {}
+  }
+
+  function tickPresence() {
+    const playing = isPlaying();
+    // Immediate push on death / respawn
+    if (lastPlayingSent !== null && lastPlayingSent !== playing) {
+      sendPresence(true);
+      return;
+    }
+    sendPresence(false);
+  }
+
+  async function refreshPlayData() {
+    if (!getToken()) return;
+    if ((Number(S?.accountData?.xp) || 0) < MIN_XP) return;
+    try {
+      const res = await api("friends/play");
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!data || !data.ok) return;
+      playData = data;
+      rebuildNickSet();
+      drawArrows();
+      drawMinimapDots();
+      if (typeof data.incomingCount === "number") {
+        setIncomingAlerts(data.incomingCount);
+        const badge = document.getElementById("badgeFriends");
+        if (badge && data.incomingCount > 0) {
+          badge.textContent = String(data.incomingCount);
+          badge.classList.add("badge--alert");
+        } else if (badge && data.incomingCount === 0) {
+          badge.classList.remove("badge--alert");
+          const friendsPaneCount = document.getElementById("friendsCountFriends");
+          if (friendsPaneCount) badge.textContent = friendsPaneCount.textContent || "0";
+        }
+      }
+    } catch (_) {}
+  }
+
+  function startLoops() {
+    stopLoops();
+    playTimer = setInterval(refreshPlayData, PLAY_POLL_MS);
+    presenceTimer = setInterval(tickPresence, PRESENCE_MS);
+    drawTimer = setInterval(() => {
+      tickPresence();
+      drawArrows();
+      drawMinimapDots();
+    }, DRAW_MS);
+    refreshPlayData();
+    sendPresence(true);
+  }
+  function stopLoops() {
+    if (playTimer) clearInterval(playTimer);
+    if (presenceTimer) clearInterval(presenceTimer);
+    if (drawTimer) clearInterval(drawTimer);
+    playTimer = null;
+    presenceTimer = null;
+    drawTimer = null;
+    lastPlayingSent = null;
+  }
+
+  function sameServerFriendCoords() {
+    const key = currentServerKey();
+    if (!key || (!optArrows() && !optMinimap())) return [];
+    if (!isPlaying()) return [];
+    return (playData.friends || []).filter((f) => {
+      // Friend died (0 cells → playing false) → hide until they play again
+      if (!f.playing || !f.online) return false;
+      if (!f.serverKey || String(f.serverKey) !== String(key)) return false;
+      return Number.isFinite(f.x) && Number.isFinite(f.y);
+    });
+  }
+
+  function drawArrows() {
+    const root = document.getElementById("friendArrows");
+    if (!root) return;
+    root.innerHTML = "";
+    if (!optArrows() || !isPlaying()) return;
+    const me = mapNorm(S.nodeX, S.nodeY);
+    if (!me) return;
+    const { w, h, cx, cy } = canvasSize();
+    const edge = Math.min(w, h) * ARROW_EDGE;
+
+    sameServerFriendCoords().forEach((f) => {
+      const them = mapNorm(f.x, f.y);
+      if (!them) return;
+      const dx = them.nx - me.nx;
+      const dy = them.ny - me.ny;
+      const dist = Math.hypot(dx, dy);
+      // Far enough on minimap (≈ >1 sector; E1↔C1 ≈ 0.4)
+      if (!(dist >= ARROW_MAP_DIST)) return;
+
+      const ang = Math.atan2(dy, dx);
+      const ax = cx + Math.cos(ang) * edge;
+      const ay = cy + Math.sin(ang) * edge;
+      const el = document.createElement("div");
+      el.className = "friend-arrow";
+      el.style.left = ax + "px";
+      el.style.top = ay + "px";
+      el.style.transform =
+        "translate(-50%,-50%) rotate(" + (ang + Math.PI / 2) + "rad)";
+      el.innerHTML = '<div class="friend-arrow-inner"></div>';
+      root.appendChild(el);
+    });
+  }
+
+  function drawMinimapDots() {
+    const root = document.getElementById("friendMapDots");
+    if (!root || !S) return;
+    root.innerHTML = "";
+    if (!optMinimap() || !isPlaying()) return;
+    const map = document.querySelector(".map-container");
+    if (!map) return;
+    const mw = map.offsetWidth || 0;
+    const mh = map.offsetHeight || 0;
+    if (!mw || !mh) return;
+    sameServerFriendCoords().forEach((f) => {
+      const them = mapNorm(f.x, f.y);
+      if (!them) return;
+      const mx = them.nx * mw;
+      const my = them.ny * mh;
+      if (!Number.isFinite(mx) || !Number.isFinite(my)) return;
+      const dot = document.createElement("span");
+      dot.className = "friend-map-dot";
+      dot.style.left = mx + "px";
+      dot.style.top = my + "px";
+      root.appendChild(dot);
+    });
+  }
+
+  function displayFriendName(f) {
+    const name = String(f?.account_name || "").trim();
+    if (name) return name;
+    return "ID " + (f?.uid ?? "?");
+  }
+
+  function renderFriendRow(f, mode) {
+    const li = document.createElement("li");
+    li.className = "friends-row";
+    const left = document.createElement("div");
+    left.className = "friends-row-main";
+    const title = document.createElement("div");
+    title.className = "friends-row-title";
+    const shown = displayFriendName(f);
+    const hasName = !!String(f?.account_name || "").trim();
+    title.innerHTML =
+      '<span class="friends-row-name">' +
+      esc(shown) +
+      "</span>" +
+      (hasName
+        ? '<span class="friends-row-id">ID ' + esc(f.uid) + "</span>"
+        : "");
+    left.appendChild(title);
+    if (mode === "friends") {
+      const meta = document.createElement("div");
+      if (f.hidden) {
+        meta.className = "friends-meta online";
+        meta.textContent = "в сети (скрыто)";
+      } else if (f.online && f.playing && f.serverKey) {
+        meta.className = "friends-meta online";
+        meta.textContent = "в игре · " + String(f.serverKey);
+      } else if (f.online) {
+        meta.className = "friends-meta online";
+        meta.textContent = "в сети";
+      } else {
+        meta.className = "friends-meta offline";
+        meta.textContent = "не в сети";
+      }
+      left.appendChild(meta);
+    } else if (mode === "incoming") {
+      const meta = document.createElement("div");
+      meta.className = "friends-meta";
+      meta.textContent = "хочет добавить вас";
+      left.appendChild(meta);
+    } else if (mode === "outgoing") {
+      const meta = document.createElement("div");
+      meta.className = "friends-meta";
+      meta.textContent = "ожидает ответа";
+      left.appendChild(meta);
+    }
+    const actions = document.createElement("div");
+    actions.className = "friends-actions";
+    if (mode === "incoming") {
+      const a = document.createElement("button");
+      a.className = "friends-btn";
+      a.type = "button";
+      a.textContent = "Принять";
+      a.onclick = () => act("friends/accept", f.uid);
+      const r = document.createElement("button");
+      r.className = "friends-btn secondary";
+      r.type = "button";
+      r.textContent = "Отклонить";
+      r.onclick = () => act("friends/reject", f.uid);
+      actions.append(a, r);
+    } else if (mode === "outgoing") {
+      const c = document.createElement("button");
+      c.className = "friends-btn secondary";
+      c.type = "button";
+      c.textContent = "Отменить";
+      c.onclick = () => act("friends/remove", f.uid);
+      actions.append(c);
+    } else if (mode === "friends") {
+      const c = document.createElement("button");
+      c.className = "friends-btn danger";
+      c.type = "button";
+      c.textContent = "Удалить";
+      c.onclick = () => {
+        if (confirm("Удалить из друзей?")) act("friends/remove", f.uid);
+      };
+      actions.append(c);
+    } else if (mode === "search") {
+      const b = document.createElement("button");
+      b.className = "friends-btn";
+      b.type = "button";
+      if (f.relation === "friends") {
+        b.textContent = "Друзья";
+        b.disabled = true;
+      } else if (f.relation === "outgoing") {
+        b.textContent = "Заявка";
+        b.disabled = true;
+      } else if (f.relation === "incoming") {
+        b.textContent = "Принять";
+        b.onclick = () => act("friends/accept", f.uid);
+      } else {
+        b.textContent = "Добавить";
+        b.onclick = () => act("friends/request", f.uid);
+      }
+      actions.append(b);
+    }
+    li.append(left, actions);
+    return li;
+  }
+
+  function clearSearchResults(uid) {
+    const box = document.getElementById("friendsSearchResults");
+    const inp = document.getElementById("friendsSearchInput");
+    if (box) {
+      if (uid != null) {
+        const id = String(uid);
+        Array.from(box.querySelectorAll(".friends-result")).forEach((row) => {
+          if (String(row.getAttribute("data-uid") || "") === id) row.remove();
+        });
+        if (!box.querySelector(".friends-result")) box.innerHTML = "";
+      } else {
+        box.innerHTML = "";
+      }
+    }
+    if (inp && uid == null) inp.value = "";
+    if (inp && uid != null && String(inp.value || "").trim() === String(uid)) inp.value = "";
+  }
+
+  async function act(path, uid) {
+    try {
+      const res = await api(path, "POST", { uid });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(data.message || data.error || "Ошибка");
+        return;
+      }
+      if (path === "friends/request" || path === "friends/accept") {
+        clearSearchResults(uid);
+      }
+      await loadFriendsPanel();
+      await refreshPlayData();
+    } catch (_) {
+      alert("Ошибка сети");
+    }
+  }
+
+  async function loadFriendsPanel() {
+    const list = document.getElementById("friendsList");
+    const incoming = document.getElementById("friendsIncomingList");
+    const outgoing = document.getElementById("friendsOutgoingList");
+    const hint = document.getElementById("friendsHint");
+    if (!list) return;
+    if (!getToken()) {
+      list.innerHTML = "<li class='empty'>Войдите в ЛК</li>";
+      updateFriendsCounts(0, 0, 0);
+      return;
+    }
+    const xp = Number(S?.accountData?.xp) || 0;
+    if (xp < MIN_XP) {
+      list.innerHTML = "";
+      if (incoming) incoming.innerHTML = "";
+      if (outgoing) outgoing.innerHTML = "";
+      updateFriendsCounts(0, 0, 0);
+      if (hint) hint.textContent = "Друзья доступны от " + MIN_XP + " XP (сейчас " + xp + ").";
+      return;
+    }
+    try {
+      const res = await api("friends");
+      const data = await res.json();
+      if (res.status === 403) {
+        if (hint) hint.textContent = data.message || "Нужно больше XP";
+        return;
+      }
+      if (!res.ok) throw new Error("fail");
+      const friends = data.friends || [];
+      const incomingRows = data.incoming || [];
+      const outgoingRows = data.outgoing || [];
+      list.innerHTML = "";
+      if (incoming) incoming.innerHTML = "";
+      if (outgoing) outgoing.innerHTML = "";
+      friends.forEach((f) => list.appendChild(renderFriendRow(f, "friends")));
+      incomingRows.forEach((f) => incoming && incoming.appendChild(renderFriendRow(f, "incoming")));
+      outgoingRows.forEach((f) => outgoing && outgoing.appendChild(renderFriendRow(f, "outgoing")));
+      if (!friends.length) list.innerHTML = "<li class='empty'>Пока нет друзей — найдите игрока выше</li>";
+      if (incoming && !incomingRows.length) incoming.innerHTML = "<li class='empty'>Нет входящих заявок</li>";
+      if (outgoing && !outgoingRows.length) outgoing.innerHTML = "<li class='empty'>Нет исходящих заявок</li>";
+      updateFriendsCounts(friends.length, outgoingRows.length, incomingRows.length);
+      if (incomingRows.length) setFriendsTab("incoming");
+      if (hint) {
+        const leftReq = Math.max(
+          0,
+          (Number(data.maxRequestsPerDay) || 15) - (Number(data.requestsToday) || 0)
+        );
+        hint.textContent =
+          "Друзья: " +
+          friends.length +
+          "/" +
+          (data.maxFriends || 100) +
+          ". Заявок сегодня: " +
+          (data.requestsToday || 0) +
+          "/" +
+          (data.maxRequestsPerDay || 15) +
+          " (осталось " +
+          leftReq +
+          "). Имя видно только у друзей и во входящих.";
+      }
+      if (data.privacy) {
+        const sc = document.getElementById("optFriendShareCoords");
+        const sp = document.getElementById("optFriendSharePresence");
+        if (sc && typeof data.privacy.shareCoords === "boolean") {
+          sc.checked = !!data.privacy.shareCoords;
+          lsSet(LS.shareCoords, !!data.privacy.shareCoords);
+        }
+        if (sp && typeof data.privacy.sharePresence === "boolean") {
+          sp.checked = data.privacy.sharePresence !== false;
+          lsSet(LS.sharePresence, data.privacy.sharePresence !== false);
+        }
+      }
+    } catch (_) {
+      list.innerHTML = "<li class='empty'>Не удалось загрузить</li>";
+    }
+  }
+
+  async function searchFriends() {
+    const q = (document.getElementById("friendsSearchInput")?.value || "").trim();
+    const box = document.getElementById("friendsSearchResults");
+    if (!box) return;
+    box.innerHTML = "";
+    if (!q) return;
+    if (!/^\d{1,12}$/.test(q)) {
+      box.textContent = "Введите только ID личного кабинета (цифры)";
+      return;
+    }
+    try {
+      const res = await api("friends/search?q=" + encodeURIComponent(q));
+      const data = await res.json();
+      if (!res.ok) {
+        box.textContent = data.message || data.error || "Ошибка";
+        return;
+      }
+      const results = (data.results || []).filter((f) => {
+        // Already friends / already sent — don't keep visible in search
+        return f.relation !== "friends" && f.relation !== "outgoing";
+      });
+      results.forEach((f) => {
+        const row = document.createElement("div");
+        row.className = "friends-result";
+        row.setAttribute("data-uid", String(f.uid));
+        const left = document.createElement("div");
+        const hasName = !!String(f?.account_name || "").trim();
+        left.innerHTML = hasName
+          ? esc(displayFriendName(f)) + " <small>ID " + esc(f.uid) + "</small>"
+          : esc(displayFriendName(f));
+        const actions = document.createElement("div");
+        actions.className = "friends-actions";
+        const fakeLi = renderFriendRow(f, "search");
+        const btns = fakeLi.querySelector(".friends-actions");
+        if (btns) actions.append(...btns.childNodes);
+        row.append(left, actions);
+        box.appendChild(row);
+      });
+      if (!(data.results || []).length) box.textContent = "Игрок с таким ID не найден";
+      else if (!results.length) box.innerHTML = "";
+    } catch (_) {
+      box.textContent = "Ошибка сети";
+    }
+  }
+
+  function wireUi() {
+    if (wiredUi) return;
+    wiredUi = true;
+    const btn = document.getElementById("friendsSearchBtn");
+    const inp = document.getElementById("friendsSearchInput");
+    if (btn) btn.onclick = () => searchFriends();
+    if (inp) {
+      inp.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") searchFriends();
+      });
+    }
+    document.querySelectorAll(".friends-subtab").forEach((tab) => {
+      tab.addEventListener("click", () => setFriendsTab(tab.getAttribute("data-friends-tab")));
+    });
+    setFriendsTab(friendsTab);
+    const map = [
+      ["optFriendArrows", optArrows()],
+      ["optFriendMinimap", optMinimap()],
+      ["optFriendShareCoords", optShareCoords()],
+      ["optFriendSharePresence", optSharePresence()],
+    ];
+    map.forEach(([id, val]) => {
+      const el = document.getElementById(id);
+      if (el) el.checked = !!val;
+    });
+  }
+
+  function patchShowTab(original) {
+    return function (Sref, which) {
+      const tabF = document.getElementById("tabFriends");
+      const friends = document.getElementById("friendsWrap");
+      if (typeof original === "function") original(Sref, which);
+      if (!tabF || !friends) return;
+      const isF = which === "friends";
+      tabF.classList.toggle("active", isF);
+      friends.style.display = isF ? "" : "none";
+      if (isF) loadFriendsPanel();
+    };
+  }
+
+  function init(gameS, hooks) {
+    S = gameS;
+    accountApiGet = hooks?.accountApiGet || null;
+    resolveServerId = hooks?.resolveServerId || null;
+    wireUi();
+    if (getToken() && (Number(S?.accountData?.xp) || 0) >= MIN_XP) startLoops();
+  }
+
+  function onAccount(data) {
+    if (S) S.accountData = data || S.accountData;
+    if ((Number(S?.accountData?.xp) || 0) >= MIN_XP) {
+      startLoops();
+      syncPrivacyToServer();
+      loadFriendsPanel();
+    } else {
+      stopLoops();
+      updateFriendsCounts(0, 0, 0);
+    }
+  }
+
+  function onLogout() {
+    stopLoops();
+    playData = { friends: [], privacy: {} };
+    friendNickSet = new Set();
+    updateFriendsCounts(0, 0, 0);
+    setIncomingAlerts(0);
+    const root = document.getElementById("friendArrows");
+    if (root) root.innerHTML = "";
+    const map = document.getElementById("friendMapDots");
+    if (map) map.innerHTML = "";
+  }
+
+  global.AgarFriends = {
+    init,
+    onAccount,
+    onLogout,
+    decorateLbName,
+    isFriendName,
+    loadFriendsPanel,
+    patchShowTab,
+    wireFriendsTab(showNickClanTab) {
+      const tabF = document.getElementById("tabFriends");
+      if (!tabF || tabF.dataset.wired) return showNickClanTab;
+      tabF.dataset.wired = "1";
+      tabF.onclick = () => {
+        // deactivate others via patched show
+        if (typeof showNickClanTab === "function") showNickClanTab(S, "friends");
+      };
+      return patchShowTab(showNickClanTab);
+    },
+  };
+})(typeof window !== "undefined" ? window : globalThis);
+
 /* AgarLkAuth — ЛК вход/регистрация/восстановление (встроено в main.js, без assets/scripts). */
 /**
  * ЛК: вход / регистрация / восстановление (клиент).
@@ -7956,7 +8859,31 @@ function updateRegionOnlineTotals(totals) {
       const levelCircle = document.getElementById("levelCircle");
       if (levelCircle) levelCircle.textContent = currLevel;
       const progressText = document.getElementById("progressText");
-      if (progressText) progressText.textContent = `${Math.round(progressPercent)}% (${S.accountData.xp}/${nextXp})`;
+      const compactXp = n => {
+        n = Math.max(0, Math.floor(Number(n) || 0));
+        const mobile = window.matchMedia && window.matchMedia("(max-width: 599px)").matches;
+        if (!mobile || n < 1000) return String(n);
+        const unit = n >= 1000000 ? "kk" : "k";
+        const value = n >= 1000000 ? n / 1000000 : n / 1000;
+        let text = (Math.round(value * 10) / 10).toFixed(1);
+        if (text.slice(-2) === ".0") text = text.slice(0, -2);
+        return text + unit;
+      };
+      if (progressText) {
+        const pct = Math.round(progressPercent);
+        const mobile = window.matchMedia && window.matchMedia("(max-width: 599px)").matches;
+        if (mobile) {
+          progressText.innerHTML = `<span class="progress-pct">${pct}%</span><span class="progress-xp">${compactXp(S.accountData.xp)}/${compactXp(nextXp)}</span>`;
+        } else {
+          progressText.textContent = `${pct}% (${S.accountData.xp}/${nextXp})`;
+        }
+      }
+      if (!displayAccountData._mq && window.matchMedia) {
+        displayAccountData._mq = window.matchMedia("(max-width: 599px)");
+        const onMq = () => displayAccountData();
+        if (displayAccountData._mq.addEventListener) displayAccountData._mq.addEventListener("change", onMq);
+        else if (displayAccountData._mq.addListener) displayAccountData._mq.addListener(onMq);
+      }
       const accountIDElement = document.getElementById("accountID");
       if (accountIDElement) accountIDElement.textContent = `ID: ${S.accountData.uid}`;
     };
@@ -7978,7 +8905,12 @@ function updateRegionOnlineTotals(totals) {
         window.updateAccountMenuLabel();
       }
       try {
-        if (window.AgarFriends) window.AgarFriends.onAccount(data);
+        if (window.AgarFriends) {
+          window.AgarFriends.onAccount(data);
+          if (typeof window.AgarFriends.loadFriendsPanel === "function") {
+            window.AgarFriends.loadFriendsPanel();
+          }
+        }
       } catch (_) {}
       const logoutBtn = document.getElementById("logoutButton");
       const authlogEl = document.getElementById("authlog");
@@ -11950,6 +12882,24 @@ onReady(() => {
     if (/^https?:\/\//i.test(url)) return url;
     return SKIN_FALLBACK_URL;
   }
+  function ratingCountText(n) {
+    n = Math.max(0, Math.floor(Number(n) || 0));
+    var mobile = window.matchMedia && window.matchMedia("(max-width: 599px)").matches;
+    if (!mobile || n < 1000) return String(n);
+    var unit = n >= 1000000 ? "kk" : "k";
+    var value = n >= 1000000 ? n / 1000000 : n / 1000;
+    var text = (Math.round(value * 10) / 10).toFixed(1);
+    if (text.slice(-2) === ".0") text = text.slice(0, -2);
+    return text + unit;
+  }
+  function refreshRatingCounts() {
+    var box = document.getElementById("table-container");
+    if (!box) return;
+    var nodes = box.querySelectorAll("[data-n]");
+    for (var i = 0; i < nodes.length; i++) {
+      nodes[i].textContent = ratingCountText(nodes[i].getAttribute("data-n"));
+    }
+  }
   function xpStats(xstats) {
     const container = document.getElementById("table-container");
     if (!container) return;
@@ -11965,16 +12915,22 @@ onReady(() => {
       playerDiv.classList.add("top-player");
       playerDiv.innerHTML =
         `<div class="time">${player.position}</div>` +
-        `<div class="nick"><span class="account-uid">ID ${escapeHtmlRating(uid)}</span></div>` +
-        `<div class="score">${level}</div>` +
-        `<div class="count" title="Ники">${nicks}</div>` +
-        `<div class="count" title="Кланы">${clans}</div>` +
-        `<div class="count friends-count" title="Друзья">${friends}</div>` +
+        `<div class="nick"><span class="account-uid">id${escapeHtmlRating(uid)}</span></div>` +
+        `<div class="score" data-n="${level}">${ratingCountText(level)}</div>` +
+        `<div class="count" data-n="${nicks}">${ratingCountText(nicks)}</div>` +
+        `<div class="count" data-n="${clans}">${ratingCountText(clans)}</div>` +
+        `<div class="count friends-count" data-n="${friends}">${ratingCountText(friends)}</div>` +
         `<div class="skkinn"><img src="${avatar.replace(/"/g, "%22")}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"></div>`;
       frag.appendChild(playerDiv);
     });
     container.innerHTML = "";
     container.appendChild(frag);
+    if (!xpStats._mq && window.matchMedia) {
+      xpStats._mq = window.matchMedia("(max-width: 599px)");
+      var onChange = function () { refreshRatingCounts(); };
+      if (xpStats._mq.addEventListener) xpStats._mq.addEventListener("change", onChange);
+      else if (xpStats._mq.addListener) xpStats._mq.addListener(onChange);
+    }
   }
   async function fetchTop100() {
     if (fetchTop100._loading) return fetchTop100._loading;

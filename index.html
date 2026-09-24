@@ -16,129 +16,7 @@
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="canonical" href="https://agar.su">
     <link rel="stylesheet" href="/fonts/fonts.css?v=1">
-    <link rel="stylesheet" href="style.css?v=42">
-    <script>
-      window.renderDeathBanner = window.renderDeathBanner || function () {};
-      window.trackPlayGoal = window.trackPlayGoal || function () {};
-    </script>
-
-<style id="i18n-lang-style">
-  .lang-selector{align-items:flex-start;}
-  .lang-flags{display:flex;flex-wrap:wrap;gap:6px;max-width:220px;justify-content:flex-end;}
-  .lang-flag-btn{width:34px;height:26px;padding:0;border:1px solid #2b3242;border-radius:6px;background:#0d1322;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;line-height:1;}
-  .lang-flag-btn .fi{width:18px;height:12px;border-radius:2px;}
-  .lang-flag-btn.active{border-color:#4d7cff;box-shadow:0 0 0 1px #4d7cff;}
-  .lang-flag-btn:hover{border-color:#3a465c;}
-  /* keep LTR layout for all languages including Arabic */
-  html, body{direction:ltr!important;}
-  /* translated text must wrap inside UI frames */
-  .settings-panel label,
-  .settings-panel-title,
-  .settings-field label,
-  .settings-nav-item,
-  .custom-bg-row > span,
-  .color-picker > span,
-  .shop-receipt-head,
-  .shop-price-list li span,
-  .shop-receipt-total span,
-  .shop-support,
-  .store-auth-title,
-  .store-auth-text,
-  .restore-title,
-  .restore-note,
-  .restore-done-block,
-  .ban-banner-title,
-  .connect-verify-title,
-  .connect-verify-text,
-  .skins-gallery-title,
-  .top-info span,
-  .footer a,
-  .share-label,
-  .card-description .step p,
-  .nav-button,
-  .shop-buy-btn{
-    overflow-wrap:anywhere;
-    word-break:break-word;
-    white-space:normal;
-  }
-  .settings-panel label{
-    align-items:flex-start;
-  }
-  .settings-panel label > span,
-  .settings-panel label[data-en]{
-    flex:1 1 auto;
-    min-width:0;
-    line-height:1.25;
-    padding-top:2px;
-  }
-  .settings-panel label > input[type="checkbox"]{
-    margin-top:1px;
-  }
-  .settings-nav-item{
-    align-items:flex-start;
-    min-width:0;
-  }
-  .settings-nav-item span{
-    flex:1 1 auto;
-    min-width:0;
-    line-height:1.2;
-    white-space:normal;
-  }
-  .settings-field{
-    align-items:flex-start;
-  }
-  .settings-field select,
-  .settings-panel select{
-    max-width:100%;
-    min-width:0;
-    flex:1 1 140px;
-  }
-  .sidebar .menu-item .label{
-    max-width:100%;
-    text-align:center;
-    line-height:1.15;
-    overflow-wrap:anywhere;
-    white-space:normal;
-  }
-  .nav-button{
-    max-width:100%;
-    justify-content:center;
-    text-align:center;
-    line-height:1.2;
-  }
-  .nav-button span{
-    overflow-wrap:anywhere;
-  }
-  .lang-selector .lang-flags{
-    max-width:100%;
-    justify-content:flex-start;
-  }
-</style>
-	<style>
-#liquid-tour-banner .liq-btn{
-  transition: transform .15s ease, filter .15s ease, box-shadow .15s ease, background .15s ease, border-color .15s ease, color .15s ease !important;
-}
-#liquid-tour-banner .liq-btn:hover{
-  transform: translateY(-1px) scale(1.03) !important;
-  filter: brightness(1.08) !important;
-}
-#liquid-tour-banner .liq-btn-primary:hover{
-  box-shadow: 0 6px 18px rgba(255,106,42,.55) !important;
-}
-#liquid-tour-banner .liq-btn-ghost:hover{
-  background: rgba(255,138,61,.18) !important;
-  border-color: #ffb347 !important;
-  color: #ffe0c2 !important;
-  box-shadow: 0 4px 14px rgba(255,106,42,.25) !important;
-}
-#liquid-tour-banner .liq-hero:hover img{
-  transform: scale(1.09) !important;
-  filter: brightness(1.06) saturate(1.05) !important;
-}
-#liquid-tour-banner .liq-hero img{
-  transition: transform .35s ease, filter .35s ease !important;
-}
-</style>
+    <link rel="stylesheet" href="style.css?v=71">
 <script>
 (function () {
   var LANGS = ['ru','en','uk','tr','zh','ar','es','pl','de'];
@@ -264,9 +142,28 @@
   }
   window.setUiLang = applyUiLang;
   window.getUiLang = function () { return window.__uiLang || detectLang(); };
+  function bindRatingHeader() {
+    var row = document.querySelector('#rating > .header-row');
+    if (!row || row.dataset.bound === '1') return;
+    row.dataset.bound = '1';
+    row.addEventListener('click', function (ev) {
+      var btn = ev.target.closest('.rating-col');
+      if (!btn) return;
+      var open = btn.classList.contains('is-open');
+      var opened = row.querySelectorAll('.rating-col.is-open');
+      for (var i = 0; i < opened.length; i++) opened[i].classList.remove('is-open');
+      if (!open) btn.classList.add('is-open');
+    });
+    document.addEventListener('click', function (ev) {
+      if (row.contains(ev.target)) return;
+      var opened = row.querySelectorAll('.rating-col.is-open');
+      for (var i = 0; i < opened.length; i++) opened[i].classList.remove('is-open');
+    });
+  }
   function boot() {
     bindFlags();
     applyUiLang(detectLang());
+    bindRatingHeader();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
@@ -288,8 +185,8 @@
     </script>
     <script src="protocols.js?v=11" defer></script>
     <script src="admin.js?v=10" defer></script>
-    <script src="assets/scripts/friends.js?v=8" defer></script>
-    <script src="main.js?v=101" defer></script>
+    <script src="assets/scripts/friends.js?v=9" defer></script>
+    <script src="main.js?v=109" defer></script>
 </head>
 <body>
   <div id="overlays" class="overlays">
@@ -774,13 +671,13 @@
             <div><span data-en="Top Players" data-tr="En İyi Oyuncular" data-zh="最佳玩家" data-ar="أفضل اللاعبين" data-es="Mejores jugadores" data-pl="Najlepsi gracze" data-de="Beste Spieler" data-uk="Найкращі гравці">Лучшие Игроки</span></div>
           </div>
           <div class="header-row">
-            <div class="cell" data-en="Rank" data-tr="Sıra" data-zh="排名" data-ar="المركز" data-es="Posición" data-pl="Pozycja" data-de="Platz" data-uk="Позиція">Позиция</div>
-            <div class="cell nr" data-en="Account ID" data-tr="Hesap ID" data-zh="账号 ID" data-ar="معرف الحساب" data-es="ID de cuenta" data-pl="ID konta" data-de="Konto-ID" data-uk="ID акаунта">ID аккаунта</div>
-            <div class="cell" data-en="Level" data-tr="Seviye" data-zh="等级" data-ar="المستوى" data-es="Nivel" data-pl="Poziom" data-de="Level" data-uk="Рівень">Уровень</div>
-            <div class="cell cell-count" data-en="Nicks" data-tr="Nickler" data-zh="昵称" data-ar="الألقاب" data-es="Nicks" data-pl="Nicki" data-de="Nicks" data-uk="Ніки">Ники</div>
-            <div class="cell cell-count" data-en="Clans" data-tr="Klanlar" data-zh="氏族" data-ar="العشائر" data-es="Clanes" data-pl="Klany" data-de="Clans" data-uk="Клани">Кланы</div>
-            <div class="cell cell-count" data-en="Friends" data-tr="Arkadaş" data-zh="好友" data-ar="أصدقاء" data-es="Amigos" data-pl="Znajomi" data-de="Freunde" data-uk="Друзі">Друзья</div>
-            <div class="cell" data-en="Avatar" data-tr="Avatar" data-zh="头像" data-ar="الصورة" data-es="Avatar" data-pl="Avatar" data-de="Avatar" data-uk="Аватар">Аватар</div>
+            <button type="button" class="cell rating-col"><i class="fas fa-hashtag" aria-hidden="true"></i><span class="rating-col-name" data-en="Rank" data-tr="Sıra" data-zh="排名" data-ar="المركز" data-es="Posición" data-pl="Pozycja" data-de="Platz" data-uk="Позиція">Позиция</span></button>
+            <button type="button" class="cell nr rating-col"><i class="fas fa-id-card" aria-hidden="true"></i><span class="rating-col-name" data-en="Account ID" data-tr="Hesap ID" data-zh="账号 ID" data-ar="معرف الحساب" data-es="ID de cuenta" data-pl="ID konta" data-de="Konto-ID" data-uk="ID акаунта">ID аккаунта</span></button>
+            <button type="button" class="cell rating-col"><i class="fas fa-star" aria-hidden="true"></i><span class="rating-col-name" data-en="Level" data-tr="Seviye" data-zh="等级" data-ar="المستوى" data-es="Nivel" data-pl="Poziom" data-de="Level" data-uk="Рівень">Уровень</span></button>
+            <button type="button" class="cell cell-count rating-col"><i class="fas fa-user" aria-hidden="true"></i><span class="rating-col-name" data-en="Nicks" data-tr="Nickler" data-zh="昵称" data-ar="الألقاب" data-es="Nicks" data-pl="Nicki" data-de="Nicks" data-uk="Ніки">Ники</span></button>
+            <button type="button" class="cell cell-count rating-col"><i class="fas fa-users" aria-hidden="true"></i><span class="rating-col-name" data-en="Clans" data-tr="Klanlar" data-zh="氏族" data-ar="العشائر" data-es="Clanes" data-pl="Klany" data-de="Clans" data-uk="Клани">Кланы</span></button>
+            <button type="button" class="cell cell-count rating-col"><i class="fas fa-user-group" aria-hidden="true"></i><span class="rating-col-name" data-en="Friends" data-tr="Arkadaş" data-zh="好友" data-ar="أصدقاء" data-es="Amigos" data-pl="Znajomi" data-de="Freunde" data-uk="Друзі">Друзья</span></button>
+            <button type="button" class="cell rating-col"><i class="fas fa-image" aria-hidden="true"></i><span class="rating-col-name" data-en="Avatar" data-tr="Avatar" data-zh="头像" data-ar="الصورة" data-es="Avatar" data-pl="Avatar" data-de="Avatar" data-uk="Аватар">Аватар</span></button>
           </div>
           <div id="table-container"></div>
         </div>
