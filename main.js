@@ -2009,6 +2009,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     return null;
   }
   function isForeignStyleHost(host) {
+    if (window.MultiProtocols && !window.MultiProtocols.isOfficial(host)) return true;
     return /:6014\b|:6015\b|:6017\b|xn--bdk\.pw|sixz\.ru:6017|\/darctida\b|\/hc\b/i.test(String(host || ""));
   }
   /**
@@ -2055,8 +2056,8 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     freeze: 70,
     chat: 13,
     coord: 67,
-    macroQ: 81,
-    macroE: 69,
+    macroFeed: 81,
+    splitAlt: 69,
     macroR: 82,
     macroT: 84,
     macroP: 80,
@@ -2077,8 +2078,8 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     freeze: "Пауза (F)",
     chat: "Чат",
     coord: "Координаты (C)",
-    macroQ: "Q",
-    macroE: "E",
+    macroFeed: "Выделение массы (Q)",
+    splitAlt: "Split (E)",
     macroR: "R",
     macroT: "T",
     macroP: "P",
@@ -2787,6 +2788,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
    */
   function isLimitGlowDisabledHost(host) {
     const h = String(host || "");
+    if (window.MultiProtocols && !window.MultiProtocols.isOfficial(h)) return true;
     if (/:6013\b|sixz\.ru:6013/i.test(h)) return true; // Turkey
     if (/:6014\b|:6015\b|:6017\b|xn--bdk\.pw|\/d(?:ffa|rookery|arctida)/i.test(h)) return true; // Europe
     return false;
@@ -4023,15 +4025,17 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     const displayedPlayers = 10;
     let myRank = null;
     if (!((_a = S.leaderBoard) == null ? void 0 : _a.length)) return;
+    const isUnofficial = window.MultiProtocols && !window.MultiProtocols.isOfficial(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl);
     for (let b = 0; b < S.leaderBoard.length; ++b) {
       let name = formatLeaderBoardName(S, S.leaderBoard[b].name || "Игрок");
       const level = S.leaderBoard[b].level;
       const isSystemLine = S.leaderBoard[b].id == null;
       let isMe = false;
-      if (!isSystemLine) {
+      if (!isSystemLine && !isUnofficial) {
         isMe = S.playerCells.some(cell => cell.id === S.leaderBoard[b].id);
       }
-      if (S.noRanking && S.leaderBoard[b].name) {
+      // Unofficial servers: LB id doesn't map to our cell id — match by nick.
+      if ((S.noRanking || isUnofficial) && S.leaderBoard[b].name) {
         const myName = ((_b = S.playerCells[0]) == null ? void 0 : _b.name) || "";
         if (myName && myName.toLowerCase() === S.leaderBoard[b].name.toLowerCase()) {
           isMe = true;
@@ -4039,10 +4043,9 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       }
       if (isMe) {
         const myCell = S.playerCells.find(cell => cell.id === S.leaderBoard[b].id);
-        if (myCell == null ? void 0 : myCell.name) {
-          name = formatLeaderBoardName(S, myCell.name);
-          myRank = b + 1;
-        }
+        const myCellName = myCell ? myCell.name : (S.playerCells[0] ? S.playerCells[0].name : "");
+        if (myCellName) name = formatLeaderBoardName(S, myCellName);
+        myRank = b + 1;
       }
       if (b < displayedPlayers) {
         const entryDiv = createLeaderboardEntry(name, level, isMe, isSystemLine, b);
@@ -4183,9 +4186,15 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   }
   function openGameSocket(wsUrl, {accountToken, connectToken} = {}) {
     const qs = new URLSearchParams;
-    if (accountToken) qs.set("accountToken", accountToken);
-    if (connectToken) qs.set("connectToken", connectToken);
-    const ws = new WebSocket(wsUrl + "?" + qs.toString(), WS_SUBPROTOCOL);
+    // Security: unofficial game servers (agarz / delta / agarlive) must never
+    // receive the agar.su account token or PoW connect token.
+    const official = !window.MultiProtocols || window.MultiProtocols.isOfficial(wsUrl);
+    if (official) {
+      if (accountToken) qs.set("accountToken", accountToken);
+      if (connectToken) qs.set("connectToken", connectToken);
+    }
+    const qsStr = qs.toString();
+    const ws = new WebSocket(wsUrl + (qsStr ? "?" + qsStr : ""), WS_SUBPROTOCOL);
     ws.binaryType = "arraybuffer";
     return ws;
   }
@@ -4357,17 +4366,22 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       (_a = hooks.clearWorld) == null ? void 0 : _a.call(hooks);
       try {
         let connectToken = null;
-        try {
-          connectToken = await fetchConnectToken2(host);
-        } catch (err) {
-          if (attemptId !== S.connectAttemptId) return;
-          console.error("Connect token error:", err);
-          if (isSpectMode()) {
-            scheduleSpectReconnect();
-          } else {
-            showReconnectPanel("Ошибка подключения. Нажмите, чтобы повторить.");
+        // PoW challenge (connectToken) is an agar.su-only flow — skip for unofficial
+        // upstream servers to avoid a pointless 3.5s /challenge probe.
+        const officialHost = !window.MultiProtocols || window.MultiProtocols.isOfficial(host);
+        if (officialHost) {
+          try {
+            connectToken = await fetchConnectToken2(host);
+          } catch (err) {
+            if (attemptId !== S.connectAttemptId) return;
+            console.error("Connect token error:", err);
+            if (isSpectMode()) {
+              scheduleSpectReconnect();
+            } else {
+              showReconnectPanel("Ошибка подключения. Нажмите, чтобы повторить.");
+            }
+            return;
           }
-          return;
         }
         if (attemptId !== S.connectAttemptId) return;
         if (serverPowSupportCache.get(getPowApiBase(host)) === true && !connectToken) {
@@ -4385,10 +4399,41 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
           accountToken: getAccountToken() || null,
           connectToken: connectToken || null
         });
+
+        // Multiprotocol: detect upstream protocol from host and route traffic
+        // through the matching adapter (agarz / delta / agarlive). Original
+        // agar.su stays pass-through.
+        const mp = (window.MultiProtocols && S.CONNECTION_URL)
+          ? window.MultiProtocols.createEngine(S.CONNECTION_URL)
+          : null;
+        S.multiProto = mp;
+        S._rawWsSend = S.ws.send.bind(S.ws);
+
+        if (mp && !mp.isPassthrough) {
+          S.ws.send = (data) => {
+            let u8 = null;
+            if (data instanceof ArrayBuffer) u8 = new Uint8Array(data);
+            else if (ArrayBuffer.isView(data)) u8 = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+            if (!u8) { S._rawWsSend(data); return; }
+            const outs = mp.encodeClientPacket(u8);
+            for (let i = 0; i < outs.length; i++) S._rawWsSend(outs[i].buffer);
+          };
+        }
+
         S.ws.onopen = onWsOpen;
         S.ws.onmessage = msg => {
           var _a2;
-          (_a2 = hooks.onMessage) == null ? void 0 : _a2.call(hooks, new DataView(msg.data));
+          if (mp && !mp.isPassthrough) {
+            const u8 = new Uint8Array(msg.data);
+            const pkts = mp.decodeServerPacket(u8);
+            if (pkts == null) return;
+            for (let i = 0; i < pkts.length; i++) {
+              const p = pkts[i];
+              (_a2 = hooks.onMessage) == null ? void 0 : _a2.call(hooks, new DataView(p.buffer, p.byteOffset, p.byteLength));
+            }
+          } else {
+            (_a2 = hooks.onMessage) == null ? void 0 : _a2.call(hooks, new DataView(msg.data));
+          }
         };
         S.ws.onclose = onWsClose;
       } catch (err) {
@@ -4419,6 +4464,11 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       const [p, key] = encodeHandshake();
       wsSend(p);
       wsSend(key);
+      // Non-agar.su protocols need their own native handshake (agarz BEGIN,
+      // delta 254/255/241, agarlive 254/255).
+      if (S.multiProto && !S.multiProto.isPassthrough && S._rawWsSend) {
+        S.multiProto.onOpen({ send: S._rawWsSend });
+      }
     }
     function onGameHandshakeReady() {
       var _a, _b;
@@ -4686,7 +4736,12 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     }
     function sendNickName() {
       if (!wsIsOpen() || S.userNickName == null) return;
-      const nick = S.userNickName;
+      let nick = S.userNickName;
+      // Security: unofficial servers get only the bare nick (no #pass).
+      if (window.MultiProtocols && !window.MultiProtocols.isOfficial(S.CONNECTION_URL)) {
+        nick = window.MultiProtocols.sanitizeNickForHost(nick, S.CONNECTION_URL);
+        if (!nick) return;
+      }
       const msg = prepareData(1 + 2 * nick.length + 1);
       msg.setUint8(0, ClientOpcode.NICK);
       msg.setUint8(1, getColorId(localStorage.getItem("selectedColor")));
@@ -4727,6 +4782,8 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         msg.setUint16(offset, str.charCodeAt(i), true);
         offset += 2;
       }
+      // Security: unofficial game servers must not receive the agar.su token.
+      if (window.MultiProtocols && !window.MultiProtocols.isOfficial(S.CONNECTION_URL)) return;
       wsSend(msg);
     }
     function sendAccountToken() {
@@ -6037,7 +6094,9 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         // Cell labels: scale=1 always; sharpness from screen-space LOD (size × zoom).
         if (this.nameCache && this.nameCache._scale !== 1) this.nameCache.setScale(1);
         if (this.sizeCache && this.sizeCache._scale !== 1) this.sizeCache.setScale(1);
-        if (S.showName && this.name && this.nameCache && this.size > 10) {
+        // Multiprotocol: show names only above size 100 (original agar.su keeps > 10).
+        const nameMinSize = (window.MultiProtocols && !window.MultiProtocols.isOfficial(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl)) ? 100 : 10;
+        if (S.showName && this.name && this.nameCache && this.size > nameMinSize) {
           let displayName = this.name;
           if (!isPetriSkinHost(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl) && invisible.has(this._nameLower)) {
             displayName = "";
@@ -6704,18 +6763,19 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         }
         return;
       }
-      if (code === getBind(S, "macroQ")) {
-        if (!keyPressed.macroQ) {
+      if (code === getBind(S, "macroFeed")) {
+        if (!keyPressed.macroFeed) {
+          hooks.sendMouseMove();
           hooks.sendUint8(18);
-          keyPressed.macroQ = true;
+          keyPressed.macroFeed = true;
         }
         return;
       }
-      if (code === getBind(S, "macroE")) {
-        if (!keyPressed.macroE) {
+      if (code === getBind(S, "splitAlt")) {
+        if (!keyPressed.splitAlt) {
           hooks.sendMouseMove();
-          hooks.sendUint8(22);
-          keyPressed.macroE = true;
+          hooks.sendUint8(17);
+          keyPressed.splitAlt = true;
         }
         return;
       }
@@ -6761,13 +6821,13 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         clearInterval(S.ejectKeyInterval);
         S.ejectKeyInterval = null;
       }
-      if (code === getBind(S, "macroQ")) {
-        if (keyPressed.macroQ) {
+      if (code === getBind(S, "macroFeed")) {
+        if (keyPressed.macroFeed) {
+          keyPressed.macroFeed = false;
           hooks.sendUint8(19);
-          keyPressed.macroQ = false;
         }
       }
-      if (code === getBind(S, "macroE")) keyPressed.macroE = false;
+      if (code === getBind(S, "splitAlt")) keyPressed.splitAlt = false;
       if (code === getBind(S, "macroR")) keyPressed.macroR = false;
       if (code === getBind(S, "macroT")) keyPressed.macroT = false;
       if (code === getBind(S, "macroP")) keyPressed.macroP = false;
@@ -6826,9 +6886,9 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       });
     }
     wHandle.onblur = function() {
-      hooks.sendUint8(19);
       clearInterval(S.ejectKeyInterval);
       S.ejectKeyInterval = null;
+      if (keyPressed.macroFeed) hooks.sendUint8(19);
       Object.keys(keyPressed).forEach(k => {
         keyPressed[k] = false;
       });
@@ -9465,6 +9525,8 @@ function updateRegionOnlineTotals(totals) {
   }
   function censorMessage(S, message) {
     if (S.showAdultContent) return message;
+    // Multiprotocol (unofficial servers): antimat is not applied.
+    if (window.MultiProtocols && !window.MultiProtocols.isOfficial(S.CONNECTION_URL)) return message;
     if (!S.badWordsSet || S.badWordsSet.size === 0) {
       console.warn("Список матерных слов не загружен. Антимат не работает.");
       return message;
