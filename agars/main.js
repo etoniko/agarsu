@@ -912,6 +912,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
 
   let registerToken = null;
   let recoverToken = null;
+  let recoverNeedsEmail = false;
   let providers = null;
   let googleInited = false;
   let onLoggedIn = null;
@@ -1083,12 +1084,54 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     return recoverToken;
   }
 
-  function showSetPassword() {
-    clearRecErr();
-    showRecOnly("authRecStepPass", "Придумайте новый пароль");
+  function ensureBindFields() {
+    const step = $("authRecStepPass");
+    if (!step || $("authRecBindEmail")) return;
+    const email = document.createElement("input");
+    email.className = "lk-auth-input";
+    email.id = "authRecBindEmail";
+    email.type = "email";
+    email.maxLength = 190;
+    email.placeholder = "Почта для привязки";
+    email.autocomplete = "email";
+    const code = document.createElement("input");
+    code.className = "lk-auth-input";
+    code.id = "authRecBindCode";
+    code.type = "text";
+    code.inputMode = "numeric";
+    code.maxLength = 5;
+    code.placeholder = "Код из письма";
+    code.hidden = true;
+    const pass = $("authRecPass");
+    if (pass) {
+      step.insertBefore(email, pass);
+      step.insertBefore(code, pass);
+    } else {
+      step.prepend(code);
+      step.prepend(email);
+    }
   }
 
-  function openRecoverPassword(token) {
+  function showSetPassword(needsEmail) {
+    recoverNeedsEmail = !!needsEmail;
+    clearRecErr();
+    ensureBindFields();
+    const email = $("authRecBindEmail");
+    const code = $("authRecBindCode");
+    if (email) {
+      email.hidden = !recoverNeedsEmail;
+      if (!recoverNeedsEmail) email.value = "";
+    }
+    if (code) {
+      code.hidden = true;
+      code.value = "";
+    }
+    const btn = $("authRecSetPassBtn");
+    if (btn) btn.textContent = recoverNeedsEmail ? "Привязать почту" : "Сохранить пароль";
+    showRecOnly("authRecStepPass", recoverNeedsEmail ? "Почта для привязки и пароль" : "Придумайте новый пароль");
+  }
+
+  function openRecoverPassword(token, needsEmail) {
     if (!token) return;
     const login = $("authCardLogin");
     const reg = $("authCardRegister");
@@ -1099,7 +1142,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     if (done) done.hidden = true;
     if (rec) rec.hidden = false;
     persistRecoverToken(token);
-    showSetPassword();
+    showSetPassword(!!needsEmail);
   }
 
   async function api(path, body, timeoutMs = 25000) {
@@ -1332,7 +1375,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         return;
       }
       stopTimer("rec");
-      openRecoverPassword(data.recoverToken);
+      openRecoverPassword(data.recoverToken, !!data.needs_email);
     } catch (_) {
       setErr(err, "Ошибка сети");
     }
@@ -1341,32 +1384,64 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   async function recSetPass() {
     const pass = $("authRecPass")?.value || "";
     const token = loadRecoverToken();
+    const hint = $("authRecHint");
     if (!token) {
-      const hint = $("authRecHint");
       if (hint) hint.textContent = "Сессия сброшена. Выберите способ заново.";
       resetRecover();
       return;
     }
     if (!PASS_RE.test(pass)) {
-      const hint = $("authRecHint");
       if (hint) hint.textContent = "Пароль: латиница, цифры и точка, 4–64";
       return;
     }
     try {
+      if (recoverNeedsEmail) {
+        const email = ($("authRecBindEmail")?.value || "").trim();
+        const code = ($("authRecBindCode")?.value || "").trim();
+        if (!email) {
+          if (hint) hint.textContent = "Введите почту";
+          return;
+        }
+        if (!code) {
+          const { res, data } = await api("/auth/recover/bind-email/send-code", {
+            recoverToken: token,
+            email,
+          });
+          if (!res.ok || data.error) {
+            if (hint) hint.textContent = data.error || "Не удалось отправить код";
+            return;
+          }
+          const codeEl = $("authRecBindCode");
+          if (codeEl) codeEl.hidden = false;
+          if (hint) hint.textContent = "Код отправлен на почту";
+          return;
+        }
+        const { res, data } = await api("/auth/recover/bind-email/confirm", {
+          recoverToken: token,
+          email,
+          code,
+          pass,
+        });
+        if (!res.ok || data.error || !data.token) {
+          if (hint) hint.textContent = data.error || "Не удалось привязать";
+          return;
+        }
+        persistRecoverToken(null);
+        recoverNeedsEmail = false;
+        showDoneBanner(resolveLkUid(data), pass, data.token, false);
+        return;
+      }
       const { res, data } = await api("/auth/recover/set-password", {
         recoverToken: token,
         pass,
       });
       if (!res.ok || data.error || !data.token) {
-        const hint = $("authRecHint");
         if (hint) hint.textContent = data.error || "Не удалось сохранить";
         return;
       }
       persistRecoverToken(null);
-      const uid = resolveLkUid(data);
-      showDoneBanner(uid, pass, data.token, false);
+      showDoneBanner(resolveLkUid(data), pass, data.token, false);
     } catch (_) {
-      const hint = $("authRecHint");
       if (hint) hint.textContent = "Ошибка сети";
     }
   }
@@ -1382,7 +1457,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         setErr($("authRecError"), data.error || "В ЛК нет связанного аккаунта");
         return;
       }
-      openRecoverPassword(data.recoverToken);
+      openRecoverPassword(data.recoverToken, true);
     } catch (_) {
       resetRecover();
       setErr($("authRecError"), "Ошибка сети");
@@ -1647,7 +1722,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       const token = ev.detail?.recoverToken;
       if (!token) return;
       // НЕ вызывать showView("recover") — он делает resetRecover() и убивает токен
-      openRecoverPassword(token);
+      openRecoverPassword(token, true);
     });
   }
 
@@ -1661,7 +1736,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     },
     showView,
     applyRecoverToken(token) {
-      openRecoverPassword(token);
+      openRecoverPassword(token, true);
     },
   };
 })();
@@ -8956,6 +9031,63 @@ function updateRegionOnlineTotals(totals) {
       wireTabsOnce: () => wireTabsOnce(S),
       showNickClanTab: which => showNickClanTab(S, which)
     };
+
+    const showEmailBindNotice = (data) => {
+      const existing = document.getElementById("lkEmailBind");
+      if (!data || !data.needs_email) {
+        if (existing) existing.remove();
+        return;
+      }
+      if (existing) return;
+      const box = document.createElement("div");
+      box.id = "lkEmailBind";
+      box.setAttribute("style", "position:fixed;top:12px;right:12px;z-index:100000;width:280px;max-width:calc(100vw - 24px);background:#141824;color:#fff;border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:12px;box-shadow:0 10px 30px rgba(0,0,0,.35);font:13px/1.35 Arial,sans-serif");
+      box.innerHTML = '<div style="font-weight:700;margin-bottom:6px">Привяжите почту</div><div style="opacity:.8;margin-bottom:8px">VK, Telegram и Google больше не используются для входа. Подтвердите почту кодом и задайте пароль.</div><input id="lkBindEmail" type="email" maxlength="190" placeholder="email@mail.ru" style="width:100%;box-sizing:border-box;margin:0 0 6px;padding:8px;border-radius:8px;border:1px solid #333;background:#0e1118;color:#fff"><input id="lkBindCode" type="text" inputmode="numeric" maxlength="5" placeholder="Код из письма" hidden style="width:100%;box-sizing:border-box;margin:0 0 6px;padding:8px;border-radius:8px;border:1px solid #333;background:#0e1118;color:#fff"><input id="lkBindPass" type="text" maxlength="64" placeholder="Пароль: a-z A-Z 0-9 ." autocomplete="off" style="width:100%;box-sizing:border-box;margin:0 0 6px;padding:8px;border-radius:8px;border:1px solid #333;background:#0e1118;color:#fff"><div id="lkBindErr" style="color:#ff8d8d;min-height:16px"></div><button id="lkBindSend" type="button" style="width:100%;padding:8px;border:0;border-radius:8px;background:#3d7eff;color:#fff;font-weight:700;cursor:pointer">Отправить код</button>';
+      document.body.appendChild(box);
+      const err = box.querySelector("#lkBindErr");
+      const sendBtn = box.querySelector("#lkBindSend");
+      sendBtn.onclick = async () => {
+        const email = box.querySelector("#lkBindEmail").value.trim();
+        const pass = box.querySelector("#lkBindPass").value;
+        const codeEl = box.querySelector("#lkBindCode");
+        const code = codeEl.value.trim();
+        err.textContent = "";
+        if (!/^[0-9a-zA-Z.]{4,64}$/.test(pass)) {
+          err.textContent = "Пароль: латиница, цифры и точка, 4–64";
+          return;
+        }
+        sendBtn.disabled = true;
+        try {
+          if (!code) {
+            const res = await accountApiGet("auth/bind-email/send-code", "POST", { email });
+            const body = await res.json().catch(() => ({}));
+            if (!res.ok || body.error) {
+              err.textContent = body.error || "Не удалось отправить код";
+              return;
+            }
+            codeEl.hidden = false;
+            sendBtn.textContent = "Привязать";
+            err.textContent = "Код отправлен на почту";
+            return;
+          }
+          const res = await accountApiGet("auth/bind-email/confirm", "POST", { email, code, pass });
+          const body = await res.json().catch(() => ({}));
+          if (!res.ok || body.error || !body.token) {
+            err.textContent = body.error || "Не удалось привязать";
+            return;
+          }
+          setAccountToken(body.token);
+          box.remove();
+          await loadAccountUserData();
+          if (typeof hooks.sendAccountToken === "function") hooks.sendAccountToken();
+        } catch (_) {
+          err.textContent = "Ошибка сети";
+        } finally {
+          sendBtn.disabled = false;
+        }
+      };
+    };
+
     const setAccountData = data => {
       S.accountData = data;
       persistRestoreTimestamp(getRestoreTimestamp(data));
@@ -8977,8 +9109,11 @@ function updateRegionOnlineTotals(totals) {
       if (logoutBtn) logoutBtn.style.display = "";
       if (authlogEl) authlogEl.style.display = "none";
       hideAuthButtons();
+      showEmailBindNotice(data);
     };
     const onLogout = () => {
+      const bindBox = document.getElementById("lkEmailBind");
+      if (bindBox) bindBox.remove();
       S.accountData = null;
       localStorage.removeItem("accountData");
       clearAccountToken();
