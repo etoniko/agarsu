@@ -277,7 +277,7 @@
           </div>
           <div class="aa-list" id="agarAdminList">
             <table>
-              <thead><tr><th>ID</th><th>Ник</th><th></th><th>Cells</th><th>Score</th><th>IP</th></tr></thead>
+              <thead><tr><th>ID</th><th>Ник</th><th></th><th>Cells</th><th>Score</th><th>ЛК</th><th>IP</th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
@@ -306,6 +306,11 @@
             <button type="button" data-act="nickunlock">Unlock</button>
             <button type="button" class="warn" data-act="nickban">NickBan</button>
             <button type="button" data-act="unnickban">UnNickBan</button>
+          </div>
+
+          <div class="aa-row" id="aaLkBanRow" style="display:none">
+            <button type="button" class="danger" data-act="uidban">Бан ЛК</button>
+            <button type="button" data-act="uidunban">Разбан ЛК</button>
           </div>
 
           <div class="aa-row" id="aaAdminPlayerRows" style="display:none">
@@ -459,6 +464,14 @@
         if (!p.nick) return;
         sendCmd(`/unnickban ${p.nick}`);
         break;
+      case "uidban":
+        if (!isAdmin() || !p.lkUid) return;
+        sendCmd(`/uidban ${p.lkUid}`);
+        break;
+      case "uidunban":
+        if (!isAdmin() || !p.lkUid) return;
+        sendCmd(`/uidunban ${p.lkUid}`);
+        break;
       case "mass":
         if (!isAdmin()) return;
         sendCmd(`/mass ${p.pid} ${val("aaMass", 500)}`);
@@ -566,8 +579,10 @@
 
     const adminRows = document.getElementById("aaAdminPlayerRows");
     const tpRow = document.getElementById("aaTpRow");
+    const lkBanRow = document.getElementById("aaLkBanRow");
     if (adminRows) adminRows.style.display = isAdmin() ? "flex" : "none";
     if (tpRow) tpRow.style.display = isAdmin() ? "flex" : "none";
+    if (lkBanRow) lkBanRow.style.display = isAdmin() ? "flex" : "none";
 
     const p = selected();
     const title = document.getElementById("aaPlayerTitle");
@@ -604,7 +619,7 @@
       .slice()
       .filter((p) => {
         if (!f) return true;
-        return String(p.pid).includes(f) || String(p.nick || "").toLowerCase().includes(f);
+        return String(p.pid).includes(f) || String(p.lkUid || "").includes(f) || String(p.nick || "").toLowerCase().includes(f);
       })
       .sort((a, b) => b.score - a.score || a.pid - b.pid);
 
@@ -643,6 +658,9 @@
       tdScore.className = "score";
       tdScore.textContent = String(p.score);
 
+      const tdLk = document.createElement("td");
+      tdLk.textContent = p.lkUid ? String(p.lkUid) : "—";
+
       const tdIp = document.createElement("td");
       tdIp.className = ipClass;
       tdIp.textContent = ipText;
@@ -652,6 +670,7 @@
       tr.appendChild(tdKick);
       tr.appendChild(tdCells);
       tr.appendChild(tdScore);
+      tr.appendChild(tdLk);
       tr.appendChild(tdIp);
 
       tr.addEventListener("click", (e) => {
@@ -801,6 +820,15 @@
     if (!role) {
       const hasRealIp = players.some((p) => p.ip && p.ip !== "null" && p.ip !== "***" && p.ip !== "BOT");
       role = hasRealIp ? "admin" : "moder";
+    }
+    for (const p of players) {
+      const m = String(p.nick || "").match(/^(.*) \[лк:(\d+)\]$/);
+      if (!m) {
+        p.lkUid = 0;
+        continue;
+      }
+      p.nick = m[1];
+      p.lkUid = Number(m[2]);
     }
     applyAdminData({ role, players });
   }
