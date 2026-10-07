@@ -9032,18 +9032,27 @@ function updateRegionOnlineTotals(totals) {
       showNickClanTab: which => showNickClanTab(S, which)
     };
 
+    let emailBindDone = false;
     const showEmailBindNotice = (data) => {
       const existing = document.getElementById("lkEmailBind");
-      if (!data || !data.needs_email) {
+      const savedEmail = String((data && data.email) || "").trim();
+      const accountId = String((data && data.account_id) || "");
+      if (emailBindDone || !data || !data.needs_email || savedEmail || accountId.startsWith("email_")) {
         if (existing) existing.remove();
+        try { sessionStorage.removeItem("lkBindDraft"); } catch (e) {}
         return;
       }
       if (existing) return;
       const box = document.createElement("div");
       box.id = "lkEmailBind";
       box.setAttribute("style", "position:fixed;top:12px;right:12px;z-index:100000;width:280px;max-width:calc(100vw - 24px);background:#141824;color:#fff;border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:12px;box-shadow:0 10px 30px rgba(0,0,0,.35);font:13px/1.35 Arial,sans-serif");
-      box.innerHTML = '<div style="font-weight:700;margin-bottom:6px">Привяжите почту</div><div style="opacity:.8;margin-bottom:8px">VK, Telegram и Google больше не используются для входа. Подтвердите почту кодом и задайте пароль.</div><input id="lkBindEmail" type="email" maxlength="190" placeholder="email@mail.ru" style="width:100%;box-sizing:border-box;margin:0 0 6px;padding:8px;border-radius:8px;border:1px solid #333;background:#0e1118;color:#fff"><input id="lkBindCode" type="text" inputmode="numeric" maxlength="5" placeholder="Код из письма" hidden style="width:100%;box-sizing:border-box;margin:0 0 6px;padding:8px;border-radius:8px;border:1px solid #333;background:#0e1118;color:#fff"><input id="lkBindPass" type="text" maxlength="64" placeholder="Пароль: a-z A-Z 0-9 ." autocomplete="off" style="width:100%;box-sizing:border-box;margin:0 0 6px;padding:8px;border-radius:8px;border:1px solid #333;background:#0e1118;color:#fff"><div id="lkBindErr" style="color:#ff8d8d;min-height:16px"></div><button id="lkBindSend" type="button" style="width:100%;padding:8px;border:0;border-radius:8px;background:#3d7eff;color:#fff;font-weight:700;cursor:pointer">Отправить код</button>';
+      box.innerHTML = '<div style="font-weight:700;margin-bottom:6px">Привяжите почту</div><div style="opacity:.8;margin-bottom:8px">VK, Telegram и Google больше не используются для входа. Подтвердите почту кодом и задайте пароль.</div><input id="lkBindEmail" type="email" maxlength="190" placeholder="email@mail.ru" style="width:100%;box-sizing:border-box;margin:0 0 6px;padding:8px;border-radius:8px;border:1px solid #333;background:#0e1118;color:#fff"><input id="lkBindCode" type="text" inputmode="numeric" maxlength="5" placeholder="Код из письма" style="width:100%;box-sizing:border-box;margin:0 0 6px;padding:8px;border-radius:8px;border:1px solid #333;background:#0e1118;color:#fff"><input id="lkBindPass" type="text" maxlength="64" placeholder="Пароль: a-z A-Z 0-9 ." autocomplete="off" style="width:100%;box-sizing:border-box;margin:0 0 6px;padding:8px;border-radius:8px;border:1px solid #333;background:#0e1118;color:#fff"><div id="lkBindErr" style="color:#ff8d8d;min-height:16px"></div><button id="lkBindSend" type="button" style="width:100%;padding:8px;border:0;border-radius:8px;background:#3d7eff;color:#fff;font-weight:700;cursor:pointer">Отправить код</button>';
       document.body.appendChild(box);
+      try {
+        const draft = sessionStorage.getItem("lkBindDraft") || "";
+        const emailInput = box.querySelector("#lkBindEmail");
+        if (draft && emailInput) emailInput.value = draft;
+      } catch (e) {}
       const err = box.querySelector("#lkBindErr");
       const sendBtn = box.querySelector("#lkBindSend");
       sendBtn.onclick = async () => {
@@ -9068,6 +9077,7 @@ function updateRegionOnlineTotals(totals) {
             codeEl.hidden = false;
             sendBtn.textContent = "Привязать";
             err.textContent = "Код отправлен на почту";
+            try { sessionStorage.setItem("lkBindDraft", email); } catch (e) {}
             return;
           }
           const res = await accountApiGet("auth/bind-email/confirm", "POST", { email, code, pass });
@@ -9077,6 +9087,8 @@ function updateRegionOnlineTotals(totals) {
             return;
           }
           setAccountToken(body.token);
+          emailBindDone = true;
+          try { sessionStorage.removeItem("lkBindDraft"); } catch (e) {}
           box.remove();
           await loadAccountUserData();
           if (typeof hooks.sendAccountToken === "function") hooks.sendAccountToken();
@@ -9112,6 +9124,8 @@ function updateRegionOnlineTotals(totals) {
       showEmailBindNotice(data);
     };
     const onLogout = () => {
+      emailBindDone = false;
+      try { sessionStorage.removeItem("lkBindDraft"); } catch (e) {}
       const bindBox = document.getElementById("lkEmailBind");
       if (bindBox) bindBox.remove();
       S.accountData = null;
