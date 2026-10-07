@@ -7704,7 +7704,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       if (fromGame) return fromGame;
     }
     const active = document.querySelector(".server-item.active[id], .server-item.active");
-    if (active && active.id && /^(ffa|ms|pvp1|pvp2|tournament2?)$/i.test(active.id)) {
+    if (active && active.id && OFFICIAL_SERVER_ID_RE.test(active.id)) {
       return active.id.toLowerCase();
     }
     if (active && active.dataset && active.dataset.ip) {
@@ -7860,15 +7860,32 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     });
   }
 
+  /** Official agar.su servers: id ↔ host. All scripts resolve from here. */
+  var OFFICIAL_SERVERS = [
+    { id: "ffa", host: "ffa.agar.su", wins: false },
+    { id: "ms", host: "ms.agar.su:6001", wins: false },
+    { id: "pvp1", host: "ms.agar.su:6004", wins: true },
+    { id: "pvp2", host: "ms.agar.su:6005", wins: true },
+    { id: "tournament", host: "ms.agar.su:6002", wins: true },
+    { id: "tournament2", host: "ms.agar.su:6003", wins: true },
+    { id: "tournament3", host: "ms.agar.su:6006", wins: true }
+  ];
+  var OFFICIAL_SERVER_ID_RE = new RegExp(
+    "^(" + OFFICIAL_SERVERS.map(s => s.id).join("|") + ")$",
+    "i"
+  );
+  var OFFICIAL_BY_ID = Object.fromEntries(OFFICIAL_SERVERS.map(s => [s.id, s]));
+
   function resolveOfficialServerId(connectionUrl) {
     const host = String(connectionUrl || "").toLowerCase().replace(/^wss?:\/\//, "");
     if (!host) return null;
+    // Port-specific hosts first (ms.agar.su:600x), then bare ffa / ms
+    for (const s of OFFICIAL_SERVERS) {
+      if (s.id === "ffa" || s.id === "ms") continue;
+      if (host.includes(s.host)) return s.id;
+    }
     if (host.includes("ffa.agar.su")) return "ffa";
     if (host.includes("ms.agar.su:6001") || host === "ms.agar.su" || host.startsWith("ms.agar.su/")) return "ms";
-    if (host.includes("ms.agar.su:6004")) return "pvp1";
-    if (host.includes("ms.agar.su:6005")) return "pvp2";
-    if (host.includes("ms.agar.su:6002")) return "tournament";
-    if (host.includes("ms.agar.su:6003")) return "tournament2";
     return null;
   }
 
@@ -7882,8 +7899,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
 
   /** FFA/MS — масса; PVP/Tournament — победы. */
   function deathScoreLabelForServer(serverId) {
-    const wins = serverId === "pvp1" || serverId === "pvp2" ||
-      serverId === "tournament" || serverId === "tournament2";
+    const wins = !!(OFFICIAL_BY_ID[serverId] && OFFICIAL_BY_ID[serverId].wins);
     if (wins) {
       return {
         ru: "Побед",
