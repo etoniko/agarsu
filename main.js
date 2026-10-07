@@ -9671,7 +9671,6 @@ function updateRegionOnlineTotals(totals) {
   function isExemptFromShadowChat(str) {
     const s = String(str || "");
     if (/вoшёл в игру/i.test(s)) return true;
-    if (/^!ls\d+\s+PvPInvite;/i.test(s)) return true;
     return false;
   }
   function isShadowBannedChatMessage(message) {
@@ -9785,7 +9784,6 @@ function updateRegionOnlineTotals(totals) {
   function appendChatLangTag(str) {
     let s = String(str || "").trim();
     if (!s) return s;
-    if (/^!ls\d+\s+PvPInvite;/i.test(s)) return s;
     if (/вoшёл в игру/i.test(s)) return s;
     s = s.replace(CHAT_LANG_TAG_RE, "").trimEnd();
     const code = getChatUiLangCode();
@@ -9876,101 +9874,6 @@ function updateRegionOnlineTotals(totals) {
       chatInput.value = dialogNumberMatch ? `!ls${dialogNumberMatch[1]} ` : "";
     } else chatInput.value = "";
   }
-  function openPvPModal(S, hooks, targetId, targetName) {
-    const modal = document.createElement("div");
-    modal.id = "pvpModal";
-    modal.style.position = "fixed";
-    modal.style.top = "0";
-    modal.style.left = "0";
-    modal.style.width = "100%";
-    modal.style.height = "100%";
-    modal.style.background = "rgba(0,0,0,0.5)";
-    modal.style.display = "flex";
-    modal.style.alignItems = "center";
-    modal.style.justifyContent = "center";
-    modal.style.zIndex = "9999";
-    const box = document.createElement("div");
-    box.style.background = "#1e1e1e";
-    box.style.padding = "20px";
-    box.style.borderRadius = "8px";
-    box.style.color = "#fff";
-    box.style.minWidth = "300px";
-    box.innerHTML = `<h3>Позвать ${targetName} на PvP</h3>\n                     <p>Выберите сервер:</p>`;
-    const servers = [ {
-      name: "FFA 1vs1",
-      address: "ffa.agar.su:6004"
-    }, {
-      name: "MS 2vs2",
-      address: "ffa.agar.su:6005"
-    }, {
-      name: "Tournament",
-      address: "ffa.agar.su:6006"
-    } ];
-    servers.forEach(server => {
-      const btn = document.createElement("button");
-      btn.textContent = server.name;
-      btn.style.margin = "5px";
-      btn.style.padding = "8px 16px";
-      btn.style.cursor = "pointer";
-      btn.style.background = "#2c2c2c";
-      btn.style.border = "none";
-      btn.style.borderRadius = "4px";
-      btn.style.color = "#fff";
-      btn.onmouseover = () => {
-        btn.style.background = "#3c3c3c";
-      };
-      btn.onmouseout = () => {
-        btn.style.background = "#2c2c2c";
-      };
-      btn.onclick = () => {
-        sendPvPInvite(S, hooks, targetId, server.address);
-        modal.remove();
-      };
-      box.appendChild(btn);
-    });
-    const cancelBtn = document.createElement("button");
-    cancelBtn.textContent = "Отмена";
-    cancelBtn.style.marginTop = "10px";
-    cancelBtn.style.padding = "8px 16px";
-    cancelBtn.style.cursor = "pointer";
-    cancelBtn.style.background = "#6c6c6c";
-    cancelBtn.style.border = "none";
-    cancelBtn.style.borderRadius = "4px";
-    cancelBtn.style.color = "#fff";
-    cancelBtn.onclick = () => modal.remove();
-    box.appendChild(cancelBtn);
-    modal.appendChild(box);
-    document.body.appendChild(modal);
-  }
-  function sendPvPInvite(S, hooks, targetId, server, isAccept = false) {
-    const msg = isAccept ? `PvPInvite;${server};accept` : `PvPInvite;${server}`;
-    hooks.sendChat(`!ls${targetId} ${msg}`);
-  }
-  function showPvPConfirm(S, hooks, playerId, playerName, server) {
-    const modal = document.createElement("div");
-    modal.id = "pvpConfirmModal";
-    const box = document.createElement("div");
-    box.style.background = "#1e1e1e";
-    box.style.padding = "20px";
-    box.style.borderRadius = "8px";
-    box.style.color = "#fff";
-    box.style.minWidth = "300px";
-    box.innerHTML = `<h3>${playerName} приглашает на PvP</h3>`;
-    const acceptBtn = document.createElement("button");
-    acceptBtn.textContent = "Принять";
-    acceptBtn.onclick = () => {
-      sendPvPInvite(S, hooks, playerId, server, true);
-      hooks.setserver(server);
-      modal.remove();
-    };
-    box.appendChild(acceptBtn);
-    const rejectBtn = document.createElement("button");
-    rejectBtn.textContent = "Отказать";
-    rejectBtn.onclick = () => modal.remove();
-    box.appendChild(rejectBtn);
-    modal.appendChild(box);
-    document.body.appendChild(modal);
-  }
   function drawChatBoard(S, hooks) {
     if (S.hideChat) return;
     const rendered = S.chatRenderedCount || 0;
@@ -10051,7 +9954,7 @@ function updateRegionOnlineTotals(totals) {
     let targetDiv = null;
     const messageRaw = (lastMessage.message || "").trim();
     const privateMatch = messageRaw.match(/^!ls(\d+)\s+(.+)/i);
-    if (privateMatch && !privateMatch[2].startsWith("PvPInvite;")) {
+    if (privateMatch) {
       targetDiv = (_a = S.dialogs[`!ls${privateMatch[1]}`]) == null ? void 0 : _a.div;
     }
     if (!targetDiv) targetDiv = document.getElementById("chatX_feed");
@@ -10070,12 +9973,12 @@ function updateRegionOnlineTotals(totals) {
     if (privateMatch) {
       const number = privateMatch[1];
       messageContent = privateMatch[2];
-      if (!messageContent.startsWith("PvPInvite;")) {
-        targetDialogId = `!ls${number}`;
-        createDialog(S, hooks, number, lastMessage.name, S.skinList[normalizedName] ? `https://api.agar.su/skins/${S.skinList[normalizedName]}.png` : "https://api.agar.su/skins/4.png");
-        targetDiv = ((_b = S.dialogs[targetDialogId]) == null ? void 0 : _b.div) || targetDiv;
-      }
+      if (messageContent.startsWith("PvPInvite;")) return;
+      targetDialogId = `!ls${number}`;
+      createDialog(S, hooks, number, lastMessage.name, S.skinList[normalizedName] ? `https://api.agar.su/skins/${S.skinList[normalizedName]}.png` : "https://api.agar.su/skins/4.png");
+      targetDiv = ((_b = S.dialogs[targetDialogId]) == null ? void 0 : _b.div) || targetDiv;
     }
+    if (messageContent.startsWith("PvPInvite;")) return;
     const parsedLang = parseChatLangTag(messageContent);
     messageContent = parsedLang.text;
     const messageLang = parsedLang.lang;
@@ -10163,16 +10066,6 @@ function updateRegionOnlineTotals(totals) {
     msgDiv.appendChild(nameContainer);
     const textDiv = document.createElement("div");
     textDiv.className = "chatX_text";
-    if (messageContent.startsWith("PvPInvite;") && !messageContent.endsWith(";accept")) {
-      const server = messageContent.split(";")[1];
-      showPvPConfirm(S, hooks, lastMessage.pId, lastMessage.name, server);
-      return;
-    }
-    if (messageContent.startsWith("PvPInvite;") && messageContent.endsWith(";accept")) {
-      const server = messageContent.split(";")[1];
-      hooks.setserver(server);
-      return;
-    }
     const safeHtml = replaceEmojis(highlightMentions(censorMessage(S, messageContent)));
     textDiv.innerHTML = safeHtml;
     if (shouldBlurAndRecord(S, lastMessage.pId, messageContent)) {
@@ -10404,10 +10297,6 @@ function updateRegionOnlineTotals(totals) {
         onClick: () => openStatsForName(S, lastMessage.name)
       });
     }
-    menuItems.push({
-      label: "Позвать на PvP",
-      onClick: () => openPvPModal(S, hooks, lastMessage.pId, lastMessage.name)
-    });
     menuItems.push({
       label: "Личное сообщение",
       onClick: () => {
