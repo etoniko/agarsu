@@ -913,6 +913,9 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   let registerToken = null;
   let recoverToken = null;
   let recoverNeedsEmail = false;
+  let recoverHasPass = false;
+  let recoverPhase = "pass";
+  let recoverNewPass = "";
   let providers = null;
   let googleInited = false;
   let onLoggedIn = null;
@@ -1101,6 +1104,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     code.inputMode = "numeric";
     code.maxLength = 5;
     code.placeholder = "Код из письма";
+    code.autocomplete = "one-time-code";
     code.hidden = true;
     const pass = $("authRecPass");
     let anchor = pass;
@@ -1114,26 +1118,39 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     }
   }
 
+  function showPassField(show) {
+    const pass = $("authRecPass");
+    const label = pass && pass.closest("label");
+    const hintP = label && label.nextElementSibling;
+    if (label) label.hidden = !show;
+    else if (pass) pass.hidden = !show;
+    if (hintP && hintP.classList && hintP.classList.contains("lk-auth-hint")) hintP.hidden = !show;
+    if (!show && pass) pass.value = "";
+  }
+
   function showSetPassword(needsEmail) {
     recoverNeedsEmail = !!needsEmail;
+    recoverPhase = "pass";
+    recoverNewPass = "";
     clearRecErr();
     ensureBindFields();
     const email = $("authRecBindEmail");
     const code = $("authRecBindCode");
     if (email) {
-      email.hidden = !recoverNeedsEmail;
-      if (!recoverNeedsEmail) email.value = "";
+      email.hidden = true;
+      email.value = "";
     }
     if (code) {
       code.hidden = true;
       code.value = "";
     }
+    showPassField(true);
     const btn = $("authRecSetPassBtn");
-    if (btn) btn.textContent = recoverNeedsEmail ? "Привязать почту" : "Сохранить пароль";
-    showRecOnly("authRecStepPass", recoverNeedsEmail ? "Почта для привязки и пароль" : "Придумайте новый пароль");
+    if (btn) btn.textContent = recoverNeedsEmail ? "Дальше" : "Сохранить пароль";
+    showRecOnly("authRecStepPass", "Придумайте новый пароль");
   }
 
-  function openRecoverPassword(token, needsEmail) {
+  function openRecoverPassword(token, needsEmail, hasPass) {
     if (!token) return;
     const login = $("authCardLogin");
     const reg = $("authCardRegister");
@@ -1377,7 +1394,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         return;
       }
       stopTimer("rec");
-      openRecoverPassword(data.recoverToken, !!data.needs_email);
+      openRecoverPassword(data.recoverToken, !!data.needs_email, !!data.has_pass);
     } catch (_) {
       setErr(err, "Ошибка сети");
     }
@@ -1392,37 +1409,41 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       resetRecover();
       return;
     }
-    if (!PASS_RE.test(pass)) {
-      if (hint) hint.textContent = "Пароль: латиница, цифры и точка, 4–64";
-      return;
-    }
     try {
-      if (recoverNeedsEmail) {
+      if (recoverNeedsEmail && recoverPhase === "mail") {
         const email = ($("authRecBindEmail")?.value || "").trim();
-        const code = ($("authRecBindCode")?.value || "").trim();
+        const code = (($("authRecBindCode")?.value || "").trim().replace(/\D/g, ""));
         if (!email) {
           if (hint) hint.textContent = "Введите почту";
           return;
         }
-        if (!code) {
-          const { res, data } = await api("/auth/recover/bind-email/send-code", {
-            recoverToken: token,
-            email,
-          });
-          if (!res.ok || data.error) {
-            if (hint) hint.textContent = data.error || "Не удалось отправить код";
+        if (!/^\d{5}$/.test(code)) {
+          if (!code) {
+            const { res, data } = await api("/auth/recover/bind-email/send-code", {
+              recoverToken: token,
+              email,
+            });
+            if (!res.ok || data.error) {
+              if (hint) hint.textContent = data.error || "Не удалось отправить код";
+              return;
+            }
+            const codeEl = $("authRecBindCode");
+            if (codeEl) {
+              codeEl.hidden = false;
+              codeEl.focus();
+            }
+            const btn = $("authRecSetPassBtn");
+            if (btn) btn.textContent = "Подтвердить";
+            if (hint) hint.textContent = "Код отправлен на почту";
             return;
           }
-          const codeEl = $("authRecBindCode");
-          if (codeEl) codeEl.hidden = false;
-          if (hint) hint.textContent = "Код отправлен на почту";
+          if (hint) hint.textContent = "Введите 5-значный код из письма";
           return;
         }
         const { res, data } = await api("/auth/recover/bind-email/confirm", {
           recoverToken: token,
           email,
           code,
-          pass,
         });
         if (!res.ok || data.error || !data.token) {
           if (hint) hint.textContent = data.error || "Не удалось привязать";
@@ -1430,7 +1451,11 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         }
         persistRecoverToken(null);
         recoverNeedsEmail = false;
-        showDoneBanner(resolveLkUid(data), pass, data.token, false);
+        showDoneBanner(resolveLkUid(data), recoverNewPass, data.token, false);
+        return;
+      }
+      if (!PASS_RE.test(pass)) {
+        if (hint) hint.textContent = "Пароль: латиница, цифры и точка, 4–64";
         return;
       }
       const { res, data } = await api("/auth/recover/set-password", {
@@ -1439,6 +1464,26 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       });
       if (!res.ok || data.error || !data.token) {
         if (hint) hint.textContent = data.error || "Не удалось сохранить";
+        return;
+      }
+      if (data.needs_email) {
+        recoverNewPass = pass;
+        recoverNeedsEmail = true;
+        recoverPhase = "mail";
+        showPassField(false);
+        const emailEl = $("authRecBindEmail");
+        if (emailEl) {
+          emailEl.hidden = false;
+          emailEl.focus();
+        }
+        const codeEl = $("authRecBindCode");
+        if (codeEl) {
+          codeEl.hidden = true;
+          codeEl.value = "";
+        }
+        const btn = $("authRecSetPassBtn");
+        if (btn) btn.textContent = "Отправить код";
+        if (hint) hint.textContent = "Укажите почту, затем код из письма";
         return;
       }
       persistRecoverToken(null);
@@ -1459,7 +1504,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         setErr($("authRecError"), data.error || "В ЛК нет связанного аккаунта");
         return;
       }
-      openRecoverPassword(data.recoverToken, true);
+      openRecoverPassword(data.recoverToken, data.needs_email !== false, !!data.has_pass);
     } catch (_) {
       resetRecover();
       setErr($("authRecError"), "Ошибка сети");
@@ -1724,7 +1769,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       const token = ev.detail?.recoverToken;
       if (!token) return;
       // НЕ вызывать showView("recover") — он делает resetRecover() и убивает токен
-      openRecoverPassword(token, true);
+      openRecoverPassword(token, ev.detail?.needs_email !== false, !!ev.detail?.has_pass);
     });
   }
 
@@ -1737,8 +1782,8 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       showView("login");
     },
     showView,
-    applyRecoverToken(token) {
-      openRecoverPassword(token, true);
+    applyRecoverToken(token, flags) {
+      openRecoverPassword(token, !flags || flags.needs_email !== false, !!(flags && flags.has_pass));
     },
   };
 })();
@@ -9236,10 +9281,10 @@ function updateRegionOnlineTotals(totals) {
             } catch (_) {}
             if (window.AgarLkAuth) {
               if (typeof window.AgarLkAuth.applyRecoverToken === "function") {
-                window.AgarLkAuth.applyRecoverToken(d.recoverToken);
+                window.AgarLkAuth.applyRecoverToken(d.recoverToken, d);
               } else {
                 document.dispatchEvent(new CustomEvent("lk-recover-ready", {
-                  detail: { recoverToken: d.recoverToken, uid: d.uid }
+                  detail: { recoverToken: d.recoverToken, uid: d.uid, needs_email: d.needs_email, has_pass: d.has_pass }
                 }));
               }
             }
