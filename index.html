@@ -16,12 +16,12 @@
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="canonical" href="https://agar.su">
     <link rel="stylesheet" href="/fonts/fonts.css?v=1">
-    <link rel="stylesheet" href="style.css?v=71">
+    <link rel="stylesheet" href="style.css?v=77">
     <script src="protocols.js?v=11" defer></script>
     <script src="admin.js?v=11" defer></script>
     <script src="assets/scripts/friends.js?v=9" defer></script>
     <script src="multiprotocols.js?v=18" defer></script>
-    <script src="main.js?v=132" defer></script>
+    <script src="main.js?v=134" defer></script>
 </head>
 <body>
   <div id="overlays" class="overlays">
@@ -959,6 +959,7 @@
     </div>
     <div id="statsWrapper" class="statsWrapper">
       <div class="death"></div>
+      <div class="death-actions">
       <div class="share-label" data-en="share:" data-tr="paylaş:" data-zh="分享：" data-ar="مشاركة:" data-es="compartir:" data-pl="udostępnij:" data-de="teilen:" data-uk="поділитися:">поделиться:</div>
       <div id="buttons">
         <button class="social-btn fab fa-vk vk" data-en-title="VK" data-tr-title="VK" data-zh-title="VK" data-ar-title="VK" data-es-title="VK" data-pl-title="VK" data-de-title="VK" data-uk-title="VK" title="ВКонтакте"></button>
@@ -971,6 +972,7 @@
       <div class="nav-buttons">
         <div onclick="spectate();" class="nav-button serv-button"><i class="fas fa-eye"></i><span data-en="Spectate" data-tr="İzle" data-zh="观战" data-ar="مشاهدة" data-es="Espectear" data-pl="Obserwuj" data-de="Zuschauen" data-uk="Спостерігати">Наблюдать</span></div>
         <button id="button-text" onclick="trackPlayGoal();startGame();return false" class="nav-button play-button"><i class="fas fa-play"></i><span data-en="PLAY" data-tr="OYNA" data-zh="开始" data-ar="العب" data-es="JUGAR" data-pl="GRAJ" data-de="SPIELEN" data-uk="ГРАТИ"> ИГРАТЬ</span></button>
+      </div>
       </div>
     </div>
     <div class="statsWrapper">
