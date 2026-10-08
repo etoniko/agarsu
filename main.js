@@ -2179,7 +2179,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     chat: 13,
     coord: 67,
     macroFeed: 81,
-    splitAlt: 69,
     macroR: 82,
     macroT: 84,
     macroP: 80,
@@ -2201,7 +2200,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     chat: "Чат",
     coord: "Координаты (C)",
     macroFeed: "Выделение массы (Q)",
-    splitAlt: "Split (E)",
     macroR: "R",
     macroT: "T",
     macroP: "P",
@@ -4322,9 +4320,25 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   }
   function safeCloseSocket(ws) {
     if (!ws) return;
-    ws.onopen = null;
     ws.onmessage = null;
     ws.onclose = null;
+    ws.onerror = function() {};
+    // close() during CONNECTING is logged as
+    // "WebSocket is closed before the connection is established".
+    // Drop handlers now and close only after the handshake finishes.
+    if (ws.readyState === WebSocket.CONNECTING) {
+      ws.onopen = function() {
+        ws.onopen = null;
+        ws.onmessage = null;
+        ws.onerror = null;
+        try {
+          ws.close();
+        } catch (e) {}
+      };
+      return;
+    }
+    ws.onopen = null;
+    if (ws.readyState !== WebSocket.OPEN) return;
     try {
       ws.close();
     } catch (e) {}
@@ -4476,6 +4490,11 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       const attemptId = S.connectAttemptId;
       S.connectInProgress = true;
       S.gameHandshakeDone = false;
+      // safeCloseSocket clears onclose, so onWsClose will not stop this timer.
+      if (S.wsPingInterval) {
+        clearInterval(S.wsPingInterval);
+        S.wsPingInterval = null;
+      }
       hideBanBanner();
       hideReconnectPanel();
       showConnectVerifyOverlay("Подключение к серверу…");
@@ -4574,9 +4593,11 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     }
     function wsSend(dataViewOrTyped) {
       var _a;
-      if (!S.ws) return;
+      if (!S.ws || S.ws.readyState !== WebSocket.OPEN) return;
       const buf = (_a = dataViewOrTyped.buffer) != null ? _a : dataViewOrTyped;
-      S.ws.send(buf);
+      try {
+        S.ws.send(buf);
+      } catch (e) {}
     }
     function onWsOpen() {
       var _a;
@@ -4613,6 +4634,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       }
       if (S.wsPingInterval) clearInterval(S.wsPingInterval);
       S.wsPingInterval = setInterval(() => {
+        if (!S.gameHandshakeDone || !S.ws || S.ws.readyState !== WebSocket.OPEN) return;
         S.pingstamp = Date.now();
         wsSend(encodePing());
       }, 3e3);
@@ -4785,9 +4807,11 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       return S.ws != null && S.ws.readyState === WebSocket.OPEN;
     }
     function wsSend(view) {
-      if (!S.ws) return;
+      if (!S.ws || S.ws.readyState !== WebSocket.OPEN) return;
       ensureFreezeWsHook(S);
-      S.ws.send(view.buffer);
+      try {
+        S.ws.send(view.buffer);
+      } catch (e) {}
     }
     function getColorId(hex) {
       const colors = S.cellColors;
@@ -6893,14 +6917,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         }
         return;
       }
-      if (code === getBind(S, "splitAlt")) {
-        if (!keyPressed.splitAlt) {
-          hooks.sendMouseMove();
-          hooks.sendUint8(17);
-          keyPressed.splitAlt = true;
-        }
-        return;
-      }
       if (code === getBind(S, "macroR")) {
         if (!keyPressed.macroR) {
           hooks.sendMouseMove();
@@ -6949,7 +6965,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
           hooks.sendUint8(19);
         }
       }
-      if (code === getBind(S, "splitAlt")) keyPressed.splitAlt = false;
       if (code === getBind(S, "macroR")) keyPressed.macroR = false;
       if (code === getBind(S, "macroT")) keyPressed.macroT = false;
       if (code === getBind(S, "macroP")) keyPressed.macroP = false;

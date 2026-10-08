@@ -1632,6 +1632,49 @@ i:hover{cursor:pointer;}
 .fa-youtube{background: radial-gradient(white 4px, #1e90ff00 1%);color: red;}
 #toplistnow{font-size: 13.4px;padding-top: 5px;}
 @media (max-width:599px){
+#statics{justify-content:center;}
+#statsWrapper{
+  width:calc(100% - 32px);
+  max-width:100%;
+  height:auto;
+  min-height:360px;
+  padding:28px 22px;
+  justify-content:flex-start;
+  gap:16px;
+}
+#statsWrapper .death-actions{
+  margin-top:auto;
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:10px;
+}
+#statsWrapper > .death{
+  width:100%;
+  max-width:100%;
+  height:150px;
+  max-height:150px;
+}
+#statsWrapper > .death:empty{display:none;}
+#statsWrapper > .death > div{
+  width:100%!important;
+  height:150px!important;
+}
+#statsWrapper .share-label{font-size:13px;}
+#statsWrapper #buttons{gap:8px;}
+#statsWrapper .social-btn{width:40px;height:40px;font-size:20px;}
+#statsWrapper #shareText{font-size:14px;line-height:1.3;max-width:34ch;}
+#statsWrapper .nav-buttons{gap:16px;margin-top:12px;justify-content:center;}
+#statsWrapper .nav-button{
+  flex:0 0 auto;
+  min-height:42px;
+  padding:12px 24px;
+  font-size:14px;
+  font-weight:600;
+  border-radius:22px;
+}
+#statsWrapper .nav-button i{font-size:14px;}
 #statics > div:nth-child(1), #statics > div:nth-child(3){display:none;}
 .score-info{left:40%;}
 #table-container{height:auto;max-height:none;flex:1 1 auto;min-height:0;}
