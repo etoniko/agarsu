@@ -5064,6 +5064,18 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     for (let i = 0; i < S.nodelist.length; i++) {
       const node = S.nodelist[i];
       if (!(node == null ? void 0 : node.isFood)) continue;
+      if (node.foodPlaced && node.encX != null) {
+        const x = S.leftPos + node.encX;
+        const y = S.topPos + node.encY;
+        node.ox = x;
+        node.oy = y;
+        node.nx = x;
+        node.ny = y;
+        node.x = x;
+        node.y = y;
+        node.updateTime = now;
+        continue;
+      }
       const {x, y} = computeFoodPosition(S, node.id);
       const sz = computeFoodSize(S, node.id);
       node.ox = x;
@@ -5219,14 +5231,9 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       setNodeSticker(node, enabled ? stickerId : null);
     }
   }
-  function foodColorHex(slot) {
-    let n = (Math.imul(slot, 1103515245) + 12345) >>> 0;
-    const r = 80 + (n & 127);
-    n = (Math.imul(n, 1664525) + 1013904223) >>> 0;
-    const g = 80 + (n & 127);
-    n = (Math.imul(n, 22695477) + 1) >>> 0;
-    const b = 80 + (n & 127);
-    return "#" + (r << 16 | g << 8 | b).toString(16).padStart(6, "0");
+  const FOOD_HEX = [ "#ff0720", "#ff0760", "#ff07b4", "#ff4007", "#ffa007", "#ff07ff", "#07ff20", "#07ff8c", "#07ffe6", "#0740ff", "#07b4ff", "#b407ff", "#ff285a", "#28ff5a", "#ffdc07", "#07dcff" ];
+  function foodColorHex(id) {
+    return FOOD_HEX[(id | 0) & 15] || FOOD_HEX[0];
   }
   function applyThinWorld(S, view, offset) {
     if (!view || offset >= view.byteLength) return;
@@ -5283,25 +5290,49 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       const b = u8();
       return "#" + (r << 16 | g << 8 | b).toString(16).padStart(6, "0");
     }
-    function syncFood(slot, on) {
-      if (!slot) return;
+    function dropFood(slot) {
       const node = S.nodes[slot];
-      if (on) {
-        if (node && !node.destroyed) return;
-        const pos = computeFoodPosition(S, slot);
-        const size = computeFoodSize(S, slot);
-        const cell = new Cell(slot, pos.x, pos.y, size, foodColorHex(slot), "");
-        cell.isFood = true;
-        cell.held = true;
-        cell.nx = pos.x;
-        cell.ny = pos.y;
-        cell.nSize = size;
-        cell.updateTime = S.timestamp;
-        S.nodelist.push(cell);
-        S.nodes[slot] = cell;
-        return;
-      }
       if (node && !node.destroyed && node.isFood) node.destroy();
+    }
+    function addViewFood(slot, encX, encY, colorId) {
+      if (!slot) return;
+      const x = S.leftPos + encX;
+      const y = S.topPos + encY;
+      const size = computeFoodSize(S, slot);
+      const color = foodColorHex(colorId);
+      let node = S.nodes[slot];
+      if (node && !node.destroyed && !node.isFood) return;
+      if (!node || node.destroyed) {
+        node = new Cell(slot, x, y, size, color, "");
+        S.nodelist.push(node);
+        S.nodes[slot] = node;
+      }
+      node.isFood = true;
+      node.foodPlaced = true;
+      node.held = true;
+      node.color = color;
+      node.encX = encX;
+      node.encY = encY;
+      node.ox = node.x = node.nx = x;
+      node.oy = node.y = node.ny = y;
+      node.oSize = size;
+      node.size = size;
+      node.nSize = size;
+      node.setSize(size);
+      node.updateTime = S.timestamp;
+    }
+    function readFoodSpawn() {
+      const slot = u16();
+      const x = u16();
+      const y = u16();
+      const colorId = u8();
+      if (!bad) addViewFood(slot, x, y, colorId);
+    }
+    function wipeFood() {
+      for (let i = S.nodelist.length - 1; i >= 0; i--) {
+        const node = S.nodelist[i];
+        if (node && node.isFood && !node.destroyed) node.destroy();
+      }
     }
     function claimOwn(node, pid) {
       if (!pid) return;
@@ -5354,23 +5385,14 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     try {
       const foodMode = u8();
       if (foodMode === 1) {
-        const slotCount = u16();
-        const byteLen = u16();
-        if (!need(byteLen)) return;
-        const bytes = new Uint8Array(view.buffer, view.byteOffset + offset, byteLen);
-        offset += byteLen;
-        for (let slot = 1; slot <= slotCount; slot++) {
-          const i = slot - 1;
-          const on = i >> 3 < bytes.length && (bytes[i >> 3] >> (i & 7) & 1);
-          syncFood(slot, on);
-        }
+        const count = u16();
+        wipeFood();
+        for (let i = 0; i < count && !bad; i++) readFoodSpawn();
       } else if (foodMode === 2) {
-        const flips = u16();
-        for (let i = 0; i < flips && !bad; i++) {
-          const slot = u16();
-          const on = u8();
-          if (!bad) syncFood(slot, on);
-        }
+        const removeCount = u16();
+        for (let i = 0; i < removeCount && !bad; i++) dropFood(u16());
+        const addCount = u16();
+        for (let i = 0; i < addCount && !bad; i++) readFoodSpawn();
       }
       if (bad) return;
       const eatCount = u16();
