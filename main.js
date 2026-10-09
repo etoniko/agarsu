@@ -2922,6 +2922,11 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   }
   window.getLimitGlowMassBounds = getLimitGlowMassBounds;
   window.isLimitGlowDisabledHost = isLimitGlowDisabledHost;
+  /** Side rings (left.png / right.png) only on tournament 3x3 and 4x4. */
+  function isTeamSideOutlineServer(host) {
+    const id = resolveOfficialServerId(host);
+    return id === "tournament2" || id === "tournament3";
+  }
   /** Bridge skins via unified xn--bdk.pw skinsbot. skinlist.txt still wins (agar.su only). */
   var SKINS_BOT_BASE = "https://xn--bdk.pw:6016";
   function applyServerSpectateCamera(S, x, y, size) {
@@ -5309,6 +5314,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       node.setSize(size);
       node.updateTime = S.timestamp;
       node.flag = spiked;
+      node.teamSide = spiked & 2 ? 1 : spiked & 4 ? 2 : 0;
       if (pid && packetName) {
         if (rememberPlayerNick(S, pid, packetName)) applyPlayerNickToCells(S, pid, packetName);
         else if (node.name !== packetName) node.setName(packetName);
@@ -5684,7 +5690,8 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       spectateAutoFollow: false,
       mouseSplitButton: 3,
       mouseEjectButton: 1,
-      showGlow: true,
+      showGlow: false,
+      showSideOutline: true,
       confirmCloseTab: false,
       showAdultContent: false,
       fixedCell: false,
@@ -6212,6 +6219,20 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
           ctx.clip();
           const edrawSize = 2 * renderSize;
           ctx.globalAlpha = 1;
+          ctx.drawImage(effectImg, this.x - edrawSize / 2, this.y - edrawSize / 2, edrawSize, edrawSize);
+          ctx.restore();
+        }
+      }
+      if (S.showSideOutline && this.teamSide && !this.isVirus && !this.isFood && !this.isEjected && isTeamSideOutlineServer(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl)) {
+        const sideUrl = this.teamSide === 1 ? "/photo/left.png" : "/photo/right.png";
+        const sideImg = this.teamSide === 1 ? S.sideLeftIcon : S.sideRightIcon;
+        const effectImg = sideImg && sideImg.complete && sideImg.width > 0 ? sideImg : loadCachedImage2(sideUrl);
+        if (effectImg && effectImg.complete && effectImg.width > 0) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, renderSize, 0, 2 * Math.PI);
+          ctx.clip();
+          const edrawSize = 2 * renderSize;
           ctx.drawImage(effectImg, this.x - edrawSize / 2, this.y - edrawSize / 2, edrawSize, edrawSize);
           ctx.restore();
         }
@@ -10633,6 +10654,9 @@ function updateRegionOnlineTotals(totals) {
      case 9:
       return S.showGlow;
 
+     case 18:
+      return S.showSideOutline !== false;
+
      case 10:
       return S.showAdultContent;
 
@@ -10678,7 +10702,16 @@ function updateRegionOnlineTotals(totals) {
     } catch (e) {}
     return null;
   }
+  function disableLimitGlowByDefault() {
+    try {
+      if (localStorage.getItem("limitGlowDefaultOff") === "1") return;
+      localStorage.setItem("limitGlowDefaultOff", "1");
+      localStorage.setItem("checkbox-9", "false");
+    } catch (e) {}
+    setCookie("checkbox-9", "false", 365);
+  }
   function restoreCheckboxCookies(S) {
+    disableLimitGlowByDefault();
     onReady(function() {
       const qualitySelect = document.getElementById("quality-select");
       const savedQuality = readStored("render_quality", "high");
@@ -10713,6 +10746,7 @@ function updateRegionOnlineTotals(totals) {
           if (id == 15) S.wHandle.setCustomMapBg(value);
           if (id == 16) S.wHandle.setCustomVirusBg(value);
           if (id == 17) S.wHandle.setSpectateAutoFollow(value);
+          if (id == 18) S.wHandle.setSideOutline(value);
         });
       });
     });
@@ -10769,6 +10803,10 @@ function updateRegionOnlineTotals(totals) {
     wHandle.setGlow = function(arg) {
       S.showGlow = arg;
       persistCheckbox(9, arg);
+    };
+    wHandle.setSideOutline = function(arg) {
+      S.showSideOutline = !!arg;
+      persistCheckbox(18, S.showSideOutline);
     };
     wHandle.setAdultContent = function(arg) {
       S.showAdultContent = arg;
@@ -10937,6 +10975,10 @@ function initServers(S) {
     S.ejectIcon = new Image;
     S.splitIcon.src = "/photo/split.png";
     S.ejectIcon.src = "/photo/eject.png";
+    S.sideLeftIcon = new Image();
+    S.sideRightIcon = new Image();
+    S.sideLeftIcon.src = "/photo/left.png";
+    S.sideRightIcon.src = "/photo/right.png";
     S.isTouchStart = "ontouchstart" in wHandle && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     setTouchDeviceDetected(S.isTouchStart);
     S.Quad = Quad;
