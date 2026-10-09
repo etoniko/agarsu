@@ -1,0 +1,13753 @@
+/* Moved from index.html */
+window.renderDeathBanner = window.renderDeathBanner || function () {};
+      window.trackPlayGoal = window.trackPlayGoal || function () {};
+
+(function () {
+  var LANGS = ['ru','en','uk','tr','zh','ar','es','pl','de'];
+  var STORE_KEY = 'ui_lang';
+  function detectLang() {
+    try {
+      var saved = localStorage.getItem(STORE_KEY);
+      if (saved && LANGS.indexOf(saved) !== -1) return saved;
+    } catch (e) {}
+    var nav = String((navigator.languages && navigator.languages[0]) || navigator.language || 'ru').toLowerCase();
+    if (nav.indexOf('ru') === 0) return 'ru';
+    if (nav.indexOf('uk') === 0) return 'uk';
+    if (nav.indexOf('en') === 0) return 'en';
+    if (nav.indexOf('tr') === 0) return 'tr';
+    if (nav.indexOf('zh') === 0) return 'zh';
+    if (nav.indexOf('ar') === 0) return 'ar';
+    if (nav.indexOf('es') === 0) return 'es';
+    if (nav.indexOf('pl') === 0) return 'pl';
+    if (nav.indexOf('de') === 0) return 'de';
+    return 'en';
+  }
+  function getText(el) {
+    var nodes = [];
+    for (var i = 0; i < el.childNodes.length; i++) {
+      var n = el.childNodes[i];
+      if (n.nodeType === 3 && n.textContent.trim()) nodes.push(n);
+    }
+    if (nodes.length) {
+      var t = '';
+      for (var j = 0; j < nodes.length; j++) t += nodes[j].textContent;
+      return t;
+    }
+    return el.textContent;
+  }
+  function setText(el, text) {
+    var nodes = [];
+    for (var i = 0; i < el.childNodes.length; i++) {
+      var n = el.childNodes[i];
+      if (n.nodeType === 3 && String(n.textContent).trim()) nodes.push(n);
+    }
+    if (nodes.length && el.children.length) {
+      nodes[0].textContent = text;
+      for (var k = 1; k < nodes.length; k++) nodes[k].textContent = '';
+      return;
+    }
+    if (nodes.length === 1 && !el.children.length) {
+      nodes[0].textContent = text;
+      return;
+    }
+    el.textContent = text;
+  }
+  function applyAttrLang(el, lang, base, prop) {
+    var key = lang === 'ru' ? 'data-ru' + (base ? '-' + base : '') : 'data-' + lang + (base ? '-' + base : '');
+    var val = el.getAttribute(key);
+    if (val == null && lang === 'ru') return;
+    if (val == null) return;
+    if (prop === 'text') setText(el, val);
+    else if (prop === 'placeholder') el.setAttribute('placeholder', val);
+    else if (prop === 'title') el.setAttribute('title', val);
+    else if (prop === 'aria') el.setAttribute('aria-label', val);
+  }
+  function ensureRu(el, base, getter) {
+    var key = 'data-ru' + (base ? '-' + base : '');
+    if (!el.hasAttribute(key)) el.setAttribute(key, getter(el));
+  }
+  function applyUiLang(lang) {
+    if (LANGS.indexOf(lang) === -1) lang = 'en';
+    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : lang;
+    document.documentElement.setAttribute('dir', 'ltr');
+    if (document.body) document.body.setAttribute('dir', 'ltr');
+    var nodes = document.querySelectorAll('[data-en]');
+    for (var i = 0; i < nodes.length; i++) {
+      var el = nodes[i];
+      if (el.id === 'accountMenuLabel') {
+        // keep dynamic login label unless it still looks like the default
+        var cur = getText(el).trim();
+        var ruLogin = 'Войти';
+        if (!el.hasAttribute('data-ru')) el.setAttribute('data-ru', ruLogin);
+        if (cur && cur !== ruLogin && cur !== el.getAttribute('data-en') &&
+            cur !== el.getAttribute('data-tr') && cur !== el.getAttribute('data-zh') &&
+            cur !== el.getAttribute('data-ar') && cur !== el.getAttribute('data-es') &&
+            cur !== el.getAttribute('data-pl') && cur !== el.getAttribute('data-de') &&
+            cur !== el.getAttribute('data-ru')) {
+          continue;
+        }
+      }
+      ensureRu(el, '', getText);
+      var val = lang === 'ru' ? el.getAttribute('data-ru') : el.getAttribute('data-' + lang);
+      if (val != null) setText(el, val);
+    }
+    var ph = document.querySelectorAll('[data-en-placeholder]');
+    for (var p = 0; p < ph.length; p++) {
+      ensureRu(ph[p], 'placeholder', function (e) { return e.getAttribute('placeholder') || ''; });
+      applyAttrLang(ph[p], lang, 'placeholder', 'placeholder');
+    }
+    var titles = document.querySelectorAll('[data-en-title]');
+    for (var t = 0; t < titles.length; t++) {
+      ensureRu(titles[t], 'title', function (e) { return e.getAttribute('title') || ''; });
+      applyAttrLang(titles[t], lang, 'title', 'title');
+    }
+    var arias = document.querySelectorAll('[data-en-aria-label]');
+    for (var a = 0; a < arias.length; a++) {
+      ensureRu(arias[a], 'aria-label', function (e) { return e.getAttribute('aria-label') || ''; });
+      applyAttrLang(arias[a], lang, 'aria-label', 'aria');
+    }
+    var btns = document.querySelectorAll('.lang-flag-btn');
+    for (var b = 0; b < btns.length; b++) {
+      btns[b].classList.toggle('active', btns[b].getAttribute('data-set-lang') === lang);
+    }
+    try { localStorage.setItem(STORE_KEY, lang); } catch (e) {}
+    window.__uiLang = lang;
+    try { document.dispatchEvent(new CustomEvent('ui-lang-changed', { detail: { lang: lang } })); } catch (e2) {}
+  }
+  function bindFlags() {
+    var root = document.getElementById('lang-flags');
+    if (!root || root.dataset.bound === '1') return;
+    root.dataset.bound = '1';
+    root.addEventListener('click', function (ev) {
+      var btn = ev.target.closest('[data-set-lang]');
+      if (!btn) return;
+      applyUiLang(btn.getAttribute('data-set-lang'));
+    });
+  }
+  window.setUiLang = applyUiLang;
+  window.getUiLang = function () { return window.__uiLang || detectLang(); };
+  function bindRatingHeader() {
+    var row = document.querySelector('#rating > .header-row');
+    if (!row || row.dataset.bound === '1') return;
+    row.dataset.bound = '1';
+    row.addEventListener('click', function (ev) {
+      var btn = ev.target.closest('.rating-col');
+      if (!btn) return;
+      var open = btn.classList.contains('is-open');
+      var opened = row.querySelectorAll('.rating-col.is-open');
+      for (var i = 0; i < opened.length; i++) opened[i].classList.remove('is-open');
+      if (!open) btn.classList.add('is-open');
+    });
+    document.addEventListener('click', function (ev) {
+      if (row.contains(ev.target)) return;
+      var opened = row.querySelectorAll('.rating-col.is-open');
+      for (var i = 0; i < opened.length; i++) opened[i].classList.remove('is-open');
+    });
+  }
+  function boot() {
+    bindFlags();
+    applyUiLang(detectLang());
+    bindRatingHeader();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+})();
+
+// Встройка с каталога wgl: прячем юр.полоску
+      (function () {
+        try {
+          var q = new URLSearchParams(location.search);
+          var emb = q.get("embed") === "1" || q.get("wgl") === "1";
+          var ref = String(document.referrer || "");
+          if (emb || /wgl\.su|etoniko\.github\.io/i.test(ref) || window !== window.top) {
+            document.documentElement.classList.add("wgl-embed");
+          }
+        } catch (e) {}
+      })();
+
+/* Friends, moved from assets/scripts/friends.js */
+/**
+ * Client Friends feature (agar.su). Rollback: remove this script + HTML/CSS hooks.
+ * Depends on API /api/friends* (file-backed). Does not touch game servers.
+ */
+(function (global) {
+  "use strict";
+
+  const API = "https://api.agar.su/api/";
+  const MIN_XP = 1000;
+  const PLAY_POLL_MS = 4000;
+  const PRESENCE_MS = 2000;
+  const DRAW_MS = 200;
+  // ~1.25 sectors on a 5×5 minimap (E1↔C1 ≈ 2 sectors)
+  const ARROW_MAP_DIST = 0.25;
+  const ARROW_EDGE = 0.47;
+  const LS = {
+    arrows: "friends_show_arrows",
+    minimap: "friends_show_minimap",
+    shareCoords: "friends_share_coords",
+    sharePresence: "friends_share_presence",
+  };
+
+  let S = null;
+  let accountApiGet = null;
+  let resolveServerId = null;
+  let playTimer = null;
+  let presenceTimer = null;
+  let drawTimer = null;
+  let playData = { friends: [], privacy: { shareCoords: false, sharePresence: true } };
+  let friendNickSet = new Set();
+  let wiredUi = false;
+  let friendsTab = "friends";
+  let lastPlayingSent = null;
+
+  function setFriendsTab(which) {
+    friendsTab = which === "incoming" || which === "outgoing" ? which : "friends";
+    document.querySelectorAll(".friends-subtab").forEach((btn) => {
+      const on = btn.getAttribute("data-friends-tab") === friendsTab;
+      btn.classList.toggle("active", on);
+      btn.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    document.querySelectorAll(".friends-pane").forEach((pane) => {
+      const on = pane.getAttribute("data-friends-pane") === friendsTab;
+      pane.classList.toggle("active", on);
+      if (on) pane.removeAttribute("hidden");
+      else pane.setAttribute("hidden", "");
+    });
+  }
+
+  function updateFriendsCounts(friendsN, outgoingN, incomingN) {
+    const set = (id, n) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = String(n);
+    };
+    set("friendsCountFriends", friendsN);
+    set("friendsCountOutgoing", outgoingN);
+    set("friendsCountIncoming", incomingN);
+    const badge = document.getElementById("badgeFriends");
+    if (badge) {
+      badge.textContent = String(friendsN);
+      badge.classList.toggle("badge--alert", incomingN > 0);
+      if (incomingN > 0) badge.textContent = String(incomingN);
+    }
+    setIncomingAlerts(incomingN);
+  }
+
+  function setIncomingAlerts(incomingN) {
+    const n = Math.max(0, Number(incomingN) || 0);
+    const show = n > 0;
+    const accountDot = document.getElementById("accountFriendsAlert");
+    const tabDot = document.getElementById("tabFriendsAlert");
+    const tab = document.getElementById("tabFriends");
+    const accountItem = document.getElementById("accountMenuItem");
+    if (accountDot) {
+      accountDot.hidden = !show;
+      accountDot.setAttribute("aria-hidden", show ? "false" : "true");
+      if (show) accountDot.title = "Входящие заявки в друзья: " + n;
+    }
+    if (tabDot) {
+      tabDot.hidden = !show;
+      tabDot.setAttribute("aria-hidden", show ? "false" : "true");
+      if (show) tabDot.title = "Входящие: " + n;
+    }
+    if (tab) tab.classList.toggle("has-friends-alert", show);
+    if (accountItem) accountItem.classList.toggle("has-friends-alert", show);
+  }
+
+  function lsBool(key, def) {
+    try {
+      const v = localStorage.getItem(key);
+      if (v === null || v === undefined) return def;
+      return v === "1" || v === "true";
+    } catch (_) {
+      return def;
+    }
+  }
+  function lsSet(key, val) {
+    try {
+      localStorage.setItem(key, val ? "1" : "0");
+    } catch (_) {}
+  }
+
+  function optArrows() {
+    return lsBool(LS.arrows, true);
+  }
+  function optMinimap() {
+    return lsBool(LS.minimap, true);
+  }
+  function optShareCoords() {
+    return lsBool(LS.shareCoords, true);
+  }
+  function optSharePresence() {
+    return lsBool(LS.sharePresence, true);
+  }
+
+  global.setFriendArrows = function (v) {
+    lsSet(LS.arrows, !!v);
+    drawArrows();
+  };
+  global.setFriendMinimap = function (v) {
+    lsSet(LS.minimap, !!v);
+    drawMinimapDots();
+  };
+  global.setFriendShareCoords = function (v) {
+    lsSet(LS.shareCoords, !!v);
+    syncPrivacyToServer();
+    sendPresence(true);
+  };
+  global.setFriendSharePresence = function (v) {
+    lsSet(LS.sharePresence, !!v);
+    syncPrivacyToServer();
+  };
+
+  function getToken() {
+    try {
+      return localStorage.getItem("accountToken") || "";
+    } catch (_) {
+      return "";
+    }
+  }
+  async function api(tag, method, body) {
+    if (typeof accountApiGet === "function") {
+      return accountApiGet(tag, method || "GET", body || null);
+    }
+    const headers = {};
+    const token = getToken();
+    if (token) headers.Authorization = "Game " + token;
+    if (body) headers["Content-Type"] = "application/json";
+    return fetch(API + tag, {
+      method: method || "GET",
+      headers,
+      body: body ? JSON.stringify(body) : null,
+      cache: "no-store",
+    });
+  }
+
+  async function syncPrivacyToServer() {
+    if (!getToken()) return;
+    try {
+      await api("friends/privacy", "POST", {
+        shareCoords: optShareCoords(),
+        sharePresence: optSharePresence(),
+      });
+    } catch (_) {}
+  }
+
+  function esc(s) {
+    return String(s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function rebuildNickSet() {
+    const set = new Set();
+    (playData.friends || []).forEach((f) => {
+      if (f.account_name) set.add(String(f.account_name).toLowerCase());
+      (f.nicks || []).forEach((n) => set.add(String(n).toLowerCase().split("#")[0]));
+    });
+    friendNickSet = set;
+  }
+
+  function isFriendName(name) {
+    if (!name) return false;
+    const n = String(name).toLowerCase().split("#")[0].trim();
+    return friendNickSet.has(n);
+  }
+
+  function decorateLbName(name) {
+    // In-game leaderboard stays plain (no friend marks).
+    return String(name || "");
+  }
+
+  function currentServerKey() {
+    if (!S) return "";
+    try {
+      if (typeof resolveServerId === "function") {
+        return resolveServerId(S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl || "") || "";
+      }
+    } catch (_) {}
+    return "";
+  }
+
+  function isPlaying() {
+    if (!S) return false;
+    // Dead / spectating: 0 own cells → no arrows for me, and presence playing=false
+    return !!(S.playerCells && S.playerCells.length > 0 && S.ws && S.ws.readyState === 1);
+  }
+
+  function mapNorm(x, y) {
+    if (!S) return null;
+    const tw = Number(S.rightPos) - Number(S.leftPos);
+    const th = Number(S.bottomPos) - Number(S.topPos);
+    if (!(tw > 0) || !(th > 0)) return null;
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+    return {
+      nx: (x - S.leftPos) / tw,
+      ny: (y - S.topPos) / th,
+    };
+  }
+
+  function canvasSize() {
+    const canvas = document.getElementById("canvas");
+    const w = (canvas && (canvas.clientWidth || canvas.width)) || window.innerWidth || 1;
+    const h = (canvas && (canvas.clientHeight || canvas.height)) || window.innerHeight || 1;
+    return { w, h, cx: w / 2, cy: h / 2 };
+  }
+
+  async function sendPresence(force) {
+    if (!getToken()) return;
+    if ((Number(S?.accountData?.xp) || 0) < MIN_XP && !force) return;
+    const playing = isPlaying();
+    if (!force && lastPlayingSent === playing && !playing) {
+      // already reported death; skip spam while dead
+      return;
+    }
+    const body = {
+      playing,
+      serverKey: playing ? currentServerKey() : "",
+      serverTitle: playing ? currentServerKey() : "",
+      shareCoords: optShareCoords(),
+    };
+    if (playing && optShareCoords() && S) {
+      body.x = S.nodeX;
+      body.y = S.nodeY;
+    }
+    try {
+      await api("friends/presence", "POST", body);
+      lastPlayingSent = playing;
+    } catch (_) {}
+  }
+
+  function tickPresence() {
+    const playing = isPlaying();
+    // Immediate push on death / respawn
+    if (lastPlayingSent !== null && lastPlayingSent !== playing) {
+      sendPresence(true);
+      return;
+    }
+    sendPresence(false);
+  }
+
+  async function refreshPlayData() {
+    if (!getToken()) return;
+    if ((Number(S?.accountData?.xp) || 0) < MIN_XP) return;
+    try {
+      const res = await api("friends/play");
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!data || !data.ok) return;
+      playData = data;
+      rebuildNickSet();
+      drawArrows();
+      drawMinimapDots();
+      if (typeof data.incomingCount === "number") {
+        setIncomingAlerts(data.incomingCount);
+        const badge = document.getElementById("badgeFriends");
+        if (badge && data.incomingCount > 0) {
+          badge.textContent = String(data.incomingCount);
+          badge.classList.add("badge--alert");
+        } else if (badge && data.incomingCount === 0) {
+          badge.classList.remove("badge--alert");
+          const friendsPaneCount = document.getElementById("friendsCountFriends");
+          if (friendsPaneCount) badge.textContent = friendsPaneCount.textContent || "0";
+        }
+      }
+    } catch (_) {}
+  }
+
+  function startLoops() {
+    stopLoops();
+    playTimer = setInterval(refreshPlayData, PLAY_POLL_MS);
+    presenceTimer = setInterval(tickPresence, PRESENCE_MS);
+    drawTimer = setInterval(() => {
+      tickPresence();
+      drawArrows();
+      drawMinimapDots();
+    }, DRAW_MS);
+    refreshPlayData();
+    sendPresence(true);
+  }
+  function stopLoops() {
+    if (playTimer) clearInterval(playTimer);
+    if (presenceTimer) clearInterval(presenceTimer);
+    if (drawTimer) clearInterval(drawTimer);
+    playTimer = null;
+    presenceTimer = null;
+    drawTimer = null;
+    lastPlayingSent = null;
+  }
+
+  function sameServerFriendCoords() {
+    const key = currentServerKey();
+    if (!key || (!optArrows() && !optMinimap())) return [];
+    if (!isPlaying()) return [];
+    return (playData.friends || []).filter((f) => {
+      // Friend died (0 cells → playing false) → hide until they play again
+      if (!f.playing || !f.online) return false;
+      if (!f.serverKey || String(f.serverKey) !== String(key)) return false;
+      return Number.isFinite(f.x) && Number.isFinite(f.y);
+    });
+  }
+
+  function drawArrows() {
+    const root = document.getElementById("friendArrows");
+    if (!root) return;
+    root.innerHTML = "";
+    if (!optArrows() || !isPlaying()) return;
+    const me = mapNorm(S.nodeX, S.nodeY);
+    if (!me) return;
+    const { w, h, cx, cy } = canvasSize();
+    const edge = Math.min(w, h) * ARROW_EDGE;
+
+    sameServerFriendCoords().forEach((f) => {
+      const them = mapNorm(f.x, f.y);
+      if (!them) return;
+      const dx = them.nx - me.nx;
+      const dy = them.ny - me.ny;
+      const dist = Math.hypot(dx, dy);
+      // Far enough on minimap (≈ >1 sector; E1↔C1 ≈ 0.4)
+      if (!(dist >= ARROW_MAP_DIST)) return;
+
+      const ang = Math.atan2(dy, dx);
+      const ax = cx + Math.cos(ang) * edge;
+      const ay = cy + Math.sin(ang) * edge;
+      const el = document.createElement("div");
+      el.className = "friend-arrow";
+      el.style.left = ax + "px";
+      el.style.top = ay + "px";
+      el.style.transform =
+        "translate(-50%,-50%) rotate(" + (ang + Math.PI / 2) + "rad)";
+      el.innerHTML = '<div class="friend-arrow-inner"></div>';
+      root.appendChild(el);
+    });
+  }
+
+  function drawMinimapDots() {
+    const root = document.getElementById("friendMapDots");
+    if (!root || !S) return;
+    root.innerHTML = "";
+    if (!optMinimap() || !isPlaying()) return;
+    const map = document.querySelector(".map-container");
+    if (!map) return;
+    const mw = map.offsetWidth || 0;
+    const mh = map.offsetHeight || 0;
+    if (!mw || !mh) return;
+    sameServerFriendCoords().forEach((f) => {
+      const them = mapNorm(f.x, f.y);
+      if (!them) return;
+      const mx = them.nx * mw;
+      const my = them.ny * mh;
+      if (!Number.isFinite(mx) || !Number.isFinite(my)) return;
+      const dot = document.createElement("span");
+      dot.className = "friend-map-dot";
+      dot.style.left = mx + "px";
+      dot.style.top = my + "px";
+      root.appendChild(dot);
+    });
+  }
+
+  function displayFriendName(f) {
+    const name = String(f?.account_name || "").trim();
+    if (name) return name;
+    return "ID " + (f?.uid ?? "?");
+  }
+
+  function renderFriendRow(f, mode) {
+    const li = document.createElement("li");
+    li.className = "friends-row";
+    const left = document.createElement("div");
+    left.className = "friends-row-main";
+    const title = document.createElement("div");
+    title.className = "friends-row-title";
+    const shown = displayFriendName(f);
+    const hasName = !!String(f?.account_name || "").trim();
+    title.innerHTML =
+      '<span class="friends-row-name">' +
+      esc(shown) +
+      "</span>" +
+      (hasName
+        ? '<span class="friends-row-id">ID ' + esc(f.uid) + "</span>"
+        : "");
+    left.appendChild(title);
+    if (mode === "friends") {
+      const meta = document.createElement("div");
+      if (f.hidden) {
+        meta.className = "friends-meta online";
+        meta.textContent = "в сети (скрыто)";
+      } else if (f.online && f.playing && f.serverKey) {
+        meta.className = "friends-meta online";
+        meta.textContent = "в игре · " + String(f.serverKey);
+      } else if (f.online) {
+        meta.className = "friends-meta online";
+        meta.textContent = "в сети";
+      } else {
+        meta.className = "friends-meta offline";
+        meta.textContent = "не в сети";
+      }
+      left.appendChild(meta);
+    } else if (mode === "incoming") {
+      const meta = document.createElement("div");
+      meta.className = "friends-meta";
+      meta.textContent = "хочет добавить вас";
+      left.appendChild(meta);
+    } else if (mode === "outgoing") {
+      const meta = document.createElement("div");
+      meta.className = "friends-meta";
+      meta.textContent = "ожидает ответа";
+      left.appendChild(meta);
+    }
+    const actions = document.createElement("div");
+    actions.className = "friends-actions";
+    if (mode === "incoming") {
+      const a = document.createElement("button");
+      a.className = "friends-btn";
+      a.type = "button";
+      a.textContent = "Принять";
+      a.onclick = () => act("friends/accept", f.uid);
+      const r = document.createElement("button");
+      r.className = "friends-btn secondary";
+      r.type = "button";
+      r.textContent = "Отклонить";
+      r.onclick = () => act("friends/reject", f.uid);
+      actions.append(a, r);
+    } else if (mode === "outgoing") {
+      const c = document.createElement("button");
+      c.className = "friends-btn secondary";
+      c.type = "button";
+      c.textContent = "Отменить";
+      c.onclick = () => act("friends/remove", f.uid);
+      actions.append(c);
+    } else if (mode === "friends") {
+      const c = document.createElement("button");
+      c.className = "friends-btn danger";
+      c.type = "button";
+      c.textContent = "Удалить";
+      c.onclick = () => {
+        if (confirm("Удалить из друзей?")) act("friends/remove", f.uid);
+      };
+      actions.append(c);
+    } else if (mode === "search") {
+      const b = document.createElement("button");
+      b.className = "friends-btn";
+      b.type = "button";
+      if (f.relation === "friends") {
+        b.textContent = "Друзья";
+        b.disabled = true;
+      } else if (f.relation === "outgoing") {
+        b.textContent = "Заявка";
+        b.disabled = true;
+      } else if (f.relation === "incoming") {
+        b.textContent = "Принять";
+        b.onclick = () => act("friends/accept", f.uid);
+      } else {
+        b.textContent = "Добавить";
+        b.onclick = () => act("friends/request", f.uid);
+      }
+      actions.append(b);
+    }
+    li.append(left, actions);
+    return li;
+  }
+
+  function clearSearchResults(uid) {
+    const box = document.getElementById("friendsSearchResults");
+    const inp = document.getElementById("friendsSearchInput");
+    if (box) {
+      if (uid != null) {
+        const id = String(uid);
+        Array.from(box.querySelectorAll(".friends-result")).forEach((row) => {
+          if (String(row.getAttribute("data-uid") || "") === id) row.remove();
+        });
+        if (!box.querySelector(".friends-result")) box.innerHTML = "";
+      } else {
+        box.innerHTML = "";
+      }
+    }
+    if (inp && uid == null) inp.value = "";
+    if (inp && uid != null && String(inp.value || "").trim() === String(uid)) inp.value = "";
+  }
+
+  async function act(path, uid) {
+    try {
+      const res = await api(path, "POST", { uid });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(data.message || data.error || "Ошибка");
+        return;
+      }
+      if (path === "friends/request" || path === "friends/accept") {
+        clearSearchResults(uid);
+      }
+      await loadFriendsPanel();
+      await refreshPlayData();
+    } catch (_) {
+      alert("Ошибка сети");
+    }
+  }
+
+  async function loadFriendsPanel() {
+    const list = document.getElementById("friendsList");
+    const incoming = document.getElementById("friendsIncomingList");
+    const outgoing = document.getElementById("friendsOutgoingList");
+    const hint = document.getElementById("friendsHint");
+    if (!list) return;
+    if (!getToken()) {
+      list.innerHTML = "<li class='empty'>Войдите в ЛК</li>";
+      updateFriendsCounts(0, 0, 0);
+      return;
+    }
+    const xp = Number(S?.accountData?.xp) || 0;
+    if (xp < MIN_XP) {
+      list.innerHTML = "";
+      if (incoming) incoming.innerHTML = "";
+      if (outgoing) outgoing.innerHTML = "";
+      updateFriendsCounts(0, 0, 0);
+      if (hint) hint.textContent = "Друзья доступны от " + MIN_XP + " XP (сейчас " + xp + ").";
+      return;
+    }
+    try {
+      const res = await api("friends");
+      const data = await res.json();
+      if (res.status === 403) {
+        if (hint) hint.textContent = data.message || "Нужно больше XP";
+        return;
+      }
+      if (!res.ok) throw new Error("fail");
+      const friends = data.friends || [];
+      const incomingRows = data.incoming || [];
+      const outgoingRows = data.outgoing || [];
+      list.innerHTML = "";
+      if (incoming) incoming.innerHTML = "";
+      if (outgoing) outgoing.innerHTML = "";
+      friends.forEach((f) => list.appendChild(renderFriendRow(f, "friends")));
+      incomingRows.forEach((f) => incoming && incoming.appendChild(renderFriendRow(f, "incoming")));
+      outgoingRows.forEach((f) => outgoing && outgoing.appendChild(renderFriendRow(f, "outgoing")));
+      if (!friends.length) list.innerHTML = "<li class='empty'>Пока нет друзей — найдите игрока выше</li>";
+      if (incoming && !incomingRows.length) incoming.innerHTML = "<li class='empty'>Нет входящих заявок</li>";
+      if (outgoing && !outgoingRows.length) outgoing.innerHTML = "<li class='empty'>Нет исходящих заявок</li>";
+      updateFriendsCounts(friends.length, outgoingRows.length, incomingRows.length);
+      if (incomingRows.length) setFriendsTab("incoming");
+      if (hint) {
+        const leftReq = Math.max(
+          0,
+          (Number(data.maxRequestsPerDay) || 15) - (Number(data.requestsToday) || 0)
+        );
+        hint.textContent =
+          "Друзья: " +
+          friends.length +
+          "/" +
+          (data.maxFriends || 100) +
+          ". Заявок сегодня: " +
+          (data.requestsToday || 0) +
+          "/" +
+          (data.maxRequestsPerDay || 15) +
+          " (осталось " +
+          leftReq +
+          "). Имя видно только у друзей и во входящих.";
+      }
+      if (data.privacy) {
+        const sc = document.getElementById("optFriendShareCoords");
+        const sp = document.getElementById("optFriendSharePresence");
+        if (sc && typeof data.privacy.shareCoords === "boolean") {
+          sc.checked = !!data.privacy.shareCoords;
+          lsSet(LS.shareCoords, !!data.privacy.shareCoords);
+        }
+        if (sp && typeof data.privacy.sharePresence === "boolean") {
+          sp.checked = data.privacy.sharePresence !== false;
+          lsSet(LS.sharePresence, data.privacy.sharePresence !== false);
+        }
+      }
+    } catch (_) {
+      list.innerHTML = "<li class='empty'>Не удалось загрузить</li>";
+    }
+  }
+
+  async function searchFriends() {
+    const q = (document.getElementById("friendsSearchInput")?.value || "").trim();
+    const box = document.getElementById("friendsSearchResults");
+    if (!box) return;
+    box.innerHTML = "";
+    if (!q) return;
+    if (!/^\d{1,12}$/.test(q)) {
+      box.textContent = "Введите только ID личного кабинета (цифры)";
+      return;
+    }
+    try {
+      const res = await api("friends/search?q=" + encodeURIComponent(q));
+      const data = await res.json();
+      if (!res.ok) {
+        box.textContent = data.message || data.error || "Ошибка";
+        return;
+      }
+      const results = (data.results || []).filter((f) => {
+        // Already friends / already sent — don't keep visible in search
+        return f.relation !== "friends" && f.relation !== "outgoing";
+      });
+      results.forEach((f) => {
+        const row = document.createElement("div");
+        row.className = "friends-result";
+        row.setAttribute("data-uid", String(f.uid));
+        const left = document.createElement("div");
+        const hasName = !!String(f?.account_name || "").trim();
+        left.innerHTML = hasName
+          ? esc(displayFriendName(f)) + " <small>ID " + esc(f.uid) + "</small>"
+          : esc(displayFriendName(f));
+        const actions = document.createElement("div");
+        actions.className = "friends-actions";
+        const fakeLi = renderFriendRow(f, "search");
+        const btns = fakeLi.querySelector(".friends-actions");
+        if (btns) actions.append(...btns.childNodes);
+        row.append(left, actions);
+        box.appendChild(row);
+      });
+      if (!(data.results || []).length) box.textContent = "Игрок с таким ID не найден";
+      else if (!results.length) box.innerHTML = "";
+    } catch (_) {
+      box.textContent = "Ошибка сети";
+    }
+  }
+
+  function wireUi() {
+    if (wiredUi) return;
+    wiredUi = true;
+    const btn = document.getElementById("friendsSearchBtn");
+    const inp = document.getElementById("friendsSearchInput");
+    if (btn) btn.onclick = () => searchFriends();
+    if (inp) {
+      inp.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") searchFriends();
+      });
+    }
+    document.querySelectorAll(".friends-subtab").forEach((tab) => {
+      tab.addEventListener("click", () => setFriendsTab(tab.getAttribute("data-friends-tab")));
+    });
+    setFriendsTab(friendsTab);
+    const map = [
+      ["optFriendArrows", optArrows()],
+      ["optFriendMinimap", optMinimap()],
+      ["optFriendShareCoords", optShareCoords()],
+      ["optFriendSharePresence", optSharePresence()],
+    ];
+    map.forEach(([id, val]) => {
+      const el = document.getElementById(id);
+      if (el) el.checked = !!val;
+    });
+  }
+
+  function patchShowTab(original) {
+    return function (Sref, which) {
+      const tabF = document.getElementById("tabFriends");
+      const friends = document.getElementById("friendsWrap");
+      if (typeof original === "function") original(Sref, which);
+      if (!tabF || !friends) return;
+      const isF = which === "friends";
+      tabF.classList.toggle("active", isF);
+      friends.style.display = isF ? "" : "none";
+      if (isF) loadFriendsPanel();
+    };
+  }
+
+  function init(gameS, hooks) {
+    S = gameS;
+    accountApiGet = hooks?.accountApiGet || null;
+    resolveServerId = hooks?.resolveServerId || null;
+    wireUi();
+    if (getToken() && (Number(S?.accountData?.xp) || 0) >= MIN_XP) startLoops();
+  }
+
+  function onAccount(data) {
+    if (S) S.accountData = data || S.accountData;
+    if ((Number(S?.accountData?.xp) || 0) >= MIN_XP) {
+      startLoops();
+      syncPrivacyToServer();
+      loadFriendsPanel();
+    } else {
+      stopLoops();
+      updateFriendsCounts(0, 0, 0);
+    }
+  }
+
+  function onLogout() {
+    stopLoops();
+    playData = { friends: [], privacy: {} };
+    friendNickSet = new Set();
+    updateFriendsCounts(0, 0, 0);
+    setIncomingAlerts(0);
+    const root = document.getElementById("friendArrows");
+    if (root) root.innerHTML = "";
+    const map = document.getElementById("friendMapDots");
+    if (map) map.innerHTML = "";
+  }
+
+  global.AgarFriends = {
+    init,
+    onAccount,
+    onLogout,
+    decorateLbName,
+    isFriendName,
+    loadFriendsPanel,
+    patchShowTab,
+    wireFriendsTab(showNickClanTab) {
+      const tabF = document.getElementById("tabFriends");
+      if (!tabF || tabF.dataset.wired) return showNickClanTab;
+      tabF.dataset.wired = "1";
+      tabF.onclick = () => {
+        // deactivate others via patched show
+        if (typeof showNickClanTab === "function") showNickClanTab(S, "friends");
+      };
+      return patchShowTab(showNickClanTab);
+    },
+  };
+})(typeof window !== "undefined" ? window : globalThis);
+
+/* AgarLkAuth — ЛК вход/регистрация/восстановление (встроено в main.js, без assets/scripts). */
+/**
+ * ЛК: вход / регистрация / восстановление (клиент).
+ * Пошаговый UI — на экране только текущий шаг.
+ */
+(function () {
+  const API = "https://api.agar.su/api";
+  const PASS_RE = /^[0-9a-zA-Z.]{4,64}$/;
+
+  let registerToken = null;
+  let recoverToken = null;
+  let recoverNeedsEmail = false;
+  let recoverHasPass = false;
+  let recoverPhase = "pass";
+  let recoverNewPass = "";
+  let providers = null;
+  let googleInited = false;
+  let onLoggedIn = null;
+  let wired = false;
+  let regTimerId = null;
+  let recTimerId = null;
+  /** @type {{ token: string, uid: string, pass: string, fromRegister: boolean } | null} */
+  let pendingDone = null;
+
+  function $(id) {
+    return document.getElementById(id);
+  }
+
+  function setErr(el, text) {
+    if (!el) return;
+    el.hidden = !text;
+    el.textContent = text || "";
+  }
+
+  function clearRecErr() {
+    setErr($("authRecError"), "");
+    setErr($("authRecErrorEmail"), "");
+    setErr($("authRecErrorCode"), "");
+  }
+
+  function fmtTime(sec) {
+    const s = Math.max(0, Math.floor(sec));
+    const m = Math.floor(s / 60);
+    const r = s % 60;
+    return m + ":" + String(r).padStart(2, "0");
+  }
+
+  function stopTimer(kind) {
+    if (kind === "reg" && regTimerId) {
+      clearInterval(regTimerId);
+      regTimerId = null;
+    }
+    if (kind === "rec" && recTimerId) {
+      clearInterval(recTimerId);
+      recTimerId = null;
+    }
+  }
+
+  function startCooldown(kind, sec) {
+    const total = Math.max(1, Number(sec) || 300);
+    const timerEl = $(kind === "reg" ? "authRegTimer" : "authRecTimer");
+    const resendBtn = $(kind === "reg" ? "authRegResendBtn" : "authRecResendBtn");
+    stopTimer(kind);
+    if (timerEl) {
+      timerEl.hidden = false;
+      timerEl.innerHTML = "Новый код через <b>" + fmtTime(total) + "</b>";
+    }
+    if (resendBtn) resendBtn.hidden = true;
+
+    let left = total;
+    const tick = () => {
+      left -= 1;
+      if (left <= 0) {
+        stopTimer(kind);
+        if (timerEl) {
+          timerEl.hidden = true;
+          timerEl.innerHTML = "";
+        }
+        if (resendBtn) resendBtn.hidden = false;
+        return;
+      }
+      if (timerEl) timerEl.innerHTML = "Новый код через <b>" + fmtTime(left) + "</b>";
+    };
+    const id = setInterval(tick, 1000);
+    if (kind === "reg") regTimerId = id;
+    else recTimerId = id;
+  }
+
+  function setRegStep(n) {
+    document.querySelectorAll("#authRegSteps .lk-auth-step").forEach((el) => {
+      el.classList.toggle("is-on", Number(el.getAttribute("data-step")) <= n);
+    });
+  }
+
+  function hideAll(ids) {
+    ids.forEach((id) => {
+      const el = $(id);
+      if (el) el.hidden = true;
+    });
+  }
+
+  function showView(name) {
+    const login = $("authCardLogin");
+    const reg = $("authCardRegister");
+    const rec = $("authCardRecover");
+    const done = $("authCardDone");
+    if (login) login.hidden = name !== "login";
+    if (reg) reg.hidden = name !== "register";
+    if (rec) rec.hidden = name !== "recover";
+    if (done) done.hidden = name !== "done";
+    if (name !== "done") pendingDone = null;
+    if (name === "register") resetRegister();
+    if (name === "recover") {
+      resetRecover();
+      preloadVkSdk();
+    }
+  }
+
+  function resetRegister() {
+    registerToken = null;
+    stopTimer("reg");
+    setErr($("authRegError"), "");
+    setErr($("authRegErrorCode"), "");
+    setErr($("authRegErrorPass"), "");
+    hideAll(["authRegStepCode", "authRegStepPass"]);
+    const email = $("authRegStepEmail");
+    if (email) email.hidden = false;
+    setRegStep(1);
+    const hint = $("authRegHint");
+    if (hint) hint.textContent = "Укажите почту";
+    const resend = $("authRegResendBtn");
+    if (resend) resend.hidden = true;
+    const timer = $("authRegTimer");
+    if (timer) timer.hidden = true;
+  }
+
+  function resetRecover() {
+    persistRecoverToken(null);
+    stopTimer("rec");
+    clearRecErr();
+    hideAll([
+      "authRecStepEmail",
+      "authRecStepGoogle",
+      "authRecStepCode",
+      "authRecStepPass",
+    ]);
+    const pick = $("authRecPick");
+    if (pick) pick.hidden = false;
+    const hint = $("authRecHint");
+    if (hint) hint.textContent = "Выберите способ";
+    const resend = $("authRecResendBtn");
+    if (resend) resend.hidden = true;
+    const timer = $("authRecTimer");
+    if (timer) timer.hidden = true;
+  }
+
+  function showRecOnly(stepId, hintText) {
+    hideAll([
+      "authRecPick",
+      "authRecStepEmail",
+      "authRecStepGoogle",
+      "authRecStepCode",
+      "authRecStepPass",
+    ]);
+    const step = $(stepId);
+    if (step) step.hidden = false;
+    const hint = $("authRecHint");
+    if (hint && hintText) hint.textContent = hintText;
+  }
+
+  function persistRecoverToken(token) {
+    recoverToken = token || null;
+    try {
+      if (token) sessionStorage.setItem("lk_recover_token", token);
+      else sessionStorage.removeItem("lk_recover_token");
+    } catch (_) {}
+  }
+
+  function loadRecoverToken() {
+    if (recoverToken) return recoverToken;
+    try {
+      recoverToken = sessionStorage.getItem("lk_recover_token");
+    } catch (_) {}
+    return recoverToken;
+  }
+
+  function ensureBindFields() {
+    const step = $("authRecStepPass");
+    if (!step || $("authRecBindEmail")) return;
+    const email = document.createElement("input");
+    email.className = "lk-auth-input";
+    email.id = "authRecBindEmail";
+    email.type = "email";
+    email.maxLength = 190;
+    email.placeholder = "Почта для привязки";
+    email.autocomplete = "email";
+    const code = document.createElement("input");
+    code.className = "lk-auth-input";
+    code.id = "authRecBindCode";
+    code.type = "text";
+    code.inputMode = "numeric";
+    code.maxLength = 5;
+    code.placeholder = "Код из письма";
+    code.autocomplete = "one-time-code";
+    code.hidden = true;
+    const pass = $("authRecPass");
+    let anchor = pass;
+    if (anchor && anchor.parentElement !== step) anchor = anchor.parentElement;
+    if (anchor && anchor.parentElement === step) {
+      step.insertBefore(email, anchor);
+      step.insertBefore(code, anchor);
+    } else {
+      step.prepend(code);
+      step.prepend(email);
+    }
+  }
+
+  function showPassField(show) {
+    const pass = $("authRecPass");
+    const label = pass && pass.closest("label");
+    const hintP = label && label.nextElementSibling;
+    if (label) label.hidden = !show;
+    else if (pass) pass.hidden = !show;
+    if (hintP && hintP.classList && hintP.classList.contains("lk-auth-hint")) hintP.hidden = !show;
+    if (!show && pass) pass.value = "";
+  }
+
+  function showSetPassword(needsEmail) {
+    recoverNeedsEmail = !!needsEmail;
+    recoverPhase = "pass";
+    recoverNewPass = "";
+    clearRecErr();
+    ensureBindFields();
+    const email = $("authRecBindEmail");
+    const code = $("authRecBindCode");
+    if (email) {
+      email.hidden = true;
+      email.value = "";
+    }
+    if (code) {
+      code.hidden = true;
+      code.value = "";
+    }
+    showPassField(true);
+    const btn = $("authRecSetPassBtn");
+    if (btn) btn.textContent = recoverNeedsEmail ? "Дальше" : "Сохранить пароль";
+    showRecOnly("authRecStepPass", "Придумайте новый пароль");
+  }
+
+  function openRecoverPassword(token, needsEmail, hasPass) {
+    if (!token) return;
+    const login = $("authCardLogin");
+    const reg = $("authCardRegister");
+    const rec = $("authCardRecover");
+    const done = $("authCardDone");
+    if (login) login.hidden = true;
+    if (reg) reg.hidden = true;
+    if (done) done.hidden = true;
+    if (rec) rec.hidden = false;
+    persistRecoverToken(token);
+    showSetPassword(!!needsEmail);
+  }
+
+  async function api(path, body, timeoutMs = 25000) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+      const res = await fetch(API + path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body || {}),
+        signal: ctrl.signal,
+      });
+      let data = {};
+      try {
+        data = await res.json();
+      } catch (_) {}
+      return { res, data };
+    } catch (e) {
+      if (e && e.name === "AbortError") {
+        return {
+          res: { ok: false, status: 408 },
+          data: { error: "Сервер не ответил. Попробуйте ещё раз." },
+        };
+      }
+      throw e;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  async function loadProviders() {
+    if (providers) return providers;
+    try {
+      const res = await fetch(API + "/auth/providers");
+      providers = await res.json();
+    } catch (_) {
+      providers = {};
+    }
+    return providers;
+  }
+
+  function finishLogin(token) {
+    if (!token) return;
+    pendingDone = null;
+    if (typeof onLoggedIn === "function") onLoggedIn(token);
+    else if (window.wHandle && typeof window.wHandle.onAccountLoggedIn === "function") {
+      window.wHandle.onAccountLoggedIn(token);
+    }
+  }
+
+  /** LK login id from API (uid / ulogin / id) — never email. */
+  function resolveLkUid(data) {
+    const raw = data && (data.uid ?? data.ulogin ?? data.id);
+    const uid = String(raw == null ? "" : raw).trim();
+    return /^\d{1,12}$/.test(uid) ? uid : "";
+  }
+
+  /** Banner instead of alert: show ID + pass, then OK → login. No OS password save. */
+  function showDoneBanner(uid, pass, token, fromRegister) {
+    const id = resolveLkUid({ uid });
+    if (!token) return;
+    if (!id) {
+      finishLogin(token);
+      return;
+    }
+    pendingDone = {
+      token,
+      uid: id,
+      pass: String(pass || ""),
+      fromRegister: !!fromRegister,
+    };
+
+    const loginId = $("authLoginId");
+    if (loginId) loginId.value = id;
+
+    const title = $("authDoneTitle");
+    const hint = $("authDoneHint");
+    const idEl = $("authDoneId");
+    const passEl = $("authDonePass");
+    const mailHint = $("authDoneMailHint");
+
+    if (title) title.textContent = fromRegister ? "ЛК создан" : "Пароль сохранён";
+    if (hint) {
+      hint.textContent = fromRegister
+        ? "Запомните ID и пароль для входа"
+        : "Запомните ID и новый пароль для входа";
+    }
+    if (idEl) idEl.textContent = id;
+    if (passEl) passEl.textContent = String(pass || "");
+    if (mailHint) mailHint.hidden = !fromRegister;
+
+    showView("done");
+  }
+
+  function confirmDoneBanner() {
+    const pending = pendingDone;
+    if (!pending || !pending.token) return;
+    const loginId = $("authLoginId");
+    if (loginId) loginId.value = pending.uid;
+    finishLogin(pending.token);
+  }
+
+  async function doLogin(ev) {
+    if (ev) ev.preventDefault();
+    const err = $("authLoginError");
+    const btn = $("authLoginBtn");
+    const ulogin = ($("authLoginId")?.value || "").trim();
+    const pass = $("authLoginPass")?.value || "";
+    setErr(err, "");
+    if (!/^\d{1,12}$/.test(ulogin)) return setErr(err, "Введите ID ЛК (число)");
+    if (!pass) return setErr(err, "Введите пароль");
+    if (btn) btn.disabled = true;
+    try {
+      const { res, data } = await api("/auth/login", { ulogin, pass });
+      if (!res.ok || data.error || !data.token) {
+        setErr(err, data.error || "Ошибка входа");
+        return;
+      }
+      finishLogin(data.token);
+    } catch (_) {
+      setErr(err, "Ошибка сети");
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  async function regSend(isResend) {
+    const err = isResend ? $("authRegErrorCode") : $("authRegError");
+    const btn = isResend ? $("authRegResendBtn") : $("authRegSendBtn");
+    const email = ($("authRegEmail")?.value || "").trim();
+    setErr(err, "");
+    if (btn) btn.disabled = true;
+    if (err) {
+      err.hidden = false;
+      err.textContent = "Отправляем код…";
+    }
+    try {
+      const { res, data } = await api("/auth/register/send-code", { email }, 28000);
+      if (!res.ok || data.error) {
+        setErr(err, data.error || "Не удалось отправить код");
+        if (data.cooldownSec) startCooldown("reg", data.cooldownSec);
+        return;
+      }
+      $("authRegStepEmail").hidden = true;
+      $("authRegStepCode").hidden = false;
+      setRegStep(2);
+      $("authRegHint").textContent = "Код из письма";
+      startCooldown("reg", data.cooldownSec || 300);
+    } catch (_) {
+      setErr(err, "Ошибка сети");
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  async function regVerify() {
+    const err = $("authRegErrorCode") || $("authRegError");
+    const email = ($("authRegEmail")?.value || "").trim();
+    const code = ($("authRegCode")?.value || "").trim();
+    setErr(err, "");
+    try {
+      const { res, data } = await api("/auth/register/verify-code", { email, code });
+      if (!res.ok || data.error || !data.registerToken) {
+        setErr(err, data.error || "Неверный код");
+        return;
+      }
+      registerToken = data.registerToken;
+      stopTimer("reg");
+      $("authRegStepCode").hidden = true;
+      $("authRegStepPass").hidden = false;
+      setRegStep(3);
+      $("authRegHint").textContent = "Придумайте пароль";
+    } catch (_) {
+      setErr(err, "Ошибка сети");
+    }
+  }
+
+  async function regCreate() {
+    const err = $("authRegErrorPass") || $("authRegError");
+    const pass = $("authRegPass")?.value || "";
+    setErr(err, "");
+    if (!PASS_RE.test(pass)) {
+      return setErr(err, "Пароль: латиница, цифры и точка, 4–64");
+    }
+    try {
+      const { res, data } = await api("/auth/register/create", {
+        registerToken,
+        pass,
+      });
+      if (!res.ok || data.error || !data.token) {
+        setErr(err, data.error || "Не удалось создать");
+        return;
+      }
+      const uid = resolveLkUid(data);
+      showDoneBanner(uid, pass, data.token, true);
+    } catch (_) {
+      setErr(err, "Ошибка сети");
+    }
+  }
+
+  async function recSend(isResend) {
+    const err = isResend
+      ? $("authRecErrorCode") || $("authRecError")
+      : $("authRecErrorEmail") || $("authRecError");
+    const email = ($("authRecEmail")?.value || "").trim();
+    setErr(err, "");
+    try {
+      const { res, data } = await api("/auth/recover/send-code", { email });
+      if (!res.ok || data.error) {
+        setErr(err, data.error || "Не удалось отправить код");
+        if (data.cooldownSec) startCooldown("rec", data.cooldownSec);
+        return;
+      }
+      showRecOnly("authRecStepCode", "Код из письма");
+      startCooldown("rec", data.cooldownSec || 300);
+    } catch (_) {
+      setErr(err, "Ошибка сети");
+    }
+  }
+
+  async function recVerify() {
+    const err = $("authRecErrorCode") || $("authRecError");
+    const email = ($("authRecEmail")?.value || "").trim();
+    const code = ($("authRecCode")?.value || "").trim();
+    setErr(err, "");
+    try {
+      const { res, data } = await api("/auth/recover/verify-code", { email, code });
+      if (!res.ok || data.error || !data.recoverToken) {
+        setErr(err, data.error || "Неверный код");
+        return;
+      }
+      stopTimer("rec");
+      openRecoverPassword(data.recoverToken, !!data.needs_email, !!data.has_pass);
+    } catch (_) {
+      setErr(err, "Ошибка сети");
+    }
+  }
+
+  async function recSetPass() {
+    const pass = $("authRecPass")?.value || "";
+    const token = loadRecoverToken();
+    const hint = $("authRecHint");
+    if (!token) {
+      if (hint) hint.textContent = "Сессия сброшена. Выберите способ заново.";
+      resetRecover();
+      return;
+    }
+    try {
+      if (recoverNeedsEmail && recoverPhase === "mail") {
+        const email = ($("authRecBindEmail")?.value || "").trim();
+        const code = (($("authRecBindCode")?.value || "").trim().replace(/\D/g, ""));
+        if (!email) {
+          if (hint) hint.textContent = "Введите почту";
+          return;
+        }
+        if (!/^\d{5}$/.test(code)) {
+          if (!code) {
+            const { res, data } = await api("/auth/recover/bind-email/send-code", {
+              recoverToken: token,
+              email,
+            });
+            if (!res.ok || data.error) {
+              if (hint) hint.textContent = data.error || "Не удалось отправить код";
+              return;
+            }
+            const codeEl = $("authRecBindCode");
+            if (codeEl) {
+              codeEl.hidden = false;
+              codeEl.focus();
+            }
+            const btn = $("authRecSetPassBtn");
+            if (btn) btn.textContent = "Подтвердить";
+            if (hint) hint.textContent = "Код отправлен на почту";
+            return;
+          }
+          if (hint) hint.textContent = "Введите 5-значный код из письма";
+          return;
+        }
+        const { res, data } = await api("/auth/recover/bind-email/confirm", {
+          recoverToken: token,
+          email,
+          code,
+        });
+        if (!res.ok || data.error || !data.token) {
+          if (hint) hint.textContent = data.error || "Не удалось привязать";
+          return;
+        }
+        persistRecoverToken(null);
+        recoverNeedsEmail = false;
+        showDoneBanner(resolveLkUid(data), recoverNewPass, data.token, false);
+        return;
+      }
+      if (!PASS_RE.test(pass)) {
+        if (hint) hint.textContent = "Пароль: латиница, цифры и точка, 4–64";
+        return;
+      }
+      const { res, data } = await api("/auth/recover/set-password", {
+        recoverToken: token,
+        pass,
+      });
+      if (!res.ok || data.error || !data.token) {
+        if (hint) hint.textContent = data.error || "Не удалось сохранить";
+        return;
+      }
+      if (data.needs_email) {
+        recoverNewPass = pass;
+        recoverNeedsEmail = true;
+        recoverPhase = "mail";
+        showPassField(false);
+        const emailEl = $("authRecBindEmail");
+        if (emailEl) {
+          emailEl.hidden = false;
+          emailEl.focus();
+        }
+        const codeEl = $("authRecBindCode");
+        if (codeEl) {
+          codeEl.hidden = true;
+          codeEl.value = "";
+        }
+        const btn = $("authRecSetPassBtn");
+        if (btn) btn.textContent = "Отправить код";
+        if (hint) hint.textContent = "Укажите почту, затем код из письма";
+        return;
+      }
+      persistRecoverToken(null);
+      showDoneBanner(resolveLkUid(data), pass, data.token, false);
+    } catch (_) {
+      if (hint) hint.textContent = "Ошибка сети";
+    }
+  }
+
+  async function applySocialRecover(path, body) {
+    clearRecErr();
+    const hint = $("authRecHint");
+    if (hint) hint.textContent = "Проверяем…";
+    try {
+      const { res, data } = await api(path, body);
+      if (!res.ok || data.error || !data.recoverToken) {
+        resetRecover();
+        setErr($("authRecError"), data.error || "В ЛК нет связанного аккаунта");
+        return;
+      }
+      openRecoverPassword(data.recoverToken, data.needs_email !== false, !!data.has_pass);
+    } catch (_) {
+      resetRecover();
+      setErr($("authRecError"), "Ошибка сети");
+    }
+  }
+
+  function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      if (document.querySelector(`script[src="${src}"]`)) {
+        if (src.indexOf("vkid") !== -1 && window.VKIDSDK) return resolve();
+        return resolve();
+      }
+      const s = document.createElement("script");
+      s.src = src;
+      s.async = true;
+      s.crossOrigin = "anonymous";
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error("script"));
+      document.head.appendChild(s);
+    });
+  }
+
+  function persistVkRecoverMode(on) {
+    window._lkRecoverVkMode = !!on;
+    try {
+      if (on) sessionStorage.setItem("lk_recover_vk_mode", "1");
+      else sessionStorage.removeItem("lk_recover_vk_mode");
+    } catch (_) {}
+  }
+
+  function restoreVkRecoverMode() {
+    try {
+      if (sessionStorage.getItem("lk_recover_vk_mode") === "1") {
+        window._lkRecoverVkMode = true;
+        return true;
+      }
+    } catch (_) {}
+    return !!window._lkRecoverVkMode;
+  }
+
+  // Restore before main boot consumes ?code= from VK redirect
+  restoreVkRecoverMode();
+
+  function loadVkSdkLocal() {
+    if (window.VKIDSDK) return Promise.resolve(window.VKIDSDK);
+    return loadScript("/vendor/vkid-sdk.umd.js").then(() => {
+      if (!window.VKIDSDK) throw new Error("no sdk");
+      return window.VKIDSDK;
+    });
+  }
+
+  function preloadVkSdk() {
+    loadVkSdkLocal().catch(() => {});
+  }
+
+  function makePkcePair() {
+    const alphabet =
+      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-";
+    const rand = (n) => {
+      const bytes = crypto.getRandomValues(new Uint8Array(n));
+      let out = "";
+      for (let i = 0; i < n; i++) out += alphabet[bytes[i] % 64];
+      return out;
+    };
+    return { codeVerifier: rand(64), state: rand(32) };
+  }
+
+  function persistVkPkce(codeVerifier, state) {
+    try {
+      sessionStorage.setItem("vk_code_verifier", codeVerifier);
+      sessionStorage.setItem("vk_state", state);
+    } catch (_) {}
+    try {
+      localStorage.setItem("vk_code_verifier", codeVerifier);
+      localStorage.setItem("vk_state", state);
+    } catch (_) {}
+  }
+
+  async function initGoogleRecover() {
+    // Prefer dedicated /google/ popup (same pattern as Telegram) —
+    // GIS button inside the store panel often fails (FedCM / COOP / blockers).
+    startGoogleRecoverPopup();
+  }
+
+  function startGoogleRecoverPopup() {
+    clearRecErr();
+    const hint = $("authRecHint");
+    if (hint) hint.textContent = "Откройте окно Google…";
+    hideAll([
+      "authRecPick",
+      "authRecStepEmail",
+      "authRecStepGoogle",
+      "authRecStepCode",
+      "authRecStepPass",
+    ]);
+    window._googleRecoverMode = true;
+    const popup = window.open("/google/", "googleAuth", "width=480,height=640");
+    if (!popup) {
+      window._googleRecoverMode = false;
+      resetRecover();
+      setErr($("authRecError"), "Разрешите всплывающие окна для Google");
+      return;
+    }
+    // If user closes popup without auth — restore pick after a while when focus returns
+    const poll = setInterval(() => {
+      if (!window._googleRecoverMode) {
+        clearInterval(poll);
+        return;
+      }
+      try {
+        if (popup.closed) {
+          clearInterval(poll);
+          window._googleRecoverMode = false;
+          resetRecover();
+          setErr($("authRecError"), "Окно Google закрыто");
+        }
+      } catch (_) {}
+    }, 800);
+  }
+
+  /**
+   * VK recover: always same-tab Redirect.
+   * Callback/popup hangs on "Allow" (returns to agar.su inside popup, parent waits forever).
+   */
+  function startVkRecover() {
+    persistVkRecoverMode(true);
+    const hint = $("authRecHint");
+    if (hint) hint.textContent = "Переход в VK…";
+    hideAll([
+      "authRecPick",
+      "authRecStepEmail",
+      "authRecStepGoogle",
+      "authRecStepCode",
+      "authRecStepPass",
+    ]);
+
+    (async () => {
+      try {
+        const VKID = window.VKIDSDK || (await loadVkSdkLocal());
+        if (!VKID) throw new Error("no sdk");
+
+        const { codeVerifier, state } = makePkcePair();
+        persistVkPkce(codeVerifier, state);
+
+        const config = {
+          app: 54069355,
+          redirectUrl: "https://agar.su",
+          state,
+          codeVerifier,
+          responseMode: VKID.ConfigResponseMode.Redirect,
+          source: VKID.ConfigSource.LOWCODE,
+          scope: "",
+        };
+        if (VKID.ConfigAuthMode && VKID.ConfigAuthMode.Redirect) {
+          config.mode = VKID.ConfigAuthMode.Redirect;
+        }
+        VKID.Config.init(config);
+        VKID.Auth.login({ provider: VKID.OAuthName.VK });
+      } catch (e) {
+        persistVkRecoverMode(false);
+        resetRecover();
+        setErr($("authRecError"), "Не удалось открыть VK");
+      }
+    })();
+  }
+
+  function pickRecoverMethod(method) {
+    clearRecErr();
+    if (method === "email") {
+      showRecOnly("authRecStepEmail", "Email аккаунта");
+      return;
+    }
+    if (method === "google") {
+      startGoogleRecoverPopup();
+      return;
+    }
+    if (method === "vk") {
+      startVkRecover();
+      return;
+    }
+    if (method === "telegram") {
+      const hint = $("authRecHint");
+      if (hint) hint.textContent = "Откройте Telegram…";
+      hideAll([
+        "authRecPick",
+        "authRecStepEmail",
+        "authRecStepGoogle",
+        "authRecStepCode",
+        "authRecStepPass",
+      ]);
+      window._telegramRecoverMode = true;
+      window.open("/telegram/", "tgAuth", "width=420,height=520");
+    }
+  }
+
+  function wire() {
+    if (wired) return;
+    wired = true;
+
+    document.querySelectorAll("[data-auth-view]").forEach((btn) => {
+      btn.addEventListener("click", () => showView(btn.getAttribute("data-auth-view")));
+    });
+
+    const idInput = $("authLoginId");
+    if (idInput) {
+      idInput.addEventListener("input", () => {
+        const digits = idInput.value.replace(/\D/g, "").slice(0, 12);
+        if (idInput.value !== digits) idInput.value = digits;
+      });
+    }
+    $("authLoginForm")?.addEventListener("submit", doLogin);
+    $("authDoneOkBtn")?.addEventListener("click", confirmDoneBanner);
+    $("authRegSendBtn")?.addEventListener("click", () => regSend(false));
+    $("authRegResendBtn")?.addEventListener("click", () => regSend(true));
+    $("authRegVerifyBtn")?.addEventListener("click", regVerify);
+    $("authRegCreateBtn")?.addEventListener("click", regCreate);
+    $("authRecSendBtn")?.addEventListener("click", () => recSend(false));
+    $("authRecResendBtn")?.addEventListener("click", () => recSend(true));
+    $("authRecVerifyBtn")?.addEventListener("click", recVerify);
+    $("authRecSetPassBtn")?.addEventListener("click", recSetPass);
+
+    document.querySelectorAll("[data-rec-method]").forEach((btn) => {
+      btn.addEventListener("click", () => pickRecoverMethod(btn.getAttribute("data-rec-method")));
+    });
+
+    $("authRecBackPick")?.addEventListener("click", resetRecover);
+    document.querySelectorAll("[data-rec-back]").forEach((btn) => {
+      btn.addEventListener("click", resetRecover);
+    });
+
+    window.addEventListener("message", (event) => {
+      const data = event && event.data;
+      if (!data || !data.type) return;
+      // Accept only our auth popups (agar.su / same origin / null for some browsers)
+      const okOrigin =
+        !event.origin ||
+        event.origin === "https://agar.su" ||
+        event.origin === window.location.origin;
+      if (!okOrigin) return;
+
+      if (data.type === "telegram-auth") {
+        if (!window._telegramRecoverMode) return;
+        window._telegramRecoverMode = false;
+        applySocialRecover("/auth/recover/telegram", data.user);
+        return;
+      }
+      if (data.type === "google-auth") {
+        if (!window._googleRecoverMode) return;
+        window._googleRecoverMode = false;
+        if (!data.credential) {
+          resetRecover();
+          setErr($("authRecError"), "Google не вернул токен");
+          return;
+        }
+        applySocialRecover("/auth/recover/google", {
+          credential: data.credential,
+        });
+      }
+    });
+
+    document.addEventListener("lk-recover-ready", (ev) => {
+      const token = ev.detail?.recoverToken;
+      if (!token) return;
+      // НЕ вызывать showView("recover") — он делает resetRecover() и убивает токен
+      openRecoverPassword(token, ev.detail?.needs_email !== false, !!ev.detail?.has_pass);
+    });
+  }
+
+  window.AgarLkAuth = {
+    init(hooks) {
+      onLoggedIn = hooks?.onLoggedIn || null;
+      restoreVkRecoverMode();
+      wire();
+      preloadVkSdk();
+      showView("login");
+    },
+    showView,
+    applyRecoverToken(token, flags) {
+      openRecoverPassword(token, !flags || flags.needs_email !== false, !!(flags && flags.has_pass));
+    },
+  };
+})();
+
+(() => {
+  var log = {
+    info(str) {
+      console.debug("[INFO]", str);
+    },
+    warn(str) {
+      console.warn("[WARN]", str);
+    },
+    err(str) {
+      console.error("[ERROR] ", str);
+    },
+    debug(str) {
+      console.info("[DEBUG] ", str);
+    }
+  };
+  if (typeof window !== "undefined") {
+    window.log = log;
+  }
+  function Vector2(x, y) {
+    this.x = x || 0;
+    this.y = y || 0;
+  }
+  Vector2.prototype = {
+    reset(x, y) {
+      this.x = x;
+      this.y = y;
+      return this;
+    },
+    toString(decPlaces) {
+      decPlaces = decPlaces || 3;
+      const scalar = Math.pow(10, decPlaces);
+      return "[" + Math.round(this.x * scalar) / scalar + ", " + Math.round(this.y * scalar) / scalar + "]";
+    },
+    clone() {
+      return new Vector2(this.x, this.y);
+    },
+    copyTo(v) {
+      v.x = this.x;
+      v.y = this.y;
+    },
+    copyFrom(v) {
+      this.x = v.x;
+      this.y = v.y;
+    },
+    magnitude() {
+      return Math.sqrt(this.x * this.x + this.y * this.y);
+    },
+    magnitudeSquared() {
+      return this.x * this.x + this.y * this.y;
+    },
+    normalise() {
+      const m = this.magnitude();
+      this.x = this.x / m;
+      this.y = this.y / m;
+      return this;
+    },
+    reverse() {
+      this.x = -this.x;
+      this.y = -this.y;
+      return this;
+    },
+    plusEq(v) {
+      this.x += v.x;
+      this.y += v.y;
+      return this;
+    },
+    plusNew(v) {
+      return new Vector2(this.x + v.x, this.y + v.y);
+    },
+    minusEq(v) {
+      this.x -= v.x;
+      this.y -= v.y;
+      return this;
+    },
+    minusNew(v) {
+      return new Vector2(this.x - v.x, this.y - v.y);
+    },
+    multiplyEq(scalar) {
+      this.x *= scalar;
+      this.y *= scalar;
+      return this;
+    },
+    multiplyNew(scalar) {
+      return this.clone().multiplyEq(scalar);
+    },
+    divideEq(scalar) {
+      this.x /= scalar;
+      this.y /= scalar;
+      return this;
+    },
+    divideNew(scalar) {
+      return this.clone().divideEq(scalar);
+    },
+    dot(v) {
+      return this.x * v.x + this.y * v.y;
+    },
+    angle(useRadians) {
+      return Math.atan2(this.y, this.x) * (useRadians ? 1 : Vector2Const.TO_DEGREES);
+    },
+    rotate(angle, useRadians) {
+      const cosRY = Math.cos(angle * (useRadians ? 1 : Vector2Const.TO_RADIANS));
+      const sinRY = Math.sin(angle * (useRadians ? 1 : Vector2Const.TO_RADIANS));
+      Vector2Const.temp.copyFrom(this);
+      this.x = Vector2Const.temp.x * cosRY - Vector2Const.temp.y * sinRY;
+      this.y = Vector2Const.temp.x * sinRY + Vector2Const.temp.y * cosRY;
+      return this;
+    },
+    equals(v) {
+      return this.x == v.x && this.y == v.x;
+    },
+    isCloseTo(v, tolerance) {
+      if (this.equals(v)) return true;
+      Vector2Const.temp.copyFrom(this);
+      Vector2Const.temp.minusEq(v);
+      return Vector2Const.temp.magnitudeSquared() < tolerance * tolerance;
+    },
+    rotateAroundPoint(point, angle, useRadians) {
+      Vector2Const.temp.copyFrom(this);
+      Vector2Const.temp.minusEq(point);
+      Vector2Const.temp.rotate(angle, useRadians);
+      Vector2Const.temp.plusEq(point);
+      this.copyFrom(Vector2Const.temp);
+    },
+    isMagLessThan(distance) {
+      return this.magnitudeSquared() < distance * distance;
+    },
+    isMagGreaterThan(distance) {
+      return this.magnitudeSquared() > distance * distance;
+    }
+  };
+  var Vector2Const = {
+    TO_DEGREES: 180 / Math.PI,
+    TO_RADIANS: Math.PI / 180,
+    temp: null
+  };
+  Vector2Const.temp = new Vector2;
+  if (typeof window !== "undefined") {
+    window.Vector2 = Vector2;
+    window.Vector2Const = Vector2Const;
+  }
+  var AppEvents = class extends EventTarget {
+    emit(type, detail) {
+      this.dispatchEvent(new CustomEvent(type, {
+        detail
+      }));
+    }
+    on(type, handler) {
+      this.addEventListener(type, handler);
+      return () => this.removeEventListener(type, handler);
+    }
+  };
+  var bus = new AppEvents;
+  var Events = {
+    SHOW_CONTENT: "show-content",
+    XP_UPDATE: "xp-update",
+    DEATH: "death",
+    BAN: "ban",
+    AUTH: "auth",
+    LOGOUT: "logout",
+    SERVER_CHANGE: "server-change"
+  };
+  function getCookie(name) {
+    const match = document.cookie.match(new RegExp("(?:^|; )" + name.replace(/([.$?*|{}()[\]\\/+^])/g, "\\$1") + "=([^;]*)"));
+    return match ? decodeURIComponent(match[1]) : void 0;
+  }
+  function cookieSecurityFlags() {
+    const secure = typeof location !== "undefined" && location.protocol === "https:" ? "; Secure" : "";
+    return `; path=/; SameSite=Lax${secure}`;
+  }
+  function setCookie(name, value, days) {
+    let expires = "";
+    if (days) {
+      const date = new Date;
+      date.setTime(date.getTime() + days * 24 * 60 * 60 * 1e3);
+      expires = "; expires=" + date.toUTCString();
+    }
+    const encoded = encodeURIComponent(value == null ? "" : String(value));
+    document.cookie = name + "=" + encoded + expires + cookieSecurityFlags();
+  }
+  function deleteCookie(name) {
+    document.cookie = name + "=; Max-Age=0" + cookieSecurityFlags();
+  }
+  var TOKEN_KEY = "accountToken";
+  var memory = Object.create(null);
+  function canUseStorage(store) {
+    try {
+      if (!store) return false;
+      const probe = "__agarsu_storage_probe__";
+      store.setItem(probe, "1");
+      const ok = store.getItem(probe) === "1";
+      store.removeItem(probe);
+      return ok;
+    } catch (e) {
+      return false;
+    }
+  }
+  function lsGetJson(key, fallback = null) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return fallback;
+      return JSON.parse(raw);
+    } catch (e) {
+      return fallback;
+    }
+  }
+  function lsSet(key, value) {
+    try {
+      localStorage.setItem(key, value);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+  function lsSetJson(key, value) {
+    return lsSet(key, JSON.stringify(value));
+  }
+  function lsRemove(key) {
+    try {
+      localStorage.removeItem(key);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+  function readTokenCandidates() {
+    const values = [];
+    try {
+      const fromLs = localStorage.getItem(TOKEN_KEY);
+      if (fromLs) values.push(fromLs);
+    } catch (e) {}
+    try {
+      if (localStorage[TOKEN_KEY]) values.push(localStorage[TOKEN_KEY]);
+    } catch (e) {}
+    try {
+      const fromSs = sessionStorage.getItem(TOKEN_KEY);
+      if (fromSs) values.push(fromSs);
+    } catch (e) {}
+    try {
+      const fromCookie = getCookie(TOKEN_KEY);
+      if (fromCookie) values.push(fromCookie);
+    } catch (e) {}
+    if (memory[TOKEN_KEY]) values.push(memory[TOKEN_KEY]);
+    return values.find(v => typeof v === "string" && v.trim()) || null;
+  }
+  function writeTokenEverywhere(token) {
+    memory[TOKEN_KEY] = token;
+    try {
+      localStorage.setItem(TOKEN_KEY, token);
+    } catch (e) {}
+    try {
+      sessionStorage.setItem(TOKEN_KEY, token);
+    } catch (e) {}
+    try {
+      setCookie(TOKEN_KEY, token, 30);
+    } catch (e) {}
+  }
+  function clearTokenEverywhere() {
+    delete memory[TOKEN_KEY];
+    lsRemove(TOKEN_KEY);
+    try {
+      delete localStorage[TOKEN_KEY];
+    } catch (e) {}
+    try {
+      sessionStorage.removeItem(TOKEN_KEY);
+    } catch (e) {}
+    try {
+      deleteCookie(TOKEN_KEY);
+    } catch (e) {}
+  }
+  function getAccountToken() {
+    const token = readTokenCandidates();
+    if (token) {
+      try {
+        if (localStorage.getItem(TOKEN_KEY) !== token) localStorage.setItem(TOKEN_KEY, token);
+      } catch (e) {}
+    }
+    return token;
+  }
+  function setAccountToken(token) {
+    if (!token) {
+      clearTokenEverywhere();
+      return;
+    }
+    writeTokenEverywhere(String(token));
+  }
+  function clearAccountToken() {
+    clearTokenEverywhere();
+  }
+  function hydrateAccountToken() {
+    const token = readTokenCandidates();
+    if (!token) return null;
+    writeTokenEverywhere(token);
+    return token;
+  }
+  function isStorageReliable() {
+    return canUseStorage(window.localStorage);
+  }
+  function prefersSameWindowAuth() {
+    const ua = navigator.userAgent || "";
+    if (/\bElectron\b/i.test(ua)) return true;
+    if (!isStorageReliable()) return true;
+    return false;
+  }
+  var SERVERS = {};
+  var REGION_CONFIGS = {};
+  function readServersFromHtml() {
+    const regions = {};
+    document.querySelectorAll(".server-item[data-ip]").forEach(item => {
+      const region = item.dataset.region || "ru";
+      const key = item.dataset.serverKey || item.id;
+      if (!key) return;
+      if (!regions[region]) regions[region] = { label: region === "tr" ? "Турция" : region === "eu" ? "Европа" : "Россия", available: true, servers: {} };
+      regions[region].servers[key] = { host: item.dataset.ip, title: item.dataset.title || item.querySelector(".server-name")?.textContent.trim() || key };
+    });
+    REGION_CONFIGS = regions;
+    return regions;
+  }
+  var activeRegion = null;
+  function getDefaultRegion() {
+    try { let saved = localStorage.getItem("agar_region"); if (saved === "nl") saved = "tr"; if (saved && REGION_CONFIGS[saved]) return saved; } catch (e) {}
+    const browserLanguage = String((navigator && (navigator.language || navigator.userLanguage)) || "").toLowerCase();
+    return browserLanguage.startsWith("ru") ? "ru" : "tr";
+  }
+  function findGameServer(hostOrUrl) {
+    if (!hostOrUrl) return null;
+    return Object.values(REGION_CONFIGS).flatMap(region => Object.values(region.servers)).find(server => server.host === hostOrUrl) || null;
+  }
+  function findRegionForHost(hostOrUrl) {
+    if (!hostOrUrl) return null;
+    const host = String(hostOrUrl).replace(/^wss?:\/\//i, "");
+    for (const [region, cfg] of Object.entries(REGION_CONFIGS || {})) {
+      for (const server of Object.values(cfg.servers || {})) {
+        if (server.host === host) return region;
+      }
+    }
+    // Fallback by port/path when list miss
+    if (/:6013\b|sixz\.ru:6013/i.test(host)) return "tr";
+    // hardcore (6017) + darctida live under RU list in HTML
+    if (/sixz\.ru:6017|:6017\b|\/hc\b|\/darctida\b/i.test(host)) return "ru";
+    if (/:6014\b|:6015\b|xn--bdk\.pw|\/d(?:ffa|rookery)/i.test(host)) return "eu";
+    return null;
+  }
+  function isForeignStyleHost(host) {
+    if (window.MultiProtocols && !window.MultiProtocols.isOfficial(host)) return true;
+    return /:6014\b|:6015\b|:6017\b|xn--bdk\.pw|sixz\.ru:6017|\/darctida\b|\/hc\b/i.test(String(host || ""));
+  }
+  /**
+   * EN(EU) + TR servers: mass as 1.2k / 1,2k.
+   * Quantized so the label does not rebuild every tick (less GPU/text load).
+   * hardcore/darctida stay on RU tab but keep foreign mass style by host.
+   */
+  function formatMassLabel(mass, regionKey, host) {
+    const h = String(host || "");
+    const fullMass = /sixz\.ru:6017|:6017\b/i.test(h);
+    const useK = !fullMass && (regionKey === "tr" || regionKey === "eu" || regionKey === "en" || isForeignStyleHost(h));
+    let m = mass | 0;
+    if (!useK) return String(m);
+    if (m >= 1000) {
+      m = Math.round(m / 100) * 100;
+      let s = (m / 1000).toFixed(1);
+      if (regionKey === "tr") s = s.replace(".", ",");
+      return s + "k";
+    }
+    m = Math.round(m / 10) * 10;
+    return String(m);
+  }
+  /** TR / EU(EN): lighter Arial labels, no black outline (incl. hardcore/darctida by host) */
+  function isLightLabelRegion(regionKey, host) {
+    return regionKey === "tr" || regionKey === "eu" || regionKey === "en" || isForeignStyleHost(host);
+  }
+  function getPowApiBase(hostOrUrl) {
+    const entry = findGameServer(hostOrUrl);
+    let host = entry ? entry.host : hostOrUrl || "ffa.agar.su";
+    host = String(host || "").replace(/^wss?:\/\//i, "");
+    // strip room path: xn--bdk.pw:6014/dparty → xn--bdk.pw:6014
+    const slash = host.indexOf("/");
+    if (slash > 0) host = host.slice(0, slash);
+    if (/^https?:\/\//i.test(host)) return String(host).replace(/\/$/, "");
+    return "https://" + host;
+  }
+  function getGameServerWssUrl(host) {
+    const h = host || "ffa.agar.su";
+    return "wss://" + String(h).replace(/^wss?:\/\//i, "");
+  }
+  var KEYBIND_DEFAULTS = {
+    split: 32,
+    eject: 87,
+    freeze: 70,
+    chat: 13,
+    coord: 67,
+    macroFeed: 81,
+    macroR: 82,
+    macroT: 84,
+    macroP: 80,
+    menu: 27,
+    sticker1: 49,
+    sticker2: 50,
+    sticker3: 51,
+    sticker4: 52,
+    sticker5: 53,
+    sticker6: 54,
+    sticker7: 55,
+    sticker8: 56,
+    sticker9: 57
+  };
+  var KEYBIND_LABELS = {
+    split: "Split",
+    eject: "Eject (масса W)",
+    freeze: "Пауза (F)",
+    chat: "Чат",
+    coord: "Координаты (C)",
+    macroFeed: "Выделение массы (Q)",
+    macroR: "R",
+    macroT: "T",
+    macroP: "P",
+    menu: "Меню / пауза UI",
+    sticker1: "Стикер 1",
+    sticker2: "Стикер 2",
+    sticker3: "Стикер 3",
+    sticker4: "Стикер 4",
+    sticker5: "Стикер 5",
+    sticker6: "Стикер 6",
+    sticker7: "Стикер 7",
+    sticker8: "Стикер 8",
+    sticker9: "Стикер 9"
+  };
+  var ClientOpcode = {
+    NICK: 0,
+    SPECTATE: 1,
+    PING: 2,
+    MOUSE: 16,
+    SPLIT: 17,
+    EJECT_Q: 18,
+    Q_UP: 19,
+    CLEAR: 20,
+    EJECT: 21,
+    MACRO_E: 22,
+    MACRO_R: 23,
+    MACRO_T: 24,
+    MACRO_P: 25,
+    CHAT: 99,
+    STICKER: 200,
+    ADMIN_PANEL: 169,
+    HANDSHAKE_PROTO: 254,
+    HANDSHAKE_KEY: 255
+  };
+  var ServerOpcode = {
+    PING: 2,
+    UPDATE_NODES: 16,
+    THIN_WORLD: 96,
+    UPDATE_CAMERA: 17,
+    CLEAR_NODES: 20,
+    CUSTOM_LB: 48,
+    FFA_LB: 49,
+    BORDERS: 64,
+    BAN: 91,
+    CHAT: 99,
+    XP: 114,
+    ADMIN_PANEL: 169,
+    STICKER: 200
+  };
+  function prepareData(byteLength) {
+    return new DataView(new ArrayBuffer(byteLength));
+  }
+  function encodeHandshake() {
+    const proto = prepareData(5);
+    proto.setUint8(0, ClientOpcode.HANDSHAKE_PROTO);
+    proto.setUint32(1, 5, true);
+    const key = prepareData(5);
+    key.setUint8(0, ClientOpcode.HANDSHAKE_KEY);
+    key.setUint32(1, 0, true);
+    return [ proto, key ];
+  }
+  function encodePing() {
+    return new Uint8Array([ ClientOpcode.PING ]);
+  }
+  function normalizeNick(nick) {
+    if (!nick) return "";
+    let n = nick.trim();
+    if (n.startsWith("[")) {
+      const endIndex = n.indexOf("]");
+      if (endIndex === -1) return "";
+      const innerNick = n.substring(1, endIndex).trim();
+      if (!innerNick || innerNick !== n.substring(1, endIndex)) return "";
+      return `[${innerNick}]`.toLowerCase();
+    }
+    if (!n || n.trim() !== n) return "";
+    return n.toLowerCase();
+  }
+  var ONLINE_HUB_URL = "https://api.agar.su/online";//2
+  var TOP100_URL = "https://api.agar.su/api/top100";
+  var SKINLIST_URL = "https://api.agar.su/skinlist.txt";
+  var STICKERLIST_URL = "https://api.agar.su/stickerlist.txt";
+  var SKIN_CDN = "https://api.agar.su/skins";
+  var STICKER_CDN = "https://api.agar.su/stickers";
+  var SKIN_FALLBACK_URL = "https://api.agar.su/skins/4.png";
+  var WS_SUBPROTOCOL = "eSejeKSVdysQvZs0ES1H";
+  var TTL_MS = 3e5;
+  var STATIC_URLS = {
+    skinlist: SKINLIST_URL,
+    stickerlist: STICKERLIST_URL,
+    pass: "https://api.agar.su/pass.txt",
+    bannick: "https://api.agar.su/bannick.txt",
+    invisible: "https://api.agar.su/invisible.txt",
+    rotation: "https://api.agar.su/rotation.txt",
+    statsbglist: "https://api.agar.su/statsbglist.txt",
+    word: "word.txt"
+  };
+  /** Purchased skins / passes — never cache in browser or nginx. */
+  var NO_CACHE_URLS = new Set([ STATIC_URLS.skinlist, STATIC_URLS.stickerlist, STATIC_URLS.pass, STATIC_URLS.bannick, STATIC_URLS.invisible, STATIC_URLS.rotation, STATIC_URLS.statsbglist ]);
+  var cache = new Map;
+  var inflight = new Map;
+  var SESSION_PREFIX = "agar_static_v1:";
+  function sessionKey(url) {
+    return SESSION_PREFIX + url;
+  }
+  function readSessionEntry(url) {
+    try {
+      const raw = sessionStorage.getItem(sessionKey(url));
+      if (!raw) return null;
+      const entry = JSON.parse(raw);
+      if (!entry || typeof entry.text !== "string" || typeof entry.at !== "number") return null;
+      if (Date.now() - entry.at >= TTL_MS) {
+        sessionStorage.removeItem(sessionKey(url));
+        return null;
+      }
+      return entry;
+    } catch (e) {
+      return null;
+    }
+  }
+  function writeSessionEntry(url, text, at) {
+    try {
+      sessionStorage.setItem(sessionKey(url), JSON.stringify({
+        text,
+        at
+      }));
+    } catch (e) {}
+  }
+  function rememberText(url, text, at = Date.now()) {
+    cache.set(url, {
+      text,
+      at
+    });
+    writeSessionEntry(url, text, at);
+    return text;
+  }
+  function fetchStaticText(url, force = false) {
+    if (NO_CACHE_URLS.has(url)) {
+      const pending = inflight.get(url);
+      if (pending) return pending;
+      const p = fetch(url, { cache: "no-store" }).then(res => {
+        if (!res.ok) throw new Error(`fetch failed: ${url} (${res.status})`);
+        return res.text();
+      }).catch(err => {
+        console.error("fetchStaticText:", err);
+        const hit = cache.get(url);
+        return hit ? hit.text : "";
+      }).finally(() => {
+        inflight.delete(url);
+      });
+      inflight.set(url, p);
+      return p.then(text => {
+        cache.set(url, { text, at: Date.now() });
+        return text;
+      });
+    }
+    const now = Date.now();
+    const hit = cache.get(url);
+    if (!force && hit && now - hit.at < TTL_MS) {
+      return Promise.resolve(hit.text);
+    }
+    if (!force) {
+      const stored = readSessionEntry(url);
+      if (stored) {
+        cache.set(url, stored);
+        return Promise.resolve(stored.text);
+      }
+    }
+    const pending = inflight.get(url);
+    if (pending) return pending;
+    const p = fetch(url).then(res => {
+      if (!res.ok) throw new Error(`fetch failed: ${url} (${res.status})`);
+      return res.text();
+    }).then(text => rememberText(url, text, Date.now())).catch(err => {
+      console.error("fetchStaticText:", err);
+      if (hit) return hit.text;
+      return "";
+    }).finally(() => {
+      inflight.delete(url);
+    });
+    inflight.set(url, p);
+    return p;
+  }
+  function parseSkinListText(data) {
+    const map = new Map;
+    const obj = {};
+    String(data || "").split("\n").forEach(line => {
+      const idx = line.indexOf(":");
+      if (idx < 0) return;
+      const name = normalizeNick(line.slice(0, idx).trim());
+      const id = line.slice(idx + 1).trim();
+      if (!name || !id) return;
+      map.set(name, id);
+      obj[name] = id;
+    });
+    return {
+      map,
+      obj
+    };
+  }
+  async function loadSkinListMap(force = false) {
+    const text = await fetchStaticText(STATIC_URLS.skinlist, force);
+    return parseSkinListText(text);
+  }
+  function parseStickerListText(data) {
+    const map = new Map;
+    const obj = {};
+    String(data || "").split("\n").forEach(line => {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) return;
+      const idx = trimmed.indexOf(":");
+      if (idx < 0) return;
+      const name = normalizeNick(trimmed.slice(0, idx).trim());
+      const code = trimmed.slice(idx + 1).trim();
+      if (!name || !code) return;
+      map.set(name, code);
+      obj[name] = code;
+    });
+    return {
+      map,
+      obj
+    };
+  }
+  async function loadStickerListMap(force = false) {
+    const text = await fetchStaticText(STATIC_URLS.stickerlist, force);
+    return parseStickerListText(text);
+  }
+  function applySkinListToState(S, bundle) {
+    if (S && (bundle == null ? void 0 : bundle.obj)) S.skinList = bundle.obj;
+  }
+  function applyStickerListToState(S, bundle) {
+    if (S && (bundle == null ? void 0 : bundle.obj)) S.stickerList = bundle.obj;
+  }
+  function getStickerPackCode(stickerSource, nick) {
+    const key = normalizeNick(String(nick || "").replace(/<[^>]*>/g, ""));
+    if (!key) return "";
+    if (stickerSource instanceof Map) return stickerSource.get(key) || "";
+    return (stickerSource == null ? void 0 : stickerSource[key]) || "";
+  }
+  function getStickerUrl(stickerSource, nick, stickerId) {
+    const id = Number(stickerId);
+    if (!Number.isFinite(id) || id < 1 || id > 9) return "";
+    const code = getStickerPackCode(stickerSource, nick);
+    if (code) return `${STICKER_CDN}/${encodeURIComponent(code)}/${id}.png`;
+    return `${STICKER_CDN}/${id}.png`;
+  }
+  function getSkinIdForNick(skinSource, nick, fallback = "PPFtwqH") {
+    const key = normalizeNick(String(nick || "").replace(/<[^>]*>/g, ""));
+    if (!key) return fallback;
+    if (skinSource instanceof Map) return skinSource.get(key) || fallback;
+    return (skinSource == null ? void 0 : skinSource[key]) || fallback;
+  }
+  function getSkinUrlForNick(skinSource, nick, fallback = "4") {
+    const id = getSkinIdForNick(skinSource, nick, fallback);
+    return `https://api.agar.su/skins/${id}.png`;
+  }
+  function invalidateStatsRenderCaches(S) {
+    if (S) S.lastStatsRenderKey = "";
+  }
+  function toLowerSet(text) {
+    return new Set(String(text || "").split("\n").map(l => l.trim().toLowerCase().replace(/ё/g, "е")).filter(Boolean));
+  }
+  async function loadPassData(force = false) {
+    const [text, banText] = await Promise.all([
+      fetchStaticText(STATIC_URLS.pass, force),
+      fetchStaticText(STATIC_URLS.bannick, force).catch(() => "")
+    ]);
+    const banned = new Set();
+    for (const line of String(banText || "").split("\n")) {
+      const norm = normalizeNick(line.trim());
+      if (norm) banned.add(norm);
+    }
+    const passPlayerNickToId = new Map;
+    const passClanNickToId = new Map;
+    const passUsers = [];
+    let lineNum = 0;
+    for (const line of text.split("\n")) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) continue;
+      lineNum += 1;
+      const norm = normalizeNick(trimmed);
+      if (!norm) continue;
+      const passId = String(lineNum);
+      if (norm.startsWith("[") && norm.endsWith("]")) {
+        if (!passClanNickToId.has(norm)) passClanNickToId.set(norm, passId);
+      } else if (!passPlayerNickToId.has(norm)) {
+        passPlayerNickToId.set(norm, passId);
+      }
+      if (!banned.has(norm)) passUsers.push(norm);
+    }
+    return {
+      passUsers,
+      passPlayerNickToId,
+      passClanNickToId
+    };
+  }
+  async function loadInvisibleSet(force = false) {
+    return toLowerSet(await fetchStaticText(STATIC_URLS.invisible, force));
+  }
+  async function loadRotationSet(force = false) {
+    return toLowerSet(await fetchStaticText(STATIC_URLS.rotation, force));
+  }
+  async function loadStatsBgMap(force = false) {
+    const text = await fetchStaticText(STATIC_URLS.statsbglist, force).catch(() => "");
+    const map = {};
+    for (const line of String(text || "").split("\n")) {
+      const idx = line.indexOf(":");
+      if (idx < 0) continue;
+      const nick = line.slice(0, idx).trim().toLowerCase();
+      const file = line.slice(idx + 1).trim();
+      if (nick && file) map[nick] = file;
+    }
+    return map;
+  }
+  function statsBgUrlForNick(nickname, statsBgMap) {
+    const lower = String(nickname || "").toLowerCase();
+    const clean = lower.replace(/\[|\]/g, "").trim();
+    const file = (statsBgMap && (statsBgMap[lower] || statsBgMap[clean] || statsBgMap[`[${clean}]`])) || null;
+    return file ? `https://api.agar.su/statsbg/${file}` : null;
+  }
+  async function loadBadWordsSet(force = false) {
+    return toLowerSet(await fetchStaticText(STATIC_URLS.word, force));
+  }
+  async function preloadStaticLists(force = false) {
+    const [skin, sticker, pass, invisible, rotation, words] = await Promise.all([ loadSkinListMap(force), loadStickerListMap(force), loadPassData(force), loadInvisibleSet(force), loadRotationSet(force), loadBadWordsSet(force) ]);
+    return {
+      skin,
+      sticker,
+      pass,
+      invisible,
+      rotation,
+      words
+    };
+  }
+  var skinImageCache = new Map;
+  var skinPetriFailAt = new Map;
+  function getSkinImageUrl(skinId, fallbackId = "4") {
+    const id = skinId && String(skinId).trim() || fallbackId;
+    return `${SKIN_CDN}/${id}.png`;
+  }
+  function resolveAssetUrl(url) {
+    try {
+      return new URL(url, location.href).href;
+    } catch (e) {
+      return url;
+    }
+  }
+  function setImgSrc(img, url) {
+    if (!img || !url) return;
+    const resolved = resolveAssetUrl(url);
+    if (img.dataset.resolvedSrc === resolved) return;
+    img.dataset.resolvedSrc = resolved;
+    img.src = resolved;
+  }
+  function skinImageCacheKey(url) {
+    return resolveAssetUrl(String(url || "").replace(/([?&])_=\d+/g, "").replace(/\?$/, ""));
+  }
+  /** One network fetch per URL; DOM imgs reuse the same cached Image.src */
+  function loadCachedImage(url, bustRetry) {
+    const baseKey = skinImageCacheKey(url);
+    const fetchUrl = bustRetry
+      ? url + (url.indexOf("?") >= 0 ? "&" : "?") + "_=" + Date.now()
+      : url;
+    const resolved = resolveAssetUrl(fetchUrl);
+    const entry = skinImageCache.get(baseKey);
+    if (entry instanceof Image) return entry;
+    if (entry === "error") {
+      if (baseKey === skinImageCacheKey(SKIN_FALLBACK_URL)) return null;
+      if (/\/api\/getSkin\?/i.test(baseKey)) {
+        const failAt = skinPetriFailAt.get(baseKey) || 0;
+        if (Date.now() - failAt < 5000) return null;
+        skinImageCache.delete(baseKey);
+      } else {
+        return loadCachedImage(SKIN_FALLBACK_URL);
+      }
+    }
+    const img = new Image;
+    img.decoding = "async";
+    img.crossOrigin = "anonymous";
+    skinImageCache.set(baseKey, img);
+    img.onload = () => skinImageCache.set(baseKey, img);
+    img.onerror = () => {
+      if (!bustRetry) {
+        skinImageCache.delete(baseKey);
+        loadCachedImage(url, true);
+        return;
+      }
+      skinImageCache.set(baseKey, "error");
+      if (/\/api\/getSkin\?/i.test(baseKey)) {
+        skinPetriFailAt.set(baseKey, Date.now());
+        return;
+      }
+      if (baseKey !== skinImageCacheKey(SKIN_FALLBACK_URL)) loadCachedImage(SKIN_FALLBACK_URL);
+    };
+    img.src = resolved;
+    return img;
+  }
+
+  var SKIN_STRIP_MS = 100;
+  var DOM_STRIP_SELECTOR = "#skinss,#prevSkin,#nextSkin,.skinswraper,.skkinn img,.rating-home .avatar,.rating-row .avatar,.skins-gallery-card img,.nick-card img.skin,img.chatX_avatar,img.account-level-avatar,.chatX_top_avatar img,.avatarXcontainer img";
+  var domStripRaf = 0;
+  var lastDomStripTick = 0;
+  function getSkinStripInfo(img) {
+    if (!img) return { isStrip: false, frames: 1, fw: 0, fh: 0 };
+    var fw = img.naturalWidth || img.width || 0;
+    var fh = img.naturalHeight || img.height || 0;
+    if (fw <= 0 || fh <= 0) return { isStrip: false, frames: 1, fw: fw, fh: fh };
+    var frames = fw > fh ? Math.max(1, Math.floor(fw / fh)) : 1;
+    return { isStrip: frames > 1, frames: frames, fw: fw, fh: fh };
+  }
+  function getSkinStripFrameIndex(frames, now) {
+    if (!frames || frames <= 1) return 0;
+    return Math.floor((now != null ? now : Date.now()) / SKIN_STRIP_MS) % frames;
+  }
+  function getSkinStripSourceRect(img, now) {
+    var info = getSkinStripInfo(img);
+    if (!info.fw || !info.fh) return { sx: 0, sy: 0, sw: 0, sh: 0, frame: 0, frames: 1 };
+    if (!info.isStrip) return { sx: 0, sy: 0, sw: info.fw, sh: info.fh, frame: 0, frames: 1 };
+    var frame = getSkinStripFrameIndex(info.frames, now);
+    return { sx: frame * info.fh, sy: 0, sw: info.fh, sh: info.fh, frame: frame, frames: info.frames };
+  }
+  function drawSkinStripImage(ctx, img, dx, dy, dw, dh, now) {
+    if (!ctx || !img) return;
+    var r = getSkinStripSourceRect(img, now);
+    if (r.sw <= 0 || r.sh <= 0) return;
+    ctx.drawImage(img, r.sx, r.sy, r.sw, r.sh, dx, dy, dw, dh);
+  }
+  var skinLodCache = new Map;
+  var SKIN_LOD_CACHE_MAX = 384;
+  function isAnimatedSkinImage(img) {
+    return !!(img && getSkinStripInfo(img).isStrip);
+  }
+  /** Static skins: mass <= 50 → 128px, else 512px. */
+  function pickSkinLodByMass(mass) {
+    return (mass | 0) <= 50 ? 128 : 512;
+  }
+  function getSkinLodSource(img, lodSize, cacheKey) {
+    if (!img) return img;
+    const fw = img.naturalWidth || img.width || 0;
+    const fh = img.naturalHeight || img.height || 0;
+    if (!fw || !fh) return img;
+    lodSize = lodSize === 512 ? 512 : 128;
+    const frameSize = getSkinStripInfo(img).isStrip ? fh : Math.min(fw, fh);
+    if (lodSize >= frameSize) return img;
+    const key = String(cacheKey || img.src || "x") + ":lod" + lodSize;
+    let cached = skinLodCache.get(key);
+    if (cached) return cached;
+    const c = document.createElement("canvas");
+    c.width = lodSize;
+    c.height = lodSize;
+    const cctx = c.getContext("2d");
+    if (cctx) cctx.drawImage(img, 0, 0, frameSize, frameSize, 0, 0, lodSize, lodSize);
+    if (skinLodCache.size >= SKIN_LOD_CACHE_MAX) {
+      const firstKey = skinLodCache.keys().next().value;
+      if (firstKey !== void 0) skinLodCache.delete(firstKey);
+    }
+    skinLodCache.set(key, c);
+    return c;
+  }
+  function extractCssUrl(value) {
+    if (!value || value === "none") return "";
+    var m = String(value).match(/url\(\s*['"]?([^'")]+)['"]?\s*\)/i);
+    return m ? m[1] : "";
+  }
+  function getElementSkinUrl(el) {
+    if (!el) return "";
+    if (el.tagName === "IMG") return el.currentSrc || el.getAttribute("src") || el.src || "";
+    var inline = extractCssUrl(el.style.backgroundImage);
+    if (inline) return inline;
+    try { return extractCssUrl(getComputedStyle(el).backgroundImage); } catch (e) { return ""; }
+  }
+  function clearDomStripStyles(el) {
+    if (el.dataset.skinStrip !== "1") return;
+    if (el.tagName === "IMG") {
+      el.style.removeProperty("width");
+      el.style.removeProperty("height");
+      el.style.removeProperty("max-width");
+      el.style.removeProperty("transform");
+      el.style.removeProperty("object-fit");
+      el.style.removeProperty("margin-left");
+      el.style.removeProperty("border-radius");
+      el.style.removeProperty("border");
+      el.style.removeProperty("box-shadow");
+      el.style.removeProperty("display");
+      el.classList.remove("skin-strip-anim");
+      delete el.dataset.skinStripSide;
+    } else {
+      el.style.backgroundSize = "";
+      el.style.backgroundPosition = "";
+      el.style.backgroundRepeat = "";
+      el.style.width = "";
+      el.style.height = "";
+      el.style.minWidth = "";
+      el.style.minHeight = "";
+      el.style.padding = "";
+      el.style.boxSizing = "";
+      el.classList.remove("skin-strip-bg");
+    }
+    delete el.dataset.skinStrip;
+  }
+  function applyBackgroundStrip(el, frames, frame) {
+    // Never write width/height here — clientWidth shrinks under border-box and
+    // would collapse #skinss / avatars every tick (strip skins like amfitamin).
+    if (el.style.width || el.style.height || el.style.minWidth || el.style.minHeight) {
+      el.style.width = "";
+      el.style.height = "";
+      el.style.minWidth = "";
+      el.style.minHeight = "";
+      el.style.padding = "";
+      el.style.boxSizing = "";
+    }
+    var w = el.clientWidth || el.offsetWidth;
+    var h = el.clientHeight || el.offsetHeight;
+    var side = Math.max(1, Math.min(w || h, h || w));
+    if (!side) return;
+    el.classList.add("skin-strip-bg");
+    el.style.backgroundRepeat = "no-repeat";
+    el.style.backgroundSize = frames * side + "px " + side + "px";
+    el.style.backgroundPosition = "-" + frame * side + "px center";
+    el.dataset.skinStrip = "1";
+  }
+  function isStripClipHost(el) {
+    if (!el) return false;
+    return el.classList.contains("skinswraper") || el.classList.contains("skkinn") || el.classList.contains("avatar") || el.id === "skinss" || el.id === "prevSkin" || el.id === "nextSkin";
+  }
+  function defaultStripSideForImg(img) {
+    if (!img) return 40;
+    if (img.classList.contains("chatX_avatar")) return 50;
+    if (img.classList.contains("account-level-avatar")) return 20;
+    if (img.classList.contains("skin")) return 36;
+    if (img.classList.contains("chatX_avatar_private")) return 20;
+    return 40;
+  }
+  function ensureImgStripHost(img) {
+    var parent = img.parentElement;
+    if (!parent) return null;
+    if (parent.classList.contains("skin-strip-host")) return parent;
+    if (isStripClipHost(parent)) {
+      parent.classList.add("skin-strip-host");
+      if (!parent.style.overflow) parent.style.overflow = "hidden";
+      return parent;
+    }
+    var cs = getComputedStyle(img);
+    var side = Math.max(1, Math.round(Math.min(
+      parseFloat(cs.width) || img.clientWidth || 0,
+      parseFloat(cs.height) || img.clientHeight || 0
+    ) || defaultStripSideForImg(img)));
+    var wrap = document.createElement("span");
+    wrap.className = "skin-strip-host";
+    wrap.style.width = side + "px";
+    wrap.style.height = side + "px";
+    wrap.style.minWidth = side + "px";
+    wrap.style.minHeight = side + "px";
+    wrap.style.overflow = "hidden";
+    wrap.style.borderRadius = "50%";
+    wrap.style.display = "inline-block";
+    wrap.style.flexShrink = "0";
+    wrap.style.boxSizing = "border-box";
+    wrap.style.verticalAlign = "middle";
+    wrap.style.position = "relative";
+    if (cs.borderTopWidth && cs.borderTopWidth !== "0px") {
+      wrap.style.border = cs.borderTopWidth + " solid " + (cs.borderTopColor || "currentColor");
+    }
+    if (cs.boxShadow && cs.boxShadow !== "none") {
+      wrap.style.boxShadow = cs.boxShadow;
+    }
+    parent.insertBefore(wrap, img);
+    wrap.appendChild(img);
+    img.dataset.skinStripWrapped = "1";
+    return wrap;
+  }
+  function applyImgStrip(img, frames, frame) {
+    var host = ensureImgStripHost(img);
+    if (!host) return;
+    var side = parseInt(img.dataset.skinStripSide || "", 10);
+    if (!side) {
+      side = Math.max(1, Math.round(Math.min(
+        host.clientWidth || host.offsetWidth || 0,
+        host.clientHeight || host.offsetHeight || 0
+      ) || defaultStripSideForImg(img)));
+      img.dataset.skinStripSide = String(side);
+    }
+    img.classList.add("skin-strip-anim");
+    img.style.setProperty("width", frames * side + "px", "important");
+    img.style.setProperty("height", side + "px", "important");
+    img.style.setProperty("max-width", "none", "important");
+    img.style.setProperty("border-radius", "0", "important");
+    img.style.setProperty("border", "none", "important");
+    img.style.setProperty("box-shadow", "none", "important");
+    img.style.setProperty("object-fit", "fill", "important");
+    img.style.setProperty("display", "block", "important");
+    img.style.setProperty("transform", "translateX(-" + frame * side + "px)", "important");
+    img.dataset.skinStrip = "1";
+  }
+  function updateDomSkinStrip(el, now) {
+    if (el.dataset && el.dataset.skinStripStatic === "1") return;
+    if (el.closest && el.closest("#leaderboard, #toplistnow")) return;
+    // Skip hidden menu tabs / death screen — no work, no layout thrash
+    if (el.closest) {
+      var hiddenPanel = el.closest(".content:not(.active), #statics");
+      if (hiddenPanel) {
+        try {
+          if (hiddenPanel.id === "statics") {
+            var st = hiddenPanel.style.display;
+            if (!st || st === "none") return;
+          } else if (!hiddenPanel.classList.contains("active")) return;
+        } catch (e) { return; }
+      }
+    }
+    var url = getElementSkinUrl(el);
+    if (!url) { clearDomStripStyles(el); return; }
+    var img = loadCachedImage(resolveAssetUrl(url));
+    if (!(img instanceof Image) || !img.complete || !(img.naturalWidth || img.width)) return;
+    var info = getSkinStripInfo(img);
+    if (!info.isStrip) { clearDomStripStyles(el); return; }
+    var frame = getSkinStripFrameIndex(info.frames, now);
+    if (el.tagName === "IMG") applyImgStrip(el, info.frames, frame);
+    else applyBackgroundStrip(el, info.frames, frame);
+  }
+  function startDomSkinStripAnimator() {
+    if (domStripRaf) return;
+    function loop() {
+      domStripRaf = requestAnimationFrame(loop);
+      var now = Date.now();
+      if (now - lastDomStripTick < 50) return;
+      lastDomStripTick = now;
+      var nodes = document.querySelectorAll(DOM_STRIP_SELECTOR);
+      for (var i = 0; i < nodes.length; i++) updateDomSkinStrip(nodes[i], now);
+    }
+    domStripRaf = requestAnimationFrame(loop);
+  }
+
+  /**
+   * Chat / UI avatars: never start a new download per message.
+   * Warm skinImageCache first, then point the DOM img at the same src.
+   */
+  function setSkinAvatarFromUrl(img, url) {
+    if (!img || !url) return;
+    const resolved = resolveAssetUrl(url);
+    const fallbackResolved = resolveAssetUrl(SKIN_FALLBACK_URL);
+    if (img.dataset.resolvedSrc === resolved && img.complete && img.naturalWidth > 0) return;
+
+    img.crossOrigin = "anonymous";
+    img.decoding = "async";
+    img.dataset.resolvedSrc = resolved;
+
+    const cached = loadCachedImage(resolved);
+    if (!(cached instanceof Image)) {
+      if (resolved !== fallbackResolved) setSkinAvatarFromUrl(img, SKIN_FALLBACK_URL);
+      return;
+    }
+
+    const apply = () => {
+      if (skinImageCache.get(resolved) === "error") {
+        if (resolved !== fallbackResolved) setSkinAvatarFromUrl(img, SKIN_FALLBACK_URL);
+        return;
+      }
+      if (cached.complete && cached.naturalWidth > 0) {
+        if (img.src !== cached.src) img.src = cached.src;
+        return;
+      }
+      if (cached.complete && resolved !== fallbackResolved) {
+        setSkinAvatarFromUrl(img, SKIN_FALLBACK_URL);
+      }
+    };
+
+    apply();
+    if (!cached.complete) {
+      cached.addEventListener("load", apply, { once: true });
+      cached.addEventListener("error", () => {
+        if (resolved !== fallbackResolved) setSkinAvatarFromUrl(img, SKIN_FALLBACK_URL);
+      }, { once: true });
+    }
+  }
+  function setSkinAvatarById(img, skinId) {
+    setSkinAvatarFromUrl(img, getSkinImageUrl(skinId));
+  }
+  /** Leaderboard/small UI: one strip frame, no animation loop. */
+  function setSkinAvatarStatic(img, url) {
+    if (!img || !url) return;
+    img.dataset.skinStripStatic = "1";
+    setSkinAvatarFromUrl(img, url);
+    const resolved = resolveAssetUrl(url);
+    const apply = () => {
+      const cached = loadCachedImage(resolved);
+      if (!(cached instanceof Image) || !cached.complete || !(cached.naturalWidth || cached.width)) return;
+      const info = getSkinStripInfo(cached);
+      if (!info.isStrip) return;
+      applyImgStrip(img, info.frames, 0);
+    };
+    apply();
+    const cached = loadCachedImage(resolved);
+    if (cached instanceof Image && !cached.complete) {
+      cached.addEventListener("load", apply, { once: true });
+    }
+  }
+  function setSkinAvatarStaticById(img, skinId) {
+    setSkinAvatarStatic(img, getSkinImageUrl(skinId));
+  }
+  function getSkinImage(skinId) {
+    return loadCachedImage(getSkinImageUrl(skinId));
+  }
+  /**
+   * Limited-glow mass thresholds by server (Russia only).
+   * Turkey / Europe servers: disabled.
+   * Default RU (ffa / ms / pvp / tournament): 22400 / 22300
+   * hardcore (/hc): 35000 / 34900
+   */
+  function isLimitGlowDisabledHost(host) {
+    const h = String(host || "");
+    if (window.MultiProtocols && !window.MultiProtocols.isOfficial(h)) return true;
+    if (/:6013\b|sixz\.ru:6013/i.test(h)) return true; // Turkey
+    if (/:6014\b|:6015\b|:6017\b|xn--bdk\.pw|\/d(?:ffa|rookery|arctida)/i.test(h)) return true; // Europe
+    return false;
+  }
+  function getLimitGlowMassBounds(host) {
+    const h = String(host || "");
+    if (/\/hc\b/i.test(h)) return { on: 35000, off: 34900 };
+    if (isLimitGlowDisabledHost(host)) return null;
+    if (/megasplit5k|\/ms5k/i.test(h)) return { on: 32400, off: 32300 };
+    return { on: 22400, off: 22300 };
+  }
+  window.getLimitGlowMassBounds = getLimitGlowMassBounds;
+  window.isLimitGlowDisabledHost = isLimitGlowDisabledHost;
+  /** Bridge skins via unified xn--bdk.pw skinsbot. skinlist.txt still wins (agar.su only). */
+  var SKINS_BOT_BASE = "https://xn--bdk.pw:6016";
+  function applyServerSpectateCamera(S, x, y, size) {
+    // Playing own cells — never let server spectate camera override
+    if (S.playerCells && S.playerCells.length > 0) return;
+    const sizeOk = typeof size === "number" && size > 0;
+    S.posX = x;
+    S.posY = y;
+    if (sizeOk) S.posSize = size;
+  }
+  /** AgarZ skin bridge (sixz.ru:6013). */
+  function isPetriSkinHost(host) {
+    return /sixz\.ru:6013|:6013\//i.test(String(host || ""));
+  }
+  function getSkinBridge(host) {
+    if (/sixz\.ru:6013|:6013\b/i.test(String(host || ""))) return "agarz";
+    return null;
+  }
+  function getPetriSkinUrl(nick, host) {
+    const bridge = getSkinBridge(host);
+    if (!bridge) return null;
+    const bare = String(nick || "").split("#")[0].replace(/<[^>]*>/g, "").trim();
+    if (!bare) return null;
+    return SKINS_BOT_BASE + "/api/getSkin?bridge=" + bridge + "&username=" + encodeURIComponent(bare);
+  }
+  function getCellSkinImage(S, nick, skinId, getSkinImageFn, loadCachedImageFn) {
+    if (skinId) return (getSkinImageFn || getSkinImage)(skinId);
+    const host = S && (S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl);
+    if (!isPetriSkinHost(host)) return null;
+    const url = getPetriSkinUrl(nick, host);
+    return url ? (loadCachedImageFn || loadCachedImage)(url) : null;
+  }
+  function isSkinImageReady(img) {
+    return !!(img && img.complete && (img.naturalWidth || img.width) > 0);
+  }
+  /**
+   * Skin for transparent-body nicks: only the real skin file, never silent fallback.
+   * Missing / still loading / failed → null (caller must keep cell color visible).
+   */
+  function getOwnedSkinDrawable(skinId) {
+    if (!skinId) return null;
+    const baseKey = skinImageCacheKey(getSkinImageUrl(skinId));
+    const entry = skinImageCache.get(baseKey);
+    if (entry === "error") return null;
+    let img = entry instanceof Image ? entry : null;
+    if (!img) {
+      img = loadCachedImage(getSkinImageUrl(skinId));
+      if (skinImageCache.get(baseKey) === "error") return null;
+    }
+    return isSkinImageReady(img) ? img : null;
+  }
+  var scoreMessages = {
+    low: [ "Ничего, зови друзей и попробуй ещё раз!", "Только начало! Поделись с друзьями и вернись сильным!", "Быстро умер? Зови друзей, пусть они покажут мастерство!", "Не расстраивайся, каждая игра — это опыт. Попробуй снова!", "Попробуй поменять фон в настройках — может, поможет!", "Используй F, чтобы остановиться и обдумать стратегию!", "Терпение и стратегия важнее скорости!", "Нажимая W — выделяется цешка (маленькая масса)." ],
+    mid: [ "Неплохо! Позови друзей и бросьте друг другу вызов!", "Хорошая игра! Поделись результатом и зови друзей!", "Ты уже на полпути! Продолжай и удиви всех!", "F — для паузы и стратегии. Используй с умом!", "W — цешка. Корми врагов или заманивай!" ],
+    high: [ "Вау! Легендарный результат! Делись с друзьями!", "Ты на вершине! Покажи, кто настоящий чемпион!", "Превосходно! Каждый шаг — как по учебнику!", "Настройки фона — твой стиль, твоя концентрация!", "F в нужный момент — контроль даже на вершине!", "Ты — мастер! Бей рекорды дальше!" ]
+  };
+  function setPingDisplay(ping) {
+    const pingElement = document.getElementById("ping");
+    if (!pingElement) return;
+    pingElement.textContent = ping;
+    pingElement.classList.remove("ping-green", "ping-yellow", "ping-red");
+    if (ping >= 0 && ping < 50) pingElement.classList.add("ping-green"); else if (ping >= 50 && ping < 150) pingElement.classList.add("ping-yellow"); else pingElement.classList.add("ping-red");
+  }
+  function calcUserScore(S) {
+    let score = 0;
+    for (let i = 0; i < S.playerCells.length; i++) {
+      score += S.playerCells[i].nSize * S.playerCells[i].nSize;
+    }
+    return score;
+  }
+  function updateStats(S) {
+    var _a;
+    const currentScore = Math.floor(calcUserScore(S) / 100);
+    const cellCount = S.playerCells.length;
+    if (currentScore > S.maxScore) {
+      S.maxScore = currentScore;
+      const elMax = document.getElementById("score-max");
+      if (elMax) elMax.innerText = "Максимум: " + S.maxScore;
+    }
+    const elCurrent = document.getElementById("score-new");
+    if (elCurrent) {
+      const prevScore = parseInt(((_a = elCurrent.innerText.match(/\d+/)) == null ? void 0 : _a[0]) || "0", 10);
+      if (currentScore !== prevScore) {
+        elCurrent.innerText = "Сейчас: " + currentScore;
+      }
+    }
+    const elCells = document.getElementById("cell-length");
+    if (elCells) {
+      const prevCells = parseInt(elCells.innerText, 10) || 0;
+      if (cellCount !== prevCells) {
+        elCells.innerText = cellCount;
+      }
+    }
+  }
+  function getShareMessage(S) {
+    const max = S.maxScore;
+    const messages = max < 1e3 ? scoreMessages.low : max < 1e4 ? scoreMessages.mid : scoreMessages.high;
+    return messages[Math.floor(Math.random() * messages.length)];
+  }
+  function updateShareText(S) {
+    const el = document.getElementById("shareText");
+    if (el) el.textContent = getShareMessage(S);
+  }
+  function getStatsText(S) {
+    return `Моя статистика в Agar.su!\nМаксимальная масса: ${S.maxScore}\nВремя игры: ${Date.now()}`;
+  }
+  function shareStats(platform, S) {
+    const text = encodeURIComponent(getStatsText(S));
+    const url = encodeURIComponent(location.href);
+    const urls = {
+      vk: `https://vk.com/share.php?url=${url}&title=${text}`,
+      telegram: `https://t.me/share/url?url=${url}&text=${text}`,
+      whatsapp: `https://wa.me/?text=${text}%20${url}`,
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`,
+      twitter: `https://twitter.com/intent/tweet?url=${url}&text=${text}`
+    };
+    const w = 650;
+    const h = 450;
+    const left = (screen.width - w) / 2;
+    const top = (screen.height - h) / 2;
+    window.open(urls[platform] || "", "_blank", `width=${w},height=${h},top=${top},left=${left},toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes`);
+  }
+  function initShareHandlers(S) {
+    updateShareText(S);
+    [ "vk", "telegram", "whatsapp", "facebook", "twitter" ].forEach(p => {
+      const btn = document.querySelector(`.${p}`);
+      if (btn) btn.addEventListener("click", () => shareStats(p, S));
+    });
+  }
+  var onOverlaysShow = null;
+  var onOverlaysHide = null;
+  var onStaticsShow = null;
+  function onReady(fn) {
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", fn, {
+        once: true
+      });
+    } else {
+      fn();
+    }
+  }
+  function byId(id) {
+    return document.getElementById(id);
+  }
+  function isVisible(el) {
+    if (!el) return false;
+    if (el.hidden) return false;
+    if (el.style.display === "none") return false;
+    return !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
+  }
+  function showElement(el) {
+    if (!el) return;
+    if (el._savedDisplay != null) {
+      el.style.display = el._savedDisplay;
+      el._savedDisplay = null;
+    } else {
+      el.style.removeProperty("display");
+    }
+  }
+  function hideElement(el) {
+    if (!el) return;
+    if (el.style.display !== "none") {
+      el._savedDisplay = el.style.display || "";
+    }
+    el.style.display = "none";
+  }
+  function setElementDisplay(el, value) {
+    if (!el) return;
+    el.style.display = value;
+  }
+  function isPointerOverElement(el, clientX, clientY) {
+    if (!el || !isVisible(el)) return false;
+    const rect = el.getBoundingClientRect();
+    return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
+  }
+  function setOverlaysLifecycleHooks({onShow, onHide} = {}) {
+    onOverlaysShow = onShow != null ? onShow : null;
+    onOverlaysHide = onHide != null ? onHide : null;
+  }
+  let touchDeviceDetected = false;
+  function setTouchDeviceDetected(v) {
+    touchDeviceDetected = v;
+  }
+  function updateTouchButtonsVisibility() {
+    const el = byId("touch-buttons");
+    if (!el) return;
+    if (touchDeviceDetected && !isOverlaysVisible()) {
+      el.hidden = false;
+    } else {
+      el.hidden = true;
+    }
+  }
+  function showOverlays() {
+    const el = byId("overlays");
+    showElement(el);
+    onOverlaysShow == null ? void 0 : onOverlaysShow();
+    updateTouchButtonsVisibility();
+  }
+  function hideOverlays() {
+    const el = byId("overlays");
+    hideElement(el);
+    onOverlaysHide == null ? void 0 : onOverlaysHide();
+    updateTouchButtonsVisibility();
+  }
+  function isOverlaysVisible() {
+    return isVisible(byId("overlays"));
+  }
+  function showStatics() {
+    setElementDisplay(byId("statics"), "flex");
+    if (typeof onStaticsShow === "function") {
+      try { onStaticsShow(); } catch (e) {}
+    }
+  }
+  function hideStatics() {
+    hideElement(byId("statics"));
+  }
+  function mouseCoordinateChange(S) {
+    if (S.freeze && S.playerCells && S.playerCells[0]) {
+      const main = S.playerCells[0];
+      S.X = main.x;
+      S.Y = main.y;
+      return;
+    }
+    S.X = (S.rawMouseX - S.canvasWidth / 2) / S.viewZoom + S.nodeX;
+    S.Y = (S.rawMouseY - S.canvasHeight / 2) / S.viewZoom + S.nodeY;
+  }
+  function normalizeSpectateNick(name) {
+    return String(name || "").trim().toLowerCase();
+  }
+  function findSpectateHit(S, wx, wy) {
+    let best = null;
+    let bestSize = Infinity;
+    const list = S.nodelist || [];
+    for (let i = 0; i < list.length; i++) {
+      const node = list[i];
+      if (!node || node.destroyed || node.isOwn || node.isFood || node.isVirus || node.isEjected) continue;
+      if (!node.name && !(node.playerId > 0)) continue;
+      const dx = node.x - wx;
+      const dy = node.y - wy;
+      const r = node.size || 0;
+      if (r <= 0) continue;
+      if (dx * dx + dy * dy < r * r && r < bestSize) {
+        best = node;
+        bestSize = r;
+      }
+    }
+    return best;
+  }
+  function collectSpectateFollowCells(S) {
+    const nick = S.spectateFollowNick;
+    const pid = S.spectateFollowPid | 0;
+    if (!nick && !pid) return [];
+    const out = [];
+    const list = S.nodelist || [];
+    for (let i = 0; i < list.length; i++) {
+      const node = list[i];
+      if (!node || node.destroyed || node.isFood || node.isVirus || node.isEjected) continue;
+      if (pid && (node.playerId | 0) === pid) {
+        out.push(node);
+        continue;
+      }
+      if (nick && normalizeSpectateNick(node.name) === nick) out.push(node);
+    }
+    return out;
+  }
+  function viewRange(S) {
+    const ratio = Math.max(S.canvasHeight / 1080, S.canvasWidth / 1920);
+    return ratio * S.zoom;
+  }
+  function calcViewZoom(S) {
+    if (0 != S.playerCells.length) {
+      let newViewZoom = 0;
+      for (let i = 0; i < S.playerCells.length; i++) newViewZoom += S.playerCells[i].size;
+      newViewZoom = Math.pow(Math.min(64 / newViewZoom, 1), .4) * viewRange(S);
+      S.viewZoom = (9 * S.viewZoom + newViewZoom) / 10;
+    }
+  }
+  function getQualityDprScale(quality) {
+    if (quality === "low") return .5;
+    if (quality === "medium") return .75;
+    return 1;
+  }
+  function getEffectiveDpr(S) {
+    const base = window.devicePixelRatio || 1;
+    return base * getQualityDprScale(S && S.renderQuality);
+  }
+  function canvasResize(S) {
+    const wHandle = S.wHandle || window;
+    window.scrollTo(0, 0);
+    const dpr = getEffectiveDpr(S);
+    S.dpr = dpr;
+    S.canvasWidth = wHandle.innerWidth * dpr;
+    S.canvasHeight = wHandle.innerHeight * dpr;
+    if (S.nCanvas) {
+      S.nCanvas.width = S.canvasWidth;
+      S.nCanvas.height = S.canvasHeight;
+      S.nCanvas.style.width = `${wHandle.innerWidth}px`;
+      S.nCanvas.style.height = `${wHandle.innerHeight}px`;
+    }
+  }
+  var deps = {
+    S: null,
+    hooks: {}
+  };
+  var gridStyleCache = {
+    theme: "gradient",
+    center: "#132745",
+    edge: "#000000",
+    at: 0
+  };
+  var GRID_STYLE_CACHE_MS = 3e3;
+  var miniMapEls = null;
+  var MINIMAP_DOT_RADIUS = 5;
+  var ROW_LETTERS = [ "A", "B", "C", "D", "E" ];
+  var screenGradientCache = {
+    key: "",
+    gradient: null
+  };
+  var gridThemeSettingsBound = false;
+  var perfOverlayEl = null;
+  var perfEnabled = typeof location !== "undefined" && new URLSearchParams(location.search).has("perf");
+  var perfStats = {
+    frame: 0,
+    sortMs: 0,
+    drawMs: 0,
+    preMs: 0,
+    gridMs: 0,
+    qtreeMs: 0,
+    miniMapMs: 0,
+    nodes: 0,
+    drawn: 0,
+    movePoints: 0
+  };
+  function readStored(key, fallback = null) {
+    const fromCookie = getCookie(key);
+    if (fromCookie !== void 0 && fromCookie !== null && fromCookie !== "") return fromCookie;
+    try {
+      const fromLs = localStorage.getItem(key);
+      if (fromLs != null && fromLs !== "") return fromLs;
+    } catch (e) {}
+    return fallback;
+  }
+  function writeStored(key, value, days = 365) {
+    setCookie(key, value, days);
+    try {
+      localStorage.setItem(key, value);
+    } catch (e) {}
+  }
+  function invalidateGridStyleCache() {
+    gridStyleCache.at = 0;
+    screenGradientCache.key = "";
+    screenGradientCache.gradient = null;
+  }
+  function getGridStyle() {
+    const now = Date.now();
+    if (now - gridStyleCache.at > GRID_STYLE_CACHE_MS) {
+      gridStyleCache = {
+        theme: readStored("grid_theme", "gradient"),
+        center: readStored("gradient_center", "#132745"),
+        edge: readStored("gradient_edge", "#000000"),
+        at: now
+      };
+      screenGradientCache.key = "";
+      screenGradientCache.gradient = null;
+    }
+    return gridStyleCache;
+  }
+  function syncGradientSettingsVisibility(theme) {
+    const panel = document.getElementById("gradient-settings");
+    if (panel) panel.style.display = theme === "gradient" ? "" : "none";
+  }
+  function applyGridTheme(theme, center, edge) {
+    if (theme) writeStored("grid_theme", theme);
+    if (center) writeStored("gradient_center", center);
+    if (edge) writeStored("gradient_edge", edge);
+    invalidateGridStyleCache();
+    const style = getGridStyle();
+    syncGradientSettingsVisibility(style.theme);
+    drawGrid();
+  }
+  function initGridThemeSettings() {
+    if (gridThemeSettingsBound) return;
+    const selectElement = document.getElementById("theme-select");
+    const centerColor = document.getElementById("gradient-center");
+    const edgeColor = document.getElementById("gradient-edge");
+    if (!selectElement || !centerColor || !edgeColor) return;
+    gridThemeSettingsBound = true;
+    const savedTheme = readStored("grid_theme", "gradient");
+    const savedCenter = readStored("gradient_center", "#132745");
+    const savedEdge = readStored("gradient_edge", "#000000");
+    selectElement.value = savedTheme;
+    centerColor.value = savedCenter;
+    edgeColor.value = savedEdge;
+    writeStored("grid_theme", savedTheme);
+    writeStored("gradient_center", savedCenter);
+    writeStored("gradient_edge", savedEdge);
+    invalidateGridStyleCache();
+    syncGradientSettingsVisibility(savedTheme);
+    selectElement.addEventListener("change", function() {
+      applyGridTheme(this.value, null, null);
+    });
+    const onColorInput = () => {
+      applyGridTheme("gradient", centerColor.value, edgeColor.value);
+      if (selectElement.value !== "gradient") {
+        selectElement.value = "gradient";
+      }
+    };
+    centerColor.addEventListener("input", onColorInput);
+    edgeColor.addEventListener("input", onColorInput);
+  }
+  function buildMiniMapCellMap(cells) {
+    const cellMap = new Map;
+    if (!cells) return cellMap;
+    cells.forEach(span => {
+      var _a;
+      const key = (_a = span.textContent) == null ? void 0 : _a.trim();
+      if (key) cellMap.set(key, span);
+    });
+    return cellMap;
+  }
+  function initMiniMapLayout(els = miniMapEls) {
+    if (!(els == null ? void 0 : els.dot) || els.ready) return;
+    els.dot.style.left = "0";
+    els.dot.style.top = "0";
+    els.dot.style.willChange = "transform";
+    els.dot.style.transform = "translate3d(0,0,0)";
+    els.ready = true;
+  }
+  function getMiniMapEls() {
+    var _a;
+    const container = document.querySelector(".map-container");
+    if (!miniMapEls || miniMapEls.container !== container || !((_a = miniMapEls.dot) == null ? void 0 : _a.isConnected)) {
+      const cells = container ? container.querySelectorAll("div > span") : null;
+      miniMapEls = {
+        mapRoot: document.getElementById("map"),
+        dot: document.getElementById("mapposition"),
+        container,
+        cells,
+        cellMap: buildMiniMapCellMap(cells),
+        width: (container == null ? void 0 : container.offsetWidth) || 0,
+        height: (container == null ? void 0 : container.offsetHeight) || 0,
+        ready: false,
+        visible: true,
+        visibleAt: 0
+      };
+      initMiniMapLayout(miniMapEls);
+    }
+    return miniMapEls;
+  }
+  function isMiniMapOpen() {
+    const els = getMiniMapEls();
+    const now = Date.now();
+    if (now - (els.visibleAt || 0) < 400) return els.visible;
+    els.visibleAt = now;
+    const mapEl = els.mapRoot || document.getElementById("map");
+    els.visible = !!(mapEl && getComputedStyle(mapEl).display !== "none");
+    return els.visible;
+  }
+  function ensurePerfOverlay() {
+    if (!perfEnabled || perfOverlayEl) return;
+    perfOverlayEl = document.createElement("div");
+    perfOverlayEl.id = "perf-overlay";
+    perfOverlayEl.style.cssText = "position:fixed;top:48px;left:8px;z-index:99999;background:rgba(0,0,0,.75);color:#0f0;font:12px/1.4 monospace;padding:8px 10px;border-radius:6px;pointer-events:none;white-space:pre";
+    document.body.appendChild(perfOverlayEl);
+  }
+  function updatePerfOverlay(S) {
+    var _a, _b, _c;
+    if (!perfEnabled) return;
+    ensurePerfOverlay();
+    perfOverlayEl.textContent = `FPS ${S.fps}\nnodes ${perfStats.nodes} drawn ${perfStats.drawn}\npre ${perfStats.preMs.toFixed(2)}ms grid ${perfStats.gridMs.toFixed(2)}ms\nsort ${perfStats.sortMs.toFixed(2)}ms draw ${perfStats.drawMs.toFixed(2)}ms\nqtree ${perfStats.qtreeMs.toFixed(2)}ms movePts ${perfStats.movePoints}\nminimap ${perfStats.miniMapMs.toFixed(2)}ms\nzoom ${(_a = S.viewZoom) == null ? void 0 : _a.toFixed(2)} cells ${((_b = S.playerCells) == null ? void 0 : _b.length) || 0}\nws main`;
+    window.__perfStats = {
+      ...perfStats,
+      fps: S.fps,
+      viewZoom: S.viewZoom
+    };
+  }
+  var isBackgroundLoaded = false;
+  var isInnerImageLoaded = false;
+  var centerBackground = new Image;
+  centerBackground.onload = () => {
+    var _a;
+    isBackgroundLoaded = true;
+    if ((_a = deps.S) == null ? void 0 : _a.ctx) drawCenterBackground();
+  };
+  centerBackground.src = "/photo/center.png";
+    var innerImage = new Image;
+  innerImage.onload = () => {
+    var _a;
+    isInnerImageLoaded = true;
+    if ((_a = deps.S) == null ? void 0 : _a.ctx) drawCenterBackground();
+  };
+  innerImage.src = getSkinImageUrl("4");
+  var topPlayerNick = "";
+  var topPlayerScore = 0;
+  var backgroundWidth = 512;
+  var backgroundHeight = 512;
+  var innerImageWidth = 450;
+  var innerImageHeight = 450;
+    function attachScene(S, hooks = {}) {
+    deps = {
+      S,
+      hooks
+    };
+    onReady(() => initGridThemeSettings());
+    requestAnimationFrame(() => initMiniMapLayout());
+    return {
+      redrawGameScene,
+      drawGameScene,
+      drawGrid,
+      drawGradientGrid,
+      drawClassicGrid,
+      drawBlackGrid,
+      drawWhiteGrid,
+      drawCenterBackground,
+      drawCustomMapBackground,
+      updateMiniMapPosition,
+      drawTouch,
+      drawSplitIcon,
+      loadTopPlayerData,
+      buildQTree
+    };
+  }
+  function loadTopPlayerData(stat) {
+    const S = deps.S;
+    if (!S) return;
+    try {
+      if (!(stat == null ? void 0 : stat.length)) return;
+      const topPlayer = stat[0];
+      topPlayerNick = topPlayer.nick;
+      topPlayerScore = topPlayer.score;
+      const skinId = S.skinList[normalizeNick(topPlayer.nick)];
+      const nextSrc = getSkinImageUrl(skinId);
+      if (innerImage.dataset.skinSrc !== nextSrc) {
+        innerImage.dataset.skinSrc = nextSrc;
+        isInnerImageLoaded = false;
+        innerImage.src = nextSrc;
+      }
+    } catch (error) {
+      console.error("Ошибка обработки данных о топ-1 игроке:", error);
+    }
+  }
+  function buildQTree() {
+    const S = deps.S;
+    if (!S || !S.Quad) return;
+    if (deps.hooks.buildQTree) {
+      deps.hooks.buildQTree(S);
+      return;
+    }
+    const t0 = perfEnabled ? performance.now() : 0;
+    if (.4 > S.viewZoom || S.renderQuality === "low" || S.renderQuality === "medium") {
+      S.qTree = null;
+      if (perfEnabled) perfStats.qtreeMs = performance.now() - t0;
+      return;
+    }
+    S.qTree = null;
+    if (perfEnabled) perfStats.qtreeMs = performance.now() - t0;
+    return;
+    let minX = Number.POSITIVE_INFINITY;
+    let minY = Number.POSITIVE_INFINITY;
+    let maxX = Number.NEGATIVE_INFINITY;
+    let maxY = Number.NEGATIVE_INFINITY;
+    let maxSize = 0;
+    for (let i = 0; i < S.nodelist.length; i++) {
+      const node = S.nodelist[i];
+      if (node.shouldRender() && !node.prepareData && 20 < node.size * S.viewZoom) {
+        maxSize = Math.max(node.size, maxSize);
+        minX = Math.min(node.x, minX);
+        minY = Math.min(node.y, minY);
+        maxX = Math.max(node.x, maxX);
+        maxY = Math.max(node.y, maxY);
+      }
+    }
+    S.qTree = S.Quad.init({
+      minX: minX - (maxSize + 100),
+      minY: minY - (maxSize + 100),
+      maxX: maxX + (maxSize + 100),
+      maxY: maxY + (maxSize + 100),
+      maxChildren: 2,
+      maxDepth: 4
+    });
+    for (let i = 0; i < S.nodelist.length; i++) {
+      const node = S.nodelist[i];
+      if (node.shouldRender() && !(20 >= node.size * S.viewZoom)) {
+        for (let a = 0; a < node.points.length; ++a) {
+          const px = node.points[a].x;
+          const py = node.points[a].y;
+          if (px < S.nodeX - S.canvasWidth / 2 / S.viewZoom || py < S.nodeY - S.canvasHeight / 2 / S.viewZoom || px > S.nodeX + S.canvasWidth / 2 / S.viewZoom || py > S.nodeY + S.canvasHeight / 2 / S.viewZoom) {
+            continue;
+          }
+          S.qTree.insert(node.points[a]);
+        }
+      }
+    }
+    if (perfEnabled) perfStats.qtreeMs = performance.now() - t0;
+  }
+  function redrawGameScene(now) {
+    const S = deps.S;
+    if (!S) return;
+    const delta = now - S.lastTime;
+    S.lastTime = now;
+    S.fps = Math.round(1e3 / delta);
+    if (now - S.fpsUpdateTime >= 1e3) {
+      const fpsEl = document.getElementById("fps");
+      if (fpsEl) fpsEl.textContent = S.fps;
+      S.fpsUpdateTime = now;
+    }
+    drawGameScene();
+    const tMini = perfEnabled ? performance.now() : 0;
+    updateMiniMapPosition();
+    if (perfEnabled) perfStats.miniMapMs = performance.now() - tMini;
+    (S.wHandle || window).requestAnimationFrame(redrawGameScene);
+  }
+  function drawGameScene() {
+    const S = deps.S;
+    if (!(S == null ? void 0 : S.ctx)) return;
+    const tPre = perfEnabled ? performance.now() : 0;
+    S.frameId = (S.frameId || 0) + 1;
+    S.timestamp = Date.now();
+    const playerCount = S.playerCells.length;
+    if (playerCount > 0) {
+      if (S.spectateFollowNick || S.spectateFollowPid || S._spectateFollowTimer) {
+        clearSpectateFollow(S);
+      }
+      calcViewZoom(S);
+      let sumX = 0;
+      let sumY = 0;
+      for (let i = 0; i < playerCount; i++) {
+        const cell = S.playerCells[i];
+        cell.updatePos();
+        cell._posFrame = S.frameId;
+        sumX += cell.x;
+        sumY += cell.y;
+      }
+      const avgX = sumX / playerCount;
+      const avgY = sumY / playerCount;
+      S.posX = avgX;
+      S.posY = avgY;
+      S.posSize = S.viewZoom;
+      S.nodeX = (S.nodeX + avgX) / 2;
+      S.nodeY = (S.nodeY + avgY) / 2;
+    } else {
+      const follow = collectSpectateFollowCells(S);
+      if (follow.length) {
+        let sumX = 0;
+        let sumY = 0;
+        for (let i = 0; i < follow.length; i++) {
+          const cell = follow[i];
+          if (cell._posFrame !== S.frameId) cell.updatePos();
+          cell._posFrame = S.frameId;
+          sumX += cell.x;
+          sumY += cell.y;
+        }
+        S.posX = sumX / follow.length;
+        S.posY = sumY / follow.length;
+      } else if (!S.mapBoundsReady && !S.spectateFollowNick && !S.spectateFollowPid) {
+        S.posX = (S.leftPos + S.rightPos) / 2;
+        S.posY = (S.topPos + S.bottomPos) / 2;
+      }
+      S.nodeX = (29 * S.nodeX + S.posX) / 30;
+      S.nodeY = (29 * S.nodeY + S.posY) / 30;
+      S.viewZoom = (9 * S.viewZoom + S.posSize * viewRange(S)) / 10;
+    }
+    buildQTree();
+    mouseCoordinateChange(S);
+    const tGrid = perfEnabled ? performance.now() : 0;
+    drawGrid();
+    drawCenterBackground();
+    if (perfEnabled) perfStats.gridMs = performance.now() - tGrid;
+    if (S.nodesSortDirty !== false) {
+      const tSort = perfEnabled ? performance.now() : 0;
+      S.nodelist.sort((a, b) => a.size - b.size || a.id - b.id);
+      S.nodesSortDirty = false;
+      if (perfEnabled) perfStats.sortMs = performance.now() - tSort;
+    } else if (perfEnabled) {
+      perfStats.sortMs = 0;
+    }
+    perfStats.nodes = S.nodelist.length;
+    if (perfEnabled) S._perfMovePoints = 0;
+    if (perfEnabled) perfStats.preMs = performance.now() - tPre;
+    const {ctx, canvasWidth, canvasHeight, viewZoom, nodeX, nodeY} = S;
+    const textZoomRatio = Math.ceil(10 * viewZoom) * .1;
+    S.textZoomRatio = textZoomRatio;
+    S.textInvZoom = 1 / textZoomRatio;
+    S.playRegion = findRegionForHost(S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl) || activeRegion || "ru";
+    S.formatMassLabel = formatMassLabel;
+    const tDraw = perfEnabled ? performance.now() : 0;
+    ctx.save();
+    ctx.translate(canvasWidth / 2, canvasHeight / 2);
+    ctx.scale(viewZoom, viewZoom);
+    ctx.translate(-nodeX, -nodeY);
+    drawCustomMapBackground(ctx);
+    let drawn = 0;
+    for (let i = 0; i < S.Cells.length; i++) S.Cells[i].drawOneCell(ctx);
+    // ── FOOD BATCH (2026-09) ──────────────────────────────────────────────
+    // Was: every food pellet called drawOneCell → beginPath+arc+fill each.
+    // Now: drawBatchedFood groups visible food by color → one path + one fill
+    // per color. Non-food still uses drawOneCell below (skips isFood).
+    // If food missing / wrong z-order / color bugs → disable foodBatchDraw or
+    // revert this block to: for (nodelist) nodelist[i].drawOneCell(ctx);
+    // Chat/agent context: "food batch fill" / this comment.
+    // ─────────────────────────────────────────────────────────────────────
+    S.foodBatchDraw = true;
+    drawn += drawBatchedFood(ctx, S);
+    for (let i = 0; i < S.nodelist.length; i++) {
+      const node = S.nodelist[i];
+      if (node && node.isFood) continue;
+      node.drawOneCell(ctx);
+      drawn++;
+    }
+    S.foodBatchDraw = false;
+    ctx.restore();
+    if (perfEnabled) {
+      perfStats.drawn = drawn;
+      perfStats.drawMs = performance.now() - tDraw;
+      perfStats.movePoints = S._perfMovePoints || 0;
+      perfStats.frame = S.frameId;
+      updatePerfOverlay(S);
+    }
+    drawTouch(ctx);
+  }
+  // ── FOOD BATCH helper (see drawGameScene foodBatchDraw block) ────────────
+  // Pre-batch: food went through Cell.drawOneCell like players (per-pellet fill).
+  // Bugs (invisible food, wrong colors, food above players): turn off batch in
+  // drawGameScene or remove early-return in drawOneCell for isFood.
+  /** One beginPath + many arcs + one fill per food color (cheaper than per-pellet fill). */
+  function drawBatchedFood(ctx, S) {
+    const list = S.nodelist;
+    if (!list || !list.length) return 0;
+    const byColor = new Map();
+    let drawn = 0;
+    const frameId = S.frameId;
+    const ts = S.timestamp;
+    for (let i = 0; i < list.length; i++) {
+      const node = list[i];
+      if (!node || !node.isFood || node.destroyed) continue;
+      if (node._posFrame !== frameId) {
+        node.updatePos();
+        node._posFrame = frameId;
+      }
+      if (!node.shouldRender()) continue;
+      node.drawTime = ts;
+      let r = node.size;
+      if (!r) r = 20;
+      const color = typeof node.getEffectiveColor === "function" ? node.getEffectiveColor() : node.color || "#FFFFFF";
+      let bucket = byColor.get(color);
+      if (!bucket) {
+        bucket = [];
+        byColor.set(color, bucket);
+      }
+      bucket.push(node.x, node.y, r);
+      drawn++;
+    }
+    byColor.forEach(function (coords, color) {
+      ctx.beginPath();
+      for (let i = 0; i < coords.length; i += 3) {
+        const x = coords[i];
+        const y = coords[i + 1];
+        const r = coords[i + 2];
+        ctx.moveTo(x + r, y);
+        ctx.arc(x, y, r, 0, 2 * Math.PI);
+      }
+      ctx.fillStyle = color;
+      ctx.fill();
+    });
+    return drawn;
+  }
+  function drawGrid() {
+    const S = deps.S;
+    if (!(S == null ? void 0 : S.ctx)) return;
+    const {theme} = getGridStyle();
+    switch (theme) {
+     case "gradient":
+      drawGradientGrid();
+      break;
+
+     case "white":
+      drawWhiteGrid();
+      break;
+
+     case "black":
+      drawBlackGrid();
+      break;
+
+     default:
+      drawGradientGrid();
+    }
+  }
+  function drawGradientGrid() {
+    const S = deps.S;
+    if (!(S == null ? void 0 : S.ctx)) return;
+    const {center: centerColor, edge: edgeColor} = getGridStyle();
+    const mapCenterX = (S.leftPos + S.rightPos) / 2;
+    const mapCenterY = (S.topPos + S.bottomPos) / 2;
+    const gradientRadius = Math.hypot(S.rightPos - S.leftPos, S.bottomPos - S.topPos) / 2;
+    const {ctx, canvasWidth, canvasHeight, viewZoom, nodeX, nodeY} = S;
+    const gx = Math.round(((mapCenterX - nodeX) * viewZoom + canvasWidth / 2) * .5) * 2;
+    const gy = Math.round(((mapCenterY - nodeY) * viewZoom + canvasHeight / 2) * .5) * 2;
+    const gr = Math.round(gradientRadius * viewZoom * .5) * 2;
+    const cacheKey = `${centerColor}|${edgeColor}|${gx}|${gy}|${gr}`;
+    if (screenGradientCache.key !== cacheKey) {
+      screenGradientCache.key = cacheKey;
+      screenGradientCache.gradient = ctx.createRadialGradient(gx, gy, 0, gx, gy, gr);
+      screenGradientCache.gradient.addColorStop(0, centerColor);
+      screenGradientCache.gradient.addColorStop(1, edgeColor);
+    }
+    ctx.fillStyle = screenGradientCache.gradient;
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+  }
+  function drawClassicGrid(bgColor, lineColor) {
+    const S = deps.S;
+    if (!(S == null ? void 0 : S.ctx)) return;
+    const {ctx, canvasWidth, canvasHeight, viewZoom, nodeX, nodeY} = S;
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+    ctx.save();
+    ctx.scale(viewZoom, viewZoom);
+    const vw = canvasWidth / viewZoom;
+    const vh = canvasHeight / viewZoom;
+    ctx.strokeStyle = lineColor;
+    ctx.globalAlpha = .1;
+    ctx.beginPath();
+    let x = -.5 + (-nodeX + vw / 2) % 50;
+    for (;x < vw; x += 50) {
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, vh);
+    }
+    let y = -.5 + (-nodeY + vh / 2) % 50;
+    for (;y < vh; y += 50) {
+      ctx.moveTo(0, y);
+      ctx.lineTo(vw, y);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+  function drawBlackGrid() {
+    drawClassicGrid("#101010", "white");
+  }
+  function drawWhiteGrid() {
+    drawClassicGrid("#F2FBFF", "#111111");
+  }
+  function drawCenterBackground() {
+    const S = deps.S;
+    if (!(S == null ? void 0 : S.ctx)) return;
+    // Неофициальный сервер: без center.png / рекорда в центре карты
+    if (document.body.classList.contains("no-official-stats")) return;
+    if (!isBackgroundLoaded) return;
+    const mapCenterX = (S.leftPos + S.rightPos) / 2;
+    const mapCenterY = (S.topPos + S.bottomPos) / 2;
+    const screenX = (mapCenterX - S.nodeX) * S.viewZoom + S.canvasWidth / 2;
+    const screenY = (mapCenterY - S.nodeY) * S.viewZoom + S.canvasHeight / 2;
+    const scaledBackgroundWidth = backgroundWidth * S.viewZoom;
+    const scaledBackgroundHeight = backgroundHeight * S.viewZoom;
+    const scaledInnerImageWidth = innerImageWidth * S.viewZoom;
+    const scaledInnerImageHeight = innerImageHeight * S.viewZoom;
+    const {ctx} = S;
+    if (isInnerImageLoaded) {
+      ctx.save();
+      const radius = Math.min(scaledInnerImageWidth, scaledInnerImageHeight) / 2;
+      ctx.beginPath();
+      ctx.arc(screenX, screenY, radius, 0, 2 * Math.PI);
+      ctx.closePath();
+      ctx.clip();
+      drawSkinStripImage(ctx, innerImage, screenX - scaledInnerImageWidth / 2, screenY - scaledInnerImageHeight / 2, scaledInnerImageWidth, scaledInnerImageHeight);
+      ctx.restore();
+    }
+    ctx.drawImage(centerBackground, screenX - scaledBackgroundWidth / 2, screenY - scaledBackgroundHeight / 2, scaledBackgroundWidth, scaledBackgroundHeight);
+    if (topPlayerNick || topPlayerScore) {
+      const radius = Math.min(scaledInnerImageWidth, scaledInnerImageHeight) / 2;
+      ctx.fillStyle = "white";
+      ctx.font = `${22 * S.viewZoom}px Ubuntu`;
+      ctx.textAlign = "center";
+      if (topPlayerNick) {
+        ctx.fillText(topPlayerNick, screenX, screenY + radius - 415 * S.viewZoom);
+      }
+      if (topPlayerScore) {
+        ctx.fillText(`${topPlayerScore}`, screenX, screenY + radius - 15 * S.viewZoom);
+      }
+    }
+  }
+  function drawCustomMapBackground(ctx) {
+    var _a;
+    const S = deps.S;
+    if (!S) return;
+    if (!S.customMapBgEnabled || !((_a = S.mapBgImage) == null ? void 0 : _a.complete) || !S.mapBgImage.width) return;
+    const left = S.leftPos;
+    const top = S.topPos;
+    const right = S.rightPos;
+    const bottom = S.bottomPos;
+    const mapW = right - left;
+    const mapH = bottom - top;
+    if (mapW <= 0 || mapH <= 0) return;
+    const halfW = S.canvasWidth / (2 * S.viewZoom);
+    const halfH = S.canvasHeight / (2 * S.viewZoom);
+    const visLeft = Math.max(left, S.nodeX - halfW);
+    const visRight = Math.min(right, S.nodeX + halfW);
+    const visTop = Math.max(top, S.nodeY - halfH);
+    const visBottom = Math.min(bottom, S.nodeY + halfH);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(left, top, mapW, mapH);
+    ctx.clip();
+    if (S.customMapBgMode === "repeat") {
+      const tile = Math.max(32, S.customMapBgTileSize | 0);
+      const startX = left + Math.floor((visLeft - left) / tile) * tile;
+      const startY = top + Math.floor((visTop - top) / tile) * tile;
+      for (let x = startX; x < visRight; x += tile) {
+        for (let y = startY; y < visBottom; y += tile) {
+          ctx.drawImage(S.mapBgImage, x, y, Math.min(tile, right - x), Math.min(tile, bottom - y));
+        }
+      }
+    } else {
+      ctx.drawImage(S.mapBgImage, left, top, mapW, mapH);
+    }
+    ctx.restore();
+  }
+  function updateMiniMapPosition() {
+    const S = deps.S;
+    if (!S || !isMiniMapOpen()) return;
+    const els = getMiniMapEls();
+    const {dot: playerDot, container: mapContainer, cellMap} = els;
+    if (!playerDot || !mapContainer) return;
+    const totalMapWidth = S.rightPos - S.leftPos;
+    const totalMapHeight = S.bottomPos - S.topPos;
+    if (totalMapWidth <= 0 || totalMapHeight <= 0) return;
+    if (!els.width || !els.height) {
+      els.width = mapContainer.offsetWidth;
+      els.height = mapContainer.offsetHeight;
+    }
+    const miniMapWidth = els.width;
+    const miniMapHeight = els.height;
+    if (!miniMapWidth || !miniMapHeight) return;
+    const miniX = Math.round((S.nodeX - S.leftPos) / totalMapWidth * miniMapWidth);
+    const miniY = Math.round((S.nodeY - S.topPos) / totalMapHeight * miniMapHeight);
+    const tx = miniX - MINIMAP_DOT_RADIUS;
+    const ty = miniY - MINIMAP_DOT_RADIUS;
+    if (S._miniMapTx !== tx || S._miniMapTy !== ty) {
+      S._miniMapTx = tx;
+      S._miniMapTy = ty;
+      playerDot.style.transform = `translate3d(${tx}px,${ty}px,0)`;
+    }
+    const colIndex = Math.min(4, Math.max(0, Math.floor(miniX / (miniMapWidth / 5))));
+    const rowIndex = Math.min(4, Math.max(0, Math.floor(miniY / (miniMapHeight / 5))));
+    const currentCell = ROW_LETTERS[rowIndex] + (colIndex + 1);
+    if (S.lastCell !== currentCell) {
+      if (S.lastHighlightedSpan) S.lastHighlightedSpan.style.color = "";
+      S.lastHighlightedSpan = (cellMap == null ? void 0 : cellMap.get(currentCell)) || null;
+      if (S.lastHighlightedSpan) S.lastHighlightedSpan.style.color = "gold";
+      S.lastCell = currentCell;
+    }
+  }
+  function drawTouch(ctx) {
+    const S = deps.S;
+    if (!S) return;
+    ctx.save();
+    if (S.touchable) {
+      for (let i = 0; i < S.touches.length; i++) {
+        const touch = S.touches[i];
+        if (touch.identifier === S.leftTouchID) {
+          ctx.beginPath();
+          ctx.strokeStyle = "#0096ff";
+          ctx.lineWidth = 6;
+          ctx.arc(S.leftTouchStartPos.x, S.leftTouchStartPos.y, 40, 0, Math.PI * 2, true);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.strokeStyle = "#0096ff";
+          ctx.lineWidth = 2;
+          ctx.arc(S.leftTouchStartPos.x, S.leftTouchStartPos.y, 140, 0, Math.PI * 2, true);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.strokeStyle = "#0096ff";
+          ctx.arc(S.leftTouchPos.x, S.leftTouchPos.y, 40, 0, Math.PI * 2, true);
+          ctx.stroke();
+          ctx.fillStyle = "#0096ff";
+          ctx.fillRect(S.rawMouseX - S.cursorSize / 2, S.rawMouseY - S.cursorSize / 2, S.cursorSize, S.cursorSize);
+        }
+      }
+    }
+    ctx.restore();
+  }
+  function drawSplitIcon(ctx) {
+    var _a, _b, _c, _d;
+    const S = deps.S;
+    if (!S) return;
+    const size = ~~(S.canvasWidth / 7);
+    if (S.isTouchStart) {
+      if (S.splitPressed && ((_a = S.splitIcon) == null ? void 0 : _a.width)) {
+        ctx.save();
+        ctx.scale(1.1, 0);
+      }
+      if ((_b = S.splitIcon) == null ? void 0 : _b.width) {
+        ctx.drawImage(S.splitIcon, S.canvasWidth - size, S.canvasHeight - size, size, size);
+      }
+      if (S.splitPressed) {
+        ctx.restore();
+        setTimeout(() => {
+          S.splitPressed = false;
+        }, 150);
+      }
+      if (S.ejectPressed && ((_c = S.ejectIcon) == null ? void 0 : _c.width)) {
+        ctx.save();
+        ctx.scale(1.1, 0);
+      }
+      if ((_d = S.ejectIcon) == null ? void 0 : _d.width) {
+        ctx.drawImage(S.ejectIcon, S.canvasWidth - size, S.canvasHeight - 2 * size - 20, size, size);
+      }
+      if (S.ejectPressed) {
+        ctx.restore();
+        setTimeout(() => {
+          S.ejectPressed = false;
+        }, 150);
+      }
+    }
+  }
+  var TOURNAMENT_PLAYERS = ["Vaas","Mnrve"];
+  var TOURNAMENT_WINNERS = ["Vaas","Mnrve"];
+  var deps2 = {
+    S: null,
+    hooks: {}
+  };
+  function attachLeaderboard(S, hooks = {}) {
+    deps2 = {
+      S,
+      hooks
+    };
+    return {
+      createLeaderboardEntry,
+      drawCustomLeaderBoard,
+      drawLeaderBoard,
+      getLeaderBoardRenderKey
+    };
+  }
+  function getLeaderBoardRenderKey() {
+    const S = deps2.S;
+    if (!S) return "";
+    return S.leaderBoard.map(e => `${e.id}|${e.name}|${e.level}`).join("\n");
+  }
+  function renderLeaderboardName(container, name) {
+    const value = String(name || "");
+    const streakPattern = /\*(\d+)\*/g;
+    let lastIndex = 0;
+    let match;
+    while ((match = streakPattern.exec(value)) !== null) {
+      if (match.index > lastIndex) {
+        container.appendChild(document.createTextNode(value.slice(lastIndex, match.index)));
+      }
+      const streak = document.createElement("span");
+      streak.title = "Серия побед подряд";
+      streak.className = "streak";
+      streak.textContent = match[1];
+      container.appendChild(streak);
+      lastIndex = streakPattern.lastIndex;
+    }
+    if (lastIndex < value.length) {
+      container.appendChild(document.createTextNode(value.slice(lastIndex)));
+    }
+  }
+  function createLeaderboardEntry(name, level, isMe, isSystemLine, b) {
+    var _a;
+    const S = deps2.S;
+    const hooks = deps2.hooks;
+    const entryDiv = document.createElement("div");
+    const lowerName = (name || "").toLowerCase();
+    const cleanName = name.replace(/<[^>]*>/g, "");
+    const cleanNameLower = cleanName.toLowerCase();
+    const isTournamentPlayer = TOURNAMENT_PLAYERS.some(tourneyName => tourneyName.toLowerCase() === cleanNameLower);
+    const isWinner = TOURNAMENT_WINNERS.some(w => w.toLowerCase() === cleanNameLower);
+    const donators = (S == null ? void 0 : S.donators) || [];
+    const chatBackgrounds = (S == null ? void 0 : S.chatBackgrounds) || [];
+    if (!isSystemLine && chatBackgrounds.includes(lowerName)) {
+      entryDiv.className = "Lednick " + lowerName;
+    } else {
+      entryDiv.className = "Lednick";
+    }
+    const numberHtml = isSystemLine ? "" : `${b + 1}. `;
+    if (isSystemLine) entryDiv.style.textAlign = "center";
+    if (isMe) {
+      entryDiv.style.color = "#FFAAAA";
+    } else if (!isSystemLine && isTournamentPlayer) {
+      entryDiv.style.color = "#FFD700";
+    } else {
+      entryDiv.style.color = "#FFFFFF";
+    }
+    const nameSpan = document.createElement("span");
+    nameSpan.className = "Lednick-name";
+    renderLeaderboardName(nameSpan, name);
+    if (!isSystemLine && isTournamentPlayer && !isWinner) {
+      nameSpan.title = "Участник турнира";
+    }
+    if (!isSystemLine) {
+      const resolveClan = hooks.resolveClanPassIdFromName;
+      const resolvePlayer = hooks.resolvePlayerPassIdFromName;
+      const clanPassId = resolveClan ? resolveClan(cleanName) : null;
+      const playerPassId = resolvePlayer ? resolvePlayer(cleanName) : null;
+      const passId = clanPassId || playerPassId;
+      if (passId) {
+        nameSpan.dataset.hasPass = "1";
+        nameSpan.dataset.passId = String(passId);
+        nameSpan.dataset.passClan = clanPassId ? "1" : "0";
+        nameSpan.title = clanPassId ? "ПКМ — статистика клана" : "ПКМ — статистика игрока";
+        nameSpan.style.cursor = "pointer";
+      }
+    }
+    const iconsContainer = document.createElement("span");
+    if (level !== -1 && !isSystemLine) {
+      const starContainer = document.createElement("div");
+      starContainer.className = "star-container";
+      if (hooks.createLevelIcon) {
+        starContainer.appendChild(hooks.createLevelIcon(level, cleanName));
+      }
+      if (level < 200 && hooks.getStarClass) {
+        const levelSpan = document.createElement("span");
+        levelSpan.className = "levelme " + hooks.getStarClass(level);
+        levelSpan.textContent = level;
+        starContainer.appendChild(levelSpan);
+      }
+      const tooltip = document.createElement("div");
+      tooltip.className = "tooltip";
+      tooltip.textContent = "XP: " + (((_a = S == null ? void 0 : S.leaderBoard[b]) == null ? void 0 : _a.xp) || 0);
+      starContainer.appendChild(tooltip);
+      iconsContainer.appendChild(starContainer);
+    }
+    const youtubers = (S == null ? void 0 : S.youtubers) || [];
+    const urlYoutubers = (S == null ? void 0 : S.url_youtubers) || [];
+    const ytIndex = youtubers.indexOf(lowerName);
+    if (!isSystemLine && ytIndex !== -1 && urlYoutubers[ytIndex]) {
+      const ytLink = document.createElement("a");
+      ytLink.href = urlYoutubers[ytIndex];
+      ytLink.target = "_blank";
+      ytLink.innerHTML = '<i class="fab fa-youtube"></i>';
+      ytLink.style.color = "#ff0000";
+      ytLink.title = "YouTube канал";
+      iconsContainer.appendChild(ytLink);
+    }
+    if (!isSystemLine && donators.includes(lowerName)) {
+      const donateIcon = document.createElement("div");
+      donateIcon.title = "Данный игрок является спонсором Agar.su";
+      donateIcon.style.width = "19px";
+      donateIcon.style.height = "19px";
+      donateIcon.style.backgroundImage = "url(/photo/mod.png)";
+      donateIcon.style.backgroundSize = "cover";
+      donateIcon.style.display = "inline-block";
+      iconsContainer.appendChild(donateIcon);
+    }
+    if (!isSystemLine && isWinner) {
+      const winnerIcon = document.createElement("div");
+      winnerIcon.title = "Дважды подряд, победитель турнира FFA 2x2";
+      winnerIcon.style.width = "18px";
+      winnerIcon.style.height = "18px";
+      winnerIcon.style.backgroundImage = "url(/photo/trophy.png)";
+      winnerIcon.style.backgroundSize = "cover";
+      winnerIcon.style.display = "inline-block";
+      iconsContainer.appendChild(winnerIcon);
+    }
+    entryDiv.innerHTML = numberHtml;
+    entryDiv.appendChild(iconsContainer);
+    entryDiv.appendChild(nameSpan);
+    return entryDiv;
+  }
+  function updateLeaderboardTooltips() {
+    const S = deps2.S;
+    if (!S) return;
+    const rows = document.querySelectorAll("#toplistnow .Lednick");
+    rows.forEach((row, b) => {
+      const entry = S.leaderBoard[b];
+      if (!entry) return;
+      const tip = row.querySelector(".tooltip");
+      if (tip) tip.textContent = "XP: " + (entry.xp || 0);
+    });
+  }
+  function formatLeaderBoardName(S, raw) {
+    return String(raw || "");
+  }
+  function leaderboardIsMe(S, id) {
+    const cells = S.playerCells;
+    for (let i = 0; i < cells.length; i++) {
+      const cell = cells[i];
+      if (!cell) continue;
+      if (cell.id === id) return true;
+      if (cell.encX != null && cell.playerId && cell.playerId === id) return true;
+    }
+    return false;
+  }
+  function drawCustomLeaderBoard() {
+    var _a, _b;
+    const S = deps2.S;
+    if (!S) return;
+    const renderKey = getLeaderBoardRenderKey();
+    if (renderKey === S.lastLeaderBoardRenderKey) {
+      updateLeaderboardTooltips();
+      return;
+    }
+    S.lastLeaderBoardRenderKey = renderKey;
+    const toplistDiv = document.getElementById("toplistnow");
+    if (!toplistDiv) return;
+    toplistDiv.innerHTML = "";
+    if (!((_a = S.leaderBoard) == null ? void 0 : _a.length)) return;
+    for (let b = 0; b < S.leaderBoard.length; ++b) {
+      let name = formatLeaderBoardName(S, S.leaderBoard[b].name || "Игрок");
+      const isSystemLine = S.leaderBoard[b].id == null;
+      let isMe = false;
+      if (S.noRanking && S.leaderBoard[b].name) {
+        const myName = ((_b = S.playerCells[0]) == null ? void 0 : _b.name) || "";
+        if (myName && myName.toLowerCase() === S.leaderBoard[b].name.toLowerCase()) {
+          isMe = true;
+        }
+      }
+      if (isMe) {
+        const myCell = S.playerCells.find(cell => cell.id === S.leaderBoard[b].id);
+        if (myCell == null ? void 0 : myCell.name) name = formatLeaderBoardName(S, myCell.name);
+      }
+      if (b < 10) {
+        const entryDiv = createLeaderboardEntry(name, S.leaderBoard[b].level, isMe, isSystemLine, b);
+        toplistDiv.insertAdjacentHTML("beforeend", entryDiv.outerHTML);
+      }
+    }
+  }
+  function drawLeaderBoard() {
+    var _a, _b, _c;
+    const S = deps2.S;
+    const hooks = deps2.hooks;
+    if (!S) return;
+    const renderKey = getLeaderBoardRenderKey();
+    if (renderKey === S.lastLeaderBoardRenderKey) {
+      updateLeaderboardTooltips();
+      return;
+    }
+    S.lastLeaderBoardRenderKey = renderKey;
+    const toplistDiv = document.getElementById("toplistnow");
+    if (!toplistDiv) return;
+    toplistDiv.innerHTML = "";
+    const displayedPlayers = 10;
+    let myRank = null;
+    if (!((_a = S.leaderBoard) == null ? void 0 : _a.length)) return;
+    const isUnofficial = window.MultiProtocols && !window.MultiProtocols.isOfficial(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl);
+    for (let b = 0; b < S.leaderBoard.length; ++b) {
+      let name = formatLeaderBoardName(S, S.leaderBoard[b].name || "Игрок");
+      const level = S.leaderBoard[b].level;
+      const isSystemLine = S.leaderBoard[b].id == null;
+      let isMe = false;
+      if (!isSystemLine && !isUnofficial) {
+        isMe = leaderboardIsMe(S, S.leaderBoard[b].id);
+      }
+      // Unofficial servers: LB id doesn't map to our cell id — match by nick.
+      if ((S.noRanking || isUnofficial) && S.leaderBoard[b].name) {
+        const myName = ((_b = S.playerCells[0]) == null ? void 0 : _b.name) || "";
+        if (myName && myName.toLowerCase() === S.leaderBoard[b].name.toLowerCase()) {
+          isMe = true;
+        }
+      }
+      if (isMe) {
+        const myCell = S.playerCells.find(cell => cell.id === S.leaderBoard[b].id);
+        const myCellName = myCell ? myCell.name : (S.playerCells[0] ? S.playerCells[0].name : "");
+        if (myCellName) name = formatLeaderBoardName(S, myCellName);
+        myRank = b + 1;
+      }
+      if (b < displayedPlayers) {
+        const entryDiv = createLeaderboardEntry(name, level, isMe, isSystemLine, b);
+        toplistDiv.appendChild(entryDiv);
+      }
+    }
+    if (myRank && myRank > displayedPlayers) {
+      const level = S.accountData && hooks.getLevel ? hooks.getLevel(S.accountData.xp) : -1;
+      const myName = (_c = S.playerCells[0]) == null ? void 0 : formatLeaderBoardName(S, _c.name);
+      if (myName) {
+        const myRankDiv = createLeaderboardEntry(myName, level, true, false, myRank - 1);
+        myRankDiv.style.color = "#FFAAAA";
+        toplistDiv.appendChild(myRankDiv);
+      }
+    }
+  }
+  var _sha256K = new Uint32Array([ 1116352408, 1899447441, 3049323471, 3921009573, 961987163, 1508970993, 2453635748, 2870763221, 3624381080, 310598401, 607225278, 1426881987, 1925078388, 2162078206, 2614888103, 3248222580, 3835390401, 4022224774, 264347078, 604807628, 770255983, 1249150122, 1555081692, 1996064986, 2554220882, 2821834349, 2952996808, 3210313671, 3336571891, 3584528711, 113926993, 338241895, 666307205, 773529912, 1294757372, 1396182291, 1695183700, 1986661051, 2177026350, 2456956037, 2730485921, 2820302411, 3259730800, 3345764771, 3516065817, 3600352804, 4094571909, 275423344, 430227734, 506948616, 659060556, 883997877, 958139571, 1322822218, 1537002063, 1747873779, 1955562222, 2024104815, 2227730452, 2361852424, 2428436474, 2756734187, 3204031479, 3329325298 ]);
+  function sha256HexConnectSync(text) {
+    const enc = (new TextEncoder).encode(String(text));
+    const len = enc.length;
+    const bitLen = len * 8;
+    const padLen = len + 9 + 63 >> 6 << 6;
+    const buf = new Uint8Array(padLen);
+    buf.set(enc);
+    buf[len] = 128;
+    const view = new DataView(buf.buffer);
+    view.setUint32(padLen - 4, bitLen, false);
+    let h0 = 1779033703, h1 = 3144134277, h2 = 1013904242, h3 = 2773480762;
+    let h4 = 1359893119, h5 = 2600822924, h6 = 528734635, h7 = 1541459225;
+    const w = new Uint32Array(64);
+    for (let off = 0; off < padLen; off += 64) {
+      for (let i = 0; i < 16; i++) w[i] = view.getUint32(off + i * 4, false);
+      for (let i = 16; i < 64; i++) {
+        const s0 = (w[i - 15] >>> 7 | w[i - 15] << 25) ^ (w[i - 15] >>> 18 | w[i - 15] << 14) ^ w[i - 15] >>> 3;
+        const s1 = (w[i - 2] >>> 17 | w[i - 2] << 15) ^ (w[i - 2] >>> 19 | w[i - 2] << 13) ^ w[i - 2] >>> 10;
+        w[i] = w[i - 16] + s0 + w[i - 7] + s1 | 0;
+      }
+      let a = h0, b = h1, c = h2, d = h3, e = h4, f = h5, g = h6, h = h7;
+      for (let i = 0; i < 64; i++) {
+        const S1 = (e >>> 6 | e << 26) ^ (e >>> 11 | e << 21) ^ (e >>> 25 | e << 7);
+        const ch = e & f ^ ~e & g;
+        const t1 = h + S1 + ch + _sha256K[i] + w[i] | 0;
+        const S0 = (a >>> 2 | a << 30) ^ (a >>> 13 | a << 19) ^ (a >>> 22 | a << 10);
+        const maj = a & b ^ a & c ^ b & c;
+        const t2 = S0 + maj | 0;
+        h = g;
+        g = f;
+        f = e;
+        e = d + t1 | 0;
+        d = c;
+        c = b;
+        b = a;
+        a = t1 + t2 | 0;
+      }
+      h0 = h0 + a | 0;
+      h1 = h1 + b | 0;
+      h2 = h2 + c | 0;
+      h3 = h3 + d | 0;
+      h4 = h4 + e | 0;
+      h5 = h5 + f | 0;
+      h6 = h6 + g | 0;
+      h7 = h7 + h | 0;
+    }
+    const out = new Uint32Array([ h0, h1, h2, h3, h4, h5, h6, h7 ]);
+    let hex = "";
+    for (let i = 0; i < 8; i++) {
+      const v = out[i];
+      hex += (v >>> 28 & 15).toString(16) + (v >>> 24 & 15).toString(16) + (v >>> 20 & 15).toString(16) + (v >>> 16 & 15).toString(16) + (v >>> 12 & 15).toString(16) + (v >>> 8 & 15).toString(16) + (v >>> 4 & 15).toString(16) + (v & 15).toString(16);
+    }
+    return hex;
+  }
+  function solveConnectChallenge(challenge, ui = {}) {
+    var _a;
+    const need = "0".repeat(challenge.difficulty);
+    const prefix = challenge.prefix;
+    let nonce = 0;
+    (_a = ui.setText) == null ? void 0 : _a.call(ui, "ПК обменивается данными с сервером…");
+    return new Promise(resolve => {
+      function step() {
+        var _a2, _b, _c;
+        const t0 = performance.now();
+        while (performance.now() - t0 < 14) {
+          const input = prefix + nonce;
+          const hash = sha256HexConnectSync(input);
+          if (hash.startsWith(need)) {
+            (_a2 = ui.onProgress) == null ? void 0 : _a2.call(ui, input, hash);
+            resolve(`${challenge.challengeId}:${nonce}`);
+            return;
+          }
+          nonce++;
+          if (nonce % 1500 === 0) {
+            (_b = ui.setText) == null ? void 0 : _b.call(ui, "Проверка безопасности…");
+            (_c = ui.onProgress) == null ? void 0 : _c.call(ui, input, hash);
+          }
+        }
+        requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    });
+  }
+  var serverPowSupportCache = new Map;
+  async function fetchConnectToken(apiBase, ui = {}) {
+    var _a, _b, _c;
+    if (serverPowSupportCache.get(apiBase) === false) {
+      return null;
+    }
+    (_a = ui.setText) == null ? void 0 : _a.call(ui, serverPowSupportCache.get(apiBase) === true ? "Запрос проверки…" : "Проверка сервера…");
+    let res;
+    try {
+      // Short timeout: servers without /challenge (ms/pvp) or blocked ports must not hang connect
+      res = await fetch(apiBase + "/challenge", {
+        cache: "no-store",
+        signal: AbortSignal.timeout(3500)
+      });
+    } catch (e) {
+      return null;
+    }
+    if (!res.ok) {
+      if (res.status === 404 || res.status === 403) {
+        serverPowSupportCache.set(apiBase, false);
+      }
+      return null;
+    }
+    let challenge;
+    try {
+      challenge = await res.json();
+    } catch (e) {
+      return null;
+    }
+    if (!challenge || !challenge.challengeId || challenge.prefix == null || challenge.difficulty == null) {
+      return null;
+    }
+    serverPowSupportCache.set(apiBase, true);
+    (_b = ui.setText) == null ? void 0 : _b.call(ui, "Проверка безопасности…");
+    const token = await solveConnectChallenge(challenge, ui);
+    (_c = ui.setText) == null ? void 0 : _c.call(ui, "Подключение к серверу…");
+    return token;
+  }
+  function openGameSocket(wsUrl, {accountToken, connectToken} = {}) {
+    const qs = new URLSearchParams;
+    // Security: unofficial game servers (agarz / delta / agarlive) must never
+    // receive the agar.su account token or PoW connect token.
+    const official = !window.MultiProtocols || window.MultiProtocols.isOfficial(wsUrl);
+    if (official) {
+      if (accountToken) qs.set("accountToken", accountToken);
+      if (connectToken) qs.set("connectToken", connectToken);
+    }
+    const qsStr = qs.toString();
+    const ws = new WebSocket(wsUrl + (qsStr ? "?" + qsStr : ""), WS_SUBPROTOCOL);
+    ws.binaryType = "arraybuffer";
+    return ws;
+  }
+  function safeCloseSocket(ws) {
+    if (!ws) return;
+    ws.onmessage = null;
+    ws.onclose = null;
+    ws.onerror = function() {};
+    // close() during CONNECTING is logged as
+    // "WebSocket is closed before the connection is established".
+    // Drop handlers now and close only after the handshake finishes.
+    if (ws.readyState === WebSocket.CONNECTING) {
+      ws.onopen = function() {
+        ws.onopen = null;
+        ws.onmessage = null;
+        ws.onerror = null;
+        try {
+          ws.close();
+        } catch (e) {}
+      };
+      return;
+    }
+    ws.onopen = null;
+    if (ws.readyState !== WebSocket.OPEN) return;
+    try {
+      ws.close();
+    } catch (e) {}
+  }
+  function showConnectVerifyOverlay(text) {
+    const overlay = document.getElementById("connect-verify-overlay");
+    hideReconnectPanel();
+    setConnectVerifyTransferVisible(true);
+    if (overlay) overlay.style.display = "flex";
+    setConnectVerifyText(text);
+  }
+  function hideConnectVerifyOverlay() {
+    const overlay = document.getElementById("connect-verify-overlay");
+    hideReconnectPanel();
+    resetConnectVerifyStream();
+    setConnectVerifyTransferVisible(true);
+    if (overlay) overlay.style.display = "none";
+  }
+  function setConnectVerifyText(text) {
+    const el = document.getElementById("connect-verify-text");
+    if (el && text != null) el.textContent = text;
+  }
+  function setConnectVerifyTransferVisible(show) {
+    const el = document.getElementById("connect-verify-transfer");
+    if (el) el.style.display = show ? "" : "none";
+  }
+  function resetConnectVerifyStream() {
+    const stream = document.getElementById("connect-verify-data-stream");
+    if (stream) stream.textContent = 'sha256("…") → …';
+  }
+  function updateConnectTransferStream(inputPreview, hashHex) {
+    const stream = document.getElementById("connect-verify-data-stream");
+    if (!stream) return;
+    const raw = String(inputPreview);
+    const tail = raw.length > 18 ? "…" + raw.slice(-14) : raw;
+    const h = String(hashHex || "");
+    stream.textContent = 'sha256("' + tail + '") → ' + h.slice(0, 12) + "…";
+  }
+  function hideReconnectPanel() {
+    const box = document.getElementById("connect-verify-reconnect");
+    if (box) box.hidden = true;
+  }
+  function showReconnectPanel(message) {
+    const overlay = document.getElementById("connect-verify-overlay");
+    setConnectVerifyTransferVisible(false);
+    if (overlay) overlay.style.display = "flex";
+    setConnectVerifyText(message || "Соединение с сервером потеряно.");
+    const box = document.getElementById("connect-verify-reconnect");
+    if (box) box.hidden = false;
+  }
+  function formatBanDuration(sec) {
+    sec = Math.max(0, sec | 0);
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor(sec % 3600 / 60);
+    const s = sec % 60;
+    if (h > 0) return `${h}ч ${m}м`;
+    if (m > 0) return `${m}м ${s}с`;
+    return `${s}с`;
+  }
+  function showBanBanner(remainingSec, reason) {
+    const banner = document.getElementById("ban-banner");
+    if (!banner) return;
+    const msgEl = document.getElementById("ban-banner-message");
+    const text = `Осталось: ${formatBanDuration(remainingSec)}` + (reason ? `\n${reason}` : "");
+    if (msgEl) msgEl.textContent = text;
+    banner.style.display = "block";
+  }
+  function hideBanBanner() {
+    const banner = document.getElementById("ban-banner");
+    if (banner) banner.style.display = "none";
+  }
+  function createConnection(S, hooks = {}) {
+    function isSpectMode() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const hash = window.location.hash;
+      return urlParams.has("spect") || urlParams.has("spectator") || hash.includes("?spect") || hash.includes("?spectator");
+    }
+    function clearSpectReconnectTimer() {
+      if (S.spectReconnectTimer) {
+        clearInterval(S.spectReconnectTimer);
+        S.spectReconnectTimer = null;
+      }
+    }
+    function scheduleSpectReconnect() {
+      clearSpectReconnectTimer();
+      if (!isSpectMode() || !S.ma) return;
+      hideReconnectPanel();
+      showConnectVerifyOverlay("Переподключение к серверу…");
+      const tryReconnect = () => {
+        if (!S.ma || !isSpectMode()) {
+          clearSpectReconnectTimer();
+          return;
+        }
+        if (isWsConnected() || S.connectInProgress || S.ws && S.ws.readyState === WebSocket.CONNECTING) {
+          return;
+        }
+        showConnecting();
+      };
+      tryReconnect();
+      S.spectReconnectTimer = setInterval(tryReconnect, S.SPECT_RECONNECT_INTERVAL_MS);
+    }
+    function isWsConnected() {
+      return !!(S.ws && S.ws.readyState === WebSocket.OPEN);
+    }
+    function clearHiddenTabDisconnectTimer() {
+      if (S.hiddenTabDisconnectTimer) {
+        clearTimeout(S.hiddenTabDisconnectTimer);
+        S.hiddenTabDisconnectTimer = null;
+      }
+    }
+    function scheduleHiddenTabDisconnect() {
+      clearHiddenTabDisconnectTimer();
+      if (!document.hidden) return;
+      S.hiddenTabDisconnectTimer = setTimeout(() => {
+        S.hiddenTabDisconnectTimer = null;
+        if (!document.hidden || !isWsConnected()) return;
+        S.wsClosedByHiddenTab = true;
+        try {
+          S.ws.close();
+        } catch (e) {}
+      }, S.HIDDEN_TAB_DISCONNECT_MS);
+    }
+    function reconnectToServer() {
+      hideBanBanner();
+      hideReconnectPanel();
+      showConnecting();
+    }
+    async function fetchConnectToken2(gameHost) {
+      const apiBase = getPowApiBase(gameHost);
+      return fetchConnectToken(apiBase, {
+        setText: setConnectVerifyText,
+        onProgress: updateConnectTransferStream
+      });
+    }
+    function showConnecting() {
+      const wsUrl = getGameServerWssUrl(S.CONNECTION_URL);
+      if (S.ws && S.ws.readyState === WebSocket.OPEN && S.currentWebSocketUrl === wsUrl) {
+        return;
+      }
+      if (S.ma) {
+        S.connectAttemptId++;
+        S.currentWebSocketUrl = wsUrl;
+        S.gameHandshakeDone = false;
+        wsConnect(wsUrl);
+      }
+    }
+    async function wsConnect(wsUrlArg) {
+      var _a;
+      const attemptId = S.connectAttemptId;
+      S.connectInProgress = true;
+      S.gameHandshakeDone = false;
+      // safeCloseSocket clears onclose, so onWsClose will not stop this timer.
+      if (S.wsPingInterval) {
+        clearInterval(S.wsPingInterval);
+        S.wsPingInterval = null;
+      }
+      hideBanBanner();
+      hideReconnectPanel();
+      showConnectVerifyOverlay("Подключение к серверу…");
+      if (S.ws) {
+        safeCloseSocket(S.ws);
+        S.ws = null;
+      }
+      const host = S.CONNECTION_URL;
+      S.wsUrl = wsUrlArg || getGameServerWssUrl(host);
+      (_a = hooks.clearWorld) == null ? void 0 : _a.call(hooks);
+      try {
+        let connectToken = null;
+        // PoW challenge (connectToken) is an agar.su-only flow — skip for unofficial
+        // upstream servers to avoid a pointless 3.5s /challenge probe.
+        const officialHost = !window.MultiProtocols || window.MultiProtocols.isOfficial(host);
+        if (officialHost) {
+          try {
+            connectToken = await fetchConnectToken2(host);
+          } catch (err) {
+            if (attemptId !== S.connectAttemptId) return;
+            console.error("Connect token error:", err);
+            if (isSpectMode()) {
+              scheduleSpectReconnect();
+            } else {
+              showReconnectPanel("Ошибка подключения. Нажмите, чтобы повторить.");
+            }
+            return;
+          }
+        }
+        if (attemptId !== S.connectAttemptId) return;
+        if (serverPowSupportCache.get(getPowApiBase(host)) === true && !connectToken) {
+          if (isSpectMode()) {
+            scheduleSpectReconnect();
+          } else {
+            showReconnectPanel("Не удалось пройти проверку сервера. Нажмите, чтобы повторить.");
+          }
+          return;
+        }
+        if (connectToken === null) {
+          hideConnectVerifyOverlay();
+        }
+        S.ws = openGameSocket(S.wsUrl, {
+          accountToken: getAccountToken() || null,
+          connectToken: connectToken || null
+        });
+
+        // Multiprotocol: detect upstream protocol from host and route traffic
+        // through the matching adapter (agarz / delta / agarlive). Original
+        // agar.su stays pass-through.
+        const mp = (window.MultiProtocols && S.CONNECTION_URL)
+          ? window.MultiProtocols.createEngine(S.CONNECTION_URL)
+          : null;
+        S.multiProto = mp;
+        S._rawWsSend = S.ws.send.bind(S.ws);
+
+        if (mp && !mp.isPassthrough) {
+          S.ws.send = (data) => {
+            let u8 = null;
+            if (data instanceof ArrayBuffer) u8 = new Uint8Array(data);
+            else if (ArrayBuffer.isView(data)) u8 = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+            if (!u8) { S._rawWsSend(data); return; }
+            const outs = mp.encodeClientPacket(u8);
+            for (let i = 0; i < outs.length; i++) S._rawWsSend(outs[i].buffer);
+          };
+        }
+
+        S.ws.onopen = onWsOpen;
+        S.ws.onmessage = msg => {
+          var _a2;
+          if (mp && !mp.isPassthrough) {
+            const u8 = new Uint8Array(msg.data);
+            const pkts = mp.decodeServerPacket(u8);
+            if (pkts == null) return;
+            for (let i = 0; i < pkts.length; i++) {
+              const p = pkts[i];
+              (_a2 = hooks.onMessage) == null ? void 0 : _a2.call(hooks, new DataView(p.buffer, p.byteOffset, p.byteLength));
+            }
+          } else {
+            (_a2 = hooks.onMessage) == null ? void 0 : _a2.call(hooks, new DataView(msg.data));
+          }
+        };
+        S.ws.onclose = onWsClose;
+      } catch (err) {
+        if (attemptId !== S.connectAttemptId) return;
+        console.error("WebSocket connect error:", err);
+        if (isSpectMode()) {
+          scheduleSpectReconnect();
+        } else {
+          showReconnectPanel("Ошибка подключения. Нажмите, чтобы повторить.");
+        }
+      } finally {
+        if (attemptId === S.connectAttemptId) {
+          S.connectInProgress = false;
+        }
+      }
+    }
+    function wsSend(dataViewOrTyped) {
+      var _a;
+      if (!S.ws || S.ws.readyState !== WebSocket.OPEN) return;
+      const buf = (_a = dataViewOrTyped.buffer) != null ? _a : dataViewOrTyped;
+      try {
+        S.ws.send(buf);
+      } catch (e) {}
+    }
+    function onWsOpen() {
+      var _a;
+      setConnectVerifyText("Синхронизация с сервером…");
+      S.gameHandshakeDone = false;
+      (_a = hooks.sendAccountToken) == null ? void 0 : _a.call(hooks);
+      const [p, key] = encodeHandshake();
+      wsSend(p);
+      wsSend(key);
+      // Non-agar.su protocols need their own native handshake (agarz BEGIN,
+      // delta 254/255/241, agarlive 254/255).
+      if (S.multiProto && !S.multiProto.isPassthrough && S._rawWsSend) {
+        S.multiProto.onOpen({ send: S._rawWsSend });
+      }
+    }
+    function onGameHandshakeReady() {
+      var _a, _b;
+      if (S.gameHandshakeDone) return;
+      S.gameHandshakeDone = true;
+      clearSpectReconnectTimer();
+      // New socket: never keep previous server's follow target / auto-click timer
+      clearSpectateFollow(S);
+      hideConnectVerifyOverlay();
+      hideReconnectPanel();
+      (_a = hooks.sendNickName) == null ? void 0 : _a.call(hooks);
+      // Button «Наблюдать» sets userNickName=null — must enter spectate (not only ?spect URL).
+      if (S.userNickName == null) {
+        if (typeof hooks.sendSpectate === "function") hooks.sendSpectate();
+        else {
+          const spect = prepareData(1);
+          spect.setUint8(0, ClientOpcode.SPECTATE);
+          wsSend(spect);
+        }
+      }
+      if (S.wsPingInterval) clearInterval(S.wsPingInterval);
+      S.wsPingInterval = setInterval(() => {
+        if (!S.gameHandshakeDone || !S.ws || S.ws.readyState !== WebSocket.OPEN) return;
+        S.pingstamp = Date.now();
+        wsSend(encodePing());
+      }, 3e3);
+      (_b = hooks.sendChat) == null ? void 0 : _b.call(hooks, "вoшёл в игру!");
+    }
+    function onWsClose() {
+      S.gameHandshakeDone = false;
+      if (S.wsPingInterval) {
+        clearInterval(S.wsPingInterval);
+        S.wsPingInterval = null;
+      }
+      if (S.connectInProgress) return;
+      if (!S.ma) return;
+      if (isSpectMode()) {
+        S.wsClosedByHiddenTab = false;
+        scheduleSpectReconnect();
+        return;
+      }
+      const msg = S.wsClosedByHiddenTab ? "Вкладка была неактивна более 60 секунд. Нажмите, чтобы переподключиться." : "Соединение с сервером потеряно. Нажмите, чтобы переподключиться.";
+      S.wsClosedByHiddenTab = false;
+      showReconnectPanel(msg);
+    }
+    function bindVisibilityHandlers() {
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) {
+          scheduleHiddenTabDisconnect();
+        } else {
+          clearHiddenTabDisconnectTimer();
+        }
+      });
+    }
+    return {
+      isSpectMode,
+      clearSpectReconnectTimer,
+      scheduleSpectReconnect,
+      isWsConnected,
+      clearHiddenTabDisconnectTimer,
+      scheduleHiddenTabDisconnect,
+      reconnectToServer,
+      fetchConnectToken: fetchConnectToken2,
+      showConnecting,
+      wsConnect,
+      wsSend,
+      onWsOpen,
+      onGameHandshakeReady,
+      onWsClose,
+      bindVisibilityHandlers
+    };
+  }
+  function attachConnection(S, hooks = {}) {
+    const api = createConnection(S, hooks);
+    Object.assign(S.api, api);
+    return api;
+  }
+  /** Pause (F toggle): mouse locked to main cell center. No flip/mirror. */
+  function setFreezeUi(visible) {
+    try {
+      const el = document.querySelector("#freeze");
+      if (el) el.style.display = visible ? "flex" : "none";
+    } catch (_) {}
+  }
+  function clearAimFlipResidue(S) {
+    if (!S) return;
+    S._aimFlipForced = null;
+    S._aimFlipLoopToken = (S._aimFlipLoopToken || 0) + 1;
+    if (!S.ws) return;
+    // Drop old AimFlip wrappers only; do not touch active freeze hook
+    if (S.ws.__freezeHooked) {
+      S.ws.__aimFlipHooked = false;
+      S.ws.__aimFlipRawSend = null;
+      S.ws.__aimFlipSend = null;
+      return;
+    }
+    if (S.ws.__aimFlipRawSend) {
+      try { S.ws.send = S.ws.__aimFlipRawSend; } catch (_) {}
+      S.ws.__aimFlipRawSend = null;
+    } else if (S.ws.__aimFlipSend) {
+      try { S.ws.send = S.ws.__aimFlipSend; } catch (_) {}
+      S.ws.__aimFlipSend = null;
+    }
+    S.ws.__aimFlipHooked = false;
+  }
+  function mainCellCenter(S) {
+    const main = S.playerCells && S.playerCells[0];
+    if (!main) return null;
+    return { x: main.x, y: main.y };
+  }
+  function updateFreezeAim(S) {
+    const c = mainCellCenter(S);
+    if (!c) {
+      S._freezeAim = null;
+      return null;
+    }
+    S._freezeAim = c;
+    S.X = c.x;
+    S.Y = c.y;
+    return c;
+  }
+  function ensureFreezeWsHook(S) {
+    if (!S || !S.ws) return;
+    if (S.ws.__freezeHooked && S.ws.__freezeRawSend) return;
+    clearAimFlipResidue(S);
+    const rawSend = (S.ws.__freezeRawSend || S.ws.send).bind(S.ws);
+    S.ws.__freezeRawSend = rawSend;
+    S.ws.__freezeHooked = true;
+    S.ws.send = function(data) {
+      if (S.freeze && S._freezeAim) {
+        let view = null;
+        if (data instanceof ArrayBuffer && data.byteLength >= 21) {
+          view = new DataView(data);
+        } else if (ArrayBuffer.isView(data) && data.byteLength >= 21) {
+          view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+        }
+        if (view && view.getUint8(0) === ClientOpcode.MOUSE) {
+          view.setFloat64(1, S._freezeAim.x, true);
+          view.setFloat64(9, S._freezeAim.y, true);
+        }
+      }
+      return rawSend(data);
+    };
+  }
+  function stopFreezePauseLoop(S) {
+    S._freezeLoopToken = (S._freezeLoopToken || 0) + 1;
+    S._freezeAim = null;
+  }
+  function startFreezePauseLoop(S, hooks) {
+    ensureFreezeWsHook(S);
+    const token = (S._freezeLoopToken = (S._freezeLoopToken || 0) + 1);
+    (function freezeLoop() {
+      if (!S.freeze || S._freezeLoopToken !== token) {
+        if (S._freezeLoopToken === token) S._freezeAim = null;
+        return;
+      }
+      try {
+        if (S.playerCells && S.playerCells.length) {
+          ensureFreezeWsHook(S);
+          updateFreezeAim(S);
+          if (hooks && typeof hooks.sendMouseMove === "function") {
+            hooks.sendMouseMove({ force: true });
+          }
+        }
+      } catch (_) {}
+      setTimeout(freezeLoop, 40);
+    })();
+  }
+  function enablePause(S, hooks) {
+    if (S.freeze) return;
+    clearAimFlipResidue(S);
+    S.freeze = true;
+    setFreezeUi(true);
+    updateFreezeAim(S);
+    startFreezePauseLoop(S, hooks || S.api || {});
+  }
+  function disablePause(S) {
+    if (!S.freeze && !S._freezeAim) {
+      setFreezeUi(false);
+      return;
+    }
+    S.freeze = false;
+    stopFreezePauseLoop(S);
+    clearAimFlipResidue(S);
+    setFreezeUi(false);
+  }
+  function togglePause(S, hooks) {
+    if (S.freeze) disablePause(S);
+    else enablePause(S, hooks);
+  }
+  function createOutbound(S, hooks = {}) {
+    function wsIsOpen() {
+      return S.ws != null && S.ws.readyState === WebSocket.OPEN;
+    }
+    function wsSend(view) {
+      if (!S.ws || S.ws.readyState !== WebSocket.OPEN) return;
+      ensureFreezeWsHook(S);
+      try {
+        S.ws.send(view.buffer);
+      } catch (e) {}
+    }
+    function getColorId(hex) {
+      const colors = S.cellColors;
+      if (!colors || !hex) return 0;
+      const index = colors.indexOf(hex);
+      return index === -1 ? 0 : index + 1;
+    }
+    function sendMouseMove(opts) {
+      if (!wsIsOpen()) return;
+      ensureFreezeWsHook(S);
+      // Until borders arrive, never aim — old default (5000,5000) clamped to map corner (D4/E5)
+      if (!S.mapBoundsReady) return;
+      const spectating = !S.playerCells.length;
+      const force = opts && opts.force;
+      // Pause: lock mouse to main cell center (0,0 of primary cell)
+      if (S.freeze && !spectating) {
+        const aim = updateFreezeAim(S);
+        if (aim && (force || !(Math.abs(S.oldX - aim.x) < .05 && Math.abs(S.oldY - aim.y) < .05))) {
+          S.oldX = aim.x;
+          S.oldY = aim.y;
+          const msg = prepareData(21);
+          msg.setUint8(0, ClientOpcode.MOUSE);
+          msg.setFloat64(1, aim.x, true);
+          msg.setFloat64(9, aim.y, true);
+          msg.setUint32(17, 0, true);
+          wsSend(msg);
+        }
+        return;
+      }
+      // Spectate: overview follows camera aim (posX) — keep server view at map center until user aims
+      if (spectating) {
+        if (force || !(Math.abs(S.oldX - S.posX) < .05 && Math.abs(S.oldY - S.posY) < .05)) {
+          S.oldX = S.posX;
+          S.oldY = S.posY;
+          const msg = prepareData(21);
+          msg.setUint8(0, ClientOpcode.MOUSE);
+          msg.setFloat64(1, S.posX, true);
+          msg.setFloat64(9, S.posY, true);
+          msg.setUint32(17, 0, true);
+          wsSend(msg);
+        }
+      } else {
+        const msgX = S.rawMouseX - S.canvasWidth / 2;
+        const msgY = S.rawMouseY - S.canvasHeight / 2;
+        if (64 <= msgX * msgX + msgY * msgY && !(Math.abs(S.oldX - S.X) < .1 && Math.abs(S.oldY - S.Y) < .1)) {
+          S.oldX = S.X;
+          S.oldY = S.Y;
+          const msg = prepareData(21);
+          msg.setUint8(0, ClientOpcode.MOUSE);
+          msg.setFloat64(1, S.X, true);
+          msg.setFloat64(9, S.Y, true);
+          msg.setUint32(17, 0, true);
+          wsSend(msg);
+        }
+      }
+    }
+    function sendUint8(a) {
+      if (!wsIsOpen()) return;
+      const msg = prepareData(1);
+      msg.setUint8(0, a);
+      wsSend(msg);
+    }
+    function sendSpectate() {
+      if (!wsIsOpen()) return;
+      const spect = prepareData(1);
+      spect.setUint8(0, ClientOpcode.SPECTATE);
+      wsSend(spect);
+    }
+    function sendNickName() {
+      if (!wsIsOpen() || S.userNickName == null) return;
+      let nick = S.userNickName;
+      // Security: unofficial servers get only the bare nick (no #pass).
+      if (window.MultiProtocols && !window.MultiProtocols.isOfficial(S.CONNECTION_URL)) {
+        nick = window.MultiProtocols.sanitizeNickForHost(nick, S.CONNECTION_URL);
+        if (!nick) return;
+      }
+      const msg = prepareData(1 + 2 * nick.length + 1);
+      msg.setUint8(0, ClientOpcode.NICK);
+      msg.setUint8(1, getColorId(localStorage.getItem("selectedColor")));
+      for (let i = 0; i < nick.length; ++i) {
+        msg.setUint16(1 + 2 * i + 1, nick.charCodeAt(i), true);
+      }
+      wsSend(msg);
+    }
+    function isIncompletePrivateChat(str) {
+      const s = String(str || "").trim();
+      if (!s || !/^!ls/i.test(s)) return false;
+      // Valid PM: !ls<id> <non-empty message>. Bare !ls1223 must not go to public chat.
+      return !/^!ls\d+\s+\S/i.test(s);
+    }
+    function sendChat(str) {
+      if (isIncompletePrivateChat(str)) return;
+      str = appendChatLangTag(str);
+      if (!wsIsOpen() || !(str.length < 200) || !(str.length > 0) || S.hideChat) return;
+      if (!isExemptFromShadowChat(str)) {
+        const banned = isShadowBannedChatMessage(str);
+        if (S.lastChatSent === str) {
+          S.lastChatRepeat = (S.lastChatRepeat || 1) + 1;
+        } else {
+          S.lastChatSent = str;
+          S.lastChatRepeat = 1;
+        }
+        // Spam: only from the 4th identical message in a row. Banned words: always shadow.
+        if (banned || S.lastChatRepeat >= 4) {
+          echoShadowChat(S, str);
+          return;
+        }
+      }
+      const msg = prepareData(2 + 2 * str.length);
+      let offset = 0;
+      msg.setUint8(offset++, ClientOpcode.CHAT);
+      msg.setUint8(offset++, 0);
+      for (let i = 0; i < str.length; ++i) {
+        msg.setUint16(offset, str.charCodeAt(i), true);
+        offset += 2;
+      }
+      // Security: unofficial game servers must not receive the agar.su token.
+      if (window.MultiProtocols && !window.MultiProtocols.isOfficial(S.CONNECTION_URL)) return;
+      wsSend(msg);
+    }
+    function sendAccountToken() {
+      const token = getAccountToken();
+      if (!wsIsOpen() || !token) return;
+      const msg = prepareData(1 + 2 * token.length);
+      msg.setUint8(0, 114);
+      for (let i = 0; i < token.length; ++i) {
+        msg.setUint16(1 + 2 * i, token.charCodeAt(i), true);
+      }
+      wsSend(msg);
+    }
+    function sendAdminPanel() {
+      if (!wsIsOpen()) return;
+      const msg = prepareData(1);
+      msg.setUint8(0, ClientOpcode.ADMIN_PANEL);
+      wsSend(msg);
+    }
+    function sendSticker(stickerId, action) {
+      if (!wsIsOpen()) return;
+      const msg = prepareData(6);
+      msg.setUint8(0, ClientOpcode.STICKER);
+      msg.setUint8(1, stickerId);
+      msg.setUint8(2, action ? 1 : 0);
+      wsSend(msg);
+    }
+    return {
+      wsIsOpen,
+      sendMouseMove,
+      sendUint8,
+      sendSpectate,
+      sendNickName,
+      sendChat,
+      sendAccountToken,
+      sendAdminPanel,
+      sendSticker,
+      getColorId
+    };
+  }
+  function attachOutbound(S, hooks = {}) {
+    const api = createOutbound(S, hooks);
+    Object.assign(S.api, api);
+    return api;
+  }
+  var BinaryReader = class {
+    constructor(view) {
+      this.view = view;
+      this.byteLength = view.byteLength;
+      this.offset = 0;
+    }
+    get canRead() {
+      return this.offset < this.byteLength;
+    }
+    uint8() {
+      return this.view.getUint8(this.offset++);
+    }
+    int8() {
+      return this.view.getInt8(this.offset++);
+    }
+    uint16() {
+      return this.view.getUint16((this.offset += 2) - 2, true);
+    }
+    int16() {
+      return this.view.getInt16((this.offset += 2) - 2, true);
+    }
+    uint32() {
+      return this.view.getUint32((this.offset += 4) - 4, true);
+    }
+    int32() {
+      return this.view.getInt32((this.offset += 4) - 4, true);
+    }
+    utf16() {
+      let str = "";
+      let char;
+      while (this.canRead && (char = this.uint16())) str += String.fromCharCode(char);
+      return str;
+    }
+    utf8() {
+      let text = "";
+      for (let byte1; byte1 = this.canRead && this.view.getUint8(this.offset++); ) {
+        if (byte1 <= 127) text += String.fromCharCode(byte1); else if (byte1 <= 223) text += String.fromCharCode((byte1 & 31) << 6 | this.view.getUint8(this.offset++) & 63); else if (byte1 <= 239) text += String.fromCharCode((byte1 & 15) << 12 | (this.view.getUint8(this.offset++) & 63) << 6 | this.view.getUint8(this.offset++) & 63); else {
+          let codePoint = (byte1 & 7) << 18 | (this.view.getUint8(this.offset++) & 63) << 12 | (this.view.getUint8(this.offset++) & 63) << 6 | this.view.getUint8(this.offset++) & 63;
+          if (codePoint >= 65536) {
+            codePoint -= 65536;
+            text += String.fromCharCode(55296 | codePoint >> 10, 56320 | codePoint & 1023);
+          } else text += String.fromCharCode(codePoint);
+        }
+      }
+      return text;
+    }
+  };
+  var normalizeFractlPart = n => n % (Math.PI * 2) / (Math.PI * 2);
+  /** Food placeholder positions from node id — must use map width/height, not rightPos alone. */
+  function computeFoodPosition(S, nodeid) {
+    const w = (S.rightPos - S.leftPos) || 1;
+    const h = (S.bottomPos - S.topPos) || 1;
+    return {
+      x: S.leftPos + w * normalizeFractlPart(nodeid),
+      y: S.topPos + h * normalizeFractlPart(nodeid * nodeid)
+    };
+  }
+  /** Same mass/size formula as GameServer.spawnFood / entity/Food.js */
+  function computeFoodSize(S, nodeid) {
+    let minMass = S.foodMass | 0;
+    let maxMass = S.foodMaxMass | 0;
+    if (!(minMass > 0)) {
+      // Fallback from size fields if mass not stored yet
+      if (S.foodMinSize > 0) minMass = Math.max(1, Math.round(S.foodMinSize * S.foodMinSize / 100));
+      else minMass = 1;
+    }
+    if (!(maxMass >= minMass)) {
+      if (S.foodMaxSize > 0) maxMass = Math.max(minMass, Math.round(S.foodMaxSize * S.foodMaxSize / 100));
+      else maxMass = minMass;
+    }
+    const mass = minMass + nodeid % (maxMass - minMass + 1);
+    return Math.ceil(Math.sqrt(100 * mass));
+  }
+  function repositionFoodNodes(S) {
+    if (!S.mapBoundsReady) return;
+    const now = Date.now();
+    for (let i = 0; i < S.nodelist.length; i++) {
+      const node = S.nodelist[i];
+      if (!(node == null ? void 0 : node.isFood)) continue;
+      const {x, y} = computeFoodPosition(S, node.id);
+      const sz = computeFoodSize(S, node.id);
+      node.ox = x;
+      node.oy = y;
+      node.nx = x;
+      node.ny = y;
+      node.x = x;
+      node.y = y;
+      node.setSize(sz);
+      node.oSize = sz;
+      node.size = sz;
+      node.updateTime = now;
+    }
+    S.nodesSortDirty = true;
+  }
+  function ensureStickerState(S) {
+    if (!S.activeStickersByNode) S.activeStickersByNode = Object.create(null);
+    if (!S.activeStickersByName) S.activeStickersByName = Object.create(null);
+  }
+  function stickerNameKey(name) {
+    return String(name || "").trim().toLowerCase();
+  }
+  function setNodeSticker(node, stickerId) {
+    if (!node) return;
+    if (stickerId) {
+      node.currentSticker = stickerId;
+      node.stickerActive = true;
+    } else {
+      node.currentSticker = null;
+      node.stickerActive = false;
+    }
+  }
+  function rememberSticker(S, nodeId, name, stickerId) {
+    ensureStickerState(S);
+    if (stickerId) {
+      if (nodeId != null) S.activeStickersByNode[nodeId] = stickerId;
+      const key = stickerNameKey(name);
+      if (key) S.activeStickersByName[key] = stickerId;
+    } else {
+      if (nodeId != null) delete S.activeStickersByNode[nodeId];
+      const key = stickerNameKey(name);
+      if (key) delete S.activeStickersByName[key];
+    }
+  }
+  function resolveRememberedSticker(S, nodeId, name) {
+    ensureStickerState(S);
+    if (nodeId != null && S.activeStickersByNode[nodeId]) return S.activeStickersByNode[nodeId];
+    const key = stickerNameKey(name);
+    if (key && S.activeStickersByName[key]) return S.activeStickersByName[key];
+    return null;
+  }
+  /**
+   * UpdateNodes хвост: FF+id = стикер вкл, 00 = выкл.
+   * Свои клетки — только пока зажата клавиша (анти-мерцание/залипание у себя).
+   * Чужие: 00 обязательно гасит (иначе 2-я вкладка видит стикер после отпускания).
+   */
+  /** playerId → canonical nick (skin API still resolves by nick). */
+  function rememberPlayerNick(S, playerId, name) {
+    if (!S || !playerId || !name) return false;
+    if (!S.playerNicks) S.playerNicks = Object.create(null);
+    const pid = playerId >>> 0;
+    if (S.playerNicks[pid] === name) return false;
+    S.playerNicks[pid] = name;
+    return true;
+  }
+  function nickForPlayerId(S, playerId) {
+    if (!S || !playerId || !S.playerNicks) return "";
+    return S.playerNicks[playerId >>> 0] || "";
+  }
+  /** When nick changes for a pid, push to all linked cells once. */
+  function applyPlayerNickToCells(S, playerId, name) {
+    if (!S || !S.nodelist || !playerId || !name) return;
+    const pid = playerId >>> 0;
+    for (let i = 0; i < S.nodelist.length; i++) {
+      const n = S.nodelist[i];
+      if (n && !n.isFood && (n.playerId >>> 0) === pid && n.name !== name) n.setName(name);
+    }
+  }
+  function syncNodeStickerFromUpdate(S, node, name, stickerFromUpdate) {
+    if (!node) return;
+    const n = name || node.name || "";
+    if (node.isOwn) {
+      if (S.localStickerHeld && S.localStickerId) {
+        setNodeSticker(node, S.localStickerId);
+      } else {
+        setNodeSticker(node, null);
+      }
+      return;
+    }
+    if (stickerFromUpdate) {
+      rememberSticker(S, node.id, n, stickerFromUpdate);
+      setNodeSticker(node, stickerFromUpdate);
+      return;
+    }
+    if (stickerFromUpdate === false) {
+      rememberSticker(S, node.id, n, null);
+      setNodeSticker(node, null);
+      return;
+    }
+    const remembered = resolveRememberedSticker(S, node.id, n);
+    if (remembered) setNodeSticker(node, remembered);
+  }
+  /** Пакет STICKER — явное вкл/выкл. Для своих ignore «on», если клавиша уже отпущена (анти-залипание). */
+  function applyStickerPacket(S, stickerPlayerId, stickerId, enabled) {
+    ensureStickerState(S);
+    let refName = null;
+    let isOwnPacket = stickerPlayerId === S.ownerPlayerId;
+    for (let i = 0; i < S.nodelist.length; i++) {
+      const node = S.nodelist[i];
+      if (node && node.id === stickerPlayerId) {
+        refName = node.name || null;
+        if (node.isOwn) isOwnPacket = true;
+        break;
+      }
+    }
+    if (isOwnPacket) {
+      if (enabled && !S.localStickerHeld) return;
+      if (!enabled) {
+        S.localStickerHeld = false;
+        S.localStickerId = null;
+      }
+      for (let i = 0; i < S.playerCells.length; i++) {
+        const cell = S.playerCells[i];
+        if (!cell) continue;
+        if (!refName && cell.name) refName = cell.name;
+        setNodeSticker(cell, enabled && S.localStickerHeld ? stickerId : null);
+      }
+      if (!enabled) {
+        const nameKey = stickerNameKey(refName);
+        delete S.activeStickersByNode[stickerPlayerId];
+        if (nameKey) delete S.activeStickersByName[nameKey];
+        for (let i = 0; i < S.playerCells.length; i++) {
+          const cell = S.playerCells[i];
+          if (cell) rememberSticker(S, cell.id, cell.name, null);
+        }
+      }
+      return;
+    }
+    const nameKey = stickerNameKey(refName);
+    if (enabled) {
+      if (stickerPlayerId != null) S.activeStickersByNode[stickerPlayerId] = stickerId;
+      if (nameKey) S.activeStickersByName[nameKey] = stickerId;
+    } else {
+      delete S.activeStickersByNode[stickerPlayerId];
+      if (nameKey) delete S.activeStickersByName[nameKey];
+    }
+    for (let i = 0; i < S.nodelist.length; i++) {
+      const node = S.nodelist[i];
+      if (!node || node.isOwn || node.isFood || node.isVirus || node.isEjected) continue;
+      const hit = node.id === stickerPlayerId || nameKey && stickerNameKey(node.name) === nameKey;
+      if (!hit) continue;
+      rememberSticker(S, node.id, node.name, enabled ? stickerId : null);
+      setNodeSticker(node, enabled ? stickerId : null);
+    }
+  }
+  function foodColorHex(slot) {
+    let n = (Math.imul(slot, 1103515245) + 12345) >>> 0;
+    const r = 80 + (n & 127);
+    n = (Math.imul(n, 1664525) + 1013904223) >>> 0;
+    const g = 80 + (n & 127);
+    n = (Math.imul(n, 22695477) + 1) >>> 0;
+    const b = 80 + (n & 127);
+    return "#" + (r << 16 | g << 8 | b).toString(16).padStart(6, "0");
+  }
+  function applyThinWorld(S, view, offset) {
+    if (!view || offset >= view.byteLength) return;
+    S.timestamp = Date.now();
+    S.ua = false;
+    S.nodesSortDirty = true;
+    const end = view.byteLength;
+    let bad = false;
+    function need(n) {
+      if (bad || offset + n > end) {
+        bad = true;
+        return false;
+      }
+      return true;
+    }
+    function u8() {
+      if (!need(1)) return 0;
+      return view.getUint8(offset++);
+    }
+    function u16() {
+      if (!need(2)) return 0;
+      const v = view.getUint16(offset, true);
+      offset += 2;
+      return v;
+    }
+    function i8() {
+      if (!need(1)) return 0;
+      const v = view.getInt8(offset);
+      offset += 1;
+      return v;
+    }
+    function i16() {
+      if (!need(2)) return 0;
+      const v = view.getInt16(offset, true);
+      offset += 2;
+      return v;
+    }
+    function utf8() {
+      const bytes = [];
+      while (offset < end) {
+        const c = view.getUint8(offset++);
+        if (c === 0) break;
+        bytes.push(c);
+      }
+      if (!bytes.length) return "";
+      if (typeof TextDecoder !== "undefined") return new TextDecoder("utf-8").decode(new Uint8Array(bytes));
+      let s = "";
+      for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+      return s;
+    }
+    function rgbHex() {
+      const r = u8();
+      const g = u8();
+      const b = u8();
+      return "#" + (r << 16 | g << 8 | b).toString(16).padStart(6, "0");
+    }
+    function syncFood(slot, on) {
+      if (!slot) return;
+      const node = S.nodes[slot];
+      if (on) {
+        if (node && !node.destroyed) return;
+        const pos = computeFoodPosition(S, slot);
+        const size = computeFoodSize(S, slot);
+        const cell = new Cell(slot, pos.x, pos.y, size, foodColorHex(slot), "");
+        cell.isFood = true;
+        cell.held = true;
+        cell.nx = pos.x;
+        cell.ny = pos.y;
+        cell.nSize = size;
+        cell.updateTime = S.timestamp;
+        S.nodelist.push(cell);
+        S.nodes[slot] = cell;
+        return;
+      }
+      if (node && !node.destroyed && node.isFood) node.destroy();
+    }
+    function claimOwn(node, pid) {
+      if (!pid) return;
+      node.playerId = pid;
+      if ((pid >>> 0) !== (S.ownerPlayerId >>> 0)) return;
+      node.isOwn = true;
+      if (S.playerCells.indexOf(node) !== -1) return;
+      const overlays = document.getElementById("overlays");
+      if (overlays) overlays.style.display = "none";
+      S.playerCells.push(node);
+      if (S.playerCells.length === 1) {
+        S.nodeX = node.x;
+        S.nodeY = node.y;
+      }
+    }
+    function applyName(node, pid, name) {
+      if (pid && name) {
+        if (rememberPlayerNick(S, pid, name)) applyPlayerNickToCells(S, pid, name);
+        else if (node.name !== name) node.setName(name);
+        return;
+      }
+      if (name && node.name !== name) {
+        node.setName(name);
+        return;
+      }
+      if (pid) {
+        const known = nickForPlayerId(S, pid);
+        if (known && node.name !== known) node.setName(known);
+      }
+    }
+    function retarget(node, encX, encY, size) {
+      if (encX < 0) encX = 0;
+      if (encY < 0) encY = 0;
+      if (encX > 65535) encX = 65535;
+      if (encY > 65535) encY = 65535;
+      const x = S.leftPos + encX;
+      const y = S.topPos + encY;
+      if (node.updateTime) node.updatePos();
+      node.ox = node.x;
+      node.oy = node.y;
+      node.oSize = node.size;
+      node.nx = x;
+      node.ny = y;
+      node.encX = encX;
+      node.encY = encY;
+      node.setSize(size);
+      node.held = true;
+      node.updateTime = S.timestamp;
+    }
+    try {
+      const foodMode = u8();
+      if (foodMode === 1) {
+        const slotCount = u16();
+        const byteLen = u16();
+        if (!need(byteLen)) return;
+        const bytes = new Uint8Array(view.buffer, view.byteOffset + offset, byteLen);
+        offset += byteLen;
+        for (let slot = 1; slot <= slotCount; slot++) {
+          const i = slot - 1;
+          const on = i >> 3 < bytes.length && (bytes[i >> 3] >> (i & 7) & 1);
+          syncFood(slot, on);
+        }
+      } else if (foodMode === 2) {
+        const flips = u16();
+        for (let i = 0; i < flips && !bad; i++) {
+          const slot = u16();
+          const on = u8();
+          if (!bad) syncFood(slot, on);
+        }
+      }
+      if (bad) return;
+      const eatCount = u16();
+      for (let i = 0; i < eatCount && !bad; i++) {
+        const victimRaw = u16();
+        const killerHandle = u16();
+        if (bad) return;
+        const id = victimRaw;
+        const killer = killerHandle ? S.nodes[killerHandle] : null;
+        const killed = S.nodes[id];
+        if (!killed || killed.destroyed) continue;
+        if (killer) {
+          killed.destroy();
+          killed.ox = killed.x;
+          killed.oy = killed.y;
+          killed.oSize = killed.size;
+          killed.nx = killer.x;
+          killed.ny = killer.y;
+          killed.nSize = killed.size;
+          killed.updateTime = S.timestamp;
+        } else {
+          killed.destroy();
+        }
+      }
+      if (bad) return;
+      const entityCount = u16();
+      for (let i = 0; i < entityCount && !bad; i++) {
+        const handle = u16();
+        const flags = u8();
+        if (bad) return;
+        if (flags & 16) {
+          const gone = S.nodes[handle];
+          if (gone && !gone.destroyed) gone.destroy();
+          continue;
+        }
+        let kind = 0;
+        let encX = 0;
+        let encY = 0;
+        let size = 0;
+        let pid = 0;
+        let spawned = false;
+        if (flags & 1) {
+          spawned = true;
+          kind = u8();
+          encX = u16();
+          encY = u16();
+          size = u16();
+          if (kind === 0) pid = (u16() | u16() << 16) >>> 0;
+        } else {
+          const prev = S.nodes[handle];
+          encX = prev && prev.encX != null ? prev.encX : 0;
+          encY = prev && prev.encY != null ? prev.encY : 0;
+          size = prev ? prev.nSize || prev.size : 0;
+          if (flags & 2) {
+            encX += i8();
+            encY += i8();
+          } else if (flags & 4) {
+            encX += i16();
+            encY += i16();
+          }
+          if (flags & 8) size = u16();
+        }
+        let color = null;
+        if (flags & 32) color = rgbHex();
+        let name = "";
+        if (flags & 64) name = utf8();
+        let sticker = null;
+        if (flags & 128) sticker = u8();
+        if (bad) return;
+        if (!handle) continue;
+        let node = S.nodes[handle];
+        if (spawned) {
+          if (node && !node.destroyed) node.destroy();
+          const x = S.leftPos + encX;
+          const y = S.topPos + encY;
+          node = new Cell(handle, x, y, size, color || "#00ff00", "");
+          node.nx = x;
+          node.ny = y;
+          node.nSize = size;
+          node.encX = encX;
+          node.encY = encY;
+          node.held = true;
+          node.updateTime = S.timestamp;
+          node.isVirus = kind === 2;
+          node.isEjected = kind === 3;
+          node.flag = kind === 2 ? 1 : 0;
+          S.nodelist.push(node);
+          S.nodes[handle] = node;
+          claimOwn(node, pid);
+          applyName(node, pid, name);
+        } else if (node && !node.destroyed) {
+          retarget(node, encX, encY, size);
+          if (color) node.color = color;
+          if (name || pid) applyName(node, node.playerId || pid, name);
+        }
+        if (node && sticker != null) {
+          syncNodeStickerFromUpdate(S, node, node.name, sticker || false);
+        }
+      }
+    } catch (err) {
+      return;
+    }
+    if (S.ua && S.playerCells.length === 0) {
+      disablePause(S);
+      showStatics();
+      if (typeof window.updateShareText === "function") window.updateShareText();
+      if (typeof window.renderDeathBanner === "function") window.renderDeathBanner();
+    }
+  }
+  function updateNodes(S, reader, hooks) {
+    const {Cell: Cell2, onPlayerDeath} = hooks;
+    S.timestamp = Date.now();
+    S.ua = false;
+    S.nodesSortDirty = true;
+    for (let killedId; killedId = reader.uint32(); ) {
+      const killer = S.nodes[reader.uint32()];
+      const killedNode = S.nodes[killedId];
+      if (killer && killedNode) {
+        killedNode.destroy();
+        killedNode.ox = killedNode.x;
+        killedNode.oy = killedNode.y;
+        killedNode.oSize = killedNode.size;
+        killedNode.nx = killer.x;
+        killedNode.ny = killer.y;
+        killedNode.nSize = killedNode.size;
+        killedNode.updateTime = S.timestamp;
+      }
+    }
+    for (let nodeid; nodeid = reader.uint32(); ) {
+      const type = reader.uint8();
+      let posX = 0;
+      let posY = 0;
+      let size = 0;
+      let playerId = 0;
+      if (type === 1) {
+        // Always place food (even before borders). Discarding here is fatal on server-hop:
+        // server marks food as already sent and never re-sends the full set.
+        const foodPos = computeFoodPosition(S, nodeid);
+        posX = foodPos.x;
+        posY = foodPos.y;
+        size = computeFoodSize(S, nodeid);
+      } else {
+        if (type === 0) playerId = reader.uint32();
+        posX = reader.int32();
+        posY = reader.int32();
+        size = reader.uint16();
+      }
+      const r = reader.uint8();
+      const g = reader.uint8();
+      const b = reader.uint8();
+      let color = "#" + (r << 16 | g << 8 | b).toString(16).padStart(6, "0");
+      const spiked = reader.uint8();
+      const flagVirus = !!(spiked & 1);
+      const flagEjected = !!(spiked & 32) || !!(spiked & 64);
+      const flagAgitated = !!(spiked & 16);
+      const packetName = reader.utf8();
+      // Хвост протокола: FF+id (стикер есть) или 00 (в этом апдекте нет).
+      // Источник истины — пакет STICKER + карта activeStickers*: байт 00 НЕ сбрасывает
+      // активный стикер (иначе у всех мерцает главная клетка на каждом тике).
+      let stickerFromUpdate = null;
+      if (reader.canRead) {
+        const marker = reader.uint8();
+        if (marker === 255) {
+          stickerFromUpdate = reader.uint8() || null;
+        } else if (marker === 0) {
+          stickerFromUpdate = false;
+        }
+      }
+      const pid = type === 0 && playerId ? playerId >>> 0 : 0;
+      // Canonical nick lives on playerId; cells inherit. Skin API still keys by nick.
+      let resolvedName = packetName || "";
+      if (!resolvedName && pid) resolvedName = nickForPlayerId(S, pid);
+      let node = S.nodes[nodeid];
+      if (node) {
+        node = S.nodes[nodeid];
+        node.updatePos();
+        node.ox = node.x;
+        node.oy = node.y;
+        node.oSize = node.size;
+        node.color = color;
+      } else {
+        node = new Cell2(nodeid, posX, posY, size, color, resolvedName);
+        S.nodelist.push(node);
+        S.nodes[nodeid] = node;
+        node.ka = posX;
+        node.la = posY;
+        if (pid && pid === S.ownerPlayerId) {
+          const overlays = document.getElementById("overlays");
+          if (overlays) overlays.style.display = "none";
+          node.isOwn = true;
+          S.playerCells.push(node);
+          if (1 == S.playerCells.length) {
+            S.nodeX = node.x;
+            S.nodeY = node.y;
+          }
+        }
+      }
+      if (pid) node.playerId = pid;
+      if (node) {
+        syncNodeStickerFromUpdate(S, node, resolvedName || node.name, stickerFromUpdate);
+      }
+      node.isVirus = flagVirus;
+      node.isEjected = flagEjected;
+      node.isAgitated = flagAgitated;
+      if (type === 1 || type === 4) node.isFood = true; // type4 = AgarZ food w/ coords
+      node.nx = posX;
+      node.ny = posY;
+      node.setSize(size);
+      node.updateTime = S.timestamp;
+      node.flag = spiked;
+      if (pid && packetName) {
+        if (rememberPlayerNick(S, pid, packetName)) applyPlayerNickToCells(S, pid, packetName);
+        else if (node.name !== packetName) node.setName(packetName);
+      } else if (resolvedName && node.name !== resolvedName) {
+        node.setName(resolvedName);
+      }
+    }
+    while (reader.canRead) {
+      const node = S.nodes[reader.uint32()];
+      if (node) node.destroy();
+    }
+    if (S.ua && S.playerCells.length === 0) {
+      if (typeof onPlayerDeath === "function") {
+        onPlayerDeath(S);
+      } else {
+        showStatics();
+        if (typeof window.updateShareText === "function") window.updateShareText();
+        if (typeof window.renderDeathBanner === "function") window.renderDeathBanner();
+      }
+    }
+  }
+  function fixDead(S) {
+    const now = Date.now();
+    for (let i = S.nodelist.length - 1; i >= 0; i--) {
+      const node = S.nodelist[i];
+      if (!node || node.destroyed || node.held) continue;
+      if (now - node.updateTime > 3e3) node.destroy();
+    }
+  }
+  function clearSpectateFollow(S) {
+    if (!S) return;
+    S.spectateFollowNick = null;
+    S.spectateFollowPid = 0;
+    if (S._spectateFollowTimer) {
+      clearInterval(S._spectateFollowTimer);
+      S._spectateFollowTimer = null;
+    }
+  }
+  function clearWorld(S) {
+    clearSpectateFollow(S);
+    S.playerCells = [];
+    S.nodes = {};
+    S.playerNicks = Object.create(null);
+    S.activeStickersByNode = Object.create(null);
+    S.activeStickersByName = Object.create(null);
+    S.nodelist = [];
+    S.Cells = [];
+    S.leaderBoard = [];
+    S.mapBoundsReady = false;
+    // Free camera — do not keep previous follow target / map position across hops
+    if (typeof S.leftPos === "number" && typeof S.rightPos === "number") {
+      S.posX = (S.leftPos + S.rightPos) / 2;
+      S.posY = (S.topPos + S.bottomPos) / 2;
+      S.nodeX = S.posX;
+      S.nodeY = S.posY;
+    }
+  }
+  function createHandlers(S, hooks = {}) {
+    function handleWsMessage(msg) {
+      var _a, _b, _c, _d, _e, _f, _g, _h, _i;
+      let offset = 0;
+      let setCustomLB = false;
+      function getString() {
+        let text = "";
+        let char;
+        while ((char = msg.getUint16(offset, true)) !== 0) {
+          offset += 2;
+          text += String.fromCharCode(char);
+        }
+        offset += 2;
+        return text;
+      }
+      const messageType = msg.getUint8(offset++);
+      switch (messageType) {
+       case ServerOpcode.BAN:
+        {
+          hideConnectVerifyOverlay();
+          const banRemaining = msg.getUint32(offset, true);
+          offset += 4;
+          const banReason = getString();
+          showBanBanner(banRemaining, banReason);
+          S.connectInProgress = false;
+          S.gameHandshakeDone = false;
+          if (S.wsPingInterval) {
+            clearInterval(S.wsPingInterval);
+            S.wsPingInterval = null;
+          }
+          if (S.ws) {
+            safeCloseSocket(S.ws);
+            S.ws = null;
+          }
+          break;
+        }
+
+       case ServerOpcode.PING:
+        S.ping = Date.now() - S.pingstamp;
+        (_a = hooks.setPingDisplay) == null ? void 0 : _a.call(hooks, S.ping);
+        break;
+
+       case ServerOpcode.UPDATE_NODES:
+        {
+          const reader = new BinaryReader(msg);
+          reader.offset++;
+          (_b = hooks.updateNodes) == null ? void 0 : _b.call(hooks, reader);
+          break;
+        }
+
+       case ServerOpcode.THIN_WORLD:
+        applyThinWorld(S, msg, offset);
+        break;
+
+       case ServerOpcode.UPDATE_CAMERA:
+        // Agar.su: full packet float32 x/y/size, or bare opcode → default spectate zoom.
+        if (msg.byteLength >= offset + 12) {
+          const cx = msg.getFloat32(offset, true);
+          offset += 4;
+          const cy = msg.getFloat32(offset, true);
+          offset += 4;
+          const csize = msg.getFloat32(offset, true);
+          offset += 4;
+          applyServerSpectateCamera(S, cx, cy, csize);
+        } else {
+          S.posSize = .15;
+        }
+        break;
+
+       case ServerOpcode.CLEAR_NODES:
+        // CLEAR alone wiped playerCells without S.ua → death screen skipped (AgarZ)
+        if (S.playerCells.length > 0) {
+          S.ua = true;
+          disablePause(S);
+          S.playerCells = [];
+          clearSpectateFollow(S);
+          showStatics();
+          if (typeof window.updateShareText === "function") {
+            try { window.updateShareText(S); } catch (_) {
+              try { window.updateShareText(); } catch (_) {}
+            }
+          }
+          if (typeof window.renderDeathBanner === "function") window.renderDeathBanner();
+        } else {
+          S.playerCells = [];
+        }
+        break;
+
+       case ServerOpcode.CUSTOM_LB:
+        {
+          setCustomLB = true;
+          S.noRanking = true;
+          const count = msg.getUint32(offset, true);
+          offset += 4;
+          S.leaderBoard = [];
+          for (let i = 0; i < count; i++) {
+            msg.getUint32(offset, true);
+            offset += 4;
+            const text = getString();
+            S.leaderBoard.push({
+              id: null,
+              name: text,
+              level: -1,
+              xp: 0
+            });
+          }
+          (_c = hooks.drawCustomLeaderBoard) == null ? void 0 : _c.call(hooks);
+          break;
+        }
+
+       case ServerOpcode.FFA_LB:
+        {
+          if (!setCustomLB) {
+            S.noRanking = false;
+          }
+          const LBplayerNum = msg.getUint32(offset, true);
+          offset += 4;
+          S.leaderBoard = [];
+          for (let i = 0; i < LBplayerNum; ++i) {
+            const nodeId = msg.getUint32(offset, true);
+            offset += 4;
+            const playerName = getString();
+            const playerXp = msg.getUint32(offset, true);
+            offset += 4;
+            S.leaderBoard.push({
+              id: nodeId,
+              name: playerName,
+              level: playerXp ? (_e = (_d = hooks.getLevel) == null ? void 0 : _d.call(hooks, playerXp)) != null ? _e : -1 : -1,
+              xp: playerXp
+            });
+          }
+          (_f = hooks.drawLeaderBoard) == null ? void 0 : _f.call(hooks);
+          break;
+        }
+
+       case ServerOpcode.BORDERS:
+        {
+          S.leftPos = msg.getFloat64(offset, true);
+          offset += 8;
+          S.topPos = msg.getFloat64(offset, true);
+          offset += 8;
+          S.rightPos = msg.getFloat64(offset, true);
+          offset += 8;
+          S.bottomPos = msg.getFloat64(offset, true);
+          offset += 8;
+          S.foodMass = msg.getUint16(offset, true);
+          offset += 2;
+          S.foodMaxMass = msg.getUint16(offset, true);
+          offset += 2;
+          S.foodMinSize = Math.ceil(Math.sqrt(100 * S.foodMass));
+          S.foodMaxSize = Math.ceil(Math.sqrt(100 * S.foodMaxMass));
+          S.ownerPlayerId = msg.getUint32(offset, true);
+          offset += 4;
+          if (msg.byteLength >= offset + 2) {
+            S.foodMaxAmount = msg.getUint16(offset, true);
+            offset += 2;
+          }
+          S.mapBoundsReady = true;
+          repositionFoodNodes(S);
+          S.mapWidth = (S.rightPos + S.leftPos) / 2;
+          S.mapHeight = (S.bottomPos + S.topPos) / 2;
+          S.posX = (S.rightPos + S.leftPos) / 2;
+          S.posY = (S.bottomPos + S.topPos) / 2;
+          S.posSize = 1;
+          if (S.playerCells.length === 0) {
+            S.nodeX = S.posX;
+            S.nodeY = S.posY;
+            S.viewZoom = S.posSize;
+            S.X = S.posX;
+            S.Y = S.posY;
+            S.oldX = S.posX - 999;
+            S.oldY = S.posY - 999;
+          }
+          (_g = hooks.onGameHandshakeReady) == null ? void 0 : _g.call(hooks);
+          // Sync server overview to map center (C3) — avoids D4 lock from pre-border mouse (5000,5000)
+          if (S.playerCells.length === 0 && typeof hooks.sendMouseMove === "function") {
+            try {
+              hooks.sendMouseMove({ force: true });
+            } catch (_) {}
+          }
+          break;
+        }
+
+       case ServerOpcode.CHAT:
+        (_h = hooks.addChat) == null ? void 0 : _h.call(hooks, msg, offset);
+        break;
+
+       case ServerOpcode.XP:
+        {
+          const xp = msg.getUint32(offset, true);
+          (_i = hooks.onUpdateXp) == null ? void 0 : _i.call(hooks, xp);
+          break;
+        }
+
+       case ServerOpcode.STICKER:
+        {
+          if (!S.showStickers) break;
+          const stickerPlayerId = msg.getUint32(offset, true);
+          offset += 4;
+          const stickerId = msg.getUint8(offset++);
+          const stickerAction = msg.getUint8(offset++);
+          applyStickerPacket(S, stickerPlayerId, stickerId, stickerAction === 1);
+          break;
+        }
+
+       case ServerOpcode.ADMIN_PANEL:
+        {
+          if (window.AgarAdmin && typeof window.AgarAdmin.onAdminPacket === "function") {
+            window.AgarAdmin.onAdminPacket(msg, offset);
+          } else if (hooks.onAdminPanel) {
+            hooks.onAdminPanel(msg, offset);
+          }
+          break;
+        }
+
+       default:
+        break;
+      }
+    }
+    return {
+      handleWsMessage
+    };
+  }
+
+  function attachHandlers(S, hooks = {}) {
+    const api = createHandlers(S, hooks);
+    Object.assign(S.api, api);
+    return api;
+  }
+  function createGameState() {
+    return {
+      wHandle: null,
+      nCanvas: null,
+      ctx: null,
+      mainCanvas: null,
+      canvasWidth: 0,
+      canvasHeight: 0,
+      qTree: null,
+      ws: null,
+      wsUrl: null,
+      CONNECTION_URL: "ffa.agar.su",
+      SELECTED_SERVER: null,
+      currentWebSocketUrl: null,
+      connectInProgress: false,
+      connectAttemptId: 0,
+      hiddenTabDisconnectTimer: null,
+      wsClosedByHiddenTab: false,
+      spectReconnectTimer: null,
+      HIDDEN_TAB_DISCONNECT_MS: 6e5,
+      SPECT_RECONNECT_INTERVAL_MS: 2e3,
+      ping: 0,
+      pingstamp: 0,
+      wsPingInterval: null,
+      gameHandshakeDone: false,
+      nodeX: 0,
+      nodeY: 0,
+      playerCells: [],
+      nodes: {},
+      nodelist: [],
+      Cells: [],
+      leaderBoard: [],
+      chatBoard: [],
+      rawMouseX: 0,
+      rawMouseY: 0,
+      X: 0,
+      Y: 0,
+      timestamp: 0,
+      userNickName: null,
+      leftPos: -5e3,
+      topPos: -5e3,
+      rightPos: 5e3,
+      bottomPos: 5e3,
+      mapBoundsReady: false,
+      foodMinSize: 0,
+      foodMaxSize: 0,
+      foodMass: 1,
+      foodMaxMass: 4,
+      ownerPlayerId: -1,
+      playerNicks: Object.create(null),
+      spectateFollowNick: null,
+      spectateFollowPid: 0,
+      mapWidth: 0,
+      mapHeight: 0,
+      viewZoom: 1,
+      ua: false,
+      posX: 0,
+      posY: 0,
+      posSize: 1,
+      ma: false,
+      freeze: false,
+      zoom: 1,
+      isTouchStart: false,
+      splitIcon: null,
+      ejectIcon: null,
+      noRanking: false,
+      oldX: -1,
+      oldY: -1,
+      z: 1,
+      maxScore: 0,
+      touchable: false,
+      touches: [],
+      leftTouchID: -1,
+      leftTouchPos: null,
+      leftTouchStartPos: null,
+      leftVector: null,
+      skinList: {},
+      stickerList: {},
+      badWordsSet: null,
+      transparent: null,
+      invisible: null,
+      rotation: null,
+      showSkin: true,
+      showName: true,
+      showColor: true,
+      showMass: true,
+      hideChat: false,
+      renderQuality: (() => {
+        const q = readStored("render_quality", "low");
+        return q === "low" || q === "medium" ? q : "high";
+      })(),
+      smoothRender: 2,
+      closebord: false,
+      enableMouseClicks: false,
+      spectateAutoFollow: false,
+      mouseSplitButton: 3,
+      mouseEjectButton: 1,
+      showGlow: true,
+      confirmCloseTab: false,
+      showAdultContent: false,
+      fixedCell: false,
+      showStickers: true,
+      customClientColors: false,
+      clientColorVirus: "#33ff33",
+      clientColorFood: "#ffe066",
+      clientColorEnemy: "#ff4444",
+      clientColorOwn: "#4488ff",
+      clientColorEject: "#ff66cc",
+      customMapBgEnabled: false,
+      customVirusBgEnabled: false,
+      customMapBgMode: "cover",
+      customMapBgTileSize: 512,
+      mapBgImage: null,
+      virusBgImage: null,
+      customBgSettingsInitialized: false,
+      keyBinds: null,
+      keybindCaptureAction: null,
+      keybindUiInitialized: false,
+      ejectKeyInterval: null,
+      cellColors: null,
+      lastLeaderBoardRenderKey: "",
+      tournament: false,
+      tournamentWinner: null,
+      accountData: null,
+      nickPerksLists: null,
+      fps: 0,
+      lastTime: 0,
+      fpsUpdateTime: 0,
+      scoreMessages: 0,
+      canSendCoord: true,
+      lastCell: null,
+      lastHighlightedSpan: null,
+      dpr: 1,
+      joystickRadius: 60,
+      cursorSize: 20,
+      splitPressed: false,
+      ejectPressed: false,
+      ejectInterval: null,
+      ejectPressedByTouch: false,
+      pinchZoomStartDistance: 0,
+      isPinching: false,
+      uiTouchIds: null,
+      localStickerHeld: false,
+      localStickerId: null,
+      activeStickersByNode: Object.create(null),
+      activeStickersByName: Object.create(null),
+      lastStatsRenderKey: "",
+      pointsLabel: null,
+      Quad: null,
+      donators: null,
+      chatBackgrounds: null,
+      admins: null,
+      youtubers: null,
+      url_youtubers: null,
+      passUsers: null,
+      passPlayerNickToId: null,
+      passClanNickToId: null,
+      ignoredPlayers: null,
+      activeDialog: null,
+      dialogs: null,
+      dialogMessages: null,
+      maxGlobalMessages: 100,
+      maxDialogMessages: 50,
+      profanityCountByPlayer: null,
+      BLUR_THRESHOLD: 10,
+      RESET_TIME: 6e4,
+      api: {}
+    };
+  }
+  function resetWorldContainers(S) {
+    S.playerCells = [];
+    S.nodes = {};
+    S.nodelist = [];
+    S.Cells = [];
+    S.leaderBoard = [];
+  }
+  var deps3 = {
+    S: null,
+    getSkinImage,
+    getOwnedSkinDrawable,
+    isSkinImageReady,
+    loadCachedImage,
+    normalizeNick
+  };
+  function bindCellDeps(d) {
+    deps3 = {
+      ...deps3,
+      ...d
+    };
+  }
+  var DEFAULT_TRANSPARENT = [ "liqwid", "⟨本⟩ Itana.", "†Ĵώâ4ќâ†","g","Uroboros","ww","demons"];
+  function ensureNameSets(S) {
+    if (!S.transparent) S.transparent = new Set(DEFAULT_TRANSPARENT);
+    if (!S.invisible) {
+      S.invisible = new Set;
+      loadInvisibleSet().then(set => {
+        S.invisible = set;
+      }).catch(() => {});
+    }
+    if (!S.rotation) {
+      S.rotation = new Set;
+      loadRotationSet().then(set => {
+        S.rotation = set;
+      }).catch(() => {});
+    }
+  }
+  function isEjectedMass(cell) {
+    const S = deps3.S;
+    if (!cell || cell.isVirus || cell.isFood) return false;
+    if (cell.isOwn) return false;
+    const flags = cell.flag | 0;
+    if (flags & 32 || flags & 64 || cell.isEjected) return true;
+    const sz = cell.nSize || cell.size || 0;
+    if (sz <= 0 || !(S.foodMaxSize > 0)) return false;
+    return sz > S.foodMaxSize && sz <= Math.max(55, S.foodMaxSize + 20);
+  }
+  function getClientCellColor(cell) {
+    const S = deps3.S;
+    if (cell.isVirus && /sixz\.ru:6017|:6017\b/i.test(String(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl || ""))) {
+      return "#ff9900";
+    }
+    if (!S.customClientColors) return null;
+    if (cell.isVirus) return S.clientColorVirus;
+    if (cell.isFood) return S.clientColorFood;
+    if (cell.isOwn) return S.clientColorOwn;
+    if (isEjectedMass(cell)) return S.clientColorEject;
+    if (!cell.isVirus && !cell.isFood && !cell.isOwn) {
+      return S.clientColorEnemy;
+    }
+    return null;
+  }
+  function drawVirusFillBackground(ctx, cell, renderSize, simpleRender, bigPointSize) {
+    const S = deps3.S;
+    if (!S.customVirusBgEnabled || !S.virusBgImage || !S.virusBgImage.complete || !S.virusBgImage.width) {
+      return false;
+    }
+    const half = (simpleRender ? renderSize : bigPointSize) * 1.15;
+    ctx.save();
+    ctx.clip();
+    ctx.drawImage(S.virusBgImage, cell.x - half, cell.y - half, half * 2, half * 2);
+    ctx.restore();
+    return true;
+  }
+  function UText(usize, ucolor, ustroke, ustrokecolor) {
+    usize && (this._size = usize);
+    ucolor && (this._color = ucolor);
+    this._stroke = !!ustroke;
+    ustrokecolor && (this._strokeColor = ustrokecolor);
+  }
+  /** Stable font px for UText; visual size follows cell via drawImage scale (no re-raster every frame).
+   * LOD is chosen by on-screen px (world label size × viewZoom): zoom in / big ball → sharp. */
+  var LABEL_RASTER_LODS = [16, 24, 32, 48, 64, 96, 128, 192, 256];
+  function pickLabelRasterLod(targetPx, prevLod) {
+    const t = Math.max(1, Number(targetPx) || 1);
+    let closest = LABEL_RASTER_LODS[0];
+    let bestDist = Math.abs(t - closest);
+    for (let i = 1; i < LABEL_RASTER_LODS.length; i++) {
+      const lod = LABEL_RASTER_LODS[i];
+      const d = Math.abs(t - lod);
+      if (d < bestDist) {
+        bestDist = d;
+        closest = lod;
+      }
+    }
+    if (prevLod) {
+      const idx = LABEL_RASTER_LODS.indexOf(prevLod);
+      if (idx >= 0) {
+        if (idx < LABEL_RASTER_LODS.length - 1 && t > prevLod * 1.38) return LABEL_RASTER_LODS[idx + 1];
+        if (idx > 0 && t < prevLod * 0.7) return LABEL_RASTER_LODS[idx - 1];
+        return prevLod;
+      }
+    }
+    return closest;
+  }
+  /** Screen-pixel budget for a label (what you actually see). */
+  function labelScreenPx(worldSize, viewZoom) {
+    return Math.max(1, (Number(worldSize) || 1) * (Number(viewZoom) || 1));
+  }
+  UText.prototype = {
+    _value: "",
+    _color: "#000000",
+    _stroke: false,
+    _strokeColor: "#000000",
+    _size: 16,
+    _font: "Ubuntu",
+    _canvas: null,
+    _ctx: null,
+    _dirty: false,
+    _scale: 1,
+    setSize(a) {
+      if (this._size != a) {
+        this._size = a;
+        this._dirty = true;
+      }
+    },
+    setScale(a) {
+      if (this._scale != a) {
+        this._scale = a;
+        this._dirty = true;
+      }
+    },
+    setFont(a) {
+      const next = a || "Ubuntu";
+      if (this._font !== next) {
+        this._font = next;
+        this._dirty = true;
+      }
+    },
+    setStrokeColor(a) {
+      if (this._strokeColor != a) {
+        this._strokeColor = a;
+        this._dirty = true;
+      }
+    },
+    setStroke(a) {
+      const next = !!a;
+      if (this._stroke !== next) {
+        this._stroke = next;
+        this._dirty = true;
+      }
+    },
+    setValue(a) {
+      if (a != this._value) {
+        this._value = a;
+        this._dirty = true;
+      }
+    },
+    render() {
+      if (null == this._canvas) {
+        this._canvas = document.createElement("canvas");
+        this._ctx = this._canvas.getContext("2d");
+        this._ver = 0;
+      }
+      if (this._dirty) {
+        this._dirty = false;
+        this._ver = (this._ver || 0) + 1;
+        const canvas = this._canvas;
+        const ctx = this._ctx;
+        const value = this._value;
+        const scale = this._scale;
+        const fontsize = this._size;
+        const family = this._font || "Ubuntu";
+        const font = fontsize + "px " + family;
+        ctx.font = font;
+        const h = ~~(.2 * fontsize);
+        const wd = fontsize * .1;
+        const h2 = h * .2;
+        canvas.width = ctx.measureText(value).width * scale + 3;
+        canvas.height = (fontsize + h) * scale;
+        ctx.font = font;
+        ctx.globalAlpha = 1;
+        ctx.lineWidth = wd;
+        ctx.strokeStyle = this._strokeColor;
+        ctx.fillStyle = this._color;
+        ctx.scale(scale, scale);
+        this._stroke && ctx.strokeText(value, 0, fontsize - h2);
+        ctx.fillText(value, 0, fontsize - h2);
+      }
+      return this._canvas;
+    },
+    getWidth() {
+      const ctx = deps3.S && deps3.S.ctx;
+      if (!ctx) return 0;
+      return ctx.measureText(this._value).width + 6;
+    }
+  };
+  function Cell(uid, ux, uy, usize, ucolor, uname) {
+    this.id = uid;
+    this.ox = this.x = ux;
+    this.oy = this.y = uy;
+    this.oSize = this.size = usize;
+    this.color = ucolor;
+    this.points = [];
+    this.pointsAcc = [];
+    this.createPoints();
+    this.setName(uname);
+  }
+  Cell.prototype = {
+    id: 0,
+    points: [],
+    pointsAcc: [],
+    name: null,
+    nameCache: null,
+    sizeCache: null,
+    x: 0,
+    y: 0,
+    size: 0,
+    ox: 0,
+    oy: 0,
+    oSize: 0,
+    nx: 0,
+    ny: 0,
+    nSize: 0,
+    flag: 0,
+    updateTime: 0,
+    drawTime: 0,
+    destroyed: false,
+    isVirus: false,
+    isEjected: false,
+    isAgitated: false,
+    isFood: false,
+    wasSimpleDrawing: true,
+    fixedName: null,
+    fixedColor: null,
+    destroy() {
+      const S = deps3.S;
+      S.nodesSortDirty = true;
+      const tmpIndex = S.nodelist.indexOf(this);
+      if (tmpIndex !== -1) S.nodelist.splice(tmpIndex, 1);
+      delete S.nodes[this.id];
+      const playerIndex = S.playerCells.indexOf(this);
+      if (playerIndex !== -1) {
+        S.ua = true;
+        S.playerCells.splice(playerIndex, 1);
+      }
+      this.destroyed = true;
+      this.fixedName = null;
+      this.fixedColor = null;
+    },
+    getNameSize() {
+      return Math.max(~~(.3 * this.size), 24);
+    },
+    setName(name) {
+      const S = deps3.S;
+      if (S.fixedCell) {
+        if (this.fixedName === null) {
+          this.fixedName = name;
+        }
+        name = this.fixedName;
+      } else {
+        this.fixedName = null;
+      }
+      // Same nick → keep skin/text caches (split/merge spam used to rebuild every tick).
+      if (name === this.name && this.nameCache && this._txtNameVal === name) return;
+      this.name = name;
+      this._skinNameKey = null;
+      this._skinId = null;
+      this._nameLower = name ? name.toLowerCase() : "";
+      this._txtNameVal = void 0;
+      this._txtMassVal = -1;
+      this._txtNameStroke = null;
+      // Raster size is LOD-stable; per-frame visual size is drawImage scale.
+      // Initial LOD from screen px so first paint matches zoom.
+      const viewZ = (deps3.S && deps3.S.viewZoom) || 1;
+      const raster = this._txtRasterSize || pickLabelRasterLod(labelScreenPx(this.getNameSize(), viewZ), 0);
+      this._txtRasterSize = raster;
+      if (!this.nameCache) {
+        this.nameCache = new UText(raster, "#FFFFFF", true, "#000000");
+        this.nameCache.setScale(1);
+      }
+      let labelName = name;
+      this.nameCache.setValue(labelName);
+      this._txtNameVal = labelName;
+    },
+    setSize(size) {
+      this.nSize = size;
+      // Mass label font size is no longer rebuilt here — scaled in drawOneCell.
+    },
+    getNumPoints() {
+      return 0;
+    },
+    createPoints() {},
+
+    movePoints() {},
+
+    updatePos() {
+      const S = deps3.S;
+      if (this.id === 0) return 1;
+      let a = (S.timestamp - this.updateTime) / 120;
+      a = Math.max(0, Math.min(1, a));
+      const b = a;
+      this.x = a * (this.nx - this.ox) + this.ox;
+      this.y = a * (this.ny - this.oy) + this.oy;
+      this.size = b * (this.nSize - this.oSize) + this.oSize;
+      return b;
+    },
+    shouldRender() {
+      const S = deps3.S;
+      if (this.id === 0) return true;
+      const margin = 40;
+      return !(this.x + this.size + margin < S.nodeX - S.canvasWidth / 2 / S.viewZoom || this.y + this.size + margin < S.nodeY - S.canvasHeight / 2 / S.viewZoom || this.x - this.size - margin > S.nodeX + S.canvasWidth / 2 / S.viewZoom || this.y - this.size - margin > S.nodeY + S.canvasHeight / 2 / S.viewZoom);
+    },
+    getEffectiveColor() {
+      const S = deps3.S;
+      const clientColor = getClientCellColor(this);
+      if (clientColor) return clientColor;
+      if (!S.showColor) return "#AAAAAA";
+      if (S.fixedCell) {
+        if (this.fixedColor === null) {
+          this.fixedColor = this.color || "#FFFFFF";
+        }
+        return this.fixedColor;
+      }
+      this.fixedColor = null;
+      return this.color || "#FFFFFF";
+    },
+    getStrokeColor() {
+      const base = this.getEffectiveColor();
+      const parseColor = i => {
+        const hexPart = base && base.length >= i + 2 ? base.substr(i, 2) : "00";
+        let c = Math.floor(parseInt(hexPart, 16) * .78).toString(16);
+        return c.length === 1 ? "0" + c : c;
+      };
+      return `#${parseColor(1)}${parseColor(3)}${parseColor(5)}`;
+    },
+    drawOneCell(ctx) {
+      var _a, _b;
+      if (!this.shouldRender()) return;
+      const S = deps3.S;
+      // FOOD BATCH: when foodBatchDraw is set, food is painted in drawBatchedFood —
+      // skip here. If batch disabled/reverted, delete this guard.
+      if (this.isFood && S.foodBatchDraw) return;
+      const getSkinImage2 = deps3.getSkinImage || getSkinImage;
+      const getOwnedSkinDrawable2 = deps3.getOwnedSkinDrawable || getOwnedSkinDrawable;
+      const loadCachedImage2 = deps3.loadCachedImage || loadCachedImage;
+      const transparent = S.transparent || new Set;
+      const invisible = S.invisible || new Set;
+      const rotation = S.rotation || new Set;
+      const skinList = S.skinList || {};
+      const simpleRender = true;
+      let bigPointSize = this.size;
+      ctx.save();
+      this.drawTime = S.timestamp;
+      if (this._posFrame !== S.frameId) {
+        this.updatePos();
+      }
+      let renderSize = this.size;
+      if (renderSize === 0) renderSize = 20;
+      ctx.lineCap = "round";
+      ctx.lineJoin = this.isVirus ? "miter" : "round";
+      const normalizeNickFn = deps3.normalizeNick || normalizeNick;
+      const skinName = normalizeNickFn(this.name);
+      if (this._skinNameKey !== skinName) {
+        this._skinNameKey = skinName;
+        this._skinId = null;
+      }
+      const skinId = skinList[skinName] || null;
+      if (this._skinId !== skinId) this._skinId = skinId;
+      const wantTransp = !!(S.showSkin && !this.isVirus && transparent.has(this.name));
+      // Transparent body only when the real skin is loaded — never leave an invisible ghost.
+      const ownedSkinImg = wantTransp && skinId ? getOwnedSkinDrawable2(skinId) : null;
+      const isTransp = !!(wantTransp && ownedSkinImg);
+      const cellColor = this.getEffectiveColor();
+      ctx.fillStyle = isTransp ? "rgba(0,0,0,0)" : cellColor;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, renderSize, 0, 2 * Math.PI);
+      ctx.closePath();
+      const useVirusImageFill = this.isVirus && !isTransp && drawVirusFillBackground(ctx, this, renderSize, simpleRender, bigPointSize);
+      if (!useVirusImageFill) ctx.fill();
+      if (S.showSkin && !this.isVirus) {
+        const skinImg = isTransp ? ownedSkinImg : getCellSkinImage(S, this.name, skinId, getSkinImage2, loadCachedImage2);
+        if (skinImg && isSkinImageReady(skinImg)) {
+            ctx.save();
+            ctx.clip();
+            if (typeof this.skinZoom === "undefined") this.skinZoom = 1;
+            if (typeof this.skinPhase === "undefined") this.skinPhase = 0;
+            if (this.glowActive && S.showGlow) {
+              this.skinPhase += .05;
+              const targetZoom = 1 + Math.abs(Math.sin(this.skinPhase)) * .08;
+              this.skinZoom += (targetZoom - this.skinZoom) * .1;
+            } else {
+              this.skinZoom += (1 - this.skinZoom) * .05;
+              this.skinPhase = 0;
+            }
+            const sz = simpleRender ? this.size * this.skinZoom : bigPointSize * this.skinZoom;
+            let drawSkinImg = skinImg;
+            if (!isAnimatedSkinImage(skinImg)) {
+              const skinMass = Math.floor(this.size * this.size * .01);
+              drawSkinImg = getSkinLodSource(skinImg, pickSkinLodByMass(skinMass), skinId || skinName || skinImg.src);
+            }
+            if (rotation.has(skinName)) {
+              if (!this._rot) {
+                this._rot = {
+                  target: 0,
+                  current: 0,
+                  lastAngle: null
+                };
+              }
+              const vx = this.nx - this.ox;
+              const vy = this.ny - this.oy;
+              let rawAngle;
+              if (Math.abs(vx) < 1e-6 && Math.abs(vy) < 1e-6) {
+                rawAngle = (_b = this._rot.lastAngle) != null ? _b : this._rot.current;
+              } else {
+                rawAngle = Math.atan2(vy, vx);
+              }
+              if (this._rot.lastAngle == null) {
+                this._rot.lastAngle = rawAngle;
+                this._rot.target = rawAngle;
+                this._rot.current = rawAngle;
+              } else {
+                let d = rawAngle - this._rot.lastAngle;
+                if (d > Math.PI) d -= 2 * Math.PI;
+                if (d < -Math.PI) d += 2 * Math.PI;
+                this._rot.target += d;
+                this._rot.lastAngle = rawAngle;
+              }
+              this._rot.current += (this._rot.target - this._rot.current) * .12;
+              ctx.translate(this.x, this.y);
+              ctx.rotate(this._rot.current);
+              drawSkinStripImage(ctx, drawSkinImg, -sz, -sz, sz * 2, sz * 2);
+            } else {
+              drawSkinStripImage(ctx, drawSkinImg, this.x - sz, this.y - sz, sz * 2, sz * 2);
+            }
+            ctx.restore();
+          }
+      }
+      const mass = Math.floor(this.size * this.size * .01);
+      if (typeof this.glowActive === "undefined") this.glowActive = false;
+      const glowMass = getLimitGlowMassBounds(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl);
+      if (!glowMass) {
+        this.glowActive = false;
+      } else {
+        if (!this.glowActive && mass >= glowMass.on) this.glowActive = true;
+        if (this.glowActive && mass <= glowMass.off) this.glowActive = false;
+      }
+      if (this.glowActive && S.showGlow) {
+        const effectImg = loadCachedImage2("/photo/limited.png");
+        if (effectImg && effectImg.complete && effectImg.width > 0) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, renderSize, 0, 2 * Math.PI);
+          ctx.clip();
+          const edrawSize = 2 * renderSize;
+          ctx.globalAlpha = 1;
+          ctx.drawImage(effectImg, this.x - edrawSize / 2, this.y - edrawSize / 2, edrawSize, edrawSize);
+          ctx.restore();
+        }
+      }
+      if (S.showStickers && this.stickerActive && this.currentSticker) {
+        const stickerUrl = getStickerUrl(S.stickerList, this.name, this.currentSticker);
+        if (stickerUrl) {
+          const stickerImg = loadCachedImage2(stickerUrl);
+          if (stickerImg && stickerImg.complete && stickerImg.width > 0) {
+            ctx.save();
+            ctx.clip();
+            const fw = stickerImg.width;
+            const fh = stickerImg.height;
+            const sz = this.size;
+            ctx.drawImage(stickerImg, 0, 0, fw, fh, this.x - sz, this.y - sz, sz * 2, sz * 2);
+            ctx.restore();
+          }
+        }
+      }
+      if (this.id !== 0) {
+        const x = this.x;
+        const y = this.y;
+        const viewZ = S.viewZoom || 1;
+        const screenSize = this.size * viewZ;
+        const showMassLabels = screenSize > 28;
+        // Cell labels: scale=1 always; sharpness from screen-space LOD (size × zoom).
+        if (this.nameCache && this.nameCache._scale !== 1) this.nameCache.setScale(1);
+        if (this.sizeCache && this.sizeCache._scale !== 1) this.sizeCache.setScale(1);
+        // Multiprotocol: show names only above size 100 (original agar.su keeps > 10).
+        const nameMinSize = (window.MultiProtocols && !window.MultiProtocols.isOfficial(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl)) ? 100 : 10;
+        if (S.showName && this.name && this.nameCache && this.size > nameMinSize) {
+          let displayName = this.name;
+          if (!isPetriSkinHost(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl) && invisible.has(this._nameLower)) {
+            displayName = "";
+          }
+          if (displayName) {
+            const targetSize = this.getNameSize();
+            const screenPx = labelScreenPx(targetSize, viewZ);
+            const rasterSize = pickLabelRasterLod(screenPx, this._txtRasterSize || 0);
+            const playHost = S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl;
+            const light = isLightLabelRegion(S.playRegion, playHost);
+            const wantsStroke = !light && S.renderQuality !== "low";
+            const labelFont = light ? "Arial" : "Ubuntu";
+            if (displayName !== this._txtNameVal) {
+              this._txtNameVal = displayName;
+              this.nameCache.setValue(displayName);
+            }
+            if (rasterSize !== this._txtRasterSize) {
+              this._txtRasterSize = rasterSize;
+              this.nameCache.setSize(rasterSize);
+            }
+            if (wantsStroke !== this._txtNameStroke) {
+              this._txtNameStroke = wantsStroke;
+              this.nameCache.setStroke(wantsStroke);
+            }
+            if (labelFont !== this._txtNameFont) {
+              this._txtNameFont = labelFont;
+              this.nameCache.setFont(labelFont);
+            }
+            const img = this.nameCache.render();
+            // World draw size tracks cell; ctx.scale(viewZoom) → screen ≈ targetSize×zoom.
+            // Bitmap px ≈ LOD(screen) so zoom-in / big ball stays sharp.
+            const scaleToTarget = targetSize / (this._txtRasterSize || rasterSize);
+            let drawWidth = img.width * scaleToTarget;
+            let drawHeight = img.height * scaleToTarget;
+            const maxAllowedWidth = this.size * 2;
+            if (drawWidth > maxAllowedWidth) {
+              const shrink = maxAllowedWidth / drawWidth;
+              drawWidth *= shrink;
+              drawHeight *= shrink;
+            }
+            ctx.drawImage(img, x - drawWidth / 2, y - drawHeight / 2, drawWidth, drawHeight);
+          }
+        }
+        if (S.renderQuality !== "low" && S.showMass && showMassLabels && !this.isVirus && !this.isEjected && !this.isAgitated && this.size > 100) {
+          const targetMassSize = this.getNameSize() * .5;
+          const massScreenPx = labelScreenPx(targetMassSize, viewZ);
+          const massRaster = pickLabelRasterLod(massScreenPx, this._txtMassRasterSize || 0);
+          if (!this.sizeCache) {
+            this.sizeCache = new UText(massRaster, "#FFFFFF", true, "#000000");
+            this.sizeCache.setScale(1);
+            this._txtMassRasterSize = massRaster;
+          } else if (massRaster !== this._txtMassRasterSize) {
+            this._txtMassRasterSize = massRaster;
+            this.sizeCache.setSize(massRaster);
+          }
+          const playHost = S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl;
+          const light = isLightLabelRegion(S.playRegion, playHost);
+          const massFont = light ? "Arial" : "Ubuntu";
+          const wantsMassStroke = !light;
+          if (this._txtMassStroke !== wantsMassStroke) {
+            this._txtMassStroke = wantsMassStroke;
+            this.sizeCache.setStroke(wantsMassStroke);
+          }
+          if (this._txtMassFont !== massFont) {
+            this._txtMassFont = massFont;
+            this.sizeCache.setFont(massFont);
+          }
+          const massLabel = formatMassLabel(mass, S.playRegion || "ru", playHost);
+          if (massLabel !== this._txtMassVal) {
+            this._txtMassVal = massLabel;
+            this.sizeCache.setValue(massLabel);
+          }
+          const img = this.sizeCache.render();
+          const massScale = targetMassSize / (this._txtMassRasterSize || massRaster);
+          const massW = img.width * massScale;
+          const massH = img.height * massScale;
+          ctx.drawImage(img, x - massW / 2, y + massH * .9, massW, massH);
+        }
+      }
+      ctx.restore();
+    }
+  };
+  var Quad = {
+    init(args) {
+      const maxChildren = args.maxChildren || 2;
+      const maxDepth = args.maxDepth || 4;
+      function Node(x, y, w, h, depth) {
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
+        this.depth = depth;
+        this.items = [];
+        this.nodes = [];
+      }
+      Node.prototype = {
+        exists(selector) {
+          for (let i = 0; i < this.items.length; ++i) {
+            const item = this.items[i];
+            if (item.x >= selector.x && item.y >= selector.y && item.x < selector.x + selector.w && item.y < selector.y + selector.h) {
+              return true;
+            }
+          }
+          if (this.nodes.length) {
+            const self = this;
+            return this.findOverlappingNodes(selector, dir => self.nodes[dir].exists(selector));
+          }
+          return false;
+        },
+        retrieve(item, callback) {
+          for (let i = 0; i < this.items.length; ++i) callback(this.items[i]);
+          if (this.nodes.length) {
+            const self = this;
+            this.findOverlappingNodes(item, dir => {
+              self.nodes[dir].retrieve(item, callback);
+            });
+          }
+        },
+        insert(a) {
+          if (this.nodes.length) {
+            this.nodes[this.findInsertNode(a)].insert(a);
+          } else if (this.items.length >= maxChildren && this.depth < maxDepth) {
+            this.devide();
+            this.nodes[this.findInsertNode(a)].insert(a);
+          } else {
+            this.items.push(a);
+          }
+        },
+        findInsertNode(a) {
+          return a.x < this.x + this.w / 2 ? a.y < this.y + this.h / 2 ? 0 : 2 : a.y < this.y + this.h / 2 ? 1 : 3;
+        },
+        findOverlappingNodes(a, b) {
+          return a.x < this.x + this.w / 2 && (a.y < this.y + this.h / 2 && b(0) || a.y >= this.y + this.h / 2 && b(2)) || a.x >= this.x + this.w / 2 && (a.y < this.y + this.h / 2 && b(1) || a.y >= this.y + this.h / 2 && b(3));
+        },
+        devide() {
+          const depth = this.depth + 1;
+          const hw = this.w / 2;
+          const hh = this.h / 2;
+          this.nodes.push(new Node(this.x, this.y, hw, hh, depth));
+          this.nodes.push(new Node(this.x + hw, this.y, hw, hh, depth));
+          this.nodes.push(new Node(this.x, this.y + hh, hw, hh, depth));
+          this.nodes.push(new Node(this.x + hw, this.y + hh, hw, hh, depth));
+          const items = this.items;
+          this.items = [];
+          for (let i = 0; i < items.length; i++) this.insert(items[i]);
+        },
+        clear() {
+          for (let i = 0; i < this.nodes.length; i++) this.nodes[i].clear();
+          this.items.length = 0;
+          this.nodes.length = 0;
+        }
+      };
+      const internalSelector = {
+        x: 0,
+        y: 0,
+        w: 0,
+        h: 0
+      };
+      return {
+        root: new Node(args.minX, args.minY, args.maxX - args.minX, args.maxY - args.minY, 0),
+        insert(a) {
+          this.root.insert(a);
+        },
+        retrieve(a, b) {
+          this.root.retrieve(a, b);
+        },
+        retrieve2(a, b, c, d, callback) {
+          internalSelector.x = a;
+          internalSelector.y = b;
+          internalSelector.w = c;
+          internalSelector.h = d;
+          this.root.retrieve(internalSelector, callback);
+        },
+        exists(a) {
+          return this.root.exists(a);
+        },
+        clear() {
+          this.root.clear();
+        }
+      };
+    }
+  };
+  var KEYBINDS_KEY = "keybinds_v1";
+  var CELL_COLORS = [ "#003366", "#336699", "#3366CC", "#003399", "#000099", "#0000CC", "#000066", "#006666", "#006699", "#0099CC", "#0066CC", "#0033CC", "#0000FF", "#3333FF", "#333399", "#669999", "#009999", "#33CCCC", "#00CCFF", "#0099FF", "#0066FF", "#3366FF", "#3333CC", "#666699", "#339966", "#00CC99", "#00FFCC", "#00FFFF", "#33CCFF", "#3399FF", "#6699FF", "#6666FF", "#6600FF", "#6600CC", "#339933", "#00CC66", "#00FF99", "#66FFCC", "#66FFFF", "#66CCFF", "#99CCFF", "#9999FF", "#9966FF", "#9933FF", "#9900FF", "#006600", "#00CC00", "#00FF00", "#66FF99", "#99FFCC", "#CCFFFF", "#CCCCFF", "#CC99FF", "#CC66FF", "#CC33FF", "#CC00FF", "#9900CC", "#003300", "#009933", "#33CC33", "#66FF66", "#99FF99", "#CCFFCC", "#FFCCFF", "#FF99FF", "#FF66FF", "#FF00FF", "#CC00CC", "#660066", "#336600", "#009900", "#66FF33", "#99FF66", "#CCFF99", "#FFFFCC", "#FFCCCC", "#FF99CC", "#FF66CC", "#FF33CC", "#CC0099", "#993399", "#333300", "#669900", "#99FF33", "#CCFF66", "#FFFF99", "#FFCC99", "#FF9999", "#FF6699", "#FF3399", "#CC3399", "#990099", "#666633", "#99CC00", "#CCFF33", "#FFFF66", "#FFCC66", "#FF9966", "#FF6666", "#FF0066", "#CC6699", "#993366", "#999966", "#CCCC00", "#FFFF00", "#FFCC00", "#FF9933", "#FF66000", "#FF5050", "#CC0066", "#660033", "#996633", "#CC9900", "#FF9900", "#CC6600", "#FF3300", "#FF0000", "#CC0000", "#990033", "#663300", "#996600", "#CC3300", "#993300", "#990000", "#800000", "#993333" ];
+  function loadKeybinds(defaults = KEYBIND_DEFAULTS) {
+    const saved = lsGetJson(KEYBINDS_KEY, null);
+    const binds = Object.assign({}, defaults);
+    if (saved) {
+      Object.keys(defaults).forEach(action => {
+        if (typeof saved[action] === "number") binds[action] = saved[action];
+      });
+    }
+    return binds;
+  }
+  function saveKeybinds(binds) {
+    lsSetJson(KEYBINDS_KEY, binds);
+  }
+  function keyCodeToLabel(code) {
+    const named = {
+      8: "Backspace",
+      9: "Tab",
+      13: "Enter",
+      16: "Shift",
+      17: "Ctrl",
+      18: "Alt",
+      20: "CapsLock",
+      27: "Esc",
+      32: "Space",
+      37: "←",
+      38: "↑",
+      39: "→",
+      40: "↓"
+    };
+    if (named[code]) return named[code];
+    if (code >= 65 && code <= 90) return String.fromCharCode(code);
+    if (code >= 48 && code <= 57) return String.fromCharCode(code);
+    if (code >= 96 && code <= 105) return "Numpad " + (code - 96);
+    return "Код " + code;
+  }
+  function getBind(S, action) {
+    const code = S.keyBinds[action];
+    return typeof code === "number" ? code : KEYBIND_DEFAULTS[action];
+  }
+  function assignKeybind(S, action, code) {
+    const other = Object.keys(S.keyBinds).find(a => a !== action && S.keyBinds[a] === code);
+    if (other) S.keyBinds[other] = S.keyBinds[action];
+    S.keyBinds[action] = code;
+    saveKeybinds(S.keyBinds);
+    cancelKeybindCapture(S);
+  }
+  function resetKeybinds(S) {
+    S.keyBinds = Object.assign({}, KEYBIND_DEFAULTS);
+    saveKeybinds(S.keyBinds);
+    S.mouseSplitButton = 3;
+    S.mouseEjectButton = 1;
+    saveMouseButtonSettings(S);
+    const splitSel = document.getElementById("mouse-split-btn");
+    const ejectSel = document.getElementById("mouse-eject-btn");
+    if (splitSel) splitSel.value = "3";
+    if (ejectSel) ejectSel.value = "1";
+    renderKeybindUI(S);
+  }
+  function renderKeybindUI(S) {
+    const list = document.getElementById("keybind-list");
+    if (!list) return;
+    list.querySelectorAll(".keybind-key").forEach(btn => {
+      const action = btn.dataset.action;
+      if (action) btn.textContent = keyCodeToLabel(getBind(S, action));
+    });
+  }
+  function cancelKeybindCapture(S) {
+    S.keybindCaptureAction = null;
+    document.querySelectorAll(".keybind-key.listening").forEach(el => el.classList.remove("listening"));
+    renderKeybindUI(S);
+  }
+  function normalizeMouseButton(btn) {
+    if (btn === 0) return 0;
+    return btn === 3 ? 3 : 1;
+  }
+  function syncMouseBindSettingsVisibility(S) {
+    const block = document.getElementById("mouse-bind-settings");
+    if (block) block.classList.toggle("visible", !!S.enableMouseClicks);
+  }
+  function loadMouseButtonSettings(S) {
+    const split = parseInt(getCookie("mouse_split_btn"), 10);
+    const eject = parseInt(getCookie("mouse_eject_btn"), 10);
+    S.mouseSplitButton = normalizeMouseButton(split);
+    S.mouseEjectButton = normalizeMouseButton(eject);
+    if (S.mouseSplitButton !== 0 && S.mouseSplitButton === S.mouseEjectButton) {
+      S.mouseEjectButton = S.mouseSplitButton === 1 ? 3 : 1;
+    }
+    const splitSel = document.getElementById("mouse-split-btn");
+    const ejectSel = document.getElementById("mouse-eject-btn");
+    if (splitSel) splitSel.value = String(S.mouseSplitButton);
+    if (ejectSel) ejectSel.value = String(S.mouseEjectButton);
+    syncMouseBindSettingsVisibility(S);
+  }
+  function saveMouseButtonSettings(S) {
+    setCookie("mouse_split_btn", S.mouseSplitButton, 365);
+    setCookie("mouse_eject_btn", S.mouseEjectButton, 365);
+  }
+  function initMouseButtonSettings(S) {
+    loadMouseButtonSettings(S);
+    const splitSel = document.getElementById("mouse-split-btn");
+    const ejectSel = document.getElementById("mouse-eject-btn");
+    if (!splitSel || !ejectSel) return;
+    splitSel.addEventListener("change", function() {
+      S.mouseSplitButton = normalizeMouseButton(parseInt(this.value, 10));
+      if (S.mouseSplitButton !== 0 && S.mouseSplitButton === S.mouseEjectButton) {
+        S.mouseEjectButton = S.mouseSplitButton === 1 ? 3 : 1;
+        ejectSel.value = String(S.mouseEjectButton);
+      }
+      saveMouseButtonSettings(S);
+    });
+    ejectSel.addEventListener("change", function() {
+      S.mouseEjectButton = normalizeMouseButton(parseInt(this.value, 10));
+      if (S.mouseEjectButton !== 0 && S.mouseSplitButton === S.mouseEjectButton) {
+        S.mouseSplitButton = S.mouseEjectButton === 1 ? 3 : 1;
+        splitSel.value = String(S.mouseSplitButton);
+      }
+      saveMouseButtonSettings(S);
+    });
+  }
+  function initKeybindSettings(S) {
+    if (S.keybindUiInitialized) return;
+    S.keybindUiInitialized = true;
+    S.keyBinds = loadKeybinds();
+    const list = document.getElementById("keybind-list");
+    if (!list) return;
+    Object.keys(KEYBIND_DEFAULTS).forEach(action => {
+      const row = document.createElement("div");
+      row.className = "keybind-row";
+      const label = document.createElement("span");
+      label.textContent = KEYBIND_LABELS[action] || action;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "keybind-key";
+      btn.dataset.action = action;
+      btn.textContent = keyCodeToLabel(getBind(S, action));
+      btn.addEventListener("click", () => {
+        S.keybindCaptureAction = action;
+        btn.textContent = "…нажмите клавишу";
+        btn.classList.add("listening");
+      });
+      row.appendChild(label);
+      row.appendChild(btn);
+      list.appendChild(row);
+    });
+    const resetBtn = document.getElementById("keybind-reset");
+    if (resetBtn) resetBtn.addEventListener("click", () => resetKeybinds(S));
+    initMouseButtonSettings(S);
+  }
+  function initSettingsNav() {
+    const layout = document.querySelector(".settings-layout");
+    if (!layout) return;
+    const navItems = layout.querySelectorAll(".settings-nav-item");
+    const panels = layout.querySelectorAll(".settings-panel");
+    if (!navItems.length || !panels.length) return;
+    function showSettingsPanel(panelId) {
+      panels.forEach(p => p.classList.toggle("active", p.dataset.panel === panelId));
+      navItems.forEach(btn => btn.classList.toggle("active", btn.dataset.panel === panelId));
+      try {
+        localStorage.setItem("settings_active_panel", panelId);
+      } catch (e) {}
+    }
+    navItems.forEach(btn => {
+      btn.addEventListener("click", () => showSettingsPanel(btn.dataset.panel));
+    });
+    let initial = "graphics";
+    try {
+      const saved = localStorage.getItem("settings_active_panel");
+      if (saved && layout.querySelector(`.settings-panel[data-panel="${saved}"]`)) {
+        initial = saved;
+      }
+    } catch (e) {}
+    showSettingsPanel(initial);
+  }
+  function attachInput(S, hooks) {
+    const wHandle = S.wHandle;
+    if (!S.keyBinds) S.keyBinds = loadKeybinds();
+    if (!S.cellColors) S.cellColors = CELL_COLORS;
+    wHandle.resetKeybinds = () => resetKeybinds(S);
+    let isTyping = false;
+    let currentSticker = null;
+    const heldStickerKeys = new Set();
+    let stickerGateUntil = 0;
+    let stickerSyncTimer = null;
+    const STICKER_ACTION_DELAY = 300;
+    const keyPressed = {};
+    const mouseHoldState = {};
+    S.ma = true;
+    S.freeze = false;
+    S.localStickerHeld = false;
+    S.localStickerId = null;
+    ensureStickerState(S);
+    const reconnectBtn = document.getElementById("connect-verify-reconnect-btn");
+    if (reconnectBtn && !reconnectBtn.dataset.bound) {
+      reconnectBtn.dataset.bound = "1";
+      reconnectBtn.addEventListener("click", hooks.reconnectToServer);
+    }
+    S.mainCanvas = S.nCanvas = document.getElementById("canvas");
+    S.ctx = S.mainCanvas.getContext("2d");
+    function syncMouseFromEvent(event2) {
+      const dpr = S.dpr || getEffectiveDpr(S);
+      S.rawMouseX = event2.clientX * dpr;
+      S.rawMouseY = event2.clientY * dpr;
+      mouseCoordinateChange(S);
+    }
+    S.mainCanvas.onmousemove = syncMouseFromEvent;
+    document.addEventListener("mousemove", syncMouseFromEvent, {
+      passive: true
+    });
+    const updateMouseAim = () => {
+      if (!S.mapBoundsReady) {
+        S.posX = S.X;
+        S.posY = S.Y;
+        return;
+      }
+      S.posX = Math.max(S.leftPos, Math.min(S.rightPos, S.X));
+      S.posY = Math.max(S.topPos, Math.min(S.bottomPos, S.Y));
+    };
+    /** Overview moves on spectate-click (op 1), not mouse alone — auto-click while following. */
+    function sendSpectateAimClick() {
+      if (S.playerCells.length) return;
+      S.oldX = S.posX - 999;
+      S.oldY = S.posY - 999;
+      if (typeof hooks.sendMouseMove === "function") hooks.sendMouseMove({ force: true });
+      const pid = S.spectateFollowPid | 0;
+      if (pid && hooks.prepareData && hooks.wsSend) {
+        const msg = hooks.prepareData(5);
+        msg.setUint8(0, 1);
+        msg.setUint32(1, pid, true);
+        hooks.wsSend(msg);
+      } else if (typeof hooks.sendUint8 === "function") {
+        hooks.sendUint8(1);
+      }
+    }
+    function stopSpectateFollowAutoClick() {
+      if (S._spectateFollowTimer) {
+        clearInterval(S._spectateFollowTimer);
+        S._spectateFollowTimer = null;
+      }
+    }
+    function startSpectateFollowAutoClick() {
+      stopSpectateFollowAutoClick();
+      S._spectateFollowTimer = setInterval(() => {
+        if (S.playerCells.length || !(S.spectateFollowNick || S.spectateFollowPid)) {
+          stopSpectateFollowAutoClick();
+          return;
+        }
+        const follow = collectSpectateFollowCells(S);
+        if (follow.length) {
+          let sx = 0;
+          let sy = 0;
+          for (let i = 0; i < follow.length; i++) {
+            sx += follow[i].x;
+            sy += follow[i].y;
+          }
+          S.posX = sx / follow.length;
+          S.posY = sy / follow.length;
+        }
+        sendSpectateAimClick();
+      }, 250);
+    }
+    S.mainCanvas.addEventListener("mousedown", () => {
+      if (S.playerCells.length) return;
+      const hit = findSpectateHit(S, S.X, S.Y);
+      if (hit && S.spectateAutoFollow) {
+        S.spectateFollowNick = normalizeSpectateNick(hit.name) || null;
+        S.spectateFollowPid = hit.playerId > 0 ? hit.playerId >>> 0 : 0;
+        S.posX = hit.x;
+        S.posY = hit.y;
+        sendSpectateAimClick();
+        startSpectateFollowAutoClick();
+      } else {
+        S.spectateFollowNick = null;
+        S.spectateFollowPid = 0;
+        stopSpectateFollowAutoClick();
+        // Авто-наблюдение выкл.: клик везде — точка под курсором (не центр клетки)
+        updateMouseAim();
+        sendSpectateAimClick();
+      }
+    });
+    if (S.touchable) {
+      S.mainCanvas.addEventListener("touchstart", onTouchStart, false);
+      S.mainCanvas.addEventListener("touchmove", onTouchMove, false);
+      S.mainCanvas.addEventListener("touchend", onTouchEnd, false);
+    }
+    bindTouchDivButtons(S, hooks);
+    S.mainCanvas.onmouseup = function() {};
+    function handleWheel(event2) {
+      const chatContainer = document.querySelector(".noscroll");
+      if (isOverlaysVisible() || isPointerOverElement(chatContainer, event2.clientX, event2.clientY)) return;
+      S.zoom *= Math.pow(.9, event2.wheelDelta / -120 || event2.detail || 0);
+      if (S.zoom < 0) S.zoom = 1;
+      if (S.zoom > 4 / S.viewZoom) S.zoom = 4 / S.viewZoom;
+      if (S.zoom < .3) S.zoom = .3;
+    }
+    if (/firefox/i.test(navigator.userAgent)) {
+      document.addEventListener("DOMMouseScroll", handleWheel, false);
+    } else {
+      document.body.onmousewheel = handleWheel;
+    }
+    S.mainCanvas.onfocus = () => {
+      isTyping = false;
+    };
+    document.querySelectorAll(".noPress").forEach(elem => {
+      elem.onblur = () => {
+        isTyping = false;
+      };
+      elem.onfocus = () => {
+        isTyping = true;
+      };
+    });
+    function sendSticker(stickerId, action) {
+      if (hooks.wsIsOpen()) {
+        const msg = hooks.prepareData(6);
+        msg.setUint8(0, 200);
+        msg.setUint8(1, stickerId);
+        msg.setUint8(2, action ? 1 : 0);
+        hooks.wsSend(msg);
+      }
+    }
+    function showStickerOverCell(stickerId) {
+      S.localStickerHeld = true;
+      S.localStickerId = stickerId;
+      for (let i = 0; i < S.playerCells.length; i++) {
+        const cell = S.playerCells[i];
+        if (!cell) continue;
+        setNodeSticker(cell, stickerId);
+      }
+    }
+    function hideSticker() {
+      S.localStickerHeld = false;
+      S.localStickerId = null;
+      for (let i = 0; i < S.playerCells.length; i++) {
+        const cell = S.playerCells[i];
+        if (!cell) continue;
+        rememberSticker(S, cell.id, cell.name, null);
+        setNodeSticker(cell, null);
+      }
+    }
+    function pickHeldSticker() {
+      let next = null;
+      heldStickerKeys.forEach(function (id) {
+        next = id;
+      });
+      return next;
+    }
+    /** Применить реальное состояние зажатых клавиш (show/hide/switch). */
+    function applyHeldStickerState() {
+      const next = pickHeldSticker();
+      if (next == null) {
+        if (currentSticker !== null) {
+          sendSticker(currentSticker, false);
+          currentSticker = null;
+        }
+        hideSticker();
+        return;
+      }
+      if (currentSticker === next) {
+        showStickerOverCell(next);
+        return;
+      }
+      if (currentSticker !== null) sendSticker(currentSticker, false);
+      currentSticker = next;
+      sendSticker(next, true);
+      showStickerOverCell(next);
+    }
+    function armStickerGate() {
+      stickerGateUntil = Date.now() + STICKER_ACTION_DELAY;
+    }
+    /** 500ms между действиями; клавиши трекаем сразу, применение — сразу или по таймеру. */
+    function requestStickerSync() {
+      const wait = stickerGateUntil - Date.now();
+      if (wait <= 0) {
+        if (stickerSyncTimer) {
+          clearTimeout(stickerSyncTimer);
+          stickerSyncTimer = null;
+        }
+        applyHeldStickerState();
+        armStickerGate();
+        return;
+      }
+      if (stickerSyncTimer) return;
+      stickerSyncTimer = setTimeout(function () {
+        stickerSyncTimer = null;
+        applyHeldStickerState();
+        armStickerGate();
+        // если за ожидание снова жали/отпускали — догнать актуальное состояние
+        if (pickHeldSticker() !== currentSticker || pickHeldSticker() == null && currentSticker !== null) {
+          requestStickerSync();
+        }
+      }, wait);
+    }
+    function pressStickerKey(stickerId) {
+      if (!S.showStickers || isTyping) return;
+      if (heldStickerKeys.has(stickerId)) return;
+      heldStickerKeys.add(stickerId);
+      requestStickerSync();
+    }
+    function releaseStickerKey(stickerId) {
+      if (!heldStickerKeys.has(stickerId)) return;
+      heldStickerKeys.delete(stickerId);
+      requestStickerSync();
+    }
+    wHandle.onkeydown = function(event2) {
+      if (S.keybindCaptureAction) {
+        event2.preventDefault();
+        const code2 = event2.keyCode;
+        if (code2 === 27) {
+          cancelKeybindCapture(S);
+          return;
+        }
+        assignKeybind(S, S.keybindCaptureAction, code2);
+        return;
+      }
+      const code = event2.keyCode;
+      if (code === getBind(S, "chat")) {
+        if (isTyping || S.hideChat) {
+          isTyping = false;
+          const chatInput = document.getElementById("chat_textbox");
+          const lsInput = document.getElementById("ls");
+          const lsText = lsInput ? lsInput.value.trim() : "";
+          const chatText = chatInput ? chatInput.value.trim() : "";
+          let combinedText = "";
+          if (lsText && chatText) combinedText = lsText + " " + chatText; else if (lsText) combinedText = lsText; else if (chatText) combinedText = chatText;
+          if (combinedText && /^!ls/i.test(combinedText) && !/^!ls\d+\s+\S/i.test(combinedText)) {
+            // Incomplete PM (!ls1223 without message) — do not send, keep chat open
+            isTyping = true;
+            if (chatInput) chatInput.focus();
+            return;
+          }
+          if (combinedText.length > 0) hooks.sendChat(combinedText);
+          if (chatInput) chatInput.value = "";
+          if (lsInput) {
+            if (S.activeDialog && /^!ls\d+$/i.test(S.activeDialog)) {
+              lsInput.value = S.activeDialog + " ";
+            } else {
+              lsInput.value = "";
+            }
+          }
+          if (chatInput) chatInput.blur();
+          if (lsInput) lsInput.blur();
+        } else {
+          document.getElementById("chat_textbox").focus();
+          isTyping = true;
+        }
+        return;
+      }
+      if (isTyping) return;
+      if (code === getBind(S, "freeze")) {
+        // Toggle pause: mouse → main cell center + #freeze UI
+        if (!keyPressed.freeze && S.playerCells.length > 0) {
+          keyPressed.freeze = true;
+          togglePause(S, hooks);
+        }
+        return;
+      }
+      if (code === getBind(S, "split")) {
+        if (!keyPressed.split) {
+          hooks.sendMouseMove();
+          hooks.sendUint8(17);
+          keyPressed.split = true;
+        }
+        return;
+      }
+      if (code === getBind(S, "coord")) {
+        if (!keyPressed.coord) {
+          hooks.coord();
+          keyPressed.coord = true;
+        }
+        return;
+      }
+      if (code === getBind(S, "eject")) {
+        if (!keyPressed.eject) {
+          hooks.sendMouseMove();
+          hooks.sendUint8(21);
+          keyPressed.eject = true;
+          S.ejectKeyInterval = setInterval(function() {
+            hooks.sendMouseMove();
+            hooks.sendUint8(21);
+          }, 100);
+        }
+        return;
+      }
+      if (code === getBind(S, "macroFeed")) {
+        if (!keyPressed.macroFeed) {
+          hooks.sendMouseMove();
+          hooks.sendUint8(18);
+          keyPressed.macroFeed = true;
+        }
+        return;
+      }
+      if (code === getBind(S, "macroR")) {
+        if (!keyPressed.macroR) {
+          hooks.sendMouseMove();
+          hooks.sendUint8(23);
+          hooks.fixDead();
+          keyPressed.macroR = true;
+        }
+        return;
+      }
+      if (code === getBind(S, "macroT")) {
+        if (!keyPressed.macroT) {
+          hooks.sendMouseMove();
+          hooks.sendUint8(24);
+          keyPressed.macroT = true;
+        }
+        return;
+      }
+      if (code === getBind(S, "macroP")) {
+        if (!keyPressed.macroP) {
+          hooks.sendMouseMove();
+          hooks.sendUint8(25);
+          keyPressed.macroP = true;
+        }
+        return;
+      }
+      for (let s = 1; s <= 9; s++) {
+        if (code === getBind(S, "sticker" + s)) {
+          pressStickerKey(s);
+          return;
+        }
+      }
+    };
+    wHandle.onkeyup = function(event2) {
+      const code = event2.keyCode;
+      if (code === getBind(S, "freeze")) keyPressed.freeze = false;
+      if (code === getBind(S, "split")) keyPressed.split = false;
+      if (code === getBind(S, "coord")) keyPressed.coord = false;
+      if (code === getBind(S, "eject")) {
+        keyPressed.eject = false;
+        clearInterval(S.ejectKeyInterval);
+        S.ejectKeyInterval = null;
+      }
+      if (code === getBind(S, "macroFeed")) {
+        if (keyPressed.macroFeed) {
+          keyPressed.macroFeed = false;
+          hooks.sendUint8(19);
+        }
+      }
+      if (code === getBind(S, "macroR")) keyPressed.macroR = false;
+      if (code === getBind(S, "macroT")) keyPressed.macroT = false;
+      if (code === getBind(S, "macroP")) keyPressed.macroP = false;
+      for (let s = 1; s <= 9; s++) {
+        if (code === getBind(S, "sticker" + s)) releaseStickerKey(s);
+      }
+    };
+    const clearAllHeldStickers = () => {
+      if (stickerSyncTimer) {
+        clearTimeout(stickerSyncTimer);
+        stickerSyncTimer = null;
+      }
+      stickerGateUntil = 0;
+      if (!heldStickerKeys.size && !currentSticker) return;
+      heldStickerKeys.clear();
+      if (currentSticker !== null) {
+        sendSticker(currentSticker, false);
+        currentSticker = null;
+      }
+      hideSticker();
+    };
+    const colorSelected = document.getElementById("selectedColor");
+    const colorList = document.getElementById("colorList");
+    const skinss = document.getElementById("skinss");
+    const colorSaved = localStorage.getItem("selectedColor");
+    if (colorSaved && colorSelected) {
+      colorSelected.style.background = colorSaved;
+      if (skinss) {
+        skinss.style.borderColor = colorSaved;
+        skinss.style.backgroundColor = colorSaved;
+        skinss.style.boxShadow = `0 0 10px ${colorSaved}`;
+      }
+    }
+    if (colorSelected) {
+      colorSelected.onclick = () => {
+        colorList.style.display = colorList.style.display === "none" || colorList.style.display === "" ? "flex" : "none";
+      };
+    }
+    if (colorList) {
+      colorList.onclick = evt => {
+        const hex = evt.target._cellColorHex;
+        if (!hex) return;
+        colorSelected.style.background = hex;
+        localStorage.setItem("selectedColor", hex);
+        skinss.style.borderColor = hex;
+        skinss.style.backgroundColor = hex;
+        skinss.style.boxShadow = `0 0 10px ${hex}`;
+        colorList.style.display = "none";
+      };
+      S.cellColors.forEach(hex => {
+        const d = document.createElement("div");
+        d.className = "item";
+        d.style.background = hex;
+        d._cellColorHex = hex;
+        colorList.appendChild(d);
+      });
+    }
+    wHandle.onblur = function() {
+      clearInterval(S.ejectKeyInterval);
+      S.ejectKeyInterval = null;
+      if (keyPressed.macroFeed) hooks.sendUint8(19);
+      Object.keys(keyPressed).forEach(k => {
+        keyPressed[k] = false;
+      });
+      clearAllHeldStickers();
+    };
+    document.addEventListener("contextmenu", () => {
+      if (keyPressed.eject) {
+        keyPressed.eject = false;
+        clearInterval(S.ejectKeyInterval);
+        S.ejectKeyInterval = null;
+      }
+    });
+    const doSplitAction = () => {
+      hooks.sendMouseMove();
+      hooks.sendUint8(17);
+    };
+    const doEjectAction = () => {
+      hooks.sendMouseMove();
+      hooks.sendUint8(21);
+    };
+    const getMouseAction = which => {
+      if (which === S.mouseSplitButton) return "split";
+      if (which === S.mouseEjectButton) return "eject";
+      return null;
+    };
+    const clearMouseButton = which => {
+      const st = mouseHoldState[which];
+      if (!st) return;
+      st.down = false;
+      if (st.interval) clearInterval(st.interval);
+      if (st.timeout) clearTimeout(st.timeout);
+      delete mouseHoldState[which];
+    };
+    const clearAllMouseHolds = () => {
+      Object.keys(mouseHoldState).forEach(k => clearMouseButton(+k));
+    };
+    window.addEventListener("blur", clearAllMouseHolds);
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) clearAllMouseHolds();
+    });
+    document.addEventListener("mousedown", function(event2) {
+      var _a;
+      if (!S.enableMouseClicks || isTyping) return;
+      if (isOverlaysVisible()) return;
+      const which = event2.which;
+      const action = getMouseAction(which);
+      if (!action || ((_a = mouseHoldState[which]) == null ? void 0 : _a.down)) return;
+      mouseHoldState[which] = {
+        down: true,
+        interval: null,
+        timeout: null
+      };
+      if (action === "split") {
+        doSplitAction();
+        mouseHoldState[which].timeout = setTimeout(() => {
+          var _a2;
+          if ((_a2 = mouseHoldState[which]) == null ? void 0 : _a2.down) {
+            mouseHoldState[which].interval = setInterval(() => {
+              var _a3;
+              if ((_a3 = mouseHoldState[which]) == null ? void 0 : _a3.down) doSplitAction();
+            }, 50);
+          }
+        }, 130);
+      } else {
+        doEjectAction();
+        mouseHoldState[which].interval = setInterval(() => {
+          var _a2;
+          if ((_a2 = mouseHoldState[which]) == null ? void 0 : _a2.down) doEjectAction();
+        }, 100);
+      }
+    });
+    window.addEventListener("mouseup", function(event2) {
+      clearMouseButton(event2.which);
+    });
+    window.addEventListener("mouseleave", () => {
+      clearAllMouseHolds();
+    });
+    document.addEventListener("contextmenu", function(event2) {
+      if (S.enableMouseClicks) event2.preventDefault();
+    });
+    onReady(function() {
+      document.addEventListener("keydown", function(event2) {
+        if (event2.keyCode === getBind(S, "menu")) {
+          hideStatics();
+          if (isOverlaysVisible()) {
+            hideOverlays();
+          } else {
+            showOverlays();
+          }
+        }
+      });
+    });
+    S.dpr = getEffectiveDpr(S);
+    if (!S.uiTouchIds) S.uiTouchIds = new Set();
+    function isUiTouchId(id) {
+      return S.uiTouchIds && S.uiTouchIds.has(id);
+    }
+    function collectGameTouches(touchList) {
+      const out = [];
+      for (let i = 0; i < touchList.length; i++) {
+        const t = touchList[i];
+        if (!isUiTouchId(t.identifier)) out.push(t);
+      }
+      return out;
+    }
+    function onTouchStart(e) {
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const touch = e.changedTouches[i];
+        if (isUiTouchId(touch.identifier)) continue;
+        const size = ~~(S.canvasWidth / 7);
+        if (touch.clientX * S.dpr > S.canvasWidth - size && touch.clientY * S.dpr > S.canvasHeight - size) {
+          hooks.sendMouseMove();
+          hooks.sendUint8(17);
+          continue;
+        }
+        if (touch.clientX * S.dpr > S.canvasWidth - size && touch.clientY * S.dpr > S.canvasHeight - 2 * size - 10 && touch.clientY * S.dpr < S.canvasHeight - size - 10) {
+          S.ejectPressedByTouch = true;
+          if (!S.ejectInterval) {
+            hooks.sendMouseMove();
+            hooks.sendUint8(21);
+            S.ejectInterval = setInterval(() => {
+              if (S.ejectPressedByTouch && hooks.wsIsOpen()) {
+                hooks.sendMouseMove();
+                hooks.sendUint8(21);
+              }
+            }, 80);
+          }
+          continue;
+        }
+        if (S.leftTouchID < 0) {
+          S.leftTouchID = touch.identifier;
+          S.leftTouchStartPos.reset(touch.clientX * S.dpr, touch.clientY * S.dpr);
+          S.leftTouchPos.copyFrom(S.leftTouchStartPos);
+          S.leftVector.reset(0, 0);
+        }
+      }
+      S.touches = e.touches;
+    }
+    function onTouchMove(e) {
+      e.preventDefault();
+      const gameTouches = collectGameTouches(e.touches);
+      // Pinch только если 2 пальца на карте/джойстике — не считая кнопок split/eject
+      if (gameTouches.length === 2) {
+        const dx = gameTouches[0].clientX - gameTouches[1].clientX;
+        const dy = gameTouches[0].clientY - gameTouches[1].clientY;
+        const currentDistance = Math.sqrt(dx * dx + dy * dy);
+        if (!S.isPinching) {
+          S.pinchZoomStartDistance = currentDistance;
+          S.isPinching = true;
+        } else {
+          const delta = currentDistance - S.pinchZoomStartDistance;
+          const zoomFactor = 1 + delta / 300;
+          S.zoom *= zoomFactor;
+          if (S.zoom < .3) S.zoom = .3;
+          if (S.zoom > 4 / S.viewZoom) S.zoom = 4 / S.viewZoom;
+          S.pinchZoomStartDistance = currentDistance;
+        }
+        return;
+      }
+      if (gameTouches.length < 2) S.isPinching = false;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const touch = e.changedTouches[i];
+        if (isUiTouchId(touch.identifier)) continue;
+        if (S.leftTouchID === touch.identifier) {
+          S.leftTouchPos.reset(touch.clientX * S.dpr, touch.clientY * S.dpr);
+          S.leftVector.copyFrom(S.leftTouchPos);
+          S.leftVector.minusEq(S.leftTouchStartPos);
+          const distance = Math.sqrt(S.leftVector.x ** 2 + S.leftVector.y ** 2);
+          if (distance > S.joystickRadius) {
+            const scale = S.joystickRadius / distance;
+            S.leftVector.x *= scale;
+            S.leftVector.y *= scale;
+            S.leftTouchPos.x = S.leftTouchStartPos.x + S.leftVector.x;
+            S.leftTouchPos.y = S.leftTouchStartPos.y + S.leftVector.y;
+          }
+          S.rawMouseX = S.leftVector.x * 3 + S.canvasWidth / 2;
+          S.rawMouseY = S.leftVector.y * 3 + S.canvasHeight / 2;
+          mouseCoordinateChange(S);
+          hooks.sendMouseMove();
+        }
+      }
+      S.touches = e.touches;
+    }
+    function onTouchEnd(e) {
+      const gameTouchesLeft = collectGameTouches(e.touches);
+      if (gameTouchesLeft.length < 2) {
+        S.isPinching = false;
+      }
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const touch = e.changedTouches[i];
+        if (S.uiTouchIds) S.uiTouchIds.delete(touch.identifier);
+        if (S.leftTouchID === touch.identifier) {
+          S.leftTouchID = -1;
+          S.leftVector.reset(0, 0);
+        }
+        const size = ~~(S.canvasWidth / 7);
+        if (touch.clientX * S.dpr > S.canvasWidth - size && touch.clientY * S.dpr > S.canvasHeight - 2 * size - 10 && touch.clientY * S.dpr < S.canvasHeight - size - 10) {
+          S.ejectPressedByTouch = false;
+          if (S.ejectInterval) {
+            clearInterval(S.ejectInterval);
+            S.ejectInterval = null;
+          }
+        }
+      }
+      if (e.touches.length === 0) {
+        S.ejectPressedByTouch = false;
+        if (S.ejectInterval) {
+          clearInterval(S.ejectInterval);
+          S.ejectInterval = null;
+        }
+        if (S.uiTouchIds) S.uiTouchIds.clear();
+      }
+      S.touches = e.touches;
+    }
+    function bindTouchDivButtons(S, hooks) {
+      const ejectBtn = document.getElementById("touch-eject");
+      const splitBtn = document.getElementById("touch-split");
+      if (!ejectBtn || !splitBtn) return;
+      if (!S.uiTouchIds) S.uiTouchIds = new Set();
+      const markUiTouches = (e) => {
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          S.uiTouchIds.add(e.changedTouches[i].identifier);
+        }
+      };
+      const unmarkUiTouches = (e) => {
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          S.uiTouchIds.delete(e.changedTouches[i].identifier);
+        }
+      };
+      const startEject = () => {
+        if (S.ejectPressedByTouch) return;
+        S.ejectPressedByTouch = true;
+        hooks.sendMouseMove();
+        hooks.sendUint8(21);
+        if (!S.ejectInterval) {
+          S.ejectInterval = setInterval(() => {
+            if (S.ejectPressedByTouch && hooks.wsIsOpen()) {
+              hooks.sendMouseMove();
+              hooks.sendUint8(21);
+            }
+          }, 80);
+        }
+      };
+      const stopEject = () => {
+        S.ejectPressedByTouch = false;
+        if (S.ejectInterval) {
+          clearInterval(S.ejectInterval);
+          S.ejectInterval = null;
+        }
+      };
+      const doSplit = () => {
+        hooks.sendMouseMove();
+        hooks.sendUint8(17);
+      };
+      ejectBtn.addEventListener("touchstart", e => {
+        e.preventDefault();
+        e.stopPropagation();
+        markUiTouches(e);
+        startEject();
+      }, {passive: false});
+      ejectBtn.addEventListener("touchend", e => {
+        e.preventDefault();
+        e.stopPropagation();
+        unmarkUiTouches(e);
+        stopEject();
+      }, {passive: false});
+      ejectBtn.addEventListener("touchcancel", e => {
+        unmarkUiTouches(e);
+        stopEject();
+      }, {passive: false});
+      ejectBtn.addEventListener("mousedown", e => {
+        e.preventDefault();
+        startEject();
+      });
+      ejectBtn.addEventListener("mouseup", stopEject);
+      ejectBtn.addEventListener("mouseleave", stopEject);
+      splitBtn.addEventListener("touchstart", e => {
+        e.preventDefault();
+        e.stopPropagation();
+        markUiTouches(e);
+        doSplit();
+      }, {passive: false});
+      splitBtn.addEventListener("touchend", e => {
+        e.preventDefault();
+        e.stopPropagation();
+        unmarkUiTouches(e);
+      }, {passive: false});
+      splitBtn.addEventListener("touchcancel", e => {
+        unmarkUiTouches(e);
+      }, {passive: false});
+      splitBtn.addEventListener("mousedown", e => {
+        e.preventDefault();
+        doSplit();
+      });
+    }
+    wHandle.onresize = () => canvasResize(S);
+    canvasResize(S);
+    wHandle.requestAnimationFrame(hooks.redrawGameScene);
+    setInterval(hooks.sendMouseMove, 50);
+    showOverlays();
+    if (hooks.updateStats) setInterval(hooks.updateStats, 100);
+    S.mainCanvas.focus();
+    return {
+      sendSticker,
+      getBind: action => getBind(S, action)
+    };
+  }
+  var STATS_API = "https://api.agar.su/stats-api";
+  var STATS_PAGE_URL = "https://agar.su/stats/";
+  var STATS_PROFILE_BASE = "https://agar.su/stats/users/?id=";
+  var STATS_CLAN_PROFILE_BASE = "https://agar.su/stats/clans/?id=";
+  var STATS_RECORDS_FEED = STATS_API + "/api/records/feed";
+  // feed раньше поллился каждые 10с на главной — лишний трафик; рекорды смотреть на /stats
+  var STATS_FEED_ENABLED = false;
+  var STATS_FEED_POLL_MS = 10000;
+  var STATS_FEED_STORAGE_KEY = "agar_stats_feed_since";
+
+  // ── In-game monit widget (like /stats/monit, current server only) ─────────
+  // Chart = #1 mass/wins over time (up/down). List = places now. Click → /stats/users.
+  var monitWidgetState = { hoursMode: "today", hours: 24, loading: false, srv: null, hitPts: [] };
+
+  function monitEscapeHtml(s) {
+    return String(s ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function monitFmtTime(iso) {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    if (isNaN(d)) return "—";
+    return d.toLocaleString("ru-RU", {
+      timeZone: "Europe/Moscow",
+      day: "2-digit",
+      month: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  }
+
+  function monitFmtScore(n, kind) {
+    const v = Number(n) || 0;
+    if (kind === "score") return String(v);
+    return v.toLocaleString("ru-RU");
+  }
+
+  function monitMoscowParts(date = new Date()) {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Europe/Moscow",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false
+    }).formatToParts(date);
+    const get = t => Number(parts.find(p => p.type === t)?.value || 0);
+    return {
+      y: get("year"),
+      m: get("month"),
+      d: get("day"),
+      hour: get("hour"),
+      minute: get("minute"),
+      second: get("second")
+    };
+  }
+
+  /** Hours since 00:00 Europe/Moscow (for "Сегодня" window). */
+  function monitTodayHours() {
+    const p = monitMoscowParts();
+    const h = p.hour + p.minute / 60 + p.second / 3600;
+    return Math.min(48, Math.max(1, Math.ceil(h + .05)));
+  }
+
+  function monitMoscowTodayStartMs() {
+    const p = monitMoscowParts();
+    const y = String(p.y).padStart(4, "0");
+    const m = String(p.m).padStart(2, "0");
+    const d = String(p.d).padStart(2, "0");
+    return Date.parse(`${y}-${m}-${d}T00:00:00+03:00`);
+  }
+
+  function monitResolveHours() {
+    if (monitWidgetState.hoursMode === "today") return monitTodayHours();
+    return Number(monitWidgetState.hours) || 24;
+  }
+
+  function openMonitPlayerProfile(id, nick) {
+    if (id) {
+      window.open(STATS_PROFILE_BASE + encodeURIComponent(id), "_blank", "noopener");
+      return;
+    }
+    if (nick) {
+      window.open(STATS_PAGE_URL + "?q=" + encodeURIComponent(nick), "_blank", "noopener");
+    }
+  }
+
+  var monitStatsBgMap = null;
+  var monitStatsBgPromise = null;
+  async function ensureMonitStatsBgMap() {
+    if (monitStatsBgMap) return monitStatsBgMap;
+    if (!monitStatsBgPromise) {
+      monitStatsBgPromise = loadStatsBgMap(false)
+        .then(m => {
+          monitStatsBgMap = m || {};
+          return monitStatsBgMap;
+        })
+        .catch(() => {
+          monitStatsBgMap = {};
+          return monitStatsBgMap;
+        });
+    }
+    return monitStatsBgPromise;
+  }
+
+  async function renderMonitTopList(srv) {
+    const box = document.getElementById("monitWidgetTop");
+    if (!box) return;
+    const pts = srv && srv.points || [];
+    const last = pts[pts.length - 1];
+    const rows = last && Array.isArray(last.top) && last.top.length
+      ? last.top
+      : last && last.nick
+        ? [{ nick: last.nick, score: last.score, id: last.id }]
+        : [];
+    // Widget shows top-10 only.
+    const top10 = rows.slice(0, 10);
+    if (!top10.length) {
+      box.innerHTML = '<div class="monit-widget-row" style="cursor:default;color:#8b93a7">Пока нет топа за окно</div>';
+      return;
+    }
+    box.innerHTML = "";
+    for (let idx = 0; idx < top10.length; idx++) {
+      const r = top10[idx];
+      const row = document.createElement("div");
+      row.className = "monit-widget-row";
+      row.dataset.id = r.id != null ? String(r.id) : "";
+      row.dataset.nick = r.nick || "—";
+      row.innerHTML =
+        '<span class="monit-widget-place">#' + (idx + 1) + "</span>" +
+        '<span class="monit-widget-nick-slot"><span class="monit-widget-nick">' + monitEscapeHtml(r.nick || "—") + "</span></span>" +
+        '<span class="monit-widget-mass">' + monitEscapeHtml(monitFmtScore(r.score, srv.kind)) + "</span>";
+      box.appendChild(row);
+    }
+  }
+
+  var monitBgImgCache = new Map();
+  function loadMonitBgImage(url) {
+    if (!url) return Promise.resolve(null);
+    if (monitBgImgCache.has(url)) return Promise.resolve(monitBgImgCache.get(url));
+    return new Promise(resolve => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        monitBgImgCache.set(url, img);
+        resolve(img);
+      };
+      img.onerror = () => {
+        monitBgImgCache.set(url, null);
+        resolve(null);
+      };
+      img.src = url;
+    });
+  }
+
+  async function drawMonitWidgetChart(canvas, srv) {
+    if (!canvas || !srv) return;
+    let pts = srv.points || [];
+    if (monitWidgetState.hoursMode === "today") {
+      const start = monitMoscowTodayStartMs();
+      pts = pts.filter(p => {
+        const ms = Date.parse(p.t);
+        return Number.isFinite(ms) && ms >= start;
+      });
+    }
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    const cssW = canvas.clientWidth || 340;
+    const cssH = canvas.clientHeight || 170;
+    canvas.width = Math.floor(cssW * dpr);
+    canvas.height = Math.floor(cssH * dpr);
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const pad = { l: 8, r: 8, t: 22, b: 22 };
+    const w = cssW - pad.l - pad.r;
+    const h = cssH - pad.t - pad.b;
+    ctx.clearRect(0, 0, cssW, cssH);
+    ctx.fillStyle = "rgba(255,255,255,0.018)";
+    ctx.fillRect(pad.l, pad.t, w, h);
+    monitWidgetState.hitPts = [];
+    if (pts.length < 1) {
+      ctx.fillStyle = "#8b93a7";
+      ctx.font = "12px Arial,sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("Нет точек за сегодня — подождите poll", cssW / 2, cssH / 2);
+      return;
+    }
+    const times = pts.map(p => Date.parse(p.t));
+    const scores = pts.map(p => Number(p.score) || 0);
+    let minS = Math.min(...scores);
+    let maxS = Math.max(...scores);
+    if (minS === maxS) {
+      minS = Math.max(0, minS - 1);
+      maxS = maxS + 1;
+    }
+    const minT = times[0];
+    const maxT = times[times.length - 1] || minT + 1;
+    const xAt = t => pad.l + (t - minT) / (maxT - minT || 1) * w;
+    const yAt = s => pad.t + h - (s - minS) / (maxS - minS || 1) * h;
+
+    // Hairline grid
+    ctx.strokeStyle = "rgba(255,255,255,0.05)";
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 3; i++) {
+      const y = pad.t + h * i / 3;
+      ctx.beginPath();
+      ctx.moveTo(pad.l, y);
+      ctx.lineTo(pad.l + w, y);
+      ctx.stroke();
+    }
+
+    const up = scores[scores.length - 1] >= scores[0];
+    const lineColor = up ? "rgba(120, 200, 150, 0.95)" : "rgba(239, 140, 140, 0.95)";
+    const bottomY = pad.t + h;
+
+    // Split timeline into leader segments — each #1 gets their statsbg only on their span.
+    const segments = [];
+    let segStart = 0;
+    for (let i = 1; i <= pts.length; i++) {
+      const prevNick = String((pts[segStart] && pts[segStart].nick) || "");
+      const curNick = i < pts.length ? String((pts[i] && pts[i].nick) || "") : null;
+      if (i === pts.length || curNick !== prevNick) {
+        segments.push({ nick: prevNick, from: segStart, to: i - 1 });
+        segStart = i;
+      }
+    }
+
+    const map = await ensureMonitStatsBgMap();
+    const uniqueNicks = [...new Set(segments.map(s => s.nick).filter(Boolean))];
+    const bgByNick = {};
+    await Promise.all(uniqueNicks.map(async nick => {
+      bgByNick[nick] = await loadMonitBgImage(statsBgUrlForNick(nick, map));
+    }));
+
+    monitWidgetState.hitPts = [];
+    for (let i = 0; i < pts.length; i++) {
+      monitWidgetState.hitPts.push({
+        x: xAt(times[i]),
+        y: yAt(scores[i]),
+        p: pts[i],
+        i
+      });
+    }
+
+    function fillSegment(from, to, bgImg) {
+      if (from > to) return;
+      ctx.beginPath();
+      for (let i = from; i <= to; i++) {
+        const x = xAt(times[i]);
+        const y = yAt(scores[i]);
+        if (i === from) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.lineTo(xAt(times[to]), bottomY);
+      ctx.lineTo(xAt(times[from]), bottomY);
+      ctx.closePath();
+
+      if (bgImg) {
+        ctx.save();
+        ctx.clip();
+        const x0 = xAt(times[from]);
+        const x1 = xAt(times[to]);
+        const segW = Math.max(1, x1 - x0);
+        const iw = bgImg.naturalWidth || bgImg.width || 1;
+        const ih = bgImg.naturalHeight || bgImg.height || 1;
+        const scale = Math.max(segW / iw, h / ih);
+        const dw = iw * scale;
+        const dh = ih * scale;
+        const dx = x0 + (segW - dw) / 2;
+        const dy = pad.t + (h - dh) / 2;
+        ctx.globalAlpha = 0.75;
+        ctx.drawImage(bgImg, dx, dy, dw, dh);
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = "rgba(8,12,22,0.4)";
+        ctx.fillRect(x0, pad.t, segW, h);
+        ctx.restore();
+      } else {
+        const grad = ctx.createLinearGradient(0, pad.t, 0, bottomY);
+        grad.addColorStop(0, up ? "rgba(102,187,106,.10)" : "rgba(239,83,80,.10)");
+        grad.addColorStop(1, "rgba(91,140,255,0)");
+        ctx.fillStyle = grad;
+        ctx.fill();
+      }
+    }
+
+    for (const seg of segments) {
+      fillSegment(seg.from, seg.to, seg.nick ? bgByNick[seg.nick] : null);
+    }
+
+    // Thin line on top of fills
+    ctx.beginPath();
+    pts.forEach((p, i) => {
+      const x = xAt(times[i]);
+      const y = yAt(scores[i]);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = lineColor;
+    ctx.lineWidth = 1.15;
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+    ctx.stroke();
+
+    const labelIdx = [];
+    let prevNick = null;
+    for (let i = 0; i < pts.length; i++) {
+      const nick = pts[i].nick || "";
+      if (nick && nick !== prevNick) {
+        labelIdx.push(i);
+        prevNick = nick;
+      }
+    }
+    ctx.font = "10px Arial,sans-serif";
+    ctx.textAlign = "center";
+    const pick = labelIdx.length <= 6
+      ? labelIdx
+      : labelIdx.filter((_, n) => n === 0 || n === labelIdx.length - 1 || n % Math.ceil(labelIdx.length / 5) === 0);
+    for (const i of pick) {
+      const p = pts[i];
+      const x = xAt(times[i]);
+      const y = yAt(scores[i]);
+      const label = String(p.nick || "").slice(0, 12);
+      const mass = monitFmtScore(p.score, srv.kind);
+      ctx.fillStyle = "rgba(220,226,240,0.9)";
+      ctx.fillText(label, Math.min(cssW - 36, Math.max(36, x)), Math.max(12, y - 12));
+      ctx.fillStyle = "rgba(140,175,255,0.95)";
+      ctx.fillText(mass, Math.min(cssW - 36, Math.max(36, x)), Math.max(22, y - 2));
+    }
+
+    ctx.fillStyle = "rgba(139,147,167,0.85)";
+    ctx.font = "10px Arial,sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText(monitFmtTime(pts[0].t), pad.l, cssH - 5);
+    ctx.textAlign = "right";
+    ctx.fillText(monitFmtTime(pts[pts.length - 1].t), pad.l + w, cssH - 5);
+
+    function nearestHit(mx, my) {
+      let best = null;
+      let bestDist = 16;
+      const hits = monitWidgetState.hitPts || [];
+      for (let i = 0; i < hits.length; i++) {
+        const ht = hits[i];
+        const d = Math.hypot(ht.x - mx, ht.y - my);
+        if (d < bestDist) {
+          bestDist = d;
+          best = ht;
+        }
+      }
+      return best;
+    }
+
+    canvas.onmousemove = null;
+    canvas.onmouseleave = null;
+    canvas.onclick = ev => {
+      const rect = canvas.getBoundingClientRect();
+      const mx = ev.clientX - rect.left;
+      const my = ev.clientY - rect.top;
+      let hit = nearestHit(mx, my);
+      if (!hit) {
+        let best = 0;
+        let bestDist = Infinity;
+        for (let i = 0; i < times.length; i++) {
+          const dx = Math.abs(xAt(times[i]) - mx);
+          if (dx < bestDist) {
+            bestDist = dx;
+            best = i;
+          }
+        }
+        if (bestDist < 20) hit = { p: pts[best] };
+      }
+      if (hit && hit.p) openMonitPlayerProfile(hit.p.id, hit.p.nick);
+    };
+  }
+
+  function currentMonitServerId() {
+    if (deps && deps.S) {
+      const fromGame = resolveOfficialServerId(
+        deps.S.CONNECTION_URL || deps.S.SELECTED_SERVER || deps.S.wsUrl || ""
+      );
+      if (fromGame) return fromGame;
+    }
+    const active = document.querySelector(".server-item.active[id], .server-item.active");
+    if (active && active.id && OFFICIAL_SERVER_ID_RE.test(active.id)) {
+      return active.id.toLowerCase();
+    }
+    if (active && active.dataset && active.dataset.ip) {
+      return resolveOfficialServerId(active.dataset.ip);
+    }
+    return null;
+  }
+
+  async function loadMonitWidget() {
+    const panel = document.getElementById("monit-widget");
+    const errEl = document.getElementById("monitWidgetErr");
+    const titleEl = document.getElementById("monitWidgetTitle");
+    const subEl = document.getElementById("monitWidgetSub");
+    const footEl = document.getElementById("monitWidgetFoot");
+    const canvas = document.getElementById("monitWidgetChart");
+    if (!panel || panel.hidden) return;
+    const serverId = currentMonitServerId();
+    if (!serverId) {
+      if (titleEl) titleEl.textContent = "Топ сегодня";
+      if (subEl) subEl.textContent = "Только официальные серверы agar.su (FFA / MS / PVP / Tournament)";
+      if (footEl) footEl.textContent = "";
+      renderMonitTopList(null);
+      if (errEl) {
+        errEl.hidden = false;
+        errEl.textContent = "Сейчас выбран не официальный сервер — график недоступен.";
+      }
+      if (canvas) {
+        const ctx = canvas.getContext("2d");
+        ctx && ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+      return;
+    }
+    if (monitWidgetState.loading) return;
+    monitWidgetState.loading = true;
+    if (errEl) errEl.hidden = true;
+    if (subEl) subEl.textContent = "загрузка…";
+    try {
+      const hours = monitResolveHours();
+      const url = STATS_API + "/api/monit?hours=" + encodeURIComponent(hours) +
+        "&servers=" + encodeURIComponent(serverId);
+      const res = await fetch(url, { cache: "no-store" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      let srv = (data.servers || []).find(s => s.id === serverId) || (data.servers || [])[0] || null;
+      if (srv && monitWidgetState.hoursMode === "today") {
+        const start = monitMoscowTodayStartMs();
+        const filtered = (srv.points || []).filter(p => {
+          const ms = Date.parse(p.t);
+          return Number.isFinite(ms) && ms >= start;
+        });
+        srv = Object.assign({}, srv, { points: filtered });
+        const first = filtered[0];
+        const last = filtered[filtered.length - 1];
+        srv.delta = first && last ? (Number(last.score) || 0) - (Number(first.score) || 0) : 0;
+        srv.lastNick = last?.nick || null;
+        srv.lastScore = last ? Number(last.score) || 0 : 0;
+        srv.lastN = last ? Number(last.n) || 0 : 0;
+      }
+      monitWidgetState.srv = srv;
+      if (!srv) {
+        if (titleEl) titleEl.textContent = serverId;
+        if (subEl) subEl.textContent = "история ещё пустая";
+        if (footEl) footEl.innerHTML = "";
+        renderMonitTopList(null);
+        drawMonitWidgetChart(canvas, { points: [], delta: 0 });
+        return;
+      }
+      if (titleEl) titleEl.textContent = (srv.name || serverId) + " · топ";
+      if (subEl) {
+        subEl.textContent =
+          (srv.scoreLabel || "Масса") + " #1 за окно" +
+          (srv.lastNick ? " · сейчас: " + srv.lastNick : "") +
+          (monitWidgetState.hoursMode === "today" ? " · сегодня (МСК)" : "");
+      }
+      if (footEl) {
+        footEl.innerHTML =
+          "<span>лидер: <strong>" + monitEscapeHtml(monitFmtScore(srv.lastScore, srv.kind)) + "</strong></span>" +
+          "<span>на доске: <strong>" + monitEscapeHtml(String(srv.lastN || 0)) + "</strong></span>" +
+          "<span>точек: <strong>" + monitEscapeHtml(String((srv.points || []).length)) + "</strong></span>";
+      }
+      await renderMonitTopList(srv);
+      await drawMonitWidgetChart(canvas, srv);
+    } catch (e) {
+      if (errEl) {
+        errEl.hidden = false;
+        errEl.textContent = "Не удалось загрузить monit: " + (e.message || e);
+      }
+    } finally {
+      monitWidgetState.loading = false;
+    }
+  }
+
+  function openMonitWidget() {
+    const panel = document.getElementById("monit-widget");
+    if (!panel) return;
+    panel.hidden = false;
+    loadMonitWidget();
+  }
+
+  function closeMonitWidget() {
+    const panel = document.getElementById("monit-widget");
+    if (panel) panel.hidden = true;
+  }
+
+  function toggleMonitWidget() {
+    const panel = document.getElementById("monit-widget");
+    if (!panel) return;
+    if (panel.hidden) openMonitWidget();
+    else closeMonitWidget();
+  }
+
+  function initMonitWidget() {
+    const btn = document.getElementById("homestats");
+    const closeBtn = document.getElementById("monitWidgetClose");
+    const hoursEl = document.getElementById("monitWidgetHours");
+    const topBox = document.getElementById("monitWidgetTop");
+    if (btn) btn.addEventListener("click", e => {
+      e.stopPropagation();
+      toggleMonitWidget();
+    });
+    if (closeBtn) closeBtn.addEventListener("click", e => {
+      e.stopPropagation();
+      closeMonitWidget();
+    });
+    if (hoursEl) {
+      hoursEl.addEventListener("click", ev => {
+        const b = ev.target.closest("button[data-h]");
+        if (!b) return;
+        const mode = b.dataset.h;
+        if (mode === "today") {
+          monitWidgetState.hoursMode = "today";
+        } else {
+          monitWidgetState.hoursMode = "fixed";
+          monitWidgetState.hours = Number(mode) || 24;
+        }
+        hoursEl.querySelectorAll("button").forEach(x => x.classList.toggle("active", x === b));
+        loadMonitWidget();
+      });
+    }
+    if (topBox && !topBox._monitBound) {
+      topBox._monitBound = true;
+      topBox.addEventListener("click", ev => {
+        const row = ev.target.closest(".monit-widget-row[data-nick]");
+        if (!row) return;
+        openMonitPlayerProfile(row.getAttribute("data-id"), row.getAttribute("data-nick"));
+      });
+    }
+    document.querySelectorAll(".server-item[data-ip]").forEach(item => {
+      item.addEventListener("click", () => {
+        const panel = document.getElementById("monit-widget");
+        if (panel && !panel.hidden) setTimeout(loadMonitWidget, 0);
+      });
+    });
+  }
+
+  /** Official agar.su servers: id ↔ host. All scripts resolve from here. */
+  var OFFICIAL_SERVERS = [
+    { id: "ffa", host: "ffa.agar.su", wins: false },
+    { id: "ms", host: "ms.agar.su:6001", wins: false },
+    { id: "pvp1", host: "ms.agar.su:6004", wins: true },
+    { id: "pvp2", host: "ms.agar.su:6005", wins: true },
+    { id: "tournament", host: "ms.agar.su:6002", wins: true },
+    { id: "tournament2", host: "ms.agar.su:6003", wins: true },
+    { id: "tournament3", host: "ms.agar.su:6006", wins: true }
+  ];
+  var OFFICIAL_SERVER_ID_RE = new RegExp(
+    "^(" + OFFICIAL_SERVERS.map(s => s.id).join("|") + ")$",
+    "i"
+  );
+  var OFFICIAL_BY_ID = Object.fromEntries(OFFICIAL_SERVERS.map(s => [s.id, s]));
+
+  function resolveOfficialServerId(connectionUrl) {
+    const host = String(connectionUrl || "").toLowerCase().replace(/^wss?:\/\//, "");
+    if (!host) return null;
+    // Port-specific hosts first (ms.agar.su:600x), then bare ffa / ms
+    for (const s of OFFICIAL_SERVERS) {
+      if (s.id === "ffa" || s.id === "ms") continue;
+      if (host.includes(s.host)) return s.id;
+    }
+    if (host.includes("ffa.agar.su")) return "ffa";
+    if (host.includes("ms.agar.su:6001") || host === "ms.agar.su" || host.startsWith("ms.agar.su/")) return "ms";
+    return null;
+  }
+
+  function updateOfficialStatsVisibility(S) {
+    const serverId = resolveOfficialServerId(
+      (S && (S.SELECTED_SERVER || S.CONNECTION_URL || S.wsUrl)) || ""
+    );
+    document.body.classList.toggle("no-official-stats", !serverId);
+    return serverId;
+  }
+
+  /** FFA/MS — масса; PVP/Tournament — победы. */
+  function deathScoreLabelForServer(serverId) {
+    const wins = !!(OFFICIAL_BY_ID[serverId] && OFFICIAL_BY_ID[serverId].wins);
+    if (wins) {
+      return {
+        ru: "Побед",
+        en: "Wins",
+        tr: "Galibiyet",
+        zh: "胜场",
+        ar: "انتصارات",
+        es: "Victorias",
+        pl: "Wygrane",
+        de: "Siege",
+        uk: "Перемог"
+      };
+    }
+    return {
+      ru: "Масса",
+      en: "Mass",
+      tr: "Kütle",
+      zh: "质量",
+      ar: "الكتلة",
+      es: "Masa",
+      pl: "Masa",
+      de: "Masse",
+      uk: "Маса"
+    };
+  }
+
+  function updateDeathScoreLabel(serverId) {
+    const el = document.getElementById("deathScoreLabel");
+    if (!el) return;
+    const labels = deathScoreLabelForServer(serverId);
+    el.textContent = labels.ru;
+    el.setAttribute("data-en", labels.en);
+    el.setAttribute("data-tr", labels.tr);
+    el.setAttribute("data-zh", labels.zh);
+    el.setAttribute("data-ar", labels.ar);
+    el.setAttribute("data-es", labels.es);
+    el.setAttribute("data-pl", labels.pl);
+    el.setAttribute("data-de", labels.de);
+    el.setAttribute("data-uk", labels.uk);
+  }
+
+  function formatChatClock(date) {
+    const d = date instanceof Date ? date : new Date();
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mm = String(d.getMinutes()).padStart(2, "0");
+    return hh + ":" + mm;
+  }
+
+  function pushStatsSystemChat(S, hooks, text) {
+    if (!S || !Array.isArray(S.chatBoard) || !text) return;
+    S.chatBoard.push({
+      pId: 0,
+      playerXp: 0,
+      playerLevel: -1,
+      name: "Agar.su",
+      color: "#ffd54f",
+      message: String(text),
+      time: formatChatClock(new Date),
+      isStatsRecord: true
+    });
+    if (typeof hooks.drawChatBoard === "function") hooks.drawChatBoard();
+    else if (typeof drawChatBoard === "function") {
+      try {
+        drawChatBoard(S, hooks);
+      } catch (_) {}
+    }
+  }
+
+  function startStatsRecordFeed(S, hooks) {
+    if (!STATS_FEED_ENABLED) return;
+    if (S.__statsFeedStarted) return;
+    S.__statsFeedStarted = true;
+    let sinceId = "";
+    try {
+      sinceId = localStorage.getItem(STATS_FEED_STORAGE_KEY) || "";
+    } catch (_) {}
+
+    async function tick() {
+      try {
+        const url = STATS_RECORDS_FEED + (sinceId ? "?since=" + encodeURIComponent(sinceId) : "?since=");
+        const res = await fetch(url, {
+          cache: "no-store"
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const events = Array.isArray(data.events) ? data.events : [];
+        if (!events.length) return;
+
+        const currentServerId = resolveOfficialServerId(S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl || "");
+
+        for (const ev of events) {
+          const messages = Array.isArray(ev.messages) ? ev.messages : [];
+          for (const msg of messages) {
+            if (!msg || !msg.text) continue;
+            // PVP / tournament — не показываем рекорды дня (победы скачут)
+            if (msg.server) {
+              const sid = String(msg.server).toLowerCase();
+              if (sid.startsWith("pvp") || sid.startsWith("tournament")) continue;
+            }
+            if (msg.scope === "global") {
+              // Глобальные (год/alltime) с pvp/tournament тоже глушим
+              const evServer = String(ev.server || "").toLowerCase();
+              if (evServer.startsWith("pvp") || evServer.startsWith("tournament")) continue;
+              pushStatsSystemChat(S, hooks, msg.text);
+            } else if (msg.scope === "server") {
+              if (currentServerId && msg.server && currentServerId === msg.server) {
+                // На всякий случай: если сидим на pvp/tournament — молчим
+                const cur = String(currentServerId).toLowerCase();
+                if (cur.startsWith("pvp") || cur.startsWith("tournament")) continue;
+                pushStatsSystemChat(S, hooks, msg.text);
+              }
+            }
+          }
+          if (ev.id) sinceId = ev.id;
+        }
+        try {
+          localStorage.setItem(STATS_FEED_STORAGE_KEY, sinceId);
+        } catch (_) {}
+      } catch (_) {}
+    }
+
+    // Первый запрос только запоминает курсор, без спама старыми событиями
+    (async () => {
+      try {
+        const res = await fetch(STATS_RECORDS_FEED, {
+          cache: "no-store"
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const events = Array.isArray(data.events) ? data.events : [];
+        if (events.length) {
+          sinceId = events[events.length - 1].id || sinceId;
+          try {
+            localStorage.setItem(STATS_FEED_STORAGE_KEY, sinceId);
+          } catch (_) {}
+        }
+      } catch (_) {}
+      setInterval(tick, STATS_FEED_POLL_MS);
+    })();
+  }
+  var FORBIDDEN_NICK_CHARS = [ "﷽", "𒐫", "𒈙", "⸻", "꧅", "ဪ", "௵", "௸", "‱", "ㅤ", "⁣", "‎ ", "​", "‌", "‍", "‎", "‏", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", "​", "\ufeff", "", " ", "⠀", "ﾠ", "卐", "卍" ];
+  function getStarClass(level) {
+    if (level >= 1 && level < 50) return "";
+    if (level >= 50 && level < 100) return "azure";
+    if (level >= 100 && level < 150) return "red";
+    if (level >= 150 && level < 200) return "white";
+    if (level >= 200) return "black";
+    return "";
+  }
+  var getXp = level => ~~(100 * (level ** 2 / 2));
+  var getLevel = xp => ~~((xp / 100 * 2) ** .5);
+  function getPlayerSkinId(S, nick) {
+    const normalized = normalizeNick((nick || "").replace(/<[^>]*>/g, ""));
+    return normalized && S.skinList[normalized] ? S.skinList[normalized] : "4";
+  }
+  function createLevelIcon(S, level, nick, hooks, options) {
+    options = options || {};
+    if (level >= 200) {
+      const img = document.createElement("img");
+      img.className = "account-level-avatar " + getStarClass(level);
+      const skinId = getPlayerSkinId(S, nick);
+      if (options.staticSkin) setSkinAvatarStaticById(img, skinId);
+      else setSkinAvatarById(img, skinId);
+      img.onerror = () => {
+        if (!img.dataset.fallback) {
+          img.dataset.fallback = "1";
+          setSkinAvatarFromUrl(img, SKIN_FALLBACK_URL);
+        }
+      };
+      return img;
+    }
+    const starIcon = document.createElement("i");
+    starIcon.className = "fas fa-star " + getStarClass(level);
+    return starIcon;
+  }
+  var scoreMessages2 = {
+    low: [ "Ничего, зови друзей и попробуй ещё раз!", "Только начало! Поделись с друзьями и вернись сильным!", "Быстро умер? Зови друзей, пусть они покажут мастерство!", "Не расстраивайся, каждая игра — это опыт. Попробуй снова!", "Попробуй поменять фон в настройках — может, поможет!", "Используй F, чтобы остановиться и обдумать стратегию!", "Терпение и стратегия важнее скорости!", "Нажимая W — выделяется цешка (маленькая масса)." ],
+    mid: [ "Неплохо! Позови друзей и бросьте друг другу вызов!", "Хорошая игра! Поделись результатом и зови друзей!", "Ты уже на полпути! Продолжай и удиви всех!", "F — для паузы и стратегии. Используй с умом!", "W — цешка. Корми врагов или заманивай!" ],
+    high: [ "Вау! Легендарный результат! Делись с друзьями!", "Ты на вершине! Покажи, кто настоящий чемпион!", "Превосходно! Каждый шаг — как по учебнику!", "Настройки фона — твой стиль, твоя концентрация!", "F в нужный момент — контроль даже на вершине!", "Ты — мастер! Бей рекорды дальше!" ]
+  };
+  function pointsLabel(n) {
+    n = Math.abs(Number(n) || 0);
+    const mod10 = n % 10;
+    const mod100 = n % 100;
+    if (mod100 >= 11 && mod100 <= 14) return n + " очков";
+    if (mod10 === 1) return n + " очко";
+    if (mod10 >= 2 && mod10 <= 4) return n + " очка";
+    return n + " очков";
+  }
+  function displayStats(S, stats) {
+    const renderKey = JSON.stringify(stats);
+    if (renderKey === S.lastStatsRenderKey) return;
+    S.lastStatsRenderKey = renderKey;
+    const container = document.getElementById("table-containerwraper");
+    if (!container) return;
+    container.innerHTML = "";
+    stats.forEach((player, index) => {
+      const playerDiv = document.createElement("div");
+      playerDiv.classList.add("top-playerwraper");
+      playerDiv.setAttribute("title", player.time);
+      const skinUrl = getSkinUrlForNick(S.skinList, player.nick);
+      const safeSkinUrl = String(skinUrl).replace(/'/g, "%27");
+      playerDiv.innerHTML = `\n        <div>${index + 1}</div>\n        <div>${player.nick}</div>\n        <div>${player.score}</div>\n        <div class="skinswraper" style="background-image:url('${safeSkinUrl}')"></div>\n    `;
+      container.appendChild(playerDiv);
+    });
+  }
+  async function fetchStats(S, stats) {
+    try {
+      if (!Array.isArray(stats)) {
+        throw new Error("Invalid stats data");
+      }
+      const {map, obj} = await loadSkinListMap();
+      applySkinListToState(S, {
+        map,
+        obj
+      });
+      stats.forEach(player => {
+        player.skin = getSkinIdForNick(map, player.nick);
+      });
+      displayStats(S, stats);
+    } catch (error) {
+      console.error("There was a problem with the fetch operation:", error);
+    }
+  }
+  function loadTopPlayerData2(S, stat, hooks) {
+    try {
+      if (stat.length > 0) {
+        const topPlayer = stat[0];
+        S.topPlayerNick = topPlayer.nick;
+        S.topPlayerScore = topPlayer.score;
+        const skinId = getSkinIdForNick(S.skinList, topPlayer.nick, "4");
+        if (typeof (hooks == null ? void 0 : hooks.onTopPlayer) === "function") {
+          hooks.onTopPlayer(topPlayer);
+        } else if ((hooks == null ? void 0 : hooks.innerImage) && typeof hooks.getSkinImageUrl === "function") {
+          const innerImage2 = hooks.innerImage;
+          const nextSrc = hooks.getSkinImageUrl(skinId);
+          if (innerImage2.dataset.skinSrc !== nextSrc) {
+            innerImage2.dataset.skinSrc = nextSrc;
+            hooks.isInnerImageLoaded = false;
+            innerImage2.src = nextSrc;
+          }
+        }
+        S.topPlayerSkin = skinId || "default";
+      }
+    } catch (error) {
+      console.error("Ошибка обработки данных о топ-1 игроке:", error);
+    }
+  }
+async function updateOnlineCount() {
+  var _a, _b, _c;
+  let rows = [];
+  try {
+    const res = await fetch(ONLINE_HUB_URL, {
+      cache: "no-store"
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    rows = Array.isArray(data.servers) ? data.servers : [];
+  } catch (_) {
+    return;
+  }
+  
+  let totalOnline = 0;
+  for (const row of rows) {
+    const id = row.id;
+    if (!id) continue;
+    const playing = (_a = row.playing) != null ? _a : 0;
+    const observers = (_b = row.no_playing) != null ? _b : 0;
+    const max = (_c = row.max) != null ? _c : 0;
+    totalOnline += playing + observers;
+    
+    const item = document.querySelector(`.server-item[data-server-key="${id}"]`) || document.getElementById(id);
+    if (item) {
+      const spans = item.querySelectorAll(".online-count");
+      if (spans.length >= 2) {
+        spans[0].textContent = observers;
+        spans[1].textContent = max > 0 ? `${playing}/${max}` : String(playing);
+        
+        spans.forEach(span => {
+          const num = parseInt(span.textContent, 10);
+          if (!isNaN(num)) {
+            span.classList.remove('has-online', 'no-online');
+            span.classList.add(num > 0 ? 'has-online' : 'no-online');
+          }
+        });
+      }
+    }
+  }
+  
+  const onlineElement = document.getElementById("online");
+  if (onlineElement) onlineElement.textContent = `Онлайн: ${totalOnline}`;
+  updateRegionOnlineTotals(getRegionOnlineTotals(rows));
+}
+function getRegionOnlineTotals(rows) {
+  const totals = Object.fromEntries(Object.keys(REGION_CONFIGS).map(key => [key, 0]));
+  for (const [key, config] of Object.entries(REGION_CONFIGS)) {
+    const ids = new Set(Object.keys(config.servers));
+    totals[key] = rows.reduce((sum, row) => ids.has(row.id) ? sum + (Number(row.playing) || 0) + (Number(row.no_playing) || 0) : sum, 0);
+  }
+  return totals;
+}
+function updateRegionOnlineTotals(totals) {
+  document.querySelectorAll("[data-region-online]").forEach(element => {
+    if (totals[element.dataset.regionOnline] != null) element.textContent = String(totals[element.dataset.regionOnline]);
+  });
+}
+  function startOnlineCountPolling() {
+    updateOnlineCount();
+    if (!window.onlineInterval) {
+      window.onlineInterval = setInterval(updateOnlineCount, 5e3);
+    }
+  }
+  function stopOnlineCountPolling() {
+    if (window.onlineInterval) {
+      clearInterval(window.onlineInterval);
+      window.onlineInterval = null;
+    }
+  }
+  function calcUserScore2(S) {
+    let score = 0;
+    for (let i = 0; i < S.playerCells.length; i++) {
+      score += S.playerCells[i].nSize * S.playerCells[i].nSize;
+    }
+    return score;
+  }
+  function updateStats2(S) {
+    var _a;
+    const currentScore = Math.floor(calcUserScore2(S) / 100);
+    const cellCount = S.playerCells.length;
+    if (currentScore > S.maxScore) {
+      S.maxScore = currentScore;
+      const elMax = document.getElementById("score-max");
+      if (elMax) elMax.innerText = "Максимум: " + S.maxScore;
+    }
+    const elCurrent = document.getElementById("score-new");
+    if (elCurrent) {
+      const prevScore = parseInt(((_a = elCurrent.innerText.match(/\d+/)) == null ? void 0 : _a[0]) || "0", 10);
+      if (currentScore !== prevScore) {
+        elCurrent.innerText = "Сейчас: " + currentScore;
+      }
+    }
+    const elCells = document.getElementById("cell-length");
+    if (elCells) {
+      const prevCells = parseInt(elCells.innerText, 10) || 0;
+      if (cellCount !== prevCells) {
+        elCells.innerText = cellCount;
+      }
+    }
+  }
+  function getShareMessage2(S) {
+    const max = S.maxScore;
+    const messages = max < 1e3 ? scoreMessages2.low : max < 1e4 ? scoreMessages2.mid : scoreMessages2.high;
+    return messages[Math.floor(Math.random() * messages.length)];
+  }
+  function updateShareText2(S) {
+    const el = document.getElementById("shareText");
+    if (el) el.textContent = getShareMessage2(S);
+  }
+  function getStatsText2(S) {
+    return `Моя статистика в Agar.su!\nМаксимальная масса: ${S.maxScore}\nВремя игры: ${Date.now()}`;
+  }
+  function shareStats2(S, platform) {
+    const text = encodeURIComponent(getStatsText2(S));
+    const url = encodeURIComponent(location.href);
+    const urls = {
+      vk: `https://vk.com/share.php?url=${url}&title=${text}`,
+      telegram: `https://t.me/share/url?url=${url}&text=${text}`,
+      whatsapp: `https://wa.me/?text=${text}%20${url}`,
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`,
+      twitter: `https://twitter.com/intent/tweet?url=${url}&text=${text}`
+    };
+    const w = 650;
+    const h = 450;
+    const left = (screen.width - w) / 2;
+    const top = (screen.height - h) / 2;
+    window.open(urls[platform] || "", "_blank", `width=${w},height=${h},top=${top},left=${left},toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes`);
+  }
+  async function refreshGlobalRatingHome(S, data) {
+    const container = document.getElementById("topswindow");
+    if (!container) return;
+    const {map, obj} = await loadSkinListMap();
+    applySkinListToState(S, {
+      map,
+      obj
+    });
+    container.innerHTML = "";
+    const players = (data.players || []).slice(0, 3);
+    const clans = (data.clans || []).slice(0, 3);
+    function createRow(name, points, index, passId, isClan) {
+      const medal = index === 0 ? "gold" : index === 1 ? "silver" : "bronze";
+      const skinUrl = getSkinUrlForNick(map, name, "4");
+      const pts = Number(points) || 0;
+      const row = document.createElement("div");
+      row.className = "rating-row " + medal + (passId ? " rating-row--link" : "");
+      row.innerHTML = `<div>${index + 1}</div><div>${name || "—"}</div><div class="rating-pts">${pointsLabel(pts)}</div><div class="avatar" style="background-image: url('${skinUrl}');"></div>`;
+      if (passId) {
+        const profileBase = isClan ? STATS_CLAN_PROFILE_BASE : STATS_PROFILE_BASE;
+        row.title = isClan ? "Профиль клана" : "Профиль";
+        row.addEventListener("click", e => {
+          e.stopPropagation();
+          window.open(profileBase + encodeURIComponent(passId), "_blank");
+        });
+      }
+      return row;
+    }
+    const playersTitle = document.createElement("div");
+    playersTitle.className = "section-title";
+    playersTitle.setAttribute("data-en", "Top players");
+    playersTitle.setAttribute("data-ru", "Топ игроков");
+    playersTitle.setAttribute("data-uk", "Топ гравців");
+    playersTitle.setAttribute("data-tr", "En iyi oyuncular");
+    playersTitle.setAttribute("data-zh", "顶级玩家");
+    playersTitle.setAttribute("data-ar", "أفضل اللاعبين");
+    playersTitle.setAttribute("data-es", "Mejores jugadores");
+    playersTitle.setAttribute("data-pl", "Najlepsi gracze");
+    playersTitle.setAttribute("data-de", "Top-Spieler");
+    playersTitle.innerText = "Топ игроков";
+    container.appendChild(playersTitle);
+    if (!players.length) {
+      const empty = document.createElement("div");
+      empty.className = "rating-row";
+      empty.innerHTML = `<div></div><div>—</div><div class="rating-pts">0 очков</div><div class="avatar" style="background-image:url('https://api.agar.su/skins/4.png');"></div>`;
+      container.appendChild(empty);
+    } else {
+      players.forEach((p, i) => container.appendChild(createRow(p.nick, p.points, i, p.id, false)));
+    }
+    const clansTitle = document.createElement("div");
+    clansTitle.className = "section-title";
+    clansTitle.setAttribute("data-en", "Top Clans");
+    clansTitle.setAttribute("data-ru", "Топ кланов");
+    clansTitle.setAttribute("data-uk", "Топ кланів");
+    clansTitle.setAttribute("data-tr", "En iyi klanlar");
+    clansTitle.setAttribute("data-zh", "顶级氏族");
+    clansTitle.setAttribute("data-ar", "أفضل العشائر");
+    clansTitle.setAttribute("data-es", "Mejores clanes");
+    clansTitle.setAttribute("data-pl", "Najlepsze klany");
+    clansTitle.setAttribute("data-de", "Top-Clans");
+    clansTitle.innerText = "Топ кланов";
+    container.appendChild(clansTitle);
+    if (!clans.length) {
+      const empty = document.createElement("div");
+      empty.className = "rating-row";
+      empty.innerHTML = `<div></div><div>—</div><div class="rating-pts">0 очков</div><div class="avatar" style="background-image:url('https://api.agar.su/skins/4.png');"></div>`;
+      container.appendChild(empty);
+    } else {
+      clans.forEach((c, i) => container.appendChild(createRow(c.clan, c.points, i, c.id, true)));
+    }
+    if (typeof window.setUiLang === "function") {
+      window.setUiLang(typeof window.getUiLang === "function" ? window.getUiLang() : "ru");
+    }
+  }
+  function installPeriodDropdowns() {
+    if (window.__periodDdInstalled) return;
+    window.__periodDdInstalled = true;
+
+    function closeAll(except) {
+      document.querySelectorAll(".period-dd.is-open").forEach((dd) => {
+        if (except && dd === except) return;
+        dd.classList.remove("is-open");
+        const menu = dd.querySelector(".period-dd__menu");
+        const btn = dd.querySelector(".period-dd__btn");
+        if (menu) menu.hidden = true;
+        if (btn) btn.setAttribute("aria-expanded", "false");
+      });
+    }
+
+    function setValue(dd, value, fireChange) {
+      const selectId = dd.getAttribute("data-period-for");
+      const select = selectId ? document.getElementById(selectId) : null;
+      const label = dd.querySelector(".period-dd__label");
+      const items = dd.querySelectorAll(".period-dd__menu [data-value]");
+      let text = value;
+      items.forEach((li) => {
+        const on = li.getAttribute("data-value") === value;
+        // Текущий выбор уже на кнопке — в списке его не дублируем
+        li.classList.toggle("is-current", on);
+        li.setAttribute("aria-selected", on ? "true" : "false");
+        if (on) text = li.textContent.trim();
+      });
+      if (label) label.textContent = text;
+      if (select && select.value !== value) {
+        select.value = value;
+        if (fireChange) select.dispatchEvent(new Event("change", { bubbles: true }));
+      } else if (select && fireChange) {
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    }
+
+    document.querySelectorAll(".period-dd").forEach((dd) => {
+      const btn = dd.querySelector(".period-dd__btn");
+      const menu = dd.querySelector(".period-dd__menu");
+      const selectId = dd.getAttribute("data-period-for");
+      const select = selectId ? document.getElementById(selectId) : null;
+      if (!btn || !menu) return;
+      if (select) setValue(dd, select.value || menu.querySelector(".is-active")?.getAttribute("data-value") || "", false);
+
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const willOpen = !dd.classList.contains("is-open");
+        closeAll();
+        if (willOpen) {
+          dd.classList.add("is-open");
+          menu.hidden = false;
+          btn.setAttribute("aria-expanded", "true");
+        }
+      });
+
+      menu.addEventListener("click", (e) => {
+        const li = e.target.closest("[data-value]");
+        if (!li) return;
+        e.preventDefault();
+        e.stopPropagation();
+        setValue(dd, li.getAttribute("data-value"), true);
+        closeAll();
+      });
+    });
+
+    document.addEventListener("click", () => closeAll());
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeAll();
+    });
+  }
+
+  function installGlobalRatingHome(S) {
+    let lastGlobalRatingKey = "";
+    const ratingHome = document.getElementById("ratinghome");
+    updateOfficialStatsVisibility(S);
+    const ratingHeaderTitle = ratingHome && ratingHome.querySelector(".rating-header-title");
+    if (ratingHeaderTitle) {
+      ratingHeaderTitle.addEventListener("click", () => window.open(STATS_PAGE_URL, "_blank"));
+    } else {
+      const ratingHeader = ratingHome && ratingHome.querySelector(".rating-header");
+      if (ratingHeader) ratingHeader.addEventListener("click", () => window.open(STATS_PAGE_URL, "_blank"));
+    }
+    const homePeriodSelect = document.getElementById("homePeriodSelect");
+    function currentHomePeriod() {
+      return (homePeriodSelect && homePeriodSelect.value) || "alltime";
+    }
+    function loadGlobalRatingHome(force) {
+      updateOfficialStatsVisibility(S);
+      const period = currentHomePeriod();
+      fetch(STATS_API + "/rankings?limit=3&period=" + encodeURIComponent(period) + "&metric=points", {
+        cache: "default"
+      }).then(res => res.ok ? res.json() : Promise.reject()).then(data => {
+        const key = JSON.stringify({
+          period,
+          p: data.players,
+          c: data.clans,
+          u: data.updatedAt
+        });
+        if (!force && key === lastGlobalRatingKey) return;
+        lastGlobalRatingKey = key;
+        return refreshGlobalRatingHome(S, data);
+      }).catch(e => console.error("Global rating load error:", e));
+    }
+    if (homePeriodSelect) {
+      homePeriodSelect.addEventListener("change", () => {
+        lastGlobalRatingKey = "";
+        loadGlobalRatingHome(true);
+      });
+    }
+    window.__agarsuRefreshHomeRating = () => loadGlobalRatingHome(true);
+    // один раз при загрузке системы (+ смена периода) — без MutationObserver и без 5-мин поллинга
+    loadGlobalRatingHome(true);
+  }
+  function setActiveFromHash(S) {
+    const hash = location.hash.replace("#", "") || "ffa";
+    const hashWithoutParams = hash.split("?")[0];
+    document.querySelectorAll(".gamemode li").forEach(li => li.classList.remove("active"));
+    const activeLi = document.getElementById(hashWithoutParams);
+    const titleEl = document.getElementById("serverTitle");
+    if (activeLi) {
+      activeLi.classList.add("active");
+      if (titleEl) titleEl.textContent = `Статистика ${hashWithoutParams}`;
+      if (activeLi.dataset.ip) {
+        S.SELECTED_SERVER = activeLi.dataset.ip;
+      }
+      if (typeof S.wHandle.refreshCenterTop === "function") {
+        S.wHandle.refreshCenterTop();
+      }
+    }
+  }
+  function attachStats(S, hooks) {
+    const wHandle = S.wHandle;
+    setOverlaysLifecycleHooks({
+      onShow: startOnlineCountPolling,
+      onHide: stopOnlineCountPolling
+    });
+    
+    if (isOverlaysVisible()) {
+      startOnlineCountPolling();
+    }
+    wHandle.refreshCenterTop = async function() {
+      try {
+        const {obj} = await loadSkinListMap();
+        applySkinListToState(S, { obj });
+        const serverId = updateOfficialStatsVisibility(S);
+        if (!serverId) return;
+        const statsUrl = STATS_API + "/api/server/" + encodeURIComponent(serverId) +
+          "?period=today&limit=1";
+        const response = await fetch(statsUrl, {
+          method: "GET",
+          cache: "no-store"
+        });
+        if (!response.ok) throw new Error(`Ошибка запроса: ${response.status}`);
+        const payload = await response.json();
+        const stat = Array.isArray(payload.players) ? payload.players : [];
+        loadTopPlayerData2(S, stat, hooks);
+      } catch (error) {
+        console.error("Ошибка загрузки топ-1 для центра карты:", error);
+      }
+    };
+    wHandle.chekstats = async function() {
+      try {
+        const {obj} = await loadSkinListMap();
+        applySkinListToState(S, {
+          obj
+        });
+        const serverId = updateOfficialStatsVisibility(S);
+        const periodEl = document.getElementById("deathPeriodSelect");
+        const period = (periodEl && periodEl.value) || "today";
+        if (!serverId) {
+          console.warn("chekstats: unknown official server", S.SELECTED_SERVER || S.CONNECTION_URL);
+          displayStats(S, []);
+          return;
+        }
+        updateDeathScoreLabel(serverId);
+        const statsUrl = STATS_API + "/api/server/" + encodeURIComponent(serverId) +
+          "?period=" + encodeURIComponent(period) + "&limit=500";
+        const response = await fetch(statsUrl, {
+          method: "GET",
+          cache: "no-store"
+        });
+        if (!response.ok) {
+          throw new Error(`Ошибка запроса: ${response.status}`);
+        }
+        const payload = await response.json();
+        if (payload && payload.scoreLabel) {
+          const el = document.getElementById("deathScoreLabel");
+          if (el) el.textContent = payload.scoreLabel;
+        } else {
+          updateDeathScoreLabel(serverId);
+        }
+        const stat = Array.isArray(payload.players) ? payload.players : [];
+        loadTopPlayerData2(S, stat, hooks);
+        invalidateStatsRenderCaches(S);
+        await fetchStats(S, stat);
+      } catch (error) {
+        console.error("Ошибка загрузки данных о топ-1 игроке:", error);
+      }
+    };
+    const deathPeriodSelect = document.getElementById("deathPeriodSelect");
+    if (deathPeriodSelect) {
+      deathPeriodSelect.addEventListener("change", () => {
+        if (typeof wHandle.chekstats === "function") wHandle.chekstats();
+      });
+    }
+    onStaticsShow = () => {
+      if (typeof wHandle.chekstats === "function") wHandle.chekstats();
+    };
+    wHandle.startGame = function() {
+      let nickInput = document.getElementById("nick").value.trim();
+      let passInput = document.getElementById("pass").value;
+      const forbiddenRegex = new RegExp(FORBIDDEN_NICK_CHARS.join("|"), "g");
+      nickInput = nickInput.replace(forbiddenRegex, "");
+      nickInput = hooks.censorMessage(nickInput);
+      if (!nickInput) nickInput = "agarsu";
+      if (nickInput.length > 16) nickInput = nickInput.substring(0, 16);
+      if (passInput.length > 8) passInput = passInput.substring(0, 8);
+      const nickEl = document.getElementById("nick");
+      if (nickEl && !String(nickEl.value || "").trim()) nickEl.value = nickInput;
+      hooks.setNick(nickInput + "#" + passInput);
+    };
+    wHandle.coord = function() {
+      if (S.canSendCoord) {
+        if (S.lastCell) hooks.sendChat(S.lastCell);
+        S.canSendCoord = false;
+        setTimeout(function() {
+          S.canSendCoord = true;
+        }, 3e3);
+      }
+    };
+    onReady(() => {
+      installPeriodDropdowns();
+      installGlobalRatingHome(S);
+      updateShareText2(S);
+      [ "vk", "telegram", "whatsapp", "facebook", "twitter" ].forEach(p => {
+        const btn = document.querySelector(`.${p}`);
+        if (btn) btn.addEventListener("click", () => shareStats2(S, p));
+      });
+    });
+    return {
+      getLevel,
+      getXp,
+      getStarClass,
+      createLevelIcon: (level, nick) => createLevelIcon(S, level, nick, hooks),
+      updateStats: () => updateStats2(S),
+      updateShareText: () => updateShareText2(S),
+      fetchStats: stats => fetchStats(S, stats, hooks),
+      displayStats: stats => displayStats(S, stats),
+      calcUserScore: () => calcUserScore2(S)
+    };
+  }
+  async function fetchNickPerksLists(S) {
+    if (S.nickPerksLists) return S.nickPerksLists;
+    try {
+      const [passData, invisible, rotation, skin, statsBgMap] = await Promise.all([
+        loadPassData(),
+        loadInvisibleSet(),
+        loadRotationSet(),
+        loadSkinListMap(),
+        loadStatsBgMap()
+      ]);
+      const skinMap = {};
+      for (const [key, val] of Object.entries(skin.obj || {})) {
+        skinMap[String(key).toLowerCase()] = val;
+      }
+      S.nickPerksLists = {
+        pass: new Set(passData.passUsers),
+        invisible,
+        rotation,
+        skinMap,
+        statsBgMap
+      };
+    } catch (e) {
+      console.error("Ошибка загрузки списков покупок:", e);
+      S.nickPerksLists = {
+        pass: new Set,
+        invisible: new Set,
+        rotation: new Set,
+        skinMap: {},
+        statsBgMap: {}
+      };
+    }
+    return S.nickPerksLists;
+  }
+  function nickInPublicSet(set, nickname) {
+    const lower = String(nickname || "").toLowerCase();
+    if (set.has(lower)) return true;
+    const clean = lower.replace(/\[|\]/g, "").trim();
+    return set.has(clean) || set.has(`[${clean}]`);
+  }
+  function getSkinUrlForNick2(S, nickname) {
+    try {
+      if (typeof S.skinList !== "object" || !S.skinList) return null;
+      const cleanKey = nickname.replace(/\[|\]/g, "").trim().toLowerCase();
+      const code = S.skinList[cleanKey];
+      if (code) {
+        return `https://api.agar.su/skins/${code}.png`;
+      }
+      const withBrackets = `[${cleanKey}]`;
+      const code2 = S.skinList[withBrackets];
+      return code2 ? `https://api.agar.su/skins/${code2}.png` : null;
+    } catch (e) {
+      console.error("Skin error:", e);
+      return null;
+    }
+  }
+  function nickHasPurchasedSkin(S, nickname, skinMap) {
+    const lower = String(nickname || "").toLowerCase();
+    if (skinMap[lower]) return true;
+    const clean = lower.replace(/\[|\]/g, "").trim();
+    return !!(skinMap[clean] || skinMap[`[${clean}]`] || getSkinUrlForNick2(S, clean));
+  }
+  function getNickPerks(S, nickname, password, lists) {
+    const pass = String(password != null ? password : "").trim();
+    const statsBgUrl = statsBgUrlForNick(nickname, lists.statsBgMap || {});
+    return {
+      hasSkinPass: nickInPublicSet(lists.pass, nickname) || !!pass,
+      hasSkin: nickHasPurchasedSkin(S, nickname, lists.skinMap),
+      invisible: nickInPublicSet(lists.invisible, nickname),
+      rotation: nickInPublicSet(lists.rotation, nickname),
+      statsBg: !!statsBgUrl,
+      statsBgUrl
+    };
+  }
+  function makePerkBadge(label, active, hoverText, onBuy) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "nick-perk" + (active ? " nick-perk--on" : "");
+    const text = document.createElement("span");
+    text.className = "nick-perk-label";
+    text.textContent = label;
+    btn.appendChild(text);
+    if (hoverText && onBuy) {
+      btn.classList.add("nick-perk--action");
+      btn.setAttribute("aria-label", hoverText);
+      let leaveTimer = null;
+      const showHover = () => {
+        if (leaveTimer) {
+          clearTimeout(leaveTimer);
+          leaveTimer = null;
+        }
+        if (btn.classList.contains("is-hover")) return;
+        btn.style.minWidth = `${btn.offsetWidth}px`;
+        text.textContent = hoverText;
+        btn.classList.add("is-hover");
+      };
+      const showDefault = () => {
+        text.textContent = label;
+        btn.classList.remove("is-hover");
+        btn.style.minWidth = "";
+      };
+      btn.addEventListener("pointerenter", showHover);
+      btn.addEventListener("pointerleave", () => {
+        if (leaveTimer) clearTimeout(leaveTimer);
+        leaveTimer = setTimeout(() => {
+          leaveTimer = null;
+          showDefault();
+        }, 30);
+      });
+      btn.addEventListener("focus", showHover);
+      btn.addEventListener("blur", showDefault);
+      btn.addEventListener("click", e => {
+        e.stopPropagation();
+        onBuy();
+      });
+    } else if (active) {
+      btn.title = "Куплено";
+      btn.tabIndex = -1;
+    } else {
+      btn.tabIndex = -1;
+    }
+    return btn;
+  }
+  function openShopForNick(nickPart, hasClan, options) {
+    if (typeof window.openShopPurchase === "function") {
+      window.openShopPurchase(nickPart, {
+        clan: hasClan,
+        ...options
+      });
+    } else if (typeof showContent === "function") {
+      showContent("shop");
+    }
+  }
+  function parseFullNick(full) {
+    const str = String(full || "").trim();
+    const [nickPart, pass = ""] = str.split("#", 2);
+    const hasClan = /\[[^\]]+\]/.test(nickPart);
+    const cleanNick = nickPart.replace(/\[|\]/g, "").trim();
+    return {
+      str,
+      nickPart,
+      pass: pass.trim(),
+      hasClan,
+      cleanNick
+    };
+  }
+  function makePasswordBox(pass) {
+    const wrap = document.createElement("div");
+    wrap.className = "passbox";
+    const input = document.createElement("input");
+    input.type = "password";
+    input.value = pass || "";
+    input.readOnly = true;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "icon-btn";
+    const icon = document.createElement("i");
+    icon.className = "fa fa-eye";
+    btn.appendChild(icon);
+    btn.onclick = () => {
+      const show = input.type === "password";
+      input.type = show ? "text" : "password";
+      icon.className = show ? "fa fa-eye-slash" : "fa fa-eye";
+    };
+    wrap.append(input, btn);
+    return wrap;
+  }
+  function renderNickCard(S, list, fullNick, perks, hooks) {
+    const {str, nickPart, pass, hasClan, cleanNick} = parseFullNick(fullNick);
+    const label = hasClan ? nickPart : nickPart || "?";
+    const p = perks || {
+      hasSkinPass: false,
+      hasSkin: false,
+      invisible: false,
+      rotation: false,
+      statsBg: false,
+      statsBgUrl: null
+    };
+    const li = document.createElement("li");
+    li.className = "nick-card" + (p.statsBgUrl ? " nick-card--statsbg" : "");
+    if (p.statsBgUrl) {
+      li.style.setProperty("--nick-card-bg", `url("${p.statsBgUrl}")`);
+    }
+    const skinUrl = getSkinUrlForNick2(S, cleanNick);
+    const avatar = skinUrl ? Object.assign(document.createElement("img"), {
+      className: "skin",
+      src: skinUrl,
+      loading: "lazy"
+    }) : Object.assign(document.createElement("div"), {
+      className: "skin skin--empty",
+      textContent: label.charAt(0).toUpperCase()
+    });
+    const body = document.createElement("div");
+    body.className = "nick-card-body";
+    const name = document.createElement("div");
+    name.className = "nick";
+    name.textContent = label;
+    const applyNickFromCabinet = () => {
+      try {
+        if (typeof hooks.setNick === "function") hooks.setNick(str);
+      } catch (e) {}
+      const nickEl = document.getElementById("nick");
+      const passEl = document.getElementById("pass");
+      if (nickEl) nickEl.value = nickPart;
+      if (passEl) {
+        passEl.value = pass;
+        passEl.style.display = pass ? "block" : "none";
+      }
+      setCookie("userPass", pass, 7);
+      // Сохраняем в avatar-containers (localStorage players) — ник или клан
+      const pick =
+        typeof hooks.selectSkin === "function"
+          ? hooks.selectSkin
+          : typeof window.selectSkin === "function"
+            ? window.selectSkin
+            : null;
+      if (pick) {
+        Promise.resolve(pick(nickPart)).catch(() => {});
+      } else if (typeof window.savePlayerData === "function") {
+        window.savePlayerData(nickPart, "", pass);
+        if (typeof window.updateAvatarDisplay === "function") window.updateAvatarDisplay();
+      }
+    };
+    name.onclick = e => {
+      e.stopPropagation();
+      applyNickFromCabinet();
+    };
+    li.addEventListener("click", e => {
+      if (e.target.closest(".nick-perks, .passbox, button, a, input")) return;
+      applyNickFromCabinet();
+    });
+    const perksRow = document.createElement("div");
+    perksRow.className = "nick-perks";
+    const shop = opts => () => openShopForNick(nickPart, hasClan, opts);
+    perksRow.append(makePerkBadge("Пароль", p.hasSkinPass, p.hasSkinPass ? "Сменить" : "Купить", shop({
+      focusPassword: true
+    })), makePerkBadge("Скин", p.hasSkin, p.hasSkin ? "Сменить" : "Купить", shop({
+      focusSkin: true
+    })), makePerkBadge("Невидимый", p.invisible, p.invisible ? null : "Купить", p.invisible ? null : shop({
+      invisible: true
+    })), makePerkBadge("Поворот", p.rotation, p.rotation ? null : "Купить", p.rotation ? null : shop({
+      rotation: true
+    })), makePerkBadge("Фон статы", p.statsBg, p.statsBg ? "Сменить" : "Купить", shop({
+      statsBg: true
+    })));
+    body.append(name, perksRow);
+    const passBox = makePasswordBox(pass);
+    li.append(avatar, body, passBox);
+    list.appendChild(li);
+  }
+  async function loadMyNicknames(S, hooks) {
+    const block = document.getElementById("myNicknamesBlock");
+    const nickList = document.getElementById("myNickList");
+    const clanList = document.getElementById("myClanList");
+    const badgeNick = document.getElementById("badgeNick");
+    const badgeClan = document.getElementById("badgeClan");
+    if (!getAccountToken()) return;
+    if (block) block.style.display = "";
+    try {
+      S.nickPerksLists = null;
+      const res = await hooks.accountApiGet("me/nicknames");
+      if (!res.ok) {
+        if (res.status === 401) {
+          hooks.clearAccountToken();
+          hooks.onLogout();
+        }
+        return;
+      }
+      const data = await res.json();
+      const lists = await fetchNickPerksLists(S);
+      if (nickList) nickList.innerHTML = "";
+      if (clanList) clanList.innerHTML = "";
+      let nickCount = 0;
+      let clanCount = 0;
+      if (Array.isArray(data == null ? void 0 : data.nicknames) && data.nicknames.length) {
+        data.nicknames.forEach(row => {
+          var _a;
+          const full = String(row.nickname || "");
+          const pass = ((_a = row.password) != null ? _a : "").trim();
+          const finalNick = pass && !full.includes("#") ? `${full}#${pass}` : full;
+          const parsed = parseFullNick(finalNick);
+          const perks = getNickPerks(S, full, pass, lists);
+          if (parsed.hasClan) {
+            if (clanList) renderNickCard(S, clanList, finalNick, perks, hooks);
+            clanCount++;
+          } else if (parsed.nickPart) {
+            if (nickList) renderNickCard(S, nickList, finalNick, perks, hooks);
+            nickCount++;
+          }
+        });
+      } else {
+        if (nickList) {
+          const li = document.createElement("li");
+          li.className = "empty";
+          li.textContent = "Вы не покупали ники";
+          nickList.appendChild(li);
+        }
+        if (clanList) {
+          const li = document.createElement("li");
+          li.className = "empty";
+          li.textContent = "Вы не покупали кланы";
+          clanList.appendChild(li);
+        }
+      }
+      if (badgeNick) badgeNick.textContent = String(nickCount);
+      if (badgeClan) badgeClan.textContent = String(clanCount);
+      if (block) block.style.display = "";
+      hooks.wireTabsOnce();
+      hooks.showNickClanTab("nicks");
+    } catch (e) {
+      console.error("Ошибка загрузки ников:", e);
+      if (block) block.style.display = "";
+      if (nickList && !nickList.children.length) {
+        const li = document.createElement("li");
+        li.className = "error";
+        li.textContent = "Не удалось загрузить никнеймы";
+        nickList.appendChild(li);
+      }
+    }
+  }
+  var GOOGLE_RESTORE_CLIENT_ID = "157257230972-4vh698jtf46c76sc7607oe1k9tr782je.apps.googleusercontent.com";
+  var RESTORED_AT_KEY = "accountRestoredAt";
+  function isTruthyRestoreValue(value) {
+    return value !== null && value !== void 0 && value !== "" && value !== false && value !== 0 && value !== "0" && value !== "false";
+  }
+  function getRestoreTimestamp(accountData) {
+    const candidates = [ accountData == null ? void 0 : accountData.restored_at, accountData == null ? void 0 : accountData.restoredAt, accountData == null ? void 0 : accountData.restore_at, (accountData == null ? void 0 : accountData.is_restored) === true ? (accountData == null ? void 0 : accountData.restored_at) || Date.now() : null, (accountData == null ? void 0 : accountData.restored) === true ? (accountData == null ? void 0 : accountData.restored_at) || Date.now() : null ];
+    for (const value of candidates) {
+      if (isTruthyRestoreValue(value)) return value;
+    }
+    try {
+      const cached = localStorage.getItem(RESTORED_AT_KEY);
+      return isTruthyRestoreValue(cached) ? cached : null;
+    } catch (e) {
+      return null;
+    }
+  }
+  function persistRestoreTimestamp(value) {
+    if (!isTruthyRestoreValue(value)) return;
+    try {
+      localStorage.setItem(RESTORED_AT_KEY, String(value));
+    } catch (e) {}
+  }
+  function clearRestoreTimestamp() {
+    try {
+      localStorage.removeItem(RESTORED_AT_KEY);
+    } catch (e) {}
+  }
+  function formatRestoreDate(value) {
+    if (!isTruthyRestoreValue(value)) return "";
+    const num = Number(value);
+    const date = !Number.isNaN(num) && num > 0 ? new Date(num < 1e12 ? num * 1e3 : num) : new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toLocaleDateString("ru-RU");
+  }
+  function updateRestoreBlockVisibility(S) {
+    const block = document.getElementById("restoreProgressBlock");
+    if (!block) return;
+    const available = document.getElementById("restoreAvailableBlock");
+    const done = document.getElementById("restoreDoneBlock");
+    const badge = document.getElementById("restoreStateBadge");
+    const restoredAt = getRestoreTimestamp(S.accountData);
+    const restored = restoredAt != null;
+    if (badge) {
+      const dateLabel = formatRestoreDate(restoredAt);
+      badge.textContent = restored ? dateLabel ? `Восстановлен ${dateLabel}` : "Восстановлен" : "Не восстановлен";
+      badge.className = "restore-state-badge" + (restored ? " restore-state-badge--done" : "");
+    }
+    if (available) available.style.display = restored ? "none" : "";
+    if (done) {
+      done.style.display = restored ? "" : "none";
+      if (restored) {
+        const dateLabel = formatRestoreDate(restoredAt);
+        done.textContent = dateLabel ? `Этот аккаунт уже был восстановлен ${dateLabel}. Повторное восстановление не требуется.` : "Этот аккаунт уже был восстановлен. Повторное восстановление не требуется.";
+      }
+    }
+    block.style.display = "none";
+  }
+  function showNickClanTab(S, which) {
+    const tabN = document.getElementById("tabNicknames");
+    const tabC = document.getElementById("tabClans");
+    const tabF = document.getElementById("tabFriends");
+    const tabS = document.getElementById("tabSettings");
+    const nick = document.getElementById("nickWrap");
+    const clan = document.getElementById("clanWrap");
+    const friends = document.getElementById("friendsWrap");
+    const settings = document.getElementById("settingsWrap");
+    if (!tabN || !tabC || !tabS || !nick || !clan || !settings) return;
+    tabN.classList.toggle("active", which === "nicks");
+    tabC.classList.toggle("active", which === "clans");
+    if (tabF) tabF.classList.toggle("active", which === "friends");
+    tabS.classList.toggle("active", which === "settings");
+    nick.style.display = which === "nicks" ? "" : "none";
+    clan.style.display = which === "clans" ? "" : "none";
+    if (friends) friends.style.display = which === "friends" ? "" : "none";
+    settings.style.display = which === "settings" ? "" : "none";
+    updateRestoreBlockVisibility(S);
+    if (which === "friends" && window.AgarFriends) {
+      try {
+        window.AgarFriends.loadFriendsPanel();
+      } catch (_) {}
+    }
+  }
+  function wireTabsOnce(S) {
+    const wrap = document.getElementById("myNickClanTabs");
+    const tabN = document.getElementById("tabNicknames");
+    const tabC = document.getElementById("tabClans");
+    const tabF = document.getElementById("tabFriends");
+    const tabS = document.getElementById("tabSettings");
+    if (!wrap || !tabN || !tabC || !tabS || wrap.dataset.wired) return;
+    tabN.onclick = () => showNickClanTab(S, "nicks");
+    tabC.onclick = () => showNickClanTab(S, "clans");
+    if (tabF) tabF.onclick = () => showNickClanTab(S, "friends");
+    tabS.onclick = () => showNickClanTab(S, "settings");
+    wrap.dataset.wired = "1";
+  }
+  function hideAuthButtons() {
+    /* login form lives in #authlog; hidden via setAccountData */
+  }
+  function showAuthButtons() {
+    /* login form lives in #authlog; shown via onLogout */
+  }
+  function setRestoreStatus(text, type = "info") {
+    const el = document.getElementById("restoreStatus");
+    if (!el) return;
+    el.hidden = !text;
+    el.textContent = text || "";
+    el.className = "restore-status" + (type ? ` restore-status--${type}` : "");
+  }
+  function attachAccountHooks(S, hooks) {
+    const wHandle = S.wHandle;
+    let restoreGoogleInitialized = false;
+    const accountApiGet = (tag, method = "GET", body = null) => {
+      const headers = {
+        Authorization: `Game ${getAccountToken() || ""}`
+      };
+      if (body) headers["Content-Type"] = "application/json";
+      return fetch("https://api.agar.su/api/" + tag, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : null
+      });
+    };
+    const displayAccountData = () => {
+      if (!S.accountData) return;
+      updateRestoreBlockVisibility(S);
+      const currLevel = getLevel(S.accountData.xp);
+      const nextXp = getXp(currLevel + 1);
+      const progressPercent = S.accountData.xp / nextXp * 100;
+      const progressBar = document.querySelector(".progress-fill");
+      if (progressBar) progressBar.style.width = `${progressPercent}%`;
+      const levelCircle = document.getElementById("levelCircle");
+      if (levelCircle) levelCircle.textContent = currLevel;
+      const progressText = document.getElementById("progressText");
+      const compactXp = n => {
+        n = Math.max(0, Math.floor(Number(n) || 0));
+        const mobile = window.matchMedia && window.matchMedia("(max-width: 599px)").matches;
+        if (!mobile || n < 1000) return String(n);
+        const unit = n >= 1000000 ? "kk" : "k";
+        const value = n >= 1000000 ? n / 1000000 : n / 1000;
+        let text = (Math.round(value * 10) / 10).toFixed(1);
+        if (text.slice(-2) === ".0") text = text.slice(0, -2);
+        return text + unit;
+      };
+      if (progressText) {
+        const pct = Math.round(progressPercent);
+        const mobile = window.matchMedia && window.matchMedia("(max-width: 599px)").matches;
+        if (mobile) {
+          progressText.innerHTML = `<span class="progress-pct">${pct}%</span><span class="progress-xp">${compactXp(S.accountData.xp)}/${compactXp(nextXp)}</span>`;
+        } else {
+          progressText.textContent = `${pct}% (${S.accountData.xp}/${nextXp})`;
+        }
+      }
+      if (!displayAccountData._mq && window.matchMedia) {
+        displayAccountData._mq = window.matchMedia("(max-width: 599px)");
+        const onMq = () => displayAccountData();
+        if (displayAccountData._mq.addEventListener) displayAccountData._mq.addEventListener("change", onMq);
+        else if (displayAccountData._mq.addListener) displayAccountData._mq.addListener(onMq);
+      }
+      const accountIDElement = document.getElementById("accountID");
+      if (accountIDElement) accountIDElement.textContent = `ID: ${S.accountData.uid}`;
+    };
+    const nickHooks = {
+      accountApiGet,
+      clearAccountToken,
+      onLogout: () => onLogout(),
+      setNick: hooks.setNick,
+      selectSkin: hooks.selectSkin,
+      wireTabsOnce: () => wireTabsOnce(S),
+      showNickClanTab: which => showNickClanTab(S, which)
+    };
+
+    let emailBindDone = false;
+    const showEmailBindNotice = (data) => {
+      const existing = document.getElementById("lkEmailBind");
+      const savedEmail = String((data && data.email) || "").trim();
+      const accountId = String((data && data.account_id) || "");
+      if (emailBindDone || !data || !data.needs_email || savedEmail || accountId.startsWith("email_")) {
+        if (existing) existing.remove();
+        try { sessionStorage.removeItem("lkBindDraft"); } catch (e) {}
+        return;
+      }
+      if (existing) return;
+      const box = document.createElement("div");
+      box.id = "lkEmailBind";
+      box.setAttribute("style", "position:fixed;top:12px;right:12px;z-index:100000;width:280px;max-width:calc(100vw - 24px);background:#141824;color:#fff;border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:12px;box-shadow:0 10px 30px rgba(0,0,0,.35);font:13px/1.35 Arial,sans-serif");
+      box.innerHTML = '<div style="font-weight:700;margin-bottom:6px">Привяжите почту</div><div style="opacity:.8;margin-bottom:8px">VK, Telegram и Google больше не используются для входа. Сначала укажите почту, затем код из письма. Пароль аккаунта остаётся прежним.</div><input id="lkBindEmail" type="email" maxlength="190" placeholder="email@mail.ru" style="width:100%;box-sizing:border-box;margin:0 0 6px;padding:8px;border-radius:8px;border:1px solid #333;background:#0e1118;color:#fff"><input id="lkBindCode" type="text" inputmode="numeric" maxlength="5" placeholder="Код из письма" hidden style="width:100%;box-sizing:border-box;margin:0 0 6px;padding:8px;border-radius:8px;border:1px solid #333;background:#0e1118;color:#fff"><div id="lkBindErr" style="color:#ff8d8d;min-height:16px"></div><button id="lkBindSend" type="button" style="width:100%;padding:8px;border:0;border-radius:8px;background:#3d7eff;color:#fff;font-weight:700;cursor:pointer">Отправить код</button>';
+      document.body.appendChild(box);
+      try {
+        const draft = sessionStorage.getItem("lkBindDraft") || "";
+        const emailInput = box.querySelector("#lkBindEmail");
+        if (draft && emailInput) emailInput.value = draft;
+      } catch (e) {}
+      const err = box.querySelector("#lkBindErr");
+      const sendBtn = box.querySelector("#lkBindSend");
+      try {
+        if (sessionStorage.getItem("lkBindDraft")) {
+          const codeEl = box.querySelector("#lkBindCode");
+          if (codeEl) codeEl.hidden = false;
+          sendBtn.textContent = "Подтвердить";
+        }
+      } catch (e) {}
+      sendBtn.onclick = async () => {
+        const email = box.querySelector("#lkBindEmail").value.trim();
+        const codeEl = box.querySelector("#lkBindCode");
+        const code = codeEl.value.trim();
+        err.textContent = "";
+        sendBtn.disabled = true;
+        try {
+          if (!code) {
+            const res = await accountApiGet("auth/bind-email/send-code", "POST", { email });
+            const body = await res.json().catch(() => ({}));
+            if (!res.ok || body.error) {
+              err.textContent = body.error || "Не удалось отправить код";
+              return;
+            }
+            codeEl.hidden = false;
+            sendBtn.textContent = "Подтвердить";
+            err.textContent = "Код отправлен на почту";
+            try { sessionStorage.setItem("lkBindDraft", email); } catch (e) {}
+            return;
+          }
+          const res = await accountApiGet("auth/bind-email/confirm", "POST", { email, code });
+          const body = await res.json().catch(() => ({}));
+          if (!res.ok || body.error || !body.token) {
+            err.textContent = body.error || "Не удалось привязать";
+            return;
+          }
+          setAccountToken(body.token);
+          emailBindDone = true;
+          try { sessionStorage.removeItem("lkBindDraft"); } catch (e) {}
+          box.remove();
+          await loadAccountUserData();
+          if (typeof hooks.sendAccountToken === "function") hooks.sendAccountToken();
+        } catch (_) {
+          err.textContent = "Ошибка сети";
+        } finally {
+          sendBtn.disabled = false;
+        }
+      };
+    };
+
+    const setAccountData = data => {
+      S.accountData = data;
+      persistRestoreTimestamp(getRestoreTimestamp(data));
+      displayAccountData();
+      loadMyNicknames(S, nickHooks);
+      if (typeof window.updateAccountMenuLabel === "function") {
+        window.updateAccountMenuLabel();
+      }
+      try {
+        if (window.AgarFriends) {
+          window.AgarFriends.onAccount(data);
+          if (typeof window.AgarFriends.loadFriendsPanel === "function") {
+            window.AgarFriends.loadFriendsPanel();
+          }
+        }
+      } catch (_) {}
+      const logoutBtn = document.getElementById("logoutButton");
+      const authlogEl = document.getElementById("authlog");
+      if (logoutBtn) logoutBtn.style.display = "";
+      if (authlogEl) authlogEl.style.display = "none";
+      hideAuthButtons();
+      showEmailBindNotice(data);
+    };
+    const onLogout = () => {
+      emailBindDone = false;
+      try { sessionStorage.removeItem("lkBindDraft"); } catch (e) {}
+      const bindBox = document.getElementById("lkEmailBind");
+      if (bindBox) bindBox.remove();
+      S.accountData = null;
+      localStorage.removeItem("accountData");
+      clearAccountToken();
+      try {
+        if (window.AgarFriends) window.AgarFriends.onLogout();
+      } catch (_) {}
+      clearRestoreTimestamp();
+      const block = document.getElementById("myNicknamesBlock");
+      if (block) block.style.display = "none";
+      const settingsWrap = document.getElementById("settingsWrap");
+      if (settingsWrap) settingsWrap.style.display = "none";
+      setRestoreStatus("");
+      const nickList = document.getElementById("myNickList");
+      const clanList = document.getElementById("myClanList");
+      const badgeNick = document.getElementById("badgeNick");
+      const badgeClan = document.getElementById("badgeClan");
+      if (nickList) nickList.innerHTML = "";
+      if (clanList) clanList.innerHTML = "";
+      if (badgeNick) badgeNick.textContent = "0";
+      if (badgeClan) badgeClan.textContent = "0";
+      const progressBar = document.querySelector(".progress-fill");
+      if (progressBar) progressBar.style.width = "0%";
+      const levelCircle = document.getElementById("levelCircle");
+      if (levelCircle) levelCircle.textContent = "0";
+      const progressText = document.getElementById("progressText");
+      if (progressText) progressText.textContent = "0% (0/0)";
+      const accountIDElement = document.getElementById("accountID");
+      if (accountIDElement) accountIDElement.textContent = "ID: 0000";
+      const authlogEl = document.getElementById("authlog");
+      if (authlogEl) authlogEl.style.display = "flex";
+      const logoutBtn = document.getElementById("logoutButton");
+      if (logoutBtn) logoutBtn.style.display = "none";
+      showAuthButtons();
+      if (window.AgarLkAuth && typeof window.AgarLkAuth.showView === "function") {
+        window.AgarLkAuth.showView("login");
+      }
+      if (typeof window.updateAccountMenuLabel === "function") {
+        window.updateAccountMenuLabel();
+      }
+    };
+    const loadAccountUserData = async () => {
+      const res = await accountApiGet("me/login");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.error) {
+          if (401 == data.status) clearAccountToken(); else alert(data.error);
+        } else setAccountData(data);
+      }
+    };
+    async function handleLogin(tokenOrUser, provider) {
+      if (provider !== "vk") return;
+      // Primary auth is ID+password. VK only for recovery (see AgarLkAuth).
+      if (window._lkRecoverVkMode) return;
+      alert("Вход по ID ЛК и паролю. Если пароля нет — нажмите «Восстановить» и войдите через VK / Google / Telegram / email.");
+    }
+    wHandle.onVkAuth = function(payload) {
+      if (!payload || !payload.code || !payload.device_id) {
+        return alert("VK: не получен код авторизации");
+      }
+      const isRecover = !!(window._lkRecoverVkMode || (function() {
+        try {
+          return sessionStorage.getItem("lk_recover_vk_mode") === "1";
+        } catch (_) {
+          return false;
+        }
+      })());
+      if (isRecover) {
+        let codeVerifier = payload.code_verifier;
+        let state = payload.state;
+        try {
+          codeVerifier = codeVerifier || sessionStorage.getItem("vk_code_verifier") || localStorage.getItem("vk_code_verifier");
+          state = state || sessionStorage.getItem("vk_state") || localStorage.getItem("vk_state");
+        } catch (_) {}
+        // Keep recover flag until API responds (redirect return needs it)
+        fetch("https://api.agar.su/api/auth/recover/vk", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            code: payload.code,
+            device_id: payload.device_id,
+            code_verifier: codeVerifier,
+            state: state
+          })
+        })
+          .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
+          .then(({ ok, d }) => {
+            window._lkRecoverVkMode = false;
+            try {
+              sessionStorage.removeItem("lk_recover_vk_mode");
+            } catch (_) {}
+            if (!ok || d.error || !d.recoverToken) {
+              alert(d.error || "В ЛК нет связанного аккаунта");
+              if (window.AgarLkAuth && typeof window.AgarLkAuth.showView === "function") {
+                window.AgarLkAuth.showView("recover");
+              }
+              return;
+            }
+            window.__lkRecoverToken = d.recoverToken;
+            try {
+              if (typeof window.showContent === "function") window.showContent("store");
+              else if (typeof showContent === "function") showContent("store");
+            } catch (_) {}
+            if (window.AgarLkAuth) {
+              if (typeof window.AgarLkAuth.applyRecoverToken === "function") {
+                window.AgarLkAuth.applyRecoverToken(d.recoverToken, d);
+              } else {
+                document.dispatchEvent(new CustomEvent("lk-recover-ready", {
+                  detail: { recoverToken: d.recoverToken, uid: d.uid, needs_email: d.needs_email, has_pass: d.has_pass }
+                }));
+              }
+            }
+          })
+          .catch(() => {
+            window._lkRecoverVkMode = false;
+            try {
+              sessionStorage.removeItem("lk_recover_vk_mode");
+            } catch (_) {}
+            alert("Ошибка сети VK");
+          });
+        return;
+      }
+      handleLogin(payload, "vk");
+    };
+    if (typeof window.flushPendingVkAuth === "function") {
+      window.flushPendingVkAuth();
+    }
+    const handleRestoreResponse = async res => {
+      let data;
+      try {
+        data = await res.json();
+      } catch (e) {
+        setRestoreStatus("Ошибка ответа сервера", "error");
+        return;
+      }
+      if (!res.ok || data.error) {
+        setRestoreStatus(data.error || "Не удалось восстановить прогресс", "error");
+        return;
+      }
+      setRestoreStatus(data.message || "Аккаунт привязан", "success");
+      const restoredAt = data.restored_at || data.restoredAt || Date.now();
+      persistRestoreTimestamp(restoredAt);
+      if (S.accountData) S.accountData.restored_at = restoredAt;
+      if (data.token) {
+        setAccountToken(data.token);
+        if (typeof window.updateAccountMenuLabel === "function") {
+          window.updateAccountMenuLabel();
+        }
+        hooks.sendAccountToken();
+      }
+      await loadAccountUserData();
+      updateRestoreBlockVisibility(S);
+    };
+    async function restoreProgressFromTelegram(user) {
+      setRestoreStatus("Привязываем аккаунт…", "info");
+      try {
+        const res = await accountApiGet("me/restore/telegram", "POST", user);
+        await handleRestoreResponse(res);
+      } catch (e) {
+        setRestoreStatus("Ошибка сети", "error");
+      }
+    }
+    async function restoreProgressFromGoogle(credential) {
+      setRestoreStatus("Привязываем аккаунт…", "info");
+      try {
+        const res = await accountApiGet("me/restore/google", "POST", {
+          credential
+        });
+        await handleRestoreResponse(res);
+      } catch (e) {
+        setRestoreStatus("Ошибка сети", "error");
+      }
+    }
+    wHandle.onRestoreGoogleAuth = function(response) {
+      if (response == null ? void 0 : response.credential) restoreProgressFromGoogle(response.credential);
+    };
+    function loadGoogleRestoreScript() {
+      return new Promise((resolve, reject) => {
+        var _a, _b;
+        if ((_b = (_a = window.google) == null ? void 0 : _a.accounts) == null ? void 0 : _b.id) return resolve();
+        const existing = document.querySelector('script[src*="accounts.google.com/gsi/client"]');
+        if (existing) {
+          existing.addEventListener("load", () => resolve(), {
+            once: true
+          });
+          existing.addEventListener("error", () => reject(new Error("Google script failed")), {
+            once: true
+          });
+          return;
+        }
+        const script = document.createElement("script");
+        script.src = "https://accounts.google.com/gsi/client";
+        script.async = true;
+        script.defer = true;
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error("Google script failed"));
+        document.head.appendChild(script);
+      });
+    }
+    async function initRestoreGoogleButton() {
+      const container = document.getElementById("restoreGoogleContainer");
+      if (!container || restoreGoogleInitialized) return;
+      try {
+        await loadGoogleRestoreScript();
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_RESTORE_CLIENT_ID,
+          callback: wHandle.onRestoreGoogleAuth
+        });
+        window.google.accounts.id.renderButton(container, {
+          type: "standard",
+          size: "medium",
+          theme: "outline",
+          text: "continue_with",
+          shape: "rectangular"
+        });
+        restoreGoogleInitialized = true;
+      } catch (e) {
+        setRestoreStatus("Не удалось загрузить Google", "error");
+      }
+    }
+    function wireRestoreProgressUI() {
+      /* settings restore UI removed — recovery is on auth screen */
+    }
+    window.addEventListener("message", function(event) {
+      if (event.origin !== "https://agar.su" && event.origin !== window.location.origin) return;
+      if (event.data.type === "telegram-auth" && window._telegramRestoreMode) {
+        window._telegramRestoreMode = false;
+        restoreProgressFromTelegram(event.data.user);
+      }
+    });
+    function initRestoreProgressUI() {
+      wireRestoreProgressUI();
+    }
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", initRestoreProgressUI);
+    } else {
+      initRestoreProgressUI();
+    }
+    wHandle.onAccountLoggedIn = token => {
+      setAccountToken(token);
+      if (typeof window.updateAccountMenuLabel === "function") {
+        window.updateAccountMenuLabel();
+      }
+      loadAccountUserData();
+      loadMyNicknames(S, nickHooks);
+      hooks.sendAccountToken();
+    };
+    if (window.AgarLkAuth && typeof window.AgarLkAuth.init === "function") {
+      window.AgarLkAuth.init({
+        onLoggedIn: token => wHandle.onAccountLoggedIn(token)
+      });
+    }
+    if (typeof window.flushPendingVkAuth === "function") {
+      window.flushPendingVkAuth();
+    }
+    wHandle.logoutAccount = async () => {
+      if (getAccountToken()) {
+        const res = await accountApiGet("me/logout");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.ok || 401 == data.status) onLogout();
+          if (data.error) alert(data.error);
+        }
+      } else onLogout();
+    };
+    wHandle.onUpdateXp = xp => {
+      if (S.accountData) {
+        S.accountData.xp = xp;
+        displayAccountData();
+      }
+    };
+    if (getAccountToken()) loadAccountUserData();
+    if (typeof window.updateAccountMenuLabel === "function") {
+      window.updateAccountMenuLabel();
+    }
+    try {
+      if (window.AgarFriends && typeof window.AgarFriends.init === "function") {
+        window.AgarFriends.init(S, {
+          accountApiGet,
+          resolveServerId: resolveOfficialServerId
+        });
+      }
+    } catch (err) {
+      console.warn("AgarFriends init failed:", err);
+    }
+    return {
+      displayAccountData,
+      loadAccountUserData,
+      onLogout,
+      updateRestoreBlockVisibility: () => updateRestoreBlockVisibility(S),
+      showNickClanTab: which => showNickClanTab(S, which),
+      wireTabsOnce: () => wireTabsOnce(S)
+    };
+  }
+  function normalize(text) {
+    return String(text || "").toLowerCase().replace(/ё/g, "е").replace(/Ё/g, "е");
+  }
+  function cleanEntry(raw) {
+    let s = normalize(raw).trim();
+    if (!s) return "";
+    if (/\s/.test(s)) {
+      return s.replace(/[^a-zа-я0-9\s]+/g, " ").replace(/\s+/g, " ").trim();
+    }
+    return s.replace(/[^a-zа-я0-9]+/g, "");
+  }
+  function compileDictionary(rawSet) {
+    const words = new Set;
+    const phrases = [];
+    const seenPhrase = new Set;
+    for (const raw of rawSet) {
+      const key = cleanEntry(raw);
+      if (key.length < 2) continue;
+      if (key.includes(" ")) {
+        if (seenPhrase.has(key)) continue;
+        seenPhrase.add(key);
+        phrases.push(key);
+      } else {
+        words.add(key);
+      }
+    }
+    phrases.sort((a, b) => b.length - a.length);
+    return {
+      words,
+      phrases
+    };
+  }
+  function getDict(badWordsSet) {
+    let dict = badWordsSet._antimatDict;
+    if (!dict || dict.from !== badWordsSet) {
+      dict = compileDictionary(badWordsSet);
+      dict.from = badWordsSet;
+      try {
+        badWordsSet._antimatDict = dict;
+      } catch (e) {}
+    }
+    return dict;
+  }
+  var TOKEN_RE = /[a-zа-я0-9]+/g;
+  function collectHits(norm, dict) {
+    const hits = [];
+    const used = new Uint8Array(norm.length);
+    const mark = (start, end) => {
+      if (end <= start) return false;
+      for (let i = start; i < end; i++) {
+        if (used[i]) return false;
+      }
+      for (let i = start; i < end; i++) used[i] = 1;
+      hits.push({
+        start,
+        end
+      });
+      return true;
+    };
+    for (const phrase of dict.phrases) {
+      let from = 0;
+      while (from <= norm.length - phrase.length) {
+        const idx = norm.indexOf(phrase, from);
+        if (idx === -1) break;
+        mark(idx, idx + phrase.length);
+        from = idx + phrase.length;
+      }
+    }
+    TOKEN_RE.lastIndex = 0;
+    let m;
+    while ((m = TOKEN_RE.exec(norm)) !== null) {
+      const token = m[0];
+      if (dict.words.has(token)) {
+        mark(m.index, m.index + token.length);
+      }
+    }
+    hits.sort((a, b) => a.start - b.start);
+    return hits;
+  }
+  function censorText(badWordsSet, message) {
+    if (!badWordsSet || badWordsSet.size === 0) return message;
+    const text = String(message || "");
+    if (!text) return text;
+    const dict = getDict(badWordsSet);
+    const norm = normalize(text);
+    if (!norm) return text;
+    const hits = collectHits(norm, dict);
+    if (!hits.length) return text;
+    const chars = Array.from(text);
+    const normChars = Array.from(norm);
+    if (chars.length !== normChars.length) {
+      let out = text;
+      for (const phrase of dict.phrases) {
+        const re = new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+        out = out.replace(re, "***");
+      }
+      out = out.replace(TOKEN_RE, tok => dict.words.has(normalize(tok)) ? "***" : tok);
+      return out;
+    }
+    let result = "";
+    let cursor = 0;
+    for (const hit of hits) {
+      if (hit.start < cursor) continue;
+      result += chars.slice(cursor, hit.start).join("");
+      result += "***";
+      cursor = hit.end;
+    }
+    result += chars.slice(cursor).join("");
+    return result;
+  }
+  function countHits(badWordsSet, message) {
+    if (!badWordsSet || badWordsSet.size === 0) return 0;
+    const text = String(message || "");
+    if (!text) return 0;
+    return collectHits(normalize(text), getDict(badWordsSet)).length;
+  }
+  function attachSmoothScroll(el, opts = {}) {
+    var _a;
+    if (!el) return null;
+    if (el._smoothScroll) return el._smoothScroll;
+    const ease = (_a = opts.ease) != null ? _a : .22;
+    const state = {
+      target: el.scrollTop,
+      raf: 0
+    };
+    const maxScroll = () => Math.max(0, el.scrollHeight - el.clientHeight);
+    const tick = () => {
+      const cur = el.scrollTop;
+      const capped = Math.max(0, Math.min(maxScroll(), state.target));
+      state.target = capped;
+      const diff = capped - cur;
+      if (Math.abs(diff) < .5) {
+        el.scrollTop = capped;
+        state.raf = 0;
+        return;
+      }
+      el.scrollTop = cur + diff * ease;
+      state.raf = requestAnimationFrame(tick);
+    };
+    const start = () => {
+      if (!state.raf) state.raf = requestAnimationFrame(tick);
+    };
+    const api = {
+      by(delta) {
+        const base = state.raf ? state.target : el.scrollTop;
+        state.target = Math.max(0, Math.min(maxScroll(), base + delta));
+        start();
+      },
+      to(top) {
+        state.target = Math.max(0, Math.min(maxScroll(), top));
+        start();
+      },
+      toEnd() {
+        state.target = maxScroll();
+        start();
+      },
+      syncFromDom() {
+        if (!state.raf) state.target = el.scrollTop;
+      },
+      stop() {
+        if (state.raf) cancelAnimationFrame(state.raf);
+        state.raf = 0;
+        state.target = el.scrollTop;
+      }
+    };
+    el._smoothScroll = api;
+    el.addEventListener("scroll", () => {
+      if (!state.raf) state.target = el.scrollTop;
+    }, {
+      passive: true
+    });
+    return api;
+  }
+  var DONATORS = ["☼k☼"];
+  var CHAT_BACKGROUNDS = ["bambule", "☼k☼","pulik","liquidator"];
+  var ADMINS = ["нико", "banshee"];
+  var YOUTUBERS = ["salruz", "morcov", "sealand"];
+  var URL_YOUTUBERS = [ "https://youtube.com/@SalRuzO", "https://www.youtube.com/@MORCCVA", "https://www.youtube.com/@sealandv" ];
+  var SHADOW_CHAT_TERMS = [ "agartime", "агартайм", "kotov.fun", "kotovfun", "agartime.ru", "petridish.pw", "petridish", "чашка петри", "чашке", "чашку", "чашка", "петри", "чп"];
+  function normalizeShadowChatText(text) {
+    return String(text || "").toLowerCase().replace(/ё/g, "е");
+  }
+  function isExemptFromShadowChat(str) {
+    const s = String(str || "");
+    if (/вoшёл в игру/i.test(s)) return true;
+    return false;
+  }
+  function isShadowBannedChatMessage(message) {
+    const raw = String(message || "");
+    if (/https:\/\//i.test(raw)) return true;
+    const lower = normalizeShadowChatText(raw);
+    for (let i = 0; i < SHADOW_CHAT_TERMS.length; i++) {
+      if (lower.includes(normalizeShadowChatText(SHADOW_CHAT_TERMS[i]))) return true;
+    }
+    return false;
+  }
+  function displayNickFromState(S) {
+    const cells = S && S.playerCells;
+    const alive = cells && cells.length > 0;
+    // Same as server Chat.js: no cells → spectator
+    if (!alive) {
+      if (S && S.userNickName == null) return "Наблюдатель";
+    }
+    const cell = alive ? cells[0] : null;
+    let name = cell && cell.name || S && S.userNickName || "Игрок";
+    // userNickName is often "nick#password" for pass auth — never show the password in chat
+    name = String(name || "").split("#")[0].replace(/<[^>]*>/g, "").trim();
+    return name || "Игрок";
+  }
+  function displayColorFromState(S) {
+    const cells = S && S.playerCells;
+    const alive = cells && cells.length > 0;
+    // Server default for spectators / no cells: rgb(120,120,120)
+    if (!alive) return "#787878";
+    const cell = cells[0];
+    if (cell && typeof cell.color === "string" && cell.color) return cell.color;
+    if (cell && cell.color && typeof cell.color === "object") {
+      const r = cell.color.r | 0;
+      const g = cell.color.g | 0;
+      const b = cell.color.b | 0;
+      return "#" + (r << 16 | g << 8 | b).toString(16).padStart(6, "0");
+    }
+    try {
+      const saved = localStorage.getItem("selectedColor");
+      if (saved) return saved;
+    } catch (_) {}
+    return "#787878";
+  }
+  function echoShadowChat(S, message) {
+    if (!S || !Array.isArray(S.chatBoard)) return;
+    const name = displayNickFromState(S);
+    const color = displayColorFromState(S);
+    const playerXp = S.accountData && S.accountData.xp ? S.accountData.xp + 1 : 0;
+    const pId = S.ownerPlayerId > 0 ? S.ownerPlayerId & 65535 : 0;
+    S.chatBoard.push({
+      pId,
+      playerXp,
+      playerLevel: playerXp ? getLevel(playerXp) : -1,
+      name,
+      color,
+      message: String(message),
+      time: formatTime(new Date)
+    });
+    if (typeof S.__drawChatBoard === "function") S.__drawChatBoard(); else drawChatBoard(S, {});
+  }
+  function formatTime(date) {
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    return `${hours}:${minutes}`;
+  }
+  function censorMessage(S, message) {
+    if (S.showAdultContent) return message;
+    // Multiprotocol (unofficial servers): antimat is not applied.
+    if (window.MultiProtocols && !window.MultiProtocols.isOfficial(S.CONNECTION_URL)) return message;
+    if (!S.badWordsSet || S.badWordsSet.size === 0) {
+      console.warn("Список матерных слов не загружен. Антимат не работает.");
+      return message;
+    }
+    return censorText(S.badWordsSet, message);
+  }
+  var CHAT_LANG_CODES = new Set([ "ru", "en", "uk", "tr", "zh", "ar", "es", "pl", "de" ]);
+  var CHAT_LANG_FLAG = {
+    ru: "ru",
+    en: "gb",
+    uk: "ua",
+    tr: "tr",
+    zh: "cn",
+    ar: "sa",
+    es: "es",
+    pl: "pl",
+    de: "de"
+  };
+  var CHAT_LANG_TAG_RE = /\s*:(ru|en|uk|tr|zh|ar|es|pl|de)\s*$/i;
+  function getChatUiLangCode() {
+    let lang = "ru";
+    try {
+      if (typeof window.getUiLang === "function") lang = window.getUiLang(); else if (window.__uiLang) lang = window.__uiLang;
+    } catch (e) {}
+    lang = String(lang || "ru").toLowerCase();
+    if (lang === "zh-cn" || lang.indexOf("zh") === 0) lang = "zh";
+    if (CHAT_LANG_CODES.has(lang)) return lang;
+    return "en";
+  }
+  function parseChatLangTag(message) {
+    const raw = String(message == null ? "" : message);
+    const m = raw.match(CHAT_LANG_TAG_RE);
+    if (!m) return {
+      text: raw,
+      lang: null
+    };
+    return {
+      text: raw.slice(0, m.index).trimEnd(),
+      lang: m[1].toLowerCase()
+    };
+  }
+  function appendChatLangTag(str) {
+    let s = String(str || "").trim();
+    if (!s) return s;
+    if (/вoшёл в игру/i.test(s)) return s;
+    s = s.replace(CHAT_LANG_TAG_RE, "").trimEnd();
+    const code = getChatUiLangCode();
+    const tag = " :" + code;
+    if (s.length + tag.length >= 200) {
+      s = s.slice(0, Math.max(0, 199 - tag.length)).trimEnd();
+    }
+    return s + tag;
+  }
+  function countProfanity(S, message) {
+    if (!S.badWordsSet || S.badWordsSet.size === 0) return 0;
+    if (S.showAdultContent) return 0;
+    return countHits(S.badWordsSet, message);
+  }
+  function shouldBlurAndRecord(S, pId, message) {
+    if (S.showAdultContent) return false;
+    if (pId === 0 || pId === "0") return false;
+    const now = Date.now();
+    const hits = countProfanity(S, message);
+    let data = S.profanityCountByPlayer.get(pId) || {
+      count: 0,
+      lastTime: now
+    };
+    if (now - data.lastTime > S.RESET_TIME) {
+      data.count = 0;
+    }
+    data.count += hits;
+    data.lastTime = now;
+    S.profanityCountByPlayer.set(pId, data);
+    return data.count >= S.BLUR_THRESHOLD;
+  }
+  function highlightMentions(text) {
+    text = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return text.replace(/@((?:[^\s@]|\u00A0)+)/g, '<span class="mention">@$1</span>');
+  }
+  function replaceEmojis(text) {
+    const gifEmojis = [ 50, 253, 26 ];
+    return text.replace(/:([0-9]+):/g, (match, p1) => {
+      const num = Number(p1);
+      const ext = gifEmojis.includes(num) ? "gif" : "png";
+      return `<img class="chat-emoji" src="/emoji/${num}.${ext}">`;
+    });
+  }
+  function createDialog(S, hooks, number, senderName, senderAvatar) {
+    const dialogId = `!ls${number}`;
+    if (S.dialogs[dialogId]) return;
+    const dialogDiv = document.createElement("div");
+    dialogDiv.className = "chatX_feed";
+    dialogDiv.id = dialogId;
+    dialogDiv.style.display = "none";
+    document.getElementById("chatX_container").appendChild(dialogDiv);
+    const avatarContainer = document.createElement("div");
+    avatarContainer.className = "chatX_top_avatar";
+    const avatar = document.createElement("img");
+    avatar.className = "chatX_avatar_private";
+    setSkinAvatarFromUrl(avatar, senderAvatar || SKIN_FALLBACK_URL);
+    avatar.onerror = () => {
+      if (!avatar.dataset.fallback) {
+        avatar.dataset.fallback = "1";
+        setSkinAvatarFromUrl(avatar, SKIN_FALLBACK_URL);
+      }
+    };
+    avatar.title = senderName || `User ${number}`;
+    avatarContainer.appendChild(avatar);
+    avatarContainer.addEventListener("click", () => switchToDialog(S, dialogId));
+    document.getElementById("chatX_top").appendChild(avatarContainer);
+    S.dialogs[dialogId] = {
+      div: dialogDiv,
+      avatar: avatarContainer
+    };
+    S.dialogMessages[dialogId] = [];
+  }
+  function switchToDialog(S, dialogId) {
+    document.getElementById("chatX_feed").style.display = "none";
+    Object.values(S.dialogs).forEach(d => {
+      d.div.style.display = "none";
+    });
+    if (!dialogId) {
+      document.getElementById("chatX_feed").style.display = "flex";
+      S.activeDialog = null;
+    } else if (S.dialogs[dialogId]) {
+      S.dialogs[dialogId].div.style.display = "flex";
+      S.activeDialog = dialogId;
+    }
+    const chatInput = document.getElementById("ls");
+    if (S.activeDialog) {
+      const dialogNumberMatch = S.activeDialog.match(/^!ls(\d+)$/);
+      chatInput.value = dialogNumberMatch ? `!ls${dialogNumberMatch[1]} ` : "";
+    } else chatInput.value = "";
+  }
+  function drawChatBoard(S, hooks) {
+    if (S.hideChat) return;
+    const rendered = S.chatRenderedCount || 0;
+    if (rendered >= S.chatBoard.length) return;
+    for (let i = rendered; i < S.chatBoard.length; i++) {
+      renderChatMessage(S, hooks, S.chatBoard[i], i);
+    }
+    S.chatRenderedCount = S.chatBoard.length;
+  }
+  function isScrollNearBottom(el) {
+    if (!el) return true;
+    return el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+  }
+  var chatScrollLockUntil = 0;
+  function scrollChatToLatest(targetDiv) {
+    const el = targetDiv || document.getElementById("chatX_feed");
+    if (!el) return;
+    const go = () => {
+      chatScrollLockUntil = performance.now() + 480;
+      const scroller = attachSmoothScroll(el);
+      scroller.toEnd();
+    };
+    requestAnimationFrame(go);
+  }
+  function bindChatScrollTracking(S) {
+    var _a;
+    if (S.chatScrollBound) return;
+    S.chatScrollBound = true;
+    S.chatStickToBottom = true;
+    const feed = document.getElementById("chatX_feed");
+    if (feed) attachSmoothScroll(feed);
+    const onScroll = el => {
+      if (!el) return;
+      if (performance.now() < chatScrollLockUntil) {
+        S.chatStickToBottom = true;
+        return;
+      }
+      S.chatStickToBottom = isScrollNearBottom(el);
+    };
+    feed == null ? void 0 : feed.addEventListener("scroll", e => onScroll(e.currentTarget), {
+      passive: true
+    });
+    (_a = document.getElementById("chatX_container")) == null ? void 0 : _a.addEventListener("scroll", e => {
+      var _a2;
+      const t = e.target;
+      if (t && ((_a2 = t.classList) == null ? void 0 : _a2.contains("chatX_feed"))) onScroll(t);
+    }, {
+      passive: true,
+      capture: true
+    });
+  }
+  function renderChatMessage(S, hooks, lastMessage, msgIndex) {
+    var _a, _b;
+    if (!lastMessage) return;
+    if (lastMessage.isStatsRecord) {
+      const simpleDiv = document.createElement("div");
+      simpleDiv.className = "chatexit chatexit-record";
+      simpleDiv.dataset.chatIdx = String(msgIndex);
+      simpleDiv.textContent = lastMessage.message || "";
+      document.getElementById("chatX_feed").appendChild(simpleDiv);
+      if (S.chatStickToBottom !== false) scrollChatToLatest(document.getElementById("chatX_feed"));
+      return;
+    }
+    if (lastMessage.message && lastMessage.message.toLowerCase().includes("вoшёл в игру")) {
+      const simpleDiv = document.createElement("div");
+      simpleDiv.className = "chatexit";
+      const nameSpan = document.createElement("span");
+      nameSpan.style.color = lastMessage.color || "#b8c0cc";
+      const enterName = lastMessage.name;
+      nameSpan.textContent = `${enterName}:`;
+      simpleDiv.appendChild(nameSpan);
+      simpleDiv.append(` ${lastMessage.message}`);
+      document.getElementById("chatX_feed").appendChild(simpleDiv);
+      if (S.chatStickToBottom !== false) scrollChatToLatest(document.getElementById("chatX_feed"));
+      return;
+    }
+    if (S.ignoredPlayers.has(lastMessage.pId)) return;
+    let targetDiv = null;
+    const messageRaw = (lastMessage.message || "").trim();
+    const privateMatch = messageRaw.match(/^!ls(\d+)\s+(.+)/i);
+    if (privateMatch) {
+      targetDiv = (_a = S.dialogs[`!ls${privateMatch[1]}`]) == null ? void 0 : _a.div;
+    }
+    if (!targetDiv) targetDiv = document.getElementById("chatX_feed");
+    if (targetDiv == null ? void 0 : targetDiv.querySelector(`[data-chat-idx="${msgIndex}"]`)) return;
+    const msgDiv = document.createElement("div");
+    msgDiv.setAttribute("data-id", lastMessage.pId);
+    msgDiv.dataset.chatIdx = String(msgIndex);
+    const lowerName = lastMessage.name.toLowerCase();
+    if (ADMINS.some(admin => admin.toLowerCase() === lowerName)) {
+      msgDiv.style.backgroundColor = "rgba(194, 13, 13, 0.74)";
+    }
+    if (CHAT_BACKGROUNDS.includes(lowerName)) msgDiv.className = "chatX_msg " + lowerName; else msgDiv.className = "chatX_msg";
+    const normalizedName = normalizeNick(lastMessage.name || "");
+    let targetDialogId = null;
+    let messageContent = messageRaw;
+    if (privateMatch) {
+      const number = privateMatch[1];
+      messageContent = privateMatch[2];
+      if (messageContent.startsWith("PvPInvite;")) return;
+      targetDialogId = `!ls${number}`;
+      createDialog(S, hooks, number, lastMessage.name, S.skinList[normalizedName] ? `https://api.agar.su/skins/${S.skinList[normalizedName]}.png` : "https://api.agar.su/skins/4.png");
+      targetDiv = ((_b = S.dialogs[targetDialogId]) == null ? void 0 : _b.div) || targetDiv;
+    }
+    if (messageContent.startsWith("PvPInvite;")) return;
+    const parsedLang = parseChatLangTag(messageContent);
+    messageContent = parsedLang.text;
+    const messageLang = parsedLang.lang;
+    if (!targetDiv) targetDiv = document.getElementById("chatX_feed");
+    const avatarContainer = document.createElement("div");
+    avatarContainer.className = "avatarXcontainer";
+    if (S.passUsers.includes(normalizedName)) {
+      avatarContainer.style.setProperty("--after-display", "block");
+    }
+    if (messageLang && CHAT_LANG_FLAG[messageLang]) {
+      const langBadge = document.createElement("span");
+      langBadge.className = "chatX_lang fi fi-" + CHAT_LANG_FLAG[messageLang];
+      langBadge.title = messageLang.toUpperCase();
+      langBadge.setAttribute("aria-label", messageLang);
+      avatarContainer.appendChild(langBadge);
+    }
+    const avatar = document.createElement("img");
+    avatar.className = "chatX_avatar";
+    avatar.decoding = "async";
+    const skinId = S.skinList[normalizedName];
+    const _skinHost = S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl;
+    const bridgeAvatar = (!skinId && isPetriSkinHost(_skinHost)) ? getPetriSkinUrl(lastMessage.name, _skinHost) : null;
+    setSkinAvatarFromUrl(avatar, skinId ? getSkinImageUrl(skinId) : (bridgeAvatar || SKIN_FALLBACK_URL));
+    avatar.onerror = () => {
+      if (!avatar.dataset.fallback) {
+        avatar.dataset.fallback = "1";
+        setSkinAvatarFromUrl(avatar, SKIN_FALLBACK_URL);
+      }
+    };
+    avatarContainer.appendChild(avatar);
+    msgDiv.appendChild(avatarContainer);
+    const nameContainer = document.createElement("div");
+    nameContainer.className = "chatX_name_container";
+    if (typeof lastMessage.playerLevel === "number" && lastMessage.playerLevel > 0) {
+      const levelContainer = document.createElement("div");
+      levelContainer.className = "star-container";
+      const tooltip = document.createElement("div");
+      tooltip.className = "tooltip";
+      tooltip.textContent = `XP: ${lastMessage.playerXp}`;
+      levelContainer.appendChild(hooks.createLevelIcon(lastMessage.playerLevel, lastMessage.name));
+      if (lastMessage.playerLevel < 200) {
+        const levelSpan = document.createElement("span");
+        levelSpan.className = "levelme " + hooks.getStarClass(lastMessage.playerLevel);
+        levelSpan.textContent = lastMessage.playerLevel;
+        levelContainer.appendChild(levelSpan);
+      }
+      levelContainer.appendChild(tooltip);
+      nameContainer.appendChild(levelContainer);
+    }
+    const ytIndex = YOUTUBERS.indexOf(lowerName);
+    if (ytIndex !== -1 && URL_YOUTUBERS[ytIndex]) {
+      const ytLink = document.createElement("a");
+      ytLink.href = URL_YOUTUBERS[ytIndex];
+      ytLink.target = "_blank";
+      ytLink.innerHTML = '<i class="fab fa-youtube"></i>';
+      ytLink.style.color = "#ff0000";
+      ytLink.title = "YouTube канал";
+      nameContainer.appendChild(ytLink);
+    }
+    if (DONATORS.includes(lowerName)) {
+      const donateIcon = document.createElement("div");
+      donateIcon.title = "Данный игрок является спонсором Agar.su";
+      donateIcon.style.width = "19px";
+      donateIcon.style.height = "19px";
+      donateIcon.style.backgroundImage = "url(/photo/mod.png)";
+      donateIcon.style.backgroundSize = "cover";
+      donateIcon.style.display = "inline-block";
+      nameContainer.appendChild(donateIcon);
+    }
+    const nameDiv = document.createElement("div");
+    nameDiv.className = "chatX_nick";
+    const chatDisplayName = lastMessage.name;
+    const safeName = censorMessage(S, chatDisplayName);
+    nameDiv.textContent = safeName + ":";
+    if (targetDialogId) {
+      nameDiv.style.color = lastMessage.color || "#b8c0cc";
+      nameDiv.title = "Личное сообщение";
+    } else {
+      nameDiv.style.color = lastMessage.color || "#b8c0cc";
+      avatar.style.border = `2px solid ${lastMessage.color}`;
+      avatar.style.background = `${lastMessage.color}`;
+      nameDiv.title = DONATORS.includes(lowerName) ? `${lastMessage.pId} (Донатер)` : `${lastMessage.pId || 0}`;
+    }
+    nameContainer.appendChild(nameDiv);
+    msgDiv.appendChild(nameContainer);
+    const textDiv = document.createElement("div");
+    textDiv.className = "chatX_text";
+    const safeHtml = replaceEmojis(highlightMentions(censorMessage(S, messageContent)));
+    textDiv.innerHTML = safeHtml;
+    if (shouldBlurAndRecord(S, lastMessage.pId, messageContent)) {
+      msgDiv.classList.add("blurred");
+      msgDiv.title = "Скрыто из-за токсичности. Нажмите, чтобы показать.";
+      textDiv.style.cursor = "pointer";
+      textDiv.title = "Нажмите, чтобы показать сообщение";
+      textDiv.addEventListener("click", function revealHandler(e) {
+        if (msgDiv.classList.contains("blurred")) {
+          e.stopPropagation();
+          msgDiv.classList.remove("blurred");
+          textDiv.classList.add("revealed");
+          msgDiv.title = "";
+          textDiv.title = "";
+          textDiv.style.cursor = "default";
+        }
+      });
+    }
+    msgDiv.appendChild(textDiv);
+    const timeDiv = document.createElement("div");
+    timeDiv.className = "chatX_time";
+    timeDiv.textContent = lastMessage.time || "";
+    msgDiv.appendChild(timeDiv);
+    bindChatMsgContextMenu(msgDiv, () => buildChatMsgMenuItems(S, hooks, lastMessage, msgDiv, targetDiv));
+    targetDiv.appendChild(msgDiv);
+    if (targetDialogId && S.dialogs[targetDialogId]) {
+      S.dialogMessages[targetDialogId].push(msgDiv);
+      const topAvatarImg = S.dialogs[targetDialogId].avatar.querySelector("img");
+      if (topAvatarImg) {
+        const sid = S.skinList[normalizedName];
+        setSkinAvatarFromUrl(topAvatarImg, sid ? getSkinImageUrl(sid) : SKIN_FALLBACK_URL);
+        topAvatarImg.title = lastMessage.name || `User ${targetDialogId.replace("!ls", "")}`;
+      }
+    }
+    if (targetDialogId) {
+      while (targetDiv.children.length > S.maxDialogMessages) targetDiv.removeChild(targetDiv.firstChild);
+    } else {
+      while (targetDiv.children.length > S.maxGlobalMessages) targetDiv.removeChild(targetDiv.firstChild);
+    }
+    const stickToBottom = targetDialogId ? true : S.chatStickToBottom !== false;
+    if (stickToBottom) {
+      S.chatStickToBottom = true;
+      scrollChatToLatest(targetDiv);
+      const avatarImg = msgDiv.querySelector("img.chatX_avatar");
+      if (avatarImg && !avatarImg.complete) {
+        avatarImg.addEventListener("load", () => {
+          scrollChatToLatest(targetDiv);
+        }, {
+          once: true
+        });
+      }
+    }
+    const chatInput = document.getElementById("ls");
+    if (S.activeDialog) {
+      const dialogNumberMatch = S.activeDialog.match(/^!ls(\d+)$/);
+      if (dialogNumberMatch) {
+        const number = dialogNumberMatch[1];
+        const currentText = chatInput.value.replace(/^!ls\d+\s*/, "");
+        chatInput.value = `!ls${number} ${currentText}`;
+      }
+    }
+  }
+  function addChat(S, hooks, view, offset) {
+    function getString() {
+      let text = "";
+      let char;
+      while ((char = view.getUint16(offset, true)) != 0) {
+        offset += 2;
+        text += String.fromCharCode(char);
+      }
+      offset += 2;
+      return text;
+    }
+    view.getUint8(offset++);
+    let r = view.getUint8(offset++);
+    let g = view.getUint8(offset++);
+    let b = view.getUint8(offset++);
+    let color = (r << 16 | g << 8 | b).toString(16);
+    while (color.length < 6) {
+      color = "0" + color;
+    }
+    const playerXp = view.getUint32(offset, true);
+    offset += 4;
+    const pId = view.getUint16(offset, true);
+    offset += 2;
+    color = "#" + color;
+    S.chatBoard.push({
+      pId,
+      playerXp,
+      playerLevel: playerXp ? getLevel(playerXp) : -1,
+      name: getString(),
+      color,
+      message: getString(),
+      time: formatTime(new Date)
+    });
+    drawChatBoard(S, hooks);
+    return offset;
+  }
+  function attachChat(S, hooks) {
+    var _a, _b;
+    S.donators = DONATORS;
+    S.chatBackgrounds = CHAT_BACKGROUNDS;
+    S.youtubers = YOUTUBERS;
+    S.url_youtubers = URL_YOUTUBERS;
+    S.passUsers = S.passUsers || [];
+    S.passPlayerNickToId = S.passPlayerNickToId || new Map;
+    S.passClanNickToId = S.passClanNickToId || new Map;
+    S.ignoredPlayers = S.ignoredPlayers || new Set;
+    S.activeDialog = S.activeDialog || null;
+    S.dialogs = S.dialogs || {};
+    S.dialogMessages = S.dialogMessages || {};
+    S.profanityCountByPlayer = S.profanityCountByPlayer || new Map;
+    S.maxGlobalMessages = (_a = S.maxGlobalMessages) != null ? _a : 50;
+    S.maxDialogMessages = (_b = S.maxDialogMessages) != null ? _b : 100;
+    if (typeof S.chatRenderedCount !== "number") S.chatRenderedCount = 0;
+    bindChatScrollTracking(S);
+    S.wHandle.switchToDialog = dialogId => switchToDialog(S, dialogId);
+    const chatHooks = {
+      ...hooks,
+      sendChat: hooks.sendChat,
+      setserver: hooks.setserver,
+      drawChatBoard: () => drawChatBoard(S, hooks)
+    };
+    S.__drawChatBoard = () => drawChatBoard(S, chatHooks);
+    startStatsRecordFeed(S, chatHooks);
+    return {
+      addChat: (view, offset) => addChat(S, chatHooks, view, offset),
+      drawChatBoard: () => drawChatBoard(S, chatHooks),
+      censorMessage: msg => censorMessage(S, msg),
+      switchToDialog: dialogId => switchToDialog(S, dialogId)
+    };
+  }
+  function resolveClanPassIdFromName(S, name) {
+    const clean = String(name || "").replace(/<[^>]*>/g, "");
+    const m = clean.match(/^\[([^\]]+)\]/);
+    if (!m) return null;
+    const clanKey = normalizeNick(`[${m[1]}]`);
+    if (!clanKey) return null;
+    return S.passClanNickToId.get(clanKey) || null;
+  }
+  function resolvePlayerPassIdFromName(S, name) {
+    const clean = String(name || "").replace(/<[^>]*>/g, "");
+    const m = clean.match(/^\[([^\]]+)\](.*)$/);
+    if (m) return null;
+    const norm = normalizeNick(clean);
+    if (!norm || norm.startsWith("[")) return null;
+    return S.passPlayerNickToId.get(norm) || null;
+  }
+  function resolveStatsForName(S, name) {
+    const clanPassId = resolveClanPassIdFromName(S, name);
+    const playerPassId = resolvePlayerPassIdFromName(S, name);
+    const passId = clanPassId || playerPassId;
+    if (!passId) return null;
+    return {
+      passId,
+      isClan: !!clanPassId,
+      url: (clanPassId ? STATS_CLAN_PROFILE_BASE : STATS_PROFILE_BASE) + encodeURIComponent(passId)
+    };
+  }
+  function openStatsForName(S, name) {
+    const info = resolveStatsForName(S, name);
+    if (!info) return false;
+    window.open(info.url, "_blank");
+    return true;
+  }
+  function showUiContextMenu(items, x, y) {
+    document.querySelectorAll(".chat-context-menu").forEach(m => m.remove());
+    if (!(items && items.length)) return null;
+    const menu = document.createElement("div");
+    menu.className = "chat-context-menu";
+    menu.style.top = y + "px";
+    menu.style.left = x + "px";
+    items.forEach(item => {
+      const el = document.createElement("div");
+      el.textContent = item.label;
+      if (item.className) el.className = item.className;
+      el.style.cursor = "pointer";
+      el.onclick = () => {
+        try {
+          item.onClick && item.onClick();
+        } finally {
+          menu.remove();
+        }
+      };
+      menu.appendChild(el);
+    });
+    document.body.appendChild(menu);
+    // Keep menu on screen
+    requestAnimationFrame(() => {
+      const rect = menu.getBoundingClientRect();
+      let left = x;
+      let top = y;
+      if (rect.right > window.innerWidth - 8) left = Math.max(8, window.innerWidth - rect.width - 8);
+      if (rect.bottom > window.innerHeight - 8) top = Math.max(8, window.innerHeight - rect.height - 8);
+      menu.style.left = left + "px";
+      menu.style.top = top + "px";
+    });
+    const closeMenu = event => {
+      if (!menu.contains(event.target)) {
+        menu.remove();
+        document.removeEventListener("click", closeMenu);
+        document.removeEventListener("touchstart", closeMenu);
+      }
+    };
+    setTimeout(() => {
+      document.addEventListener("click", closeMenu);
+      document.addEventListener("touchstart", closeMenu, { passive: true });
+    }, 0);
+    return menu;
+  }
+  function buildChatMsgMenuItems(S, hooks, lastMessage, msgDiv, targetDiv) {
+    const playerId = lastMessage.pId;
+    const menuItems = [];
+    menuItems.push({
+      label: `pid: ${playerId || 0}`,
+      className: "chat-context-pid",
+      onClick: () => {
+        const text = String(playerId || 0);
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text);
+          }
+        } catch (e) {}
+      }
+    });
+    if (resolveStatsForName(S, lastMessage.name)) {
+      menuItems.push({
+        label: "Статистика",
+        onClick: () => openStatsForName(S, lastMessage.name)
+      });
+    }
+    menuItems.push({
+      label: "Личное сообщение",
+      onClick: () => {
+        createDialog(S, hooks, playerId, lastMessage.name, S.skinList[normalizeNick(lastMessage.name)] ? `https://api.agar.su/skins/${S.skinList[normalizeNick(lastMessage.name)]}.png` : "https://api.agar.su/skins/4.png");
+        switchToDialog(S, `!ls${playerId}`);
+      }
+    });
+    menuItems.push({
+      label: "Игнорировать",
+      onClick: () => {
+        S.ignoredPlayers.add(playerId);
+        msgDiv.remove();
+      }
+    });
+    menuItems.push({
+      label: "Удалить всех из игнора",
+      onClick: () => {
+        S.ignoredPlayers.clear();
+      }
+    });
+    menuItems.push({
+      label: "Удалить сообщение",
+      onClick: () => {
+        msgDiv.remove();
+      }
+    });
+    menuItems.push({
+      label: "Удалить все сообщения игрока",
+      onClick: () => {
+        [ ...targetDiv.children ].forEach(c => {
+          var _a2;
+          if ((_a2 = c.querySelector(".chatX_nick")) == null ? void 0 : _a2.title.includes(playerId)) c.remove();
+        });
+      }
+    });
+    return menuItems;
+  }
+  function bindChatMsgContextMenu(msgDiv, getItems) {
+    msgDiv.addEventListener("contextmenu", e => {
+      e.preventDefault();
+      e.stopPropagation();
+      showUiContextMenu(getItems(), e.clientX, e.clientY);
+    });
+    let pressTimer = null;
+    let startX = 0;
+    let startY = 0;
+    msgDiv.addEventListener("touchstart", e => {
+      if (!e.touches || !e.touches[0]) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      pressTimer = setTimeout(() => {
+        pressTimer = null;
+        showUiContextMenu(getItems(), startX, startY);
+      }, 450);
+    }, {
+      passive: true
+    });
+    const cancelPress = () => {
+      if (pressTimer) {
+        clearTimeout(pressTimer);
+        pressTimer = null;
+      }
+    };
+    msgDiv.addEventListener("touchmove", e => {
+      if (!pressTimer || !e.touches || !e.touches[0]) return;
+      const dx = Math.abs(e.touches[0].clientX - startX);
+      const dy = Math.abs(e.touches[0].clientY - startY);
+      if (dx > 14 || dy > 14) cancelPress();
+    }, {
+      passive: true
+    });
+    msgDiv.addEventListener("touchend", cancelPress);
+    msgDiv.addEventListener("touchcancel", cancelPress);
+  }
+  var CUSTOM_BG_STORAGE_MAX = 9e5;
+  function loadBgImageFromDataUrl(dataUrl, onReady2) {
+    if (!dataUrl) {
+      onReady2(null);
+      return;
+    }
+    const img = new Image;
+    img.onload = () => onReady2(img);
+    img.onerror = () => onReady2(null);
+    img.src = dataUrl;
+  }
+  function saveBgImageToStorage(key, dataUrl) {
+    if (!dataUrl) {
+      localStorage.removeItem(key);
+      return true;
+    }
+    if (dataUrl.length > CUSTOM_BG_STORAGE_MAX) return false;
+    try {
+      localStorage.setItem(key, dataUrl);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+  function drawCustomMapBackground2(S, ctx) {
+    if (!S.customMapBgEnabled || !S.mapBgImage || !S.mapBgImage.complete || !S.mapBgImage.width) return;
+    const left = S.leftPos;
+    const top = S.topPos;
+    const right = S.rightPos;
+    const bottom = S.bottomPos;
+    const mapW = right - left;
+    const mapH = bottom - top;
+    if (mapW <= 0 || mapH <= 0) return;
+    const halfW = S.canvasWidth / (2 * S.viewZoom);
+    const halfH = S.canvasHeight / (2 * S.viewZoom);
+    const visLeft = Math.max(left, S.nodeX - halfW);
+    const visRight = Math.min(right, S.nodeX + halfW);
+    const visTop = Math.max(top, S.nodeY - halfH);
+    const visBottom = Math.min(bottom, S.nodeY + halfH);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(left, top, mapW, mapH);
+    ctx.clip();
+    if (S.customMapBgMode === "repeat") {
+      const tile = Math.max(32, S.customMapBgTileSize | 0);
+      const startX = left + Math.floor((visLeft - left) / tile) * tile;
+      const startY = top + Math.floor((visTop - top) / tile) * tile;
+      for (let x = startX; x < visRight; x += tile) {
+        for (let y = startY; y < visBottom; y += tile) {
+          ctx.drawImage(S.mapBgImage, x, y, Math.min(tile, right - x), Math.min(tile, bottom - y));
+        }
+      }
+    } else {
+      ctx.drawImage(S.mapBgImage, left, top, mapW, mapH);
+    }
+    ctx.restore();
+  }
+  function drawVirusFillBackground2(S, ctx, cell, renderSize, simpleRender, bigPointSize) {
+    if (!S.customVirusBgEnabled || !S.virusBgImage || !S.virusBgImage.complete || !S.virusBgImage.width) return false;
+    const half = (simpleRender ? renderSize : bigPointSize) * 1.15;
+    ctx.save();
+    ctx.clip();
+    ctx.drawImage(S.virusBgImage, cell.x - half, cell.y - half, half * 2, half * 2);
+    ctx.restore();
+    return true;
+  }
+  function updateBgPreview(previewId, dataUrl) {
+    const el = document.getElementById(previewId);
+    if (!el) return;
+    if (dataUrl) {
+      el.style.backgroundImage = `url("${dataUrl}")`;
+      el.classList.add("has-image");
+    } else {
+      el.style.backgroundImage = "";
+      el.classList.remove("has-image");
+    }
+  }
+  function syncBgTileRows(S) {
+    const mapRow = document.getElementById("map-bg-tile-row");
+    if (mapRow) mapRow.style.display = S.customMapBgMode === "repeat" ? "flex" : "none";
+  }
+  function initCustomBgSettings(S) {
+    if (S.customBgSettingsInitialized) return;
+    S.customBgSettingsInitialized = true;
+    S.customMapBgMode = getCookie("custom_map_bg_mode") || "stretch";
+    S.customMapBgTileSize = parseInt(getCookie("custom_map_bg_tile"), 10) || 512;
+    const mapMode = document.getElementById("map-bg-mode");
+    const mapTile = document.getElementById("map-bg-tile");
+    if (mapMode) mapMode.value = S.customMapBgMode;
+    if (mapTile) mapTile.value = S.customMapBgTileSize;
+    syncBgTileRows(S);
+    const enabledMap = readCheckboxSaved(15);
+    if (enabledMap !== null) S.customMapBgEnabled = enabledMap;
+    const enabledVirus = readCheckboxSaved(16);
+    if (enabledVirus !== null) S.customVirusBgEnabled = enabledVirus;
+    loadBgImageFromDataUrl(localStorage.getItem("custom_map_bg_image"), img => {
+      S.mapBgImage = img;
+      updateBgPreview("map-bg-preview", img ? localStorage.getItem("custom_map_bg_image") : null);
+    });
+    loadBgImageFromDataUrl(localStorage.getItem("custom_virus_bg_image"), img => {
+      S.virusBgImage = img;
+      updateBgPreview("virus-bg-preview", img ? localStorage.getItem("custom_virus_bg_image") : null);
+    });
+    function bindBgFile(fileId, storageKey, previewId, setImage) {
+      const input = document.getElementById(fileId);
+      if (!input) return;
+      input.addEventListener("change", function() {
+        const file = input.files && input.files[0];
+        if (!file) return;
+        const reader = new FileReader;
+        reader.onload = function(e) {
+          const dataUrl = e.target.result;
+          loadBgImageFromDataUrl(dataUrl, img => {
+            setImage(img);
+            if (img && saveBgImageToStorage(storageKey, dataUrl)) {
+              updateBgPreview(previewId, dataUrl);
+            } else if (img) {
+              updateBgPreview(previewId, dataUrl);
+              alert("Картинка загружена, но слишком большая для сохранения. После перезагрузки выберите файл снова.");
+            }
+          });
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+    bindBgFile("map-bg-file", "custom_map_bg_image", "map-bg-preview", img => {
+      S.mapBgImage = img;
+    });
+    bindBgFile("virus-bg-file", "custom_virus_bg_image", "virus-bg-preview", img => {
+      S.virusBgImage = img;
+    });
+    const mapClear = document.getElementById("map-bg-clear");
+    const virusClear = document.getElementById("virus-bg-clear");
+    if (mapClear) mapClear.addEventListener("click", () => {
+      S.mapBgImage = null;
+      saveBgImageToStorage("custom_map_bg_image", null);
+      updateBgPreview("map-bg-preview", null);
+      const fi = document.getElementById("map-bg-file");
+      if (fi) fi.value = "";
+    });
+    if (virusClear) virusClear.addEventListener("click", () => {
+      S.virusBgImage = null;
+      saveBgImageToStorage("custom_virus_bg_image", null);
+      updateBgPreview("virus-bg-preview", null);
+      const fi = document.getElementById("virus-bg-file");
+      if (fi) fi.value = "";
+    });
+    if (mapMode) mapMode.addEventListener("change", function() {
+      S.customMapBgMode = this.value;
+      setCookie("custom_map_bg_mode", S.customMapBgMode, 365);
+      syncBgTileRows(S);
+    });
+    if (mapTile) mapTile.addEventListener("change", function() {
+      S.customMapBgTileSize = Math.max(64, parseInt(this.value, 10) || 512);
+      this.value = S.customMapBgTileSize;
+      setCookie("custom_map_bg_tile", S.customMapBgTileSize, 365);
+    });
+  }
+  function isEjectedMass2(S, cell) {
+    if (!cell || cell.isVirus || cell.isFood) return false;
+    if (S.playerCells.indexOf(cell) !== -1) return false;
+    const flags = cell.flag | 0;
+    if (flags & 32 || flags & 64 || cell.isEjected) return true;
+    const sz = cell.nSize || cell.size || 0;
+    if (sz <= 0 || !(S.foodMaxSize > 0)) return false;
+    return sz > S.foodMaxSize && sz <= Math.max(55, S.foodMaxSize + 20);
+  }
+  function getClientCellColor2(S, cell) {
+    if (cell.isVirus && /sixz\.ru:6017|:6017\b/i.test(String(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl || ""))) {
+      return "#ff9900";
+    }
+    if (!S.customClientColors) return null;
+    if (cell.isVirus) return S.clientColorVirus;
+    if (cell.isFood) return S.clientColorFood;
+    if (S.playerCells.indexOf(cell) !== -1) return S.clientColorOwn;
+    if (isEjectedMass2(S, cell)) return S.clientColorEject;
+    if (!cell.isVirus && !cell.isFood && S.playerCells.indexOf(cell) === -1) {
+      return S.clientColorEnemy;
+    }
+    return null;
+  }
+  function loadClientColorSettings(S) {
+    const enabled = readCheckboxSaved(14);
+    if (enabled !== null) {
+      S.customClientColors = enabled;
+    }
+    S.clientColorVirus = getCookie("client_color_virus") || S.clientColorVirus;
+    S.clientColorFood = getCookie("client_color_food") || S.clientColorFood;
+    S.clientColorEnemy = getCookie("client_color_enemy") || S.clientColorEnemy;
+    S.clientColorOwn = getCookie("client_color_own") || S.clientColorOwn;
+    S.clientColorEject = getCookie("client_color_eject") || S.clientColorEject;
+  }
+  function saveClientColorSetting(key, value) {
+    setCookie(key, value, 365);
+  }
+  function wireClientColorInputs(S) {
+    loadClientColorSettings(S);
+    const clientColorInputs = [ [ "client-color-virus", "client_color_virus", () => S.clientColorVirus, v => {
+      S.clientColorVirus = v;
+    } ], [ "client-color-food", "client_color_food", () => S.clientColorFood, v => {
+      S.clientColorFood = v;
+    } ], [ "client-color-enemy", "client_color_enemy", () => S.clientColorEnemy, v => {
+      S.clientColorEnemy = v;
+    } ], [ "client-color-own", "client_color_own", () => S.clientColorOwn, v => {
+      S.clientColorOwn = v;
+    } ], [ "client-color-eject", "client_color_eject", () => S.clientColorEject, v => {
+      S.clientColorEject = v;
+    } ] ];
+    clientColorInputs.forEach(([id, cookieKey, getter, setter]) => {
+      const input = document.getElementById(id);
+      if (!input) return;
+      input.value = getCookie(cookieKey) || getter();
+      input.addEventListener("input", function() {
+        setter(input.value);
+        saveClientColorSetting(cookieKey, input.value);
+      });
+    });
+  }
+  function getCheckboxDefaultValue(S, id) {
+    switch (id) {
+     case 1:
+      return S.showSkin;
+
+     case 2:
+      return S.showName;
+
+     case 3:
+      return S.showColor;
+
+     case 4:
+      return S.enableMouseClicks;
+
+     case 5:
+      return S.showMass;
+
+     case 6:
+      return false;
+
+     case 7:
+      return S.closebord;
+
+     case 8:
+      return S.hideChat;
+
+     case 9:
+      return S.showGlow;
+
+     case 10:
+      return S.showAdultContent;
+
+     case 11:
+      return S.confirmCloseTab;
+
+     case 12:
+      return S.fixedCell;
+
+     case 13:
+      return S.showStickers;
+
+     case 14:
+      return S.customClientColors;
+
+     case 15:
+      return S.customMapBgEnabled;
+
+     case 16:
+      return S.customVirusBgEnabled;
+
+     case 17:
+      return S.spectateAutoFollow;
+
+     default:
+      return false;
+    }
+  }
+  function persistCheckbox(id, value) {
+    setCookie("checkbox-" + id, value ? "true" : "false", 365);
+    try {
+      localStorage.setItem("checkbox-" + id, value ? "true" : "false");
+    } catch (e) {}
+  }
+  function readCheckboxSaved(id) {
+    const fromCookie = getCookie("checkbox-" + id);
+    if (fromCookie !== void 0 && fromCookie !== null && fromCookie !== "") {
+      return fromCookie === "true";
+    }
+    try {
+      const fromLs = localStorage.getItem("checkbox-" + id);
+      if (fromLs === "true" || fromLs === "false") return fromLs === "true";
+    } catch (e) {}
+    return null;
+  }
+  function restoreCheckboxCookies(S) {
+    onReady(function() {
+      const qualitySelect = document.getElementById("quality-select");
+      const savedQuality = readStored("render_quality", "high");
+      const quality = savedQuality === "low" || savedQuality === "medium" ? savedQuality : "high";
+      S.renderQuality = quality;
+      if (qualitySelect) qualitySelect.value = quality;
+      if (S.nCanvas) canvasResize(S);
+      const checkboxes = Array.from(document.querySelectorAll(".save"));
+      checkboxes.forEach(input => {
+        const id = Number(input.dataset.boxId);
+        const saved = readCheckboxSaved(id);
+        input.checked = saved !== null ? saved : getCheckboxDefaultValue(S, id);
+      });
+      loadClientColorSettings(S);
+      loadMouseButtonSettings(S);
+      S.keyBinds = loadKeybinds();
+      renderKeybindUI(S);
+      checkboxes.forEach(input => {
+        input.dispatchEvent(new Event("change", {
+          bubbles: true
+        }));
+        if (input.dataset.persistBound === "1") return;
+        input.dataset.persistBound = "1";
+        input.addEventListener("change", function() {
+          const id = Number(input.dataset.boxId);
+          const value = input.checked;
+          persistCheckbox(id, value);
+          if (id == 10) S.wHandle.setAdultContent(value);
+          if (id == 11) S.wHandle.setConfirmCloseTab(value);
+          if (id == 13) S.wHandle.setShowStickers(value);
+          if (id == 14) S.wHandle.setCustomClientColors(value);
+          if (id == 15) S.wHandle.setCustomMapBg(value);
+          if (id == 16) S.wHandle.setCustomVirusBg(value);
+          if (id == 17) S.wHandle.setSpectateAutoFollow(value);
+        });
+      });
+    });
+  }
+  function attachSettings(S, hooks = {}) {
+    const wHandle = S.wHandle;
+    wHandle.setSkins = function(arg) {
+      S.showSkin = arg;
+      persistCheckbox(1, arg);
+    };
+    wHandle.setNames = function(arg) {
+      S.showName = arg;
+      persistCheckbox(2, arg);
+    };
+    wHandle.setColors = function(arg) {
+      S.showColor = arg;
+      persistCheckbox(3, arg);
+    };
+    wHandle.setMouseClicks = function(arg) {
+      S.enableMouseClicks = arg;
+      persistCheckbox(4, arg);
+      syncMouseBindSettingsVisibility(S);
+    };
+    wHandle.setSpectateAutoFollow = function(arg) {
+      S.spectateAutoFollow = !!arg;
+      persistCheckbox(17, S.spectateAutoFollow);
+      if (!S.spectateAutoFollow) clearSpectateFollow(S);
+    };
+    wHandle.setShowMass = function(arg) {
+      S.showMass = arg;
+      persistCheckbox(5, arg);
+    };
+    wHandle.setSmooth = function(arg) {
+      S.smoothRender = arg ? 2 : .4;
+      persistCheckbox(6, arg);
+    };
+    wHandle.setSmooth.enabled = false;
+    wHandle.setRenderQuality = function(arg) {
+      const q = arg === "low" || arg === "medium" ? arg : "high";
+      S.renderQuality = q;
+      writeStored("render_quality", q);
+      const select = document.getElementById("quality-select");
+      if (select && select.value !== q) select.value = q;
+      canvasResize(S);
+    };
+    wHandle.setNoBorder = function(arg) {
+      S.closebord = arg;
+      persistCheckbox(7, arg);
+    };
+    wHandle.setChatHide = function(arg) {
+      S.hideChat = arg;
+      persistCheckbox(8, arg);
+    };
+    wHandle.setGlow = function(arg) {
+      S.showGlow = arg;
+      persistCheckbox(9, arg);
+    };
+    wHandle.setAdultContent = function(arg) {
+      S.showAdultContent = arg;
+      persistCheckbox(10, arg);
+    };
+    wHandle.setConfirmCloseTab = function(arg) {
+      S.confirmCloseTab = arg;
+      persistCheckbox(11, arg);
+    };
+    wHandle.setFixedCell = function(arg) {
+      S.fixedCell = arg;
+      persistCheckbox(12, arg);
+    };
+    wHandle.setShowStickers = function(arg) {
+      S.showStickers = arg;
+      persistCheckbox(13, arg);
+    };
+    wHandle.setCustomClientColors = function(arg) {
+      S.customClientColors = arg;
+      persistCheckbox(14, arg);
+    };
+    wHandle.setCustomMapBg = function(arg) {
+      S.customMapBgEnabled = arg;
+      persistCheckbox(15, arg);
+    };
+    wHandle.setCustomVirusBg = function(arg) {
+      S.customVirusBgEnabled = arg;
+      persistCheckbox(16, arg);
+    };
+    if (hooks.fixDead) {
+      wHandle.fixDead = hooks.fixDead;
+    }
+    Object.defineProperty(wHandle, "freeze", {
+      get() {
+        return S.freeze;
+      },
+      set(v) {
+        if (v) enablePause(S, S.api || {});
+        else disablePause(S);
+      },
+      configurable: true
+    });
+    window.addEventListener("beforeunload", function(e) {
+      if (S.confirmCloseTab) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    });
+    restoreCheckboxCookies(S);
+    onReady(function() {
+      wireClientColorInputs(S);
+      initCustomBgSettings(S);
+      initKeybindSettings(S);
+      initSettingsNav();
+    });
+    return {
+      drawCustomMapBackground: ctx => drawCustomMapBackground2(S, ctx),
+      drawVirusFillBackground: (ctx, cell, renderSize, simpleRender, bigPointSize) => drawVirusFillBackground2(S, ctx, cell, renderSize, simpleRender, bigPointSize),
+      getClientCellColor: cell => getClientCellColor2(S, cell),
+      isEjectedMass: cell => isEjectedMass2(S, cell),
+      cancelKeybindCapture: () => cancelKeybindCapture(S)
+    };
+  }
+function getServerDomId(regionKey, serverKey) {
+  return document.querySelector(`.server-item[data-region="${regionKey}"][data-server-key="${serverKey}"]`)?.id || serverKey;
+}
+function renderRegionServers(regionKey) {
+  const config = REGION_CONFIGS[regionKey];
+  if (!config) return;
+  document.querySelectorAll(".server-item").forEach(item => {
+    const visible = item.dataset.region === regionKey;
+    item.hidden = !visible;
+    item.classList.remove("active");
+  });
+  document.querySelectorAll(".server-group").forEach(group => {
+    group.hidden = !group.querySelector(`.server-item[data-region="${regionKey}"]`);
+  });
+  document.querySelectorAll("[data-region]").forEach(button => button.classList.toggle("active", button.dataset.region === regionKey));
+}
+function applyRegion(regionKey, S, save) {
+  const config = REGION_CONFIGS[regionKey];
+  if (!config) return false;
+  activeRegion = regionKey;
+  SERVERS = Object.fromEntries(Object.entries(config.servers).map(([id, server]) => [id, server.host]));
+  renderRegionServers(regionKey);
+  if (save !== false) try { localStorage.setItem("agar_region", regionKey); } catch (e) {}
+  if (S) {
+    history.replaceState(null, "", " ");
+    initServers(S);
+  }
+  return true;
+}
+function getServerHash(regionKey, serverKey) {
+  return serverKey;
+}
+function parseServerHash(hashValue) {
+  const value = String(hashValue || "").split("?")[0].toLowerCase();
+  if (REGION_CONFIGS.eu?.servers[value]) return { regionKey: "eu", serverKey: value };
+  if (REGION_CONFIGS.tr?.servers[value]) return { regionKey: "tr", serverKey: value };
+  return { regionKey: "ru", serverKey: value };
+}
+function getRegionForHash(hashValue) {
+  const parsed = parseServerHash(hashValue);
+  return REGION_CONFIGS[parsed.regionKey]?.servers[parsed.serverKey] ? parsed.regionKey : null;
+}
+function initServers(S) {
+  readServersFromHtml();
+  let serverKey = "ffa";
+  const hash = S.wHandle.location.hash.slice(1);
+  const hashWithoutParams = hash.split("?")[0];
+  const parsedHash = parseServerHash(hashWithoutParams);
+  const hashRegion = getRegionForHash(hashWithoutParams);
+  if (!activeRegion) applyRegion(hashRegion || getDefaultRegion(), null, false);
+  else if (hashRegion && hashRegion !== activeRegion) applyRegion(hashRegion, null, false);
+  const urlParams = new URLSearchParams(window.location.search);
+  
+  // Определяем сервер из URL
+  if (hashRegion && parsedHash.serverKey && SERVERS[parsedHash.serverKey]) {
+    serverKey = parsedHash.serverKey;
+  } else {
+    const keys = Object.keys(SERVERS);
+    if (keys.length) serverKey = keys[0];
+  }
+  
+  S.CONNECTION_URL = serverKey ? SERVERS[serverKey] : null;
+  S.SELECTED_SERVER = S.CONNECTION_URL;
+  
+  // Обновляем активный класс на НОВЫХ элементах .server-item
+  document.querySelectorAll(".server-item").forEach(el => el.classList.remove("active"));
+  const activeItem = serverKey ? document.getElementById(getServerDomId(activeRegion, serverKey)) : null;
+  if (activeItem) {
+    activeItem.classList.add("active");
+  }
+  
+  const titleEl = document.getElementById("serverTitle");
+  if (titleEl) {
+    const serverName = REGION_CONFIGS[activeRegion]?.servers[serverKey]?.title || serverKey;
+    titleEl.textContent = `Статистика ${serverName}`;
+  }
+
+  if (typeof updateOfficialStatsVisibility === "function") updateOfficialStatsVisibility(S);
+  
+  if (urlParams.has("spect") || urlParams.has("spectator") || hash.includes("?spect") || hash.includes("?spectator")) {
+    window._autoSpectate = true;
+  }
+  if (typeof S.wHandle.refreshCenterTop === "function") {
+    S.wHandle.refreshCenterTop();
+  }
+}
+  function hideGameOverlays() {
+    hideOverlays();
+  }
+  function initGame(wHandle) {
+    const S = createGameState();
+    S.wHandle = wHandle;
+    S.keyBinds = loadKeybinds(KEYBIND_DEFAULTS);
+    S.cellColors = CELL_COLORS;
+    S.touchable = "createTouch" in window || navigator.maxTouchPoints > 0;
+    S.leftTouchPos = new Vector2(0, 0);
+    S.leftTouchStartPos = new Vector2(0, 0);
+    S.leftVector = new Vector2(0, 0);
+    S.joystickRadius = 360;
+    S.cursorSize = 20;
+    S.canSendCoord = true;
+    S.splitIcon = new Image;
+    S.ejectIcon = new Image;
+    S.splitIcon.src = "/photo/split.png";
+    S.ejectIcon.src = "/photo/eject.png";
+    S.isTouchStart = "ontouchstart" in wHandle && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    setTouchDeviceDetected(S.isTouchStart);
+    S.Quad = Quad;
+    S.nodesSortDirty = true;
+    bindCellDeps({
+      S,
+      getSkinImage,
+      loadCachedImage,
+      normalizeNick
+    });
+    const listsPromise = preloadStaticLists().then(({skin, sticker, pass, invisible, rotation, words}) => {
+      applySkinListToState(S, skin);
+      applyStickerListToState(S, sticker);
+      S.passUsers = pass.passUsers;
+      S.passPlayerNickToId = pass.passPlayerNickToId;
+      S.passClanNickToId = pass.passClanNickToId;
+      S.invisible = invisible;
+      S.rotation = rotation;
+      S.badWordsSet = words;
+      ensureNameSets(S);
+      invalidateStatsRenderCaches(S);
+      return {
+        skin,
+        sticker,
+        pass,
+        invisible,
+        rotation,
+        words
+      };
+    }).catch(() => {
+      ensureNameSets(S);
+      return null;
+    });
+    const outbound = attachOutbound(S);
+    const chatApi = attachChat(S, {
+      sendChat: t => outbound.sendChat(t),
+      setserver: arg => wHandle.setserver(arg),
+      getSkinImageUrl,
+      createLevelIcon: (level, nick) => createLevelIcon(S, level, nick, {
+        getSkinImageUrl,
+        setImgSrc
+      }),
+      getStarClass
+    });
+    const lbApi = attachLeaderboard(S, {
+      getLevel,
+      createLevelIcon: (level, nick) => createLevelIcon(S, level, nick, {
+        getSkinImageUrl,
+        setImgSrc
+      }, { staticSkin: true }),
+      getStarClass,
+      resolveClanPassIdFromName: name => resolveClanPassIdFromName(S, name),
+      resolvePlayerPassIdFromName: name => resolvePlayerPassIdFromName(S, name),
+      STATS_PROFILE_BASE,
+      STATS_CLAN_PROFILE_BASE
+    });
+    const sceneApi = attachScene(S, {
+      sendMouseMove: () => outbound.sendMouseMove()
+    });
+    const statsApi = attachStats(S, {
+      censorMessage: msg => chatApi.censorMessage(msg),
+      setNick: nick => wHandle.setNick(nick),
+      sendChat: t => outbound.sendChat(t),
+      getSkinImageUrl,
+      setImgSrc,
+      onTopPlayer: top => loadTopPlayerData([ top ])
+    });
+    const connectionHooks = {
+      onMessage: null,
+      sendNickName: () => outbound.sendNickName(),
+      sendSpectate: () => outbound.sendSpectate(),
+      sendChat: t => outbound.sendChat(t),
+      sendAccountToken: () => outbound.sendAccountToken(),
+      clearWorld: () => {
+        resetWorldContainers(S);
+        clearWorld(S);
+      }
+    };
+    const connection = attachConnection(S, connectionHooks);
+    const handlers = attachHandlers(S, {
+      updateNodes: reader => updateNodes(S, reader, {
+        Cell,
+        onPlayerDeath: () => {
+          disablePause(S);
+          showStatics();
+          updateShareText(S);
+          if (typeof window.renderDeathBanner === "function") window.renderDeathBanner();
+        }
+      }),
+      addChat: (view, offset) => chatApi.addChat(view, offset),
+      drawLeaderBoard: () => lbApi.drawLeaderBoard(),
+      drawCustomLeaderBoard: () => lbApi.drawCustomLeaderBoard(),
+      onUpdateXp: xp => {
+        if (typeof wHandle.onUpdateXp === "function") wHandle.onUpdateXp(xp);
+      },
+      onGameHandshakeReady: () => connection.onGameHandshakeReady(),
+      sendMouseMove: opts => outbound.sendMouseMove(opts),
+      getLevel,
+      setPingDisplay
+    });
+    connectionHooks.onMessage = (dv) => {
+      handlers.handleWsMessage(dv);
+    };
+    attachSettings(S, {
+      fixDead: () => fixDead(S)
+    });
+    const bootSettingsUi = () => {
+      initKeybindSettings(S);
+      initSettingsNav();
+      initMouseButtonSettings(S);
+      initCustomBgSettings(S);
+    };
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", bootSettingsUi);
+    } else {
+      bootSettingsUi();
+    }
+    wHandle.setserver = function(arg) {
+      if (!SERVERS || Object.keys(SERVERS).length === 0) {
+        console.warn("Серверы ещё не загружены. Подождите...");
+        return;
+      }
+      const wsUrl = getGameServerWssUrl(arg);
+      const alreadyConnected = S.ws && S.ws.readyState === WebSocket.OPEN && S.currentWebSocketUrl === wsUrl;
+      if (arg !== S.CONNECTION_URL) {
+        S.CONNECTION_URL = arg;
+        const foundServerKey = Object.keys(SERVERS).find(key => SERVERS[key] === arg);
+        if (foundServerKey) {
+          history.replaceState(null, "", `#${getServerHash(activeRegion, foundServerKey)}`);
+          setActiveFromHash(S);
+        } else {
+          console.warn("Неизвестный сервер URL:", arg);
+          history.replaceState(null, "", " ");
+        }
+      }
+      if (!alreadyConnected) {
+        connection.showConnecting();
+        updateOnlineCount();
+      }
+    };
+    wHandle.setNick = function(arg) {
+      wHandle.setserver(S.SELECTED_SERVER);
+      hideGameOverlays();
+      S.userNickName = arg;
+      S.spectateFollowNick = null;
+      S.spectateFollowPid = 0;
+      if (S._spectateFollowTimer) {
+        clearInterval(S._spectateFollowTimer);
+        S._spectateFollowTimer = null;
+      }
+      outbound.sendNickName();
+      hideStatics();
+      S.maxScore = 0;
+      if (typeof wHandle.refreshCenterTop === "function") wHandle.refreshCenterTop();
+    };
+    wHandle.spectate = function() {
+      wHandle.setserver(S.SELECTED_SERVER);
+      S.userNickName = null;
+      S.spectateFollowNick = null;
+      S.spectateFollowPid = 0;
+      if (S._spectateFollowTimer) {
+        clearInterval(S._spectateFollowTimer);
+        S._spectateFollowTimer = null;
+      }
+      // Already connected → enter overview now (otherwise only canvas click sent op 1).
+      outbound.sendSpectate();
+      hideGameOverlays();
+      hideStatics();
+      if (typeof wHandle.refreshCenterTop === "function") wHandle.refreshCenterTop();
+    };
+    wHandle.connect = connection.wsConnect;
+onReady(() => {
+  const serverGrid = document.querySelector(".server-grid");
+  if (!serverGrid || serverGrid.dataset.serverClickBound === "1") return;
+  serverGrid.dataset.serverClickBound = "1";
+  serverGrid.addEventListener("click", event => {
+    const item = event.target.closest(".server-item");
+    if (!item || !serverGrid.contains(item)) return;
+    const id = item.dataset.serverKey || item.id;
+    if (!id || !REGION_CONFIGS[activeRegion]?.servers[id]) return;
+    document.querySelectorAll(".server-item").forEach(el => el.classList.remove("active"));
+    item.classList.add("active");
+    S.SELECTED_SERVER = item.dataset.ip;
+    S.CONNECTION_URL = item.dataset.ip;
+    history.replaceState(null, "", "#" + getServerHash(activeRegion, id));
+    const titleEl = document.getElementById("serverTitle");
+    if (titleEl) titleEl.textContent = `Статистика ${REGION_CONFIGS[activeRegion].servers[id].title || id}`;
+    if (typeof updateOfficialStatsVisibility === "function") updateOfficialStatsVisibility(S);
+    if (typeof wHandle.refreshCenterTop === "function") wHandle.refreshCenterTop();
+  });
+});
+    listsPromise.then(() => fetchNickPerksLists(S)).catch(() => {});
+    listsPromise.then(() => initServers(S)).catch(() => initServers(S));
+    onReady(() => {
+      document.querySelectorAll(".region-option[data-region]").forEach(button => {
+        if (button.dataset.regionBound === "1") return;
+        button.dataset.regionBound = "1";
+        button.addEventListener("click", () => {
+          if (applyRegion(button.dataset.region, S, true)) updateOnlineCount();
+        });
+      });
+      startOnlineCountPolling();
+    });
+    setInterval(async () => {
+      const data = await preloadStaticLists(true);
+      applySkinListToState(S, data.skin);
+      applyStickerListToState(S, data.sticker);
+      S.passUsers = data.pass.passUsers;
+      S.passPlayerNickToId = data.pass.passPlayerNickToId;
+      S.passClanNickToId = data.pass.passClanNickToId;
+      S.invisible = data.invisible;
+      S.rotation = data.rotation;
+      S.badWordsSet = data.words;
+      invalidateStatsRenderCaches(S);
+      const staticsEl = document.getElementById("statics");
+      if (staticsEl && staticsEl.style.display === "flex" && typeof wHandle.chekstats === "function") {
+        wHandle.chekstats();
+      } else if (typeof wHandle.refreshCenterTop === "function") {
+        wHandle.refreshCenterTop();
+      }
+    }, TTL_MS);
+    wHandle.addEventListener("hashchange", () => initServers(S));
+    attachAccountHooks(S, {
+      sendAccountToken: () => outbound.sendAccountToken(),
+      setNick: n => wHandle.setNick(n),
+      selectSkin: nick => {
+        if (typeof window.selectSkin === "function") return window.selectSkin(nick);
+        return selectSkin(nick);
+      }
+    });
+    initShareHandlers(S);
+    connection.bindVisibilityHandlers();
+    hideReconnectPanel();
+    function startGameLoop() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const hash = wHandle.location.hash;
+      if (urlParams.has("spect") || urlParams.has("spectator") || hash.includes("?spect") || hash.includes("?spectator")) {
+        const requestedZoom = Number.parseFloat(urlParams.get("zoom"));
+        S.zoom = Number.isFinite(requestedZoom) ? Math.min(4, Math.max(.3, requestedZoom)) : .4;
+      }
+      if (window._autoSpectate && typeof wHandle.spectate === "function") {
+        delete window._autoSpectate;
+        setTimeout(() => wHandle.spectate(), 100);
+      }
+      attachInput(S, {
+        sendUint8: a => outbound.sendUint8(a),
+        sendMouseMove: () => outbound.sendMouseMove(),
+        sendChat: t => outbound.sendChat(t),
+        fixDead: () => fixDead(S),
+        coord: () => wHandle.coord(),
+        redrawGameScene: sceneApi.redrawGameScene,
+        updateStats: () => {
+          updateStats(S);
+          statsApi.updateStats();
+        },
+        reconnectToServer: () => connection.reconnectToServer(),
+        prepareData,
+        wsSend: v => connection.wsSend(v),
+        wsIsOpen: () => outbound.wsIsOpen(),
+        showConnecting: () => connection.showConnecting()
+      });
+    }
+    wHandle.onload = startGameLoop;
+    if (document.readyState === "complete") {
+      startGameLoop();
+    }
+    wHandle.__gameState = S;
+    wHandle.__gameApi = S.api;
+    if (window.AgarAdmin && typeof window.AgarAdmin.attach === "function") {
+      try {
+        window.AgarAdmin.attach(S, {
+          sendChat: (t) => outbound.sendChat(t),
+          sendAdminPanel: () => outbound.sendAdminPanel(),
+          sendUint8: (n) => outbound.sendUint8(n),
+          wsIsOpen: () => outbound.wsIsOpen()
+        });
+      } catch (err) {
+        console.warn("AgarAdmin attach failed:", err);
+      }
+    }
+    return S;
+  }
+  var actionInterval = 500;
+  var actionTimeout;
+  var currentIndex = 0;
+  var MANUAL_SKINS_NICKS = [ "Муха", "Паук", "Кактус", "Могучая", "Ящерица", "Лиса", "Волк", "Мамонт", "Динозавр", "Мороженое", "Ракета", "Зая", "Фаун", "Бабушка", "Юпитер", "Марс", "Луна", "Гора", "Нептун", "Плутон", "Уран", "Венера", "Сатурн","Теннисистка", "Первобытный", "Влюблённый", "Влюблённая"];
+  var SKINS_PER_PAGE_MOBILE = 8;
+  var SKINS_PER_PAGE_DESKTOP = 14;
+  var PLAYERS_KEY = "players";
+  var MAX_PLAYERS = 3;
+  var skinsGalleryItems = [];
+  var skinsGalleryPage = 1;
+  var skinsGalleryPerPage = SKINS_PER_PAGE_DESKTOP;
+  var skinsGalleryLoading = false;
+  var skinsGalleryLoaded = false;
+  var skinsGalleryResizeBound = false;
+  var cachedSkinsMap = null;
+  var cachedSkinsMapAt = 0;
+  var avatarCtxMenu = null;
+  function getSkinPreviewUrl(skinId) {
+    return skinId ? `https://api.agar.su/skins/${skinId}.png` : "";
+  }
+  function setBackgroundImageIfChanged(el, skinId) {
+    if (!el) return;
+    const url = getSkinPreviewUrl(skinId);
+    const next = url ? `url(${url})` : "";
+    if (el.dataset.bgSrc === next) return;
+    el.dataset.bgSrc = next;
+    el.style.backgroundImage = next;
+  }
+  function getPlayers() {
+    try {
+      const players = JSON.parse(localStorage.getItem(PLAYERS_KEY) || "[]");
+      return Array.isArray(players) ? players : [];
+    } catch (e) {
+      return [];
+    }
+  }
+  function setPlayers(players) {
+    localStorage.setItem(PLAYERS_KEY, JSON.stringify(players));
+  }
+  function getPassInputValue() {
+    const passInput = document.getElementById("pass");
+    return passInput ? String(passInput.value || "").trim() : "";
+  }
+  function setFormNickPass(nick, pass) {
+    const nickInput = document.getElementById("nick");
+    const passInput = document.getElementById("pass");
+    if (nickInput && nick != null) nickInput.value = nick;
+    if (passInput) {
+      passInput.value = pass || "";
+      if (typeof window.__agarsuCheckNickStatus === "function") {
+        window.__agarsuCheckNickStatus(nick || "");
+      }
+    }
+    if (typeof window.__agarsuSyncNickPassCookies === "function") {
+      window.__agarsuSyncNickPassCookies(nick || "", pass || "");
+    }
+  }
+  function getSkinsGalleryPerPage() {
+    return window.matchMedia("(max-width: 599px)").matches ? SKINS_PER_PAGE_MOBILE : SKINS_PER_PAGE_DESKTOP;
+  }
+  function bindSkinsGalleryResize() {
+    if (skinsGalleryResizeBound) return;
+    skinsGalleryResizeBound = true;
+    let lastPerPage = getSkinsGalleryPerPage();
+    window.addEventListener("resize", () => {
+      const next = getSkinsGalleryPerPage();
+      if (next === lastPerPage || !skinsGalleryLoaded) return;
+      lastPerPage = next;
+      skinsGalleryPerPage = next;
+      const totalPages = Math.max(1, Math.ceil(skinsGalleryItems.length / skinsGalleryPerPage));
+      if (skinsGalleryPage > totalPages) skinsGalleryPage = totalPages;
+      renderSkinsGalleryPage(skinsGalleryPage);
+    });
+  }
+  async function loadSkinsGalleryData() {
+    const {map: skinMap} = await loadSkinListMap();
+    const items = [];
+    for (const nick of MANUAL_SKINS_NICKS) {
+      const code = skinMap.get(normalizeNick(nick));
+      if (code) {
+        items.push({
+          nick,
+          code
+        });
+      }
+    }
+    skinsGalleryItems = items;
+    skinsGalleryLoaded = true;
+  }
+  function setSkinsGalleryStatus(text, isError) {
+    const el = document.getElementById("skinsGalleryStatus");
+    if (!el) return;
+    const textEl = el.querySelector(".skins-gallery-status-text");
+    if (textEl) textEl.textContent = text || ""; else el.textContent = text || "";
+    el.classList.toggle("is-error", !!isError);
+    const createBtn = el.querySelector(".skins-gallery-shop-btn");
+    if (createBtn) createBtn.hidden = !!isError;
+  }
+  function mountSkinsGalleryPanel() {
+    var _a;
+    const panel = document.getElementById("skinslist");
+    if (!panel) return null;
+    if (!panel.querySelector("#skinsGalleryGrid")) {
+      panel.innerHTML = `\n          <div class="skins-gallery-wrap">\n            <div class="skins-gallery-header">\n              <span class="skins-gallery-title">Галерея бесплатных скинов</span>\n            </div>\n            <div id="skinsGalleryGrid" class="skins-gallery-grid"></div>\n            <div id="skinsGalleryPagination" class="skins-gallery-pagination"></div>\n            <p id="skinsGalleryStatus" class="skins-gallery-status">\n              <span class="skins-gallery-status-text"></span>\n              <button type="button" class="skins-gallery-shop-btn" onclick="showContent('shop')">Создать скин</button>\n            </p>\n          </div>`;
+    } else {
+      (_a = panel.querySelector(".skins-gallery-header .skins-gallery-shop-btn")) == null ? void 0 : _a.remove();
+      const status = panel.querySelector("#skinsGalleryStatus");
+      if (status && !status.querySelector(".skins-gallery-shop-btn")) {
+        status.innerHTML = `\n              <span class="skins-gallery-status-text"></span>\n              <button type="button" class="skins-gallery-shop-btn" onclick="showContent('shop')">Создать скин</button>`;
+      }
+    }
+    panel.dataset.mounted = "1";
+    return panel;
+  }
+  function renderSkinsGalleryPagination(totalPages, pagination) {
+    pagination.innerHTML = "";
+    if (totalPages <= 1) return;
+    const addBtn = (label, p, extraClass) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = label;
+      btn.className = extraClass || "page-num";
+      if (p === skinsGalleryPage) btn.classList.add("active");
+      if (p != null) {
+        btn.addEventListener("click", () => renderSkinsGalleryPage(p));
+      } else {
+        btn.disabled = true;
+      }
+      pagination.appendChild(btn);
+    };
+    if (skinsGalleryPage > 1) {
+      addBtn("‹", skinsGalleryPage - 1, "page-nav");
+    }
+    const windowSize = 5;
+    let start = Math.max(1, skinsGalleryPage - Math.floor(windowSize / 2));
+    let end = Math.min(totalPages, start + windowSize - 1);
+    start = Math.max(1, end - windowSize + 1);
+    for (let i = start; i <= end; i++) {
+      addBtn(String(i), i, "page-num");
+    }
+    if (skinsGalleryPage < totalPages) {
+      addBtn("›", skinsGalleryPage + 1, "page-nav");
+    }
+  }
+  function renderSkinsGalleryPage(page) {
+    const grid = document.getElementById("skinsGalleryGrid");
+    const pagination = document.getElementById("skinsGalleryPagination");
+    if (!grid || !pagination) return;
+    skinsGalleryPerPage = getSkinsGalleryPerPage();
+    bindSkinsGalleryResize();
+    grid.setAttribute("data-per-page", String(skinsGalleryPerPage));
+    grid.innerHTML = "";
+    const totalPages = Math.max(1, Math.ceil(skinsGalleryItems.length / skinsGalleryPerPage));
+    skinsGalleryPage = Math.min(Math.max(1, page), totalPages);
+    const start = (skinsGalleryPage - 1) * skinsGalleryPerPage;
+    const pageSkins = skinsGalleryItems.slice(start, start + skinsGalleryPerPage);
+    pageSkins.forEach(skin => {
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = "skins-gallery-card";
+      card.innerHTML = `\n            <img src="https://api.agar.su/skins/${skin.code}.png" alt="" loading="lazy">\n            <h4>${escapeHtml(skin.nick)}</h4>\n        `;
+      card.addEventListener("click", async () => {
+        await selectSkin(skin.nick);
+        showContent("home");
+      });
+      grid.appendChild(card);
+    });
+    renderSkinsGalleryPagination(totalPages, pagination);
+    if (!skinsGalleryItems.length) {
+      setSkinsGalleryStatus("Нет скинов. Добавьте ники в MANUAL_SKINS_NICKS", false);
+    } else if (totalPages <= 1) {
+      setSkinsGalleryStatus(`${skinsGalleryItems.length} скинов`, false);
+    } else {
+      setSkinsGalleryStatus(`${skinsGalleryItems.length} · ${skinsGalleryPage} / ${totalPages}`, false);
+    }
+  }
+  function escapeHtml(str) {
+    return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  async function initSkinsGallery() {
+    mountSkinsGalleryPanel();
+    const grid = document.getElementById("skinsGalleryGrid");
+    if (!grid || skinsGalleryLoading) return;
+    if (skinsGalleryLoaded && skinsGalleryItems.length) {
+      renderSkinsGalleryPage(skinsGalleryPage);
+      return;
+    }
+    skinsGalleryLoading = true;
+    setSkinsGalleryStatus("Загрузка…");
+    grid.innerHTML = "";
+    try {
+      await loadSkinsGalleryData();
+      renderSkinsGalleryPage(1);
+    } catch (e) {
+      console.error("Галерея скинов:", e);
+      setSkinsGalleryStatus("Не удалось загрузить галерею. Попробуйте позже.", true);
+    } finally {
+      skinsGalleryLoading = false;
+    }
+  }
+  async function loadSkinsList(force) {
+    const {map} = await loadSkinListMap(force);
+    cachedSkinsMap = map;
+    cachedSkinsMapAt = Date.now();
+    return map;
+  }
+  async function selectSkin(nick) {
+    const skinsMap = await loadSkinsList();
+    const normalizedNick = normalizeNick(nick);
+    const id = skinsMap.has(normalizedNick) ? skinsMap.get(normalizedNick) : "";
+    // Всегда сохраняем в avatar-containers (даже без скина / клан)
+    savePlayerData(nick, id, getPassInputValue());
+    currentIndex = getCurrentPlayerIndex(nick);
+    if (currentIndex < 0) currentIndex = 0;
+    updateAvatarDisplay();
+  }
+  function getCurrentPlayerIndex(nick) {
+    const players = getPlayers();
+    return players.findIndex(player => normalizeNick(player.nick) === normalizeNick(nick));
+  }
+  function savePlayerData(nick, id, pass) {
+    const players = getPlayers();
+    const passValue = pass != null ? String(pass).trim() : getPassInputValue();
+    const playerData = {
+      nick,
+      id,
+      pass: passValue || ""
+    };
+    const index = players.findIndex(player => normalizeNick(player.nick) === normalizeNick(nick));
+    if (index !== -1) {
+      const prevPass = players[index].pass || "";
+      if (!playerData.pass && prevPass) playerData.pass = prevPass;
+      players.splice(index, 1);
+    }
+    players.unshift(playerData);
+    if (players.length > MAX_PLAYERS) players.pop();
+    setPlayers(players);
+    currentIndex = 0;
+  }
+  function updateCurrentPlayerPass(pass) {
+    const players = getPlayers();
+    if (!players.length || currentIndex < 0 || currentIndex >= players.length) return;
+    players[currentIndex] = {
+      ...players[currentIndex],
+      pass: String(pass || "").trim()
+    };
+    setPlayers(players);
+  }
+  function updateAvatarDisplay() {
+    const players = getPlayers();
+    const mainSkin = document.querySelector("#skinss");
+    const previousSkin = document.querySelector("#prevSkin");
+    const nextSkin = document.querySelector("#nextSkin");
+    if (!mainSkin) return;
+    if (players.length > 0) {
+      if (currentIndex < 0 || currentIndex >= players.length) currentIndex = 0;
+      const currentPlayer = players[currentIndex];
+      setBackgroundImageIfChanged(mainSkin, currentPlayer.id);
+      setFormNickPass(currentPlayer.nick, currentPlayer.pass || "");
+      const prevIndex = (currentIndex - 1 + players.length) % players.length;
+      if (previousSkin && players[prevIndex] && players.length > 1) {
+        setBackgroundImageIfChanged(previousSkin, players[prevIndex].id);
+      } else if (previousSkin) {
+        setBackgroundImageIfChanged(previousSkin, "");
+      }
+      const nextIndex = (currentIndex + 1) % players.length;
+      if (nextSkin && players[nextIndex] && players.length > 1) {
+        setBackgroundImageIfChanged(nextSkin, players[nextIndex].id);
+      } else if (nextSkin) {
+        setBackgroundImageIfChanged(nextSkin, "");
+      }
+    } else {
+      setBackgroundImageIfChanged(mainSkin, "");
+      setBackgroundImageIfChanged(previousSkin, "");
+      setBackgroundImageIfChanged(nextSkin, "");
+    }
+  }
+  function showNext() {
+    const players = getPlayers();
+    if (players.length > 0) {
+      currentIndex = (currentIndex + 1) % players.length;
+      changeSkin();
+    }
+  }
+  function showPrevious() {
+    const players = getPlayers();
+    if (players.length > 0) {
+      currentIndex = (currentIndex - 1 + players.length) % players.length;
+      changeSkin();
+    }
+  }
+  function changeSkin() {
+    const mainSkin = document.querySelector("#skinss");
+    if (!mainSkin) return;
+    mainSkin.classList.add("scale-down");
+    setTimeout(() => {
+      updateAvatarDisplay();
+      mainSkin.classList.remove("scale-down");
+    }, 50);
+  }
+  function resolveSlotIndexFromTarget(target) {
+    const players = getPlayers();
+    if (!players.length) return -1;
+    if (target.closest("#skinss")) return currentIndex;
+    if (target.closest("#prevSkin") || target.closest("#previous")) {
+      return players.length > 1 ? (currentIndex - 1 + players.length) % players.length : currentIndex;
+    }
+    if (target.closest("#nextSkin") || target.closest("#next")) {
+      return players.length > 1 ? (currentIndex + 1) % players.length : currentIndex;
+    }
+    return currentIndex;
+  }
+  function hideAvatarContextMenu() {
+    if (avatarCtxMenu) {
+      avatarCtxMenu.remove();
+      avatarCtxMenu = null;
+    }
+  }
+  function deletePlayerAt(index) {
+    const players = getPlayers();
+    if (index < 0 || index >= players.length) return;
+    const removed = players.splice(index, 1)[0];
+    setPlayers(players);
+    if (!players.length) {
+      currentIndex = 0;
+      setFormNickPass("", "");
+      updateAvatarDisplay();
+      return;
+    }
+    if (index < currentIndex) currentIndex -= 1; else if (index === currentIndex) currentIndex = Math.min(currentIndex, players.length - 1);
+    updateAvatarDisplay();
+    return removed;
+  }
+  function clearAllPlayers() {
+    setPlayers([]);
+    currentIndex = 0;
+    setFormNickPass("", "");
+    updateAvatarDisplay();
+  }
+  function showAvatarContextMenu(e, slotIndex) {
+    hideAvatarContextMenu();
+    const players = getPlayers();
+    if (!players.length) return;
+    const menu = document.createElement("div");
+    menu.className = "avatar-context-menu";
+    const slot = players[slotIndex];
+    const nickLabel = (slot == null ? void 0 : slot.nick) ? ` «${slot.nick}»` : "";
+    const delBtn = document.createElement("div");
+    delBtn.textContent = `Удалить${nickLabel}`;
+    delBtn.addEventListener("click", ev => {
+      ev.stopPropagation();
+      deletePlayerAt(slotIndex);
+      hideAvatarContextMenu();
+    });
+    const clearBtn = document.createElement("div");
+    clearBtn.textContent = "Очистить всё";
+    clearBtn.addEventListener("click", ev => {
+      ev.stopPropagation();
+      clearAllPlayers();
+      hideAvatarContextMenu();
+    });
+    menu.appendChild(delBtn);
+    menu.appendChild(clearBtn);
+    document.body.appendChild(menu);
+    avatarCtxMenu = menu;
+    const x = Math.min(e.clientX, window.innerWidth - menu.offsetWidth - 8);
+    const y = Math.min(e.clientY, window.innerHeight - menu.offsetHeight - 8);
+    menu.style.left = `${Math.max(8, x)}px`;
+    menu.style.top = `${Math.max(8, y)}px`;
+  }
+  function bindAvatarContextMenu() {
+    const root = document.querySelector(".avatar-containers");
+    if (!root || root.dataset.ctxBound === "1") return;
+    root.dataset.ctxBound = "1";
+    root.addEventListener("contextmenu", e => {
+      if (!e.target.closest("#skinss, #prevSkin, #nextSkin, #previous, #next")) return;
+      e.preventDefault();
+      const slotIndex = resolveSlotIndexFromTarget(e.target);
+      if (slotIndex < 0) return;
+      showAvatarContextMenu(e, slotIndex);
+    });
+    if (!window.__agarsuAvatarDocBound) {
+      window.__agarsuAvatarDocBound = true;
+      document.addEventListener("click", hideAvatarContextMenu);
+      document.addEventListener("keydown", e => {
+        if (e.key === "Escape") hideAvatarContextMenu();
+      });
+    }
+  }
+  function bindHomeAvatarUi() {
+    const nickInput = document.getElementById("nick");
+    const passInput = document.getElementById("pass");
+    if (nickInput && nickInput.dataset.homeWired !== "1") {
+      nickInput.dataset.homeWired = "1";
+      nickInput.addEventListener("input", function() {
+        const nickname = this.value;
+        clearTimeout(actionTimeout);
+        actionTimeout = setTimeout(async () => {
+          await selectSkin(nickname);
+        }, actionInterval);
+      });
+    }
+    if (passInput && passInput.dataset.homeWired !== "1") {
+      passInput.dataset.homeWired = "1";
+      passInput.addEventListener("input", function() {
+        updateCurrentPlayerPass(this.value);
+      });
+    }
+    bindAvatarContextMenu();
+    const players = getPlayers();
+    if (players.length > 0) {
+      if (currentIndex < 0 || currentIndex >= players.length) currentIndex = 0;
+      updateAvatarDisplay();
+    }
+  }
+  window.initSkinsGallery = initSkinsGallery;
+  window.showNext = showNext;
+  window.showPrevious = showPrevious;
+  window.savePlayerData = savePlayerData;
+  window.updateAvatarDisplay = updateAvatarDisplay;
+  window.selectSkin = selectSkin;
+  window.__agarsuUpdatePlayerPass = updateCurrentPlayerPass;
+  window.__agarsuGetPlayers = getPlayers;
+  window.loadSkinsList = loadSkinsList;
+  onReady(() => {
+    bindHomeAvatarUi();
+    startDomSkinStripAnimator();
+  });
+  function showContent2(id) {
+    if (id === "shop" && !getAccountToken()) {
+      showAuthRequiredForShop();
+      return;
+    }
+    document.querySelectorAll(".menu-item").forEach(item => item.classList.remove("active"));
+    document.querySelectorAll(".content").forEach(content => content.classList.remove("active"));
+    const menuItem = document.querySelector(`.menu-item[onclick="showContent('${id}')"]`);
+    if (menuItem) menuItem.classList.add("active");
+    const panel = document.getElementById(id);
+    if (panel) panel.classList.add("active");
+    if (typeof window.updateShopAuthNotice === "function") window.updateShopAuthNotice();
+    if (id === "skinslist" && typeof window.initSkinsGallery === "function") window.initSkinsGallery();
+    if (id === "rating" && typeof ensureTop100Loaded === "function") ensureTop100Loaded();
+    if (id === "home") {
+      try {
+        bindHomeAvatarUi();
+      } catch (e) {}
+      if (typeof window.__agarsuRefreshHomeRating === "function") window.__agarsuRefreshHomeRating();
+    }
+    if (id === "store") {
+      const authlogEl = document.getElementById("authlog");
+      if (authlogEl && !getAccountToken()) authlogEl.style.display = "flex";
+      if (!getAccountToken() && window.AgarLkAuth && typeof window.AgarLkAuth.showView === "function") {
+        window.AgarLkAuth.showView("login");
+      }
+    }
+    bus.emit(Events.SHOW_CONTENT, {
+      id
+    });
+  }
+
+  const AUTH_REQUIRED_I18N = {
+    ru: "Сначала войдите в личный кабинет",
+    en: "Please sign in to your account first",
+    uk: "Спочатку увійдіть в особистий кабінет",
+    tr: "Önce kişisel hesabınıza giriş yapın",
+    zh: "请先登录个人账号",
+    ar: "يرجى تسجيل الدخول إلى حسابك أولاً",
+    es: "Primero inicia sesión en tu cuenta",
+    pl: "Najpierw zaloguj się do konta",
+    de: "Bitte zuerst im Konto anmelden"
+  };
+  function getUiLangCode() {
+    try {
+      const lang = window.__uiLang || localStorage.getItem("ui_lang") || "ru";
+      return AUTH_REQUIRED_I18N[lang] ? lang : "en";
+    } catch (_) {
+      return "ru";
+    }
+  }
+  function tAuthRequired() {
+    return AUTH_REQUIRED_I18N[getUiLangCode()] || AUTH_REQUIRED_I18N.en;
+  }
+  function showUiToast(message, type) {
+    let container = document.getElementById("uiToastContainer");
+    if (!container) {
+      container = document.createElement("div");
+      container.id = "uiToastContainer";
+      container.className = "ui-toast-container";
+      container.setAttribute("aria-live", "polite");
+      document.body.appendChild(container);
+    }
+    const toast = document.createElement("div");
+    toast.className = "ui-toast ui-toast--" + (type || "warn");
+    toast.textContent = message || "";
+    container.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add("show"));
+    setTimeout(() => {
+      toast.classList.remove("show");
+      setTimeout(() => toast.remove(), 260);
+    }, 4500);
+  }
+  function showAuthRequiredForShop() {
+    showContent2("store");
+    const authlogEl = document.getElementById("authlog");
+    if (authlogEl) authlogEl.style.display = "flex";
+    if (window.AgarLkAuth && typeof window.AgarLkAuth.showView === "function") {
+      window.AgarLkAuth.showView("login");
+    }
+    const idInput = document.getElementById("authLoginId");
+    if (idInput) setTimeout(() => idInput.focus(), 40);
+    showUiToast(tAuthRequired(), "warn");
+  }
+  window.showAuthRequiredForShop = showAuthRequiredForShop;
+  window.tAuthRequired = tAuthRequired;
+  function updateAccountMenuLabel() {
+    const label = document.getElementById("accountMenuLabel");
+    if (!label) return;
+    label.textContent = getAccountToken() ? "ЛК" : "Войти";
+  }
+  function initChatResize() {
+    const chatWindow = document.getElementById("chatX_window");
+    const chatContainer = document.getElementById("chatX_container");
+    const chatBurger = document.getElementById("chatX_burger");
+    const CHAT_SIZE_KEY = "chatX_size_v1";
+    const CHAT_MIN_W = 220;
+    const CHAT_MAX_W = 520;
+    const CHAT_MIN_H = 120;
+    function chatMaxHeight() {
+      return Math.min(720, Math.floor(window.innerHeight * .85));
+    }
+    function applyChatSize(width, height, save) {
+      if (!chatWindow) return;
+      const w = Math.max(CHAT_MIN_W, Math.min(CHAT_MAX_W, width));
+      const h = Math.max(CHAT_MIN_H, Math.min(chatMaxHeight(), height));
+      chatWindow.style.width = w + "px";
+      chatWindow.style.height = h + "px";
+      if (save !== false) {
+        localStorage.setItem(CHAT_SIZE_KEY, JSON.stringify({
+          w,
+          h
+        }));
+      }
+    }
+    function loadChatSize() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(CHAT_SIZE_KEY));
+        if (saved && saved.w && saved.h) {
+          applyChatSize(saved.w, saved.h, false);
+        }
+      } catch (e) {}
+    }
+    function isPointerOverChat(clientX, clientY) {
+      if (!chatWindow || chatWindow.style.display === "none") return false;
+      const rect = chatWindow.getBoundingClientRect();
+      return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
+    }
+    let chatResizing = false;
+    let chatResizeStartX = 0;
+    let chatResizeStartY = 0;
+    let chatResizeStartW = 0;
+    let chatResizeStartH = 0;
+    function startChatResize(e) {
+      if (!chatBurger || !chatWindow) return;
+      e.preventDefault();
+      e.stopPropagation();
+      chatResizing = true;
+      chatResizeStartX = e.touches ? e.touches[0].clientX : e.clientX;
+      chatResizeStartY = e.touches ? e.touches[0].clientY : e.clientY;
+      chatResizeStartW = chatWindow.offsetWidth;
+      chatResizeStartH = chatWindow.offsetHeight;
+      document.body.style.userSelect = "none";
+    }
+    function doChatResize(e) {
+      if (!chatResizing) return;
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      const newW = chatResizeStartW + (clientX - chatResizeStartX);
+      const newH = chatResizeStartH - (clientY - chatResizeStartY);
+      applyChatSize(newW, newH);
+    }
+    function stopChatResize() {
+      chatResizing = false;
+      document.body.style.userSelect = "";
+    }
+    if (chatBurger) {
+      chatBurger.addEventListener("mousedown", startChatResize);
+      chatBurger.addEventListener("touchstart", startChatResize, {
+        passive: false
+      });
+    }
+    document.addEventListener("mousemove", doChatResize);
+    document.addEventListener("touchmove", doChatResize, {
+      passive: false
+    });
+    document.addEventListener("mouseup", stopChatResize);
+    document.addEventListener("touchend", stopChatResize);
+    document.addEventListener("wheel", e => {
+      if (!isPointerOverChat(e.clientX, e.clientY)) return;
+      const feed = document.querySelector("#chatX_container .chatX_feed:not([style*='display: none'])") || document.getElementById("chatX_feed");
+      if (!feed || feed.scrollHeight <= feed.clientHeight + 1) return;
+      e.preventDefault();
+      const scroller = attachSmoothScroll(feed, {
+        ease: .18
+      });
+      let dy = e.deltaY;
+      if (e.deltaMode === 1) dy *= 16; else if (e.deltaMode === 2) dy *= feed.clientHeight;
+      scroller.by(dy);
+    }, {
+      passive: false
+    });
+    loadChatSize();
+    return {
+      loadChatSize
+    };
+  }
+  function initHudToggles() {
+    const onchat = document.getElementById("onchat");
+    if (onchat) {
+      onchat.addEventListener("click", () => {
+        document.getElementById("chatX_window").style.display = "flex";
+        onchat.style.display = "none";
+      });
+    }
+    const onmap = document.getElementById("onmap");
+    if (onmap) {
+      onmap.addEventListener("click", () => {
+        document.getElementById("map").style.display = "block";
+        onmap.style.display = "none";
+      });
+    }
+    const onleaderboard = document.getElementById("onleaderboard");
+    if (onleaderboard) {
+      onleaderboard.addEventListener("click", () => {
+        document.getElementById("leaderboard").style.display = "block";
+        onleaderboard.style.display = "none";
+      });
+    }
+    const freezeBtn = document.getElementById("freeze");
+    if (freezeBtn) {
+      freezeBtn.addEventListener("click", function() {
+        window.freeze = false;
+        this.style.display = "none";
+      });
+    }
+    document.querySelectorAll(".homemenu").forEach(el => {
+      el.addEventListener("click", () => {
+        showOverlays();
+      });
+    });
+    initMonitWidget();
+    const closeStats = document.getElementById("closeStats");
+    if (closeStats) {
+      closeStats.addEventListener("click", () => {
+        hideStatics();
+        showOverlays();
+      });
+    }
+  }
+  function initOverlayMouseBridge() {
+    const canvas = document.getElementById("canvas");
+    const overlays = document.getElementById("overlays");
+    if (!canvas || !overlays) return;
+    overlays.addEventListener("mousemove", function(event) {
+      const x = event.clientX - overlays.offsetLeft;
+      const y = event.clientY - overlays.offsetTop;
+      const canvasEvent = new MouseEvent("mousemove", {
+        bubbles: true,
+        cancelable: true,
+        clientX: x,
+        clientY: y
+      });
+      canvas.dispatchEvent(canvasEvent);
+    });
+  }
+  function initChatNickInsert() {
+    const chatFeed = document.getElementById("chatX_feed");
+    const leaderboard = document.getElementById("leaderboard");
+    const chatInput = document.getElementById("chat_textbox");
+    if (!chatFeed || !leaderboard || !chatInput) return;
+    function insertNick(nick) {
+      nick = nick.trim().replace(/\s+/g, " ");
+      if (nick.endsWith(":")) nick = nick.slice(0, -1);
+      chatInput.value = "@" + nick + " ";
+      chatInput.focus();
+      chatInput.setSelectionRange(chatInput.value.length, chatInput.value.length);
+    }
+    chatFeed.addEventListener("click", e => {
+      if (e.button !== 0) return;
+      const msgElem = e.target.closest(".chatX_msg");
+      if (!msgElem) return;
+      const nickElem = msgElem.querySelector(".chatX_nick");
+      if (!nickElem) return;
+      insertNick(nickElem.textContent);
+    });
+    leaderboard.addEventListener("click", e => {
+      if (e.button !== 0) return;
+      const nickElem = e.target.closest(".Lednick-name");
+      if (!nickElem) return;
+      insertNick(nickElem.textContent);
+    });
+    leaderboard.addEventListener("contextmenu", e => {
+      e.preventDefault();
+      const nickElem = e.target.closest(".Lednick-name");
+      if (!nickElem) return;
+      const nick = (nickElem.textContent || "").trim();
+      if (!nick) return;
+      const S = window.__gameState;
+      if (!S) return;
+      const items = [];
+      if (resolveStatsForName(S, nick)) {
+        items.push({
+          label: "Статистика",
+          onClick: () => openStatsForName(S, nick)
+        });
+      }
+      if (!items.length) return;
+      showUiContextMenu(items, e.clientX, e.clientY);
+    });
+    const emojiToggle = document.getElementById("emoji_toggle");
+    if (emojiToggle) {
+      emojiToggle.addEventListener("click", () => {
+        const list = document.querySelector("#chatX_window .emoji-list");
+        if (!list) return;
+        list.style.display = list.style.display === "flex" ? "none" : "flex";
+      });
+    }
+    const emojiList = document.querySelector("#chatX_window .emoji-list");
+    if (emojiList) {
+      emojiList.addEventListener("click", e => {
+        const emojiItem = e.target.closest(".emoji-item");
+        if (!emojiItem) return;
+        const emojiCode = emojiItem.dataset.code;
+        const chatBox = document.getElementById("chat_textbox");
+        if (chatBox) chatBox.value += emojiCode;
+      });
+    }
+  }
+  function initHudEditor() {
+    var STORAGE_KEY = "hud_layout_v1";
+    var DEFAULTS = {
+      eject: { x: 88, y: 88, scale: 100 },
+      split: { x: 88, y: 72, scale: 100 },
+      minimap: { x: 88, y: 64, scale: 100 }
+    };
+    var ELEMENTS = [
+      { key: "eject", label: "Выброс", selector: "#touch-eject" },
+      { key: "split", label: "Сплит", selector: "#touch-split" },
+      { key: "minimap", label: "Миникарта", selector: "#map" }
+    ];
+    var editorEl = document.getElementById("hud-editor");
+    var openBtn = document.getElementById("hud-editor-open");
+    var selectEl = document.getElementById("hud-editor-select");
+    var scaleInput = document.getElementById("hud-editor-scale");
+    var scaleVal = document.getElementById("hud-editor-scale-val");
+    var resetBtn = document.getElementById("hud-editor-reset");
+    var saveBtn = document.getElementById("hud-editor-save");
+    var closeBtn = document.getElementById("hud-editor-close");
+    if (!editorEl || !openBtn || !selectEl || !scaleInput) return;
+    var layout = loadLayout();
+    var savedSnapshot = null;
+    var editing = false;
+    var selectedKey = null;
+    var overlaysEl = document.getElementById("overlays");
+    var mapPreviousStyle = null;
+    ELEMENTS.forEach(function(cfg) {
+      var option = document.createElement("option");
+      option.value = cfg.key;
+      option.textContent = cfg.label;
+      selectEl.appendChild(option);
+    });
+    function loadLayout() {
+      try {
+        var raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) return JSON.parse(raw) || {};
+      } catch (e) {}
+      return {};
+    }
+    function persistLayout() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(layout)); } catch (e) {}
+    }
+    function getCfg(key) {
+      for (var i = 0; i < ELEMENTS.length; i++) if (ELEMENTS[i].key === key) return ELEMENTS[i];
+      return null;
+    }
+    function getEl(cfg) { return document.querySelector(cfg.selector); }
+    function clone(o) { return JSON.parse(JSON.stringify(o)); }
+    function applyToEl(cfg, data) {
+      var el = getEl(cfg);
+      if (!el || !data) return;
+      el.style.position = "fixed";
+      el.style.left = data.x + "%";
+      el.style.top = data.y + "%";
+      el.style.right = "auto";
+      el.style.bottom = "auto";
+      el.style.margin = "0";
+      el.style.transform = "translate(-50%,-50%) scale(" + (data.scale / 100) + ")";
+      el.style.transformOrigin = "center center";
+    }
+    function applyAll() {
+      ELEMENTS.forEach(function(cfg) {
+        if (layout[cfg.key]) applyToEl(cfg, layout[cfg.key]);
+      });
+    }
+    function select(key) {
+      selectedKey = key;
+      if (selectEl) selectEl.value = key;
+      var data = layout[key] || DEFAULTS[key];
+      if (scaleInput) scaleInput.value = data.scale;
+      if (scaleVal) scaleVal.textContent = data.scale + "%";
+      document.querySelectorAll(".hud-editable").forEach(function(el) { el.classList.remove("hud-selected"); });
+      var el = getEl(getCfg(key));
+      if (el) el.classList.add("hud-selected");
+    }
+    function openEditor() {
+      editing = true;
+      savedSnapshot = clone(layout);
+      mapPreviousStyle = null;
+      if (typeof showContent2 === "function") showContent2("home");
+      if (overlaysEl) overlaysEl.style.display = "none";
+      document.body.classList.add("hud-editing");
+      editorEl.hidden = false;
+      var touchButtons = document.getElementById("touch-buttons");
+      if (touchButtons) touchButtons.hidden = false;
+      ELEMENTS.forEach(function(cfg) {
+        var el = getEl(cfg);
+        if (!el) return;
+        if (cfg.key === "minimap") {
+          mapPreviousStyle = el.getAttribute("style");
+          el.style.display = "block";
+        }
+        if (!layout[cfg.key]) layout[cfg.key] = Object.assign({}, DEFAULTS[cfg.key]);
+        el.classList.add("hud-editable");
+        el.setAttribute("data-hud-key", cfg.key);
+        applyToEl(cfg, layout[cfg.key]);
+      });
+      select(ELEMENTS[0].key);
+    }
+    function closeEditor(save) {
+      if (save) {
+        ELEMENTS.forEach(function(cfg) {
+          var el = getEl(cfg);
+          if (!el) return;
+          if (layout[cfg.key]) applyToEl(cfg, layout[cfg.key]);
+          el.classList.remove("hud-editable", "hud-selected");
+          el.removeAttribute("data-hud-key");
+        });
+        persistLayout();
+      } else {
+        layout = clone(savedSnapshot || {});
+        ELEMENTS.forEach(function(cfg) {
+          var el = getEl(cfg);
+          if (!el) return;
+          el.classList.remove("hud-editable", "hud-selected");
+          el.removeAttribute("data-hud-key");
+          el.style.cssText = "";
+        });
+        applyAll();
+      }
+      editing = false;
+      document.body.classList.remove("hud-editing");
+      editorEl.hidden = true;
+      if (overlaysEl) overlaysEl.style.display = "none";
+      if (typeof showContent2 === "function") showContent2("home");
+      applyAll();
+      mapPreviousStyle = null;
+      updateTouchButtonsVisibility();
+      savedSnapshot = null;
+    }
+    openBtn.addEventListener("click", openEditor);
+    if (saveBtn) saveBtn.addEventListener("click", function(e) { e.preventDefault(); e.stopPropagation(); closeEditor(true); });
+    closeBtn.addEventListener("click", function(e) { e.preventDefault(); e.stopPropagation(); closeEditor(false); });
+    resetBtn.addEventListener("click", function() {
+      if (!selectedKey) return;
+      layout[selectedKey] = Object.assign({}, DEFAULTS[selectedKey]);
+      applyToEl(getCfg(selectedKey), layout[selectedKey]);
+      select(selectedKey);
+    });
+    selectEl.addEventListener("change", function() { select(selectEl.value); });
+    scaleInput.addEventListener("input", function() {
+      if (!selectedKey) return;
+      var data = layout[selectedKey] || Object.assign({}, DEFAULTS[selectedKey]);
+      data.scale = parseInt(scaleInput.value, 10) || 100;
+      layout[selectedKey] = data;
+      if (scaleVal) scaleVal.textContent = data.scale + "%";
+      applyToEl(getCfg(selectedKey), data);
+      persistLayout();
+    });
+    document.addEventListener("pointerdown", function(e) {
+      if (!editing) return;
+      var t = e.target;
+      while (t && t !== document && !(t.getAttribute && t.getAttribute("data-hud-key"))) t = t.parentNode;
+      if (!t || t === document) return;
+      var key = t.getAttribute("data-hud-key");
+      if (!key) return;
+      e.preventDefault();
+      select(key);
+      var data = layout[key] || Object.assign({}, DEFAULTS[key]);
+      var startX = e.clientX, startY = e.clientY;
+      var startPx = { x: data.x / 100 * window.innerWidth, y: data.y / 100 * window.innerHeight };
+      var el = t;
+      try { el.setPointerCapture(e.pointerId); } catch (err) {}
+      function onMove(ev) {
+        var nx = startPx.x + (ev.clientX - startX);
+        var ny = startPx.y + (ev.clientY - startY);
+        data.x = Math.max(2, Math.min(98, Math.round(nx / window.innerWidth * 1000) / 10));
+        data.y = Math.max(2, Math.min(98, Math.round(ny / window.innerHeight * 1000) / 10));
+        layout[key] = data;
+        applyToEl(getCfg(key), data);
+        persistLayout();
+      }
+      function onUp() {
+        el.removeEventListener("pointermove", onMove);
+        el.removeEventListener("pointerup", onUp);
+        el.removeEventListener("pointercancel", onUp);
+      }
+      el.addEventListener("pointermove", onMove);
+      el.addEventListener("pointerup", onUp);
+      el.addEventListener("pointercancel", onUp);
+    });
+    document.addEventListener("keydown", function(e) {
+      if (e.key === "Escape" && editing) closeEditor(true);
+    });
+    editorEl.addEventListener("pointerdown", function(e) {
+      if (e.target === editorEl) closeEditor(true);
+    });
+    document.addEventListener("pointerdown", function(e) {
+      if (!editing || editorEl.contains(e.target)) return;
+      var t = e.target;
+      while (t && t !== document && !(t.getAttribute && t.getAttribute("data-hud-key"))) t = t.parentNode;
+      if (!t || t === document) closeEditor(true);
+    });
+    applyAll();
+  }
+  function initLobbyUi() {
+    const {loadChatSize} = initChatResize();
+    updateAccountMenuLabel();
+    loadChatSize();
+    initHudToggles();
+    initOverlayMouseBridge();
+    initChatNickInsert();
+    initHudEditor();
+  }
+  window.showContent = showContent2;
+  window.updateAccountMenuLabel = updateAccountMenuLabel;
+  var ALLOWED_CHARS = new Set;
+  var allowTxtReady = null;
+  function parseAllowTxt(text) {
+    ALLOWED_CHARS.clear();
+    for (const line of String(text || "").split(/\r?\n/)) {
+      if (line.length === 1) ALLOWED_CHARS.add(line);
+    }
+    return ALLOWED_CHARS.size > 0;
+  }
+  function loadAllowTxt() {
+    if (!allowTxtReady) {
+      allowTxtReady = fetch("https://api.agar.su/allowtxt.txt", { cache: "no-store" }).then(r => {
+        if (!r.ok) throw new Error("api allowtxt");
+        return r.text();
+      }).then(text => {
+        if (!parseAllowTxt(text)) throw new Error("empty api allowtxt");
+      });
+    }
+    return allowTxtReady;
+  }
+  function isNicknameCharAllowed(char, allowBrackets) {
+    if (!allowBrackets && (char === "[" || char === "]")) return false;
+    if (ALLOWED_CHARS.size === 0) return true;
+    return ALLOWED_CHARS.has(char);
+  }
+  function isAllowedNickname(value, allowBrackets) {
+    if (!value) return true;
+    for (const char of value) {
+      if (!isNicknameCharAllowed(char, allowBrackets)) return false;
+    }
+    return true;
+  }
+  function stripInvalidNicknameChars(value, allowBrackets) {
+    if (ALLOWED_CHARS.size === 0) return value;
+    return [ ...value ].filter(char => isNicknameCharAllowed(char, allowBrackets)).join("");
+  }
+  var allowedPattern = {
+    test: v => isAllowedNickname(v, false)
+  };
+  var allowedWithBracketsPattern = {
+    test: v => isAllowedNickname(v, true)
+  };
+  var paymentRules = {
+    maxFileSize: 5 * 1024 * 1024
+  };
+  var isNicknameTaken = false;
+  var SHOP_TOAST_TIMEOUT = 4500;
+  var errorCooldownMs = 1400;
+  var errorCache = new Map;
+  function showShopFloatAlert(el, duration = 5e3) {
+    if (!el) return;
+    clearTimeout(el._hideTimer);
+    el.classList.remove("is-hiding");
+    el.hidden = false;
+    el.style.display = "block";
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => el.classList.add("is-visible"));
+    });
+    el._hideTimer = setTimeout(() => dismissShopFloatAlert(el), duration);
+  }
+  function dismissShopFloatAlert(el) {
+    if (!el || !el.classList.contains("is-visible")) {
+      if (el) {
+        el.classList.remove("is-visible", "is-hiding");
+        el.style.display = "none";
+        el.hidden = true;
+      }
+      return;
+    }
+    el.classList.remove("is-visible");
+    el.classList.add("is-hiding");
+    const onEnd = e => {
+      if (e.propertyName !== "opacity") return;
+      el.classList.remove("is-hiding");
+      el.style.display = "none";
+      el.hidden = true;
+      el.removeEventListener("transitionend", onEnd);
+    };
+    el.addEventListener("transitionend", onEnd);
+    clearTimeout(el._dismissFallback);
+    el._dismissFallback = setTimeout(() => {
+      if (!el.classList.contains("is-hiding")) return;
+      el.classList.remove("is-hiding", "is-visible");
+      el.style.display = "none";
+      el.hidden = true;
+    }, 450);
+  }
+  function showError(elementId, message, withToast = false) {
+    const errorEl = document.getElementById(elementId);
+    if (!errorEl) return;
+    const cacheKey = `${elementId}:${message}`;
+    const now = Date.now();
+    const lastShownAt = errorCache.get(cacheKey) || 0;
+    if (now - lastShownAt < errorCooldownMs) return;
+    errorCache.set(cacheKey, now);
+    errorEl.textContent = message;
+    showShopFloatAlert(errorEl, 5e3);
+    if (withToast) showToast(message, "error");
+  }
+  function hideError(elementId) {
+    dismissShopFloatAlert(document.getElementById(elementId));
+  }
+  function showToast(message, type = "info") {
+    const container = document.getElementById("shopToastContainer");
+    if (!container || !message) return;
+    const toast = document.createElement("div");
+    toast.className = `shop-toast shop-toast-${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add("show"));
+    setTimeout(() => {
+      toast.classList.remove("show");
+      setTimeout(() => toast.remove(), 260);
+    }, SHOP_TOAST_TIMEOUT);
+  }
+  function updateShopAuthNotice() {
+    const notice = document.getElementById("shopAuthNotice");
+    const shop = document.getElementById("shop");
+    if (!notice || !shop) return;
+    const onShop = shop.classList.contains("active");
+    if (!onShop || getAccountToken()) {
+      dismissShopFloatAlert(notice);
+      notice.textContent = "";
+      return;
+    }
+    notice.textContent = tAuthRequired();
+    showShopFloatAlert(notice, 6e3);
+  }
+  function updateCharCount() {
+    const input = document.getElementById("nickname");
+    const max = document.getElementById("clan").checked ? 6 : 16;
+    const length = input.value.length;
+    document.getElementById("charCount").textContent = `${length}/${max}`;
+  }
+  function updateNicknameDisplay() {
+    const isClan = document.getElementById("clan").checked;
+    const input = document.getElementById("nickname");
+    input.value = "";
+    if (isClan) {
+      input.placeholder = "[клан]";
+      input.maxLength = 6;
+    } else {
+      input.placeholder = "Ваш ник";
+      input.maxLength = 16;
+    }
+    updateCharCount();
+  }
+  function blockForbiddenChars(input) {
+    input.addEventListener("input", () => {
+      const isClan = document.getElementById("clan").checked;
+      let value = input.value;
+      if (value && !allowedWithBracketsPattern.test(value)) {
+        const cleaned = stripInvalidNicknameChars(value, true);
+        if (cleaned !== value) {
+          input.value = cleaned;
+          showError(input.id + "Error", "Недопустимые символы в нике");
+        }
+      }
+      if (input.id === "nickname") {
+        if (!isClan && /[\[\]]/.test(input.value)) {
+          input.value = input.value.replace(/[\[\]]/g, "");
+          showError("nicknameError", "Скобки [] запрещены для личного ника");
+        }
+        updateCharCount();
+      }
+    });
+  }
+  var nicknameInput = document.getElementById("nickname");
+  var passwordInput = document.getElementById("password");
+  var emailInput = document.getElementById("shopEmail");
+  var shopPayOverlay = document.getElementById("shopPayOverlay");
+  var shopPayBackdrop = document.getElementById("shopPayBackdrop");
+  var payButton = document.getElementById("payButton");
+  var shopPayBack = document.getElementById("shopPayBack");
+  var shopPayAmount = document.getElementById("shopPayAmount");
+  var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  var isPayStepOpen = false;
+  var isSubmittingPayment = false;
+  function getShopEmail() {
+    return ((emailInput == null ? void 0 : emailInput.value) || "").trim().toLowerCase();
+  }
+  function isShopEmailValid() {
+    return EMAIL_RE.test(getShopEmail());
+  }
+  function updatePayButtonState() {
+    if (!payButton) return;
+    payButton.disabled = isSubmittingPayment || !isShopEmailValid();
+    if (isSubmittingPayment) return;
+    payButton.textContent = "ОПЛАТИТЬ";
+  }
+  function trySubmitEmail() {
+    if (!isPayStepOpen || isSubmittingPayment) return;
+    if (!isShopEmailValid()) {
+      if (getShopEmail()) showError("emailError", "Введите корректный email");
+      return;
+    }
+    hideError("emailError");
+    startPayment();
+  }
+  function openPayStep() {
+    if (!getAccountToken()) {
+      showAuthRequiredForShop();
+      return;
+    }
+    if (!shopPayOverlay) return;
+    const totalText = (document.getElementById("totalAmount") || {}).textContent || "0 ₽";
+    if (shopPayAmount) shopPayAmount.textContent = totalText;
+    shopPayOverlay.hidden = false;
+    shopPayOverlay.setAttribute("aria-hidden", "false");
+    requestAnimationFrame(() => shopPayOverlay.classList.add("is-open"));
+    isPayStepOpen = true;
+    hideError("emailError");
+    hideError("formError");
+    updatePayButtonState();
+    setTimeout(() => emailInput == null ? void 0 : emailInput.focus(), 60);
+  }
+  function closePayStep() {
+    if (!shopPayOverlay || isSubmittingPayment) return;
+    shopPayOverlay.classList.remove("is-open");
+    shopPayOverlay.setAttribute("aria-hidden", "true");
+    isPayStepOpen = false;
+    hideError("emailError");
+    const finishHide = () => {
+      if (!isPayStepOpen) shopPayOverlay.hidden = true;
+    };
+    shopPayOverlay.addEventListener("transitionend", finishHide, {
+      once: true
+    });
+    setTimeout(finishHide, 240);
+  }
+  loadAllowTxt().then(() => {
+    blockForbiddenChars(nicknameInput);
+    blockForbiddenChars(passwordInput);
+  }).catch(() => {
+    blockForbiddenChars(nicknameInput);
+    blockForbiddenChars(passwordInput);
+    showToast("Не удалось загрузить allowtxt.txt", "error");
+  });
+  emailInput == null ? void 0 : emailInput.addEventListener("input", () => {
+    if (!getShopEmail() || isShopEmailValid()) hideError("emailError");
+    updatePayButtonState();
+  });
+  emailInput == null ? void 0 : emailInput.addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      trySubmitEmail();
+    }
+  });
+  emailInput == null ? void 0 : emailInput.addEventListener("blur", () => {
+    if (!isPayStepOpen || isSubmittingPayment) return;
+    if (isShopEmailValid()) trySubmitEmail();
+  });
+  shopPayBack == null ? void 0 : shopPayBack.addEventListener("mousedown", e => {
+    e.preventDefault();
+  });
+  shopPayBack == null ? void 0 : shopPayBack.addEventListener("click", () => closePayStep());
+  shopPayBackdrop == null ? void 0 : shopPayBackdrop.addEventListener("click", () => {
+    if (isSubmittingPayment) return;
+    if (isShopEmailValid()) trySubmitEmail();
+    else closePayStep();
+  });
+  payButton == null ? void 0 : payButton.addEventListener("mousedown", e => {
+    e.preventDefault();
+  });
+  payButton == null ? void 0 : payButton.addEventListener("click", () => {
+    trySubmitEmail();
+  });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && isPayStepOpen && !isSubmittingPayment) closePayStep();
+  });
+  nicknameInput.addEventListener("blur", async () => {
+    const isClan = document.getElementById("clan").checked;
+    let value = nicknameInput.value.trim();
+    if (isClan) {
+      let innerText = value.replace(/^\[|\]$/g, "");
+      innerText = innerText.replace(/[\[\]]/g, "");
+      if (innerText.length > 4) {
+        innerText = innerText.substring(0, 4);
+        setTimeout(() => {
+          showError("nicknameError", "Текст обрезан до 4 символов");
+        }, 100);
+      }
+      nicknameInput.value = `[${innerText}]`;
+    } else {
+      if (value && !allowedPattern.test(value)) {
+        value = stripInvalidNicknameChars(value);
+        showError("nicknameError", "Недопустимые символы в нике");
+      }
+      if (/[\[\]]/.test(value)) {
+        value = value.replace(/[\[\]]/g, "");
+        showError("nicknameError", "Скобки [] запрещены для личного ника");
+      }
+      if (value.length > 16) {
+        value = value.substring(0, 16);
+        setTimeout(() => {
+          showError("nicknameError", `Личный ник обрезан до 16 символов`);
+        }, 100);
+      }
+      nicknameInput.value = value;
+    }
+    updateCharCount();
+    try {
+      const headers = {
+        "Content-Type": "application/json"
+      };
+      if (getAccountToken()) {
+        headers["Authorization"] = `Game ${getAccountToken()}`;
+      }
+      const res = await fetch("https://api.agar.su/check-nickname", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          nickname: nicknameInput.value.trim()
+        })
+      });
+      const data = await res.json();
+      if (getAccountToken() && data.taken) {
+        const meRes = await fetch("https://api.agar.su/api/me/nicknames", {
+          headers: {
+            Authorization: `Game ${getAccountToken()}`
+          }
+        });
+        if (meRes.ok) {
+          const meData = await meRes.json();
+          const myNicks = (meData.nicknames || []).map(n => n.nickname.toLowerCase());
+          const currentNick = nicknameInput.value.trim().toLowerCase();
+          if (myNicks.includes(currentNick)) {
+            hideError("nicknameError");
+            nicknameInput.setCustomValidity("");
+            isNicknameTaken = false;
+            calculateCost();
+            return;
+          }
+        }
+      }
+      if (data.taken) {
+        showError("nicknameError", data.error || "Ник занят");
+        nicknameInput.setCustomValidity("Ник занят");
+        isNicknameTaken = true;
+      } else {
+        hideError("nicknameError");
+        nicknameInput.setCustomValidity("");
+        isNicknameTaken = false;
+      }
+    } catch (err) {
+      console.error("Ошибка проверки ника:", err);
+      isNicknameTaken = false;
+      hideError("nicknameError");
+    }
+    calculateCost();
+  });
+  nicknameInput.addEventListener("input", () => {
+    updateCharCount();
+    calculateCost();
+  });
+  var invisibleNickCheckbox = document.getElementById("invisibleNick");
+  var rotationNickCheckbox = document.getElementById("rotationNick");
+  var statsBgNickCheckbox = document.getElementById("statsBgNick");
+  var statsBgInput = document.getElementById("statsBgInput");
+  passwordInput.addEventListener("input", () => {
+    if (passwordInput.value.length > 5) {
+      passwordInput.value = passwordInput.value.substring(0, 5);
+      showError("passwordError", "Пароль не может быть длиннее 5 символов");
+    } else {
+      hideError("passwordError");
+    }
+    calculateCost();
+  });
+  var previewContainer = document.getElementById("previewContainer");
+  var fileInput = document.getElementById("fileInput");
+  var skinCanvas = document.getElementById("previewCanvas");
+  var skinCtx = skinCanvas.getContext("2d");
+  var gifPreview = document.getElementById("previewGif");
+  fileInput.addEventListener("change", e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > paymentRules.maxFileSize) {
+      fileInput.value = "";
+      showError("fileError", "Файл слишком большой (макс. 5MB)");
+      return;
+    }
+    if (![ "image/png", "image/jpeg", "image/gif" ].includes(file.type)) {
+      fileInput.value = "";
+      showError("fileError", "Неподдерживаемый формат. Только PNG, JPG, GIF");
+      return;
+    }
+    previewSkin(file);
+    previewContainer.classList.add("has-image");
+    calculateCost();
+  });
+  function previewSkin(file) {
+    const url = URL.createObjectURL(file);
+    const isGif = file.type === "image/gif";
+    if (isGif) {
+      skinCanvas.style.display = "none";
+      gifPreview.style.display = "block";
+      gifPreview.src = url;
+    } else {
+      gifPreview.style.display = "none";
+      skinCanvas.style.display = "block";
+      const img = new Image;
+      img.onload = () => {
+        skinCtx.clearRect(0, 0, skinCanvas.width, skinCanvas.height);
+        skinCtx.save();
+        skinCtx.beginPath();
+        skinCtx.arc(skinCanvas.width / 2, skinCanvas.height / 2, skinCanvas.width / 2, 0, Math.PI * 2);
+        skinCtx.closePath();
+        skinCtx.clip();
+        const scale = Math.max(512 / img.width, 512 / img.height);
+        const x = (512 - img.width * scale) / 2;
+        const y = (512 - img.height * scale) / 2;
+        skinCtx.drawImage(img, x, y, img.width * scale, img.height * scale);
+        skinCtx.restore();
+      };
+      img.onerror = () => {
+        skinCtx.fillStyle = "#ccc";
+        skinCtx.fillRect(0, 0, skinCanvas.width, skinCanvas.height);
+        skinCtx.fillStyle = "#666";
+        skinCtx.font = "20px Arial";
+        skinCtx.textAlign = "center";
+        skinCtx.fillText("Ошибка загрузки", 256, 256);
+      };
+      img.src = url;
+    }
+  }
+  function getMultiplier() {
+    return document.getElementById("clan").checked ? 2 : 1;
+  }
+  function setPriceRow(rowId, label, amount) {
+    const row = document.getElementById(rowId);
+    if (!row) return;
+    const labelEl = row.querySelector("span");
+    const amountEl = row.querySelector("strong");
+    if (labelEl && label) labelEl.textContent = label;
+    if (amountEl) amountEl.textContent = amount;
+  }
+  function setReceiptVisible(show) {
+    const calculator = document.getElementById("calculator");
+    if (calculator) calculator.hidden = !show;
+  }
+  function calculateCost() {
+    const nickname = nicknameInput.value.trim();
+    const password = passwordInput.value.trim();
+    const file = fileInput.files[0];
+    const statsBgFile = statsBgInput && statsBgInput.files[0];
+    const multiplier = getMultiplier();
+    const buyButton = document.getElementById("buyButton");
+    const totalEl = document.getElementById("totalAmount");
+    const wantsStatsBg = !!(statsBgNickCheckbox && statsBgNickCheckbox.checked);
+    const hasStatsBg = wantsStatsBg && !!statsBgFile;
+    const hasOrderItem = !!(password || file || invisibleNickCheckbox.checked || rotationNickCheckbox.checked || hasStatsBg);
+    if (!nickname || isNicknameTaken || !hasOrderItem || !getAccountToken()) {
+      setReceiptVisible(false);
+      buyButton.disabled = true;
+      if (isPayStepOpen) closePayStep();
+      return;
+    }
+    const passwordCost = password ? 150 : 0;
+    const invisibleCost = invisibleNickCheckbox.checked ? 500 : 0;
+    const rotationCost = rotationNickCheckbox.checked ? 500 : 0;
+    const statsBgCost = hasStatsBg ? 100 : 0;
+    let skinCost = 0;
+    let skinLabel = "Скин";
+    if (file) {
+      skinCost = file.type === "image/gif" ? 4500 : 150;
+      skinLabel = file.type === "image/gif" ? "Скин GIF" : "Скин PNG";
+    }
+    const total = (passwordCost + skinCost + invisibleCost + rotationCost + statsBgCost) * multiplier;
+    setReceiptVisible(true);
+    document.getElementById("multiplierText").textContent = multiplier === 2 ? "2x" : "1x";
+    setPriceRow("passwordCost", "Пароль", password ? `${passwordCost * multiplier} ₽` : "0 ₽");
+    setPriceRow("skinCost", skinLabel, file ? `${skinCost * multiplier} ₽` : "0 ₽");
+    const invisibleRow = document.getElementById("invisibleCost");
+    if (invisibleNickCheckbox.checked) {
+      setPriceRow("invisibleCost", "Невидимый ник", `${invisibleCost * multiplier} ₽`);
+      invisibleRow.style.display = "flex";
+    } else {
+      invisibleRow.style.display = "none";
+    }
+    const rotationRow = document.getElementById("rotationCost");
+    if (rotationNickCheckbox.checked) {
+      setPriceRow("rotationCost", "Поворот скина", `${rotationCost * multiplier} ₽`);
+      rotationRow.style.display = "flex";
+    } else {
+      rotationRow.style.display = "none";
+    }
+    const statsBgRow = document.getElementById("statsBgCost");
+    if (statsBgRow) {
+      if (hasStatsBg) {
+        setPriceRow("statsBgCost", "Фон статистики", `${statsBgCost * multiplier} ₽`);
+        statsBgRow.style.display = "flex";
+      } else {
+        statsBgRow.style.display = "none";
+      }
+    }
+    if (total > 0) {
+      totalEl.textContent = `${total} ₽`;
+      buyButton.disabled = false;
+      if (isPayStepOpen && shopPayAmount) shopPayAmount.textContent = `${total} ₽`;
+    } else {
+      setReceiptVisible(false);
+      buyButton.disabled = true;
+      if (isPayStepOpen) closePayStep();
+    }
+  }
+  document.querySelectorAll('input[name="serviceType"]').forEach(radio => {
+    radio.addEventListener("change", () => {
+      updateNicknameDisplay();
+      calculateCost();
+    });
+  });
+  updateNicknameDisplay();
+  calculateCost();
+  updateShopAuthNotice();
+  document.getElementById("buyButton").addEventListener("click", () => {
+    if (document.getElementById("buyButton").disabled) return;
+    if (!getAccountToken()) {
+      showAuthRequiredForShop();
+      return;
+    }
+    const nickname = nicknameInput.value.trim();
+    const password = passwordInput.value.trim();
+    const file = fileInput.files[0];
+    if (!nickname) {
+      showError("formError", "Введите ник/клан.");
+      return;
+    }
+    if (isNicknameTaken) {
+      showError("formError", "Ник занят");
+      return;
+    }
+    if (!password && !file && !invisibleNickCheckbox.checked && !rotationNickCheckbox.checked && !(statsBgNickCheckbox && statsBgNickCheckbox.checked && statsBgInput && statsBgInput.files[0])) {
+      showError("formError", "Выберите хотя бы пароль, скин или фон статистики");
+      return;
+    }
+    openPayStep();
+  });
+  document.getElementById("paymentForm").addEventListener("submit", e => {
+    e.preventDefault();
+    if (!getAccountToken()) {
+      showAuthRequiredForShop();
+      return;
+    }
+    if (!document.getElementById("buyButton").disabled) openPayStep();
+  });
+  async function startPayment() {
+    var _a;
+    if (isSubmittingPayment) return;
+    if (!getAccountToken()) {
+      showAuthRequiredForShop();
+      closePayStep();
+      return;
+    }
+    const rawNickname = nicknameInput.value.trim();
+    const nickname = rawNickname.toLowerCase();
+    const password = passwordInput.value.trim().toLowerCase();
+    const email = getShopEmail();
+    const file = fileInput.files[0];
+    const statsBgFile = statsBgInput && statsBgInput.files[0];
+    const serviceType = ((_a = document.querySelector('input[name="serviceType"]:checked')) == null ? void 0 : _a.value) || "";
+    if (!nickname) {
+      showError("formError", "Введите ник/клан.");
+      closePayStep();
+      return;
+    }
+    if (!email) {
+      showError("emailError", "Укажите email для чека");
+      emailInput == null ? void 0 : emailInput.focus();
+      return;
+    }
+    if (!isShopEmailValid()) {
+      showError("emailError", "Введите корректный email");
+      emailInput == null ? void 0 : emailInput.focus();
+      return;
+    }
+    const hasStatsBg = !!(statsBgNickCheckbox && statsBgNickCheckbox.checked && statsBgFile);
+    if (statsBgNickCheckbox && statsBgNickCheckbox.checked && !statsBgFile) {
+      showError("formError", "Загрузите картинку фона статистики");
+      closePayStep();
+      return;
+    }
+    if (!password && !file && !invisibleNickCheckbox.checked && !rotationNickCheckbox.checked && !hasStatsBg) {
+      showError("formError", "Выберите хотя бы пароль, скин или фон статистики");
+      closePayStep();
+      return;
+    }
+    const multiplier = getMultiplier();
+    const passwordCost = password ? 1 : 0;
+    const skinCost = file ? file.type === "image/gif" ? 2 : 1 : 0;
+    const amount = (passwordCost + skinCost) * multiplier;
+    const formData = new FormData;
+    formData.append("name", nickname);
+    formData.append("amount", amount);
+    formData.append("serviceType", serviceType);
+    formData.append("email", email);
+    if (password) formData.append("password", password);
+    if (invisibleNickCheckbox.checked) formData.append("invisible", "1");
+    if (rotationNickCheckbox.checked) formData.append("rotation", "1");
+    if (hasStatsBg) {
+      formData.append("statsbg", "1");
+      formData.append("statsbgImage", statsBgFile, statsBgFile.name);
+    }
+    const headers = {};
+    if (getAccountToken()) {
+      headers["Authorization"] = `Game ${getAccountToken()}`;
+    }
+    isSubmittingPayment = true;
+    updatePayButtonState();
+    if (payButton) payButton.textContent = "ОПЛАТА...";
+    const restorePayBtn = () => {
+      isSubmittingPayment = false;
+      updatePayButtonState();
+    };
+    try {
+      if (file) {
+        if (file.type === "image/gif") {
+          formData.append("image", file, file.name);
+          await sendForm(formData, headers);
+        } else {
+          await new Promise((resolve, reject) => {
+            skinCanvas.toBlob(async blob => {
+              if (!blob) {
+                showError("formError", "Не удалось обработать изображение. Попробуйте другой файл.");
+                reject(new Error("blob"));
+                return;
+              }
+              formData.append("image", blob, "skin.png");
+              try {
+                await sendForm(formData, headers);
+                resolve();
+              } catch (err) {
+                reject(err);
+              }
+            }, "image/png");
+          });
+        }
+      } else {
+        await sendForm(formData, headers);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      restorePayBtn();
+    }
+  }
+  async function sendForm(formData, headers = {}) {
+    var _a;
+    try {
+      const res = await fetch("https://api.agar.su/create-payment", {
+        method: "POST",
+        headers,
+        body: formData
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg = data.error && (data.error.description || data.error) || `Ошибка оплаты (${res.status})`;
+        showError("formError", String(msg), true);
+        throw new Error(String(msg));
+      }
+      if (data.warning) {
+        showError("formError", data.warning, false);
+        setTimeout(() => hideError("formError"), 8e3);
+      }
+      if ((_a = data == null ? void 0 : data.confirmation) == null ? void 0 : _a.confirmation_url) {
+        showToast("Переходим к оплате...", "success");
+        window.location.href = data.confirmation.confirmation_url;
+        return;
+      }
+      if (data == null ? void 0 : data.redirect) {
+        showToast("Переходим к оплате...", "success");
+        window.location.href = data.redirect;
+        return;
+      }
+      if (data == null ? void 0 : data.error) {
+        showError("formError", `Ошибка: ${data.error.description || data.error}`, true);
+        throw new Error(String(data.error.description || data.error));
+      }
+      showError("formError", "Неизвестная ошибка платежа.", true);
+      throw new Error("unknown payment error");
+    } catch (err) {
+      console.error(err);
+      if (!(err && err.message && String(err.message).includes("Ошибка"))) {
+        showError("formError", "Ошибка соединения. Попробуйте позже.", true);
+      }
+      throw err;
+    }
+  }
+  var togglePassword = document.getElementById("togglePassword");
+  var togglePasswordIcon = togglePassword == null ? void 0 : togglePassword.querySelector("i");
+  togglePassword == null ? void 0 : togglePassword.addEventListener("click", () => {
+    const type = passwordInput.type === "password" ? "text" : "password";
+    passwordInput.type = type;
+    togglePasswordIcon == null ? void 0 : togglePasswordIcon.classList.toggle("fa-eye");
+    togglePasswordIcon == null ? void 0 : togglePasswordIcon.classList.toggle("fa-eye-slash");
+  });
+  invisibleNickCheckbox.addEventListener("change", calculateCost);
+  rotationNickCheckbox.addEventListener("change", calculateCost);
+  let statsBgPreviewUrl = null;
+  function clearStatsBgPreview() {
+    const box = document.querySelector("#shop .shop-container");
+    if (statsBgPreviewUrl) {
+      try { URL.revokeObjectURL(statsBgPreviewUrl); } catch (e) {}
+      statsBgPreviewUrl = null;
+    }
+    if (box) {
+      box.classList.remove("has-stats-bg-preview");
+      box.style.removeProperty("--shop-stats-bg");
+    }
+  }
+  function setStatsBgPreview(file) {
+    const box = document.querySelector("#shop .shop-container");
+    if (!box || !file) {
+      clearStatsBgPreview();
+      return;
+    }
+    if (statsBgPreviewUrl) {
+      try { URL.revokeObjectURL(statsBgPreviewUrl); } catch (e) {}
+    }
+    statsBgPreviewUrl = URL.createObjectURL(file);
+    box.style.setProperty("--shop-stats-bg", `url("${statsBgPreviewUrl}")`);
+    box.classList.add("has-stats-bg-preview");
+  }
+  if (statsBgNickCheckbox) {
+    statsBgNickCheckbox.addEventListener("change", () => {
+      if (statsBgNickCheckbox.checked) {
+        if (statsBgInput && !statsBgInput.files[0]) statsBgInput.click();
+        else if (statsBgInput && statsBgInput.files[0]) setStatsBgPreview(statsBgInput.files[0]);
+      } else if (statsBgInput) {
+        statsBgInput.value = "";
+        clearStatsBgPreview();
+      }
+      calculateCost();
+    });
+  }
+  if (statsBgInput) {
+    statsBgInput.addEventListener("change", () => {
+      const file = statsBgInput.files[0];
+      if (!file) {
+        if (statsBgNickCheckbox) statsBgNickCheckbox.checked = false;
+        clearStatsBgPreview();
+        calculateCost();
+        return;
+      }
+      if (file.size > paymentRules.maxFileSize) {
+        statsBgInput.value = "";
+        if (statsBgNickCheckbox) statsBgNickCheckbox.checked = false;
+        clearStatsBgPreview();
+        showError("fileError", "Фон слишком большой (макс. 5MB)");
+        calculateCost();
+        return;
+      }
+      const okTypes = ["image/png", "image/jpeg", "image/webp", "image/gif"];
+      if (!okTypes.includes(file.type)) {
+        statsBgInput.value = "";
+        if (statsBgNickCheckbox) statsBgNickCheckbox.checked = false;
+        clearStatsBgPreview();
+        showError("fileError", "Фон: только PNG, JPG, WEBP или GIF");
+        calculateCost();
+        return;
+      }
+      if (statsBgNickCheckbox) statsBgNickCheckbox.checked = true;
+      setStatsBgPreview(file);
+      hideError("fileError");
+      calculateCost();
+    });
+  }
+  window.addEventListener("storage", event => {
+    if (event.key === "accountToken") updateShopAuthNotice();
+  });
+  function openShopPurchase(nickname, options = {}) {
+    if (typeof showContent === "function") showContent("shop");
+    closePayStep();
+    const isClan = !!options.clan;
+    const personal = document.getElementById("personal");
+    const clan = document.getElementById("clan");
+    if (personal) personal.checked = !isClan;
+    if (clan) clan.checked = isClan;
+    updateNicknameDisplay();
+    nicknameInput.value = String(nickname || "").trim();
+    updateCharCount();
+    hideError("nicknameError");
+    nicknameInput.setCustomValidity("");
+    isNicknameTaken = false;
+    invisibleNickCheckbox.checked = !!options.invisible;
+    rotationNickCheckbox.checked = !!options.rotation;
+    if (statsBgNickCheckbox) statsBgNickCheckbox.checked = !!options.statsBg;
+    if (!options.statsBg) {
+      if (statsBgInput) statsBgInput.value = "";
+      clearStatsBgPreview();
+    }
+    if (options.focusPassword) {
+      passwordInput.focus();
+    } else {
+      passwordInput.value = "";
+      hideError("passwordError");
+    }
+    if (options.focusSkin) {
+      fileInput.click();
+    }
+    if (options.statsBg && statsBgInput) {
+      statsBgInput.click();
+    }
+    calculateCost();
+    nicknameInput.scrollIntoView({
+      behavior: "smooth",
+      block: "center"
+    });
+  }
+  window.openShopPurchase = openShopPurchase;
+  window.updateShopAuthNotice = updateShopAuthNotice;
+  onReady(() => {
+    const nickInput = document.getElementById("nick");
+    const passInput = document.getElementById("pass");
+    if (!nickInput || !passInput) return;
+    let allowedNicks = [];
+    function setCookie2(name, value, days) {
+      let expires = "";
+      if (days) {
+        const date = new Date;
+        date.setTime(date.getTime() + days * 24 * 60 * 60 * 1e3);
+        expires = "; expires=" + date.toUTCString();
+      }
+      document.cookie = name + "=" + encodeURIComponent(value || "") + expires + "; path=/";
+    }
+    function getCookie2(name) {
+      const nameEQ = name + "=";
+      const ca = document.cookie.split(";");
+      for (let i = 0; i < ca.length; i++) {
+        let c = ca[i].trim();
+        if (c.indexOf(nameEQ) === 0) return decodeURIComponent(c.substring(nameEQ.length));
+      }
+      return null;
+    }
+    function syncNickPassCookies(nick, pass) {
+      if (nick) setCookie2("userNick", nick, 7); else setCookie2("userNick", "", -1);
+      if (pass) setCookie2("userPass", pass, 7); else setCookie2("userPass", "", -1);
+    }
+    function checkNickStatus(nick) {
+      // Same normalizeNick as pass.txt: clans stay as "[isq]", not stripped "isq"
+      const normalized = normalizeNick(nick);
+      if (allowedNicks.includes(normalized)) {
+        passInput.style.display = "block";
+      } else {
+        passInput.style.display = "none";
+      }
+    }
+    window.__agarsuCheckNickStatus = checkNickStatus;
+    window.__agarsuSyncNickPassCookies = syncNickPassCookies;
+    loadPassData().then(data => {
+      allowedNicks = data.passUsers || [];
+      const players = typeof window.__agarsuGetPlayers === "function" ? window.__agarsuGetPlayers() : [];
+      if (players.length > 0) {
+        checkNickStatus(nickInput.value.trim());
+        return;
+      }
+      const savedNick = getCookie2("userNick");
+      const savedPass = getCookie2("userPass");
+      if (savedNick) {
+        nickInput.value = savedNick;
+        checkNickStatus(savedNick);
+      }
+      if (savedPass) {
+        passInput.value = savedPass;
+      }
+    }).catch(error => {
+      console.error("Ошибка при загрузке pass.txt:", error);
+    });
+    nickInput.addEventListener("input", () => {
+      const currentNick = nickInput.value.trim();
+      if (currentNick) {
+        setCookie2("userNick", currentNick, 7);
+      } else {
+        setCookie2("userNick", "", -1);
+        passInput.style.display = "none";
+      }
+      checkNickStatus(currentNick);
+    });
+    passInput.addEventListener("input", () => {
+      const currentPass = passInput.value.trim();
+      if (currentPass) {
+        setCookie2("userPass", currentPass, 7);
+      } else {
+        setCookie2("userPass", "", -1);
+      }
+      if (typeof window.__agarsuUpdatePlayerPass === "function") {
+        window.__agarsuUpdatePlayerPass(currentPass);
+      }
+    });
+  });
+  var getLevel2 = xp => ~~((xp / 100 * 2) ** .5);
+  function escapeHtmlRating(s) {
+    return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function resolveAccountAvatar(raw) {
+    if (!raw) return SKIN_FALLBACK_URL;
+    const url = String(raw).trim();
+    if (/^https?:\/\//i.test(url)) return url;
+    return SKIN_FALLBACK_URL;
+  }
+  function ratingCountText(n) {
+    n = Math.max(0, Math.floor(Number(n) || 0));
+    var mobile = window.matchMedia && window.matchMedia("(max-width: 599px)").matches;
+    if (!mobile || n < 1000) return String(n);
+    var unit = n >= 1000000 ? "kk" : "k";
+    var value = n >= 1000000 ? n / 1000000 : n / 1000;
+    var text = (Math.round(value * 10) / 10).toFixed(1);
+    if (text.slice(-2) === ".0") text = text.slice(0, -2);
+    return text + unit;
+  }
+  function refreshRatingCounts() {
+    var box = document.getElementById("table-container");
+    if (!box) return;
+    var nodes = box.querySelectorAll("[data-n]");
+    for (var i = 0; i < nodes.length; i++) {
+      nodes[i].textContent = ratingCountText(nodes[i].getAttribute("data-n"));
+    }
+  }
+  function xpStats(xstats) {
+    const container = document.getElementById("table-container");
+    if (!container) return;
+    const frag = document.createDocumentFragment();
+    (xstats || []).forEach(player => {
+      const level = getLevel2(player.xp);
+      const avatar = resolveAccountAvatar(player.account_avatar);
+      const uid = player.uid != null ? String(player.uid) : "—";
+      const nicks = Math.max(0, Number(player.nicks_count) || 0);
+      const clans = Math.max(0, Number(player.clans_count) || 0);
+      const friends = Math.max(0, Number(player.friends) || 0);
+      const playerDiv = document.createElement("div");
+      playerDiv.classList.add("top-player");
+      playerDiv.innerHTML =
+        `<div class="time">${player.position}</div>` +
+        `<div class="nick"><span class="account-uid">id${escapeHtmlRating(uid)}</span></div>` +
+        `<div class="score" data-n="${level}">${ratingCountText(level)}</div>` +
+        `<div class="count" data-n="${nicks}">${ratingCountText(nicks)}</div>` +
+        `<div class="count" data-n="${clans}">${ratingCountText(clans)}</div>` +
+        `<div class="count friends-count" data-n="${friends}">${ratingCountText(friends)}</div>` +
+        `<div class="skkinn"><img src="${avatar.replace(/"/g, "%22")}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"></div>`;
+      frag.appendChild(playerDiv);
+    });
+    container.innerHTML = "";
+    container.appendChild(frag);
+    if (!xpStats._mq && window.matchMedia) {
+      xpStats._mq = window.matchMedia("(max-width: 599px)");
+      var onChange = function () { refreshRatingCounts(); };
+      if (xpStats._mq.addEventListener) xpStats._mq.addEventListener("change", onChange);
+      else if (xpStats._mq.addListener) xpStats._mq.addListener(onChange);
+    }
+  }
+  async function fetchTop100() {
+    if (fetchTop100._loading) return fetchTop100._loading;
+    const panel = document.getElementById("rating");
+    if (!panel || !panel.classList.contains("active")) return null;
+    fetchTop100._loading = (async () => {
+      try {
+        const container = document.getElementById("table-container");
+        if (container && !fetchTop100._loaded) {
+          container.innerHTML = `<div class="top-player"><div class="time"></div><div class="nick">Загрузка…</div><div class="score"></div><div class="count"></div><div class="count"></div><div class="count"></div><div class="skkinn"></div></div>`;
+        }
+        const res = await fetch(TOP100_URL, {
+          cache: "default"
+        });
+        if (!res.ok) throw new Error("top100 " + res.status);
+        // если пользователь уже ушёл с вкладки — не рисуем
+        if (!panel.classList.contains("active")) return;
+        const data = await res.json();
+        if (!panel.classList.contains("active")) return;
+        xpStats(data);
+        fetchTop100._loaded = true;
+      } catch (err) {
+        console.error("Error fetching top 100:", err);
+        const container = document.getElementById("table-container");
+        if (container && panel.classList.contains("active")) {
+          container.innerHTML = `<div class="top-player"><div class="time"></div><div class="nick">Не удалось загрузить</div><div class="score"></div><div class="count"></div><div class="count"></div><div class="skkinn"></div></div>`;
+        }
+      } finally {
+        fetchTop100._loading = null;
+      }
+    })();
+    return fetchTop100._loading;
+  }
+  function ensureTop100Loaded(force) {
+    if (fetchTop100._loaded && !force) return;
+    fetchTop100();
+  }
+  function initVkAuthModule() {
+    const PKCE_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-";
+    const VK_VERIFIER_KEY = "vk_code_verifier";
+    const VK_STATE_KEY = "vk_state";
+    const OAUTH_MAP = {
+      vk: "VK",
+      mail: "MAIL",
+      ok: "OK"
+    };
+    let authBusy = false;
+    let configReady = false;
+
+    function randomString(len) {
+      const bytes = new Uint8Array(len);
+      crypto.getRandomValues(bytes);
+      let out = "";
+      for (let i = 0; i < len; i++) out += PKCE_CHARS[bytes[i] % PKCE_CHARS.length];
+      return out;
+    }
+    function persistPkce(codeVerifier, state) {
+      try {
+        sessionStorage.setItem(VK_VERIFIER_KEY, codeVerifier);
+        sessionStorage.setItem(VK_STATE_KEY, state);
+      } catch (e) {}
+      try {
+        localStorage.setItem(VK_VERIFIER_KEY, codeVerifier);
+        localStorage.setItem(VK_STATE_KEY, state);
+      } catch (e) {}
+      try {
+        setCookie(VK_VERIFIER_KEY, codeVerifier, 1);
+        setCookie(VK_STATE_KEY, state, 1);
+      } catch (e) {}
+    }
+    function readPkce() {
+      const read = getter => {
+        try {
+          return getter();
+        } catch (e) {
+          return null;
+        }
+      };
+      const codeVerifier = read(() => sessionStorage.getItem(VK_VERIFIER_KEY)) || read(() => localStorage.getItem(VK_VERIFIER_KEY)) || read(() => getCookie(VK_VERIFIER_KEY));
+      const state = read(() => sessionStorage.getItem(VK_STATE_KEY)) || read(() => localStorage.getItem(VK_STATE_KEY)) || read(() => getCookie(VK_STATE_KEY));
+      return {
+        codeVerifier,
+        state
+      };
+    }
+    function clearPkce() {
+      for (const key of [ VK_VERIFIER_KEY, VK_STATE_KEY ]) {
+        try {
+          sessionStorage.removeItem(key);
+        } catch (e) {}
+        try {
+          localStorage.removeItem(key);
+        } catch (e) {}
+        try {
+          deleteCookie(key);
+        } catch (e) {}
+      }
+    }
+    function setAuthHint(text, show) {
+      const hint = document.getElementById("socAuthHint");
+      if (!hint) return;
+      if (text) hint.textContent = text;
+      hint.hidden = !show;
+    }
+    function setButtonsBusy(busy) {
+      authBusy = busy;
+      document.querySelectorAll(".soc-auth-btn").forEach(btn => {
+        btn.disabled = !!busy;
+      });
+    }
+    function vkidOnError(error) {
+      console.error("VK ID error:", error);
+      setButtonsBusy(false);
+      setAuthHint("", false);
+      const msg = (error == null ? void 0 : error.error_description) || (error == null ? void 0 : error.error) || (error == null ? void 0 : error.text) || (typeof error === "string" ? error : "Ошибка входа");
+      alert("Вход: " + msg);
+    }
+    function sendCodeToServer(code, deviceId) {
+      const {codeVerifier, state} = readPkce();
+      if (!codeVerifier || !state) {
+        alert("Вход: сессия истекла, обновите страницу и войдите через VK снова");
+        return;
+      }
+      const payload = {
+        code,
+        device_id: deviceId,
+        code_verifier: codeVerifier,
+        state
+      };
+      clearPkce();
+      deliverVkAuthPayload(payload);
+    }
+    function deliverVkAuthPayload(payload) {
+      if (typeof window.onVkAuth === "function") {
+        window.__pendingVkAuthPayload = null;
+        window.onVkAuth(payload);
+        return;
+      }
+      // Boot race: redirect returns before onVkAuth is assigned
+      window.__pendingVkAuthPayload = payload;
+    }
+    function flushPendingVkAuth() {
+      const pending = window.__pendingVkAuthPayload;
+      if (!pending) return;
+      if (typeof window.onVkAuth !== "function") return;
+      window.__pendingVkAuthPayload = null;
+      window.onVkAuth(pending);
+    }
+    window.flushPendingVkAuth = flushPendingVkAuth;
+    function handleAuthPayload(payload) {
+      if (!payload || !payload.code) return;
+      sendCodeToServer(payload.code, payload.device_id);
+    }
+    function ensureVkConfig(VKID, forceRedirect) {
+      var _a2;
+      if (configReady && window.VKIDSDK && !forceRedirect) return true;
+      const codeVerifier = randomString(64);
+      const state = randomString(32);
+      persistPkce(codeVerifier, state);
+      // Always Redirect: Callback popup hangs after "Allow" (loads agar.su in popup).
+      const sameWindow = true;
+      const config = {
+        app: 54069355,
+        redirectUrl: "https://agar.su",
+        state,
+        codeVerifier,
+        responseMode: VKID.ConfigResponseMode.Redirect,
+        source: VKID.ConfigSource.LOWCODE,
+        scope: ""
+      };
+      if (sameWindow && ((_a2 = VKID.ConfigAuthMode) == null ? void 0 : _a2.Redirect)) {
+        config.mode = VKID.ConfigAuthMode.Redirect;
+      }
+      VKID.Config.init(config);
+      configReady = true;
+      return true;
+    }
+    function showFallbackWidget(VKID) {
+      const container = document.getElementById("VkIdSdkOAuthList");
+      if (!container || container.dataset.rendered === "1") return;
+      container.hidden = false;
+      container.dataset.rendered = "1";
+      const oauthListNames = [ VKID.OAuthName.VK, VKID.OAuthName.MAIL, VKID.OAuthName.OK ];
+      (new VKID.OAuthList).render({
+        container,
+        oauthList: oauthListNames,
+        scheme: VKID.Scheme.LIGHT,
+        lang: VKID.Languages.RUS,
+        styles: {
+          height: 44,
+          borderRadius: 8
+        }
+      }).on(VKID.WidgetEvents.ERROR, vkidOnError).on(VKID.OAuthListInternalEvents.LOGIN_SUCCESS, function(payload) {
+        handleAuthPayload(payload);
+      });
+    }
+    async function startOAuth(providerKey) {
+      if (authBusy) return;
+      if (isEmbedMode()) {
+        alert("Вход недоступен во встроенном режиме");
+        return;
+      }
+      setButtonsBusy(true);
+      setAuthHint("Загрузка входа…", true);
+      try {
+        const ok = await ensureVkSdk();
+        if (!ok || !window.VKIDSDK) {
+          setAuthHint("Не удалось загрузить SDK", true);
+          setButtonsBusy(false);
+          return;
+        }
+        const VKID = window.VKIDSDK;
+        ensureVkConfig(VKID, true);
+        const oauthKey = OAUTH_MAP[providerKey] || "VK";
+        const provider = VKID.OAuthName && VKID.OAuthName[oauthKey];
+        setAuthHint("Переход в VK…", true);
+        if (typeof VKID.Auth.login === "function") {
+          const opts = provider ? {
+            provider
+          } : undefined;
+          VKID.Auth.login(opts);
+          // Redirect leaves the page; no promise to await
+          return;
+        }
+        showFallbackWidget(VKID);
+        setAuthHint("Выберите способ входа ниже", true);
+        setButtonsBusy(false);
+      } catch (err) {
+        vkidOnError(err);
+      }
+    }
+    function bindSocButtons() {
+      const root = document.getElementById("socAuthBtns");
+      if (!root || root.dataset.bound === "1") return;
+      root.dataset.bound = "1";
+      root.addEventListener("click", ev => {
+        const btn = ev.target && ev.target.closest ? ev.target.closest("[data-oauth]") : null;
+        if (!btn) return;
+        ev.preventDefault();
+        startOAuth(btn.getAttribute("data-oauth") || "vk");
+      });
+    }
+    function consumeRedirectCode() {
+      try {
+        if (sessionStorage.getItem("lk_recover_vk_mode") === "1") {
+          window._lkRecoverVkMode = true;
+        }
+      } catch (e) {}
+      const urlParams = new URLSearchParams(window.location.search);
+      const codeFromUrl = urlParams.get("code");
+      const deviceFromUrl = urlParams.get("device_id") || urlParams.get("deviceId") || "";
+      if (codeFromUrl && deviceFromUrl) {
+        // Strip OAuth params immediately so reload won't re-process
+        try {
+          window.history.replaceState({}, "", window.location.pathname + window.location.hash);
+        } catch (e) {}
+        sendCodeToServer(codeFromUrl, deviceFromUrl);
+      }
+    }
+    bindSocButtons();
+    consumeRedirectCode();
+  }
+  window.initVkAuthModule = initVkAuthModule;
+  function isEmbedMode() {
+    try {
+      if (new URLSearchParams(location.search).has("embed")) return true;
+    } catch (e) {}
+    try {
+      return window.self !== window.top;
+    } catch (e) {
+      return true;
+    }
+  }
+  function isAuthorized() {
+    try {
+      return Boolean(getAccountToken());
+    } catch (e) {
+      return false;
+    }
+  }
+  function loadScript(src, attrs = {}) {
+    return new Promise((resolve, reject) => {
+      if (document.querySelector(`script[src="${src}"]`)) {
+        resolve();
+        return;
+      }
+      const s = document.createElement("script");
+      s.src = src;
+      s.async = true;
+      Object.entries(attrs).forEach(([k, v]) => s.setAttribute(k, v));
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error("Failed to load " + src));
+      document.head.appendChild(s);
+    });
+  }
+  function scheduleDeferredExternals() {
+    if (!window.renderDeathBanner) {
+      window.renderDeathBanner = function() {};
+    }
+    if (isEmbedMode()) {
+      document.documentElement.classList.add("agarsu-embed");
+    }
+    // Яндекс/Mail.ru счётчики и реклама отключены — без лишнего трафика
+  }
+  function loadScript2(src) {
+    return new Promise((resolve, reject) => {
+      const existing = document.querySelector(`script[src="${src}"]`);
+      if (existing) {
+        if (src.includes("vkid") && window.VKIDSDK) return resolve();
+        existing.addEventListener("load", () => resolve());
+        existing.addEventListener("error", reject);
+        return;
+      }
+      const s = document.createElement("script");
+      s.src = src;
+      s.async = false;
+      s.crossOrigin = "anonymous";
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error("Failed to load " + src));
+      document.head.appendChild(s);
+    });
+  }
+  async function ensureVkSdk() {
+    if (window.VKIDSDK) return true;
+    if (isEmbedMode()) return false;
+    const host = location.hostname;
+    if (host === "localhost" || host === "127.0.0.1") return false;
+    try {
+      await loadScript2("/vendor/vkid-sdk.umd.js");
+      if (window.VKIDSDK) return true;
+    } catch (e) {}
+    log.warn("VK ID SDK unavailable");
+    return false;
+  }
+  async function boot() {
+    window.renderDeathBanner = window.renderDeathBanner || function() {};
+    hydrateAccountToken();
+    // Game first so onVkAuth exists before OAuth redirect code is consumed
+    initGame(window);
+    initVkAuthModule();
+    if (typeof window.flushPendingVkAuth === "function") {
+      window.flushPendingVkAuth();
+    }
+    initLobbyUi();
+    bus.emit(Events.SHOW_CONTENT, {
+      id: "home"
+    });
+    // Returning from VK recover → open store auth UI
+    try {
+      if (sessionStorage.getItem("lk_recover_vk_mode") === "1" || window.__pendingVkAuthPayload) {
+        if (typeof window.showContent === "function") window.showContent("store");
+      }
+    } catch (e) {}
+    scheduleDeferredExternals();
+    log.info("Agar.su low-client ready");
+  }
+  boot().catch(err => {
+    console.error("Boot failed:", err);
+  });
+})();
