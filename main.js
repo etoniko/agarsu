@@ -2237,6 +2237,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   var ServerOpcode = {
     PING: 2,
     UPDATE_NODES: 16,
+    THIN_WORLD: 96, // ULTRA_FOOD_CHAIN mode3
     UPDATE_CAMERA: 17,
     CLEAR_NODES: 20,
     CUSTOM_LB: 48,
@@ -2922,11 +2923,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   }
   window.getLimitGlowMassBounds = getLimitGlowMassBounds;
   window.isLimitGlowDisabledHost = isLimitGlowDisabledHost;
-  /** Side rings (left.png / right.png) only on tournament 3x3 and 4x4. */
-  function isTeamSideOutlineServer(host) {
-    const id = resolveOfficialServerId(host);
-    return id === "tournament2" || id === "tournament3";
-  }
   /** Bridge skins via unified xn--bdk.pw skinsbot. skinlist.txt still wins (agar.su only). */
   var SKINS_BOT_BASE = "https://xn--bdk.pw:6016";
   function applyServerSpectateCamera(S, x, y, size) {
@@ -4099,6 +4095,16 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   function formatLeaderBoardName(S, raw) {
     return String(raw || "");
   }
+  function leaderboardIsMe(S, id) {
+    const cells = S.playerCells;
+    for (let i = 0; i < cells.length; i++) {
+      const cell = cells[i];
+      if (!cell) continue;
+      if (cell.id === id) return true;
+      if (cell.encX != null && cell.playerId && cell.playerId === id) return true;
+    }
+    return false;
+  }
   function drawCustomLeaderBoard() {
     var _a, _b;
     const S = deps2.S;
@@ -4157,7 +4163,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       const isSystemLine = S.leaderBoard[b].id == null;
       let isMe = false;
       if (!isSystemLine && !isUnofficial) {
-        isMe = S.playerCells.some(cell => cell.id === S.leaderBoard[b].id);
+        isMe = leaderboardIsMe(S, S.leaderBoard[b].id);
       }
       // Unofficial servers: LB id doesn't map to our cell id — match by nick.
       if ((S.noRanking || isUnofficial) && S.leaderBoard[b].name) {
@@ -5058,6 +5064,18 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     for (let i = 0; i < S.nodelist.length; i++) {
       const node = S.nodelist[i];
       if (!(node == null ? void 0 : node.isFood)) continue;
+      if (node.foodPlaced && node.encX != null) {
+        const x = S.leftPos + node.encX;
+        const y = S.topPos + node.encY;
+        node.ox = x;
+        node.oy = y;
+        node.nx = x;
+        node.ny = y;
+        node.x = x;
+        node.y = y;
+        node.updateTime = now;
+        continue;
+      }
       const {x, y} = computeFoodPosition(S, node.id);
       const sz = computeFoodSize(S, node.id);
       node.ox = x;
@@ -5213,6 +5231,338 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       setNodeSticker(node, enabled ? stickerId : null);
     }
   }
+  const FOOD_HEX = [ "#ff0720", "#ff0760", "#ff07b4", "#ff4007", "#ffa007", "#ff07ff", "#07ff20", "#07ff8c", "#07ffe6", "#0740ff", "#07b4ff", "#b407ff", "#ff285a", "#28ff5a", "#ffdc07", "#07dcff" ];
+  function foodColorHex(id) {
+    return FOOD_HEX[(id | 0) & 15] || FOOD_HEX[0];
+  }
+  function applyThinWorld(S, view, offset) {
+    if (!view || offset >= view.byteLength) return;
+    S.timestamp = Date.now();
+    S.ua = false;
+    S.nodesSortDirty = true;
+    const end = view.byteLength;
+    let bad = false;
+    function need(n) {
+      if (bad || offset + n > end) {
+        bad = true;
+        return false;
+      }
+      return true;
+    }
+    function u8() {
+      if (!need(1)) return 0;
+      return view.getUint8(offset++);
+    }
+    function u16() {
+      if (!need(2)) return 0;
+      const v = view.getUint16(offset, true);
+      offset += 2;
+      return v;
+    }
+    function i8() {
+      if (!need(1)) return 0;
+      const v = view.getInt8(offset);
+      offset += 1;
+      return v;
+    }
+    function i16() {
+      if (!need(2)) return 0;
+      const v = view.getInt16(offset, true);
+      offset += 2;
+      return v;
+    }
+    function utf8() {
+      const bytes = [];
+      while (offset < end) {
+        const c = view.getUint8(offset++);
+        if (c === 0) break;
+        bytes.push(c);
+      }
+      if (!bytes.length) return "";
+      if (typeof TextDecoder !== "undefined") return new TextDecoder("utf-8").decode(new Uint8Array(bytes));
+      let s = "";
+      for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+      return s;
+    }
+    function rgbHex() {
+      const r = u8();
+      const g = u8();
+      const b = u8();
+      return "#" + (r << 16 | g << 8 | b).toString(16).padStart(6, "0");
+    }
+    function dropFood(slot) {
+      const node = S.nodes[slot];
+      if (node && !node.destroyed && node.isFood) node.destroy();
+    }
+    function addViewFood(slot, encX, encY, colorId) {
+      if (!slot) return;
+      const x = S.leftPos + encX;
+      const y = S.topPos + encY;
+      const size = computeFoodSize(S, slot);
+      const color = foodColorHex(colorId);
+      let node = S.nodes[slot];
+      if (node && !node.destroyed && !node.isFood) return;
+      if (!node || node.destroyed) {
+        node = new Cell(slot, x, y, size, color, "");
+        S.nodelist.push(node);
+        S.nodes[slot] = node;
+      }
+      node.isFood = true;
+      node.foodPlaced = true;
+      node.held = true;
+      node.color = color;
+      node.encX = encX;
+      node.encY = encY;
+      node.ox = node.x = node.nx = x;
+      node.oy = node.y = node.ny = y;
+      node.oSize = size;
+      node.size = size;
+      node.nSize = size;
+      node.setSize(size);
+      node.updateTime = S.timestamp;
+    }
+    function readFoodSpawn() {
+      const slot = u16();
+      const x = u16();
+      const y = u16();
+      const colorId = u8();
+      if (!bad) addViewFood(slot, x, y, colorId);
+    }
+    function wipeFood() {
+      for (let i = S.nodelist.length - 1; i >= 0; i--) {
+        const node = S.nodelist[i];
+        if (node && node.isFood && !node.destroyed) node.destroy();
+      }
+    }
+    function claimOwn(node, pid) {
+      if (!pid) return;
+      node.playerId = pid;
+      if ((pid >>> 0) !== (S.ownerPlayerId >>> 0)) return;
+      node.isOwn = true;
+      if (S.playerCells.indexOf(node) !== -1) return;
+      const overlays = document.getElementById("overlays");
+      if (overlays) overlays.style.display = "none";
+      S.playerCells.push(node);
+      if (S.playerCells.length === 1) {
+        S.nodeX = node.x;
+        S.nodeY = node.y;
+      }
+    }
+    function applyName(node, pid, name) {
+      if (pid && name) {
+        if (rememberPlayerNick(S, pid, name)) applyPlayerNickToCells(S, pid, name);
+        else if (node.name !== name) node.setName(name);
+        return;
+      }
+      if (name && node.name !== name) {
+        node.setName(name);
+        return;
+      }
+      if (pid) {
+        const known = nickForPlayerId(S, pid);
+        if (known && node.name !== known) node.setName(known);
+      }
+    }
+    function retarget(node, encX, encY, size) {
+      if (encX < 0) encX = 0;
+      if (encY < 0) encY = 0;
+      if (encX > 65535) encX = 65535;
+      if (encY > 65535) encY = 65535;
+      const x = S.leftPos + encX;
+      const y = S.topPos + encY;
+      if (node.updateTime) node.updatePos();
+      node.ox = node.x;
+      node.oy = node.y;
+      node.oSize = node.size;
+      node.nx = x;
+      node.ny = y;
+      node.encX = encX;
+      node.encY = encY;
+      node.setSize(size);
+      node.held = true;
+      node.updateTime = S.timestamp;
+    }
+    try {
+      const foodMode = u8();
+      if ((foodMode & 0xF0) === 0x50) {
+        // MICRO D8: 12B for 3 near handles — no food/eat sections
+        const count = foodMode & 0x0F;
+        let handle = u16();
+        for (let i = 0; i < count && !bad; i++) {
+          if (i > 0) handle = (handle + i8()) & 65535;
+          const dx = i8();
+          const dy = i8();
+          if (bad) return;
+          const node = S.nodes[handle];
+          if (!node || node.destroyed) continue;
+          let encX = node.encX != null ? node.encX : 0;
+          let encY = node.encY != null ? node.encY : 0;
+          encX += dx;
+          encY += dy;
+          const size = node.nSize || node.size || 0;
+          retarget(node, encX, encY, size);
+        }
+        if (S.ua && S.playerCells.length === 0) {
+          disablePause(S);
+          showStatics();
+          if (typeof window.updateShareText === "function") window.updateShareText();
+          if (typeof window.renderDeathBanner === "function") window.renderDeathBanner();
+        }
+        return;
+      }
+      if (foodMode === 1) {
+        const count = u16();
+        wipeFood();
+        for (let i = 0; i < count && !bad; i++) readFoodSpawn();
+      } else if (foodMode === 2) {
+        const removeCount = u16();
+        for (let i = 0; i < removeCount && !bad; i++) dropFood(u16());
+        const addCount = u16();
+        for (let i = 0; i < addCount && !bad; i++) readFoodSpawn();
+      } else if (foodMode === 3) {
+        // ULTRA delta chain: sorted pellets, first absolute, rest dx/dy
+        const count = u16();
+        wipeFood();
+        let prevX = 0;
+        let prevY = 0;
+        for (let i = 0; i < count && !bad; i++) {
+          const slot = u16();
+          const hdr = u8();
+          if (bad) return;
+          const colorId = hdr & 15;
+          const xyMode = hdr >> 4;
+          let x = prevX;
+          let y = prevY;
+          if (xyMode === 4) {
+            x = u16();
+            y = u16();
+          } else if (xyMode === 0) {
+            x += i8();
+            y += i8();
+          } else if (xyMode === 1) {
+            x += i16();
+            y += i8();
+          } else if (xyMode === 2) {
+            x += i8();
+            y += i16();
+          } else {
+            x += i16();
+            y += i16();
+          }
+          if (bad) return;
+          prevX = x;
+          prevY = y;
+          addViewFood(slot, x, y, colorId);
+        }
+      }
+      if (bad) return;
+      const eatCount = u16();
+      for (let i = 0; i < eatCount && !bad; i++) {
+        const victimRaw = u16();
+        const killerHandle = u16();
+        if (bad) return;
+        const id = victimRaw;
+        const killer = killerHandle ? S.nodes[killerHandle] : null;
+        const killed = S.nodes[id];
+        if (!killed || killed.destroyed) continue;
+        if (killer) {
+          killed.destroy();
+          killed.ox = killed.x;
+          killed.oy = killed.y;
+          killed.oSize = killed.size;
+          killed.nx = killer.x;
+          killed.ny = killer.y;
+          killed.nSize = killed.size;
+          killed.updateTime = S.timestamp;
+        } else {
+          killed.destroy();
+        }
+      }
+      if (bad) return;
+      const entityCount = u16();
+      for (let i = 0; i < entityCount && !bad; i++) {
+        const handle = u16();
+        const flags = u8();
+        if (bad) return;
+        if (flags & 16) {
+          const gone = S.nodes[handle];
+          if (gone && !gone.destroyed) gone.destroy();
+          continue;
+        }
+        let kind = 0;
+        let encX = 0;
+        let encY = 0;
+        let size = 0;
+        let pid = 0;
+        let spawned = false;
+        if (flags & 1) {
+          spawned = true;
+          kind = u8();
+          encX = u16();
+          encY = u16();
+          size = u16();
+          if (kind === 0) pid = (u16() | u16() << 16) >>> 0;
+        } else {
+          const prev = S.nodes[handle];
+          encX = prev && prev.encX != null ? prev.encX : 0;
+          encY = prev && prev.encY != null ? prev.encY : 0;
+          size = prev ? prev.nSize || prev.size : 0;
+          if (flags & 2) {
+            encX += i8();
+            encY += i8();
+          } else if (flags & 4) {
+            encX += i16();
+            encY += i16();
+          }
+          if (flags & 8) size = u16();
+        }
+        let color = null;
+        if (flags & 32) color = rgbHex();
+        let name = "";
+        if (flags & 64) name = utf8();
+        let sticker = null;
+        if (flags & 128) sticker = u8();
+        if (bad) return;
+        if (!handle) continue;
+        let node = S.nodes[handle];
+        if (spawned) {
+          if (node && !node.destroyed) node.destroy();
+          const x = S.leftPos + encX;
+          const y = S.topPos + encY;
+          node = new Cell(handle, x, y, size, color || "#00ff00", "");
+          node.nx = x;
+          node.ny = y;
+          node.nSize = size;
+          node.encX = encX;
+          node.encY = encY;
+          node.held = true;
+          node.updateTime = S.timestamp;
+          node.isVirus = kind === 2;
+          node.isEjected = kind === 3;
+          node.flag = kind === 2 ? 1 : 0;
+          S.nodelist.push(node);
+          S.nodes[handle] = node;
+          claimOwn(node, pid);
+          applyName(node, pid, name);
+        } else if (node && !node.destroyed) {
+          retarget(node, encX, encY, size);
+          if (color) node.color = color;
+          if (name || pid) applyName(node, node.playerId || pid, name);
+        }
+        if (node && sticker != null) {
+          syncNodeStickerFromUpdate(S, node, node.name, sticker || false);
+        }
+      }
+    } catch (err) {
+      return;
+    }
+    if (S.ua && S.playerCells.length === 0) {
+      disablePause(S);
+      showStatics();
+      if (typeof window.updateShareText === "function") window.updateShareText();
+      if (typeof window.renderDeathBanner === "function") window.renderDeathBanner();
+    }
+  }
   function updateNodes(S, reader, hooks) {
     const {Cell: Cell2, onPlayerDeath} = hooks;
     S.timestamp = Date.now();
@@ -5314,7 +5664,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       node.setSize(size);
       node.updateTime = S.timestamp;
       node.flag = spiked;
-      node.teamSide = spiked & 2 ? 1 : spiked & 4 ? 2 : 0;
       if (pid && packetName) {
         if (rememberPlayerNick(S, pid, packetName)) applyPlayerNickToCells(S, pid, packetName);
         else if (node.name !== packetName) node.setName(packetName);
@@ -5340,7 +5689,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     const now = Date.now();
     for (let i = S.nodelist.length - 1; i >= 0; i--) {
       const node = S.nodelist[i];
-      if (!node || node.destroyed) continue;
+      if (!node || node.destroyed || node.held) continue;
       if (now - node.updateTime > 3e3) node.destroy();
     }
   }
@@ -5421,6 +5770,10 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
           (_b = hooks.updateNodes) == null ? void 0 : _b.call(hooks, reader);
           break;
         }
+
+       case ServerOpcode.THIN_WORLD:
+        applyThinWorld(S, msg, offset);
+        break;
 
        case ServerOpcode.UPDATE_CAMERA:
         // Agar.su: full packet float32 x/y/size, or bare opcode → default spectate zoom.
@@ -5521,6 +5874,10 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
           S.foodMaxSize = Math.ceil(Math.sqrt(100 * S.foodMaxMass));
           S.ownerPlayerId = msg.getUint32(offset, true);
           offset += 4;
+          if (msg.byteLength >= offset + 2) {
+            S.foodMaxAmount = msg.getUint16(offset, true);
+            offset += 2;
+          }
           S.mapBoundsReady = true;
           repositionFoodNodes(S);
           S.mapWidth = (S.rightPos + S.leftPos) / 2;
@@ -5690,8 +6047,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       spectateAutoFollow: false,
       mouseSplitButton: 3,
       mouseEjectButton: 1,
-      showGlow: false,
-      showSideOutline: true,
+      showGlow: true,
       confirmCloseTab: false,
       showAdultContent: false,
       fixedCell: false,
@@ -6219,20 +6575,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
           ctx.clip();
           const edrawSize = 2 * renderSize;
           ctx.globalAlpha = 1;
-          ctx.drawImage(effectImg, this.x - edrawSize / 2, this.y - edrawSize / 2, edrawSize, edrawSize);
-          ctx.restore();
-        }
-      }
-      if (S.showSideOutline && this.teamSide && !this.isVirus && !this.isFood && !this.isEjected && isTeamSideOutlineServer(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl)) {
-        const sideUrl = this.teamSide === 1 ? "/photo/left.png" : "/photo/right.png";
-        const sideImg = this.teamSide === 1 ? S.sideLeftIcon : S.sideRightIcon;
-        const effectImg = sideImg && sideImg.complete && sideImg.width > 0 ? sideImg : loadCachedImage2(sideUrl);
-        if (effectImg && effectImg.complete && effectImg.width > 0) {
-          ctx.save();
-          ctx.beginPath();
-          ctx.arc(this.x, this.y, renderSize, 0, 2 * Math.PI);
-          ctx.clip();
-          const edrawSize = 2 * renderSize;
           ctx.drawImage(effectImg, this.x - edrawSize / 2, this.y - edrawSize / 2, edrawSize, edrawSize);
           ctx.restore();
         }
@@ -10654,9 +10996,6 @@ function updateRegionOnlineTotals(totals) {
      case 9:
       return S.showGlow;
 
-     case 18:
-      return S.showSideOutline !== false;
-
      case 10:
       return S.showAdultContent;
 
@@ -10702,16 +11041,7 @@ function updateRegionOnlineTotals(totals) {
     } catch (e) {}
     return null;
   }
-  function disableLimitGlowByDefault() {
-    try {
-      if (localStorage.getItem("limitGlowDefaultOff") === "1") return;
-      localStorage.setItem("limitGlowDefaultOff", "1");
-      localStorage.setItem("checkbox-9", "false");
-    } catch (e) {}
-    setCookie("checkbox-9", "false", 365);
-  }
   function restoreCheckboxCookies(S) {
-    disableLimitGlowByDefault();
     onReady(function() {
       const qualitySelect = document.getElementById("quality-select");
       const savedQuality = readStored("render_quality", "high");
@@ -10746,7 +11076,6 @@ function updateRegionOnlineTotals(totals) {
           if (id == 15) S.wHandle.setCustomMapBg(value);
           if (id == 16) S.wHandle.setCustomVirusBg(value);
           if (id == 17) S.wHandle.setSpectateAutoFollow(value);
-          if (id == 18) S.wHandle.setSideOutline(value);
         });
       });
     });
@@ -10803,10 +11132,6 @@ function updateRegionOnlineTotals(totals) {
     wHandle.setGlow = function(arg) {
       S.showGlow = arg;
       persistCheckbox(9, arg);
-    };
-    wHandle.setSideOutline = function(arg) {
-      S.showSideOutline = !!arg;
-      persistCheckbox(18, S.showSideOutline);
     };
     wHandle.setAdultContent = function(arg) {
       S.showAdultContent = arg;
@@ -10975,10 +11300,6 @@ function initServers(S) {
     S.ejectIcon = new Image;
     S.splitIcon.src = "/photo/split.png";
     S.ejectIcon.src = "/photo/eject.png";
-    S.sideLeftIcon = new Image();
-    S.sideRightIcon = new Image();
-    S.sideLeftIcon.src = "/photo/left.png";
-    S.sideRightIcon.src = "/photo/right.png";
     S.isTouchStart = "ontouchstart" in wHandle && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     setTouchDeviceDetected(S.isTouchStart);
     S.Quad = Quad;
