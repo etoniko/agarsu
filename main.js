@@ -2597,7 +2597,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     return img;
   }
 
-  var SKIN_STRIP_MS = 100;
+  var SKIN_STRIP_MS = 50;
   var DOM_STRIP_SELECTOR = "#skinss,#prevSkin,#nextSkin,.skinswraper,.skkinn img,.rating-home .avatar,.rating-row .avatar,.skins-gallery-card img,.nick-card img.skin,img.chatX_avatar,img.account-level-avatar,.chatX_top_avatar img,.avatarXcontainer img";
   var domStripRaf = 0;
   var lastDomStripTick = 0;
