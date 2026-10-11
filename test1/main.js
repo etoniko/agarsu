@@ -2398,39 +2398,22 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     if (!S || !isTournamentHubHost(S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl)) return;
     const list = window.__arenaHubList || [];
     if (!list.length) return;
-    let filled = 0;
-    // 1) Game server /checkStats { arenas: { pvp1: [...] } } — try http then https
-    const host = String(S.CONNECTION_URL || S.SELECTED_SERVER || "").replace(/^wss?:\/\//, "").replace(/\/$/, "");
-    for (const proto of ["http://", "https://"]) {
-      try {
-        const res = await fetch(proto + host + "/checkStats", { cache: "no-store" });
-        if (!res.ok) continue;
-        const data = await res.json();
-        const arenas = data && data.arenas ? data.arenas : null;
-        if (!arenas) continue;
-        for (const a of list) {
-          const rows = arenas[a.key] || arenas[a.rating] || [];
-          const top = rows[0];
-          if (top && (top.nick || top.score)) {
-            await setHubArenaTop(a.key, top);
-            filled++;
-          }
-        }
-        if (filled) return;
-      } catch (_) {}
-    }
-    // 2) Fallback: official API per rating id (each arena independently)
+    // Tops for mini-arenas MUST come from stats-api (pass/filter), never from
+    // raw game boards (unfiltered nicks without passwords).
+    const base = (typeof STATS_API !== "undefined" && STATS_API)
+      ? STATS_API
+      : "https://api.agar.su/stats-api";
     for (const a of list) {
-      if (hubArenaTops[a.key] && hubArenaTops[a.key].nick) continue;
       const sid = a.rating || a.key;
+      if (!sid) continue;
       try {
-        const statsUrl = (typeof STATS_API !== "undefined" ? STATS_API : "https://api.agar.su") +
-          "/api/server/" + encodeURIComponent(sid) + "?period=today&limit=1";
+        const statsUrl = base + "/api/server/" + encodeURIComponent(sid) + "?period=today&limit=1";
         const response = await fetch(statsUrl, { method: "GET", cache: "no-store" });
         if (!response.ok) continue;
         const payload = await response.json();
         const rows = Array.isArray(payload.players) ? payload.players : [];
         if (rows[0] && rows[0].nick) await setHubArenaTop(a.key, rows[0]);
+        else delete hubArenaTops[a.key];
       } catch (_) {}
     }
   }
@@ -9492,24 +9475,9 @@ function setActiveFromHash(S) {
         } else if (titleEl) {
           titleEl.textContent = "Статистика " + serverId;
         }
-        // Hub day-board from game /checkStats when API empty
+        // Hub + legacy: day board only from stats-api (filters nicks without pass).
         let stat = null;
-        if (isTournamentHubHost(S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl)) {
-          const host = String(S.CONNECTION_URL || S.SELECTED_SERVER || "").replace(/^wss?:\/\//, "").replace(/\/$/, "");
-          const key = arena && (arena.rating || arena.key) || serverId;
-          for (const proto of ["https://", "http://"]) {
-            try {
-              const res = await fetch(proto + host + "/checkStats", { cache: "no-store" });
-              if (!res.ok) continue;
-              const data = await res.json();
-              if (data && data.arenas && Array.isArray(data.arenas[key])) {
-                stat = data.arenas[key];
-                break;
-              }
-            } catch (_) {}
-          }
-        }
-        if (!stat) {
+        {
           const statsUrl = STATS_API + "/api/server/" + encodeURIComponent(serverId) +
             "?period=" + encodeURIComponent(period) + "&limit=500";
           const response = await fetch(statsUrl, {
@@ -9527,8 +9495,6 @@ function setActiveFromHash(S) {
             updateDeathScoreLabel(serverId);
           }
           stat = Array.isArray(payload.players) ? payload.players : [];
-        } else {
-          updateDeathScoreLabel(serverId);
         }
         loadTopPlayerData2(S, stat, hooks);
         invalidateStatsRenderCaches(S);
