@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="utf-8">
+    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="description" content="Agar.su — the best alternative agar.io . Play online right now: consume cells, compete with other players and become the leader among all agar and agario clones.">
     <meta name="keywords" content="agario, агарио, blob, шарики, cell, клетки, io game, онлайн игры, online games, petri dish" />
@@ -13,16 +13,15 @@
     <meta property="og:url" content="https://agar.su">
     <meta property="og:type" content="website">
     <title data-en="Agar.io - total clone .su" data-tr="Agar.su - Çevrimiçi Oyna" data-zh="Agar.su - 在线游戏" data-ar="Agar.su - العب عبر الإنترنت" data-es="Agar.su - Jugar en línea" data-pl="Agar.su - Graj online" data-de="Agar.su - Online spielen" data-uk="Agar.su - Гра онлайн">Agar.su - Игра Онлайн</title>
-    <link rel="icon" href="https://agar.su/icon.svg" type="image/svg+xml">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="canonical" href="https://agar.su">
-    <link rel="stylesheet" href="https://agar.su/fonts/fonts.css?v=157">
-    <link rel="stylesheet" href="style.css?v=157">
-    <link rel="stylesheet" href="arena-hub.css?v=157">
-    <script src="protocols.js?v=157" defer></script>
-    <script src="admin.js?v=157" defer></script>
-    <script src="assets/scripts/friends.js?v=157" defer></script>
-    <script src="multiprotocols.js?v=157" defer></script>
-    <script src="main.js?v=157" defer></script>
+    <link rel="stylesheet" href="/fonts/fonts.css?v=160">
+    <link rel="stylesheet" href="style.css?v=160">
+    <script src="protocols.js?v=160" defer></script>
+    <script src="admin.js?v=160" defer></script>
+    <script src="assets/scripts/friends.js?v=160" defer></script>
+    <script src="multiprotocols.js?v=160" defer></script>
+    <script src="main.js?v=160" defer></script>
 </head>
 <body>
   <div id="overlays" class="overlays">
@@ -273,6 +272,14 @@
                 <div id="keybind-settings" class="custom-bg-block">
                   <div id="mouse-bind-settings" class="mouse-bind-in-keybind">
                     <div class="custom-bg-row">
+                      <span data-en="Split (mouse):" data-tr="Split (fare):" data-zh="分裂（鼠标）：" data-ar="انقسام (فأرة):" data-es="Split (ratón):" data-pl="Split (mysz):" data-de="Split (Maus):" data-uk="Split (миша):">Split (мышь):</span>
+                      <select id="mouse-split-btn">
+                        <option value="1" data-en="Left" data-tr="Sol" data-zh="左" data-ar="يسار" data-es="Izquierdo" data-pl="Lewy" data-de="Links" data-uk="Ліва">Левая (ЛКМ)</option>
+                        <option value="3" data-en="Right" data-tr="Sağ" data-zh="右" data-ar="يمين" data-es="Derecho" data-pl="Prawy" data-de="Rechts" data-uk="Права">Правая (ПКМ)</option>
+                        <option value="0" data-en="Disabled" data-tr="Kapalı" data-zh="禁用" data-ar="معطل" data-es="Desactivado" data-pl="Wyłączone" data-de="Deaktiviert" data-uk="Вимкнено">Отключено</option>
+                      </select>
+                    </div>
+                    <div class="custom-bg-row">
                       <span data-en="Eject (mouse):" data-tr="Eject (fare):" data-zh="喷射（鼠标）：" data-ar="قذف (فأرة):" data-es="Eject (ratón):" data-pl="Eject (mysz):" data-de="Eject (Maus):" data-uk="Eject (миша):">Eject (мышь):</span>
                       <select id="mouse-eject-btn">
                         <option value="1" data-en="Left" data-tr="Sol" data-zh="左" data-ar="يسار" data-es="Izquierdo" data-pl="Lewy" data-de="Links" data-uk="Ліва">Левая (ЛКМ)</option>
@@ -398,13 +405,38 @@
                 </div>
               </div>
 
-              <!-- Tournament hub (все арены / рейтинги на одном сервере) -->
-              <div class="server-group" style="border-left: 1px solid #d3d3d3;padding-left: 6px;">
-                <div class="group-header"><i class="fas fa-trophy"></i> Tournament</div>
+              <!-- Группа PVP -->
+              <div class="server-group" style="
+    border-left: 1px solid #d3d3d3;
+    padding-left: 6px;
+">
+                <div class="group-header"><i class="fas fa-crosshairs"></i> PVP</div>
                 <div class="server-list">
-                  <div class="server-item" data-region="ru" data-ip="ms2.agar.su:6001" id="tournament">
-                    <span class="server-name">Tournament Hub</span>
-                    <span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/200</span></span>
+                  <div class="server-item" data-region="ru" data-ip="ms.agar.su:6004" id="pvp1">
+                    <span class="server-name">1x1 ffa 1k</span>
+                    <span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/50</span></span>
+                  </div>
+                  <div class="server-item" data-region="ru" data-ip="ms.agar.su:6005" id="pvp2">
+                    <span class="server-name">2x2 ms 1k</span>
+                    <span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/50</span></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Группа Tournament -->
+              <div class="server-group" style="border-left: 1px solid #d3d3d3;padding-left: 6px;">
+                <div class="server-list">
+                  <div class="server-item" data-region="ru" data-ip="ms.agar.su:6002" id="tournament">
+                    <span class="server-name">2x2 ffa 10k</span>
+                    <span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/100</span></span>
+                  </div>
+                  <div class="server-item" data-region="ru" data-ip="ms.agar.su:6003" id="tournament2">
+                    <span class="server-name">3x3 ffa 10k</span>
+                    <span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/100</span></span>
+                  </div>
+				 <div class="server-item" data-region="ru" data-ip="ms.agar.su:6006" id="tournament3">
+                    <span class="server-name">4x4 ffa 10k</span>
+                    <span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/100</span></span>
                   </div>
                 </div>
               </div>
@@ -767,8 +799,8 @@
   <canvas id="canvas"></canvas>
   <div id="friendArrows" class="friend-arrows" aria-hidden="true"></div>
   <div id="touch-buttons" class="touch-buttons" hidden>
-    <button type="button" id="touch-eject" class="touch-btn touch-eject" aria-label="Eject"><img src="https://agar.su/photo/eject.png" alt=""></button>
-    <button type="button" id="touch-split" class="touch-btn touch-split" aria-label="Split"><img src="https://agar.su/photo/split.png" alt=""></button>
+    <button type="button" id="touch-eject" class="touch-btn touch-eject" aria-label="Eject"><img src="/photo/eject.png" alt=""></button>
+    <button type="button" id="touch-split" class="touch-btn touch-split" aria-label="Split"><img src="/photo/split.png" alt=""></button>
   </div>
   <div id="connect-verify-overlay" class="inl-13">
     <div id="connect-verify">
@@ -810,13 +842,13 @@
         <div class="chatX_feed" id="chatX_feed"></div>
     </div>
 	  		  	  	  <div class="emoji-list">
-  <div class="emoji-item" data-code=":50:"><img src="https://agar.su/emoji/50.gif"></div>
-  <div class="emoji-item" data-code=":253:"><img src="https://agar.su/emoji/253.gif"></div>
-  <div class="emoji-item" data-code=":26:"><img src="https://agar.su/emoji/26.gif"></div>
-  <div class="emoji-item" data-code=":104:"><img src="https://agar.su/emoji/104.png"></div>
-  <div class="emoji-item" data-code=":105:"><img src="https://agar.su/emoji/105.png"></div>
-  <div class="emoji-item" data-code=":92:"><img src="https://agar.su/emoji/92.png"></div>
-  <div class="emoji-item" data-code=":5:"><img src="https://agar.su/emoji/5.png"></div>
+  <div class="emoji-item" data-code=":50:"><img src="/emoji/50.gif"></div>
+  <div class="emoji-item" data-code=":253:"><img src="/emoji/253.gif"></div>
+  <div class="emoji-item" data-code=":26:"><img src="/emoji/26.gif"></div>
+  <div class="emoji-item" data-code=":104:"><img src="/emoji/104.png"></div>
+  <div class="emoji-item" data-code=":105:"><img src="/emoji/105.png"></div>
+  <div class="emoji-item" data-code=":92:"><img src="/emoji/92.png"></div>
+  <div class="emoji-item" data-code=":5:"><img src="/emoji/5.png"></div>
 </div>
     <div class="chatX_emch">
       <div class="coord" id="emoji_toggle"><i class="fa-solid fa-face-grin-squint"></i></div>
