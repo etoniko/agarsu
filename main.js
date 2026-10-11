@@ -2179,9 +2179,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     chat: 13,
     coord: 67,
     macroFeed: 81,
-    macroR: 82,
-    macroT: 84,
-    macroP: 80,
     menu: 27,
     sticker1: 49,
     sticker2: 50,
@@ -2200,9 +2197,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     chat: "Чат",
     coord: "Координаты (C)",
     macroFeed: "Выделение массы (Q)",
-    macroR: "R",
-    macroT: "T",
-    macroP: "P",
     menu: "Меню / пауза UI",
     sticker1: "Стикер 1",
     sticker2: "Стикер 2",
@@ -2224,10 +2218,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     Q_UP: 19,
     CLEAR: 20,
     EJECT: 21,
-    MACRO_E: 22,
-    MACRO_R: 23,
-    MACRO_T: 24,
-    MACRO_P: 25,
     SUICIDE: 26,
     JOIN_ARENA: 97,
     CHAT: 99,
@@ -2259,7 +2249,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   /** Tournament hub: arena picker (only when connected to tournament server). */
   function isTournamentHubHost(host) {
     const h = String(host || "").toLowerCase().replace(/^wss?:\/\//, "");
-    return h.includes("ms.agar.su:6001");
+    return h.includes("ms2.agar.su:6001");
   }
   function ensureArenaHubUi() {
     // Panel removed: pick arena by clicking a map zone, then Play
@@ -2398,22 +2388,39 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     if (!S || !isTournamentHubHost(S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl)) return;
     const list = window.__arenaHubList || [];
     if (!list.length) return;
-    // Tops for mini-arenas MUST come from stats-api (pass/filter), never from
-    // raw game boards (unfiltered nicks without passwords).
-    const base = (typeof STATS_API !== "undefined" && STATS_API)
-      ? STATS_API
-      : "https://api.agar.su/stats-api";
-    for (const a of list) {
-      const sid = a.rating || a.key;
-      if (!sid) continue;
+    let filled = 0;
+    // 1) Game server /checkStats { arenas: { pvp1: [...] } } — try http then https
+    const host = String(S.CONNECTION_URL || S.SELECTED_SERVER || "").replace(/^wss?:\/\//, "").replace(/\/$/, "");
+    for (const proto of ["http://", "https://"]) {
       try {
-        const statsUrl = base + "/api/server/" + encodeURIComponent(sid) + "?period=today&limit=1";
+        const res = await fetch(proto + host + "/checkStats", { cache: "no-store" });
+        if (!res.ok) continue;
+        const data = await res.json();
+        const arenas = data && data.arenas ? data.arenas : null;
+        if (!arenas) continue;
+        for (const a of list) {
+          const rows = arenas[a.key] || arenas[a.rating] || [];
+          const top = rows[0];
+          if (top && (top.nick || top.score)) {
+            await setHubArenaTop(a.key, top);
+            filled++;
+          }
+        }
+        if (filled) return;
+      } catch (_) {}
+    }
+    // 2) Fallback: official API per rating id (each arena independently)
+    for (const a of list) {
+      if (hubArenaTops[a.key] && hubArenaTops[a.key].nick) continue;
+      const sid = a.rating || a.key;
+      try {
+        const statsUrl = (typeof STATS_API !== "undefined" ? STATS_API : "https://api.agar.su") +
+          "/api/server/" + encodeURIComponent(sid) + "?period=today&limit=1";
         const response = await fetch(statsUrl, { method: "GET", cache: "no-store" });
         if (!response.ok) continue;
         const payload = await response.json();
         const rows = Array.isArray(payload.players) ? payload.players : [];
         if (rows[0] && rows[0].nick) await setHubArenaTop(a.key, rows[0]);
-        else delete hubArenaTops[a.key];
       } catch (_) {}
     }
   }
@@ -6502,7 +6509,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       showSideOutline: true,
       enableMouseClicks: false,
       spectateAutoFollow: false,
-      mouseSplitButton: 3,
+      mouseSplitButton: 0,
       mouseEjectButton: 1,
       showGlow: true,
       confirmCloseTab: false,
@@ -7299,12 +7306,10 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   function resetKeybinds(S) {
     S.keyBinds = Object.assign({}, KEYBIND_DEFAULTS);
     saveKeybinds(S.keyBinds);
-    S.mouseSplitButton = 3;
+    S.mouseSplitButton = 0;
     S.mouseEjectButton = 1;
     saveMouseButtonSettings(S);
-    const splitSel = document.getElementById("mouse-split-btn");
     const ejectSel = document.getElementById("mouse-eject-btn");
-    if (splitSel) splitSel.value = "3";
     if (ejectSel) ejectSel.value = "1";
     renderKeybindUI(S);
   }
@@ -7330,42 +7335,25 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     if (block) block.classList.toggle("visible", !!S.enableMouseClicks);
   }
   function loadMouseButtonSettings(S) {
-    const split = parseInt(getCookie("mouse_split_btn"), 10);
     const eject = parseInt(getCookie("mouse_eject_btn"), 10);
-    S.mouseSplitButton = normalizeMouseButton(split);
+    // Mouse-split removed from client
+    S.mouseSplitButton = 0;
     S.mouseEjectButton = normalizeMouseButton(eject);
-    if (S.mouseSplitButton !== 0 && S.mouseSplitButton === S.mouseEjectButton) {
-      S.mouseEjectButton = S.mouseSplitButton === 1 ? 3 : 1;
-    }
-    const splitSel = document.getElementById("mouse-split-btn");
     const ejectSel = document.getElementById("mouse-eject-btn");
-    if (splitSel) splitSel.value = String(S.mouseSplitButton);
     if (ejectSel) ejectSel.value = String(S.mouseEjectButton);
     syncMouseBindSettingsVisibility(S);
   }
   function saveMouseButtonSettings(S) {
-    setCookie("mouse_split_btn", S.mouseSplitButton, 365);
+    setCookie("mouse_split_btn", 0, 365);
     setCookie("mouse_eject_btn", S.mouseEjectButton, 365);
   }
   function initMouseButtonSettings(S) {
     loadMouseButtonSettings(S);
-    const splitSel = document.getElementById("mouse-split-btn");
     const ejectSel = document.getElementById("mouse-eject-btn");
-    if (!splitSel || !ejectSel) return;
-    splitSel.addEventListener("change", function() {
-      S.mouseSplitButton = normalizeMouseButton(parseInt(this.value, 10));
-      if (S.mouseSplitButton !== 0 && S.mouseSplitButton === S.mouseEjectButton) {
-        S.mouseEjectButton = S.mouseSplitButton === 1 ? 3 : 1;
-        ejectSel.value = String(S.mouseEjectButton);
-      }
-      saveMouseButtonSettings(S);
-    });
+    if (!ejectSel) return;
     ejectSel.addEventListener("change", function() {
       S.mouseEjectButton = normalizeMouseButton(parseInt(this.value, 10));
-      if (S.mouseEjectButton !== 0 && S.mouseSplitButton === S.mouseEjectButton) {
-        S.mouseSplitButton = S.mouseEjectButton === 1 ? 3 : 1;
-        splitSel.value = String(S.mouseSplitButton);
-      }
+      S.mouseSplitButton = 0;
       saveMouseButtonSettings(S);
     });
   }
@@ -7551,10 +7539,11 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       if (isOverlaysVisible() || isPointerOverElement(chatContainer, event2.clientX, event2.clientY)) return;
       S.zoom *= Math.pow(.9, event2.wheelDelta / -120 || event2.detail || 0);
       if (!(S.zoom > 0) || !isFinite(S.zoom)) S.zoom = 1;
-      if (isHubLobbyCamera(S)) {
-        // Big-map base already fits world at zoom=1
-        if (S.zoom > 10) S.zoom = 10;
-        if (S.zoom < .2) S.zoom = .2;
+      const onTourHub = isTournamentHubHost(S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl);
+      if (isHubLobbyCamera(S) || onTourHub) {
+        // Tournament: allow much farther wheel zoom-out / zoom-in
+        if (S.zoom > 20) S.zoom = 20;
+        if (S.zoom < .05) S.zoom = .05;
       } else {
         if (S.zoom > 4 / Math.max(S.viewZoom || .01, .01)) S.zoom = 4 / Math.max(S.viewZoom || .01, .01);
         if (S.zoom < .3) S.zoom = .3;
@@ -7768,31 +7757,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         }
         return;
       }
-      if (code === getBind(S, "macroR")) {
-        if (!keyPressed.macroR) {
-          hooks.sendMouseMove();
-          hooks.sendUint8(23);
-          hooks.fixDead();
-          keyPressed.macroR = true;
-        }
-        return;
-      }
-      if (code === getBind(S, "macroT")) {
-        if (!keyPressed.macroT) {
-          hooks.sendMouseMove();
-          hooks.sendUint8(24);
-          keyPressed.macroT = true;
-        }
-        return;
-      }
-      if (code === getBind(S, "macroP")) {
-        if (!keyPressed.macroP) {
-          hooks.sendMouseMove();
-          hooks.sendUint8(25);
-          keyPressed.macroP = true;
-        }
-        return;
-      }
       for (let s = 1; s <= 9; s++) {
         if (code === getBind(S, "sticker" + s)) {
           pressStickerKey(s);
@@ -7817,9 +7781,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
           hooks.sendUint8(19);
         }
       }
-      if (code === getBind(S, "macroR")) keyPressed.macroR = false;
-      if (code === getBind(S, "macroT")) keyPressed.macroT = false;
-      if (code === getBind(S, "macroP")) keyPressed.macroP = false;
       for (let s = 1; s <= 9; s++) {
         if (code === getBind(S, "sticker" + s)) releaseStickerKey(s);
       }
@@ -8031,8 +7992,13 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
           const delta = currentDistance - S.pinchZoomStartDistance;
           const zoomFactor = 1 + delta / 300;
           S.zoom *= zoomFactor;
-          if (S.zoom < .3) S.zoom = .3;
-          if (S.zoom > 4 / S.viewZoom) S.zoom = 4 / S.viewZoom;
+          if (isTournamentHubHost(S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl)) {
+            if (S.zoom < .05) S.zoom = .05;
+            if (S.zoom > 20) S.zoom = 20;
+          } else {
+            if (S.zoom < .3) S.zoom = .3;
+            if (S.zoom > 4 / S.viewZoom) S.zoom = 4 / S.viewZoom;
+          }
           S.pinchZoomStartDistance = currentDistance;
         }
         return;
@@ -8730,13 +8696,13 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   /** Official agar.su servers: id ↔ host. All scripts resolve from here. */
   var OFFICIAL_SERVERS = [
     { id: "ffa", host: "ffa.agar.su", wins: false },
-    { id: "ms", host: "ms.agar.su", wins: false },
-    { id: "tournament", host: "ms.agar.su:6001", wins: true },
+    { id: "ms", host: "ms2.agar.su", wins: false },
+    { id: "tournament", host: "ms2.agar.su:6001", wins: true },
     // Hub arena rating ids (same host; stats keyed per map)
-    { id: "pvp1", host: "ms.agar.su:6001#pvp1", wins: true },
-    { id: "pvp2", host: "ms.agar.su:6001#pvp2", wins: true },
-    { id: "tournament2", host: "ms.agar.su:6001#tournament2", wins: true },
-    { id: "tournament3", host: "ms.agar.su:6001#tournament3", wins: true }
+    { id: "pvp1", host: "ms2.agar.su:6001#pvp1", wins: true },
+    { id: "pvp2", host: "ms2.agar.su:6001#pvp2", wins: true },
+    { id: "tournament2", host: "ms2.agar.su:6001#tournament2", wins: true },
+    { id: "tournament3", host: "ms2.agar.su:6001#tournament3", wins: true }
   ];
   var OFFICIAL_SERVER_ID_RE = new RegExp(
     "^(" + OFFICIAL_SERVERS.map(s => s.id).join("|") + ")$",
@@ -8755,8 +8721,8 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       if (host.includes(s.host)) return s.id;
     }
     if (host.includes("ffa.agar.su")) return "ffa";
-    if (host.includes("ms.agar.su:6001")) return "tournament";
-    if (host.includes("ms.agar.su") || host.includes("ms.agar.su:6001") || host === "ms.agar.su" || host.startsWith("ms.agar.su/")) return "ms";
+    if (host.includes("ms2.agar.su:6001")) return "tournament";
+    if (host.includes("ms2.agar.su") || host.includes("ms.agar.su:6001") || host === "ms.agar.su" || host.startsWith("ms.agar.su/")) return "ms";
     return null;
   }
 
@@ -9475,9 +9441,24 @@ function setActiveFromHash(S) {
         } else if (titleEl) {
           titleEl.textContent = "Статистика " + serverId;
         }
-        // Hub + legacy: day board only from stats-api (filters nicks without pass).
+        // Hub day-board from game /checkStats when API empty
         let stat = null;
-        {
+        if (isTournamentHubHost(S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl)) {
+          const host = String(S.CONNECTION_URL || S.SELECTED_SERVER || "").replace(/^wss?:\/\//, "").replace(/\/$/, "");
+          const key = arena && (arena.rating || arena.key) || serverId;
+          for (const proto of ["https://", "http://"]) {
+            try {
+              const res = await fetch(proto + host + "/checkStats", { cache: "no-store" });
+              if (!res.ok) continue;
+              const data = await res.json();
+              if (data && data.arenas && Array.isArray(data.arenas[key])) {
+                stat = data.arenas[key];
+                break;
+              }
+            } catch (_) {}
+          }
+        }
+        if (!stat) {
           const statsUrl = STATS_API + "/api/server/" + encodeURIComponent(serverId) +
             "?period=" + encodeURIComponent(period) + "&limit=500";
           const response = await fetch(statsUrl, {
@@ -9495,6 +9476,8 @@ function setActiveFromHash(S) {
             updateDeathScoreLabel(serverId);
           }
           stat = Array.isArray(payload.players) ? payload.players : [];
+        } else {
+          updateDeathScoreLabel(serverId);
         }
         loadTopPlayerData2(S, stat, hooks);
         invalidateStatsRenderCaches(S);
