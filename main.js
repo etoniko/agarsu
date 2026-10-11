@@ -2228,6 +2228,8 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     MACRO_R: 23,
     MACRO_T: 24,
     MACRO_P: 25,
+    SUICIDE: 26,
+    JOIN_ARENA: 97,
     CHAT: 99,
     STICKER: 200,
     ADMIN_PANEL: 169,
@@ -2244,6 +2246,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     FFA_LB: 49,
     BORDERS: 64,
     BAN: 91,
+    ARENA_LIST: 98,
     CHAT: 99,
     XP: 114,
     ADMIN_PANEL: 169,
@@ -2252,6 +2255,213 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   function prepareData(byteLength) {
     return new DataView(new ArrayBuffer(byteLength));
   }
+
+  /** Tournament hub: arena picker (only when connected to tournament server). */
+  function isTournamentHubHost(host) {
+    const h = String(host || "").toLowerCase().replace(/^wss?:\/\//, "");
+    return h.includes("ms.agar.su:6001");
+  }
+  function ensureArenaHubUi() {
+    // Panel removed: pick arena by clicking a map zone, then Play
+    const fab = document.getElementById("arena-hub-fab");
+    if (fab) fab.remove();
+    const panel = document.getElementById("arena-hub-panel");
+    if (panel) panel.remove();
+  }
+  function openArenaHubPanel() { ensureArenaHubUi(); }
+  function renderArenaHubGrid() {}
+  function defaultHubArenaId() {
+    const list = window.__arenaHubList || [];
+    // Middle 2x2 map (tournament)
+    const mid = list.find((a) => a && (a.key === "tournament" || a.rating === "tournament"));
+    if (mid) return mid.id;
+    return list.length ? list[0].id : 2;
+  }
+  function selectHubArenaAt(S, x, y) {
+    if (!S || !isTournamentHubHost(S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl)) return null;
+    const arena = typeof findHubArenaAtPoint === "function" ? findHubArenaAtPoint(x, y) : null;
+    if (!arena) return null;
+    // Select only — do not move camera
+    sendJoinArenaPacket(arena.id, { quiet: true });
+    return arena;
+  }
+  function sendJoinArenaPacket(arenaId, opts) {
+    const S = window.__agarGameState || window.S || null;
+    const quiet = !!(opts && opts.quiet);
+    const ws = S && S.ws;
+    if (S) S.selectedArenaId = arenaId;
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    const msg = prepareData(2);
+    msg.setUint8(0, ClientOpcode.JOIN_ARENA);
+    msg.setUint8(1, arenaId & 255);
+    try { ws.send(msg.buffer); } catch (_) {}
+    // Never snap/pan camera on arena select (quiet click)
+    if (!quiet && S && S.api && typeof S.api.sendMouseMove === "function") {
+      try { S.api.sendMouseMove({ force: true }); } catch (_) {}
+    }
+  }
+  function applyArenaListPacket(msg, offset) {
+    ensureArenaHubUi();
+    const count = msg.getUint8(offset++);
+    const list = [];
+    function readStr() {
+      let t = "";
+      while (offset + 1 < msg.byteLength) {
+        const c = msg.getUint16(offset, true);
+        offset += 2;
+        if (c === 0) break;
+        t += String.fromCharCode(c);
+      }
+      return t;
+    }
+    for (let i = 0; i < count; i++) {
+      if (offset + 3 > msg.byteLength) break;
+      const id = msg.getUint8(offset++);
+      const playing = msg.getUint16(offset, true);
+      offset += 2;
+      const key = readStr();
+      const title = readStr();
+      let minx = 0, miny = 0, maxx = 0, maxy = 0;
+      if (offset + 16 <= msg.byteLength) {
+        minx = msg.getFloat32(offset, true); offset += 4;
+        miny = msg.getFloat32(offset, true); offset += 4;
+        maxx = msg.getFloat32(offset, true); offset += 4;
+        maxy = msg.getFloat32(offset, true); offset += 4;
+      }
+      list.push({ id, playing, key, title, rating: key, minx, miny, maxx, maxy });
+    }
+    window.__arenaHubList = list;
+    ensureArenaHubUi(); // remove leftover panel if any
+    const S = window.__agarGameState;
+    // Default active zone = middle 2x2 (tournament)
+    if (S && S.selectedArenaId == null) {
+      const defId = defaultHubArenaId();
+      if (defId != null) sendJoinArenaPacket(defId, { quiet: true });
+    }
+    try { refreshHubArenaTops(S); } catch (_) {}
+    // Big-map base zoom once arenas/borders known
+    try {
+      if (!(S.playerCells && S.playerCells.length)) {
+        const z = hubFittedZoom(S);
+        if (z != null) {
+          S.posSize = z;
+          if (!S._hubSpecReady) {
+            S.posX = (S.leftPos + S.rightPos) / 2;
+            S.posY = (S.topPos + S.bottomPos) / 2;
+            S.nodeX = S.posX;
+            S.nodeY = S.posY;
+            S.viewZoom = z;
+            S.zoom = 1;
+            S._hubSpecReady = true;
+          }
+        }
+      }
+    } catch (_) {}
+  }
+  /** Spectating on hub (no own cells). */
+  function isHubLobbyCamera(S) {
+    if (!S || !isTournamentHubHost(S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl)) return false;
+    if (S.playerCells && S.playerCells.length) return false;
+    if (S.spectateFollowNick || S.spectateFollowPid) return false;
+    return true;
+  }
+  /** Zoom from the BIG hub border (mini-arenas live inside). */
+  function hubFittedZoom(S) {
+    if (!S) return null;
+    const w = (S.rightPos - S.leftPos) || 0;
+    const h = (S.bottomPos - S.topPos) || 0;
+    if (!(w > 100) || !(h > 100)) return null;
+    return Math.min(1, Math.min((S.canvasWidth || 1280) / w, (S.canvasHeight || 720) / h)) * 0.92;
+  }
+  function applyHubOverviewZoom(S, force) {
+    if (!isHubLobbyCamera(S) && force !== "hard") return;
+    const z = hubFittedZoom(S);
+    if (z == null) return;
+    S.posSize = z; // base = big map; wheel multiplies via S.zoom → viewRange
+    if (force === "hard" || !S._hubSpecReady) {
+      if (force === "hard" || S._hubPreferMapCenter) {
+        S.posX = (S.leftPos + S.rightPos) / 2;
+        S.posY = (S.topPos + S.bottomPos) / 2;
+        S.nodeX = S.posX;
+        S.nodeY = S.posY;
+        S._hubPreferMapCenter = false;
+      } else {
+        S.posX = S.nodeX;
+        S.posY = S.nodeY;
+      }
+      S.viewZoom = z;
+      S.zoom = 1;
+      S._hubSpecReady = true;
+    }
+  }
+  async function refreshHubArenaTops(S) {
+    if (!S || !isTournamentHubHost(S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl)) return;
+    const list = window.__arenaHubList || [];
+    if (!list.length) return;
+    let filled = 0;
+    // 1) Game server /checkStats { arenas: { pvp1: [...] } } — try http then https
+    const host = String(S.CONNECTION_URL || S.SELECTED_SERVER || "").replace(/^wss?:\/\//, "").replace(/\/$/, "");
+    for (const proto of ["http://", "https://"]) {
+      try {
+        const res = await fetch(proto + host + "/checkStats", { cache: "no-store" });
+        if (!res.ok) continue;
+        const data = await res.json();
+        const arenas = data && data.arenas ? data.arenas : null;
+        if (!arenas) continue;
+        for (const a of list) {
+          const rows = arenas[a.key] || arenas[a.rating] || [];
+          const top = rows[0];
+          if (top && (top.nick || top.score)) {
+            await setHubArenaTop(a.key, top);
+            filled++;
+          }
+        }
+        if (filled) return;
+      } catch (_) {}
+    }
+    // 2) Fallback: official API per rating id (each arena independently)
+    for (const a of list) {
+      if (hubArenaTops[a.key] && hubArenaTops[a.key].nick) continue;
+      const sid = a.rating || a.key;
+      try {
+        const statsUrl = (typeof STATS_API !== "undefined" ? STATS_API : "https://api.agar.su") +
+          "/api/server/" + encodeURIComponent(sid) + "?period=today&limit=1";
+        const response = await fetch(statsUrl, { method: "GET", cache: "no-store" });
+        if (!response.ok) continue;
+        const payload = await response.json();
+        const rows = Array.isArray(payload.players) ? payload.players : [];
+        if (rows[0] && rows[0].nick) await setHubArenaTop(a.key, rows[0]);
+      } catch (_) {}
+    }
+  }
+  async function setHubArenaTop(key, top) {
+    if (!key || !top) return;
+    const nick = String(top.nick || "").trim();
+    const entry = { nick: nick, score: top.score || 0 };
+    // Only attach a skin when the nick maps to a real skin — never force shared default "4"
+    if (nick) {
+      try {
+        const { map } = await loadSkinListMap();
+        const skinId = getSkinIdForNick
+          ? getSkinIdForNick(map, nick, null)
+          : (map && map[normalizeNick(nick)]);
+        if (skinId) {
+          const url = typeof getSkinImageUrl === "function" ? getSkinImageUrl(skinId) : null;
+          if (url) {
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.src = url;
+            entry._img = img;
+          }
+        }
+      } catch (_) {}
+    }
+    hubArenaTops[key] = entry;
+  }
+  function syncArenaHubFabVisibility() {
+    ensureArenaHubUi();
+  }
+
   function encodeHandshake() {
     const proto = prepareData(5);
     proto.setUint8(0, ClientOpcode.HANDSHAKE_PROTO);
@@ -2926,12 +3136,26 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   /** Bridge skins via unified xn--bdk.pw skinsbot. skinlist.txt still wins (agar.su only). */
   var SKINS_BOT_BASE = "https://xn--bdk.pw:6016";
   function applyServerSpectateCamera(S, x, y, size) {
-    // Playing own cells — never let server spectate camera override
     if (S.playerCells && S.playerCells.length > 0) return;
     const sizeOk = typeof size === "number" && size > 0;
+    const onHub = isTournamentHubHost(S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl);
+    // Hub free-cam: after first ready, ignore server pan (avoids jump-to-center + avatar jitter)
+    if (onHub && S._hubSpecReady) {
+      if (sizeOk) S.posSize = size;
+      return;
+    }
     S.posX = x;
     S.posY = y;
-    if (sizeOk) S.posSize = size;
+    if (sizeOk) {
+      S.posSize = size;
+      if (onHub && !S._hubSpecReady) {
+        S.nodeX = x;
+        S.nodeY = y;
+        S.viewZoom = size;
+        S.zoom = 1;
+        S._hubSpecReady = true;
+      }
+    }
   }
   /** AgarZ skin bridge (sixz.ru:6013). */
   function isPetriSkinHost(host) {
@@ -3135,9 +3359,11 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     if (typeof onStaticsShow === "function") {
       try { onStaticsShow(); } catch (e) {}
     }
+    try { syncArenaHubFabVisibility(); } catch (e) {}
   }
   function hideStatics() {
     hideElement(byId("statics"));
+    try { syncArenaHubFabVisibility(); } catch (e) {}
   }
   function mouseCoordinateChange(S) {
     if (S.freeze && S.playerCells && S.playerCells[0]) {
@@ -3192,11 +3418,20 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     const ratio = Math.max(S.canvasHeight / 1080, S.canvasWidth / 1920);
     return ratio * S.zoom;
   }
+  /** Play zoom from cell size. On hub — slightly more zoomed out than stock agar.su. */
+  function playZoomFromCellSize(S, sizeSum) {
+    const sum = Math.max(Number(sizeSum) || 1, 1);
+    // Smaller viewZoom = more zoomed out. Stock uses ref 64; hub scales ~0.78.
+    const onHub = isTournamentHubHost(S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl);
+    const ratio = Math.max((S.canvasHeight || 1080) / 1080, (S.canvasWidth || 1920) / 1920);
+    const z = Math.pow(Math.min(64 / sum, 1), .4) * ratio * (S.zoom || 1);
+    return onHub ? z * 0.58 : z;
+  }
   function calcViewZoom(S) {
     if (0 != S.playerCells.length) {
       let newViewZoom = 0;
       for (let i = 0; i < S.playerCells.length; i++) newViewZoom += S.playerCells[i].size;
-      newViewZoom = Math.pow(Math.min(64 / newViewZoom, 1), .4) * viewRange(S);
+      newViewZoom = playZoomFromCellSize(S, newViewZoom);
       S.viewZoom = (9 * S.viewZoom + newViewZoom) / 10;
     }
   }
@@ -3407,7 +3642,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     isBackgroundLoaded = true;
     if ((_a = deps.S) == null ? void 0 : _a.ctx) drawCenterBackground();
   };
-  centerBackground.src = "/photo/center.png";
+  centerBackground.src = "photo/center.png";
     var innerImage = new Image;
   innerImage.onload = () => {
     var _a;
@@ -3417,6 +3652,8 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   innerImage.src = getSkinImageUrl("4");
   var topPlayerNick = "";
   var topPlayerScore = 0;
+  /** Tournament hub: per-arena day tops { pvp1: {nick,score,skinUrl}, ... } */
+  var hubArenaTops = Object.create(null);
   var backgroundWidth = 512;
   var backgroundHeight = 512;
   var innerImageWidth = 450;
@@ -3543,9 +3780,11 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     S.timestamp = Date.now();
     const playerCount = S.playerCells.length;
     if (playerCount > 0) {
+      // Play: same as other agar.su servers — zoom from own cell size
       if (S.spectateFollowNick || S.spectateFollowPid || S._spectateFollowTimer) {
         clearSpectateFollow(S);
       }
+      S._hubSpecReady = false;
       calcViewZoom(S);
       let sumX = 0;
       let sumY = 0;
@@ -3563,6 +3802,28 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       S.posSize = S.viewZoom;
       S.nodeX = (S.nodeX + avgX) / 2;
       S.nodeY = (S.nodeY + avgY) / 2;
+    } else if (isHubLobbyCamera(S)) {
+      // Spectate hub: zoom out from current point (death), not map center
+      const fitted = hubFittedZoom(S);
+      if (fitted != null) S.posSize = fitted;
+      if (!S._hubSpecReady && fitted != null) {
+        if (S._hubPreferMapCenter) {
+          S.posX = (S.leftPos + S.rightPos) / 2;
+          S.posY = (S.topPos + S.bottomPos) / 2;
+          S.nodeX = S.posX;
+          S.nodeY = S.posY;
+          S._hubPreferMapCenter = false;
+        } else {
+          // Stay on last play / death camera; only open the zoom
+          S.posX = S.nodeX;
+          S.posY = S.nodeY;
+        }
+        S.zoom = 1;
+        S._hubSpecReady = true;
+      }
+      S.nodeX = (29 * S.nodeX + S.posX) / 30;
+      S.nodeY = (29 * S.nodeY + S.posY) / 30;
+      S.viewZoom = (9 * S.viewZoom + S.posSize * viewRange(S)) / 10;
     } else {
       const follow = collectSpectateFollowCells(S);
       if (follow.length) {
@@ -3614,6 +3875,13 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     ctx.scale(viewZoom, viewZoom);
     ctx.translate(-nodeX, -nodeY);
     drawCustomMapBackground(ctx);
+    // Hub: only one thin arena border layer (no side-outline + no active double stroke)
+    if (isTournamentHubHost(S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl)) {
+      drawArenaHubBorders(ctx);
+    } else {
+      drawSideOutlines(ctx);
+    }
+    try { tickHubZoneStats(S); } catch (_) {}
     let drawn = 0;
     for (let i = 0; i < S.Cells.length; i++) S.Cells[i].drawOneCell(ctx);
     // ── FOOD BATCH (2026-09) ──────────────────────────────────────────────
@@ -3689,6 +3957,108 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     });
     return drawn;
   }
+
+  /** Dark team-tinted rim (2×2² / 3×3). Shade = darker of server cell color. */
+  function darkenCssColor(col, factor) {
+    if (!col || typeof col !== "string") return "rgb(40,40,40)";
+    var r, g, b;
+    if (col[0] === "#") {
+      var h = col.slice(1);
+      if (h.length === 3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+      r = parseInt(h.slice(0, 2), 16);
+      g = parseInt(h.slice(2, 4), 16);
+      b = parseInt(h.slice(4, 6), 16);
+    } else {
+      var m = col.match(/(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+      if (!m) return "rgb(40,40,40)";
+      r = +m[1]; g = +m[2]; b = +m[3];
+    }
+    var f = factor == null ? 0.35 : factor;
+    r = Math.max(0, Math.min(255, (r * f) | 0));
+    g = Math.max(0, Math.min(255, (g * f) | 0));
+    b = Math.max(0, Math.min(255, (b * f) | 0));
+    return "rgb(" + r + "," + g + "," + b + ")";
+  }
+  function strokeHubTeamOutline(ctx, cell, renderSize) {
+    if (!cell || !cell.hubTeam) return;
+    if (cell.isFood || cell.isVirus) return;
+    var fill = typeof cell.getEffectiveColor === "function" ? cell.getEffectiveColor() : (cell.color || "#000000");
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cell.x, cell.y, renderSize, 0, 2 * Math.PI);
+    ctx.strokeStyle = darkenCssColor(fill, 0.38);
+    ctx.lineWidth = Math.max(2.5, renderSize * 0.06);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawSideOutlines(ctx) {
+    const S = deps.S;
+    if (!S || !S.showSideOutline || !ctx) return;
+    const left = S.leftPos;
+    const right = S.rightPos;
+    const top = S.topPos;
+    const bottom = S.bottomPos;
+    if (!(typeof left === "number" && typeof right === "number")) return;
+    ctx.save();
+    ctx.strokeStyle = "rgba(255,255,255,0.4)";
+    ctx.lineWidth = Math.max(3, 6 / (S.viewZoom || 1));
+    ctx.beginPath();
+    ctx.moveTo(left, top);
+    ctx.lineTo(left, bottom);
+    ctx.moveTo(right, top);
+    ctx.lineTo(right, bottom);
+    ctx.stroke();
+    ctx.restore();
+  }
+  /** Tournament hub: white borders; selected zone = green. */
+  function drawArenaHubBorders(ctx) {
+    const S = deps.S;
+    if (!S || !ctx) return;
+    if (!isTournamentHubHost(S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl)) return;
+    const list = window.__arenaHubList;
+    if (!list || !list.length) return;
+    const z = S.viewZoom || 1;
+    let activeId = S.selectedArenaId;
+    if (activeId == null) activeId = defaultHubArenaId();
+    ctx.save();
+    ctx.lineJoin = "miter";
+    for (let i = 0; i < list.length; i++) {
+      const a = list[i];
+      if (a == null || a.minx == null) continue;
+      const active = a.id === activeId;
+      ctx.strokeStyle = active ? "rgba(40,220,90,0.95)" : "rgba(255,255,255,0.5)";
+      ctx.lineWidth = Math.max(1, (active ? 2.2 : 1.15) / z);
+      ctx.strokeRect(a.minx, a.miny, a.maxx - a.minx, a.maxy - a.miny);
+    }
+    ctx.restore();
+  }
+  function tickHubZoneStats(S) {
+    if (!S || !isTournamentHubHost(S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl)) return;
+    const arena = typeof getHubActiveArena === "function" ? getHubActiveArena(S) : null;
+    const key = arena && (arena.rating || arena.key) || null;
+    if (!key || key === S._hubStatsArenaKey) return;
+    S._hubStatsArenaKey = key;
+    // Reload death/table stats for this map zone
+    if (typeof S.wHandle?.chekstats === "function" && typeof isOverlaysVisible === "function" && isOverlaysVisible()) {
+      try { S.wHandle.chekstats(); } catch (_) {}
+    } else if (typeof S.wHandle?.refreshCenterTop === "function") {
+      try { S.wHandle.refreshCenterTop(); } catch (_) {}
+    }
+  }
+  function snapCameraToArena(S, arena) {
+    if (!S || !arena) return;
+    const cx = (Number(arena.minx) + Number(arena.maxx)) / 2;
+    const cy = (Number(arena.miny) + Number(arena.maxy)) / 2;
+    if (!Number.isFinite(cx) || !Number.isFinite(cy)) return;
+    S.posX = cx;
+    S.posY = cy;
+    S.nodeX = cx;
+    S.nodeY = cy;
+    S.oldX = cx - 999;
+    S.oldY = cy - 999;
+    clearSpectateFollow(S);
+  }
   function drawGrid() {
     const S = deps.S;
     if (!(S == null ? void 0 : S.ctx)) return;
@@ -3710,13 +4080,43 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       drawGradientGrid();
     }
   }
+  /** Hub: gradient origin = middle arena (2×2²) center, radius to farthest map corner. */
+  function getHubGradientOrigin(S) {
+    const mapCX = (S.leftPos + S.rightPos) / 2;
+    const mapCY = (S.topPos + S.bottomPos) / 2;
+    let cx = mapCX;
+    let cy = mapCY;
+    if (isTournamentHubHost(S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl)) {
+      const list = window.__arenaHubList;
+      const mid = list && list.find((a) => a && (a.key === "tournament" || a.rating === "tournament"));
+      if (mid && mid.minx != null) {
+        cx = (Number(mid.minx) + Number(mid.maxx)) / 2;
+        cy = (Number(mid.miny) + Number(mid.maxy)) / 2;
+      }
+    }
+    // Radius from visual center to farthest border corner (keeps ratio with mid map)
+    const corners = [
+      [S.leftPos, S.topPos],
+      [S.rightPos, S.topPos],
+      [S.leftPos, S.bottomPos],
+      [S.rightPos, S.bottomPos]
+    ];
+    let r = 0;
+    for (let i = 0; i < corners.length; i++) {
+      const d = Math.hypot(corners[i][0] - cx, corners[i][1] - cy);
+      if (d > r) r = d;
+    }
+    if (!(r > 0)) r = Math.hypot(S.rightPos - S.leftPos, S.bottomPos - S.topPos) / 2;
+    return { x: cx, y: cy, r: r };
+  }
   function drawGradientGrid() {
     const S = deps.S;
     if (!(S == null ? void 0 : S.ctx)) return;
     const {center: centerColor, edge: edgeColor} = getGridStyle();
-    const mapCenterX = (S.leftPos + S.rightPos) / 2;
-    const mapCenterY = (S.topPos + S.bottomPos) / 2;
-    const gradientRadius = Math.hypot(S.rightPos - S.leftPos, S.bottomPos - S.topPos) / 2;
+    const origin = getHubGradientOrigin(S);
+    const mapCenterX = origin.x;
+    const mapCenterY = origin.y;
+    const gradientRadius = origin.r;
     const {ctx, canvasWidth, canvasHeight, viewZoom, nodeX, nodeY} = S;
     const gx = Math.round(((mapCenterX - nodeX) * viewZoom + canvasWidth / 2) * .5) * 2;
     const gy = Math.round(((mapCenterY - nodeY) * viewZoom + canvasHeight / 2) * .5) * 2;
@@ -3763,44 +4163,65 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   function drawWhiteGrid() {
     drawClassicGrid("#F2FBFF", "#111111");
   }
-  function drawCenterBackground() {
-    const S = deps.S;
-    if (!(S == null ? void 0 : S.ctx)) return;
-    // Неофициальный сервер: без center.png / рекорда в центре карты
-    if (document.body.classList.contains("no-official-stats")) return;
+  function drawOneCenterAt(S, mapCenterX, mapCenterY, nick, score, skinImg, opts) {
     if (!isBackgroundLoaded) return;
-    const mapCenterX = (S.leftPos + S.rightPos) / 2;
-    const mapCenterY = (S.topPos + S.bottomPos) / 2;
-    const screenX = (mapCenterX - S.nodeX) * S.viewZoom + S.canvasWidth / 2;
-    const screenY = (mapCenterY - S.nodeY) * S.viewZoom + S.canvasHeight / 2;
+    const screenX = Math.round((mapCenterX - S.nodeX) * S.viewZoom + S.canvasWidth / 2);
+    const screenY = Math.round((mapCenterY - S.nodeY) * S.viewZoom + S.canvasHeight / 2);
+    // Skip if far off-screen
+    if (screenX < -600 || screenY < -600 || screenX > S.canvasWidth + 600 || screenY > S.canvasHeight + 600) return;
     const scaledBackgroundWidth = backgroundWidth * S.viewZoom;
     const scaledBackgroundHeight = backgroundHeight * S.viewZoom;
     const scaledInnerImageWidth = innerImageWidth * S.viewZoom;
     const scaledInnerImageHeight = innerImageHeight * S.viewZoom;
     const {ctx} = S;
-    if (isInnerImageLoaded) {
+    const noSharedSkin = opts && opts.noSharedSkin;
+    const img = skinImg && skinImg.complete ? skinImg : (!noSharedSkin && isInnerImageLoaded ? innerImage : null);
+    if (img) {
       ctx.save();
       const radius = Math.min(scaledInnerImageWidth, scaledInnerImageHeight) / 2;
       ctx.beginPath();
       ctx.arc(screenX, screenY, radius, 0, 2 * Math.PI);
       ctx.closePath();
       ctx.clip();
-      drawSkinStripImage(ctx, innerImage, screenX - scaledInnerImageWidth / 2, screenY - scaledInnerImageHeight / 2, scaledInnerImageWidth, scaledInnerImageHeight);
+      drawSkinStripImage(ctx, img, screenX - scaledInnerImageWidth / 2, screenY - scaledInnerImageHeight / 2, scaledInnerImageWidth, scaledInnerImageHeight);
       ctx.restore();
     }
     ctx.drawImage(centerBackground, screenX - scaledBackgroundWidth / 2, screenY - scaledBackgroundHeight / 2, scaledBackgroundWidth, scaledBackgroundHeight);
-    if (topPlayerNick || topPlayerScore) {
+    if (nick || score) {
       const radius = Math.min(scaledInnerImageWidth, scaledInnerImageHeight) / 2;
       ctx.fillStyle = "white";
       ctx.font = `${22 * S.viewZoom}px Ubuntu`;
       ctx.textAlign = "center";
-      if (topPlayerNick) {
-        ctx.fillText(topPlayerNick, screenX, screenY + radius - 415 * S.viewZoom);
-      }
-      if (topPlayerScore) {
-        ctx.fillText(`${topPlayerScore}`, screenX, screenY + radius - 15 * S.viewZoom);
-      }
+      if (nick) ctx.fillText(nick, screenX, screenY + radius - 415 * S.viewZoom);
+      if (score != null && score !== "") ctx.fillText(`${score}`, screenX, screenY + radius - 15 * S.viewZoom);
     }
+  }
+  function drawCenterBackground() {
+    const S = deps.S;
+    if (!(S == null ? void 0 : S.ctx)) return;
+    // Неофициальный сервер: без center.png / рекорда в центре карты
+    if (document.body.classList.contains("no-official-stats")) return;
+    if (!isBackgroundLoaded) return;
+    const list = window.__arenaHubList;
+    const onHub = isTournamentHubHost(S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl);
+    if (onHub && list && list.length) {
+      // Each arena center = only ITS top-1 (never reuse shared global skin/nick)
+      for (let i = 0; i < list.length; i++) {
+        const a = list[i];
+        if (!a || a.minx == null) continue;
+        const cx = (Number(a.minx) + Number(a.maxx)) / 2;
+        const cy = (Number(a.miny) + Number(a.maxy)) / 2;
+        const top = hubArenaTops[a.key] || hubArenaTops[a.rating] || null;
+        const nick = top && top.nick || "";
+        const score = top && (top.score != null) ? top.score : "";
+        const skinImg = top && top._img || null;
+        drawOneCenterAt(S, cx, cy, nick, score, skinImg, { noSharedSkin: true });
+      }
+      return;
+    }
+    const mapCenterX = (S.leftPos + S.rightPos) / 2;
+    const mapCenterY = (S.topPos + S.bottomPos) / 2;
+    drawOneCenterAt(S, mapCenterX, mapCenterY, topPlayerNick, topPlayerScore, isInnerImageLoaded ? innerImage : null);
   }
   function drawCustomMapBackground(ctx) {
     var _a;
@@ -5346,6 +5767,15 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       if (S.playerCells.length === 1) {
         S.nodeX = node.x;
         S.nodeY = node.y;
+        // Respawn: play zoom from cell size (hub a bit more zoomed out)
+        S.zoom = 1;
+        try {
+          let sum = 0;
+          for (let i = 0; i < S.playerCells.length; i++) sum += S.playerCells[i].size;
+          const z = playZoomFromCellSize(S, sum);
+          S.viewZoom = z;
+          S.posSize = z;
+        } catch (_) {}
       }
     }
     function applyName(node, pid, name) {
@@ -5404,6 +5834,14 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         }
         if (S.ua && S.playerCells.length === 0) {
           disablePause(S);
+          if (isTournamentHubHost(S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl)) {
+            S._hubPreferMapCenter = false;
+            S._hubSpecReady = false;
+            S.posX = S.nodeX;
+            S.posY = S.nodeY;
+            const zDeath = hubFittedZoom(S);
+            if (zDeath != null) { S.posSize = zDeath; S.zoom = 1; }
+          }
           showStatics();
           if (typeof window.updateShareText === "function") window.updateShareText();
           if (typeof window.renderDeathBanner === "function") window.renderDeathBanner();
@@ -5501,8 +5939,12 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
           encX = u16();
           encY = u16();
           size = u16();
+          // high4 = hubTeam (1..4), low4 = cell kind
+          var hubTeamFromKind = (kind >> 4) & 15;
+          kind = kind & 15;
           if (kind === 0) pid = (u16() | u16() << 16) >>> 0;
         } else {
+          var hubTeamFromKind = 0;
           const prev = S.nodes[handle];
           encX = prev && prev.encX != null ? prev.encX : 0;
           encY = prev && prev.encY != null ? prev.encY : 0;
@@ -5540,12 +5982,14 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
           node.isVirus = kind === 2;
           node.isEjected = kind === 3;
           node.flag = kind === 2 ? 1 : 0;
+          node.hubTeam = hubTeamFromKind || 0;
           S.nodelist.push(node);
           S.nodes[handle] = node;
           claimOwn(node, pid);
           applyName(node, pid, name);
         } else if (node && !node.destroyed) {
           retarget(node, encX, encY, size);
+          if (hubTeamFromKind) node.hubTeam = hubTeamFromKind;
           if (color) node.color = color;
           if (name || pid) applyName(node, node.playerId || pid, name);
         }
@@ -5558,6 +6002,14 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     }
     if (S.ua && S.playerCells.length === 0) {
       disablePause(S);
+      if (isTournamentHubHost(S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl)) {
+        S._hubPreferMapCenter = false;
+        S._hubSpecReady = false;
+        S.posX = S.nodeX;
+        S.posY = S.nodeY;
+        const zDeath = hubFittedZoom(S);
+        if (zDeath != null) { S.posSize = zDeath; S.zoom = 1; }
+      }
       showStatics();
       if (typeof window.updateShareText === "function") window.updateShareText();
       if (typeof window.renderDeathBanner === "function") window.renderDeathBanner();
@@ -5648,6 +6100,13 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
           if (1 == S.playerCells.length) {
             S.nodeX = node.x;
             S.nodeY = node.y;
+            // Respawn: play zoom from cell size (hub a bit more zoomed out)
+            S.zoom = 1;
+            try {
+              const z = playZoomFromCellSize(S, node.size || 1);
+              S.viewZoom = z;
+              S.posSize = z;
+            } catch (_) {}
           }
         }
       }
@@ -5713,6 +6172,8 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     S.Cells = [];
     S.leaderBoard = [];
     S.mapBoundsReady = false;
+    S._hubSpecReady = false;
+    S._hubPreferMapCenter = true;
     // Free camera — do not keep previous follow target / map position across hops
     if (typeof S.leftPos === "number" && typeof S.rightPos === "number") {
       S.posX = (S.leftPos + S.rightPos) / 2;
@@ -5775,8 +6236,12 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         applyThinWorld(S, msg, offset);
         break;
 
+       case ServerOpcode.ARENA_LIST:
+        applyArenaListPacket(msg, offset);
+        break;
+
        case ServerOpcode.UPDATE_CAMERA:
-        // Agar.su: full packet float32 x/y/size, or bare opcode → default spectate zoom.
+        // Hub sends x,y,size where size = zoom for the BIG map
         if (msg.byteLength >= offset + 12) {
           const cx = msg.getFloat32(offset, true);
           offset += 4;
@@ -5785,8 +6250,15 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
           const csize = msg.getFloat32(offset, true);
           offset += 4;
           applyServerSpectateCamera(S, cx, cy, csize);
-        } else {
-          S.posSize = .15;
+        } else if (msg.byteLength >= offset + 8) {
+          const cx = msg.getFloat32(offset, true);
+          offset += 4;
+          const cy = msg.getFloat32(offset, true);
+          offset += 4;
+          applyServerSpectateCamera(S, cx, cy, null);
+        } else if (!(S.playerCells && S.playerCells.length)) {
+          const z = hubFittedZoom(S);
+          S.posSize = z != null ? z : .15;
         }
         break;
 
@@ -5951,7 +6423,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     return api;
   }
   function createGameState() {
-    return {
+    const state = {
       wHandle: null,
       nCanvas: null,
       ctx: null,
@@ -5963,6 +6435,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       wsUrl: null,
       CONNECTION_URL: "ffa.agar.su",
       SELECTED_SERVER: null,
+      selectedArenaId: null,
       currentWebSocketUrl: null,
       connectInProgress: false,
       connectAttemptId: 0,
@@ -6043,6 +6516,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       })(),
       smoothRender: 2,
       closebord: false,
+      showSideOutline: true,
       enableMouseClicks: false,
       spectateAutoFollow: false,
       mouseSplitButton: 3,
@@ -6118,6 +6592,8 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       RESET_TIME: 6e4,
       api: {}
     };
+    try { window.__agarGameState = state; } catch (e) {}
+    return state;
   }
   function resetWorldContainers(S) {
     S.playerCells = [];
@@ -6499,6 +6975,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       ctx.closePath();
       const useVirusImageFill = this.isVirus && !isTransp && drawVirusFillBackground(ctx, this, renderSize, simpleRender, bigPointSize);
       if (!useVirusImageFill) ctx.fill();
+      if (this.hubTeam && !this.isVirus) strokeHubTeamOutline(ctx, this, renderSize);
       if (S.showSkin && !this.isVirus) {
         const skinImg = isTransp ? ownedSkinImg : getCellSkinImage(S, this.name, skinId, getSkinImage2, loadCachedImage2);
         if (skinImg && isSkinImageReady(skinImg)) {
@@ -6567,7 +7044,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         if (this.glowActive && mass <= glowMass.off) this.glowActive = false;
       }
       if (this.glowActive && S.showGlow) {
-        const effectImg = loadCachedImage2("/photo/limited.png");
+        const effectImg = loadCachedImage2("photo/limited.png");
         if (effectImg && effectImg.complete && effectImg.width > 0) {
           ctx.save();
           ctx.beginPath();
@@ -7052,6 +7529,17 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     }
     S.mainCanvas.addEventListener("mousedown", () => {
       if (S.playerCells.length) return;
+      // Hub: select green zone under cursor, then standard smooth spectate pan
+      if (isTournamentHubHost(S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl)) {
+        mouseCoordinateChange(S);
+        selectHubArenaAt(S, S.X, S.Y);
+        S.spectateFollowNick = null;
+        S.spectateFollowPid = 0;
+        stopSpectateFollowAutoClick();
+        updateMouseAim();
+        sendSpectateAimClick();
+        return;
+      }
       const hit = findSpectateHit(S, S.X, S.Y);
       if (hit && S.spectateAutoFollow) {
         S.spectateFollowNick = normalizeSpectateNick(hit.name) || null;
@@ -7064,7 +7552,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         S.spectateFollowNick = null;
         S.spectateFollowPid = 0;
         stopSpectateFollowAutoClick();
-        // Авто-наблюдение выкл.: клик везде — точка под курсором (не центр клетки)
         updateMouseAim();
         sendSpectateAimClick();
       }
@@ -7080,9 +7567,15 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       const chatContainer = document.querySelector(".noscroll");
       if (isOverlaysVisible() || isPointerOverElement(chatContainer, event2.clientX, event2.clientY)) return;
       S.zoom *= Math.pow(.9, event2.wheelDelta / -120 || event2.detail || 0);
-      if (S.zoom < 0) S.zoom = 1;
-      if (S.zoom > 4 / S.viewZoom) S.zoom = 4 / S.viewZoom;
-      if (S.zoom < .3) S.zoom = .3;
+      if (!(S.zoom > 0) || !isFinite(S.zoom)) S.zoom = 1;
+      if (isHubLobbyCamera(S)) {
+        // Big-map base already fits world at zoom=1
+        if (S.zoom > 10) S.zoom = 10;
+        if (S.zoom < .2) S.zoom = .2;
+      } else {
+        if (S.zoom > 4 / Math.max(S.viewZoom || .01, .01)) S.zoom = 4 / Math.max(S.viewZoom || .01, .01);
+        if (S.zoom < .3) S.zoom = .3;
+      }
     }
     if (/firefox/i.test(navigator.userAgent)) {
       document.addEventListener("DOMMouseScroll", handleWheel, false);
@@ -7237,6 +7730,18 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         return;
       }
       if (isTyping) return;
+      // K = suicide — tournament hub only
+      if (code === 75) {
+        if (!keyPressed.suicide) {
+          keyPressed.suicide = true;
+          const host = S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl;
+          if (typeof isTournamentHubHost === "function" && isTournamentHubHost(host)
+              && S.playerCells && S.playerCells.length > 0) {
+            hooks.sendUint8(ClientOpcode.SUICIDE);
+          }
+        }
+        return;
+      }
       if (code === getBind(S, "freeze")) {
         // Toggle pause: mouse → main cell center + #freeze UI
         if (!keyPressed.freeze && S.playerCells.length > 0) {
@@ -7314,6 +7819,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     };
     wHandle.onkeyup = function(event2) {
       const code = event2.keyCode;
+      if (code === 75) keyPressed.suicide = false;
       if (code === getBind(S, "freeze")) keyPressed.freeze = false;
       if (code === getBind(S, "split")) keyPressed.split = false;
       if (code === getBind(S, "coord")) keyPressed.coord = false;
@@ -8241,18 +8747,20 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   /** Official agar.su servers: id ↔ host. All scripts resolve from here. */
   var OFFICIAL_SERVERS = [
     { id: "ffa", host: "ffa.agar.su", wins: false },
-    { id: "ms", host: "ms.agar.su:6001", wins: false },
-    { id: "pvp1", host: "ms.agar.su:6004", wins: true },
-    { id: "pvp2", host: "ms.agar.su:6005", wins: true },
-    { id: "tournament", host: "ms.agar.su:6002", wins: true },
-    { id: "tournament2", host: "ms.agar.su:6003", wins: true },
-    { id: "tournament3", host: "ms.agar.su:6006", wins: true }
+    { id: "ms", host: "ms.agar.su", wins: false },
+    { id: "tournament", host: "ms.agar.su:6001", wins: true },
+    // Hub arena rating ids (same host; stats keyed per map)
+    { id: "pvp1", host: "ms.agar.su:6001#pvp1", wins: true },
+    { id: "pvp2", host: "ms.agar.su:6001#pvp2", wins: true },
+    { id: "tournament2", host: "ms.agar.su:6001#tournament2", wins: true },
+    { id: "tournament3", host: "ms.agar.su:6001#tournament3", wins: true }
   ];
   var OFFICIAL_SERVER_ID_RE = new RegExp(
     "^(" + OFFICIAL_SERVERS.map(s => s.id).join("|") + ")$",
     "i"
   );
   var OFFICIAL_BY_ID = Object.fromEntries(OFFICIAL_SERVERS.map(s => [s.id, s]));
+  var HUB_ARENA_STAT_IDS = ["pvp1", "pvp2", "tournament", "tournament2", "tournament3"];
 
   function resolveOfficialServerId(connectionUrl) {
     const host = String(connectionUrl || "").toLowerCase().replace(/^wss?:\/\//, "");
@@ -8260,15 +8768,73 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     // Port-specific hosts first (ms.agar.su:600x), then bare ffa / ms
     for (const s of OFFICIAL_SERVERS) {
       if (s.id === "ffa" || s.id === "ms") continue;
+      if (s.host.includes("#")) continue; // virtual hub keys
       if (host.includes(s.host)) return s.id;
     }
     if (host.includes("ffa.agar.su")) return "ffa";
-    if (host.includes("ms.agar.su:6001") || host === "ms.agar.su" || host.startsWith("ms.agar.su/")) return "ms";
+    if (host.includes("ms.agar.su:6001")) return "tournament";
+    if (host.includes("ms.agar.su") || host.includes("ms.agar.su:6001") || host === "ms.agar.su" || host.startsWith("ms.agar.su/")) return "ms";
     return null;
   }
 
+  function findHubArenaAtPoint(x, y) {
+    const list = window.__arenaHubList || [];
+    for (let i = 0; i < list.length; i++) {
+      const a = list[i];
+      if (!a || a.minx == null) continue;
+      if (x >= a.minx && x <= a.maxx && y >= a.miny && y <= a.maxy) return a;
+    }
+    // nearest center
+    let best = null, bestD = Infinity;
+    for (let i = 0; i < list.length; i++) {
+      const a = list[i];
+      if (!a || a.minx == null) continue;
+      const cx = (a.minx + a.maxx) / 2;
+      const cy = (a.miny + a.maxy) / 2;
+      const d = (x - cx) * (x - cx) + (y - cy) * (y - cy);
+      if (d < bestD) { bestD = d; best = a; }
+    }
+    return best;
+  }
+
+  /** Active hub map for stats: own cells → that arena; spectator/overview → mouse world point. */
+  function getHubActiveArena(S) {
+    if (!S || !isTournamentHubHost(S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl)) return null;
+    const list = window.__arenaHubList || [];
+    if (!list.length) return null;
+    if (S.playerCells && S.playerCells.length && !isHubLobbyCamera(S)) {
+      if (S.selectedArenaId != null) {
+        const byId = list.find((a) => a && a.id === S.selectedArenaId);
+        if (byId) return byId;
+      }
+      let sx = 0, sy = 0;
+      for (let i = 0; i < S.playerCells.length; i++) {
+        sx += S.playerCells[i].x;
+        sy += S.playerCells[i].y;
+      }
+      return findHubArenaAtPoint(sx / S.playerCells.length, sy / S.playerCells.length);
+    }
+    // Overview / spectate: camera sits at map center — use mouse world coords for zone
+    const mx = typeof S.X === "number" ? S.X : S.posX;
+    const my = typeof S.Y === "number" ? S.Y : S.posY;
+    return findHubArenaAtPoint(mx, my);
+  }
+
+  function resolveStatsServerId(S) {
+    const base = resolveOfficialServerId(
+      (S && (S.SELECTED_SERVER || S.CONNECTION_URL || S.wsUrl)) || ""
+    );
+    if (base === "tournament" || isTournamentHubHost(S && (S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl))) {
+      const arena = getHubActiveArena(S);
+      const key = arena && (arena.rating || arena.key);
+      if (key && HUB_ARENA_STAT_IDS.indexOf(key) !== -1) return key;
+      return "tournament";
+    }
+    return base;
+  }
+
   function updateOfficialStatsVisibility(S) {
-    const serverId = resolveOfficialServerId(
+    const serverId = resolveStatsServerId(S) || resolveOfficialServerId(
       (S && (S.SELECTED_SERVER || S.CONNECTION_URL || S.wsUrl)) || ""
     );
     document.body.classList.toggle("no-official-stats", !serverId);
@@ -8277,7 +8843,8 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
 
   /** FFA/MS — масса; PVP/Tournament — победы. */
   function deathScoreLabelForServer(serverId) {
-    const wins = !!(OFFICIAL_BY_ID[serverId] && OFFICIAL_BY_ID[serverId].wins);
+    const wins = !!(OFFICIAL_BY_ID[serverId] && OFFICIAL_BY_ID[serverId].wins) ||
+      HUB_ARENA_STAT_IDS.indexOf(serverId) !== -1;
     if (wins) {
       return {
         ru: "Побед",
@@ -8844,7 +9411,8 @@ function updateRegionOnlineTotals(totals) {
     // один раз при загрузке системы (+ смена периода) — без MutationObserver и без 5-мин поллинга
     loadGlobalRatingHome(true);
   }
-  function setActiveFromHash(S) {
+  
+function setActiveFromHash(S) {
     const hash = location.hash.replace("#", "") || "ffa";
     const hashWithoutParams = hash.split("?")[0];
     document.querySelectorAll(".gamemode li").forEach(li => li.classList.remove("active"));
@@ -8877,6 +9445,17 @@ function updateRegionOnlineTotals(totals) {
         applySkinListToState(S, { obj });
         const serverId = updateOfficialStatsVisibility(S);
         if (!serverId) return;
+        // Hub: prefer per-arena tops already loaded for map centers
+        if (isTournamentHubHost(S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl)) {
+          await refreshHubArenaTops(S);
+          const arena = getHubActiveArena(S);
+          const key = arena && (arena.rating || arena.key);
+          const top = key && hubArenaTops[key];
+          if (top) {
+            loadTopPlayerData2(S, [top], hooks);
+            return;
+          }
+        }
         const statsUrl = STATS_API + "/api/server/" + encodeURIComponent(serverId) +
           "?period=today&limit=1";
         const response = await fetch(statsUrl, {
@@ -8906,23 +9485,51 @@ function updateRegionOnlineTotals(totals) {
           return;
         }
         updateDeathScoreLabel(serverId);
-        const statsUrl = STATS_API + "/api/server/" + encodeURIComponent(serverId) +
-          "?period=" + encodeURIComponent(period) + "&limit=500";
-        const response = await fetch(statsUrl, {
-          method: "GET",
-          cache: "no-store"
-        });
-        if (!response.ok) {
-          throw new Error(`Ошибка запроса: ${response.status}`);
+        const titleEl = document.getElementById("serverTitle");
+        const arena = getHubActiveArena(S);
+        if (titleEl && arena) {
+          titleEl.textContent = "Статистика " + (arena.title || arena.key || serverId);
+        } else if (titleEl) {
+          titleEl.textContent = "Статистика " + serverId;
         }
-        const payload = await response.json();
-        if (payload && payload.scoreLabel) {
-          const el = document.getElementById("deathScoreLabel");
-          if (el) el.textContent = payload.scoreLabel;
+        // Hub day-board from game /checkStats when API empty
+        let stat = null;
+        if (isTournamentHubHost(S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl)) {
+          const host = String(S.CONNECTION_URL || S.SELECTED_SERVER || "").replace(/^wss?:\/\//, "").replace(/\/$/, "");
+          const key = arena && (arena.rating || arena.key) || serverId;
+          for (const proto of ["https://", "http://"]) {
+            try {
+              const res = await fetch(proto + host + "/checkStats", { cache: "no-store" });
+              if (!res.ok) continue;
+              const data = await res.json();
+              if (data && data.arenas && Array.isArray(data.arenas[key])) {
+                stat = data.arenas[key];
+                break;
+              }
+            } catch (_) {}
+          }
+        }
+        if (!stat) {
+          const statsUrl = STATS_API + "/api/server/" + encodeURIComponent(serverId) +
+            "?period=" + encodeURIComponent(period) + "&limit=500";
+          const response = await fetch(statsUrl, {
+            method: "GET",
+            cache: "no-store"
+          });
+          if (!response.ok) {
+            throw new Error(`Ошибка запроса: ${response.status}`);
+          }
+          const payload = await response.json();
+          if (payload && payload.scoreLabel) {
+            const el = document.getElementById("deathScoreLabel");
+            if (el) el.textContent = payload.scoreLabel;
+          } else {
+            updateDeathScoreLabel(serverId);
+          }
+          stat = Array.isArray(payload.players) ? payload.players : [];
         } else {
           updateDeathScoreLabel(serverId);
         }
-        const stat = Array.isArray(payload.players) ? payload.players : [];
         loadTopPlayerData2(S, stat, hooks);
         invalidateStatsRenderCaches(S);
         await fetchStats(S, stat);
@@ -8950,6 +9557,18 @@ function updateRegionOnlineTotals(totals) {
       if (passInput.length > 8) passInput = passInput.substring(0, 8);
       const nickEl = document.getElementById("nick");
       if (nickEl && !String(nickEl.value || "").trim()) nickEl.value = nickInput;
+      // Hub: spawn in clicked map zone (or arena under camera)
+      if (isTournamentHubHost(S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl)) {
+        let arenaId = S.selectedArenaId;
+        if (arenaId == null) {
+          const a = findHubArenaAtPoint(
+            typeof S.posX === "number" ? S.posX : S.X,
+            typeof S.posY === "number" ? S.posY : S.Y
+          );
+          if (a) arenaId = a.id;
+        }
+        if (arenaId != null) sendJoinArenaPacket(arenaId);
+      }
       hooks.setNick(nickInput + "#" + passInput);
     };
     wHandle.coord = function() {
@@ -11020,6 +11639,9 @@ function updateRegionOnlineTotals(totals) {
      case 17:
       return S.spectateAutoFollow;
 
+     case 18:
+      return S.showSideOutline;
+
      default:
       return false;
     }
@@ -11076,6 +11698,7 @@ function updateRegionOnlineTotals(totals) {
           if (id == 15) S.wHandle.setCustomMapBg(value);
           if (id == 16) S.wHandle.setCustomVirusBg(value);
           if (id == 17) S.wHandle.setSpectateAutoFollow(value);
+          if (id == 18) S.wHandle.setSideOutline(value);
         });
       });
     });
@@ -11124,6 +11747,10 @@ function updateRegionOnlineTotals(totals) {
     wHandle.setNoBorder = function(arg) {
       S.closebord = arg;
       persistCheckbox(7, arg);
+    };
+    wHandle.setSideOutline = function(arg) {
+      S.showSideOutline = !!arg;
+      persistCheckbox(18, S.showSideOutline);
     };
     wHandle.setChatHide = function(arg) {
       S.hideChat = arg;
@@ -11298,8 +11925,8 @@ function initServers(S) {
     S.canSendCoord = true;
     S.splitIcon = new Image;
     S.ejectIcon = new Image;
-    S.splitIcon.src = "/photo/split.png";
-    S.ejectIcon.src = "/photo/eject.png";
+    S.splitIcon.src = "photo/split.png";
+    S.ejectIcon.src = "photo/eject.png";
     S.isTouchStart = "ontouchstart" in wHandle && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     setTouchDeviceDetected(S.isTouchStart);
     S.Quad = Quad;
@@ -11384,6 +12011,18 @@ function initServers(S) {
         Cell,
         onPlayerDeath: () => {
           disablePause(S);
+          // Zoom out from death point (not map middle)
+          if (isTournamentHubHost(S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl)) {
+            S._hubPreferMapCenter = false;
+            S._hubSpecReady = false;
+            S.posX = S.nodeX;
+            S.posY = S.nodeY;
+            const z = hubFittedZoom(S);
+            if (z != null) {
+              S.posSize = z;
+              S.zoom = 1;
+            }
+          }
           showStatics();
           updateShareText(S);
           if (typeof window.renderDeathBanner === "function") window.renderDeathBanner();
