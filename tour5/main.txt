@@ -2258,7 +2258,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   /** Tournament hub: arena picker (only when connected to tournament server). */
   function isTournamentHubHost(host) {
     const h = String(host || "").toLowerCase().replace(/^wss?:\/\//, "");
-    return h.includes("ms2.agar.su:6001");
+    return h.includes("ms.agar.su:6001");
   }
   function ensureArenaHubUi() {
     if (document.getElementById("arena-hub-fab")) return;
@@ -8629,13 +8629,13 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   /** Official agar.su servers: id ↔ host. All scripts resolve from here. */
   var OFFICIAL_SERVERS = [
     { id: "ffa", host: "ffa.agar.su", wins: false },
-    { id: "ms", host: "ms2.agar.su", wins: false },
-    { id: "tournament", host: "ms2.agar.su:6001", wins: true },
+    { id: "ms", host: "ms.agar.su", wins: false },
+    { id: "tournament", host: "ms.agar.su:6001", wins: true },
     // Hub arena rating ids (same host; stats keyed per map)
-    { id: "pvp1", host: "ms2.agar.su:6001#pvp1", wins: true },
-    { id: "pvp2", host: "ms2.agar.su:6001#pvp2", wins: true },
-    { id: "tournament2", host: "ms2.agar.su:6001#tournament2", wins: true },
-    { id: "tournament3", host: "ms2.agar.su:6001#tournament3", wins: true }
+    { id: "pvp1", host: "ms.agar.su:6001#pvp1", wins: true },
+    { id: "pvp2", host: "ms.agar.su:6001#pvp2", wins: true },
+    { id: "tournament2", host: "ms.agar.su:6001#tournament2", wins: true },
+    { id: "tournament3", host: "ms.agar.su:6001#tournament3", wins: true }
   ];
   var OFFICIAL_SERVER_ID_RE = new RegExp(
     "^(" + OFFICIAL_SERVERS.map(s => s.id).join("|") + ")$",
@@ -8654,8 +8654,8 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       if (host.includes(s.host)) return s.id;
     }
     if (host.includes("ffa.agar.su")) return "ffa";
-    if (host.includes("ms2.agar.su:6001")) return "tournament";
-    if (host.includes("ms2.agar.su") || host.includes("ms.agar.su:6001") || host === "ms.agar.su" || host.startsWith("ms.agar.su/")) return "ms";
+    if (host.includes("ms.agar.su:6001")) return "tournament";
+    if (host.includes("ms.agar.su") || host.includes("ms.agar.su:6001") || host === "ms.agar.su" || host.startsWith("ms.agar.su/")) return "ms";
     return null;
   }
 
