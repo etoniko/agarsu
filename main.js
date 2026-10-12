@@ -2922,7 +2922,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   }
   window.getLimitGlowMassBounds = getLimitGlowMassBounds;
   window.isLimitGlowDisabledHost = isLimitGlowDisabledHost;
-  /** Side rings (left.png / right.png) only on tournament 3x3 and 4x4. */
+  /** Team rings (photo/team1.png … team4.png) only on tournament 3x3 and 4x4. */
   function isTeamSideOutlineServer(host) {
     const id = resolveOfficialServerId(host);
     return id === "tournament2" || id === "tournament3";
@@ -5314,7 +5314,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       node.setSize(size);
       node.updateTime = S.timestamp;
       node.flag = spiked;
-      node.teamSide = spiked & 2 ? 1 : spiked & 4 ? 2 : 0;
+      node.teamSide = (spiked & 2) ? 1 : (spiked & 4) ? 2 : (spiked & 8) ? 3 : (spiked & 128) ? 4 : 0;
       if (pid && packetName) {
         if (rememberPlayerNick(S, pid, packetName)) applyPlayerNickToCells(S, pid, packetName);
         else if (node.name !== packetName) node.setName(packetName);
@@ -6224,8 +6224,8 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         }
       }
       if (S.showSideOutline && this.teamSide && !this.isVirus && !this.isFood && !this.isEjected && isTeamSideOutlineServer(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl)) {
-        const sideUrl = this.teamSide === 1 ? "/photo/left.png" : "/photo/right.png";
-        const sideImg = this.teamSide === 1 ? S.sideLeftIcon : S.sideRightIcon;
+        const sideUrl = "/photo/team" + this.teamSide + ".png";
+        const sideImg = S.teamIcons && S.teamIcons[this.teamSide];
         const effectImg = sideImg && sideImg.complete && sideImg.width > 0 ? sideImg : loadCachedImage2(sideUrl);
         if (effectImg && effectImg.complete && effectImg.width > 0) {
           ctx.save();
@@ -10975,10 +10975,12 @@ function initServers(S) {
     S.ejectIcon = new Image;
     S.splitIcon.src = "/photo/split.png";
     S.ejectIcon.src = "/photo/eject.png";
-    S.sideLeftIcon = new Image();
-    S.sideRightIcon = new Image();
-    S.sideLeftIcon.src = "/photo/left.png";
-    S.sideRightIcon.src = "/photo/right.png";
+    S.teamIcons = [null];
+    for (let teamN = 1; teamN <= 4; teamN++) {
+      const teamImg = new Image();
+      teamImg.src = "/photo/team" + teamN + ".png";
+      S.teamIcons[teamN] = teamImg;
+    }
     S.isTouchStart = "ontouchstart" in wHandle && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     setTouchDeviceDetected(S.isTouchStart);
     S.Quad = Quad;
