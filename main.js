@@ -2598,7 +2598,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
 
   var SKIN_STRIP_MS = 50;
   var SKIN_NICK_FRAMES = {
-    "cursed": 67,
+    "cursed": 71,
   };
   var skinNickFrameMs = new Map;
   Object.keys(SKIN_NICK_FRAMES).forEach(nick => {
