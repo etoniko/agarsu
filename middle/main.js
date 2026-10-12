@@ -3227,23 +3227,11 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     const ratio = Math.max(S.canvasHeight / 1080, S.canvasWidth / 1920);
     return ratio * S.zoom;
   }
-  // 28500 is the map this client was drawn for. A 2850 map returns 10,
-  // so zoom, nicks and mass labels keep the same size on screen.
-  function worldScale(S) {
-    const w = S && Number(S.rightPos) - Number(S.leftPos);
-    if (!(w > 0) || w >= 10000) return 1;
-    return 28500 / w;
-  }
-  function displayMass(size, S) {
-    const scale = worldScale(S);
-    return Math.floor(size * size * .01 * scale * scale);
-  }
   function calcViewZoom(S) {
     if (0 != S.playerCells.length) {
       let newViewZoom = 0;
       for (let i = 0; i < S.playerCells.length; i++) newViewZoom += S.playerCells[i].size;
-      const scale = worldScale(S);
-      newViewZoom = Math.pow(Math.min(64 / scale / newViewZoom, 1), .4) * viewRange(S) * scale;
+      newViewZoom = Math.pow(Math.min(64 / newViewZoom, 1), .4) * viewRange(S);
       S.viewZoom = (9 * S.viewZoom + newViewZoom) / 10;
     }
   }
@@ -3519,7 +3507,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       return;
     }
     const t0 = perfEnabled ? performance.now() : 0;
-    if (.4 * worldScale(S) > S.viewZoom || S.renderQuality === "low" || S.renderQuality === "medium") {
+    if (.4 > S.viewZoom || S.renderQuality === "low" || S.renderQuality === "medium") {
       S.qTree = null;
       if (perfEnabled) perfStats.qtreeMs = performance.now() - t0;
       return;
@@ -3791,14 +3779,13 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     ctx.strokeStyle = lineColor;
     ctx.globalAlpha = .1;
     ctx.beginPath();
-    const gridStep = 50 / worldScale(S);
-    let x = -.5 + (-nodeX + vw / 2) % gridStep;
-    for (;x < vw; x += gridStep) {
+    let x = -.5 + (-nodeX + vw / 2) % 50;
+    for (;x < vw; x += 50) {
       ctx.moveTo(x, 0);
       ctx.lineTo(x, vh);
     }
-    let y = -.5 + (-nodeY + vh / 2) % gridStep;
-    for (;y < vh; y += gridStep) {
+    let y = -.5 + (-nodeY + vh / 2) % 50;
+    for (;y < vh; y += 50) {
       ctx.moveTo(0, y);
       ctx.lineTo(vw, y);
     }
@@ -3821,11 +3808,10 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     const mapCenterY = (S.topPos + S.bottomPos) / 2;
     const screenX = (mapCenterX - S.nodeX) * S.viewZoom + S.canvasWidth / 2;
     const screenY = (mapCenterY - S.nodeY) * S.viewZoom + S.canvasHeight / 2;
-    const badgeZoom = S.viewZoom / worldScale(S);
-    const scaledBackgroundWidth = backgroundWidth * badgeZoom;
-    const scaledBackgroundHeight = backgroundHeight * badgeZoom;
-    const scaledInnerImageWidth = innerImageWidth * badgeZoom;
-    const scaledInnerImageHeight = innerImageHeight * badgeZoom;
+    const scaledBackgroundWidth = backgroundWidth * S.viewZoom;
+    const scaledBackgroundHeight = backgroundHeight * S.viewZoom;
+    const scaledInnerImageWidth = innerImageWidth * S.viewZoom;
+    const scaledInnerImageHeight = innerImageHeight * S.viewZoom;
     const {ctx} = S;
     if (isInnerImageLoaded) {
       ctx.save();
@@ -3841,13 +3827,13 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     if (topPlayerNick || topPlayerScore) {
       const radius = Math.min(scaledInnerImageWidth, scaledInnerImageHeight) / 2;
       ctx.fillStyle = "white";
-      ctx.font = `${22 * badgeZoom}px Ubuntu`;
+      ctx.font = `${22 * S.viewZoom}px Ubuntu`;
       ctx.textAlign = "center";
       if (topPlayerNick) {
-        ctx.fillText(topPlayerNick, screenX, screenY + radius - 415 * badgeZoom);
+        ctx.fillText(topPlayerNick, screenX, screenY + radius - 415 * S.viewZoom);
       }
       if (topPlayerScore) {
-        ctx.fillText(`${topPlayerScore}`, screenX, screenY + radius - 15 * badgeZoom);
+        ctx.fillText(`${topPlayerScore}`, screenX, screenY + radius - 15 * S.viewZoom);
       }
     }
   }
@@ -4906,8 +4892,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       } else {
         const msgX = S.rawMouseX - S.canvasWidth / 2;
         const msgY = S.rawMouseY - S.canvasHeight / 2;
-        const aimEps = .1 / worldScale(S);
-        if (64 <= msgX * msgX + msgY * msgY && !(Math.abs(S.oldX - S.X) < aimEps && Math.abs(S.oldY - S.Y) < aimEps)) {
+        if (64 <= msgX * msgX + msgY * msgY && !(Math.abs(S.oldX - S.X) < .1 && Math.abs(S.oldY - S.Y) < .1)) {
           S.oldX = S.X;
           S.oldY = S.Y;
           const msg = prepareData(21);
@@ -5084,8 +5069,8 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   }
   /** Same mass/size formula as GameServer.spawnFood / entity/Food.js */
   function computeFoodSize(S, nodeid) {
-    let minMass = Number(S.foodMass) || 0;
-    let maxMass = Number(S.foodMaxMass) || 0;
+    let minMass = S.foodMass | 0;
+    let maxMass = S.foodMaxMass | 0;
     if (!(minMass > 0)) {
       // Fallback from size fields if mass not stored yet
       if (S.foodMinSize > 0) minMass = Math.max(1, Math.round(S.foodMinSize * S.foodMinSize / 100));
@@ -5095,7 +5080,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       if (S.foodMaxSize > 0) maxMass = Math.max(minMass, Math.round(S.foodMaxSize * S.foodMaxSize / 100));
       else maxMass = minMass;
     }
-    if (minMass < 1) return Math.ceil(Math.sqrt(100 * minMass));
     const mass = minMass + nodeid % (maxMass - minMass + 1);
     return Math.ceil(Math.sqrt(100 * mass));
   }
@@ -5262,6 +5246,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   }
   function updateNodes(S, reader, hooks) {
     const {Cell: Cell2, onPlayerDeath} = hooks;
+    const shortXY = resolveOfficialServerId(S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl || "") === "ultra";
     S.timestamp = Date.now();
     S.ua = false;
     S.nodesSortDirty = true;
@@ -5294,8 +5279,8 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         size = computeFoodSize(S, nodeid);
       } else {
         if (type === 0) playerId = reader.uint32();
-        posX = reader.int32();
-        posY = reader.int32();
+        posX = shortXY ? reader.int16() : reader.int32();
+        posY = shortXY ? reader.int16() : reader.int32();
         size = reader.uint16();
       }
       const r = reader.uint8();
@@ -5564,11 +5549,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
           offset += 2;
           S.foodMaxMass = msg.getUint16(offset, true);
           offset += 2;
-          // uint16 drops a pellet mass below 1. The scaled map uses 0.04.
-          if (!(S.foodMass > 0) && worldScale(S) > 1) {
-            S.foodMass = 0.04;
-            S.foodMaxMass = 0.04;
-          }
           S.foodMinSize = Math.ceil(Math.sqrt(100 * S.foodMass));
           S.foodMaxSize = Math.ceil(Math.sqrt(100 * S.foodMaxMass));
           S.ownerPlayerId = msg.getUint32(offset, true);
@@ -5579,7 +5559,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
           S.mapHeight = (S.bottomPos + S.topPos) / 2;
           S.posX = (S.rightPos + S.leftPos) / 2;
           S.posY = (S.bottomPos + S.topPos) / 2;
-          S.posSize = worldScale(S);
+          S.posSize = 1;
           if (S.playerCells.length === 0) {
             S.nodeX = S.posX;
             S.nodeY = S.posY;
@@ -6066,8 +6046,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       this.fixedColor = null;
     },
     getNameSize() {
-      const scale = worldScale(deps3.S);
-      return Math.max((.3 * this.size) | 0, 24 / scale);
+      return Math.max(~~(.3 * this.size), 24);
     },
     setName(name) {
       const S = deps3.S;
@@ -6214,7 +6193,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
             const sz = simpleRender ? this.size * this.skinZoom : bigPointSize * this.skinZoom;
             let drawSkinImg = skinImg;
             if (!isAnimatedSkinImage(skinImg)) {
-              const skinMass = displayMass(this.size, S);
+              const skinMass = Math.floor(this.size * this.size * .01);
               drawSkinImg = getSkinLodSource(skinImg, pickSkinLodByMass(skinMass), skinId || skinName || skinImg.src);
             }
             const stripMs = skinStripMsForNick(this.name);
@@ -6255,7 +6234,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
             ctx.restore();
           }
       }
-      const mass = displayMass(this.size, S);
+      const mass = Math.floor(this.size * this.size * .01);
       if (typeof this.glowActive === "undefined") this.glowActive = false;
       const glowMass = getLimitGlowMassBounds(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl);
       if (!glowMass) {
@@ -6316,8 +6295,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         if (this.nameCache && this.nameCache._scale !== 1) this.nameCache.setScale(1);
         if (this.sizeCache && this.sizeCache._scale !== 1) this.sizeCache.setScale(1);
         // Multiprotocol: show names only above size 100 (original agar.su keeps > 10).
-        const labelScale = worldScale(S);
-        const nameMinSize = ((window.MultiProtocols && !window.MultiProtocols.isOfficial(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl)) ? 100 : 10) / labelScale;
+        const nameMinSize = (window.MultiProtocols && !window.MultiProtocols.isOfficial(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl)) ? 100 : 10;
         if (S.showName && this.name && this.nameCache && this.size > nameMinSize) {
           let displayName = this.name;
           if (!isPetriSkinHost(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl) && invisible.has(this._nameLower)) {
@@ -6362,7 +6340,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
             ctx.drawImage(img, x - drawWidth / 2, y - drawHeight / 2, drawWidth, drawHeight);
           }
         }
-        if (S.renderQuality !== "low" && S.showMass && showMassLabels && !this.isVirus && !this.isEjected && !this.isAgitated && this.size > 100 / labelScale) {
+        if (S.renderQuality !== "low" && S.showMass && showMassLabels && !this.isVirus && !this.isEjected && !this.isAgitated && this.size > 100) {
           const targetMassSize = this.getNameSize() * .5;
           const massScreenPx = labelScreenPx(targetMassSize, viewZ);
           const massRaster = pickLabelRasterLod(massScreenPx, this._txtMassRasterSize || 0);
@@ -6794,7 +6772,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       if (isOverlaysVisible() || isPointerOverElement(chatContainer, event2.clientX, event2.clientY)) return;
       S.zoom *= Math.pow(.9, event2.wheelDelta / -120 || event2.detail || 0);
       if (S.zoom < 0) S.zoom = 1;
-      if (S.zoom > 4 * worldScale(S) / S.viewZoom) S.zoom = 4 * worldScale(S) / S.viewZoom;
+      if (S.zoom > 4 / S.viewZoom) S.zoom = 4 / S.viewZoom;
       if (S.zoom < .3) S.zoom = .3;
     }
     if (/firefox/i.test(navigator.userAgent)) {
@@ -7256,7 +7234,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
           const zoomFactor = 1 + delta / 300;
           S.zoom *= zoomFactor;
           if (S.zoom < .3) S.zoom = .3;
-          if (S.zoom > 4 * worldScale(S) / S.viewZoom) S.zoom = 4 * worldScale(S) / S.viewZoom;
+          if (S.zoom > 4 / S.viewZoom) S.zoom = 4 / S.viewZoom;
           S.pinchZoomStartDistance = currentDistance;
         }
         return;
@@ -7954,6 +7932,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   /** Official agar.su servers: id ↔ host. All scripts resolve from here. */
   var OFFICIAL_SERVERS = [
     { id: "ffa", host: "ffa.agar.su", wins: false },
+    { id: "ultra", host: "ms.agar.su:443", wins: false },
     { id: "ms", host: "ms.agar.su:6001", wins: false },
     { id: "pvp1", host: "ms.agar.su:6004", wins: true },
     { id: "pvp2", host: "ms.agar.su:6005", wins: true },
