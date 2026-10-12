@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>agar.su - Sprite animated</title>
-    
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
     <style>
@@ -186,7 +186,6 @@
 
         .circle-item .remove-btn i { font-size: 12px; }
 
-        /* ✏️ КНОПКА ЗАМЕНЫ ФОТО */
         .circle-item .edit-btn {
             position: absolute;
             bottom: 50%;
@@ -264,6 +263,63 @@
 
         #fileInput, #editFileInput {
             display: none;
+        }
+
+        /* ===== SPEED CONTROLS ===== */
+        .speed-controls {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            background: #f8f9fa;
+            border: 1px solid #e8ecf0;
+            border-radius: 12px;
+            padding: 10px 14px;
+            margin-bottom: 14px;
+            font-size: 0.78rem;
+            color: #1a1a2e;
+        }
+
+        .speed-controls label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .speed-controls i { color: #1a73e8; }
+
+        .speed-controls input[type="range"] {
+            width: 170px;
+            accent-color: #1a73e8;
+            cursor: pointer;
+        }
+
+        .speed-controls select {
+            padding: 3px 8px;
+            border-radius: 8px;
+            border: 1px solid #e8ecf0;
+            background: #fff;
+            color: #1a1a2e;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+
+        .speed-controls .ms-hint {
+            color: #5f6368;
+            font-size: 0.7rem;
+        }
+
+        .speed-controls .speed-copy {
+            flex: 0 0 auto;
+            padding: 6px 12px;
+            font-size: 0.72rem;
+        }
+
+        .speed-controls .speed-reset {
+            flex: 0 0 auto;
+            padding: 6px 10px;
+            font-size: 0.72rem;
         }
 
         /* ===== PREVIEW ===== */
@@ -485,9 +541,7 @@
 
         .btn:active { transform: scale(0.95); }
 
-        .btn-success {
-            background: #34a853;
-        }
+        .btn-success { background: #34a853; }
         .btn-success:hover {
             background: #2d9248;
             transform: translateY(-2px);
@@ -503,18 +557,14 @@
             transform: translateY(-2px);
         }
 
-        .btn-danger {
-            background: #ea4335;
-        }
+        .btn-danger { background: #ea4335; }
         .btn-danger:hover {
             background: #d33426;
             transform: translateY(-2px);
             box-shadow: 0 8px 24px rgba(234, 67, 53, 0.3);
         }
 
-        .btn-primary {
-            background: #1a73e8;
-        }
+        .btn-primary { background: #1a73e8; }
         .btn-primary:hover {
             background: #1557b0;
             transform: translateY(-2px);
@@ -573,6 +623,7 @@
             .preview-overlay { font-size: 0.55rem; padding: 3px 10px; bottom: 10px; }
             .bg-controls input[type="color"] { width: 24px; height: 24px; }
             .bg-controls .bg-preset { width: 24px; height: 24px; }
+            .speed-controls input[type="range"] { width: 120px; }
         }
 
         @media (max-width: 480px) {
@@ -590,6 +641,8 @@
             .example-hint { font-size: 0.55rem; gap: 8px; }
             .bg-controls input[type="color"] { width: 20px; height: 20px; }
             .bg-controls .bg-preset { width: 20px; height: 20px; }
+            .speed-controls { padding: 8px 10px; gap: 8px; font-size: 0.7rem; }
+            .speed-controls input[type="range"] { width: 90px; }
         }
     </style>
 </head>
@@ -602,7 +655,7 @@
             <span class="stat"><i class="fas fa-arrows-alt-h"></i> Ширина: <strong id="widthDisplay">—</strong></span>
             <span class="stat"><i class="fas fa-weight-hanging"></i> Вес: <strong id="fileSize">—</strong></span>
             <span class="stat"><i class="fas fa-flag"></i> Высота: <strong class="highlight-green">400px</strong></span>
-            <span class="stat"><i class="fas fa-play"></i> FPS: <strong class="highlight-red">~10</strong></span>
+            <span class="stat"><i class="fas fa-play"></i> FPS: <strong class="highlight-red" id="fpsDisplay">10</strong></span>
         </div>
 
         <div class="circle-grid" id="circleGrid"></div>
@@ -626,6 +679,38 @@
                     </span>
                 </div>
             </div>
+
+            <!-- ===== SPEED CONTROLS ===== -->
+            <div class="speed-controls">
+                <label>
+                    <i class="fas fa-tachometer-alt"></i>
+                    Скорость:
+                    <input type="range" id="fpsRange" min="1" max="60" value="10" step="1" />
+                    <strong id="fpsValue">10</strong> fps
+                    <span class="ms-hint">(<span id="msValue">100</span> ms/кадр)</span>
+                </label>
+                <label>
+                    <i class="fas fa-repeat"></i>
+                    Цикл:
+                    <strong id="cycleValue">0</strong> ms
+                </label>
+                <label>
+                    <i class="fas fa-cog"></i>
+                    Режим:
+                    <select id="speedMode">
+                        <option value="fps" selected>FPS (кадр/сек)</option>
+                        <option value="ms">мс на кадр</option>
+                        <option value="cycle">Цикл (мс)</option>
+                    </select>
+                </label>
+                <button class="btn btn-primary speed-copy" id="copySkinAnimBtn" title="Скопировать строку для SKIN_ANIM_MS">
+                    <i class="fas fa-clipboard"></i> Скопировать
+                </button>
+                <button class="btn btn-secondary speed-reset" id="resetSpeedBtn" title="Сбросить к 10 fps">
+                    <i class="fas fa-undo"></i>
+                </button>
+            </div>
+
             <div class="preview-container">
                 <div class="preview-frame" id="previewFrame">
                     <div class="preview-circle" id="previewCircle">
@@ -672,6 +757,7 @@
         (function() {
             'use strict';
 
+            // ---- DOM refs ----
             const grid = document.getElementById('circleGrid');
             const previewImage = document.getElementById('previewImage');
             const previewFrame = document.getElementById('previewFrame');
@@ -691,9 +777,21 @@
             const editFileInput = document.getElementById('editFileInput');
             const customBgColor = document.getElementById('customBgColor');
 
+            // ---- Speed control DOM ----
+            const fpsRange = document.getElementById('fpsRange');
+            const fpsValue = document.getElementById('fpsValue');
+            const msValue = document.getElementById('msValue');
+            const cycleValue = document.getElementById('cycleValue');
+            const speedMode = document.getElementById('speedMode');
+            const copySkinAnimBtn = document.getElementById('copySkinAnimBtn');
+            const resetSpeedBtn = document.getElementById('resetSpeedBtn');
+            const fpsDisplay = document.getElementById('fpsDisplay');
+
             const MAX_FRAMES = 100;
             const MIN_FRAMES = 2;
             const FRAME_HEIGHT = 400;
+            const MIN_MS = 16;      // браузерный минимум setTimeout ~16ms
+            const MAX_MS = 5000;    // разумный максимум
 
             let frames = [];
             let animTimer = null;
@@ -702,7 +800,13 @@
             let editIndex = -1;
             let dragIndex = null;
 
-            // --- BACKGROUND ---
+            // ---- SPEED STATE ----
+            // Храним "каноничное" значение: ms на кадр.
+            // FPS и cycle считаются от него.
+            let animMsPerFrame = 100;   // default 10 fps
+            let currentSpeedMode = 'fps';
+
+            // ---- BACKGROUND ----
             let currentBg = 'transparent';
 
             function setBackground(bg) {
@@ -723,7 +827,92 @@
                 }
             }
 
-            // --- RENDER CIRCLES ---
+            // ---- SPEED HELPERS ----
+            function msToFps(ms) {
+                if (!(ms > 0)) return 1;
+                return Math.max(1, Math.round(1000 / ms));
+            }
+
+            function fpsToMs(fps) {
+                if (!(fps > 0)) return 100;
+                return Math.max(MIN_MS, Math.min(MAX_MS, Math.round(1000 / fps)));
+            }
+
+            function currentCycleMs() {
+                return animMsPerFrame * Math.max(1, frames.length);
+            }
+
+            function updateSpeedUI() {
+                const fps = msToFps(animMsPerFrame);
+                fpsValue.textContent = fps;
+                msValue.textContent = animMsPerFrame;
+                cycleValue.textContent = currentCycleMs();
+                fpsDisplay.textContent = fps;
+
+                // Синхронизируем slider со сменой режима
+                if (currentSpeedMode === 'fps') {
+                    fpsRange.min = 1;
+                    fpsRange.max = 60;
+                    fpsRange.step = 1;
+                    // Не даём браузеру "прыгнуть", если значение вне диапазона
+                    const v = Math.max(1, Math.min(60, fps));
+                    if (Number(fpsRange.value) !== v) fpsRange.value = v;
+                } else if (currentSpeedMode === 'ms') {
+                    fpsRange.min = MIN_MS;
+                    fpsRange.max = 500;   // удобный диапазон для ms
+                    fpsRange.step = 1;
+                    const v = Math.max(MIN_MS, Math.min(500, animMsPerFrame));
+                    if (Number(fpsRange.value) !== v) fpsRange.value = v;
+                } else if (currentSpeedMode === 'cycle') {
+                    fpsRange.min = 50;
+                    fpsRange.max = 5000;
+                    fpsRange.step = 10;
+                    const v = Math.max(50, Math.min(5000, currentCycleMs()));
+                    if (Number(fpsRange.value) !== v) fpsRange.value = v;
+                }
+            }
+
+            function applySpeedFromSlider() {
+                const v = Number(fpsRange.value) || 1;
+                if (currentSpeedMode === 'fps') {
+                    animMsPerFrame = fpsToMs(v);
+                } else if (currentSpeedMode === 'ms') {
+                    animMsPerFrame = Math.max(MIN_MS, Math.min(MAX_MS, Math.round(v)));
+                } else if (currentSpeedMode === 'cycle') {
+                    const count = Math.max(1, frames.length);
+                    animMsPerFrame = Math.max(MIN_MS, Math.min(MAX_MS, Math.round(v / count)));
+                }
+                updateSpeedUI();
+                if (frames.length >= MIN_FRAMES && !animPaused) {
+                    // Перезапуск, чтобы новый интервал применился сразу
+                    startAnimation();
+                }
+            }
+
+            function resetSpeed() {
+                animMsPerFrame = 100;
+                updateSpeedUI();
+                if (frames.length >= MIN_FRAMES && !animPaused) startAnimation();
+            }
+
+            function copySkinAnimString() {
+                // Пример готового объекта под вставку в main.js.
+                // Пользователь заменяет "nick1"/"nick2" на реальные ники.
+                const sample = {
+                    "nick1": animMsPerFrame
+                };
+                const js =
+                    '// ms на кадр для анимации скина\n' +
+                    'var SKIN_ANIM_MS = ' + JSON.stringify(sample, null, 2) + ';';
+
+                navigator.clipboard.writeText(js).then(() => {
+                    alert('✅ Скопировано:\n\n' + js);
+                }).catch(() => {
+                    prompt('Скопируй вручную:', js);
+                });
+            }
+
+            // ---- RENDER CIRCLES ----
             function renderCircles() {
                 grid.innerHTML = '';
 
@@ -744,7 +933,7 @@
                     badge.textContent = `#${index + 1}`;
                     div.appendChild(badge);
 
-                    // 🔥 КРЕСТИК УДАЛЕНИЯ
+                    // Крестик удаления
                     const removeBtn = document.createElement('button');
                     removeBtn.className = 'remove-btn';
                     removeBtn.innerHTML = '<i class="fas fa-times"></i>';
@@ -755,7 +944,7 @@
                     });
                     div.appendChild(removeBtn);
 
-                    // ✏️ КНОПКА ЗАМЕНЫ
+                    // Кнопка замены
                     const editBtn = document.createElement('button');
                     editBtn.className = 'edit-btn';
                     editBtn.innerHTML = '<i class="fas fa-pen"></i>';
@@ -767,7 +956,7 @@
                     });
                     div.appendChild(editBtn);
 
-                    // 🔥 DRAG & DROP — ПРАВИЛЬНЫЕ СОБЫТИЯ
+                    // Drag & drop
                     div.addEventListener('dragstart', (e) => {
                         dragIndex = index;
                         div.classList.add('dragging');
@@ -823,6 +1012,7 @@
 
                 updateStats();
                 updateButtons();
+                updateSpeedUI();
                 startAnimation();
             }
 
@@ -883,9 +1073,12 @@
                 }
 
                 previewInfo.innerHTML = `
-                    <i class="fas fa-images" style="color:#1a73e8;"></i> ${count} кадров · 
+                    <i class="fas fa-images" style="color:#1a73e8;"></i> ${count} кадров ·
                     <i class="fas fa-arrows-alt-h" style="color:#34a853;"></i> ${totalWidth}×${FRAME_HEIGHT}
                 `;
+
+                // Обновляем цикл, если уже отрисовано
+                if (cycleValue) cycleValue.textContent = currentCycleMs();
             }
 
             function updateButtons() {
@@ -894,7 +1087,7 @@
                 copyBtn.disabled = !hasFrames;
             }
 
-            // --- ANIMATION ---
+            // ---- ANIMATION ----
             function startAnimation() {
                 stopAnimation();
 
@@ -925,7 +1118,7 @@
                     }
 
                     currentFrameIndex = (currentFrameIndex + 1) % count;
-                    animTimer = setTimeout(animateFrame, 50);
+                    animTimer = setTimeout(animateFrame, animMsPerFrame);
                 }
 
                 animateFrame();
@@ -945,7 +1138,7 @@
                     '<i class="fas fa-pause"></i> Пауза';
             }
 
-            // --- EXPORT ---
+            // ---- EXPORT ----
             function renderFullSprite() {
                 const count = frames.length;
                 if (count < MIN_FRAMES || count > MAX_FRAMES) return null;
@@ -996,7 +1189,7 @@
                 canvas.toBlob((blob) => {
                     if (blob) {
                         const link = document.createElement('a');
-                        link.download = `sprite_${frames.length}frames_400px.png`;
+                        link.download = `sprite_${frames.length}frames_${animMsPerFrame}ms.png`;
                         link.href = URL.createObjectURL(blob);
                         link.click();
                         setTimeout(() => URL.revokeObjectURL(link.href), 5000);
@@ -1019,7 +1212,7 @@
                 }
             }
 
-            // --- ADD / EDIT ---
+            // ---- ADD / EDIT ----
             function addFiles(fileList) {
                 const files = Array.from(fileList);
                 const validFiles = files.filter(f => f.type.startsWith('image/'));
@@ -1086,7 +1279,7 @@
                 editFileInput.value = '';
             }
 
-            // --- EVENTS ---
+            // ---- EVENTS ----
             fileInput.addEventListener('change', (e) => {
                 addFiles(e.target.files);
                 fileInput.value = '';
@@ -1116,6 +1309,17 @@
                 document.querySelectorAll('.bg-preset').forEach(el => el.classList.remove('active'));
             });
 
+            // Speed controls
+            fpsRange.addEventListener('input', applySpeedFromSlider);
+
+            speedMode.addEventListener('change', () => {
+                currentSpeedMode = speedMode.value;
+                updateSpeedUI();
+            });
+
+            copySkinAnimBtn.addEventListener('click', copySkinAnimString);
+            resetSpeedBtn.addEventListener('click', resetSpeed);
+
             // Keyboard shortcuts
             document.addEventListener('keydown', (e) => {
                 if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
@@ -1123,6 +1327,9 @@
                     downloadSpriteSheet();
                 }
                 if (e.key === ' ') {
+                    // не мешаем вводу в input
+                    const tag = (e.target && e.target.tagName) || '';
+                    if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
                     e.preventDefault();
                     toggleAnimation();
                 }
@@ -1147,14 +1354,16 @@
                 }
             });
 
-            // --- INIT ---
+            // ---- INIT ----
             renderCircles();
             setBackground('transparent');
+            updateSpeedUI();
 
             console.log('🧩 PRO-редактор спрайтов!');
             console.log('🔄 Перетаскивайте кадры — работает!');
             console.log('❌ Крестик удаления — работает!');
             console.log('🎨 Фон меняется под скином');
+            console.log('⚡ Слайдер скорости + копирование SKIN_ANIM_MS');
 
         })();
     </script>
