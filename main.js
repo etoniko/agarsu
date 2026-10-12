@@ -2597,6 +2597,36 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   }
 
   var SKIN_STRIP_MS = 50;
+  var SKIN_NICK_FRAMES = {
+    "cursed": 67,
+  };
+  var skinNickFrameMs = new Map;
+  Object.keys(SKIN_NICK_FRAMES).forEach(nick => {
+    const ms = SKIN_NICK_FRAMES[nick] | 0;
+    const key = normalizeNick(nick);
+    if (key && ms > 0) skinNickFrameMs.set(key, ms);
+  });
+  function skinStripMsForNick(nick) {
+    const key = normalizeNick(String(nick || "").replace(/<[^>]*>/g, ""));
+    const ms = key && skinNickFrameMs.get(key);
+    return ms > 0 ? ms : SKIN_STRIP_MS;
+  }
+  function skinStripMsForElement(el) {
+    if (!el) return SKIN_STRIP_MS;
+    let nick = el.dataset && el.dataset.skinNick || "";
+    if (!nick && el.closest) {
+      const host = el.closest("[data-skin-nick]");
+      if (host) nick = host.getAttribute("data-skin-nick") || "";
+    }
+    return skinStripMsForNick(nick);
+  }
+  function minSkinStripTick() {
+    let min = SKIN_STRIP_MS;
+    skinNickFrameMs.forEach(ms => {
+      if (ms > 0 && ms < min) min = ms;
+    });
+    return min;
+  }
   var DOM_STRIP_SELECTOR = "#skinss,#prevSkin,#nextSkin,.skinswraper,.skkinn img,.rating-home .avatar,.rating-row .avatar,.skins-gallery-card img,.nick-card img.skin,img.chatX_avatar,img.account-level-avatar,.chatX_top_avatar img,.avatarXcontainer img";
   var domStripRaf = 0;
   var lastDomStripTick = 0;
@@ -2608,20 +2638,21 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     var frames = fw > fh ? Math.max(1, Math.floor(fw / fh)) : 1;
     return { isStrip: frames > 1, frames: frames, fw: fw, fh: fh };
   }
-  function getSkinStripFrameIndex(frames, now) {
+  function getSkinStripFrameIndex(frames, now, frameMs) {
     if (!frames || frames <= 1) return 0;
-    return Math.floor((now != null ? now : Date.now()) / SKIN_STRIP_MS) % frames;
+    var ms = frameMs > 0 ? frameMs : SKIN_STRIP_MS;
+    return Math.floor((now != null ? now : Date.now()) / ms) % frames;
   }
-  function getSkinStripSourceRect(img, now) {
+  function getSkinStripSourceRect(img, now, frameMs) {
     var info = getSkinStripInfo(img);
     if (!info.fw || !info.fh) return { sx: 0, sy: 0, sw: 0, sh: 0, frame: 0, frames: 1 };
     if (!info.isStrip) return { sx: 0, sy: 0, sw: info.fw, sh: info.fh, frame: 0, frames: 1 };
-    var frame = getSkinStripFrameIndex(info.frames, now);
+    var frame = getSkinStripFrameIndex(info.frames, now, frameMs);
     return { sx: frame * info.fh, sy: 0, sw: info.fh, sh: info.fh, frame: frame, frames: info.frames };
   }
-  function drawSkinStripImage(ctx, img, dx, dy, dw, dh, now) {
+  function drawSkinStripImage(ctx, img, dx, dy, dw, dh, now, frameMs) {
     if (!ctx || !img) return;
-    var r = getSkinStripSourceRect(img, now);
+    var r = getSkinStripSourceRect(img, now, frameMs);
     if (r.sw <= 0 || r.sh <= 0) return;
     ctx.drawImage(img, r.sx, r.sy, r.sw, r.sh, dx, dy, dw, dh);
   }
@@ -2813,7 +2844,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     if (!(img instanceof Image) || !img.complete || !(img.naturalWidth || img.width)) return;
     var info = getSkinStripInfo(img);
     if (!info.isStrip) { clearDomStripStyles(el); return; }
-    var frame = getSkinStripFrameIndex(info.frames, now);
+    var frame = getSkinStripFrameIndex(info.frames, now, skinStripMsForElement(el));
     if (el.tagName === "IMG") applyImgStrip(el, info.frames, frame);
     else applyBackgroundStrip(el, info.frames, frame);
   }
@@ -2822,7 +2853,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     function loop() {
       domStripRaf = requestAnimationFrame(loop);
       var now = Date.now();
-      if (now - lastDomStripTick < 50) return;
+      if (now - lastDomStripTick < minSkinStripTick()) return;
       lastDomStripTick = now;
       var nodes = document.querySelectorAll(DOM_STRIP_SELECTOR);
       for (var i = 0; i < nodes.length; i++) updateDomSkinStrip(nodes[i], now);
@@ -3789,7 +3820,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       ctx.arc(screenX, screenY, radius, 0, 2 * Math.PI);
       ctx.closePath();
       ctx.clip();
-      drawSkinStripImage(ctx, innerImage, screenX - scaledInnerImageWidth / 2, screenY - scaledInnerImageHeight / 2, scaledInnerImageWidth, scaledInnerImageHeight);
+      drawSkinStripImage(ctx, innerImage, screenX - scaledInnerImageWidth / 2, screenY - scaledInnerImageHeight / 2, scaledInnerImageWidth, scaledInnerImageHeight, void 0, skinStripMsForNick(topPlayerNick));
       ctx.restore();
     }
     ctx.drawImage(centerBackground, screenX - scaledBackgroundWidth / 2, screenY - scaledBackgroundHeight / 2, scaledBackgroundWidth, scaledBackgroundHeight);
@@ -6164,6 +6195,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
               const skinMass = Math.floor(this.size * this.size * .01);
               drawSkinImg = getSkinLodSource(skinImg, pickSkinLodByMass(skinMass), skinId || skinName || skinImg.src);
             }
+            const stripMs = skinStripMsForNick(this.name);
             if (rotation.has(skinName)) {
               if (!this._rot) {
                 this._rot = {
@@ -6194,9 +6226,9 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
               this._rot.current += (this._rot.target - this._rot.current) * .12;
               ctx.translate(this.x, this.y);
               ctx.rotate(this._rot.current);
-              drawSkinStripImage(ctx, drawSkinImg, -sz, -sz, sz * 2, sz * 2);
+              drawSkinStripImage(ctx, drawSkinImg, -sz, -sz, sz * 2, sz * 2, void 0, stripMs);
             } else {
-              drawSkinStripImage(ctx, drawSkinImg, this.x - sz, this.y - sz, sz * 2, sz * 2);
+              drawSkinStripImage(ctx, drawSkinImg, this.x - sz, this.y - sz, sz * 2, sz * 2, void 0, stripMs);
             }
             ctx.restore();
           }
@@ -8097,6 +8129,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       const img = document.createElement("img");
       img.className = "account-level-avatar " + getStarClass(level);
       const skinId = getPlayerSkinId(S, nick);
+      img.dataset.skinNick = nick || "";
       if (options.staticSkin) setSkinAvatarStaticById(img, skinId);
       else setSkinAvatarById(img, skinId);
       img.onerror = () => {
@@ -8136,6 +8169,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       const playerDiv = document.createElement("div");
       playerDiv.classList.add("top-playerwraper");
       playerDiv.setAttribute("title", player.time);
+      playerDiv.dataset.skinNick = player.nick || "";
       const skinUrl = getSkinUrlForNick(S.skinList, player.nick);
       const safeSkinUrl = String(skinUrl).replace(/'/g, "%27");
       playerDiv.innerHTML = `\n        <div>${index + 1}</div>\n        <div>${player.nick}</div>\n        <div>${player.score}</div>\n        <div class="skinswraper" style="background-image:url('${safeSkinUrl}')"></div>\n    `;
@@ -8330,6 +8364,7 @@ function updateRegionOnlineTotals(totals) {
       const pts = Number(points) || 0;
       const row = document.createElement("div");
       row.className = "rating-row " + medal + (passId ? " rating-row--link" : "");
+      row.dataset.skinNick = name || "";
       row.innerHTML = `<div>${index + 1}</div><div>${name || "—"}</div><div class="rating-pts">${pointsLabel(pts)}</div><div class="avatar" style="background-image: url('${skinUrl}');"></div>`;
       if (passId) {
         const profileBase = isClan ? STATS_CLAN_PROFILE_BASE : STATS_PROFILE_BASE;
@@ -8831,6 +8866,7 @@ function updateRegionOnlineTotals(totals) {
       className: "skin skin--empty",
       textContent: label.charAt(0).toUpperCase()
     });
+    avatar.dataset.skinNick = nickPart || cleanNick || "";
     const body = document.createElement("div");
     body.className = "nick-card-body";
     const name = document.createElement("div");
@@ -9875,6 +9911,7 @@ function updateRegionOnlineTotals(totals) {
     avatarContainer.className = "chatX_top_avatar";
     const avatar = document.createElement("img");
     avatar.className = "chatX_avatar_private";
+    avatar.dataset.skinNick = senderName || "";
     setSkinAvatarFromUrl(avatar, senderAvatar || SKIN_FALLBACK_URL);
     avatar.onerror = () => {
       if (!avatar.dataset.fallback) {
@@ -10034,6 +10071,7 @@ function updateRegionOnlineTotals(totals) {
     const avatar = document.createElement("img");
     avatar.className = "chatX_avatar";
     avatar.decoding = "async";
+    avatar.dataset.skinNick = lastMessage.name || "";
     const skinId = S.skinList[normalizedName];
     const _skinHost = S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl;
     const bridgeAvatar = (!skinId && isPetriSkinHost(_skinHost)) ? getPetriSkinUrl(lastMessage.name, _skinHost) : null;
@@ -10133,6 +10171,7 @@ function updateRegionOnlineTotals(totals) {
       if (topAvatarImg) {
         const sid = S.skinList[normalizedName];
         setSkinAvatarFromUrl(topAvatarImg, sid ? getSkinImageUrl(sid) : SKIN_FALLBACK_URL);
+        topAvatarImg.dataset.skinNick = lastMessage.name || "";
         topAvatarImg.title = lastMessage.name || `User ${targetDialogId.replace("!ls", "")}`;
       }
     }
@@ -11521,23 +11560,31 @@ onReady(() => {
       if (currentIndex < 0 || currentIndex >= players.length) currentIndex = 0;
       const currentPlayer = players[currentIndex];
       setBackgroundImageIfChanged(mainSkin, currentPlayer.id);
+      mainSkin.dataset.skinNick = currentPlayer.nick || "";
       setFormNickPass(currentPlayer.nick, currentPlayer.pass || "");
       const prevIndex = (currentIndex - 1 + players.length) % players.length;
       if (previousSkin && players[prevIndex] && players.length > 1) {
         setBackgroundImageIfChanged(previousSkin, players[prevIndex].id);
+        previousSkin.dataset.skinNick = players[prevIndex].nick || "";
       } else if (previousSkin) {
         setBackgroundImageIfChanged(previousSkin, "");
+        previousSkin.dataset.skinNick = "";
       }
       const nextIndex = (currentIndex + 1) % players.length;
       if (nextSkin && players[nextIndex] && players.length > 1) {
         setBackgroundImageIfChanged(nextSkin, players[nextIndex].id);
+        nextSkin.dataset.skinNick = players[nextIndex].nick || "";
       } else if (nextSkin) {
         setBackgroundImageIfChanged(nextSkin, "");
+        nextSkin.dataset.skinNick = "";
       }
     } else {
       setBackgroundImageIfChanged(mainSkin, "");
+      mainSkin.dataset.skinNick = "";
       setBackgroundImageIfChanged(previousSkin, "");
+      if (previousSkin) previousSkin.dataset.skinNick = "";
       setBackgroundImageIfChanged(nextSkin, "");
+      if (nextSkin) nextSkin.dataset.skinNick = "";
     }
   }
   function showNext() {
