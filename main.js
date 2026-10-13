@@ -8404,8 +8404,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   /** Official agar.su servers: id ↔ host. All scripts resolve from here. */
   var OFFICIAL_SERVERS = [
     { id: "ffa", host: "ffa.agar.su", wins: false },
-    { id: "ultra", host: "ms.agar.su:443", wins: false },
-    { id: "ms", host: "ms.agar.su:6001", wins: false },
+    { id: "ms", host: "ms.agar.su:443", wins: false },
     { id: "pvp1", host: "ms.agar.su:6004", wins: true },
     { id: "pvp2", host: "ms.agar.su:6005", wins: true },
     { id: "tournament", host: "ms.agar.su:6002", wins: true },
@@ -8433,7 +8432,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       if (host.includes(s.host)) return s.id;
     }
     if (host.includes("ffa.agar.su")) return "ffa";
-    if (host.includes("ms.agar.su:6001") || host === "ms.agar.su" || host.startsWith("ms.agar.su/")) return "ms";
+    if (host === "ms.agar.su" || host === "ms.agar.su:443" || host.startsWith("ms.agar.su/")) return "ms";
     return null;
   }
 
