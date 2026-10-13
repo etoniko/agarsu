@@ -8419,9 +8419,9 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
 
   function usesShortXY(value) {
     const host = String(value || "").toLowerCase().replace(/^wss?:\/\//, "").split(/[/?#]/)[0];
-    if (host === "ms.agar.su" || host === "ms.agar.su:443") return true;
-    // All ultra mode ports share the short food/eject/virus/player wire
-    return /^ms\.agar\.su:(600[1-6]|443)$/.test(host);
+    // ffa and every ms port send the compact cell/leaderboard wire
+    if (host === "ffa.agar.su" || host === "ms.agar.su" || host === "ms.agar.su:443") return true;
+    return /^ms\.agar\.su:(600[1-6]|443)$/.test(host) || /^ffa\.agar\.su(?::\d+)?$/.test(host);
   }
   function resolveOfficialServerId(connectionUrl) {
     const host = String(connectionUrl || "").toLowerCase().replace(/^wss?:\/\//, "");
