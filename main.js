@@ -5416,23 +5416,24 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         node.teamSide = 0;
       }
       const EJECT_BASE = 65536;
+      const EJECT_SIZE = 35;
       for (let raw; raw = reader.uint16(); ) {
         const withXY = (raw & 0x8000) !== 0;
         const slot = raw & 0x7fff;
         const nodeid = EJECT_BASE + slot;
-        let posX = 0;
-        let posY = 0;
-        if (withXY) {
-          posX = reader.int16();
-          posY = reader.int16();
+        let node = S.nodes[nodeid];
+        // Пока комок в обзоре, сервер шлёт только 2 байта id. x/y/цвет живут в кэше клетки.
+        // Вышел из обзора — id приходит в хвосте remove, destroy() снимает кэш.
+        if (!withXY) {
+          if (node) node.updateTime = S.timestamp;
+          continue;
         }
+        const posX = reader.int16();
+        const posY = reader.int16();
         const r = reader.uint8();
         const g = reader.uint8();
         const b = reader.uint8();
-        const size = 35;
         const color = "#" + (r << 16 | g << 8 | b).toString(16).padStart(6, "0");
-        let node = S.nodes[nodeid];
-        if (!withXY && !node) continue;
         if (node) {
           node.updatePos();
           node.ox = node.x;
@@ -5440,7 +5441,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
           node.oSize = node.size;
           node.color = color;
         } else {
-          node = new Cell2(nodeid, posX, posY, size, color, "");
+          node = new Cell2(nodeid, posX, posY, EJECT_SIZE, color, "");
           S.nodelist.push(node);
           S.nodes[nodeid] = node;
           node.ka = posX;
@@ -5450,11 +5451,9 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         node.isEjected = true;
         node.isAgitated = false;
         node.isFood = false;
-        if (withXY) {
-          node.nx = posX;
-          node.ny = posY;
-        }
-        node.setSize(size);
+        node.nx = posX;
+        node.ny = posY;
+        node.setSize(EJECT_SIZE);
         node.updateTime = S.timestamp;
         node.flag = 0;
         node.teamSide = 0;
