@@ -4878,6 +4878,41 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         S.ws.send(view.buffer);
       } catch (e) {}
     }
+    function isRandomColorChoice(hex) {
+      return !hex || hex === "random" || hex === "#ffffff" || hex === "#FFFFFF";
+    }
+    function paletteColorId(hex) {
+      const colors = S.cellColors || CELL_COLORS;
+      const want = String(hex || "").toLowerCase();
+      const index = colors.findIndex(c => String(c).toLowerCase() === want);
+      return index === -1 ? 0 : index + 1;
+    }
+    function rollRandomPlayColor() {
+      const saved = localStorage.getItem("selectedColor");
+      if (!isRandomColorChoice(saved)) {
+        S.randomColorHex = null;
+        return;
+      }
+      if (S.playerCells && S.playerCells.length > 0) {
+        if (!S.randomColorHex) {
+          const current = S.playerCells[0] && S.playerCells[0].color;
+          if (current && paletteColorId(current) > 0) S.randomColorHex = current;
+        }
+        return;
+      }
+      const colors = S.cellColors || CELL_COLORS;
+      S.randomColorHex = colors[(Math.random() * colors.length) | 0];
+    }
+    function nickColorId() {
+      const saved = localStorage.getItem("selectedColor");
+      if (!isRandomColorChoice(saved)) return getColorId(saved);
+      if (!S.randomColorHex) {
+        const colors = S.cellColors || CELL_COLORS;
+        S.randomColorHex = colors[(Math.random() * colors.length) | 0];
+      }
+      const id = paletteColorId(S.randomColorHex);
+      return id > 0 ? id : getColorId(saved);
+    }
     function getColorId(hex) {
       if (!hex || hex === "random" || hex === "#ffffff" || hex === "#FFFFFF") return 0;
       const colors = S.cellColors;
@@ -4960,7 +4995,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       const nick = S.userNickName;
       const msg = prepareData(1 + 2 * nick.length + 1);
       msg.setUint8(0, ClientOpcode.NICK);
-      msg.setUint8(1, getColorId(localStorage.getItem("selectedColor")));
+      msg.setUint8(1, nickColorId());
       for (let i = 0; i < nick.length; ++i) {
         msg.setUint16(1 + 2 * i + 1, nick.charCodeAt(i), true);
       }
@@ -11578,6 +11613,7 @@ function initServers(S) {
       }
     };
     wHandle.setNick = function(arg) {
+      rollRandomPlayColor();
       wHandle.setserver(S.SELECTED_SERVER);
       hideGameOverlays();
       S.userNickName = arg;
