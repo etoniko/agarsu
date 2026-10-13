@@ -4957,12 +4957,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     }
     function sendNickName() {
       if (!wsIsOpen() || S.userNickName == null) return;
-      let nick = S.userNickName;
-      // EU/TR and foreign protocols: bare nick only. The play packet itself is still sent.
-      if (!isOfficialGameServer(S.CONNECTION_URL)) {
-        nick = String(nick || "").split("#")[0].split(":::::")[0].replace(/<[^>]*>/g, "").trim().slice(0, 15);
-        if (!nick) nick = "agar.su";
-      }
+      const nick = S.userNickName;
       const msg = prepareData(1 + 2 * nick.length + 1);
       msg.setUint8(0, ClientOpcode.NICK);
       msg.setUint8(1, getColorId(localStorage.getItem("selectedColor")));
@@ -7651,7 +7646,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
           const delta = currentDistance - S.pinchZoomStartDistance;
           const zoomFactor = 1 + delta / 300;
           S.zoom *= zoomFactor;
-          if (S.zoom < .3) S.zoom = .3;
+          if (S.zoom < SPECTATE_MIN_ZOOM) S.zoom = SPECTATE_MIN_ZOOM;
           if (S.zoom > 4 / S.viewZoom) S.zoom = 4 / S.viewZoom;
           S.pinchZoomStartDistance = currentDistance;
         }
@@ -8350,7 +8345,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   /** Official agar.su servers: id ↔ host. All scripts resolve from here. */
   var OFFICIAL_SERVERS = [
     { id: "ffa", host: "ffa.agar.su", wins: false },
-    { id: "ms", host: "ms.agar.su:443", wins: false },
+    { id: "ms", host: "ms.agar.su:6001", wins: false },
     { id: "pvp1", host: "ms.agar.su:6004", wins: true },
     { id: "pvp2", host: "ms.agar.su:6005", wins: true },
     { id: "tournament", host: "ms.agar.su:6002", wins: true },
@@ -8375,7 +8370,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       if (host.includes(s.host)) return s.id;
     }
     if (host.includes("ffa.agar.su")) return "ffa";
-    if (host === "ms.agar.su" || host === "ms.agar.su:443" || host.startsWith("ms.agar.su/")) return "ms";
+    if (host.includes("ms.agar.su:6001") || host === "ms.agar.su" || host.startsWith("ms.agar.su/")) return "ms";
     return null;
   }
 
