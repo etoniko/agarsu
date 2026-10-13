@@ -1840,7 +1840,7 @@ body{font-family:'Roboto', sans-serif;display:flex;height:100%;width:100%;color:
 .input-container input{box-sizing:border-box;outline:none;}
 input{font-size:16px;}
 #nick{width: 100%;outline:none;border: 0px;height:30px;padding-left:8px;border-radius: 20px;}
-#pass{top:0;right:0;width: 80px;border: 0px;height:30px;padding-left:5px;outline: none;border-left: 1px solid rgb(204, 204, 204);}
+#pass{display:none;top:0;right:0;width: 80px;border: 0px;height:30px;padding-left:5px;outline: none;border-left: 1px solid rgb(204, 204, 204);}
 .selectedIcon{width: 30px;min-width: 30px;border-left: 1px solid rgb(204, 204, 204);height: 30px;display: flex;justify-content: center;align-items: center;position: relative;}
 #selectedColor{width: 12px;height: 12px;cursor: pointer;border-radius: 50%;border: none;outline: none;box-shadow: 0 0 0 1px #0002;background: #ffffff;}
 .from-send{display: flex;width: 230px;background: white;margin-top: 10px;align-items: center;border-radius: 20px;position: relative;}
