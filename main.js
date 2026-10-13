@@ -9051,7 +9051,7 @@ function updateRegionOnlineTotals(totals) {
     };
     wHandle.startGame = function() {
       let nickInput = document.getElementById("nick").value.trim();
-      let passInput = document.getElementById("pass").value.trim();
+      let passInput = document.getElementById("pass").value;
       const forbiddenRegex = new RegExp(FORBIDDEN_NICK_CHARS.join("|"), "g");
       nickInput = nickInput.replace(forbiddenRegex, "");
       nickInput = hooks.censorMessage(nickInput);
@@ -9060,7 +9060,7 @@ function updateRegionOnlineTotals(totals) {
       if (passInput.length > 8) passInput = passInput.substring(0, 8);
       const nickEl = document.getElementById("nick");
       if (nickEl && !String(nickEl.value || "").trim()) nickEl.value = nickInput;
-      hooks.setNick(passInput ? nickInput + "#" + passInput : nickInput);
+      hooks.setNick(nickInput + "#" + passInput);
     };
     wHandle.coord = function() {
       if (S.canSendCoord) {
@@ -13526,7 +13526,14 @@ onReady(() => {
       if (nick) setCookie2("userNick", nick, 7); else setCookie2("userNick", "", -1);
       if (pass) setCookie2("userPass", pass, 7); else setCookie2("userPass", "", -1);
     }
-    function checkNickStatus() {}
+    function checkNickStatus(nick) {
+      const normalized = normalizeNick(nick);
+      if (allowedNicks.includes(normalized)) {
+        passInput.style.display = "block";
+      } else {
+        passInput.style.display = "none";
+      }
+    }
     window.__agarsuCheckNickStatus = checkNickStatus;
     window.__agarsuSyncNickPassCookies = syncNickPassCookies;
     loadPassData().then(data => {
@@ -13554,7 +13561,9 @@ onReady(() => {
         setCookie2("userNick", currentNick, 7);
       } else {
         setCookie2("userNick", "", -1);
+        passInput.style.display = "none";
       }
+      checkNickStatus(currentNick);
     });
     passInput.addEventListener("input", () => {
       const currentPass = passInput.value.trim();
