@@ -5071,7 +5071,8 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       sendAccountToken,
       sendAdminPanel,
       sendSticker,
-      getColorId
+      getColorId,
+      rollRandomPlayColor
     };
   }
   function attachOutbound(S, hooks = {}) {
@@ -11613,7 +11614,7 @@ function initServers(S) {
       }
     };
     wHandle.setNick = function(arg) {
-      rollRandomPlayColor();
+      outbound.rollRandomPlayColor();
       wHandle.setserver(S.SELECTED_SERVER);
       hideGameOverlays();
       S.userNickName = arg;
