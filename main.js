@@ -3738,7 +3738,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   /** One beginPath + many arcs + one fill per food color (cheaper than per-pellet fill). */
   function drawBatchedFood(ctx, S) {
     const list = S.nodelist;
-    if (!list || !list.length) return 0;
+    if (!S.mapBoundsReady || !list || !list.length) return 0;
     const byColor = new Map();
     let drawn = 0;
     const frameId = S.frameId;
