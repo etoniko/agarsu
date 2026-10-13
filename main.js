@@ -5338,7 +5338,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   }
   function updateNodes(S, reader, hooks) {
     const {Cell: Cell2, onPlayerDeath} = hooks;
-    const shortXY = usesShortXY(S.currentWebSocketUrl || S.wsUrl || S.CONNECTION_URL || S.SELECTED_SERVER);
     S.timestamp = Date.now();
     S.ua = false;
     S.nodesSortDirty = true;
@@ -5356,8 +5355,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         killedNode.updateTime = S.timestamp;
       }
     }
-    if (shortXY) {
-      for (let foodId; foodId = reader.uint16(); ) {
+    for (let foodId; foodId = reader.uint16(); ) {
         const foodPos = computeFoodPosition(S, foodId);
         const paint = foodPaint(foodId);
         const size = computeFoodSize(S, foodId);
@@ -5471,7 +5469,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         node.flag = 1;
         node.teamSide = 0;
       }
-    }
     for (;;) {
       const idWire = reader.uint32();
       if (!idWire) break;
@@ -5492,67 +5489,31 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       let packetName = "";
       let stickerFromUpdate = null;
       let food = false;
-      let player = false;
-      if (shortXY) {
-        const full = (idWire & 0x80000000) !== 0;
-        nodeid = idWire & 0x7fffffff;
-        player = true;
-        if (full) {
-          const pidWire = reader.uint32();
-          const hasName = (pidWire & 0x80000000) !== 0;
-          playerId = pidWire & 0x7fffffff;
-          posX = reader.int16();
-          posY = reader.int16();
-          size = reader.uint16();
-          if (hasName) {
-            r = reader.uint8();
-            g = reader.uint8();
-            b = reader.uint8();
-            color = "#" + (r << 16 | g << 8 | b).toString(16).padStart(6, "0");
-            colorProvided = true;
-            packetName = reader.utf8();
-          }
-        } else {
-          posX = reader.int16();
-          posY = reader.int16();
-          size = reader.uint16();
-          const known = S.nodes[nodeid];
-          if (!known) continue;
-          playerId = known.playerId || 0;
+      let player = true;
+      const full = (idWire & 0x80000000) !== 0;
+      nodeid = idWire & 0x7fffffff;
+      if (full) {
+        const pidWire = reader.uint32();
+        const hasName = (pidWire & 0x80000000) !== 0;
+        playerId = pidWire & 0x7fffffff;
+        posX = reader.int16();
+        posY = reader.int16();
+        size = reader.uint16();
+        if (hasName) {
+          r = reader.uint8();
+          g = reader.uint8();
+          b = reader.uint8();
+          color = "#" + (r << 16 | g << 8 | b).toString(16).padStart(6, "0");
+          colorProvided = true;
+          packetName = reader.utf8();
         }
       } else {
-        const type = reader.uint8();
-        food = type === 1 || type === 4;
-        player = type === 0;
-        if (food) {
-          const foodPos = computeFoodPosition(S, nodeid);
-          posX = foodPos.x;
-          posY = foodPos.y;
-          size = computeFoodSize(S, nodeid);
-        } else {
-          if (player) playerId = reader.uint32();
-          posX = reader.int32();
-          posY = reader.int32();
-          size = reader.uint16();
-        }
-        r = reader.uint8();
-        g = reader.uint8();
-        b = reader.uint8();
-        color = "#" + (r << 16 | g << 8 | b).toString(16).padStart(6, "0");
-        colorProvided = true;
-        spiked = reader.uint8();
-        flagVirus = !!(spiked & 1);
-        flagEjected = !!(spiked & 32) || !!(spiked & 64);
-        flagAgitated = !!(spiked & 16);
-        packetName = reader.utf8();
-        if (reader.canRead) {
-          const marker = reader.uint8();
-          if (marker === 255) {
-            stickerFromUpdate = reader.uint8() || null;
-          } else if (marker === 0) {
-            stickerFromUpdate = false;
-          }
-        }
+        posX = reader.int16();
+        posY = reader.int16();
+        size = reader.uint16();
+        const known = S.nodes[nodeid];
+        if (!known) continue;
+        playerId = known.playerId || 0;
       }
       const pid = player && playerId ? playerId >>> 0 : 0;
       let resolvedName = packetName || "";
@@ -5782,53 +5743,38 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
           const LBplayerNum = msg.getUint32(offset, true);
           offset += 4;
           S.leaderBoard = [];
-          const shortLb = usesShortXY(S.currentWebSocketUrl || S.wsUrl || S.CONNECTION_URL || S.SELECTED_SERVER);
           if (!S.lbByPid) S.lbByPid = Object.create(null);
           for (let i = 0; i < LBplayerNum; ++i) {
-            if (shortLb) {
-              const pidWire = msg.getUint32(offset, true);
+            const pidWire = msg.getUint32(offset, true);
+            offset += 4;
+            const hasInfo = (pidWire & 0x80000000) !== 0;
+            const pid = pidWire & 0x7fffffff;
+            let playerName = "";
+            let playerXp = 0;
+            if (hasInfo) {
+              playerXp = msg.getUint32(offset, true);
               offset += 4;
-              const hasInfo = (pidWire & 0x80000000) !== 0;
-              const pid = pidWire & 0x7fffffff;
-              let playerName = "";
-              let playerXp = 0;
-              if (hasInfo) {
-                playerXp = msg.getUint32(offset, true);
-                offset += 4;
-                const nameBytes = [];
-                while (offset < msg.byteLength) {
-                  const b = msg.getUint8(offset++);
-                  if (!b) break;
-                  nameBytes.push(b);
-                }
-                playerName = nameBytes.length ? new TextDecoder("utf-8").decode(new Uint8Array(nameBytes)) : "";
-                S.lbByPid[pid] = { name: playerName, xp: playerXp };
-              } else {
-                const cached = S.lbByPid[pid];
-                if (cached) {
-                  playerName = cached.name;
-                  playerXp = cached.xp;
-                }
+              const nameBytes = [];
+              while (offset < msg.byteLength) {
+                const b = msg.getUint8(offset++);
+                if (!b) break;
+                nameBytes.push(b);
               }
-              S.leaderBoard.push({
-                id: pid,
-                name: playerName,
-                level: playerXp ? (_e = (_d = hooks.getLevel) == null ? void 0 : _d.call(hooks, playerXp)) != null ? _e : -1 : -1,
-                xp: playerXp
-              });
+              playerName = nameBytes.length ? new TextDecoder("utf-8").decode(new Uint8Array(nameBytes)) : "";
+              S.lbByPid[pid] = { name: playerName, xp: playerXp };
             } else {
-              const nodeId = msg.getUint32(offset, true);
-              offset += 4;
-              const playerName = getString();
-              const playerXp = msg.getUint32(offset, true);
-              offset += 4;
-              S.leaderBoard.push({
-                id: nodeId,
-                name: playerName,
-                level: playerXp ? (_e = (_d = hooks.getLevel) == null ? void 0 : _d.call(hooks, playerXp)) != null ? _e : -1 : -1,
-                xp: playerXp
-              });
+              const cached = S.lbByPid[pid];
+              if (cached) {
+                playerName = cached.name;
+                playerXp = cached.xp;
+              }
             }
+            S.leaderBoard.push({
+              id: pid,
+              name: playerName,
+              level: playerXp ? (_e = (_d = hooks.getLevel) == null ? void 0 : _d.call(hooks, playerXp)) != null ? _e : -1 : -1,
+              xp: playerXp
+            });
           }
           (_f = hooks.drawLeaderBoard) == null ? void 0 : _f.call(hooks);
           break;
@@ -8417,11 +8363,8 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   );
   var OFFICIAL_BY_ID = Object.fromEntries(OFFICIAL_SERVERS.map(s => [s.id, s]));
 
-  function usesShortXY(value) {
-    const host = String(value || "").toLowerCase().replace(/^wss?:\/\//, "").split(/[/?#]/)[0];
-    // ffa and every ms port send the compact cell/leaderboard wire
-    if (host === "ffa.agar.su" || host === "ms.agar.su" || host === "ms.agar.su:443") return true;
-    return /^ms\.agar\.su:(600[1-6]|443)$/.test(host) || /^ffa\.agar\.su(?::\d+)?$/.test(host);
+  function usesShortXY() {
+    return true;
   }
   function resolveOfficialServerId(connectionUrl) {
     const host = String(connectionUrl || "").toLowerCase().replace(/^wss?:\/\//, "");
