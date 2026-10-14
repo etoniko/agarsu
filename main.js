@@ -5425,7 +5425,13 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         // Пока комок в обзоре, сервер шлёт только 2 байта id. x/y/цвет живут в кэше клетки.
         // Вышел из обзора — id приходит в хвосте remove, destroy() снимает кэш.
         if (!withXY) {
-          if (node) node.updateTime = S.timestamp;
+          if (node) {
+            node.updatePos();
+            node.ox = node.x;
+            node.oy = node.y;
+            node.oSize = node.size;
+            node.updateTime = S.timestamp;
+          }
           continue;
         }
         const posX = reader.int16();
@@ -5529,14 +5535,12 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         posX = reader.int16();
         posY = reader.int16();
         size = reader.uint16();
-        if (hasName) {
-          r = reader.uint8();
-          g = reader.uint8();
-          b = reader.uint8();
-          color = "#" + (r << 16 | g << 8 | b).toString(16).padStart(6, "0");
-          colorProvided = true;
-          packetName = reader.utf8();
-        }
+        r = reader.uint8();
+        g = reader.uint8();
+        b = reader.uint8();
+        color = "#" + (r << 16 | g << 8 | b).toString(16).padStart(6, "0");
+        colorProvided = true;
+        if (hasName) packetName = reader.utf8();
       } else {
         posX = reader.int16();
         posY = reader.int16();
@@ -5596,9 +5600,11 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       node.updateTime = S.timestamp;
       node.flag = spiked;
       node.teamSide = (spiked & 2) ? 1 : (spiked & 4) ? 2 : (spiked & 8) ? 3 : (spiked & 128) ? 4 : 0;
-      if (pid && packetName) {
+      if (pid && colorProvided) {
         rememberPlayerColor(S, pid, color);
         applyPlayerColorToCells(S, pid, color);
+      }
+      if (pid && packetName) {
         if (rememberPlayerNick(S, pid, packetName)) applyPlayerNickToCells(S, pid, packetName);
         else if (node.name !== packetName) node.setName(packetName);
       } else if (resolvedName && node.name !== resolvedName) {
