@@ -2107,7 +2107,9 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   }
   var activeRegion = null;
   function getDefaultRegion() {
-    return "ru";
+    try { let saved = localStorage.getItem("agar_region"); if (saved === "nl") saved = "tr"; if (saved && REGION_CONFIGS[saved]) return saved; } catch (e) {}
+    const browserLanguage = String((navigator && (navigator.language || navigator.userLanguage)) || "").toLowerCase();
+    return browserLanguage.startsWith("ru") ? "ru" : "tr";
   }
   function findGameServer(hostOrUrl) {
     if (!hostOrUrl) return null;
@@ -2123,25 +2125,19 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     }
     // Fallback by port/path when list miss
     if (/:6013\b|sixz\.ru:6013/i.test(host)) return "tr";
-    // hardcore (6017) stays RU; SelFeed/darctida → EU
-    if (/sixz\.ru:6017|:6017\b|\/hc\b/i.test(host)) return "ru";
-    if (/:6014\b|:6015\b|xn--bdk\.pw|arctida\.delt\.io|\/darctida\b|\/d(?:ffa|rookery)/i.test(host)) return "eu";
+    // hardcore (6017) + darctida live under RU list in HTML
+    if (/sixz\.ru:6017|:6017\b|\/hc\b|\/darctida\b/i.test(host)) return "ru";
+    if (/:6014\b|:6015\b|xn--bdk\.pw|\/d(?:ffa|rookery)/i.test(host)) return "eu";
     return null;
   }
-  function isOfficialGameServer(hostOrUrl) {
-    const host = String(hostOrUrl || "");
-    if (!host) return false;
-    const h = host.replace(/^wss?:\/\//i, "").split(/[/?#]/)[0].toLowerCase();
-    return /(^|\.)agar\.su(?::\d+)?$/.test(h);
-  }
-  if (typeof window !== "undefined") window.isOfficialGameServer = isOfficialGameServer;
   function isForeignStyleHost(host) {
-    return /:6017\b|\/hc\b/i.test(String(host || ""));
+    if (window.MultiProtocols && !window.MultiProtocols.isOfficial(host)) return true;
+    return /:6014\b|:6015\b|:6017\b|xn--bdk\.pw|sixz\.ru:6017|\/darctida\b|\/hc\b/i.test(String(host || ""));
   }
   /**
    * EN(EU) + TR servers: mass as 1.2k / 1,2k.
    * Quantized so the label does not rebuild every tick (less GPU/text load).
-   * hardcore stays RU; darctida/EU keep foreign mass style by host.
+   * hardcore/darctida stay on RU tab but keep foreign mass style by host.
    */
   function formatMassLabel(mass, regionKey, host) {
     const h = String(host || "");
@@ -2158,7 +2154,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     m = Math.round(m / 10) * 10;
     return String(m);
   }
-  /** TR / EU(EN): lighter Arial labels, no black outline (incl. hardcore/SelFeed by host) */
+  /** TR / EU(EN): lighter Arial labels, no black outline (incl. hardcore/darctida by host) */
   function isLightLabelRegion(regionKey, host) {
     return regionKey === "tr" || regionKey === "eu" || regionKey === "en" || isForeignStyleHost(host);
   }
@@ -2943,6 +2939,9 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
    */
   function isLimitGlowDisabledHost(host) {
     const h = String(host || "");
+    if (window.MultiProtocols && !window.MultiProtocols.isOfficial(h)) return true;
+    if (/:6013\b|sixz\.ru:6013/i.test(h)) return true; // Turkey
+    if (/:6014\b|:6015\b|:6017\b|xn--bdk\.pw|\/d(?:ffa|rookery|arctida)/i.test(h)) return true; // Europe
     return false;
   }
   function getLimitGlowMassBounds(host) {
@@ -2961,46 +2960,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   }
   /** Bridge skins via unified xn--bdk.pw skinsbot. skinlist.txt still wins (agar.su only). */
   var SKINS_BOT_BASE = "https://xn--bdk.pw:6016";
-  const SPECTATE_DEFAULT_ZOOM = 0.1;
-  const SPECTATE_MIN_ZOOM = 0.04;
-  const DEFAULT_GAME_ZOOM = 0.8;
-  function resetGameZoom(S) {
-    if (!S) return;
-    S.zoom = DEFAULT_GAME_ZOOM;
-    S.spectateDefaultZoomPending = false;
-    S.spectateZoomUserSet = false;
-    S.spectateZoomAnimating = false;
-  }
-  function armSpectateDefaultZoom(S) {
-    if (!S) return;
-    S.spectateDefaultZoomPending = true;
-    S.spectateZoomUserSet = false;
-    S.spectateZoomAnimating = false;
-    // В игре posSize = viewZoom. После смерти формула posSize*viewRange снова
-    // умножает на zoom → камера сама уезжает. Нормализуем, чтобы кадр остался как был.
-    const vr = viewRange(S);
-    if (vr > 1e-6) S.posSize = S.viewZoom / vr;
-    else S.posSize = S.viewZoom;
-  }
-  /** Плавный уход к SPECTATE_DEFAULT_ZOOM (без умножения на старый zoom). */
-  function startSpectateDefaultZoom(S) {
-    if (!S || S.playerCells.length) return;
-    S.zoom = SPECTATE_DEFAULT_ZOOM;
-    S.posSize = 1;
-    S.spectateDefaultZoomPending = false;
-    S.spectateZoomUserSet = false;
-    S.spectateZoomAnimating = true;
-  }
-  function applySpectateDefaultZoomIfPending(S) {
-    if (!S || S.playerCells.length) return;
-    if (!S.spectateDefaultZoomPending || S.spectateZoomUserSet) return;
-    startSpectateDefaultZoom(S);
-  }
-  /** Вход в наблюдение / connect: плавно к 0.2. */
-  function enterSpectateDefaultZoom(S) {
-    if (!S || S.playerCells.length) return;
-    startSpectateDefaultZoom(S);
-  }
   function applyServerSpectateCamera(S, x, y, size) {
     // Playing own cells — never let server spectate camera override
     if (S.playerCells && S.playerCells.length > 0) return;
@@ -3618,10 +3577,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     S.frameId = (S.frameId || 0) + 1;
     S.timestamp = Date.now();
     const playerCount = S.playerCells.length;
-      if (playerCount > 0) {
-      S.spectateDefaultZoomPending = false;
-      S.spectateZoomUserSet = false;
-      S.spectateZoomAnimating = false;
+    if (playerCount > 0) {
       if (S.spectateFollowNick || S.spectateFollowPid || S._spectateFollowTimer) {
         clearSpectateFollow(S);
       }
@@ -3662,16 +3618,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       }
       S.nodeX = (29 * S.nodeX + S.posX) / 30;
       S.nodeY = (29 * S.nodeY + S.posY) / 30;
-      if (S.spectateZoomAnimating && !S.spectateZoomUserSet) {
-        const target = S.posSize * viewRange(S);
-        S.viewZoom = (19 * S.viewZoom + target) / 20;
-        if (Math.abs(S.viewZoom - target) < 0.002) {
-          S.viewZoom = target;
-          S.spectateZoomAnimating = false;
-        }
-      } else if (!(S.spectateDefaultZoomPending && !S.spectateZoomUserSet)) {
-        S.viewZoom = (9 * S.viewZoom + S.posSize * viewRange(S)) / 10;
-      }
+      S.viewZoom = (9 * S.viewZoom + S.posSize * viewRange(S)) / 10;
     }
     buildQTree();
     mouseCoordinateChange(S);
@@ -3738,7 +3685,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   /** One beginPath + many arcs + one fill per food color (cheaper than per-pellet fill). */
   function drawBatchedFood(ctx, S) {
     const list = S.nodelist;
-    if (!S.mapBoundsReady || !list || !list.length) return 0;
+    if (!list || !list.length) return 0;
     const byColor = new Map();
     let drawn = 0;
     const frameId = S.frameId;
@@ -4234,20 +4181,14 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     const displayedPlayers = 10;
     let myRank = null;
     if (!((_a = S.leaderBoard) == null ? void 0 : _a.length)) return;
-    const isUnofficial = false;
+    const isUnofficial = window.MultiProtocols && !window.MultiProtocols.isOfficial(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl);
     for (let b = 0; b < S.leaderBoard.length; ++b) {
       let name = formatLeaderBoardName(S, S.leaderBoard[b].name || "Игрок");
       const level = S.leaderBoard[b].level;
       const isSystemLine = S.leaderBoard[b].id == null;
       let isMe = false;
-      const shortLb = usesShortXY(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl);
       if (!isSystemLine && !isUnofficial) {
-        if (shortLb) {
-          const pid = S.leaderBoard[b].id >>> 0;
-          isMe = (S.ownerPlayerId >>> 0) === pid || S.playerCells.some(cell => (cell.playerId >>> 0) === pid);
-        } else {
-          isMe = S.playerCells.some(cell => cell.id === S.leaderBoard[b].id);
-        }
+        isMe = S.playerCells.some(cell => cell.id === S.leaderBoard[b].id);
       }
       // Unofficial servers: LB id doesn't map to our cell id — match by nick.
       if ((S.noRanking || isUnofficial) && S.leaderBoard[b].name) {
@@ -4257,10 +4198,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         }
       }
       if (isMe) {
-        const pid = S.leaderBoard[b].id;
-        const myCell = shortLb
-          ? S.playerCells.find(cell => (cell.playerId >>> 0) === (pid >>> 0))
-          : S.playerCells.find(cell => cell.id === pid);
+        const myCell = S.playerCells.find(cell => cell.id === S.leaderBoard[b].id);
         const myCellName = myCell ? myCell.name : (S.playerCells[0] ? S.playerCells[0].name : "");
         if (myCellName) name = formatLeaderBoardName(S, myCellName);
         myRank = b + 1;
@@ -4404,8 +4342,9 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   }
   function openGameSocket(wsUrl, {accountToken, connectToken} = {}) {
     const qs = new URLSearchParams;
-    // Security: unofficial (EU/TR) must never receive agar.su accountToken / PoW.
-    const official = isOfficialGameServer(wsUrl);
+    // Security: unofficial game servers (agarz / delta / agarlive) must never
+    // receive the agar.su account token or PoW connect token.
+    const official = !window.MultiProtocols || window.MultiProtocols.isOfficial(wsUrl);
     if (official) {
       if (accountToken) qs.set("accountToken", accountToken);
       if (connectToken) qs.set("connectToken", connectToken);
@@ -4605,8 +4544,8 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       try {
         let connectToken = null;
         // PoW challenge (connectToken) is an agar.su-only flow — skip for unofficial
-        // Europe/Turkey servers to avoid a pointless 3.5s /challenge probe.
-        const officialHost = isOfficialGameServer(host);
+        // upstream servers to avoid a pointless 3.5s /challenge probe.
+        const officialHost = !window.MultiProtocols || window.MultiProtocols.isOfficial(host);
         if (officialHost) {
           try {
             connectToken = await fetchConnectToken2(host);
@@ -4622,8 +4561,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
           }
         }
         if (attemptId !== S.connectAttemptId) return;
-        // Unofficial EU/TR: no PoW. Do not abort the socket — MultiProtocols still has to send play packets.
-        if (officialHost && serverPowSupportCache.get(getPowApiBase(host)) === true && !connectToken) {
+        if (serverPowSupportCache.get(getPowApiBase(host)) === true && !connectToken) {
           if (isSpectMode()) {
             scheduleSpectReconnect();
           } else {
@@ -4638,12 +4576,41 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
           accountToken: getAccountToken() || null,
           connectToken: connectToken || null
         });
-        S.multiProto = null;
+
+        // Multiprotocol: detect upstream protocol from host and route traffic
+        // through the matching adapter (agarz / delta / agarlive). Original
+        // agar.su stays pass-through.
+        const mp = (window.MultiProtocols && S.CONNECTION_URL)
+          ? window.MultiProtocols.createEngine(S.CONNECTION_URL)
+          : null;
+        S.multiProto = mp;
+        S._rawWsSend = S.ws.send.bind(S.ws);
+
+        if (mp && !mp.isPassthrough) {
+          S.ws.send = (data) => {
+            let u8 = null;
+            if (data instanceof ArrayBuffer) u8 = new Uint8Array(data);
+            else if (ArrayBuffer.isView(data)) u8 = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+            if (!u8) { S._rawWsSend(data); return; }
+            const outs = mp.encodeClientPacket(u8);
+            for (let i = 0; i < outs.length; i++) S._rawWsSend(outs[i].buffer);
+          };
+        }
 
         S.ws.onopen = onWsOpen;
         S.ws.onmessage = msg => {
           var _a2;
-          (_a2 = hooks.onMessage) == null ? void 0 : _a2.call(hooks, new DataView(msg.data));
+          if (mp && !mp.isPassthrough) {
+            const u8 = new Uint8Array(msg.data);
+            const pkts = mp.decodeServerPacket(u8);
+            if (pkts == null) return;
+            for (let i = 0; i < pkts.length; i++) {
+              const p = pkts[i];
+              (_a2 = hooks.onMessage) == null ? void 0 : _a2.call(hooks, new DataView(p.buffer, p.byteOffset, p.byteLength));
+            }
+          } else {
+            (_a2 = hooks.onMessage) == null ? void 0 : _a2.call(hooks, new DataView(msg.data));
+          }
         };
         S.ws.onclose = onWsClose;
       } catch (err) {
@@ -4676,6 +4643,11 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       const [p, key] = encodeHandshake();
       wsSend(p);
       wsSend(key);
+      // Non-agar.su protocols need their own native handshake (agarz BEGIN,
+      // delta 254/255/241, agarlive 254/255).
+      if (S.multiProto && !S.multiProto.isPassthrough && S._rawWsSend) {
+        S.multiProto.onOpen({ send: S._rawWsSend });
+      }
     }
     function onGameHandshakeReady() {
       var _a, _b;
@@ -4689,7 +4661,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       (_a = hooks.sendNickName) == null ? void 0 : _a.call(hooks);
       // Button «Наблюдать» sets userNickName=null — must enter spectate (not only ?spect URL).
       if (S.userNickName == null) {
-        enterSpectateDefaultZoom(S);
         if (typeof hooks.sendSpectate === "function") hooks.sendSpectate();
         else {
           const spect = prepareData(1);
@@ -4878,69 +4849,11 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         S.ws.send(view.buffer);
       } catch (e) {}
     }
-    function isRandomColorChoice(hex) {
-      return !hex || hex === "random" || hex === "#ffffff" || hex === "#FFFFFF";
-    }
-    function paletteColorId(hex) {
-      const colors = S.cellColors || CELL_COLORS;
-      const want = String(hex || "").toLowerCase();
-      const index = colors.findIndex(c => String(c).toLowerCase() === want);
-      return index === -1 ? 0 : index + 1;
-    }
-    function rollRandomPlayColor() {
-      const saved = localStorage.getItem("selectedColor");
-      if (!isRandomColorChoice(saved)) {
-        S.randomColorHex = null;
-        return;
-      }
-      if (S.playerCells && S.playerCells.length > 0) {
-        if (!S.randomColorHex) {
-          const current = S.playerCells[0] && S.playerCells[0].color;
-          if (current && paletteColorId(current) > 0) S.randomColorHex = current;
-        }
-        return;
-      }
-      const colors = S.cellColors || CELL_COLORS;
-      S.randomColorHex = colors[(Math.random() * colors.length) | 0];
-    }
-    function nickColorId() {
-      const saved = localStorage.getItem("selectedColor");
-      if (!isRandomColorChoice(saved)) return getColorId(saved);
-      if (!S.randomColorHex) {
-        const colors = S.cellColors || CELL_COLORS;
-        S.randomColorHex = colors[(Math.random() * colors.length) | 0];
-      }
-      const id = paletteColorId(S.randomColorHex);
-      return id > 0 ? id : getColorId(saved);
-    }
     function getColorId(hex) {
-      if (!hex || hex === "random" || hex === "#ffffff" || hex === "#FFFFFF") return 0;
       const colors = S.cellColors;
-      if (!colors) return 0;
+      if (!colors || !hex) return 0;
       const index = colors.indexOf(hex);
       return index === -1 ? 0 : index + 1;
-    }
-    function clientViewHalf() {
-      const z = S.viewZoom > 0.0001 ? S.viewZoom : 1;
-      const halfW = Math.min(32767, Math.max(1, Math.ceil(S.canvasWidth / (2 * z))));
-      const halfH = Math.min(32767, Math.max(1, Math.ceil(S.canvasHeight / (2 * z))));
-      return { halfW, halfH };
-    }
-    function writeMousePacket(x, y) {
-      const view = clientViewHalf();
-      const msg = prepareData(21);
-      msg.setUint8(0, ClientOpcode.MOUSE);
-      msg.setFloat64(1, x, true);
-      msg.setFloat64(9, y, true);
-      msg.setUint16(17, view.halfW, true);
-      msg.setUint16(19, view.halfH, true);
-      S._sentViewW = view.halfW;
-      S._sentViewH = view.halfH;
-      wsSend(msg);
-    }
-    function viewHalfChanged() {
-      const view = clientViewHalf();
-      return Math.abs((S._sentViewW || 0) - view.halfW) > 8 || Math.abs((S._sentViewH || 0) - view.halfH) > 8;
     }
     function sendMouseMove(opts) {
       if (!wsIsOpen()) return;
@@ -4949,32 +4862,45 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       if (!S.mapBoundsReady) return;
       const spectating = !S.playerCells.length;
       const force = opts && opts.force;
-      const zoomChanged = viewHalfChanged();
       // Pause: lock mouse to main cell center (0,0 of primary cell)
       if (S.freeze && !spectating) {
         const aim = updateFreezeAim(S);
-        if (aim && (force || zoomChanged || !(Math.abs(S.oldX - aim.x) < .05 && Math.abs(S.oldY - aim.y) < .05))) {
+        if (aim && (force || !(Math.abs(S.oldX - aim.x) < .05 && Math.abs(S.oldY - aim.y) < .05))) {
           S.oldX = aim.x;
           S.oldY = aim.y;
-          writeMousePacket(aim.x, aim.y);
+          const msg = prepareData(21);
+          msg.setUint8(0, ClientOpcode.MOUSE);
+          msg.setFloat64(1, aim.x, true);
+          msg.setFloat64(9, aim.y, true);
+          msg.setUint32(17, 0, true);
+          wsSend(msg);
         }
         return;
       }
-      // Spectate: overview follows camera aim (posX).
-      // Зум 0.1 НЕ здесь — только клик по карте / кнопка «Наблюдать».
+      // Spectate: overview follows camera aim (posX) — keep server view at map center until user aims
       if (spectating) {
-        if (force || zoomChanged || !(Math.abs(S.oldX - S.posX) < .05 && Math.abs(S.oldY - S.posY) < .05)) {
+        if (force || !(Math.abs(S.oldX - S.posX) < .05 && Math.abs(S.oldY - S.posY) < .05)) {
           S.oldX = S.posX;
           S.oldY = S.posY;
-          writeMousePacket(S.posX, S.posY);
+          const msg = prepareData(21);
+          msg.setUint8(0, ClientOpcode.MOUSE);
+          msg.setFloat64(1, S.posX, true);
+          msg.setFloat64(9, S.posY, true);
+          msg.setUint32(17, 0, true);
+          wsSend(msg);
         }
       } else {
         const msgX = S.rawMouseX - S.canvasWidth / 2;
         const msgY = S.rawMouseY - S.canvasHeight / 2;
-        if (force || zoomChanged || 64 <= msgX * msgX + msgY * msgY && !(Math.abs(S.oldX - S.X) < .1 && Math.abs(S.oldY - S.Y) < .1)) {
+        if (64 <= msgX * msgX + msgY * msgY && !(Math.abs(S.oldX - S.X) < .1 && Math.abs(S.oldY - S.Y) < .1)) {
           S.oldX = S.X;
           S.oldY = S.Y;
-          writeMousePacket(S.X, S.Y);
+          const msg = prepareData(21);
+          msg.setUint8(0, ClientOpcode.MOUSE);
+          msg.setFloat64(1, S.X, true);
+          msg.setFloat64(9, S.Y, true);
+          msg.setUint32(17, 0, true);
+          wsSend(msg);
         }
       }
     }
@@ -4992,10 +4918,15 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     }
     function sendNickName() {
       if (!wsIsOpen() || S.userNickName == null) return;
-      const nick = S.userNickName;
+      let nick = S.userNickName;
+      // Security: unofficial servers get only the bare nick (no #pass).
+      if (window.MultiProtocols && !window.MultiProtocols.isOfficial(S.CONNECTION_URL)) {
+        nick = window.MultiProtocols.sanitizeNickForHost(nick, S.CONNECTION_URL);
+        if (!nick) return;
+      }
       const msg = prepareData(1 + 2 * nick.length + 1);
       msg.setUint8(0, ClientOpcode.NICK);
-      msg.setUint8(1, nickColorId());
+      msg.setUint8(1, getColorId(localStorage.getItem("selectedColor")));
       for (let i = 0; i < nick.length; ++i) {
         msg.setUint16(1 + 2 * i + 1, nick.charCodeAt(i), true);
       }
@@ -5033,11 +4964,11 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         msg.setUint16(offset, str.charCodeAt(i), true);
         offset += 2;
       }
+      // Security: unofficial game servers must not receive the agar.su token.
+      if (window.MultiProtocols && !window.MultiProtocols.isOfficial(S.CONNECTION_URL)) return;
       wsSend(msg);
     }
     function sendAccountToken() {
-      // Security: never send LK / account token to unofficial Europe/Turkey servers.
-      if (!isOfficialGameServer(S.CONNECTION_URL || S.wsUrl)) return;
       const token = getAccountToken();
       if (!wsIsOpen() || !token) return;
       const msg = prepareData(1 + 2 * token.length);
@@ -5071,8 +5002,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       sendAccountToken,
       sendAdminPanel,
       sendSticker,
-      getColorId,
-      rollRandomPlayColor
+      getColorId
     };
   }
   function attachOutbound(S, hooks = {}) {
@@ -5237,23 +5167,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       if (n && !n.isFood && (n.playerId >>> 0) === pid && n.name !== name) n.setName(name);
     }
   }
-  function rememberPlayerColor(S, playerId, color) {
-    if (!S || !playerId || !color) return;
-    if (!S.playerColors) S.playerColors = Object.create(null);
-    S.playerColors[playerId >>> 0] = color;
-  }
-  function colorForPlayerId(S, playerId) {
-    if (!S || !playerId || !S.playerColors) return "";
-    return S.playerColors[playerId >>> 0] || "";
-  }
-  function applyPlayerColorToCells(S, playerId, color) {
-    if (!S || !S.nodelist || !playerId || !color) return;
-    const pid = playerId >>> 0;
-    for (let i = 0; i < S.nodelist.length; i++) {
-      const n = S.nodelist[i];
-      if (n && !n.isFood && !n.isVirus && !n.isEjected && (n.playerId >>> 0) === pid) n.color = color;
-    }
-  }
   function syncNodeStickerFromUpdate(S, node, name, stickerFromUpdate) {
     if (!node) return;
     const n = name || node.name || "";
@@ -5263,11 +5176,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       } else {
         setNodeSticker(node, null);
       }
-      return;
-    }
-    if (stickerFromUpdate == null && node.playerId) {
-      const byPid = S.stickersByPid && S.stickersByPid[node.playerId >>> 0];
-      setNodeSticker(node, byPid || null);
       return;
     }
     if (stickerFromUpdate) {
@@ -5286,10 +5194,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   /** Пакет STICKER — явное вкл/выкл. Для своих ignore «on», если клавиша уже отпущена (анти-залипание). */
   function applyStickerPacket(S, stickerPlayerId, stickerId, enabled) {
     ensureStickerState(S);
-    if (!S.stickersByPid) S.stickersByPid = Object.create(null);
-    const pid = stickerPlayerId >>> 0;
-    if (enabled) S.stickersByPid[pid] = stickerId;
-    else delete S.stickersByPid[pid];
     let refName = null;
     let isOwnPacket = stickerPlayerId === S.ownerPlayerId;
     for (let i = 0; i < S.nodelist.length; i++) {
@@ -5334,38 +5238,11 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     for (let i = 0; i < S.nodelist.length; i++) {
       const node = S.nodelist[i];
       if (!node || node.isOwn || node.isFood || node.isVirus || node.isEjected) continue;
-      const hit = (node.playerId >>> 0) === pid || node.id === stickerPlayerId || nameKey && stickerNameKey(node.name) === nameKey;
+      const hit = node.id === stickerPlayerId || nameKey && stickerNameKey(node.name) === nameKey;
       if (!hit) continue;
       rememberSticker(S, node.id, node.name, enabled ? stickerId : null);
       setNodeSticker(node, enabled ? stickerId : null);
     }
-  }
-  var FOOD_HEX = ("003366 336699 3366CC 003399 000099 0000CC 000066 006666 006699 0099CC 0066CC 0033CC 0000FF 3333FF 333399 " +
-    "669999 009999 33CCCC 00CCFF 0099FF 0066FF 3366FF 3333CC 666699 339966 00CC99 00FFCC 00FFFF 33CCFF 3399FF 6699FF 6666FF 6600FF 6600CC " +
-    "339933 00CC66 00FF99 66FFCC 66FFFF 66CCFF 99CCFF 9999FF 9966FF 9933FF 9900FF 006600 00CC00 00FF00 66FF99 99FFCC CCFFFF CCCCFF CC99FF CC66FF CC33FF CC00FF 9900CC " +
-    "003300 009933 33CC33 66FF66 99FF99 CCFFCC FFCCFF FF99FF FF66FF FF00FF CC00CC 660066 336600 009900 66FF33 99FF66 CCFF99 FFFFCC FFCCCC FF99CC FF66CC FF33CC CC0099 993399 " +
-    "333300 669900 99FF33 CCFF66 FFFF99 FFCC99 FF9999 FF6699 FF3399 CC3399 990099 666633 99CC00 CCFF33 FFFF66 FFCC66 FF9966 FF6666 FF0066 CC6699 993366 " +
-    "999966 CCCC00 FFFF00 FFCC00 FF9933 FF6600 FF5050 CC0066 660033 996633 CC9900 FF9900 CC6600 FF3300 FF0000 CC0000 990033 663300 996600 CC3300 993300 990000 800000 993333").split(" ");
-  function foodPaint(id) {
-    const h = FOOD_HEX[(id >>> 0) % FOOD_HEX.length];
-    return {
-      r: parseInt(h.slice(0, 2), 16),
-      g: parseInt(h.slice(2, 4), 16),
-      b: parseInt(h.slice(4, 6), 16),
-      color: "#" + h
-    };
-  }
-  function virusPaint(size) {
-    const steps = [100, 105, 111, 116, 121, 126, 131];
-    const hex = ["00ff00", "80ff00", "fbff00", "ffc800", "ff9600", "ff6400", "ff3200"];
-    let h = hex[0];
-    for (let i = 0; i < steps.length; i++) if (size >= steps[i]) h = hex[i];
-    return {
-      r: parseInt(h.slice(0, 2), 16),
-      g: parseInt(h.slice(2, 4), 16),
-      b: parseInt(h.slice(4, 6), 16),
-      color: "#" + h
-    };
   }
   function updateNodes(S, reader, hooks) {
     const {Cell: Cell2, onPlayerDeath} = hooks;
@@ -5386,182 +5263,58 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         killedNode.updateTime = S.timestamp;
       }
     }
-    for (let foodId; foodId = reader.uint16(); ) {
-        const foodPos = computeFoodPosition(S, foodId);
-        const paint = foodPaint(foodId);
-        const size = computeFoodSize(S, foodId);
-        let node = S.nodes[foodId];
-        if (node) {
-          node.updatePos();
-          node.ox = node.x;
-          node.oy = node.y;
-          node.oSize = node.size;
-          node.color = paint.color;
-        } else {
-          node = new Cell2(foodId, foodPos.x, foodPos.y, size, paint.color, "");
-          S.nodelist.push(node);
-          S.nodes[foodId] = node;
-          node.ka = foodPos.x;
-          node.la = foodPos.y;
-        }
-        node.isVirus = false;
-        node.isEjected = false;
-        node.isAgitated = false;
-        node.isFood = true;
-        node.nx = foodPos.x;
-        node.ny = foodPos.y;
-        node.setSize(size);
-        node.updateTime = S.timestamp;
-        node.flag = 0;
-        node.teamSide = 0;
-      }
-      const EJECT_BASE = 65536;
-      const EJECT_SIZE = 35;
-      for (let raw; raw = reader.uint16(); ) {
-        const withXY = (raw & 0x8000) !== 0;
-        const slot = raw & 0x7fff;
-        const nodeid = EJECT_BASE + slot;
-        let node = S.nodes[nodeid];
-        // Пока комок в обзоре, сервер шлёт только 2 байта id. x/y/цвет живут в кэше клетки.
-        // Вышел из обзора — id приходит в хвосте remove, destroy() снимает кэш.
-        if (!withXY) {
-          if (node) {
-            node.updatePos();
-            node.ox = node.x;
-            node.oy = node.y;
-            node.oSize = node.size;
-            node.updateTime = S.timestamp;
-          }
-          continue;
-        }
-        const posX = reader.int16();
-        const posY = reader.int16();
-        const r = reader.uint8();
-        const g = reader.uint8();
-        const b = reader.uint8();
-        const color = "#" + (r << 16 | g << 8 | b).toString(16).padStart(6, "0");
-        if (node) {
-          node.updatePos();
-          node.ox = node.x;
-          node.oy = node.y;
-          node.oSize = node.size;
-          node.color = color;
-        } else {
-          node = new Cell2(nodeid, posX, posY, EJECT_SIZE, color, "");
-          S.nodelist.push(node);
-          S.nodes[nodeid] = node;
-          node.ka = posX;
-          node.la = posY;
-        }
-        node.isVirus = false;
-        node.isEjected = true;
-        node.isAgitated = false;
-        node.isFood = false;
-        node.nx = posX;
-        node.ny = posY;
-        node.setSize(EJECT_SIZE);
-        node.updateTime = S.timestamp;
-        node.flag = 0;
-        node.teamSide = 0;
-      }
-      const VIRUS_BASE = 131072;
-      for (let raw; raw = reader.uint16(); ) {
-        const withXY = (raw & 0x8000) !== 0;
-        const slot = raw & 0x7fff;
-        const nodeid = VIRUS_BASE + slot;
-        let posX = 0;
-        let posY = 0;
-        if (withXY) {
-          posX = reader.int16();
-          posY = reader.int16();
-        }
-        const size = reader.uint16();
-        const paint = virusPaint(size);
-        let node = S.nodes[nodeid];
-        if (!withXY && !node) continue;
-        if (node) {
-          node.updatePos();
-          node.ox = node.x;
-          node.oy = node.y;
-          node.oSize = node.size;
-          node.color = paint.color;
-        } else {
-          node = new Cell2(nodeid, posX, posY, size, paint.color, "");
-          S.nodelist.push(node);
-          S.nodes[nodeid] = node;
-          node.ka = posX;
-          node.la = posY;
-        }
-        node.isVirus = true;
-        node.isEjected = false;
-        node.isAgitated = false;
-        node.isFood = false;
-        if (withXY) {
-          node.nx = posX;
-          node.ny = posY;
-        }
-        node.setSize(size);
-        node.updateTime = S.timestamp;
-        node.flag = 1;
-        node.teamSide = 0;
-      }
-    for (;;) {
-      const idWire = reader.uint32();
-      if (!idWire) break;
-      let nodeid = idWire;
+    for (let nodeid; nodeid = reader.uint32(); ) {
+      const type = reader.uint8();
       let posX = 0;
       let posY = 0;
       let size = 0;
       let playerId = 0;
-      let r;
-      let g;
-      let b;
-      let color = "";
-      let colorProvided = false;
-      let spiked = 0;
-      let flagVirus = false;
-      let flagEjected = false;
-      let flagAgitated = false;
-      let packetName = "";
-      let stickerFromUpdate = null;
-      let food = false;
-      let player = true;
-      const full = (idWire & 0x80000000) !== 0;
-      nodeid = idWire & 0x7fffffff;
-      if (full) {
-        const pidWire = reader.uint32();
-        const hasName = (pidWire & 0x80000000) !== 0;
-        playerId = pidWire & 0x7fffffff;
-        posX = reader.int16();
-        posY = reader.int16();
-        size = reader.uint16();
-        r = reader.uint8();
-        g = reader.uint8();
-        b = reader.uint8();
-        color = "#" + (r << 16 | g << 8 | b).toString(16).padStart(6, "0");
-        colorProvided = true;
-        if (hasName) packetName = reader.utf8();
+      if (type === 1) {
+        // Always place food (even before borders). Discarding here is fatal on server-hop:
+        // server marks food as already sent and never re-sends the full set.
+        const foodPos = computeFoodPosition(S, nodeid);
+        posX = foodPos.x;
+        posY = foodPos.y;
+        size = computeFoodSize(S, nodeid);
       } else {
-        posX = reader.int16();
-        posY = reader.int16();
+        if (type === 0) playerId = reader.uint32();
+        posX = reader.int32();
+        posY = reader.int32();
         size = reader.uint16();
-        const known = S.nodes[nodeid];
-        if (!known) continue;
-        playerId = known.playerId || 0;
       }
-      const pid = player && playerId ? playerId >>> 0 : 0;
+      const r = reader.uint8();
+      const g = reader.uint8();
+      const b = reader.uint8();
+      let color = "#" + (r << 16 | g << 8 | b).toString(16).padStart(6, "0");
+      const spiked = reader.uint8();
+      const flagVirus = !!(spiked & 1);
+      const flagEjected = !!(spiked & 32) || !!(spiked & 64);
+      const flagAgitated = !!(spiked & 16);
+      const packetName = reader.utf8();
+      // Хвост протокола: FF+id (стикер есть) или 00 (в этом апдекте нет).
+      // Источник истины — пакет STICKER + карта activeStickers*: байт 00 НЕ сбрасывает
+      // активный стикер (иначе у всех мерцает главная клетка на каждом тике).
+      let stickerFromUpdate = null;
+      if (reader.canRead) {
+        const marker = reader.uint8();
+        if (marker === 255) {
+          stickerFromUpdate = reader.uint8() || null;
+        } else if (marker === 0) {
+          stickerFromUpdate = false;
+        }
+      }
+      const pid = type === 0 && playerId ? playerId >>> 0 : 0;
+      // Canonical nick lives on playerId; cells inherit. Skin API still keys by nick.
       let resolvedName = packetName || "";
       if (!resolvedName && pid) resolvedName = nickForPlayerId(S, pid);
-      if (!colorProvided && pid) color = colorForPlayerId(S, pid);
       let node = S.nodes[nodeid];
-      if (!color && node) color = node.color || "";
-      if (!color) color = "#808080";
       if (node) {
+        node = S.nodes[nodeid];
         node.updatePos();
         node.ox = node.x;
         node.oy = node.y;
         node.oSize = node.size;
-        if (colorProvided) node.color = color;
+        node.color = color;
       } else {
         node = new Cell2(nodeid, posX, posY, size, color, resolvedName);
         S.nodelist.push(node);
@@ -5576,13 +5329,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
           if (1 == S.playerCells.length) {
             S.nodeX = node.x;
             S.nodeY = node.y;
-            // Только если ещё «наблюдательский» зум — иначе свой игровой зум не трогаем.
-            if (S.spectateDefaultZoomPending || Math.abs(S.zoom - SPECTATE_DEFAULT_ZOOM) < 0.001) {
-              resetGameZoom(S);
-            } else {
-              S.spectateDefaultZoomPending = false;
-              S.spectateZoomUserSet = false;
-            }
           }
         }
       }
@@ -5593,17 +5339,13 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       node.isVirus = flagVirus;
       node.isEjected = flagEjected;
       node.isAgitated = flagAgitated;
-      if (food) node.isFood = true;
+      if (type === 1 || type === 4) node.isFood = true; // type4 = AgarZ food w/ coords
       node.nx = posX;
       node.ny = posY;
       node.setSize(size);
       node.updateTime = S.timestamp;
       node.flag = spiked;
       node.teamSide = (spiked & 2) ? 1 : (spiked & 4) ? 2 : (spiked & 8) ? 3 : (spiked & 128) ? 4 : 0;
-      if (pid && colorProvided) {
-        rememberPlayerColor(S, pid, color);
-        applyPlayerColorToCells(S, pid, color);
-      }
       if (pid && packetName) {
         if (rememberPlayerNick(S, pid, packetName)) applyPlayerNickToCells(S, pid, packetName);
         else if (node.name !== packetName) node.setName(packetName);
@@ -5647,9 +5389,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     S.playerCells = [];
     S.nodes = {};
     S.playerNicks = Object.create(null);
-    S.playerColors = Object.create(null);
-    S.lbByPid = Object.create(null);
-    S.stickersByPid = Object.create(null);
     S.activeStickersByNode = Object.create(null);
     S.activeStickersByName = Object.create(null);
     S.nodelist = [];
@@ -5724,7 +5463,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
           const csize = msg.getFloat32(offset, true);
           offset += 4;
           applyServerSpectateCamera(S, cx, cy, csize);
-        } else if (!S.spectateDefaultZoomPending) {
+        } else {
           S.posSize = .15;
         }
         break;
@@ -5736,7 +5475,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
           disablePause(S);
           S.playerCells = [];
           clearSpectateFollow(S);
-          armSpectateDefaultZoom(S);
           showStatics();
           if (typeof window.updateShareText === "function") {
             try { window.updateShareText(S); } catch (_) {
@@ -5779,34 +5517,14 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
           const LBplayerNum = msg.getUint32(offset, true);
           offset += 4;
           S.leaderBoard = [];
-          if (!S.lbByPid) S.lbByPid = Object.create(null);
           for (let i = 0; i < LBplayerNum; ++i) {
-            const pidWire = msg.getUint32(offset, true);
+            const nodeId = msg.getUint32(offset, true);
             offset += 4;
-            const hasInfo = (pidWire & 0x80000000) !== 0;
-            const pid = pidWire & 0x7fffffff;
-            let playerName = "";
-            let playerXp = 0;
-            if (hasInfo) {
-              playerXp = msg.getUint32(offset, true);
-              offset += 4;
-              const nameBytes = [];
-              while (offset < msg.byteLength) {
-                const b = msg.getUint8(offset++);
-                if (!b) break;
-                nameBytes.push(b);
-              }
-              playerName = nameBytes.length ? new TextDecoder("utf-8").decode(new Uint8Array(nameBytes)) : "";
-              S.lbByPid[pid] = { name: playerName, xp: playerXp };
-            } else {
-              const cached = S.lbByPid[pid];
-              if (cached) {
-                playerName = cached.name;
-                playerXp = cached.xp;
-              }
-            }
+            const playerName = getString();
+            const playerXp = msg.getUint32(offset, true);
+            offset += 4;
             S.leaderBoard.push({
-              id: pid,
+              id: nodeId,
               name: playerName,
               level: playerXp ? (_e = (_d = hooks.getLevel) == null ? void 0 : _d.call(hooks, playerXp)) != null ? _e : -1 : -1,
               xp: playerXp
@@ -5956,8 +5674,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       foodMaxMass: 4,
       ownerPlayerId: -1,
       playerNicks: Object.create(null),
-      playerColors: Object.create(null),
-      lbByPid: Object.create(null),
       spectateFollowNick: null,
       spectateFollowPid: 0,
       mapWidth: 0,
@@ -5970,9 +5686,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       ma: false,
       freeze: false,
       zoom: 1,
-      spectateDefaultZoomPending: false,
-      spectateZoomUserSet: false,
-      spectateZoomAnimating: false,
       isTouchStart: false,
       splitIcon: null,
       ejectIcon: null,
@@ -6581,7 +6294,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         if (this.nameCache && this.nameCache._scale !== 1) this.nameCache.setScale(1);
         if (this.sizeCache && this.sizeCache._scale !== 1) this.sizeCache.setScale(1);
         // Multiprotocol: show names only above size 100 (original agar.su keeps > 10).
-        const nameMinSize = 10;
+        const nameMinSize = (window.MultiProtocols && !window.MultiProtocols.isOfficial(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl)) ? 100 : 10;
         if (S.showName && this.name && this.nameCache && this.size > nameMinSize) {
           let displayName = this.name;
           if (!isPetriSkinHost(S.CONNECTION_URL || S.currentWebSocketUrl || S.wsUrl) && invisible.has(this._nameLower)) {
@@ -6766,138 +6479,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     }
   };
   var KEYBINDS_KEY = "keybinds_v1";
-  var CELL_COLORS = [ "#003366", "#336699", "#3366CC", "#003399", "#000099", "#0000CC", "#000066", "#006666", "#006699", "#0099CC", "#0066CC", "#0033CC", "#0000FF", "#3333FF", "#333399", "#669999", "#009999", "#33CCCC", "#00CCFF", "#0099FF", "#0066FF", "#3366FF", "#3333CC", "#666699", "#339966", "#00CC99", "#00FFCC", "#00FFFF", "#33CCFF", "#3399FF", "#6699FF", "#6666FF", "#6600FF", "#6600CC", "#339933", "#00CC66", "#00FF99", "#66FFCC", "#66FFFF", "#66CCFF", "#99CCFF", "#9999FF", "#9966FF", "#9933FF", "#9900FF", "#006600", "#00CC00", "#00FF00", "#66FF99", "#99FFCC", "#CCFFFF", "#CCCCFF", "#CC99FF", "#CC66FF", "#CC33FF", "#CC00FF", "#9900CC", "#003300", "#009933", "#33CC33", "#66FF66", "#99FF99", "#CCFFCC", "#FFCCFF", "#FF99FF", "#FF66FF", "#FF00FF", "#CC00CC", "#660066", "#336600", "#009900", "#66FF33", "#99FF66", "#CCFF99", "#FFFFCC", "#FFCCCC", "#FF99CC", "#FF66CC", "#FF33CC", "#CC0099", "#993399", "#333300", "#669900", "#99FF33", "#CCFF66", "#FFFF99", "#FFCC99", "#FF9999", "#FF6699", "#FF3399", "#CC3399", "#990099", "#666633", "#99CC00", "#CCFF33", "#FFFF66", "#FFCC66", "#FF9966", "#FF6666", "#FF0066", "#CC6699", "#993366", "#999966", "#CCCC00", "#FFFF00", "#FFCC00", "#FF9933", "#FF6600", "#FF5050", "#CC0066", "#660033", "#996633", "#CC9900", "#FF9900", "#CC6600", "#FF3300", "#FF0000", "#CC0000", "#990033", "#663300", "#996600", "#CC3300", "#993300", "#990000", "#800000", "#993333" ];
-  var COLOR_RANDOM = "random";
-  function parseHexRgb(hex) {
-    const h = String(hex || "").replace("#", "");
-    if (h.length < 6) return null;
-    return {
-      r: parseInt(h.slice(0, 2), 16),
-      g: parseInt(h.slice(2, 4), 16),
-      b: parseInt(h.slice(4, 6), 16)
-    };
-  }
-  function rgbDist2(a, b) {
-    const dr = a.r - b.r, dg = a.g - b.g, db = a.b - b.b;
-    return dr * dr + dg * dg + db * db;
-  }
-  function hsvToRgb(h, s, v) {
-    const c = v * s;
-    const x = c * (1 - Math.abs(h / 60 % 2 - 1));
-    const m = v - c;
-    let rp = 0, gp = 0, bp = 0;
-    if (h < 60) { rp = c; gp = x; }
-    else if (h < 120) { rp = x; gp = c; }
-    else if (h < 180) { gp = c; bp = x; }
-    else if (h < 240) { gp = x; bp = c; }
-    else if (h < 300) { rp = x; bp = c; }
-    else { rp = c; bp = x; }
-    return {
-      r: Math.round((rp + m) * 255),
-      g: Math.round((gp + m) * 255),
-      b: Math.round((bp + m) * 255)
-    };
-  }
-  function nearestCellColor(rgb, palette, used) {
-    let best = palette[0], bestD = 1e9;
-    for (let i = 0; i < palette.length; i++) {
-      if (used && used.has(palette[i])) continue;
-      const p = parseHexRgb(palette[i]);
-      if (!p) continue;
-      const d = rgbDist2(rgb, p);
-      if (d < bestD) { bestD = d; best = palette[i]; }
-    }
-    return best;
-  }
-  function rgbToHex(rgb) {
-    const h = (rgb.r << 16 | rgb.g << 8 | rgb.b).toString(16).padStart(6, "0");
-    return "#" + h;
-  }
-  /** Соты радиуса 6 (127 клеток), центр — random / белый. */
-  function buildHexColorItems(palette) {
-    const R = 6;
-    const items = [];
-    for (let r = -R; r <= R; r++) {
-      const qMin = Math.max(-R, -r - R);
-      const qMax = Math.min(R, -r + R);
-      for (let q = qMin; q <= qMax; q++) {
-        if (q === 0 && r === 0) {
-          items.push({ q, r, display: "#ffffff", hex: COLOR_RANDOM, random: true });
-          continue;
-        }
-        const x = Math.sqrt(3) * (q + r / 2);
-        const y = 1.5 * r;
-        const deg = Math.atan2(x, -y) * 180 / Math.PI;
-        const hue = (240 + deg + 360) % 360;
-        const dist = (Math.abs(q) + Math.abs(r) + Math.abs(-q - r)) / 2;
-        const t = dist / R;
-        const sat = 0.35 + 0.65 * t;
-        const val = 1 - 0.45 * t * t;
-        const ideal = hsvToRgb(hue, sat, val);
-        const display = rgbToHex(ideal);
-        const hex = nearestCellColor(ideal, palette, null);
-        items.push({ q, r, display, hex, random: false });
-      }
-    }
-    return items;
-  }
-  function fillHexColorList(colorList, palette) {
-    if (!colorList || !palette || !palette.length) return;
-    colorList.innerHTML = "";
-    colorList.classList.add("colorList-hex");
-    const size = 9.5;
-    const gap = 1.2;
-    const items = buildHexColorItems(palette);
-    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-    const placed = items.map(it => {
-      const x = size * Math.sqrt(3) * (it.q + it.r / 2);
-      const y = size * 1.5 * it.r;
-      if (x < minX) minX = x;
-      if (x > maxX) maxX = x;
-      if (y < minY) minY = y;
-      if (y > maxY) maxY = y;
-      return { it, x, y };
-    });
-    const cellW = size * Math.sqrt(3);
-    const cellH = size * 2;
-    const pad = 4;
-    const width = maxX - minX + cellW + pad * 2;
-    const height = maxY - minY + cellH + pad * 2;
-    colorList.style.width = Math.ceil(width) + "px";
-    colorList.style.height = Math.ceil(height) + "px";
-    for (let i = 0; i < placed.length; i++) {
-      const { it, x, y } = placed[i];
-      const d = document.createElement("div");
-      d.className = it.random ? "item item-random" : "item";
-      d.style.background = it.display;
-      d._cellColorHex = it.hex;
-      if (it.random) d.title = "Случайный цвет";
-      const drawW = cellW - gap;
-      const drawH = cellH - gap;
-      d.style.left = (x - minX + pad + (cellW - drawW) / 2) + "px";
-      d.style.top = (y - minY + pad + (cellH - drawH) / 2) + "px";
-      d.style.width = drawW + "px";
-      d.style.height = drawH + "px";
-      colorList.appendChild(d);
-    }
-  }
-  function applySelectedColorUi(hex, colorSelected, skinss) {
-    const isRandom = !hex || hex === COLOR_RANDOM || hex === "random";
-    const bg = isRandom ? "#ffffff" : hex;
-    if (colorSelected) {
-      colorSelected.style.background = bg;
-      colorSelected.style.backgroundColor = bg;
-      colorSelected.style.border = "none";
-      colorSelected.style.outline = "none";
-      colorSelected.style.boxShadow = isRandom ? "0 0 0 1px #ccc" : `0 0 0 1px ${bg}`;
-      colorSelected.title = isRandom ? "Случайный цвет" : bg;
-    }
-    if (skinss) {
-      skinss.style.borderColor = bg;
-      skinss.style.backgroundColor = isRandom ? "" : bg;
-      skinss.style.boxShadow = isRandom ? "0 0 10px #ffffff88" : `0 0 10px ${bg}`;
-    }
-  }
+  var CELL_COLORS = [ "#003366", "#336699", "#3366CC", "#003399", "#000099", "#0000CC", "#000066", "#006666", "#006699", "#0099CC", "#0066CC", "#0033CC", "#0000FF", "#3333FF", "#333399", "#669999", "#009999", "#33CCCC", "#00CCFF", "#0099FF", "#0066FF", "#3366FF", "#3333CC", "#666699", "#339966", "#00CC99", "#00FFCC", "#00FFFF", "#33CCFF", "#3399FF", "#6699FF", "#6666FF", "#6600FF", "#6600CC", "#339933", "#00CC66", "#00FF99", "#66FFCC", "#66FFFF", "#66CCFF", "#99CCFF", "#9999FF", "#9966FF", "#9933FF", "#9900FF", "#006600", "#00CC00", "#00FF00", "#66FF99", "#99FFCC", "#CCFFFF", "#CCCCFF", "#CC99FF", "#CC66FF", "#CC33FF", "#CC00FF", "#9900CC", "#003300", "#009933", "#33CC33", "#66FF66", "#99FF99", "#CCFFCC", "#FFCCFF", "#FF99FF", "#FF66FF", "#FF00FF", "#CC00CC", "#660066", "#336600", "#009900", "#66FF33", "#99FF66", "#CCFF99", "#FFFFCC", "#FFCCCC", "#FF99CC", "#FF66CC", "#FF33CC", "#CC0099", "#993399", "#333300", "#669900", "#99FF33", "#CCFF66", "#FFFF99", "#FFCC99", "#FF9999", "#FF6699", "#FF3399", "#CC3399", "#990099", "#666633", "#99CC00", "#CCFF33", "#FFFF66", "#FFCC66", "#FF9966", "#FF6666", "#FF0066", "#CC6699", "#993366", "#999966", "#CCCC00", "#FFFF00", "#FFCC00", "#FF9933", "#FF66000", "#FF5050", "#CC0066", "#660033", "#996633", "#CC9900", "#FF9900", "#CC6600", "#FF3300", "#FF0000", "#CC0000", "#990033", "#663300", "#996600", "#CC3300", "#993300", "#990000", "#800000", "#993333" ];
   function loadKeybinds(defaults = KEYBIND_DEFAULTS) {
     const saved = lsGetJson(KEYBINDS_KEY, null);
     const binds = Object.assign({}, defaults);
@@ -7118,7 +6700,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     /** Overview moves on spectate-click (op 1), not mouse alone — auto-click while following. */
     function sendSpectateAimClick() {
       if (S.playerCells.length) return;
-      applySpectateDefaultZoomIfPending(S);
       S.oldX = S.posX - 999;
       S.oldY = S.posY - 999;
       if (typeof hooks.sendMouseMove === "function") hooks.sendMouseMove({ force: true });
@@ -7188,22 +6769,10 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     function handleWheel(event2) {
       const chatContainer = document.querySelector(".noscroll");
       if (isOverlaysVisible() || isPointerOverElement(chatContainer, event2.clientX, event2.clientY)) return;
-      // Admin panel open under cursor — never zoom the game.
-      const adminRoot = document.getElementById("agarAdminRoot");
-      if (adminRoot && isPointerOverElement(adminRoot, event2.clientX, event2.clientY)) return;
-      if (window.__agarAdminHover) return;
       S.zoom *= Math.pow(.9, event2.wheelDelta / -120 || event2.detail || 0);
       if (S.zoom < 0) S.zoom = 1;
       if (S.zoom > 4 / S.viewZoom) S.zoom = 4 / S.viewZoom;
-      if (S.playerCells.length) {
-        if (S.zoom < .3) S.zoom = .3;
-      } else {
-        S.spectateZoomUserSet = true;
-        S.spectateZoomAnimating = false;
-        S.spectateDefaultZoomPending = false;
-        if (S.zoom < SPECTATE_MIN_ZOOM) S.zoom = SPECTATE_MIN_ZOOM;
-      }
-      if (typeof hooks.sendMouseMove === "function") hooks.sendMouseMove({ force: true });
+      if (S.zoom < .3) S.zoom = .3;
     }
     if (/firefox/i.test(navigator.userAgent)) {
       document.addEventListener("DOMMouseScroll", handleWheel, false);
@@ -7358,7 +6927,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         return;
       }
       if (isTyping) return;
-      if (window.__agarAdminTyping || (window.AgarAdmin && typeof window.AgarAdmin.isTyping === "function" && window.AgarAdmin.isTyping())) return;
       if (code === getBind(S, "freeze")) {
         // Toggle pause: mouse → main cell center + #freeze UI
         if (!keyPressed.freeze && S.playerCells.length > 0) {
@@ -7435,7 +7003,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       }
     };
     wHandle.onkeyup = function(event2) {
-      if (window.__agarAdminTyping || (window.AgarAdmin && typeof window.AgarAdmin.isTyping === "function" && window.AgarAdmin.isTyping())) return;
       const code = event2.keyCode;
       if (code === getBind(S, "freeze")) keyPressed.freeze = false;
       if (code === getBind(S, "split")) keyPressed.split = false;
@@ -7476,58 +7043,36 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     const colorList = document.getElementById("colorList");
     const skinss = document.getElementById("skinss");
     const colorSaved = localStorage.getItem("selectedColor");
-    applySelectedColorUi(colorSaved || COLOR_RANDOM, colorSelected, skinss);
-    function placeColorListUnderButton() {
-      if (!colorList || !colorSelected) return;
-      if (colorList.parentNode !== document.body) document.body.appendChild(colorList);
-      const r = colorSelected.getBoundingClientRect();
-      const pad = 8;
-      const w = colorList.offsetWidth || 220;
-      const h = colorList.offsetHeight || 200;
-      let left = r.right - w;
-      let top = r.bottom + pad;
-      if (left < 8) left = 8;
-      if (left + w > window.innerWidth - 8) left = Math.max(8, window.innerWidth - w - 8);
-      if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - pad);
-      colorList.style.left = Math.round(left) + "px";
-      colorList.style.top = Math.round(top) + "px";
-    }
-    function closeColorList() {
-      if (!colorList) return;
-      colorList.style.display = "none";
-    }
-    function openColorList() {
-      if (!colorList) return;
-      colorList.style.display = "block";
-      placeColorListUnderButton();
+    if (colorSaved && colorSelected) {
+      colorSelected.style.background = colorSaved;
+      if (skinss) {
+        skinss.style.borderColor = colorSaved;
+        skinss.style.backgroundColor = colorSaved;
+        skinss.style.boxShadow = `0 0 10px ${colorSaved}`;
+      }
     }
     if (colorSelected) {
-      colorSelected.onclick = evt => {
-        evt.stopPropagation();
-        if (!colorList) return;
-        const open = colorList.style.display === "none" || colorList.style.display === "";
-        if (open) openColorList();
-        else closeColorList();
+      colorSelected.onclick = () => {
+        colorList.style.display = colorList.style.display === "none" || colorList.style.display === "" ? "flex" : "none";
       };
     }
     if (colorList) {
       colorList.onclick = evt => {
-        evt.stopPropagation();
-        const t = evt.target.closest ? evt.target.closest(".item") : evt.target;
-        const hex = t && t._cellColorHex;
+        const hex = evt.target._cellColorHex;
         if (!hex) return;
+        colorSelected.style.background = hex;
         localStorage.setItem("selectedColor", hex);
-        applySelectedColorUi(hex, colorSelected, skinss);
-        closeColorList();
+        skinss.style.borderColor = hex;
+        skinss.style.backgroundColor = hex;
+        skinss.style.boxShadow = `0 0 10px ${hex}`;
+        colorList.style.display = "none";
       };
-      fillHexColorList(colorList, S.cellColors || CELL_COLORS);
-      document.addEventListener("click", evt => {
-        if (!colorList || colorList.style.display === "none") return;
-        if (colorList.contains(evt.target) || (colorSelected && colorSelected.contains(evt.target))) return;
-        closeColorList();
-      });
-      window.addEventListener("resize", () => {
-        if (colorList.style.display === "block") placeColorListUnderButton();
+      S.cellColors.forEach(hex => {
+        const d = document.createElement("div");
+        d.className = "item";
+        d.style.background = hex;
+        d._cellColorHex = hex;
+        colorList.appendChild(d);
       });
     }
     wHandle.onblur = function() {
@@ -7687,7 +7232,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
           const delta = currentDistance - S.pinchZoomStartDistance;
           const zoomFactor = 1 + delta / 300;
           S.zoom *= zoomFactor;
-          if (S.zoom < SPECTATE_MIN_ZOOM) S.zoom = SPECTATE_MIN_ZOOM;
+          if (S.zoom < .3) S.zoom = .3;
           if (S.zoom > 4 / S.viewZoom) S.zoom = 4 / S.viewZoom;
           S.pinchZoomStartDistance = currentDistance;
         }
@@ -8399,9 +7944,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   );
   var OFFICIAL_BY_ID = Object.fromEntries(OFFICIAL_SERVERS.map(s => [s.id, s]));
 
-  function usesShortXY() {
-    return true;
-  }
   function resolveOfficialServerId(connectionUrl) {
     const host = String(connectionUrl || "").toLowerCase().replace(/^wss?:\/\//, "");
     if (!host) return null;
@@ -10240,8 +9782,7 @@ function updateRegionOnlineTotals(totals) {
     }
     try {
       const saved = localStorage.getItem("selectedColor");
-      if (saved && saved !== "random" && saved !== COLOR_RANDOM) return saved;
-      if (saved === "random" || saved === COLOR_RANDOM) return "#ffffff";
+      if (saved) return saved;
     } catch (_) {}
     return "#787878";
   }
@@ -10269,6 +9810,8 @@ function updateRegionOnlineTotals(totals) {
   }
   function censorMessage(S, message) {
     if (S.showAdultContent) return message;
+    // Multiprotocol (unofficial servers): antimat is not applied.
+    if (window.MultiProtocols && !window.MultiProtocols.isOfficial(S.CONNECTION_URL)) return message;
     if (!S.badWordsSet || S.badWordsSet.size === 0) {
       console.warn("Список матерных слов не загружен. Антимат не работает.");
       return message;
@@ -11561,7 +11104,6 @@ function initServers(S) {
         Cell,
         onPlayerDeath: () => {
           disablePause(S);
-          armSpectateDefaultZoom(S);
           showStatics();
           updateShareText(S);
           if (typeof window.renderDeathBanner === "function") window.renderDeathBanner();
@@ -11619,7 +11161,6 @@ function initServers(S) {
       }
     };
     wHandle.setNick = function(arg) {
-      outbound.rollRandomPlayColor();
       wHandle.setserver(S.SELECTED_SERVER);
       hideGameOverlays();
       S.userNickName = arg;
@@ -11629,8 +11170,6 @@ function initServers(S) {
         clearInterval(S._spectateFollowTimer);
         S._spectateFollowTimer = null;
       }
-      // Уже в игре — зум не трогаем. Сброс только при выходе из наблюдения.
-      if (!S.playerCells.length) resetGameZoom(S);
       outbound.sendNickName();
       hideStatics();
       S.maxScore = 0;
@@ -11645,9 +11184,6 @@ function initServers(S) {
         clearInterval(S._spectateFollowTimer);
         S._spectateFollowTimer = null;
       }
-      // Из игры → 0.1. После смерти (pending) → 0.1. Уже крутил зум в наблюдении → не трогаем.
-      if (S.playerCells.length) enterSpectateDefaultZoom(S);
-      else applySpectateDefaultZoomIfPending(S);
       // Already connected → enter overview now (otherwise only canvas click sent op 1).
       outbound.sendSpectate();
       hideGameOverlays();
@@ -11678,6 +11214,13 @@ onReady(() => {
     listsPromise.then(() => fetchNickPerksLists(S)).catch(() => {});
     listsPromise.then(() => initServers(S)).catch(() => initServers(S));
     onReady(() => {
+      document.querySelectorAll(".region-option[data-region]").forEach(button => {
+        if (button.dataset.regionBound === "1") return;
+        button.dataset.regionBound = "1";
+        button.addEventListener("click", () => {
+          if (applyRegion(button.dataset.region, S, true)) updateOnlineCount();
+        });
+      });
       startOnlineCountPolling();
     });
     setInterval(async () => {
@@ -11715,11 +11258,7 @@ onReady(() => {
       const hash = wHandle.location.hash;
       if (urlParams.has("spect") || urlParams.has("spectator") || hash.includes("?spect") || hash.includes("?spectator")) {
         const requestedZoom = Number.parseFloat(urlParams.get("zoom"));
-        S.zoom = Number.isFinite(requestedZoom)
-          ? Math.min(4, Math.max(SPECTATE_MIN_ZOOM, requestedZoom))
-          : SPECTATE_DEFAULT_ZOOM;
-        S.spectateDefaultZoomPending = false;
-        S.spectateZoomUserSet = Number.isFinite(requestedZoom);
+        S.zoom = Number.isFinite(requestedZoom) ? Math.min(4, Math.max(.3, requestedZoom)) : .4;
       }
       if (window._autoSpectate && typeof wHandle.spectate === "function") {
         delete window._autoSpectate;
@@ -12242,17 +11781,6 @@ onReady(() => {
     pl: "Najpierw zaloguj się do konta",
     de: "Bitte zuerst im Konto anmelden"
   };
-  const VPN_REGION_WARN_I18N = {
-    ru: "Для Турции и Европы нужен VPN",
-    en: "Turkey and Europe require a VPN",
-    uk: "Для Туреччини та Європи потрібен VPN",
-    tr: "Türkiye ve Avrupa için VPN gerekli",
-    zh: "土耳其和欧洲需要 VPN",
-    ar: "تركيا وأوروبا تتطلبان VPN",
-    es: "Turquía y Europa requieren VPN",
-    pl: "Turcja i Europa wymagają VPN",
-    de: "Türkei und Europa benötigen VPN"
-  };
   function getUiLangCode() {
     try {
       const lang = window.__uiLang || localStorage.getItem("ui_lang") || "ru";
@@ -12263,9 +11791,6 @@ onReady(() => {
   }
   function tAuthRequired() {
     return AUTH_REQUIRED_I18N[getUiLangCode()] || AUTH_REQUIRED_I18N.en;
-  }
-  function tVpnRegionWarn() {
-    return VPN_REGION_WARN_I18N[getUiLangCode()] || VPN_REGION_WARN_I18N.en;
   }
   function showUiToast(message, type) {
     let container = document.getElementById("uiToastContainer");
@@ -12299,8 +11824,6 @@ onReady(() => {
   }
   window.showAuthRequiredForShop = showAuthRequiredForShop;
   window.tAuthRequired = tAuthRequired;
-  window.tVpnRegionWarn = tVpnRegionWarn;
-  window.showUiToast = showUiToast;
   function updateAccountMenuLabel() {
     const label = document.getElementById("accountMenuLabel");
     if (!label) return;
@@ -13569,6 +13092,7 @@ onReady(() => {
       if (pass) setCookie2("userPass", pass, 7); else setCookie2("userPass", "", -1);
     }
     function checkNickStatus(nick) {
+      // Same normalizeNick as pass.txt: clans stay as "[isq]", not stripped "isq"
       const normalized = normalizeNick(nick);
       if (allowedNicks.includes(normalized)) {
         passInput.style.display = "block";
@@ -14034,953 +13558,6 @@ onReady(() => {
     scheduleDeferredExternals();
     log.info("Agar.su low-client ready");
   }
-
-  // ========== AgarAdmin (inlined) ==========
-  // Agar.su admin panel — packet 169 + chat commands
-  (function (global) {
-    "use strict";
-  
-    const OPCODE = 169;
-    const REFRESH_MS = 2000;
-  
-    const STAFF_BY_NICK = {
-      нико: "admin",
-      niko: "admin",
-      banshee: "admin",
-      pulik: "moder",
-    };
-  
-    const state = {
-      attached: false,
-      S: null,
-      api: null,
-      role: null,
-      roleFromNick: null,
-      lastCellNick: "",
-      players: [],
-      selectedPid: null,
-      open: false,
-      timer: null,
-      el: null,
-      filter: "",
-      showIps: false,
-    };
-  
-    function normalizeStaffNick(nick) {
-      return String(nick || "")
-        .replace(/<[^>]*>/g, "")
-        .split("#")[0]
-        .trim()
-        .toLowerCase();
-    }
-  
-    function readCurrentNick() {
-      const S = state.S;
-      if (!S) return state.lastCellNick || "";
-  
-      // Только ник с живой клетки (после входа в игру), не из поля ввода
-      const cells = S.playerCells;
-      if (cells && cells.length) {
-        for (let i = 0; i < cells.length; i++) {
-          const raw = cells[i] && cells[i].name;
-          if (!raw) continue;
-          const nick = String(raw)
-            .replace(/<[^>]*>/g, "")
-            .split("#")[0]
-            .trim();
-          if (nick) {
-            state.lastCellNick = nick;
-            return nick;
-          }
-        }
-      }
-  
-      // Пока клетка есть в памяти сессии — оставляем последний ник (после смерти)
-      if (S.ws && S.ws.readyState === 1) return state.lastCellNick || "";
-      state.lastCellNick = "";
-      return "";
-    }
-  
-    function roleFromNick(nick) {
-      return STAFF_BY_NICK[normalizeStaffNick(nick)] || null;
-    }
-  
-    function isAdmin() {
-      return state.role === "admin";
-    }
-  
-    function escapeHtml(s) {
-      return String(s || "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
-    }
-  
-  
-    function isAdminField(el) {
-      if (!el || !el.closest) return false;
-      return !!el.closest("#agarAdminRoot, #agarAdminToggle");
-    }
-  
-    function syncTypingFlag() {
-      const ae = document.activeElement;
-      state.typing = !!(ae && isAdminField(ae) && (
-        ae.tagName === "INPUT" ||
-        ae.tagName === "TEXTAREA" ||
-        ae.tagName === "SELECT" ||
-        ae.isContentEditable
-      ));
-      global.__agarAdminTyping = state.typing;
-    }
-  
-    function installInputGuards() {
-      if (installInputGuards._done) return;
-      installInputGuards._done = true;
-      const stopKeys = (e) => {
-        if (!state.open) return;
-        if (!isAdminField(e.target) && !isAdminField(document.activeElement)) return;
-        e.stopPropagation();
-      };
-      ["keydown", "keyup", "keypress"].forEach((t) => document.addEventListener(t, stopKeys, true));
-      document.addEventListener("focusin", (e) => { if (isAdminField(e.target)) syncTypingFlag(); }, true);
-      document.addEventListener("focusout", () => setTimeout(syncTypingFlag, 0), true);
-      const onWheel = (e) => {
-        if (!state.open) return;
-        const root = document.getElementById("agarAdminRoot");
-        if (!root) return;
-        const over = (e.target && isAdminField(e.target)) || (() => {
-          const r = root.getBoundingClientRect();
-          return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
-        })();
-        if (!over) return;
-        e.preventDefault();
-        e.stopPropagation();
-        if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
-        const list = document.getElementById("agarAdminList");
-        if (list) list.scrollTop += e.deltaY || (-e.wheelDelta) || 0;
-      };
-      document.addEventListener("wheel", onWheel, { capture: true, passive: false });
-      document.addEventListener("mousewheel", onWheel, { capture: true, passive: false });
-      document.addEventListener("DOMMouseScroll", onWheel, { capture: true, passive: false });
-    }
-  
-    function ensureStyles() {
-      if (document.getElementById("agar-admin-css")) return;
-      const style = document.createElement("style");
-      style.id = "agar-admin-css";
-      style.textContent = `
-  #agarAdminToggle{position:absolute;right:178px;top:10px;z-index:6;border:1px solid rgba(255,255,255,.22);background:rgba(14,18,28,.92);color:#e8f0ff;padding:8px 12px;border-radius:10px;cursor:pointer;font:600 13px/1.2 system-ui,Segoe UI,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.35)}
-  #agarAdminToggle.on{background:rgba(36,86,180,.95);border-color:rgba(140,180,255,.55)}
-  #agarAdminRoot{position:absolute;z-index:6;right:178px;top:52px;width:min(460px,96vw);font:13px/1.35 system-ui,Segoe UI,sans-serif;color:#e8eef8;pointer-events:none}
-  #agarAdminRoot *{box-sizing:border-box}
-  #agarAdminPanel{pointer-events:auto;display:none;max-height:min(88vh,820px);overflow:auto;background:rgba(10,14,22,.97);border:1px solid rgba(255,255,255,.12);border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.45)}
-  #agarAdminPanel.open{display:block}
-  #agarAdminHead{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.08);position:sticky;top:0;background:rgba(10,14,22,.98);z-index:2}
-  #agarAdminHead b{font-size:14px}
-  #agarAdminRole{margin-left:auto;opacity:.7;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
-  @media (max-width:760px){
-    #agarAdminToggle{
-      position:fixed !important;
-      right:10px !important;
-      left:auto !important;
-      top:auto !important;
-      bottom:96px !important;
-      z-index:10060 !important;
-      padding:12px 16px;
-      font-size:15px;
-      border:2px solid rgba(150,190,255,.85);
-      background:rgba(28,72,170,.98);
-      box-shadow:0 6px 22px rgba(0,0,0,.55), 0 0 0 3px rgba(60,120,255,.25);
-    }
-    #agarAdminToggle.on{
-      background:rgba(48,110,230,.98);
-      border-color:#fff;
-    }
-    #agarAdminRoot{
-      position:fixed !important;
-      right:8px !important;
-      left:8px !important;
-      top:auto !important;
-      bottom:148px !important;
-      width:auto !important;
-      max-width:none !important;
-      z-index:10060 !important;
-    }
-    #agarAdminPanel{
-      max-height:min(58vh,520px);
-      border-width:2px;
-      border-color:rgba(140,180,255,.35);
-      -webkit-overflow-scrolling:touch;
-    }
-    .aa-btns button,.aa-row button,.aa-list .aa-kick{
-      min-height:34px;
-      padding:8px 12px;
-      font-size:13px;
-    }
-    .aa-list th,.aa-list td{padding:8px 8px;font-size:13px}
-    .aa-list .aa-nick{max-width:42vw}
-  }
-  .aa-sec{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.07)}
-  .aa-sec h4{margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.55}
-  .aa-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:6px}
-  .aa-row:last-child{margin-bottom:0}
-  .aa-row label{font-size:11px;opacity:.7;min-width:52px}
-  .aa-btns{display:flex;flex-wrap:wrap;gap:6px}
-  .aa-btns button,.aa-row button{font:inherit;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#eaf1ff;padding:5px 9px;border-radius:7px;cursor:pointer}
-  .aa-btns button:hover,.aa-row button:hover{background:rgba(80,130,220,.35)}
-  .aa-btns button:disabled,.aa-row button:disabled{opacity:.35;cursor:not-allowed}
-  .aa-btns button.warn{border-color:rgba(255,140,80,.35);background:rgba(180,70,20,.22)}
-  .aa-btns button.danger{border-color:rgba(255,80,80,.4);background:rgba(160,30,30,.28)}
-  .aa-inp{width:72px;border:1px solid rgba(255,255,255,.16);background:rgba(0,0,0,.35);color:#eaf1ff;padding:5px 7px;border-radius:7px;font:inherit}
-  .aa-inp.wide{width:120px}
-  .aa-inp.grow{flex:1;min-width:100px;width:auto}
-  .aa-sel{padding:8px 12px;font-size:12px;background:rgba(40,70,140,.18);border-bottom:1px solid rgba(255,255,255,.07)}
-  .aa-sel strong{font-weight:600}
-  .aa-list{max-height:28vh;overflow:auto}
-  .aa-list table{width:100%;border-collapse:collapse}
-  .aa-list th,.aa-list td{padding:6px 8px;text-align:left;border-bottom:1px solid rgba(255,255,255,.05);white-space:nowrap}
-  .aa-list th{position:sticky;top:0;background:rgba(16,22,34,.98);font-size:11px;opacity:.75;font-weight:600}
-  .aa-list tr{cursor:pointer}
-  .aa-list tr:hover{background:rgba(255,255,255,.04)}
-  .aa-list tr.sel{background:rgba(60,110,220,.28)}
-  .aa-list .pid,.aa-list .score{font-variant-numeric:tabular-nums}
-  .aa-list .pid{opacity:.65}
-  .aa-list .aa-nick-cell{display:flex;align-items:center;gap:8px;min-width:0}
-  .aa-list .aa-nick{overflow:hidden;text-overflow:ellipsis;max-width:140px}
-  .aa-list .aa-kick{flex-shrink:0;font:inherit;border:1px solid rgba(255,140,80,.4);background:rgba(180,70,20,.28);color:#ffe8d8;padding:3px 8px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600}
-  .aa-list .aa-kick:hover{background:rgba(220,90,30,.45)}
-  .aa-list .aa-ip{font-variant-numeric:tabular-nums;letter-spacing:.02em}
-  .aa-list .aa-ip.masked{opacity:.55}
-  .aa-ip-toggle{font:inherit;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#eaf1ff;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:11px;margin-left:auto}
-  .aa-ip-toggle.on{background:rgba(36,86,180,.55);border-color:rgba(140,180,255,.45)}
-  .aa-list-tools{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-  .aa-filter{flex:1;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.3);color:#eaf1ff;padding:6px 8px;border-radius:7px;font:inherit;margin-bottom:0}
-  .aa-hint{font-size:11px;opacity:.5;margin-top:4px}
-  #agarAdminFoot{padding:8px 12px;font-size:11px;opacity:.5}
-  `;
-      document.head.appendChild(style);
-    }
-  
-    function val(id, fallback) {
-      const el = document.getElementById(id);
-      if (!el) return fallback;
-      const n = Number(el.value);
-      return Number.isFinite(n) ? n : fallback;
-    }
-  
-    function positionNearLeaderboard() {
-      const lb = document.getElementById("leaderboard");
-      const onLb = document.getElementById("onleaderboard");
-      const toggle = document.getElementById("agarAdminToggle");
-      const root = document.getElementById("agarAdminRoot");
-      if (!toggle) return;
-  
-      // На телефонах позицию задаёт CSS (fixed), не перебиваем inline.
-      if (window.innerWidth <= 760) {
-        toggle.style.right = "";
-        toggle.style.top = "";
-        toggle.style.left = "";
-        toggle.style.bottom = "";
-        if (root) {
-          root.style.right = "";
-          root.style.top = "";
-          root.style.left = "";
-          root.style.bottom = "";
-          root.style.width = "";
-        }
-        return;
-      }
-  
-      let right = 178;
-      let top = 10;
-      const gap = 8;
-  
-      const anchor =
-        lb && getComputedStyle(lb).display !== "none" && lb.offsetParent !== null
-          ? lb
-          : onLb && getComputedStyle(onLb).display !== "none"
-            ? onLb
-            : null;
-  
-      if (anchor) {
-        const cs = getComputedStyle(anchor);
-        const w = anchor.getBoundingClientRect().width || parseFloat(cs.minWidth) || 150;
-        const r = parseFloat(cs.right);
-        const t = parseFloat(cs.top);
-        right = Math.round((Number.isFinite(r) ? r : 10) + w + gap);
-        top = Number.isFinite(t) ? Math.round(t) : 10;
-      }
-  
-      toggle.style.right = right + "px";
-      toggle.style.top = top + "px";
-      toggle.style.left = "auto";
-      if (root) {
-        root.style.right = right + "px";
-        root.style.top = top + 42 + "px";
-        root.style.left = "auto";
-      }
-    }
-  
-    function buildUi() {
-      if (state.el) return state.el;
-      ensureStyles();
-  
-      const toggle = document.createElement("button");
-      toggle.id = "agarAdminToggle";
-      toggle.type = "button";
-      toggle.textContent = "Admin";
-      toggle.title = "Админ-панель";
-      toggle.style.display = "none";
-  
-      const root = document.createElement("div");
-      root.id = "agarAdminRoot";
-      root.innerHTML = `
-        <div id="agarAdminPanel">
-          <div id="agarAdminHead">
-            <b>Панель управления</b>
-            <span id="agarAdminRole">—</span>
-          </div>
-  
-          <div class="aa-sec" id="aaGlobalSec">
-            <h4>Общее · сервер</h4>
-            <div class="aa-btns" id="aaGlobalLists"></div>
-            <div class="aa-row" style="margin-top:8px">
-              <div class="aa-btns" id="aaGlobalActs"></div>
-            </div>
-            <div class="aa-row" style="margin-top:8px">
-              <label>ChatLock</label>
-              <input class="aa-inp" id="aaChatLockSec" type="number" min="0" value="1000" title="Секунды chatlock" />
-              <button type="button" id="aaChatLockBtn">ChatLock</button>
-            </div>
-          </div>
-  
-          <div class="aa-sec">
-            <h4>Игроки онлайн</h4>
-            <div class="aa-list-tools">
-              <input class="aa-filter" id="aaFilter" type="search" placeholder="Фильтр: ник или ID…" />
-              <button type="button" class="aa-ip-toggle" id="aaIpToggle" title="Показать / скрыть IP">IP: скрыты</button>
-            </div>
-            <div class="aa-list" id="agarAdminList">
-              <table>
-                <thead><tr><th>ID</th><th>Ник</th><th></th><th>Cells</th><th>Score</th><th>ЛК</th><th>IP</th></tr></thead>
-                <tbody></tbody>
-              </table>
-            </div>
-            <div class="aa-hint">Kick рядом с ником · клик по строке — выбрать для ban/mute/…</div>
-          </div>
-  
-          <div class="aa-sel" id="agarAdminSel">Игрок не выбран</div>
-  
-          <div class="aa-sec" id="aaPlayerSec">
-            <h4 id="aaPlayerTitle">Действия с игроком</h4>
-  
-            <div class="aa-row">
-              <label>Бан сек</label>
-              <input class="aa-inp" id="aaBanSec" type="number" min="1" value="500" />
-              <button type="button" class="warn" data-act="ban">Ban</button>
-              <label>Mute сек</label>
-              <input class="aa-inp" id="aaMuteSec" type="number" min="0" value="300" />
-              <button type="button" data-act="mute">Mute</button>
-              <button type="button" data-act="unmute">Unmute</button>
-            </div>
-  
-            <div class="aa-row">
-              <label>NickLock</label>
-              <input class="aa-inp" id="aaNickLockSec" type="number" min="1" value="500" />
-              <button type="button" data-act="nicklock">Lock</button>
-              <button type="button" data-act="nickunlock">Unlock</button>
-              <button type="button" class="warn" data-act="nickban">NickBan</button>
-              <button type="button" data-act="unnickban">UnNickBan</button>
-            </div>
-  
-            <div class="aa-row" id="aaLkBanRow" style="display:none">
-              <button type="button" class="danger" data-act="uidban">Бан ЛК</button>
-              <button type="button" data-act="uidunban">Разбан ЛК</button>
-            </div>
-  
-            <div class="aa-row" id="aaAdminPlayerRows" style="display:none">
-              <label>Масса</label>
-              <input class="aa-inp" id="aaMass" type="number" min="1" value="500" />
-              <button type="button" data-act="mass">Set mass</button>
-              <label>Split</label>
-              <input class="aa-inp" id="aaSplit" type="number" min="1" max="128" value="1" />
-              <button type="button" data-act="split">Split</button>
-              <button type="button" data-act="merge">Merge</button>
-              <button type="button" class="danger" data-act="kill">Kill</button>
-            </div>
-  
-            <div class="aa-row" id="aaTpRow" style="display:none">
-              <label>TP X</label>
-              <input class="aa-inp wide" id="aaTpX" type="number" value="0" />
-              <label>Y</label>
-              <input class="aa-inp wide" id="aaTpY" type="number" value="0" />
-              <button type="button" data-act="tp">TP</button>
-              <button type="button" data-act="tpMe">TP → я</button>
-            </div>
-          </div>
-  
-          <div id="agarAdminFoot">Команды уходят в чат · список ~2с</div>
-        </div>`;
-  
-      const lb = document.getElementById("leaderboard");
-      const host = (lb && lb.parentNode) || document.body;
-      if (lb && lb.parentNode) {
-        host.insertBefore(toggle, lb);
-        host.insertBefore(root, lb);
-      } else {
-        document.body.appendChild(toggle);
-        document.body.appendChild(root);
-      }
-  
-      toggle.addEventListener("click", () => setOpen(!state.open));
-  
-      root.querySelector("#aaFilter").addEventListener("input", (e) => {
-        state.filter = String(e.target.value || "").trim().toLowerCase();
-        renderList();
-      });
-  
-      root.querySelector("#aaIpToggle").addEventListener("click", () => {
-        state.showIps = !state.showIps;
-        syncIpToggleUi();
-        renderList();
-        renderPlayerChrome();
-      });
-  
-      root.querySelector("#agarAdminList").addEventListener("click", (e) => {
-        const kickBtn = e.target.closest("[data-kick-pid]");
-        if (kickBtn) {
-          e.preventDefault();
-          e.stopPropagation();
-          const pid = Number(kickBtn.getAttribute("data-kick-pid"));
-          if (Number.isFinite(pid)) sendCmd(`/kick ${pid}`);
-          return;
-        }
-      });
-  
-      root.querySelector("#aaPlayerSec").addEventListener("click", (e) => {
-        const btn = e.target.closest("[data-act]");
-        if (!btn) return;
-        runPlayerAct(btn.getAttribute("data-act"));
-      });
-  
-      state.el = { root, toggle, panel: root.querySelector("#agarAdminPanel") };
-      positionNearLeaderboard();
-      renderGlobals();
-      renderPlayerChrome();
-      return state.el;
-    }
-  
-    function setOpen(v) {
-      state.open = !!v;
-      const ui = buildUi();
-      ui.panel.classList.toggle("open", state.open);
-      ui.toggle.classList.toggle("on", state.open);
-      if (state.open) {
-        syncStaffFromNick();
-        requestPanel();
-        fillTpFromMe(false);
-      }
-    }
-  
-    function sendCmd(cmd) {
-      if (!cmd || !state.api) return;
-      if (typeof state.api.sendChat === "function") state.api.sendChat(cmd);
-    }
-  
-    function requestPanel() {
-      if (!state.api || typeof state.api.sendAdminPanel !== "function") return;
-      state.api.sendAdminPanel();
-    }
-  
-    function selected() {
-      return state.players.find((p) => p.pid === state.selectedPid) || null;
-    }
-  
-    function needPlayer() {
-      const p = selected();
-      if (!p) {
-        const sel = document.getElementById("agarAdminSel");
-        if (sel) sel.textContent = "Сначала выберите игрока в списке";
-        return null;
-      }
-      return p;
-    }
-  
-    function fillTpFromMe(writeAlways) {
-      const S = state.S;
-      if (!S) return;
-      const x = Math.round(S.nodeX || S.posX || 0);
-      const y = Math.round(S.nodeY || S.posY || 0);
-      const ix = document.getElementById("aaTpX");
-      const iy = document.getElementById("aaTpY");
-      if (!ix || !iy) return;
-      if (writeAlways || !ix.value || ix.value === "0") ix.value = String(x);
-      if (writeAlways || !iy.value || iy.value === "0") iy.value = String(y);
-    }
-  
-    function runPlayerAct(act) {
-      const p = needPlayer();
-      if (!p) return;
-  
-      switch (act) {
-        case "kick":
-          sendCmd(`/kick ${p.pid}`);
-          break;
-        case "ban":
-          sendCmd(`/ban ${p.pid} ${val("aaBanSec", 500)}`);
-          break;
-        case "mute":
-          sendCmd(`/mute ${p.pid} ${val("aaMuteSec", 300)}`);
-          break;
-        case "unmute":
-          sendCmd(`/unmute ${p.pid}`);
-          break;
-        case "nicklock":
-          sendCmd(`/nicklock ${p.pid} ${val("aaNickLockSec", 500)}`);
-          break;
-        case "nickunlock":
-          sendCmd(`/nickunlock ${p.pid}`);
-          break;
-        case "nickban":
-          if (!p.nick) return;
-          sendCmd(`/nickban ${p.nick}`);
-          break;
-        case "unnickban":
-          if (!p.nick) return;
-          sendCmd(`/unnickban ${p.nick}`);
-          break;
-        case "uidban":
-          if (!isAdmin() || !p.lkUid) return;
-          sendCmd(`/uidban ${p.lkUid}`);
-          break;
-        case "uidunban":
-          if (!isAdmin() || !p.lkUid) return;
-          sendCmd(`/uidunban ${p.lkUid}`);
-          break;
-        case "mass":
-          if (!isAdmin()) return;
-          sendCmd(`/mass ${p.pid} ${val("aaMass", 500)}`);
-          break;
-        case "split":
-          if (!isAdmin()) return;
-          sendCmd(`/split ${p.pid} ${val("aaSplit", 1)}`);
-          break;
-        case "merge":
-          if (!isAdmin()) return;
-          sendCmd(`/merge ${p.pid}`);
-          break;
-        case "kill":
-          if (!isAdmin()) return;
-          sendCmd(`/kill ${p.pid}`);
-          break;
-        case "tp":
-          if (!isAdmin()) return;
-          sendCmd(`/tp ${p.pid} ${val("aaTpX", 0)} ${val("aaTpY", 0)}`);
-          break;
-        case "tpMe":
-          if (!isAdmin()) return;
-          fillTpFromMe(true);
-          sendCmd(`/tp ${p.pid} ${val("aaTpX", 0)} ${val("aaTpY", 0)}`);
-          break;
-        default:
-          break;
-      }
-    }
-  
-    function renderGlobals() {
-      const lists = document.getElementById("aaGlobalLists");
-      const acts = document.getElementById("aaGlobalActs");
-      if (!lists || !acts) return;
-      lists.innerHTML = "";
-      acts.innerHTML = "";
-  
-      const listCmds = [
-        { label: "Playerlist", cmd: "/playerlist" },
-        { label: "Banlist", cmd: "/banlist" },
-        { label: "Nickbans", cmd: "/nickbanlist" },
-        { label: "Mutelist", cmd: "/mutelist" },
-        { label: "Help", cmd: "/help" },
-      ];
-      listCmds.forEach((a) => {
-        const b = document.createElement("button");
-        b.type = "button";
-        b.textContent = a.label;
-        b.addEventListener("click", () => sendCmd(a.cmd));
-        lists.appendChild(b);
-      });
-  
-      const ref = document.createElement("button");
-      ref.type = "button";
-      ref.textContent = "↻ Список";
-      ref.addEventListener("click", () => requestPanel());
-      lists.appendChild(ref);
-  
-      const serverActs = [];
-      if (isAdmin()) {
-        serverActs.push(
-          { label: "Status", cmd: "/status", admin: true },
-          { label: "Pause", cmd: "/pause", admin: true }
-        );
-      }
-      serverActs.forEach((a) => {
-        const b = document.createElement("button");
-        b.type = "button";
-        b.textContent = a.label;
-        if (a.danger) b.className = "danger";
-        b.addEventListener("click", () => sendCmd(a.cmd));
-        acts.appendChild(b);
-      });
-  
-      const chatLockBtn = document.getElementById("aaChatLockBtn");
-      if (chatLockBtn && !chatLockBtn._aaBound) {
-        chatLockBtn._aaBound = true;
-        chatLockBtn.addEventListener("click", () => {
-          const sec = Math.max(0, val("aaChatLockSec", 1000) | 0);
-          const inp = document.getElementById("aaChatLockSec");
-          if (inp) inp.value = String(sec);
-          sendCmd(`/chatlock ${sec}`);
-        });
-      }
-    }
-  
-    function formatIp(ip) {
-      if (!isAdmin()) return "—";
-      if (!ip || ip === "null") return "—";
-      if (ip === "BOT" || ip === "***") return ip;
-      if (!state.showIps) return "****";
-      return ip;
-    }
-  
-    function syncIpToggleUi() {
-      const btn = document.getElementById("aaIpToggle");
-      if (!btn) return;
-      btn.classList.toggle("on", !!state.showIps);
-      btn.textContent = state.showIps ? "IP: показаны" : "IP: скрыты";
-      btn.style.display = isAdmin() ? "" : "none";
-    }
-  
-    function renderPlayerChrome() {
-      syncIpToggleUi();
-  
-      const adminRows = document.getElementById("aaAdminPlayerRows");
-      const tpRow = document.getElementById("aaTpRow");
-      const lkBanRow = document.getElementById("aaLkBanRow");
-      if (adminRows) adminRows.style.display = isAdmin() ? "flex" : "none";
-      if (tpRow) tpRow.style.display = isAdmin() ? "flex" : "none";
-      if (lkBanRow) lkBanRow.style.display = isAdmin() ? "flex" : "none";
-  
-      const p = selected();
-      const title = document.getElementById("aaPlayerTitle");
-      if (title) {
-        title.textContent = p
-          ? `Действия с игроком · ${p.nick || "?"} (#${p.pid})`
-          : "Действия с игроком";
-      }
-      const sel = document.getElementById("agarAdminSel");
-      if (sel) {
-        if (!p) sel.innerHTML = "Игрок не выбран";
-        else {
-          const ipRaw = isAdmin() && p.ip && p.ip !== "null" ? p.ip : "";
-          const ip =
-            ipRaw
-              ? ` · IP ${escapeHtml(state.showIps ? ipRaw : "****")}`
-              : "";
-          sel.innerHTML = `Выбран: <strong>${escapeHtml(p.nick || "?")}</strong> · #${p.pid} · cells ${p.cells} · score ${p.score}${ip}`;
-        }
-      }
-  
-      const disabled = !p;
-      document.querySelectorAll("#aaPlayerSec [data-act]").forEach((btn) => {
-        btn.disabled = disabled;
-      });
-    }
-  
-    function renderList() {
-      const tb = document.querySelector("#agarAdminList tbody");
-      if (!tb) return;
-      tb.innerHTML = "";
-      const f = state.filter;
-      const rows = state.players
-        .slice()
-        .filter((p) => {
-          if (!f) return true;
-          return String(p.pid).includes(f) || String(p.lkUid || "").includes(f) || String(p.nick || "").toLowerCase().includes(f);
-        })
-        .sort((a, b) => b.score - a.score || a.pid - b.pid);
-  
-      rows.forEach((p) => {
-        const tr = document.createElement("tr");
-        if (p.pid === state.selectedPid) tr.className = "sel";
-        const ipText = formatIp(p.ip);
-        const ipClass = state.showIps ? "aa-ip" : "aa-ip masked";
-  
-        const tdPid = document.createElement("td");
-        tdPid.className = "pid";
-        tdPid.textContent = String(p.pid);
-  
-        const tdNick = document.createElement("td");
-        const nickWrap = document.createElement("div");
-        nickWrap.className = "aa-nick-cell";
-        const nickSpan = document.createElement("span");
-        nickSpan.className = "aa-nick";
-        nickSpan.textContent = p.nick || "?";
-        nickWrap.appendChild(nickSpan);
-        tdNick.appendChild(nickWrap);
-  
-        const tdKick = document.createElement("td");
-        const kick = document.createElement("button");
-        kick.type = "button";
-        kick.className = "aa-kick";
-        kick.textContent = "Kick";
-        kick.title = `Кик ${p.nick || p.pid}`;
-        kick.setAttribute("data-kick-pid", String(p.pid));
-        tdKick.appendChild(kick);
-  
-        const tdCells = document.createElement("td");
-        tdCells.textContent = String(p.cells);
-  
-        const tdScore = document.createElement("td");
-        tdScore.className = "score";
-        tdScore.textContent = String(p.score);
-  
-        const tdLk = document.createElement("td");
-        tdLk.textContent = p.lkUid ? String(p.lkUid) : "—";
-  
-        const tdIp = document.createElement("td");
-        tdIp.className = ipClass;
-        tdIp.textContent = ipText;
-  
-        tr.appendChild(tdPid);
-        tr.appendChild(tdNick);
-        tr.appendChild(tdKick);
-        tr.appendChild(tdCells);
-        tr.appendChild(tdScore);
-        tr.appendChild(tdLk);
-        tr.appendChild(tdIp);
-  
-        tr.addEventListener("click", (e) => {
-          if (e.target.closest("[data-kick-pid]")) return;
-          state.selectedPid = p.pid;
-          renderList();
-          renderPlayerChrome();
-          fillTpFromMe(false);
-        });
-        tb.appendChild(tr);
-      });
-  
-      const roleEl = document.getElementById("agarAdminRole");
-      if (roleEl) roleEl.textContent = state.role || "staff";
-      renderPlayerChrome();
-    }
-  
-    function syncStaffFromNick() {
-      const nickRole = roleFromNick(readCurrentNick());
-      state.roleFromNick = nickRole;
-      if (nickRole) {
-        state.role = nickRole;
-        if (!state.el) buildUi();
-        state.el.toggle.style.display = "block";
-        positionNearLeaderboard();
-        const roleEl = document.getElementById("agarAdminRole");
-        if (roleEl) roleEl.textContent = nickRole;
-        renderGlobals();
-        renderPlayerChrome();
-        return;
-      }
-      if (!state.players.length) {
-        state.role = null;
-        if (state.el) {
-          state.el.toggle.style.display = "none";
-          if (state.open) setOpen(false);
-        }
-      }
-    }
-  
-    function applyAdminData(data) {
-      if (!data) return;
-      const nickRole = roleFromNick(readCurrentNick()) || state.roleFromNick;
-      state.role = nickRole || data.role || "moder";
-      state.players = Array.isArray(data.players) ? data.players : [];
-      if (!state.el) buildUi();
-      if (nickRole || state.role) state.el.toggle.style.display = "block";
-      positionNearLeaderboard();
-      renderGlobals();
-      renderList();
-    }
-  
-    function onAdminData(packet) {
-      applyAdminData(packet);
-    }
-  
-    function onAdminPacket(view, offset) {
-      const reader = {
-        view,
-        offset: offset | 0,
-        get canRead() {
-          return this.offset < this.view.byteLength;
-        },
-        uint8() {
-          return this.view.getUint8(this.offset++);
-        },
-        uint16() {
-          const v = this.view.getUint16(this.offset, true);
-          this.offset += 2;
-          return v;
-        },
-        uint32() {
-          const v = this.view.getUint32(this.offset, true);
-          this.offset += 4;
-          return v;
-        },
-        int32() {
-          const v = this.view.getInt32(this.offset, true);
-          this.offset += 4;
-          return v;
-        },
-        utf8() {
-          let text = "";
-          for (let byte1; (byte1 = this.canRead && this.view.getUint8(this.offset++)); ) {
-            if (byte1 <= 127) text += String.fromCharCode(byte1);
-            else if (byte1 <= 223)
-              text += String.fromCharCode(((byte1 & 31) << 6) | (this.view.getUint8(this.offset++) & 63));
-            else if (byte1 <= 239)
-              text += String.fromCharCode(
-                ((byte1 & 15) << 12) |
-                  ((this.view.getUint8(this.offset++) & 63) << 6) |
-                  (this.view.getUint8(this.offset++) & 63)
-              );
-            else {
-              let codePoint =
-                ((byte1 & 7) << 18) |
-                ((this.view.getUint8(this.offset++) & 63) << 12) |
-                ((this.view.getUint8(this.offset++) & 63) << 6) |
-                (this.view.getUint8(this.offset++) & 63);
-              if (codePoint >= 65536) {
-                codePoint -= 65536;
-                text += String.fromCharCode(55296 | (codePoint >> 10), 56320 | (codePoint & 1023));
-              } else text += String.fromCharCode(codePoint);
-            }
-          }
-          return text;
-        },
-      };
-  
-      let role = null;
-      let count = -1;
-      const mark = reader.offset;
-      if (reader.canRead) {
-        const maybeRole = reader.view.getUint8(reader.offset);
-        if (maybeRole >= 1 && maybeRole <= 3 && reader.offset + 3 <= reader.view.byteLength) {
-          const maybeCount = reader.view.getUint16(reader.offset + 1, true);
-          if (maybeCount <= 512) {
-            role = maybeRole === 1 ? "admin" : maybeRole === 2 ? "moder" : "jmod";
-            reader.offset += 1;
-            count = reader.uint16();
-          }
-        }
-      }
-      if (count < 0) reader.offset = mark;
-  
-      const players = [];
-      const readOne = () => {
-        if (!reader.canRead) return false;
-        const ip = reader.utf8();
-        if (!reader.canRead) return false;
-        players.push({
-          ip,
-          pid: reader.uint32(),
-          nick: reader.utf8(),
-          cells: reader.uint32(),
-          mx: reader.int32(),
-          my: reader.int32(),
-          score: reader.uint32(),
-        });
-        return true;
-      };
-      if (count >= 0) {
-        for (let i = 0; i < count; i++) if (!readOne()) break;
-      } else {
-        while (reader.canRead) if (!readOne()) break;
-      }
-      if (!role) {
-        const hasRealIp = players.some((p) => p.ip && p.ip !== "null" && p.ip !== "***" && p.ip !== "BOT");
-        role = hasRealIp ? "admin" : "moder";
-      }
-      for (const p of players) {
-        const m = String(p.nick || "").match(/^(.*) \[лк:(\d+)\]$/);
-        if (!m) {
-          p.lkUid = 0;
-          continue;
-        }
-        p.nick = m[1];
-        p.lkUid = Number(m[2]);
-      }
-      applyAdminData({ role, players });
-    }
-  
-    function attach(S, api) {
-      if (!S || !api) return;
-      state.S = S;
-      state.api = api;
-      state.attached = true;
-      buildUi();
-      syncStaffFromNick();
-  
-      if (state.timer) clearInterval(state.timer);
-      let tick = 0;
-      state.timer = setInterval(() => {
-        syncStaffFromNick();
-        if (state.el && state.el.toggle.style.display !== "none") positionNearLeaderboard();
-        if (!api.wsIsOpen || !api.wsIsOpen()) {
-          state.lastCellNick = "";
-          return;
-        }
-        if (!state.role) return;
-        tick++;
-        if (state.open || tick % 4 === 0) requestPanel();
-      }, REFRESH_MS);
-  
-      setTimeout(() => {
-        syncStaffFromNick();
-        if (state.role) requestPanel();
-      }, 800);
-    }
-  
-    function tryAutoAttach() {
-      const S = global.__gameState || (global.wHandle && global.wHandle.__gameState);
-      if (!S || !S.api || state.attached) return;
-      attach(S, {
-        sendChat: (t) => {
-          if (S.api && typeof S.api.sendChat === "function") S.api.sendChat(t);
-        },
-        sendAdminPanel: () => {
-          if (typeof S.api.sendAdminPanel === "function") S.api.sendAdminPanel();
-          else if (typeof S.api.sendUint8 === "function") S.api.sendUint8(OPCODE);
-        },
-        wsIsOpen: () => !!(S.ws && S.ws.readyState === 1),
-      });
-    }
-  
-    global.AgarAdmin = {
-      OPCODE,
-      attach,
-      onAdminPacket,
-      onAdminData,
-      tryAutoAttach,
-      requestPanel,
-      setOpen,
-    };
-  
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", () => setTimeout(tryAutoAttach, 1500));
-    } else {
-      setTimeout(tryAutoAttach, 1500);
-    }
-    setInterval(tryAutoAttach, 4000);
-  })(typeof window !== "undefined" ? window : globalThis);
-  
-
   boot().catch(err => {
     console.error("Boot failed:", err);
   });
