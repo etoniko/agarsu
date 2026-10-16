@@ -5815,7 +5815,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       ...d
     };
   }
-  var DEFAULT_TRANSPARENT = [ "liqwid", "⟨本⟩ Itana.", "†Ĵώâ4ќâ†","g","Uroboros","ww","demons"];
+  var DEFAULT_TRANSPARENT = [ "liqwid", "⟨本⟩ Itana.", "†Ĵώâ4ќâ†","g","Uroboros","ww","demons","nr"];
   function ensureNameSets(S) {
     if (!S.transparent) S.transparent = new Set(DEFAULT_TRANSPARENT);
     if (!S.invisible) {
