@@ -5226,7 +5226,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     return "#" + c[0].toString(16).padStart(2, "0") + c[1].toString(16).padStart(2, "0") + c[2].toString(16).padStart(2, "0");
   }
   // Player ids stop at 2147483647. Virus wire ids are stored above that.
-  var VIRUS_NODE_BASE = 2147483648;
   var EJECT_SIZE = 35;
   /** Fed virus color. Matches the sizes produced by mass 100 + 12 per feed. */
   function virusColorHex(size) {
@@ -5253,7 +5252,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     const now = Date.now();
     for (let i = 0; i < S.nodelist.length; i++) {
       const node = S.nodelist[i];
-      if (!(node == null ? void 0 : node.isFood)) continue;
+      if (!(node == null ? void 0 : node.isFood) || node.foodPlaced) continue;
       const {x, y} = computeFoodPosition(S, node.id);
       const sz = computeFoodSize(S);
       node.color = foodColorHex(node.id);
@@ -5631,10 +5630,11 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     if (reader.offset + 2 <= reader.byteLength) {
       const foodCount = reader.uint16();
       for (let f = 0; f < foodCount; f++) {
-        if (reader.offset + 2 > reader.byteLength) break;
-        const foodId = reader.uint16();
+        if (reader.offset + 8 > reader.byteLength) break;
+        const foodId = reader.uint32();
+        const foodX = reader.int16();
+        const foodY = reader.int16();
         addedFood.add(foodId);
-        const foodPos = computeFoodPosition(S, foodId);
         const foodSize = computeFoodSize(S);
         const foodColor = foodColorHex(foodId);
         let food = S.nodes[foodId];
@@ -5644,18 +5644,19 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
           food.oy = food.y;
           food.oSize = food.size;
         } else {
-          food = new Cell2(foodId, foodPos.x, foodPos.y, foodSize, foodColor, "");
+          food = new Cell2(foodId, foodX, foodY, foodSize, foodColor, "");
           S.nodelist.push(food);
           S.nodes[foodId] = food;
-          food.ka = foodPos.x;
-          food.la = foodPos.y;
+          food.ka = foodX;
+          food.la = foodY;
         }
         food.color = foodColor;
         food.isFood = true;
+        food.foodPlaced = true;
         food.isVirus = false;
         food.isEjected = false;
-        food.nx = foodPos.x;
-        food.ny = foodPos.y;
+        food.nx = foodX;
+        food.ny = foodY;
         food.setSize(foodSize);
         food.updateTime = S.timestamp;
         food.flag = 0;
@@ -5708,7 +5709,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       const virusCount = reader.uint16();
       for (let v = 0; v < virusCount; v++) {
         if (reader.offset + 8 > reader.byteLength) break;
-        const virusId = VIRUS_NODE_BASE + reader.uint16();
+        const virusId = reader.uint16();
         const posX = reader.int16();
         const posY = reader.int16();
         const size = reader.uint16();
@@ -5720,7 +5721,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       const virusCount = reader.uint16();
       for (let v = 0; v < virusCount; v++) {
         if (reader.offset + 4 > reader.byteLength) break;
-        const virusId = VIRUS_NODE_BASE + reader.uint16();
+        const virusId = reader.uint16();
         const virus = S.nodes[virusId];
         const dx = reader.int8();
         const dy = reader.int8();
@@ -5732,7 +5733,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       const virusCount = reader.uint16();
       for (let v = 0; v < virusCount; v++) {
         if (reader.offset + 6 > reader.byteLength) break;
-        const virusId = VIRUS_NODE_BASE + reader.uint16();
+        const virusId = reader.uint16();
         const virus = S.nodes[virusId];
         const dx = reader.int8();
         const dy = reader.int8();
@@ -5745,7 +5746,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       const virusCount = reader.uint16();
       for (let v = 0; v < virusCount; v++) {
         if (reader.offset + 6 > reader.byteLength) break;
-        const virusId = VIRUS_NODE_BASE + reader.uint16();
+        const virusId = reader.uint16();
         const posX = reader.int16();
         const posY = reader.int16();
         moveVirus(virusId, posX, posY, null);
@@ -5755,7 +5756,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       const virusCount = reader.uint16();
       for (let v = 0; v < virusCount; v++) {
         if (reader.offset + 8 > reader.byteLength) break;
-        const virusId = VIRUS_NODE_BASE + reader.uint16();
+        const virusId = reader.uint16();
         const posX = reader.int16();
         const posY = reader.int16();
         const size = reader.uint16();
@@ -5842,8 +5843,8 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     if (reader.offset + 2 <= reader.byteLength) {
       const foodGone = reader.uint16();
       for (let i = 0; i < foodGone; i++) {
-        if (reader.offset + 2 > reader.byteLength) break;
-        const foodId = reader.uint16();
+        if (reader.offset + 4 > reader.byteLength) break;
+        const foodId = reader.uint32();
         if (addedFood.has(foodId)) continue;
         const food = S.nodes[foodId];
         if (food) food.destroy();
@@ -5853,7 +5854,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       const virusGone = reader.uint16();
       for (let i = 0; i < virusGone; i++) {
         if (reader.offset + 2 > reader.byteLength) break;
-        const virusId = VIRUS_NODE_BASE + reader.uint16();
+        const virusId = reader.uint16();
         if (addedFood.has(virusId)) continue;
         const virus = S.nodes[virusId];
         if (virus) virus.destroy();
