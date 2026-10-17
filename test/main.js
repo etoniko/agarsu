@@ -3682,7 +3682,63 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   // Pre-batch: food went through Cell.drawOneCell like players (per-pellet fill).
   // Bugs (invisible food, wrong colors, food above players): turn off batch in
   // drawGameScene or remove early-return in drawOneCell for isFood.
-  /** One beginPath + many arcs + one fill per food color (cheaper than per-pellet fill). */
+  function foodRgb01(hex) {
+    const n = parseInt(String(hex).slice(1), 16);
+    if (!(n >= 0)) return [ 0.67, 0.67, 0.67 ];
+    return [ (n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255 ];
+  }
+  function foodGLLayer(S, w, h) {
+    const prev = S._foodGL;
+    if (prev && prev.w === w && prev.h === h && prev.gl && !prev.gl.isContextLost()) return prev;
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const gl = canvas.getContext("webgl", {
+      alpha: true,
+      antialias: false,
+      depth: false,
+      stencil: false,
+      premultipliedAlpha: false,
+      preserveDrawingBuffer: true
+    });
+    if (!gl) {
+      S._foodGL = null;
+      return null;
+    }
+    const vs = gl.createShader(gl.VERTEX_SHADER);
+    gl.shaderSource(vs, "attribute vec2 aCorner;attribute vec2 aCenter;attribute float aRadius;attribute vec3 aColor;uniform vec2 uScreen;varying vec2 vLocal;varying vec3 vColor;void main(){vec2 pos=aCenter+aCorner*aRadius;vec2 clip=pos/uScreen*2.0-1.0;clip.y=-clip.y;gl_Position=vec4(clip,0.0,1.0);vLocal=aCorner;vColor=aColor;}");
+    gl.compileShader(vs);
+    const fs = gl.createShader(gl.FRAGMENT_SHADER);
+    gl.shaderSource(fs, "precision mediump float;varying vec2 vLocal;varying vec3 vColor;void main(){float d=dot(vLocal,vLocal);if(d>1.0)discard;gl_FragColor=vec4(vColor,1.0);}");
+    gl.compileShader(fs);
+    const prog = gl.createProgram();
+    gl.bindAttribLocation(prog, 0, "aCorner");
+    gl.bindAttribLocation(prog, 1, "aCenter");
+    gl.bindAttribLocation(prog, 2, "aRadius");
+    gl.bindAttribLocation(prog, 3, "aColor");
+    gl.attachShader(prog, vs);
+    gl.attachShader(prog, fs);
+    gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+      S._foodGL = null;
+      return null;
+    }
+    const buf = gl.createBuffer();
+    const next = {
+      canvas,
+      gl,
+      prog,
+      buf,
+      uScreen: gl.getUniformLocation(prog, "uScreen"),
+      data: new Float32Array(4096),
+      w,
+      h
+    };
+    S._foodGL = next;
+    return next;
+  }
+  const FOOD_QUAD = [ -1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1 ];
+  /** Gray food stays one canvas fill. Colored food is one GPU draw, then one blit. */
   function drawBatchedFood(ctx, S) {
     const list = S.nodelist;
     if (!list || !list.length) return 0;
@@ -3710,18 +3766,96 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       bucket.push(node.x, node.y, r);
       drawn++;
     }
+    if (!drawn) return 0;
+    if (byColor.size === 1) {
+      byColor.forEach(function (coords, color) {
+        ctx.beginPath();
+        for (let i = 0; i < coords.length; i += 3) {
+          const x = coords[i];
+          const y = coords[i + 1];
+          const rad = coords[i + 2];
+          ctx.moveTo(x + rad, y);
+          ctx.arc(x, y, rad, 0, 2 * Math.PI);
+        }
+        ctx.fillStyle = color;
+        ctx.fill();
+      });
+      return drawn;
+    }
+    const bw = S.canvasWidth | 0;
+    const bh = S.canvasHeight | 0;
+    const layer = bw > 1 && bh > 1 ? foodGLLayer(S, bw, bh) : null;
+    if (!layer) {
+      byColor.forEach(function (coords, color) {
+        ctx.beginPath();
+        for (let i = 0; i < coords.length; i += 3) {
+          const x = coords[i];
+          const y = coords[i + 1];
+          const rad = coords[i + 2];
+          ctx.moveTo(x + rad, y);
+          ctx.arc(x, y, rad, 0, 2 * Math.PI);
+        }
+        ctx.fillStyle = color;
+        ctx.fill();
+      });
+      return drawn;
+    }
+    const need = drawn * 48;
+    if (layer.data.length < need) {
+      let cap = layer.data.length;
+      while (cap < need) cap *= 2;
+      layer.data = new Float32Array(cap);
+    }
+    const data = layer.data;
+    const zoom = S.viewZoom;
+    const originX = bw * 0.5;
+    const originY = bh * 0.5;
+    const nodeX = S.nodeX;
+    const nodeY = S.nodeY;
+    let p = 0;
     byColor.forEach(function (coords, color) {
-      ctx.beginPath();
+      const rgb = foodRgb01(color);
       for (let i = 0; i < coords.length; i += 3) {
-        const x = coords[i];
-        const y = coords[i + 1];
-        const r = coords[i + 2];
-        ctx.moveTo(x + r, y);
-        ctx.arc(x, y, r, 0, 2 * Math.PI);
+        const sx = (coords[i] - nodeX) * zoom + originX;
+        const sy = (coords[i + 1] - nodeY) * zoom + originY;
+        const sr = coords[i + 2] * zoom;
+        if (!(sr > 0) || sx < -sr || sy < -sr || sx - sr > bw || sy - sr > bh) continue;
+        for (let q = 0; q < 12; q += 2) {
+          data[p++] = FOOD_QUAD[q];
+          data[p++] = FOOD_QUAD[q + 1];
+          data[p++] = sx;
+          data[p++] = sy;
+          data[p++] = sr;
+          data[p++] = rgb[0];
+          data[p++] = rgb[1];
+          data[p++] = rgb[2];
+        }
       }
-      ctx.fillStyle = color;
-      ctx.fill();
     });
+    const gl = layer.gl;
+    gl.viewport(0, 0, bw, bh);
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    if (p > 0) {
+      gl.useProgram(layer.prog);
+      gl.uniform2f(layer.uScreen, bw, bh);
+      gl.bindBuffer(gl.ARRAY_BUFFER, layer.buf);
+      gl.bufferData(gl.ARRAY_BUFFER, data.subarray(0, p), gl.DYNAMIC_DRAW);
+      const stride = 32;
+      gl.enableVertexAttribArray(0);
+      gl.vertexAttribPointer(0, 2, gl.FLOAT, false, stride, 0);
+      gl.enableVertexAttribArray(1);
+      gl.vertexAttribPointer(1, 2, gl.FLOAT, false, stride, 8);
+      gl.enableVertexAttribArray(2);
+      gl.vertexAttribPointer(2, 1, gl.FLOAT, false, stride, 16);
+      gl.enableVertexAttribArray(3);
+      gl.vertexAttribPointer(3, 3, gl.FLOAT, false, stride, 20);
+      gl.drawArrays(gl.TRIANGLES, 0, p / 8);
+    }
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.drawImage(layer.canvas, 0, 0);
+    ctx.restore();
     return drawn;
   }
   function drawGrid() {
