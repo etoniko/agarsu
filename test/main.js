@@ -5072,7 +5072,8 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   /** Same mass/size formula as GameServer.spawnFood / entity/Food.js */
   function foodRgb(id) {
     let n = (Math.imul(id, 747796405) + 2891336453) >>> 0;
-    const third = n & 255;
+    // 8 steps, not 256. Otherwise almost every pellet is its own fill and the food batch does nothing.
+    const third = n & 0xE0;
     n = (Math.imul(n, 1664525) + 1013904223) >>> 0;
     const slots = [255, 7, third];
     const order = [
