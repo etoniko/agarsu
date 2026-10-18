@@ -17,6 +17,9 @@
     color: #ffffff !important;
     font-weight: lighter;
 }
+.ww {
+    background: #0166ff;
+}
 .chatX_msg[class*="\263Ck\263C"],
 .chatX_msg[class*="\263CK\263C"]{
     background: linear-gradient(rgb(0 0 0 / 33%), rgb(0 0 0 / 50%)), url(/photo/0003.png) !important;
