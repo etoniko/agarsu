@@ -2107,9 +2107,9 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   }
   var activeRegion = null;
   function getDefaultRegion() {
-    try { let saved = localStorage.getItem("agar_region"); if (saved === "nl") saved = "tr"; if (saved && REGION_CONFIGS[saved]) return saved; } catch (e) {}
-    const browserLanguage = String((navigator && (navigator.language || navigator.userLanguage)) || "").toLowerCase();
-    return browserLanguage.startsWith("ru") ? "ru" : "tr";
+    if (REGION_CONFIGS.ru) return "ru";
+    const keys = Object.keys(REGION_CONFIGS);
+    return keys[0] || "ru";
   }
   function findGameServer(hostOrUrl) {
     if (!hostOrUrl) return null;
@@ -4854,6 +4854,24 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       const index = colors.indexOf(hex);
       return index === -1 ? 0 : index + 1;
     }
+    function sendAim(x, y) {
+      const ix = Math.round(x);
+      const iy = Math.round(y);
+      let msg;
+      if (ix >= -32768 && ix <= 32767 && iy >= -32768 && iy <= 32767) {
+        msg = prepareData(5);
+        msg.setUint8(0, ClientOpcode.MOUSE);
+        msg.setInt16(1, ix, true);
+        msg.setInt16(3, iy, true);
+      } else {
+        msg = prepareData(13);
+        msg.setUint8(0, ClientOpcode.MOUSE);
+        msg.setInt32(1, ix, true);
+        msg.setInt32(5, iy, true);
+        msg.setUint32(9, 0, true);
+      }
+      wsSend(msg);
+    }
     function sendMouseMove(opts) {
       if (!wsIsOpen()) return;
       ensureFreezeWsHook(S);
@@ -4867,12 +4885,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         if (aim && (force || !(Math.abs(S.oldX - aim.x) < .05 && Math.abs(S.oldY - aim.y) < .05))) {
           S.oldX = aim.x;
           S.oldY = aim.y;
-          const msg = prepareData(21);
-          msg.setUint8(0, ClientOpcode.MOUSE);
-          msg.setFloat64(1, aim.x, true);
-          msg.setFloat64(9, aim.y, true);
-          msg.setUint32(17, 0, true);
-          wsSend(msg);
+          sendAim(aim.x, aim.y);
         }
         return;
       }
@@ -4881,12 +4894,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         if (force || !(Math.abs(S.oldX - S.posX) < .05 && Math.abs(S.oldY - S.posY) < .05)) {
           S.oldX = S.posX;
           S.oldY = S.posY;
-          const msg = prepareData(21);
-          msg.setUint8(0, ClientOpcode.MOUSE);
-          msg.setFloat64(1, S.posX, true);
-          msg.setFloat64(9, S.posY, true);
-          msg.setUint32(17, 0, true);
-          wsSend(msg);
+          sendAim(S.posX, S.posY);
         }
       } else {
         const msgX = S.rawMouseX - S.canvasWidth / 2;
@@ -4894,12 +4902,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         if (64 <= msgX * msgX + msgY * msgY && !(Math.abs(S.oldX - S.X) < .1 && Math.abs(S.oldY - S.Y) < .1)) {
           S.oldX = S.X;
           S.oldY = S.Y;
-          const msg = prepareData(21);
-          msg.setUint8(0, ClientOpcode.MOUSE);
-          msg.setFloat64(1, S.X, true);
-          msg.setFloat64(9, S.Y, true);
-          msg.setUint32(17, 0, true);
-          wsSend(msg);
+          sendAim(S.X, S.Y);
         }
       }
     }
@@ -5274,7 +5277,9 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       killedNode.nSize = killedNode.size;
       killedNode.updateTime = S.timestamp;
     }
-    if (reader.offset + 2 <= reader.byteLength) {
+    const worldMask = reader.offset + 4 <= reader.byteLength ? reader.uint32() : 0;
+    const worldHas = bit => (worldMask & bit) !== 0;
+    if (worldHas(1)) {
       const fullCount = reader.uint16();
       for (let p = 0; p < fullCount; p++) {
         if (reader.offset + 18 > reader.byteLength) break;
@@ -5342,7 +5347,25 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         }
       }
     }
-    if (reader.offset + 2 <= reader.byteLength) {
+    if (worldHas(2)) {
+      const stepCount = reader.uint16();
+      for (let p = 0; p < stepCount; p++) {
+        if (reader.offset + 6 > reader.byteLength) break;
+        const nodeid = reader.uint32();
+        const dx = reader.int8();
+        const dy = reader.int8();
+        const node = S.nodes[nodeid];
+        if (!node || node.isFood || node.isVirus || node.isEjected) continue;
+        node.updatePos();
+        node.ox = node.x;
+        node.oy = node.y;
+        node.oSize = node.size;
+        node.nx += dx;
+        node.ny += dy;
+        node.updateTime = S.timestamp;
+      }
+    }
+    if (worldHas(4)) {
       const deltaCount = reader.uint16();
       for (let p = 0; p < deltaCount; p++) {
         if (reader.offset + 8 > reader.byteLength) break;
@@ -5362,7 +5385,25 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         node.updateTime = S.timestamp;
       }
     }
-    if (reader.offset + 2 <= reader.byteLength) {
+    if (worldHas(8)) {
+      const placeCount = reader.uint16();
+      for (let p = 0; p < placeCount; p++) {
+        if (reader.offset + 8 > reader.byteLength) break;
+        const nodeid = reader.uint32();
+        const posX = reader.int16();
+        const posY = reader.int16();
+        const node = S.nodes[nodeid];
+        if (!node || node.isFood || node.isVirus || node.isEjected) continue;
+        node.updatePos();
+        node.ox = node.x;
+        node.oy = node.y;
+        node.oSize = node.size;
+        node.nx = posX;
+        node.ny = posY;
+        node.updateTime = S.timestamp;
+      }
+    }
+    if (worldHas(16)) {
       const moveCount = reader.uint16();
       for (let p = 0; p < moveCount; p++) {
         if (reader.offset + 10 > reader.byteLength) break;
@@ -5382,7 +5423,23 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         node.updateTime = S.timestamp;
       }
     }
-    for (let nodeid; nodeid = reader.uint32(); ) {
+    if (worldHas(32)) {
+      const sizeCount = reader.uint16();
+      for (let p = 0; p < sizeCount; p++) {
+        if (reader.offset + 6 > reader.byteLength) break;
+        const nodeid = reader.uint32();
+        const size = reader.uint16();
+        const node = S.nodes[nodeid];
+        if (!node || node.isFood || node.isVirus || node.isEjected) continue;
+        node.updatePos();
+        node.ox = node.x;
+        node.oy = node.y;
+        node.oSize = node.size;
+        node.setSize(size);
+        node.updateTime = S.timestamp;
+      }
+    }
+    if (worldHas(64)) for (let nodeid; nodeid = reader.uint32(); ) {
       const type = reader.uint8();
       let posX = 0;
       let posY = 0;
@@ -5473,7 +5530,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       if (type === 1) node.color = foodColorHex(nodeid);
     }
     const addedFood = new Set();
-    if (reader.offset + 2 <= reader.byteLength) {
+    if (worldHas(128)) {
       const foodCount = reader.uint16();
       for (let f = 0; f < foodCount; f++) {
         if (reader.offset + 2 > reader.byteLength) break;
@@ -5549,7 +5606,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       }
       virus.updateTime = S.timestamp;
     };
-    if (reader.offset + 2 <= reader.byteLength) {
+    if (worldHas(256)) {
       const virusCount = reader.uint16();
       for (let v = 0; v < virusCount; v++) {
         if (reader.offset + 8 > reader.byteLength) break;
@@ -5561,7 +5618,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         placeVirus(virusId, posX, posY, size, true);
       }
     }
-    if (reader.offset + 2 <= reader.byteLength) {
+    if (worldHas(512)) {
       const virusCount = reader.uint16();
       for (let v = 0; v < virusCount; v++) {
         if (reader.offset + 4 > reader.byteLength) break;
@@ -5573,7 +5630,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         moveVirus(virusId, virus.nx + dx, virus.ny + dy, null);
       }
     }
-    if (reader.offset + 2 <= reader.byteLength) {
+    if (worldHas(1024)) {
       const virusCount = reader.uint16();
       for (let v = 0; v < virusCount; v++) {
         if (reader.offset + 6 > reader.byteLength) break;
@@ -5586,7 +5643,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         moveVirus(virusId, virus.nx + dx, virus.ny + dy, size);
       }
     }
-    if (reader.offset + 2 <= reader.byteLength) {
+    if (worldHas(2048)) {
       const virusCount = reader.uint16();
       for (let v = 0; v < virusCount; v++) {
         if (reader.offset + 6 > reader.byteLength) break;
@@ -5596,7 +5653,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         moveVirus(virusId, posX, posY, null);
       }
     }
-    if (reader.offset + 2 <= reader.byteLength) {
+    if (worldHas(4096)) {
       const virusCount = reader.uint16();
       for (let v = 0; v < virusCount; v++) {
         if (reader.offset + 8 > reader.byteLength) break;
@@ -5634,7 +5691,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       eject.teamSide = 0;
       if (eject.name) eject.setName("");
     };
-    if (reader.offset + 2 <= reader.byteLength) {
+    if (worldHas(8192)) {
       const ejectCount = reader.uint16();
       for (let e = 0; e < ejectCount; e++) {
         if (reader.offset + 11 > reader.byteLength) break;
@@ -5648,7 +5705,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         placeEject(ejectId, posX, posY, "#" + (r << 16 | g << 8 | b).toString(16).padStart(6, "0"), true);
       }
     }
-    if (reader.offset + 2 <= reader.byteLength) {
+    if (worldHas(16384)) {
       const ejectCount = reader.uint16();
       for (let e = 0; e < ejectCount; e++) {
         if (reader.offset + 6 > reader.byteLength) break;
@@ -5660,7 +5717,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         placeEject(ejectId, eject.nx + dx, eject.ny + dy, null, false);
       }
     }
-    if (reader.offset + 2 <= reader.byteLength) {
+    if (worldHas(32768)) {
       const ejectCount = reader.uint16();
       for (let e = 0; e < ejectCount; e++) {
         if (reader.offset + 8 > reader.byteLength) break;
@@ -5670,21 +5727,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         placeEject(ejectId, posX, posY, null, false);
       }
     }
-    if (reader.offset + 2 <= reader.byteLength) {
-      const idleVirus = reader.uint16();
-      for (let i = 0; i < idleVirus; i++) {
-        if (reader.offset + 2 > reader.byteLength) break;
-        reader.uint16();
-      }
-    }
-    if (reader.offset + 2 <= reader.byteLength) {
-      const idleEject = reader.uint16();
-      for (let i = 0; i < idleEject; i++) {
-        if (reader.offset + 4 > reader.byteLength) break;
-        reader.uint32();
-      }
-    }
-    if (reader.offset + 2 <= reader.byteLength) {
+    if (worldHas(65536)) {
       const foodGone = reader.uint16();
       for (let i = 0; i < foodGone; i++) {
         if (reader.offset + 2 > reader.byteLength) break;
@@ -5694,7 +5737,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         if (food) food.destroy();
       }
     }
-    if (reader.offset + 2 <= reader.byteLength) {
+    if (worldHas(131072)) {
       const virusGone = reader.uint16();
       for (let i = 0; i < virusGone; i++) {
         if (reader.offset + 2 > reader.byteLength) break;
@@ -5704,11 +5747,15 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         if (virus) virus.destroy();
       }
     }
-    while (reader.canRead) {
-      const removeId = reader.uint32();
-      if (addedFood.has(removeId)) continue;
-      const node = S.nodes[removeId];
-      if (node) node.destroy();
+    if (worldHas(262144)) {
+      const goneCount = reader.uint16();
+      for (let i = 0; i < goneCount; i++) {
+        if (reader.offset + 4 > reader.byteLength) break;
+        const removeId = reader.uint32();
+        if (addedFood.has(removeId)) continue;
+        const node = S.nodes[removeId];
+        if (node) node.destroy();
+      }
     }
     if (S.ua && S.playerCells.length === 0) {
       if (typeof onPlayerDeath === "function") {
