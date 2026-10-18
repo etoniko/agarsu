@@ -3651,14 +3651,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     drawCustomMapBackground(ctx);
     let drawn = 0;
     for (let i = 0; i < S.Cells.length; i++) S.Cells[i].drawOneCell(ctx);
-    // ── FOOD BATCH (2026-09) ──────────────────────────────────────────────
-    // Was: every food pellet called drawOneCell → beginPath+arc+fill each.
-    // Now: drawBatchedFood groups visible food by color → one path + one fill
-    // per color. Non-food still uses drawOneCell below (skips isFood).
-    // If food missing / wrong z-order / color bugs → disable foodBatchDraw or
-    // revert this block to: for (nodelist) nodelist[i].drawOneCell(ctx);
-    // Chat/agent context: "food batch fill" / this comment.
-    // ─────────────────────────────────────────────────────────────────────
+    // Food is a few canvas fills on this context. One fill per palette color.
     S.foodBatchDraw = true;
     drawn += drawBatchedFood(ctx, S);
     for (let i = 0; i < S.nodelist.length; i++) {
@@ -3682,67 +3675,13 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   // Pre-batch: food went through Cell.drawOneCell like players (per-pellet fill).
   // Bugs (invisible food, wrong colors, food above players): turn off batch in
   // drawGameScene or remove early-return in drawOneCell for isFood.
-  function foodRgb01(hex) {
-    const n = parseInt(String(hex).slice(1), 16);
-    if (!(n >= 0)) return [ 0.67, 0.67, 0.67 ];
-    return [ (n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255 ];
-  }
-  function foodGLLayer(S, w, h) {
-    const prev = S._foodGL;
-    if (prev && prev.w === w && prev.h === h && prev.gl && !prev.gl.isContextLost()) return prev;
-    const canvas = document.createElement("canvas");
-    canvas.width = w;
-    canvas.height = h;
-    const gl = canvas.getContext("webgl", {
-      alpha: true,
-      antialias: false,
-      depth: false,
-      stencil: false,
-      premultipliedAlpha: false,
-      preserveDrawingBuffer: true
-    });
-    if (!gl) {
-      S._foodGL = null;
-      return null;
-    }
-    const vs = gl.createShader(gl.VERTEX_SHADER);
-    gl.shaderSource(vs, "attribute vec2 aCorner;attribute vec2 aCenter;attribute float aRadius;attribute vec3 aColor;uniform vec2 uScreen;varying vec2 vLocal;varying vec3 vColor;void main(){vec2 pos=aCenter+aCorner*aRadius;vec2 clip=pos/uScreen*2.0-1.0;clip.y=-clip.y;gl_Position=vec4(clip,0.0,1.0);vLocal=aCorner;vColor=aColor;}");
-    gl.compileShader(vs);
-    const fs = gl.createShader(gl.FRAGMENT_SHADER);
-    gl.shaderSource(fs, "precision mediump float;varying vec2 vLocal;varying vec3 vColor;void main(){float d=dot(vLocal,vLocal);if(d>1.0)discard;gl_FragColor=vec4(vColor,1.0);}");
-    gl.compileShader(fs);
-    const prog = gl.createProgram();
-    gl.bindAttribLocation(prog, 0, "aCorner");
-    gl.bindAttribLocation(prog, 1, "aCenter");
-    gl.bindAttribLocation(prog, 2, "aRadius");
-    gl.bindAttribLocation(prog, 3, "aColor");
-    gl.attachShader(prog, vs);
-    gl.attachShader(prog, fs);
-    gl.linkProgram(prog);
-    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
-      S._foodGL = null;
-      return null;
-    }
-    const buf = gl.createBuffer();
-    const next = {
-      canvas,
-      gl,
-      prog,
-      buf,
-      uScreen: gl.getUniformLocation(prog, "uScreen"),
-      data: new Float32Array(4096),
-      w,
-      h
-    };
-    S._foodGL = next;
-    return next;
-  }
-  const FOOD_QUAD = [ -1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1 ];
-  /** Gray food stays one canvas fill. Colored food is one GPU draw, then one blit. */
+  /** Same canvas fill as gray food. Eight colors, so eight fills, no second canvas. */
   function drawBatchedFood(ctx, S) {
     const list = S.nodelist;
     if (!list || !list.length) return 0;
-    const byColor = new Map();
+    let buckets = S._foodBuckets;
+    if (!buckets) buckets = S._foodBuckets = new Map();
+    else buckets.forEach(coords => { coords.length = 0; });
     let drawn = 0;
     const frameId = S.frameId;
     const ts = S.timestamp;
@@ -3758,104 +3697,28 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       let r = node.size;
       if (!r) r = 20;
       const color = typeof node.getEffectiveColor === "function" ? node.getEffectiveColor() : node.color || "#FFFFFF";
-      let bucket = byColor.get(color);
+      let bucket = buckets.get(color);
       if (!bucket) {
         bucket = [];
-        byColor.set(color, bucket);
+        buckets.set(color, bucket);
       }
       bucket.push(node.x, node.y, r);
       drawn++;
     }
     if (!drawn) return 0;
-    if (byColor.size === 1) {
-      byColor.forEach(function (coords, color) {
-        ctx.beginPath();
-        for (let i = 0; i < coords.length; i += 3) {
-          const x = coords[i];
-          const y = coords[i + 1];
-          const rad = coords[i + 2];
-          ctx.moveTo(x + rad, y);
-          ctx.arc(x, y, rad, 0, 2 * Math.PI);
-        }
-        ctx.fillStyle = color;
-        ctx.fill();
-      });
-      return drawn;
-    }
-    const bw = S.canvasWidth | 0;
-    const bh = S.canvasHeight | 0;
-    const layer = bw > 1 && bh > 1 ? foodGLLayer(S, bw, bh) : null;
-    if (!layer) {
-      byColor.forEach(function (coords, color) {
-        ctx.beginPath();
-        for (let i = 0; i < coords.length; i += 3) {
-          const x = coords[i];
-          const y = coords[i + 1];
-          const rad = coords[i + 2];
-          ctx.moveTo(x + rad, y);
-          ctx.arc(x, y, rad, 0, 2 * Math.PI);
-        }
-        ctx.fillStyle = color;
-        ctx.fill();
-      });
-      return drawn;
-    }
-    const need = drawn * 48;
-    if (layer.data.length < need) {
-      let cap = layer.data.length;
-      while (cap < need) cap *= 2;
-      layer.data = new Float32Array(cap);
-    }
-    const data = layer.data;
-    const zoom = S.viewZoom;
-    const originX = bw * 0.5;
-    const originY = bh * 0.5;
-    const nodeX = S.nodeX;
-    const nodeY = S.nodeY;
-    let p = 0;
-    byColor.forEach(function (coords, color) {
-      const rgb = foodRgb01(color);
+    buckets.forEach(function (coords, color) {
+      if (!coords.length) return;
+      ctx.beginPath();
       for (let i = 0; i < coords.length; i += 3) {
-        const sx = (coords[i] - nodeX) * zoom + originX;
-        const sy = (coords[i + 1] - nodeY) * zoom + originY;
-        const sr = coords[i + 2] * zoom;
-        if (!(sr > 0) || sx < -sr || sy < -sr || sx - sr > bw || sy - sr > bh) continue;
-        for (let q = 0; q < 12; q += 2) {
-          data[p++] = FOOD_QUAD[q];
-          data[p++] = FOOD_QUAD[q + 1];
-          data[p++] = sx;
-          data[p++] = sy;
-          data[p++] = sr;
-          data[p++] = rgb[0];
-          data[p++] = rgb[1];
-          data[p++] = rgb[2];
-        }
+        const x = coords[i];
+        const y = coords[i + 1];
+        const rad = coords[i + 2];
+        ctx.moveTo(x + rad, y);
+        ctx.arc(x, y, rad, 0, 2 * Math.PI);
       }
+      ctx.fillStyle = color;
+      ctx.fill();
     });
-    const gl = layer.gl;
-    gl.viewport(0, 0, bw, bh);
-    gl.clearColor(0, 0, 0, 0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-    if (p > 0) {
-      gl.useProgram(layer.prog);
-      gl.uniform2f(layer.uScreen, bw, bh);
-      gl.bindBuffer(gl.ARRAY_BUFFER, layer.buf);
-      gl.bufferData(gl.ARRAY_BUFFER, data.subarray(0, p), gl.DYNAMIC_DRAW);
-      const stride = 32;
-      gl.enableVertexAttribArray(0);
-      gl.vertexAttribPointer(0, 2, gl.FLOAT, false, stride, 0);
-      gl.enableVertexAttribArray(1);
-      gl.vertexAttribPointer(1, 2, gl.FLOAT, false, stride, 8);
-      gl.enableVertexAttribArray(2);
-      gl.vertexAttribPointer(2, 1, gl.FLOAT, false, stride, 16);
-      gl.enableVertexAttribArray(3);
-      gl.vertexAttribPointer(3, 3, gl.FLOAT, false, stride, 20);
-      gl.drawArrays(gl.TRIANGLES, 0, p / 8);
-    }
-    ctx.save();
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.drawImage(layer.canvas, 0, 0);
-    ctx.restore();
     return drawn;
   }
   function drawGrid() {
@@ -5203,27 +5066,9 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       y: S.topPos + h * normalizeFractlPart(nodeid * nodeid)
     };
   }
-  /** Same mass/size formula as GameServer.spawnFood / entity/Food.js */
-  function foodRgb(id) {
-    let n = (Math.imul(id, 747796405) + 2891336453) >>> 0;
-    // 8 steps, not 256. Otherwise almost every pellet is its own fill and the food batch does nothing.
-    const third = n & 0xE0;
-    n = (Math.imul(n, 1664525) + 1013904223) >>> 0;
-    const slots = [255, 7, third];
-    const order = [
-      [0, 1, 2],
-      [0, 2, 1],
-      [1, 0, 2],
-      [1, 2, 0],
-      [2, 0, 1],
-      [2, 1, 0]
-    ][n % 6];
-    const rgb = [slots[order[0]], slots[order[1]], slots[order[2]]];
-    return [ rgb[0], rgb[2], rgb[1] ];
-  }
+  const FOOD_PALETTE = [ "#ff3333", "#ff9900", "#ffe14a", "#33dd44", "#22c8ff", "#4477ff", "#e040fb", "#ffffff" ];
   function foodColorHex(id) {
-    const c = foodRgb(id);
-    return "#" + c[0].toString(16).padStart(2, "0") + c[1].toString(16).padStart(2, "0") + c[2].toString(16).padStart(2, "0");
+    return FOOD_PALETTE[(Math.imul(id | 0, 747796405) >>> 0) % FOOD_PALETTE.length];
   }
   // Player ids stop at 2147483647. Virus wire ids are stored above that.
   var VIRUS_NODE_BASE = 2147483648;
