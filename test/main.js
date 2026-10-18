@@ -6458,9 +6458,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     setName(name) {
       const S = deps3.S;
       if (S.fixedCell) {
-        if (this.fixedName === null) {
-          this.fixedName = name;
-        }
+        if (this.fixedName == null || (name && name !== this.fixedName)) this.fixedName = name;
         name = this.fixedName;
       } else {
         this.fixedName = null;
@@ -6521,7 +6519,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       if (clientColor) return clientColor;
       if (!S.showColor) return "#AAAAAA";
       if (S.fixedCell) {
-        if (this.fixedColor === null) {
+        if (this.fixedColor == null || (this.color && this.color !== this.fixedColor)) {
           this.fixedColor = this.color || "#FFFFFF";
         }
         return this.fixedColor;
