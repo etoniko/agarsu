@@ -5066,7 +5066,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       y: S.topPos + h * normalizeFractlPart(nodeid * nodeid)
     };
   }
-  const FOOD_PALETTE = [ "#ff3333", "#ff9900", "#ffe14a", "#33dd44", "#22c8ff", "#4477ff", "#e040fb", "#ffffff" ];
+  const FOOD_PALETTE = [ "#ff3333", "#ff9900", "#ffe14a", "#33dd44", "#22c8ff", "#4477ff", "#e040fb", "#ff4d88" ];
   function foodColorHex(id) {
     return FOOD_PALETTE[(Math.imul(id | 0, 747796405) >>> 0) % FOOD_PALETTE.length];
   }
