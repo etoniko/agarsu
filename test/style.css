@@ -18,7 +18,7 @@
     font-weight: lighter;
 }
 .ww {
-    background: #0166ff;
+    background: #0166ff !important;
 }
 .chatX_msg[class*="\263Ck\263C"],
 .chatX_msg[class*="\263CK\263C"]{
