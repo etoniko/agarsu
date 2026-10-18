@@ -10140,7 +10140,7 @@ function updateRegionOnlineTotals(totals) {
     return api;
   }
   var DONATORS = ["☼k☼"];
-  var CHAT_BACKGROUNDS = ["bambule", "☼k☼","pulik","liquidator"];
+  var CHAT_BACKGROUNDS = ["bambule", "☼k☼","pulik","liquidator","ww"];
   var ADMINS = ["нико", "banshee"];
   var YOUTUBERS = ["salruz", "morcov", "sealand"];
   var URL_YOUTUBERS = [ "https://youtube.com/@SalRuzO", "https://www.youtube.com/@MORCCVA", "https://www.youtube.com/@sealandv" ];
