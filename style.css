@@ -22,6 +22,10 @@
     font-weight: lighter;
 }
 
+.ww {
+    background: #0166ff !important;
+}
+
 .pulik {
     background: linear-gradient(rgb(0 0 0 / 33%), rgb(0 0 0 / 50%)), url(/photo/0002.png) !important;
     background-size: cover !important;
