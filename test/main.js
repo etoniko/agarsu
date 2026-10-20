@@ -5172,15 +5172,22 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     if (!S || !playerId || !S.playerNicks) return "";
     return S.playerNicks[playerId >>> 0] || "";
   }
-  /** When nick changes for a pid, push to all linked cells once. */
-  function applyPlayerNickToCells(S, playerId, name) {
-    if (!S || !S.nodelist || !playerId || !name) return;
-    const pid = playerId >>> 0;
-    for (let i = 0; i < S.nodelist.length; i++) {
-      const n = S.nodelist[i];
-      if (n && !n.isFood && (n.playerId >>> 0) === pid && n.name !== name) n.setName(name);
+/** When nick changes for a pid, push to all linked cells once. */
+function applyPlayerNickToCells(S, playerId, name) {
+  if (!S || !S.nodelist || !playerId || !name) return;
+  const pid = playerId >>> 0;
+  for (let i = 0; i < S.nodelist.length; i++) {
+    const n = S.nodelist[i];
+    if (!n || n.isFood) continue;
+    if ((n.playerId >>> 0) !== pid) continue;
+    if (n.name !== name || n._txtNameVal !== name) {
+      // Force label-cache rebuild if name string is same but cache desynced
+      // (happens after split/respawn when the cell was created without a nick).
+      if (n.name === name) n._txtNameVal = void 0;
+      n.setName(name);
     }
   }
+}
   function syncNodeStickerFromUpdate(S, node, name, stickerFromUpdate) {
     if (!node) return;
     const n = name || node.name || "";
@@ -5340,9 +5347,16 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         node.flag = spiked;
         node.teamSide = (spiked & 2) ? 1 : (spiked & 4) ? 2 : (spiked & 8) ? 3 : (spiked & 128) ? 4 : 0;
         if (pid && packetName) {
-          if (rememberPlayerNick(S, pid, packetName)) applyPlayerNickToCells(S, pid, packetName);
-          else if (node.name !== packetName) node.setName(packetName);
-        } else if (resolvedName && node.name !== resolvedName) {
+          const nickChanged = rememberPlayerNick(S, pid, packetName);
+          if (nickChanged) applyPlayerNickToCells(S, pid, packetName);
+          // Always re-apply to this node: split/respawn cells may hold a stale
+          // name/cache even when playerNick cache says the nick is unchanged.
+          if (node.name !== packetName || node._txtNameVal !== packetName) {
+            if (node.name === packetName) node._txtNameVal = void 0;
+            node.setName(packetName);
+          }
+        } else if (resolvedName && (node.name !== resolvedName || node._txtNameVal !== resolvedName)) {
+          if (node.name === resolvedName) node._txtNameVal = void 0;
           node.setName(resolvedName);
         }
       }
@@ -5522,9 +5536,14 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       node.flag = spiked;
       node.teamSide = (spiked & 2) ? 1 : (spiked & 4) ? 2 : (spiked & 8) ? 3 : (spiked & 128) ? 4 : 0;
       if (pid && packetName) {
-        if (rememberPlayerNick(S, pid, packetName)) applyPlayerNickToCells(S, pid, packetName);
-        else if (node.name !== packetName) node.setName(packetName);
-      } else if (resolvedName && node.name !== resolvedName) {
+        const nickChanged = rememberPlayerNick(S, pid, packetName);
+        if (nickChanged) applyPlayerNickToCells(S, pid, packetName);
+        if (node.name !== packetName || node._txtNameVal !== packetName) {
+          if (node.name === packetName) node._txtNameVal = void 0;
+          node.setName(packetName);
+        }
+      } else if (resolvedName && (node.name !== resolvedName || node._txtNameVal !== resolvedName)) {
+        if (node.name === resolvedName) node._txtNameVal = void 0;
         node.setName(resolvedName);
       }
       if (type === 1) node.color = foodColorHex(nodeid);
@@ -10138,7 +10157,7 @@ function updateRegionOnlineTotals(totals) {
     return api;
   }
   var DONATORS = ["☼k☼"];
-  var CHAT_BACKGROUNDS = ["bambule", "☼k☼","pulik","liquidator","ww"];
+  var CHAT_BACKGROUNDS = ["bambule", "☼k☼","pulik","liquidator"];
   var ADMINS = ["нико", "banshee"];
   var YOUTUBERS = ["salruz", "morcov", "sealand"];
   var URL_YOUTUBERS = [ "https://youtube.com/@SalRuzO", "https://www.youtube.com/@MORCCVA", "https://www.youtube.com/@sealandv" ];
