@@ -21,7 +21,7 @@
     <script src="admin.js?v=160" defer></script>
     <script src="assets/scripts/friends.js?v=160" defer></script>
     <script src="multiprotocols.js?v=160" defer></script>
-    <script src="main.js?v=11121" defer></script>
+    <script src="main.js?v=41" defer></script>
 </head>
 <body>
   <div id="overlays" class="overlays">
@@ -353,13 +353,6 @@
           </div>
           <div>
             <div class="line"></div></div>
-          <div class="home-region-switcher">
-            <div class="region-switcher" role="tablist" aria-label="Регион серверов">
-              <button type="button" class="region-option active" data-region="ru" aria-label="Россия"><span class="region-flag flag-ru" aria-hidden="true"></span><span class="region-online" data-region-online="ru">0</span></button>
-              <button type="button" class="region-option" data-region="tr" aria-label="Турция"><span class="region-flag" aria-hidden="true"><span class="fi fi-tr"></span></span><span class="region-online" data-region-online="tr">0</span></button>
-              <button type="button" class="region-option" data-region="eu" aria-label="Европа"><span class="region-flag" aria-hidden="true"><span class="fi fi-eu"></span></span><span class="region-online" data-region-online="eu">0</span></button>
-            </div>
-          </div>
           <div class="avatar-containers">
             <div class="avatar-container">
               <div class="previous-skin" id="prevSkin" onclick="showPrevious()"></div>
@@ -383,7 +376,7 @@
               <div class="server-group">
                 <div class="group-header"><i class="fas fa-globe"></i> FFA</div>
                 <div class="server-list">
-                  <div class="server-item active" data-region="ru" data-ip="ffa.agar.su" id="ffa">
+                  <div class="server-item active" data-region="ru" data-ip="ffa.agar.su:6001" id="ffa">
                     <span class="server-name" data-en="Moscow" data-tr="Moskova" data-zh="莫斯科" data-ar="موسكو" data-es="Moscú" data-pl="Moskwa" data-de="Moskau" data-uk="Москва">Москва</span>
                     <span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count has-online">200</span> <i class="fas fa-user"></i> <span class="online-count has-online">0/200</span></span>
                   </div>
@@ -400,8 +393,7 @@
                   <div class="server-item" data-region="ru" data-ip="ms.agar.su:6001" id="ms">
                     <span class="server-name">ms#1</span>
                     <span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count has-online">3</span> <i class="fas fa-user"></i> <span class="online-count has-online">0/120</span></span>
-                  </div>		  
-<div class="server-item" data-region="ru" data-ip="arctida.delt.io" id="darctida"><span class="server-name">SelFeed</span><span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count has-online">10</span> <i class="fas fa-user"></i> <span class="online-count has-online">12/200</span></span></div>
+                  </div>
                 </div>
               </div>
 
@@ -440,41 +432,6 @@
                   </div>
                 </div>
               </div>
-<div class="server-group" data-region-group="tr-ultra" hidden>
-  <div class="group-header"><i class="fas fa-bolt"></i> Ultra</div>
-  <div class="server-list">
-    <div class="server-item" data-region="tr" data-ip="ws.agarz.com:1013" id="tatil"><span class="server-name">Etkinlik-1</span><span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/200</span></span></div>
-    <div class="server-item" data-region="tr" data-ip="ws.agarz.com:1271" id="gsz1"><span class="server-name">GSZ-1</span><span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/200</span></span></div>
-  </div>
-</div>
-<div class="server-group" data-region-group="tr-high" style="border-left: 1px solid #d3d3d3; padding-left: 6px;" hidden>
-  <div class="group-header"><i class="fas fa-fire"></i> High</div>
-  <div class="server-list">
-    <div class="server-item" data-region="tr" data-ip="ws.agarz.com:1042" id="ffa1"><span class="server-name">FFA-1</span><span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/200</span></span></div>
-    <div class="server-item" data-region="tr" data-ip="ws.agarz.com:1004" id="ffa4"><span class="server-name">FFA-4</span><span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/200</span></span></div>
-  </div>
-</div>
-<div class="server-group" data-region-group="tr-medium" style="border-left: 1px solid #d3d3d3; padding-left: 6px;" hidden>
-  <div class="group-header"><i class="fas fa-balance-scale"></i> Medium</div>
-  <div class="server-list">
-    <div class="server-item" data-region="tr" data-ip="ws.agarz.com:1005" id="ffa5"><span class="server-name">FFA-5</span><span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/200</span></span></div>
-    <div class="server-item" data-region="tr" data-ip="ws.agarz.com:1224" id="ffa57"><span class="server-name">FFA-57</span><span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/200</span></span></div>
-  </div>
-</div>
-<div class="server-group" data-region-group="tr-low" style="border-left: 1px solid #d3d3d3; padding-left: 6px;" hidden>
-  <div class="group-header"><i class="fas fa-leaf"></i> Low</div>
-  <div class="server-list">
-    <div class="server-item" data-region="tr" data-ip="ws.agarz.com:1232" id="ffa21"><span class="server-name">FFA-21</span><span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/200</span></span></div>
-    <div class="server-item" data-region="tr" data-ip="ws.agarz.com:1242" id="ffa54"><span class="server-name">FFA-54</span><span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/200</span></span></div>
-  </div>
-</div>
-<div class="server-group" data-region-group="eu-low" style="border-left: 1px solid #d3d3d3; padding-left: 6px;" hidden>
-  <div class="group-header"><i class="fas fa-leaf"></i> Low</div>
-  <div class="server-list">
-    <div class="server-item" data-region="eu" data-ip="ffa.delt.io" id="dffa"><span class="server-name">Delta FFA</span><span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/200</span></span></div>
-    <div class="server-item" data-region="eu" data-ip="rookery.delt.io" id="drookery"><span class="server-name">Delta Rookery</span><span class="server-stats"><i class="fas fa-eye"></i> <span class="online-count no-online">0</span> <i class="fas fa-user"></i> <span class="online-count no-online">0/200</span></span></div>
-  </div>
-</div>
 
             </div>
           </div>
