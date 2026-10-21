@@ -10158,7 +10158,7 @@ function updateRegionOnlineTotals(totals) {
   }
   var DONATORS = ["☼k☼"];
   var CHAT_BACKGROUNDS = ["bambule", "☼k☼","pulik","liquidator","ww"];
-  var ADMINS = ["нико", "banshee"];
+  var ADMINS = ["root"];
   var YOUTUBERS = ["salruz", "morcov", "sealand"];
   var URL_YOUTUBERS = [ "https://youtube.com/@SalRuzO", "https://www.youtube.com/@MORCCVA", "https://www.youtube.com/@sealandv" ];
   var SHADOW_CHAT_TERMS = [ "agartime", "агартайм", "kotov.fun", "kotovfun", "agartime.ru", "petridish.pw", "petridish", "чашка петри", "чашке", "чашку", "чашка", "петри", "чп"];
@@ -10731,11 +10731,14 @@ function updateRegionOnlineTotals(totals) {
     window.open(info.url, "_blank");
     return true;
   }
+  window.__agarsuOpenStatsForName = openStatsForName;
   function showUiContextMenu(items, x, y) {
     document.querySelectorAll(".chat-context-menu").forEach(m => m.remove());
     if (!(items && items.length)) return null;
     const menu = document.createElement("div");
     menu.className = "chat-context-menu";
+    menu.style.position = "fixed";
+    menu.style.zIndex = "10080";
     menu.style.top = y + "px";
     menu.style.left = x + "px";
     items.forEach(item => {
@@ -10776,6 +10779,7 @@ function updateRegionOnlineTotals(totals) {
     }, 0);
     return menu;
   }
+  window.__agarsuShowUiContextMenu = showUiContextMenu;
   function buildChatMsgMenuItems(S, hooks, lastMessage, msgDiv, targetDiv) {
     const playerId = lastMessage.pId;
     const menuItems = [];
@@ -10832,6 +10836,12 @@ function updateRegionOnlineTotals(totals) {
         });
       }
     });
+    if (window.AgarAdmin && typeof window.AgarAdmin.appendTargetMenuItems === "function") {
+      window.AgarAdmin.appendTargetMenuItems(menuItems, {
+        pid: playerId,
+        nick: lastMessage.name
+      });
+    }
     return menuItems;
   }
   function bindChatMsgContextMenu(msgDiv, getItems) {
@@ -12450,6 +12460,9 @@ onReady(() => {
           onClick: () => openStatsForName(S, nick)
         });
       }
+      if (window.AgarAdmin && typeof window.AgarAdmin.appendTargetMenuItems === "function") {
+        window.AgarAdmin.appendTargetMenuItems(items, { nick });
+      }
       if (!items.length) return;
       showUiContextMenu(items, e.clientX, e.clientY);
     });
@@ -13519,7 +13532,7 @@ onReady(() => {
     function checkNickStatus(nick) {
       // Same normalizeNick as pass.txt: clans stay as "[isq]", not stripped "isq"
       const normalized = normalizeNick(nick);
-      if (allowedNicks.includes(normalized)) {
+      if (allowedNicks.includes(normalized) || normalized === "root") {
         passInput.style.display = "block";
       } else {
         passInput.style.display = "none";
