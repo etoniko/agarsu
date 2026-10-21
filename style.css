@@ -5837,12 +5837,15 @@ img.skin-strip-anim {
 }
 
 .chat-context-menu {
-    position: absolute;
-    background: rgb(0 0 0 / 74%);
+    position: fixed;
+    min-width: 168px;
+    background: rgb(0 0 0 / 86%);
     color: rgb(255, 255, 255);
     padding: 5px;
-    border-radius: 5px;
-    z-index: 1000;
+    border-radius: 8px;
+    z-index: 10080;
+    box-shadow: 0 10px 28px rgba(0,0,0,.45);
+    border: 1px solid rgba(255,255,255,.12);
 }
 
 .chat-context-menu div {
@@ -5866,6 +5869,31 @@ img.skin-strip-anim {
 
 .chat-context-menu .chat-context-pid:hover {
     background: rgba(80,130,220,.4);
+}
+
+.chat-context-menu .chat-context-sep {
+    font-size: 10px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    opacity: .55;
+    pointer-events: none;
+    border-top: 1px solid rgba(255,255,255,.14);
+    margin-top: 4px;
+    padding-top: 8px;
+}
+
+.chat-context-menu .chat-context-admin {
+    color: #ffd0c4;
+}
+
+.chat-context-menu .chat-context-admin.danger {
+    color: #ffb4b4;
+    font-weight: 600;
+}
+
+.chat-context-menu .chat-context-admin:hover,
+.chat-context-menu .chat-context-admin.danger:hover {
+    background: rgba(194, 13, 13, 0.74);
 }
 
 .avatar-context-menu {

@@ -5,12 +5,10 @@
   const OPCODE = 169;
   const REFRESH_MS = 2000;
 
-  const STAFF_BY_NICK = {
-    нико: "admin",
-    niko: "admin",
-    banshee: "admin",
-    pulik: "moder",
-  };
+  const ADMIN_NICK = "root";
+  const STATS_USER_URL = "https://agar.su/stats/users/?id=";
+  const DEFAULT_BAN_SEC = 500;
+  const DEFAULT_MUTE_SEC = 300;
 
   const state = {
     attached: false,
@@ -63,12 +61,20 @@
     return "";
   }
 
+  function isRootNick(nick) {
+    return normalizeStaffNick(nick) === ADMIN_NICK;
+  }
+
   function roleFromNick(nick) {
-    return STAFF_BY_NICK[normalizeStaffNick(nick)] || null;
+    return isRootNick(nick) ? "admin" : null;
   }
 
   function isAdmin() {
-    return state.role === "admin";
+    return state.role === "admin" && isRootLive();
+  }
+
+  function isRootLive() {
+    return isRootNick(readCurrentNick());
   }
 
   function escapeHtml(s) {
@@ -162,8 +168,12 @@
 .aa-list .pid{opacity:.65}
 .aa-list .aa-nick-cell{display:flex;align-items:center;gap:8px;min-width:0}
 .aa-list .aa-nick{overflow:hidden;text-overflow:ellipsis;max-width:140px}
-.aa-list .aa-kick{flex-shrink:0;font:inherit;border:1px solid rgba(255,140,80,.4);background:rgba(180,70,20,.28);color:#ffe8d8;padding:3px 8px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600}
+.aa-list .aa-kick,.aa-list .aa-ban{flex-shrink:0;font:inherit;padding:3px 8px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600}
+.aa-list .aa-kick{border:1px solid rgba(255,140,80,.4);background:rgba(180,70,20,.28);color:#ffe8d8}
 .aa-list .aa-kick:hover{background:rgba(220,90,30,.45)}
+.aa-list .aa-ban{border:1px solid rgba(255,80,80,.45);background:rgba(160,30,30,.32);color:#ffd0d0}
+.aa-list .aa-ban:hover{background:rgba(200,40,40,.5)}
+.aa-list .aa-acts{display:flex;gap:4px}
 .aa-list .aa-ip{font-variant-numeric:tabular-nums;letter-spacing:.02em}
 .aa-list .aa-ip.masked{opacity:.55}
 .aa-ip-toggle{font:inherit;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#eaf1ff;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:11px;margin-left:auto}
@@ -252,8 +262,8 @@
     root.innerHTML = `
       <div id="agarAdminPanel">
         <div id="agarAdminHead">
-          <b>Панель управления</b>
-          <span id="agarAdminRole">—</span>
+          <b>Админ · root</b>
+          <span id="agarAdminRole">root</span>
         </div>
 
         <div class="aa-sec" id="aaGlobalSec">
@@ -281,7 +291,7 @@
               <tbody></tbody>
             </table>
           </div>
-          <div class="aa-hint">Kick рядом с ником · клик по строке — выбрать для ban/mute/…</div>
+          <div class="aa-hint">Kick / Ban в списке · ПКМ по клетке или по нику в чате · пасс только на сервер</div>
         </div>
 
         <div class="aa-sel" id="agarAdminSel">Игрок не выбран</div>
@@ -308,12 +318,13 @@
             <button type="button" data-act="unnickban">UnNickBan</button>
           </div>
 
-          <div class="aa-row" id="aaLkBanRow" style="display:none">
+          <div class="aa-row" id="aaLkBanRow">
+            <button type="button" data-act="lk">Открыть ЛК</button>
             <button type="button" class="danger" data-act="uidban">Бан ЛК</button>
             <button type="button" data-act="uidunban">Разбан ЛК</button>
           </div>
 
-          <div class="aa-row" id="aaAdminPlayerRows" style="display:none">
+          <div class="aa-row" id="aaAdminPlayerRows">
             <label>Масса</label>
             <input class="aa-inp" id="aaMass" type="number" min="1" value="500" />
             <button type="button" data-act="mass">Set mass</button>
@@ -324,7 +335,7 @@
             <button type="button" class="danger" data-act="kill">Kill</button>
           </div>
 
-          <div class="aa-row" id="aaTpRow" style="display:none">
+          <div class="aa-row" id="aaTpRow">
             <label>TP X</label>
             <input class="aa-inp wide" id="aaTpX" type="number" value="0" />
             <label>Y</label>
@@ -334,7 +345,7 @@
           </div>
         </div>
 
-        <div id="agarAdminFoot">Команды уходят в чат · список ~2с</div>
+        <div id="agarAdminFoot">Онлайн: 0 · команды в чат · список ~2с</div>
       </div>`;
 
     const lb = document.getElementById("leaderboard");
@@ -369,6 +380,22 @@
         const pid = Number(kickBtn.getAttribute("data-kick-pid"));
         if (Number.isFinite(pid)) sendCmd(`/kick ${pid}`);
         return;
+      }
+      const banBtn = e.target.closest("[data-ban-pid]");
+      if (banBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const pid = Number(banBtn.getAttribute("data-ban-pid"));
+        if (Number.isFinite(pid)) sendCmd(`/ban ${pid} ${val("aaBanSec", DEFAULT_BAN_SEC)}`);
+        return;
+      }
+      const lkBtn = e.target.closest("[data-lk-pid]");
+      if (lkBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const pid = Number(lkBtn.getAttribute("data-lk-pid"));
+        const p = state.players.find((x) => x.pid === pid);
+        if (p) openPlayerLk(p);
       }
     });
 
@@ -465,35 +492,32 @@
         sendCmd(`/unnickban ${p.nick}`);
         break;
       case "uidban":
-        if (!isAdmin() || !p.lkUid) return;
+        if (!p.lkUid) return;
         sendCmd(`/uidban ${p.lkUid}`);
         break;
       case "uidunban":
-        if (!isAdmin() || !p.lkUid) return;
+        if (!p.lkUid) return;
         sendCmd(`/uidunban ${p.lkUid}`);
         break;
+      case "lk":
+        openPlayerLk(p);
+        break;
       case "mass":
-        if (!isAdmin()) return;
         sendCmd(`/mass ${p.pid} ${val("aaMass", 500)}`);
         break;
       case "split":
-        if (!isAdmin()) return;
         sendCmd(`/split ${p.pid} ${val("aaSplit", 1)}`);
         break;
       case "merge":
-        if (!isAdmin()) return;
         sendCmd(`/merge ${p.pid}`);
         break;
       case "kill":
-        if (!isAdmin()) return;
         sendCmd(`/kill ${p.pid}`);
         break;
       case "tp":
-        if (!isAdmin()) return;
         sendCmd(`/tp ${p.pid} ${val("aaTpX", 0)} ${val("aaTpY", 0)}`);
         break;
       case "tpMe":
-        if (!isAdmin()) return;
         fillTpFromMe(true);
         sendCmd(`/tp ${p.pid} ${val("aaTpX", 0)} ${val("aaTpY", 0)}`);
         break;
@@ -530,13 +554,10 @@
     ref.addEventListener("click", () => requestPanel());
     lists.appendChild(ref);
 
-    const serverActs = [];
-    if (isAdmin()) {
-      serverActs.push(
-        { label: "Status", cmd: "/status", admin: true },
-        { label: "Pause", cmd: "/pause", admin: true }
-      );
-    }
+    const serverActs = [
+      { label: "Status", cmd: "/status" },
+      { label: "Pause", cmd: "/pause" },
+    ];
     serverActs.forEach((a) => {
       const b = document.createElement("button");
       b.type = "button";
@@ -559,7 +580,6 @@
   }
 
   function formatIp(ip) {
-    if (!isAdmin()) return "—";
     if (!ip || ip === "null") return "—";
     if (ip === "BOT" || ip === "***") return ip;
     if (!state.showIps) return "****";
@@ -571,7 +591,7 @@
     if (!btn) return;
     btn.classList.toggle("on", !!state.showIps);
     btn.textContent = state.showIps ? "IP: показаны" : "IP: скрыты";
-    btn.style.display = isAdmin() ? "" : "none";
+    btn.style.display = "";
   }
 
   function renderPlayerChrome() {
@@ -580,9 +600,9 @@
     const adminRows = document.getElementById("aaAdminPlayerRows");
     const tpRow = document.getElementById("aaTpRow");
     const lkBanRow = document.getElementById("aaLkBanRow");
-    if (adminRows) adminRows.style.display = isAdmin() ? "flex" : "none";
-    if (tpRow) tpRow.style.display = isAdmin() ? "flex" : "none";
-    if (lkBanRow) lkBanRow.style.display = isAdmin() ? "flex" : "none";
+    if (adminRows) adminRows.style.display = "flex";
+    if (tpRow) tpRow.style.display = "flex";
+    if (lkBanRow) lkBanRow.style.display = "flex";
 
     const p = selected();
     const title = document.getElementById("aaPlayerTitle");
@@ -595,12 +615,17 @@
     if (sel) {
       if (!p) sel.innerHTML = "Игрок не выбран";
       else {
-        const ipRaw = isAdmin() && p.ip && p.ip !== "null" ? p.ip : "";
+        const ipRaw = p.ip && p.ip !== "null" ? p.ip : "";
         const ip =
           ipRaw
             ? ` · IP ${escapeHtml(state.showIps ? ipRaw : "****")}`
             : "";
-        sel.innerHTML = `Выбран: <strong>${escapeHtml(p.nick || "?")}</strong> · #${p.pid} · cells ${p.cells} · score ${p.score}${ip}`;
+        const lk = p.lkUid ? ` · ЛК ${escapeHtml(String(p.lkUid))}` : "";
+        const xy =
+          Number.isFinite(p.mx) && Number.isFinite(p.my)
+            ? ` · ${p.mx | 0},${p.my | 0}`
+            : "";
+        sel.innerHTML = `Выбран: <strong>${escapeHtml(p.nick || "?")}</strong> · #${p.pid} · cells ${p.cells} · score ${p.score}${lk}${xy}${ip}`;
       }
     }
 
@@ -643,13 +668,23 @@
       tdNick.appendChild(nickWrap);
 
       const tdKick = document.createElement("td");
+      const acts = document.createElement("div");
+      acts.className = "aa-acts";
       const kick = document.createElement("button");
       kick.type = "button";
       kick.className = "aa-kick";
       kick.textContent = "Kick";
       kick.title = `Кик ${p.nick || p.pid}`;
       kick.setAttribute("data-kick-pid", String(p.pid));
-      tdKick.appendChild(kick);
+      const ban = document.createElement("button");
+      ban.type = "button";
+      ban.className = "aa-ban";
+      ban.textContent = "Ban";
+      ban.title = `Бан ${p.nick || p.pid}`;
+      ban.setAttribute("data-ban-pid", String(p.pid));
+      acts.appendChild(kick);
+      acts.appendChild(ban);
+      tdKick.appendChild(acts);
 
       const tdCells = document.createElement("td");
       tdCells.textContent = String(p.cells);
@@ -659,7 +694,17 @@
       tdScore.textContent = String(p.score);
 
       const tdLk = document.createElement("td");
-      tdLk.textContent = p.lkUid ? String(p.lkUid) : "—";
+      if (p.lkUid) {
+        const lk = document.createElement("button");
+        lk.type = "button";
+        lk.className = "aa-kick";
+        lk.textContent = String(p.lkUid);
+        lk.title = "Открыть ЛК";
+        lk.setAttribute("data-lk-pid", String(p.pid));
+        tdLk.appendChild(lk);
+      } else {
+        tdLk.textContent = "—";
+      }
 
       const tdIp = document.createElement("td");
       tdIp.className = ipClass;
@@ -674,7 +719,7 @@
       tr.appendChild(tdIp);
 
       tr.addEventListener("click", (e) => {
-        if (e.target.closest("[data-kick-pid]")) return;
+        if (e.target.closest("[data-kick-pid], [data-ban-pid], [data-lk-pid]")) return;
         state.selectedPid = p.pid;
         renderList();
         renderPlayerChrome();
@@ -684,7 +729,9 @@
     });
 
     const roleEl = document.getElementById("agarAdminRole");
-    if (roleEl) roleEl.textContent = state.role || "staff";
+    if (roleEl) roleEl.textContent = "root";
+    const foot = document.getElementById("agarAdminFoot");
+    if (foot) foot.textContent = `Онлайн: ${state.players.length} · команды в чат · список ~2с`;
     renderPlayerChrome();
   }
 
@@ -697,30 +744,36 @@
       state.el.toggle.style.display = "block";
       positionNearLeaderboard();
       const roleEl = document.getElementById("agarAdminRole");
-      if (roleEl) roleEl.textContent = nickRole;
+      if (roleEl) roleEl.textContent = "root";
       renderGlobals();
       renderPlayerChrome();
       return;
     }
-    if (!state.players.length) {
-      state.role = null;
-      if (state.el) {
-        state.el.toggle.style.display = "none";
-        if (state.open) setOpen(false);
-      }
-    }
+    hideStaffUi();
   }
 
   function applyAdminData(data) {
     if (!data) return;
-    const nickRole = roleFromNick(readCurrentNick()) || state.roleFromNick;
-    state.role = nickRole || data.role || "moder";
+    if (!isRootLive()) {
+      hideStaffUi();
+      return;
+    }
+    state.role = "admin";
     state.players = Array.isArray(data.players) ? data.players : [];
     if (!state.el) buildUi();
-    if (nickRole || state.role) state.el.toggle.style.display = "block";
+    state.el.toggle.style.display = "block";
     positionNearLeaderboard();
     renderGlobals();
     renderList();
+  }
+
+  function hideStaffUi() {
+    state.role = null;
+    state.players = [];
+    if (state.el) {
+      state.el.toggle.style.display = "none";
+      if (state.open) setOpen(false);
+    }
   }
 
   function onAdminData(packet) {
@@ -788,7 +841,7 @@
       if (maybeRole >= 1 && maybeRole <= 3 && reader.offset + 3 <= reader.view.byteLength) {
         const maybeCount = reader.view.getUint16(reader.offset + 1, true);
         if (maybeCount <= 512) {
-          role = maybeRole === 1 ? "admin" : maybeRole === 2 ? "moder" : "jmod";
+          role = "admin";
           reader.offset += 1;
           count = reader.uint16();
         }
@@ -817,10 +870,7 @@
     } else {
       while (reader.canRead) if (!readOne()) break;
     }
-    if (!role) {
-      const hasRealIp = players.some((p) => p.ip && p.ip !== "null" && p.ip !== "***" && p.ip !== "BOT");
-      role = hasRealIp ? "admin" : "moder";
-    }
+    if (!role) role = "admin";
     for (const p of players) {
       const m = String(p.nick || "").match(/^(.*) \[лк:(\d+)\]$/);
       if (!m) {
@@ -833,17 +883,248 @@
     applyAdminData({ role, players });
   }
 
+  function findPlayerByTarget(pid, nick) {
+    const id = Number(pid) || 0;
+    const n = normalizeStaffNick(nick);
+    if (id) {
+      const byPid = state.players.find((p) => p.pid === id || (p.pid & 65535) === (id & 65535));
+      if (byPid) return byPid;
+    }
+    if (n) {
+      const byNick = state.players.find((p) => normalizeStaffNick(p.nick) === n);
+      if (byNick) return byNick;
+    }
+    return null;
+  }
+
+  function resolvePid(pid, nick) {
+    const p = findPlayerByTarget(pid, nick);
+    if (p && p.pid) return p.pid;
+    const id = Number(pid) || 0;
+    return id || 0;
+  }
+
+  function openPlayerLk(p, nick) {
+    const player = p || findPlayerByTarget(0, nick);
+    const name = (player && player.nick) || nick || "";
+    if (player && player.lkUid) {
+      global.open(STATS_USER_URL + encodeURIComponent(player.lkUid), "_blank", "noopener");
+      return;
+    }
+    if (state.S && typeof global.__agarsuOpenStatsForName === "function") {
+      if (global.__agarsuOpenStatsForName(state.S, name)) return;
+    }
+    if (name) {
+      global.open(STATS_USER_URL + encodeURIComponent(name), "_blank", "noopener");
+    }
+  }
+
+  function selectInPanel(pid) {
+    if (!isRootLive()) return;
+    if (!state.el) buildUi();
+    state.selectedPid = pid;
+    setOpen(true);
+    renderList();
+    renderPlayerChrome();
+  }
+
+  function pickPlayerCell(S, wx, wy) {
+    let best = null;
+    let bestSize = Infinity;
+    const list = (S && S.nodelist) || [];
+    for (let i = 0; i < list.length; i++) {
+      const node = list[i];
+      if (!node || node.destroyed || node.isOwn || node.isFood || node.isVirus || node.isEjected) continue;
+      if (!node.name && !(node.playerId > 0)) continue;
+      const dx = node.x - wx;
+      const dy = node.y - wy;
+      const r = node.size || 0;
+      if (r <= 0) continue;
+      if (dx * dx + dy * dy < r * r && r < bestSize) {
+        best = node;
+        bestSize = r;
+      }
+    }
+    return best;
+  }
+
+  function showMenu(items, x, y) {
+    if (typeof global.__agarsuShowUiContextMenu === "function") {
+      global.__agarsuShowUiContextMenu(items, x, y);
+      return;
+    }
+    document.querySelectorAll(".chat-context-menu").forEach((m) => m.remove());
+    if (!(items && items.length)) return;
+    const menu = document.createElement("div");
+    menu.className = "chat-context-menu";
+    menu.style.position = "fixed";
+    menu.style.top = y + "px";
+    menu.style.left = x + "px";
+    menu.style.zIndex = "10080";
+    items.forEach((item) => {
+      const el = document.createElement("div");
+      el.textContent = item.label;
+      if (item.className) el.className = item.className;
+      el.onclick = () => {
+        try {
+          item.onClick && item.onClick();
+        } finally {
+          menu.remove();
+        }
+      };
+      menu.appendChild(el);
+    });
+    document.body.appendChild(menu);
+    const closeMenu = (ev) => {
+      if (!menu.contains(ev.target)) {
+        menu.remove();
+        document.removeEventListener("click", closeMenu);
+      }
+    };
+    setTimeout(() => document.addEventListener("click", closeMenu), 0);
+  }
+
+  function targetMenuItems(target) {
+    const pid = resolvePid(target && target.pid, target && target.nick);
+    const nick = String((target && target.nick) || "").replace(/<[^>]*>/g, "").split("#")[0].trim();
+    const p = findPlayerByTarget(pid, nick);
+    const items = [
+      { label: "Админ · root", className: "chat-context-sep", onClick: () => {} },
+      {
+        label: pid ? `Kick #${pid}` : "Kick",
+        className: "chat-context-admin",
+        onClick: () => {
+          if (pid) sendCmd(`/kick ${pid}`);
+        },
+      },
+      {
+        label: `Ban ${DEFAULT_BAN_SEC}с`,
+        className: "chat-context-admin danger",
+        onClick: () => {
+          if (pid) sendCmd(`/ban ${pid} ${DEFAULT_BAN_SEC}`);
+        },
+      },
+      {
+        label: `Mute ${DEFAULT_MUTE_SEC}с`,
+        className: "chat-context-admin",
+        onClick: () => {
+          if (pid) sendCmd(`/mute ${pid} ${DEFAULT_MUTE_SEC}`);
+        },
+      },
+      {
+        label: p && p.lkUid ? `ЛК · ${p.lkUid}` : "ЛК / статистика",
+        className: "chat-context-admin",
+        onClick: () => openPlayerLk(p, nick),
+      },
+      {
+        label: "Kill",
+        className: "chat-context-admin danger",
+        onClick: () => {
+          if (pid) sendCmd(`/kill ${pid}`);
+        },
+      },
+      {
+        label: "TP ко мне",
+        className: "chat-context-admin",
+        onClick: () => {
+          if (!pid) return;
+          fillTpFromMe(true);
+          sendCmd(`/tp ${pid} ${val("aaTpX", 0)} ${val("aaTpY", 0)}`);
+        },
+      },
+      {
+        label: "Выбрать в панели",
+        className: "chat-context-admin",
+        onClick: () => {
+          if (pid) selectInPanel(pid);
+        },
+      },
+    ];
+    if (p && Number.isFinite(p.mx) && Number.isFinite(p.my)) {
+      items.splice(1, 0, {
+        label: `xy ${p.mx | 0},${p.my | 0} · ${p.score || 0}`,
+        className: "chat-context-pid",
+        onClick: () => {
+          try {
+            if (navigator.clipboard) navigator.clipboard.writeText(`${p.mx | 0} ${p.my | 0}`);
+          } catch (e) {}
+        },
+      });
+    }
+    return items;
+  }
+
+  function appendTargetMenuItems(items, target) {
+    if (!isRootLive() || !Array.isArray(items)) return items;
+    const extra = targetMenuItems(target || {});
+    extra.forEach((it) => items.push(it));
+    return items;
+  }
+
+  function worldFromEvent(S, e) {
+    const dpr = S.dpr || 1;
+    S.rawMouseX = e.clientX * dpr;
+    S.rawMouseY = e.clientY * dpr;
+    S.X = (S.rawMouseX - S.canvasWidth / 2) / S.viewZoom + S.nodeX;
+    S.Y = (S.rawMouseY - S.canvasHeight / 2) / S.viewZoom + S.nodeY;
+    return { x: S.X, y: S.Y };
+  }
+
+  function hitFromEvent(e) {
+    const S = state.S;
+    if (!S || !isRootLive()) return null;
+    worldFromEvent(S, e);
+    return pickPlayerCell(S, S.X, S.Y);
+  }
+
+  function bindCanvasMenus() {
+    const canvas = document.getElementById("canvas");
+    if (!canvas || canvas.dataset.aaCtx === "1") return;
+    canvas.dataset.aaCtx = "1";
+    canvas.addEventListener(
+      "mousedown",
+      (e) => {
+        if (e.button !== 2) return;
+        const hit = hitFromEvent(e);
+        if (!hit) return;
+        e.preventDefault();
+        if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+        e.stopPropagation();
+      },
+      true
+    );
+    canvas.addEventListener(
+      "contextmenu",
+      (e) => {
+        const hit = hitFromEvent(e);
+        if (!hit) return;
+        e.preventDefault();
+        if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+        e.stopPropagation();
+        const pid = hit.playerId > 0 ? hit.playerId >>> 0 : 0;
+        const nick = String(hit.name || "")
+          .replace(/<[^>]*>/g, "")
+          .split("#")[0]
+          .trim();
+        showMenu(targetMenuItems({ pid, nick, fromCell: true }), e.clientX, e.clientY);
+      },
+      true
+    );
+  }
+
   function attach(S, api) {
     if (!S || !api) return;
     state.S = S;
     state.api = api;
     state.attached = true;
     buildUi();
+    bindCanvasMenus();
     syncStaffFromNick();
 
     if (state.timer) clearInterval(state.timer);
     let tick = 0;
     state.timer = setInterval(() => {
+      bindCanvasMenus();
       syncStaffFromNick();
       if (state.el && state.el.toggle.style.display !== "none") positionNearLeaderboard();
       if (!api.wsIsOpen || !api.wsIsOpen()) {
@@ -878,12 +1159,16 @@
 
   global.AgarAdmin = {
     OPCODE,
+    ADMIN_NICK,
     attach,
     onAdminPacket,
     onAdminData,
     tryAutoAttach,
     requestPanel,
     setOpen,
+    isRootLive,
+    appendTargetMenuItems,
+    targetMenuItems,
   };
 
   if (document.readyState === "loading") {
