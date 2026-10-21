@@ -6242,7 +6242,7 @@ function applyPlayerNickToCells(S, playerId, name) {
       ...d
     };
   }
-  var DEFAULT_TRANSPARENT = [ "liqwid", "⟨本⟩ Itana.", "†Ĵώâ4ќâ†","g","Uroboros","ww","demons","nr"];
+  var DEFAULT_TRANSPARENT = [ "liqwid", "⟨本⟩ Itana.", "†Ĵώâ4ќâ†","g","Uroboros","ww","demons","nr","root"];
   function ensureNameSets(S) {
     if (!S.transparent) S.transparent = new Set(DEFAULT_TRANSPARENT);
     if (!S.invisible) {
