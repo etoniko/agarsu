@@ -9222,3 +9222,80 @@ html, body {
 .fi-eu {
     background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiBpZD0iZmxhZy1pY29ucy1ldSIgdmlld0JveD0iMCAwIDY0MCA0ODAiPgogIDxkZWZzPgogICAgPGcgaWQ9ImV1LWQiPgogICAgICA8ZyBpZD0iZXUtYiI+CiAgICAgICAgPHBhdGggaWQ9ImV1LWEiIGQ9Im0wLTEtLjMgMSAuNS4xeiIvPgogICAgICAgIDx1c2UgeGxpbms6aHJlZj0iI2V1LWEiIHRyYW5zZm9ybT0ic2NhbGUoLTEgMSkiLz4KICAgICAgPC9nPgogICAgICA8ZyBpZD0iZXUtYyI+CiAgICAgICAgPHVzZSB4bGluazpocmVmPSIjZXUtYiIgdHJhbnNmb3JtPSJyb3RhdGUoNzIpIi8+CiAgICAgICAgPHVzZSB4bGluazpocmVmPSIjZXUtYiIgdHJhbnNmb3JtPSJyb3RhdGUoMTQ0KSIvPgogICAgICA8L2c+CiAgICAgIDx1c2UgeGxpbms6aHJlZj0iI2V1LWMiIHRyYW5zZm9ybT0ic2NhbGUoLTEgMSkiLz4KICAgIDwvZz4KICA8L2RlZnM+CiAgPHBhdGggZmlsbD0iIzAzOSIgZD0iTTAgMGg2NDB2NDgwSDB6Ii8+CiAgPGcgZmlsbD0iI2ZjMCIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMzIwIDI0Mi4zKXNjYWxlKDIzLjcwMzcpIj4KICAgIDx1c2UgeGxpbms6aHJlZj0iI2V1LWQiIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIHk9Ii02Ii8+CiAgICA8dXNlIHhsaW5rOmhyZWY9IiNldS1kIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB5PSI2Ii8+CiAgICA8ZyBpZD0iZXUtZSI+CiAgICAgIDx1c2UgeGxpbms6aHJlZj0iI2V1LWQiIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIHg9Ii02Ii8+CiAgICAgIDx1c2UgeGxpbms6aHJlZj0iI2V1LWQiIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIHRyYW5zZm9ybT0icm90YXRlKC0xNDQgLTIuMyAtMi4xKSIvPgogICAgICA8dXNlIHhsaW5rOmhyZWY9IiNldS1kIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB0cmFuc2Zvcm09InJvdGF0ZSgxNDQgLTIuMSAtMi4zKSIvPgogICAgICA8dXNlIHhsaW5rOmhyZWY9IiNldS1kIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB0cmFuc2Zvcm09InJvdGF0ZSg3MiAtNC43IC0yKSIvPgogICAgICA8dXNlIHhsaW5rOmhyZWY9IiNldS1kIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB0cmFuc2Zvcm09InJvdGF0ZSg3MiAtNSAuNSkiLz4KICAgIDwvZz4KICAgIDx1c2UgeGxpbms6aHJlZj0iI2V1LWUiIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIHRyYW5zZm9ybT0ic2NhbGUoLTEgMSkiLz4KICA8L2c+Cjwvc3ZnPgo=")
 }
+
+#session-active-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(7, 12, 22, 0.82);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+}
+#session-active-overlay[hidden] {
+    display: none;
+}
+.session-active-card {
+    width: min(92vw, 420px);
+    padding: 28px 26px 22px;
+    border-radius: 22px;
+    text-align: center;
+    color: #e5edff;
+    border: 1px solid rgba(2, 212, 255, 0.18);
+    background: linear-gradient(165deg, #0f1a30 0%, #0a1224 55%, #0e172c 100%);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+.session-active-card i {
+    font-size: 2.4em;
+    color: #02d4ff;
+    display: block;
+    margin-bottom: 10px;
+}
+#session-active-title {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+#session-active-text {
+    margin: 0 0 16px;
+    line-height: 1.45;
+    color: #c5d2e8;
+}
+#session-active-ok {
+    border: 0;
+    border-radius: 12px;
+    padding: 10px 22px;
+    background: #02d4ff;
+    color: #041018;
+    font-weight: 700;
+    cursor: pointer;
+}
+.settings-session-note {
+    margin: 0 0 12px;
+    color: #9fb0c8;
+    font-size: 13px;
+    line-height: 1.45;
+}
+.settings-session-current {
+    margin-bottom: 10px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(2, 212, 255, 0.08);
+    color: #e5edff;
+    line-height: 1.4;
+}
+.settings-session-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 2px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 13px;
+    color: #d5e2f5;
+}
+.settings-session-empty {
+    color: #9fb0c8;
+    font-size: 13px;
+}

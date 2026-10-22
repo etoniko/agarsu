@@ -1264,6 +1264,20 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     finishLogin(pending.token);
   }
 
+  function showSessionLock(message) {
+    const text = message || "На этом аккаунте уже есть активная сессия. Выйдите из неё и закройте вкладку.";
+    const overlay = $("session-active-overlay");
+    const msg = $("session-active-text");
+    if (msg) msg.textContent = text;
+    if (overlay) overlay.hidden = false;
+    setErr($("authLoginError"), text);
+  }
+
+  function hideSessionLock() {
+    const overlay = $("session-active-overlay");
+    if (overlay) overlay.hidden = true;
+  }
+
   async function doLogin(ev) {
     if (ev) ev.preventDefault();
     const err = $("authLoginError");
@@ -1271,11 +1285,16 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     const ulogin = ($("authLoginId")?.value || "").trim();
     const pass = $("authLoginPass")?.value || "";
     setErr(err, "");
+    hideSessionLock();
     if (!/^\d{1,12}$/.test(ulogin)) return setErr(err, "Введите ID ЛК (число)");
     if (!pass) return setErr(err, "Введите пароль");
     if (btn) btn.disabled = true;
     try {
       const { res, data } = await api("/auth/login", { ulogin, pass });
+      if (data.code === "session_active" || res.status === 409) {
+        showSessionLock(data.error);
+        return;
+      }
       if (!res.ok || data.error || !data.token) {
         setErr(err, data.error || "Ошибка входа");
         return;
@@ -1693,6 +1712,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       });
     }
     $("authLoginForm")?.addEventListener("submit", doLogin);
+    $("session-active-ok")?.addEventListener("click", hideSessionLock);
     $("authDoneOkBtn")?.addEventListener("click", confirmDoneBanner);
     $("authRegSendBtn")?.addEventListener("click", () => regSend(false));
     $("authRegResendBtn")?.addEventListener("click", () => regSend(true));
@@ -7066,6 +7086,9 @@ function applyPlayerNickToCells(S, playerId, name) {
       try {
         localStorage.setItem("settings_active_panel", panelId);
       } catch (e) {}
+      if (panelId === "sessions" && typeof window.loadLkSessions === "function") {
+        window.loadLkSessions();
+      }
     }
     navItems.forEach(btn => {
       btn.addEventListener("click", () => showSettingsPanel(btn.dataset.panel));
@@ -9686,7 +9709,78 @@ function updateRegionOnlineTotals(totals) {
       hideAuthButtons();
       showEmailBindNotice(data);
     };
+    let sessionPingTimer = null;
+    function stopSessionPing() {
+      if (sessionPingTimer) clearInterval(sessionPingTimer);
+      sessionPingTimer = null;
+    }
+    function formatSessionTime(ms) {
+      const n = Number(ms);
+      if (!n) return "";
+      try {
+        return new Date(n).toLocaleString("ru-RU");
+      } catch (_) {
+        return "";
+      }
+    }
+    async function pingSession() {
+      if (!getAccountToken()) return stopSessionPing();
+      try {
+        const res = await accountApiGet("me/session/ping", "POST", {});
+        if (res.status === 401) onLogout();
+      } catch (_) {}
+    }
+    function startSessionPing() {
+      stopSessionPing();
+      if (!getAccountToken()) return;
+      pingSession();
+      sessionPingTimer = setInterval(pingSession, 25000);
+    }
+    window.loadLkSessions = async function() {
+      const cur = document.getElementById("session-current");
+      const list = document.getElementById("session-logins");
+      if (!cur || !list) return;
+      if (!getAccountToken()) {
+        cur.textContent = "Войдите в личный кабинет, чтобы видеть входы.";
+        list.innerHTML = "";
+        return;
+      }
+      cur.textContent = "Загрузка…";
+      list.innerHTML = "";
+      try {
+        const res = await accountApiGet("me/sessions");
+        let data = {};
+        try {
+          data = await res.json();
+        } catch (_) {}
+        if (res.status === 401 || data.status === 401) {
+          cur.textContent = "Сессия недействительна. Войдите снова.";
+          return;
+        }
+        if (!res.ok || data.error) {
+          cur.textContent = data.error || "Не удалось загрузить входы";
+          return;
+        }
+        const ip = data.session_ip ? ", IP " + data.session_ip : "";
+        const seen = data.session_seen ? ". На связи: " + formatSessionTime(data.session_seen) : "";
+        cur.textContent = data.active
+          ? "Сейчас открыта одна сессия" + ip + seen + "."
+          : "Активной сессии на сервере нет. Если кабинет открыт, подождите несколько секунд.";
+        const rows = Array.isArray(data.logins) ? data.logins.slice().reverse() : [];
+        if (!rows.length) {
+          list.innerHTML = '<div class="settings-session-empty">Входов пока нет. Строка появится после следующего входа.</div>';
+          return;
+        }
+        const esc = (value) => String(value || "—").replace(/[&<>]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[ch]));
+        list.innerHTML = rows.map((row) => {
+          return '<div class="settings-session-row"><span>' + esc(formatSessionTime(row.t) || "—") + '</span><span>' + esc(row.ip || "—") + '</span></div>';
+        }).join("");
+      } catch (_) {
+        cur.textContent = "Ошибка сети";
+      }
+    };
     const onLogout = () => {
+      stopSessionPing();
       emailBindDone = false;
       try { sessionStorage.removeItem("lkBindDraft"); } catch (e) {}
       const bindBox = document.getElementById("lkEmailBind");
@@ -9733,10 +9827,14 @@ function updateRegionOnlineTotals(totals) {
     };
     const loadAccountUserData = async () => {
       const res = await accountApiGet("me/login");
+      if (res.status === 401) {
+        onLogout();
+        return;
+      }
       if (res.ok) {
         const data = await res.json();
         if (data.error) {
-          if (401 == data.status) clearAccountToken(); else alert(data.error);
+          if (401 == data.status) onLogout(); else alert(data.error);
         } else setAccountData(data);
       }
     };
@@ -9934,6 +10032,7 @@ function updateRegionOnlineTotals(totals) {
       loadAccountUserData();
       loadMyNicknames(S, nickHooks);
       hooks.sendAccountToken();
+      startSessionPing();
     };
     if (window.AgarLkAuth && typeof window.AgarLkAuth.init === "function") {
       window.AgarLkAuth.init({
@@ -9959,7 +10058,10 @@ function updateRegionOnlineTotals(totals) {
         displayAccountData();
       }
     };
-    if (getAccountToken()) loadAccountUserData();
+    if (getAccountToken()) {
+      loadAccountUserData();
+      startSessionPing();
+    }
     if (typeof window.updateAccountMenuLabel === "function") {
       window.updateAccountMenuLabel();
     }
