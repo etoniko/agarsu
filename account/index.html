@@ -913,7 +913,8 @@ function renderList(el, items, empty) {
   }
   items.forEach(row => {
     const li = document.createElement('li');
-    li.textContent = row.nickname + (row.password ? ' · ' + row.password : '');
+    const passText = typeof row.password === 'string' ? row.password : '';
+    li.textContent = row.nickname + (passText ? ' · ' + passText : '');
     li.onclick = () => {
       const nick = String(row.nickname || '');
       $('clan').checked = /^\[[^\[\]]+\]$/.test(nick);

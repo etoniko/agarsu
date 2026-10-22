@@ -9374,9 +9374,9 @@ function updateRegionOnlineTotals(totals) {
       let clanCount = 0;
       if (Array.isArray(data == null ? void 0 : data.nicknames) && data.nicknames.length) {
         data.nicknames.forEach(row => {
-          var _a;
           const full = String(row.nickname || "");
-          const pass = ((_a = row.password) != null ? _a : "").trim();
+          const rawPass = row.password;
+          const pass = typeof rawPass === "string" ? rawPass.trim() : "";
           const finalNick = pass && !full.includes("#") ? `${full}#${pass}` : full;
           const parsed = parseFullNick(finalNick);
           const perks = getNickPerks(S, full, pass, lists);
