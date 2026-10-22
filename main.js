@@ -3480,7 +3480,11 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     const S = deps.S;
     if (!S) return;
     try {
-      if (!(stat == null ? void 0 : stat.length)) return;
+      if (!(stat == null ? void 0 : stat.length)) {
+        topPlayerNick = "";
+        topPlayerScore = "";
+        return;
+      }
       const topPlayer = stat[0];
       topPlayerNick = topPlayer.nick;
       topPlayerScore = topPlayer.score;
@@ -8640,6 +8644,12 @@ function applyPlayerNickToCells(S, playerId, name) {
   }
   function loadTopPlayerData2(S, stat, hooks) {
     try {
+      if (!stat || !stat.length) {
+        S.topPlayerNick = "";
+        S.topPlayerScore = "";
+        if (typeof (hooks == null ? void 0 : hooks.onClearCenter) === "function") hooks.onClearCenter();
+        return;
+      }
       if (stat.length > 0) {
         const topPlayer = stat[0];
         S.topPlayerNick = topPlayer.nick;
@@ -9060,9 +9070,11 @@ function updateRegionOnlineTotals(totals) {
           updateDeathScoreLabel(serverId);
         }
         const stat = Array.isArray(payload.players) ? payload.players : [];
-        loadTopPlayerData2(S, stat, hooks);
         invalidateStatsRenderCaches(S);
         await fetchStats(S, stat);
+        // Середина карты — только день «сегодня» с api, не выбранный период таблицы.
+        if (period === "today") loadTopPlayerData2(S, stat, hooks);
+        else if (typeof wHandle.refreshCenterTop === "function") wHandle.refreshCenterTop();
       } catch (error) {
         console.error("Ошибка загрузки данных о топ-1 игроке:", error);
       }
@@ -11618,7 +11630,8 @@ function initServers(S) {
       sendChat: t => outbound.sendChat(t),
       getSkinImageUrl,
       setImgSrc,
-      onTopPlayer: top => loadTopPlayerData([ top ])
+      onTopPlayer: top => loadTopPlayerData([ top ]),
+      onClearCenter: () => loadTopPlayerData([])
     });
     const connectionHooks = {
       onMessage: null,
@@ -11775,6 +11788,15 @@ onReady(() => {
         wHandle.refreshCenterTop();
       }
     }, TTL_MS);
+    // Середина всегда с period=today, чаще чем общий кэш списков.
+    setInterval(() => {
+      const staticsEl = document.getElementById("statics");
+      const periodEl = document.getElementById("deathPeriodSelect");
+      const panelOpen = staticsEl && staticsEl.style.display === "flex";
+      const period = (periodEl && periodEl.value) || "today";
+      if (panelOpen && period === "today" && typeof wHandle.chekstats === "function") return;
+      if (typeof wHandle.refreshCenterTop === "function") wHandle.refreshCenterTop();
+    }, 6e4);
     wHandle.addEventListener("hashchange", () => initServers(S));
     attachAccountHooks(S, {
       sendAccountToken: () => outbound.sendAccountToken(),
