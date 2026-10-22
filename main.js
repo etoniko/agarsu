@@ -4608,10 +4608,12 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       } catch (e) {}
     }
     function onWsOpen() {
-      var _a;
+      var _a, _b;
       setConnectVerifyText("Синхронизация с сервером…");
       S.gameHandshakeDone = false;
-      sendSecretClient();
+      try {
+        (_b = hooks.sendSecretClient) == null ? void 0 : _b.call(hooks);
+      } catch (e) {}
       (_a = hooks.sendAccountToken) == null ? void 0 : _a.call(hooks);
       const [p, key] = encodeHandshake();
       wsSend(p);
@@ -4999,6 +5001,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       sendSpectate,
       sendNickName,
       sendChat,
+      sendSecretClient,
       sendAccountToken,
       sendAdminPanel,
       sendSticker,
@@ -11522,6 +11525,7 @@ function initServers(S) {
       sendNickName: () => outbound.sendNickName(),
       sendSpectate: () => outbound.sendSpectate(),
       sendChat: t => outbound.sendChat(t),
+      sendSecretClient: () => outbound.sendSecretClient(),
       sendAccountToken: () => outbound.sendAccountToken(),
       clearWorld: () => {
         resetWorldContainers(S);
