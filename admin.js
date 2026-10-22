@@ -1,4 +1,3 @@
-// Agar.su admin panel — packet 169 + chat commands
 (function (global) {
   "use strict";
 

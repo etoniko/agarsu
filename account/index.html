@@ -7,7 +7,6 @@
   <link rel="icon" href="https://agar.su/icon.svg" type="image/x-icon">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     :root {
       --bg: #eef0f4;
@@ -97,7 +96,11 @@
     .gate-brand img { width: 40px; height: 40px; filter: drop-shadow(0 2px 6px rgba(1,107,239,.2)); }
     .gate-brand span { font-size: 22px; font-weight: 700; letter-spacing: -.03em; }
     .gate-title { text-align: center; font-size: 15px; color: var(--muted); margin-bottom: 28px; font-weight: 500; }
-    .gate-auth { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+    .gate-auth { display: flex; flex-direction: column; align-items: stretch; gap: 10px; width: 100%; }
+    .gate-field { display: block; text-align: left; font-size: 13px; color: var(--muted); }
+    .gate-field input { width: 100%; margin-top: 4px; padding: 10px 12px; border-radius: 10px; border: 1px solid #d5dbe6; font: inherit; }
+    .gate-err { color: #b42318; font-size: 13px; margin: 0; }
+    .gate-note { color: var(--muted); font-size: 12px; margin: 0; text-align: center; }
     #VkIdSdkOneTap { width: 100%; max-width: 360px; display: flex; justify-content: center; }
     .gate-divider {
       width: 100%; display: flex; align-items: center; gap: 14px;
@@ -563,25 +566,17 @@
       <span>Agar.su</span>
     </div>
     <div class="gate-title">Вход в магазин</div>
-    <div class="gate-auth">
-      <div id="VkIdSdkOneTap"></div>
-      <div class="gate-divider">или</div>
-      <div class="gate-row">
-        <div id="g_id_onload"
-             data-client_id="157257230972-4vh698jtf46c76sc7607oe1k9tr782je.apps.googleusercontent.com"
-             data-auto_prompt="false"
-             data-callback="onGoogleAuth"></div>
-        <div class="g_id_signin"
-             data-type="standard"
-             data-size="medium"
-             data-theme="outline"
-             data-text="signin_with"
-             data-shape="rectangular"></div>
-        <button type="button" class="btn-tg" onclick="openTelegramAuth()">
-          <i class="fab fa-telegram"></i> Telegram
-        </button>
-      </div>
-    </div>
+    <form class="gate-auth" id="gateLogin">
+      <label class="gate-field">ID
+        <input id="gateUid" inputmode="numeric" maxlength="12" autocomplete="username" required>
+      </label>
+      <label class="gate-field">Пароль
+        <input id="gatePass" type="password" maxlength="64" autocomplete="current-password" required>
+      </label>
+      <p class="gate-err" id="gateErr" hidden></p>
+      <button type="submit" class="btn-tg">Войти</button>
+      <p class="gate-note">Восстановление только по почте, кодом из письма.</p>
+    </form>
     <button type="button" class="gate-skip" id="skipBtn">Без входа</button>
   </div>
 </div>
@@ -1086,14 +1081,30 @@ async function sendForm(formData, headers = {}) {
   }
 }
 
-function openTelegramAuth() {
-  window.open('https://agar.su/telegram/', 'tgAuth', 'width=400,height=200');
-}
-window.onGoogleAuth = r => handleLogin(r.credential, 'google');
-window.onVkAuth = p => {
-  if (!p?.code || !p?.device_id) return alert('VK: нет кода');
-  handleLogin(p, 'vk');
-};
+$('gateLogin').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const err = $('gateErr');
+  err.hidden = true;
+  const ulogin = ($('gateUid').value || '').replace(/\D/g, '');
+  const pass = $('gatePass').value || '';
+  try {
+    const res = await fetch(API + '/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ulogin, pass })
+    });
+    const data = await res.json();
+    if (!res.ok || data.error || !data.token) {
+      err.hidden = false;
+      err.textContent = data.error || 'Ошибка входа';
+      return;
+    }
+    enterAuth(data.token);
+  } catch (e) {
+    err.hidden = false;
+    err.textContent = 'Ошибка сети';
+  }
+});
 
 $('skipBtn').onclick = enterGuest;
 $('authActionBtn').onclick = () => isAuth() ? logoutAccount() : showGate();
@@ -1101,10 +1112,6 @@ $('sidebarLoginBtn').onclick = showGate;
 $('tabNicks').onclick = () => switchTab(true);
 $('tabClans').onclick = () => switchTab(false);
 
-window.addEventListener('message', e => {
-  if (e.origin !== 'https://agar.su' || e.data?.type !== 'telegram-auth') return;
-  handleLogin(e.data.user, 'telegram');
-});
 
 fetch(API + '/allowtxt.txt').then(r => r.text()).then(t => {
   t.split(/\r?\n/).forEach(l => { if (l) ALLOWED_CHARS.add(l); });
@@ -1294,36 +1301,5 @@ else if (isGuest()) showApp();
 else showGate();
 </script>
 
-<script src="https://unpkg.com/@vkid/sdk@2/dist-sdk/umd/index.js"></script>
-<script>
-(function () {
-  const C = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-';
-  const rnd = n => { const b = new Uint8Array(n); crypto.getRandomValues(b); let s = ''; for (let i = 0; i < n; i++) s += C[b[i] % C.length]; return s; };
-  function send(code, dev) {
-    const cv = sessionStorage.getItem('vk_code_verifier'), st = sessionStorage.getItem('vk_state');
-    if (!cv || !st) return alert('VK: обновите страницу');
-    window.onVkAuth({ code, device_id: dev, code_verifier: cv, state: st });
-  }
-  function init() {
-    if (!('VKIDSDK' in window) || !$('VkIdSdkOneTap')) return;
-    const V = window.VKIDSDK;
-    const cv = rnd(64), st = rnd(32);
-    sessionStorage.setItem('vk_code_verifier', cv);
-    sessionStorage.setItem('vk_state', st);
-    V.Config.init({ app: 54069355, redirectUrl: 'https://agar.su', state: st, codeVerifier: cv, responseMode: V.ConfigResponseMode.Callback, source: V.ConfigSource.LOWCODE, scope: '' });
-    const p = new URLSearchParams(location.search);
-    if (p.get('code') && p.get('device_id')) {
-      send(p.get('code'), p.get('device_id'));
-      history.replaceState({}, '', location.pathname);
-      return;
-    }
-    new V.OneTap().render({ container: $('VkIdSdkOneTap'), showAlternativeLogin: true, oauthList: ['mail_ru', 'ok_ru'], styles: { width: 360, height: 44, borderRadius: 8 }, skin: V.OneTapSkin.Primary, scheme: V.Scheme.LIGHT, lang: V.Languages.RUS })
-      .on(V.WidgetEvents.ERROR, e => alert('VK: ' + (e?.error_description || e?.error || 'ошибка')))
-      .on(V.OneTapInternalEvents.LOGIN_SUCCESS, d => send(d.code, d.device_id));
-  }
-  if ('VKIDSDK' in window) init();
-  else document.querySelector('script[src*="@vkid/sdk"]')?.addEventListener('load', init);
-})();
-</script>
 </body>
 </html>

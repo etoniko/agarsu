@@ -1673,31 +1673,8 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
 
   function pickRecoverMethod(method) {
     clearRecErr();
-    if (method === "email") {
-      showRecOnly("authRecStepEmail", "Email аккаунта");
-      return;
-    }
-    if (method === "google") {
-      startGoogleRecoverPopup();
-      return;
-    }
-    if (method === "vk") {
-      startVkRecover();
-      return;
-    }
-    if (method === "telegram") {
-      const hint = $("authRecHint");
-      if (hint) hint.textContent = "Откройте Telegram…";
-      hideAll([
-        "authRecPick",
-        "authRecStepEmail",
-        "authRecStepGoogle",
-        "authRecStepCode",
-        "authRecStepPass",
-      ]);
-      window._telegramRecoverMode = true;
-      window.open("/telegram/", "tgAuth", "width=420,height=520");
-    }
+    if (method !== "email") return;
+    showRecOnly("authRecStepEmail", "Email аккаунта");
   }
 
   function wire() {
@@ -1768,7 +1745,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     document.addEventListener("lk-recover-ready", (ev) => {
       const token = ev.detail?.recoverToken;
       if (!token) return;
-      // НЕ вызывать showView("recover") — он делает resetRecover() и убивает токен
       openRecoverPassword(token, ev.detail?.needs_email !== false, !!ev.detail?.has_pass);
     });
   }
@@ -4341,8 +4317,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   }
   function openGameSocket(wsUrl, {accountToken, connectToken} = {}) {
     const qs = new URLSearchParams;
-    // Security: unofficial game servers (agarz / delta / agarlive) must never
-    // receive the agar.su account token or PoW connect token.
     const official = !window.MultiProtocols || window.MultiProtocols.isOfficial(wsUrl);
     if (official) {
       if (accountToken) qs.set("accountToken", accountToken);
@@ -4542,7 +4516,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       (_a = hooks.clearWorld) == null ? void 0 : _a.call(hooks);
       try {
         let connectToken = null;
-        // PoW challenge (connectToken) is an agar.su-only flow — skip for unofficial
         // upstream servers to avoid a pointless 3.5s /challenge probe.
         const officialHost = !window.MultiProtocols || window.MultiProtocols.isOfficial(host);
         if (officialHost) {
@@ -4638,6 +4611,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       var _a;
       setConnectVerifyText("Синхронизация с сервером…");
       S.gameHandshakeDone = false;
+      sendSecretClient();
       (_a = hooks.sendAccountToken) == null ? void 0 : _a.call(hooks);
       const [p, key] = encodeHandshake();
       wsSend(p);
@@ -4921,7 +4895,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     function sendNickName() {
       if (!wsIsOpen() || S.userNickName == null) return;
       let nick = S.userNickName;
-      // Security: unofficial servers get only the bare nick (no #pass).
       if (window.MultiProtocols && !window.MultiProtocols.isOfficial(S.CONNECTION_URL)) {
         nick = window.MultiProtocols.sanitizeNickForHost(nick, S.CONNECTION_URL);
         if (!nick) return;
@@ -4966,8 +4939,33 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         msg.setUint16(offset, str.charCodeAt(i), true);
         offset += 2;
       }
-      // Security: unofficial game servers must not receive the agar.su token.
       if (window.MultiProtocols && !window.MultiProtocols.isOfficial(S.CONNECTION_URL)) return;
+      wsSend(msg);
+    }
+
+    function getSecretClient() {
+      const key = "secretclient";
+      try {
+        let id = localStorage.getItem(key) || "";
+        if (!/^[a-z0-9]{16}$/.test(id)) {
+          const alphabet = "abcdefghijklmnopqrstuvwxyz0123456789";
+          const bytes = new Uint8Array(16);
+          crypto.getRandomValues(bytes);
+          id = "";
+          for (let i = 0; i < bytes.length; i++) id += alphabet[bytes[i] % alphabet.length];
+          localStorage.setItem(key, id);
+        }
+        return id;
+      } catch (e) {
+        return "";
+      }
+    }
+    function sendSecretClient() {
+      const id = getSecretClient();
+      if (!wsIsOpen() || !id) return;
+      const msg = prepareData(1 + 2 * id.length);
+      msg.setUint8(0, 115);
+      for (let i = 0; i < id.length; ++i) msg.setUint16(1 + 2 * i, id.charCodeAt(i), true);
       wsSend(msg);
     }
     function sendAccountToken() {
@@ -9741,7 +9739,6 @@ function updateRegionOnlineTotals(totals) {
     };
     async function handleLogin(tokenOrUser, provider) {
       if (provider !== "vk") return;
-      // Primary auth is ID+password. VK only for recovery (see AgarLkAuth).
       if (window._lkRecoverVkMode) return;
       alert("Вход по ID ЛК и паролю. Если пароля нет — нажмите «Восстановить» и войдите через VK / Google / Telegram / email.");
     }
@@ -9763,7 +9760,6 @@ function updateRegionOnlineTotals(totals) {
           codeVerifier = codeVerifier || sessionStorage.getItem("vk_code_verifier") || localStorage.getItem("vk_code_verifier");
           state = state || sessionStorage.getItem("vk_state") || localStorage.getItem("vk_state");
         } catch (_) {}
-        // Keep recover flag until API responds (redirect return needs it)
         fetch("https://api.agar.su/api/auth/recover/vk", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -10188,7 +10184,6 @@ function updateRegionOnlineTotals(totals) {
     }
     const cell = alive ? cells[0] : null;
     let name = cell && cell.name || S && S.userNickName || "Игрок";
-    // userNickName is often "nick#password" for pass auth — never show the password in chat
     name = String(name || "").split("#")[0].replace(/<[^>]*>/g, "").trim();
     return name || "Игрок";
   }
@@ -13987,7 +13982,6 @@ onReady(() => {
     bus.emit(Events.SHOW_CONTENT, {
       id: "home"
     });
-    // Returning from VK recover → open store auth UI
     try {
       if (sessionStorage.getItem("lk_recover_vk_mode") === "1" || window.__pendingVkAuthPayload) {
         if (typeof window.showContent === "function") window.showContent("store");
