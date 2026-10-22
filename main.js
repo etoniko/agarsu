@@ -3450,9 +3450,8 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   var topPlayerScore = 0;
   var backgroundWidth = 512;
   var backgroundHeight = 512;
-  // Дырка кольца на center.png 2000²: радиус 767px от центра.
-  var innerImageWidth = 393;
-  var innerImageHeight = 393;
+  var innerImageWidth = 450;
+  var innerImageHeight = 450;
     function attachScene(S, hooks = {}) {
     deps = {
       S,
@@ -3481,11 +3480,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     const S = deps.S;
     if (!S) return;
     try {
-      if (!(stat == null ? void 0 : stat.length) || !stat[0] || !stat[0].nick) {
-        topPlayerNick = "";
-        topPlayerScore = 0;
-        return;
-      }
+      if (!(stat == null ? void 0 : stat.length)) return;
       const topPlayer = stat[0];
       topPlayerNick = topPlayer.nick;
       topPlayerScore = topPlayer.score;
@@ -3823,24 +3818,15 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     }
     ctx.drawImage(centerBackground, screenX - scaledBackgroundWidth / 2, screenY - scaledBackgroundHeight / 2, scaledBackgroundWidth, scaledBackgroundHeight);
     if (topPlayerNick || topPlayerScore) {
-      const z = S.viewZoom;
+      const radius = Math.min(scaledInnerImageWidth, scaledInnerImageHeight) / 2;
       ctx.fillStyle = "white";
-      ctx.strokeStyle = "rgba(0,0,0,0.75)";
-      ctx.lineWidth = 4 * z;
-      ctx.font = `${15 * z}px Ubuntu`;
+      ctx.font = `${22 * S.viewZoom}px Ubuntu`;
       ctx.textAlign = "center";
-      ctx.lineJoin = "round";
-      // Ник — в чёрном поле под звёздами, счёт — над планкой «ТОП 1 СЕГОДНЯ».
       if (topPlayerNick) {
-        const nickY = screenY - 160 * z;
-        ctx.strokeText(topPlayerNick, screenX, nickY);
-        ctx.fillText(topPlayerNick, screenX, nickY);
+        ctx.fillText(topPlayerNick, screenX, screenY + radius - 415 * S.viewZoom);
       }
       if (topPlayerScore) {
-        const scoreText = `${topPlayerScore}`;
-        const scoreY = screenY + 125 * z;
-        ctx.strokeText(scoreText, screenX, scoreY);
-        ctx.fillText(scoreText, screenX, scoreY);
+        ctx.fillText(`${topPlayerScore}`, screenX, screenY + radius - 15 * S.viewZoom);
       }
     }
   }
@@ -8654,14 +8640,6 @@ function applyPlayerNickToCells(S, playerId, name) {
   }
   function loadTopPlayerData2(S, stat, hooks) {
     try {
-      if (!stat || !stat.length || !stat[0] || !stat[0].nick) {
-        S.topPlayerNick = "";
-        S.topPlayerScore = 0;
-        if (typeof (hooks == null ? void 0 : hooks.onTopPlayer) === "function") {
-          hooks.onTopPlayer({ nick: "", score: 0 });
-        }
-        return;
-      }
       if (stat.length > 0) {
         const topPlayer = stat[0];
         S.topPlayerNick = topPlayer.nick;
@@ -9082,17 +9060,13 @@ function updateRegionOnlineTotals(totals) {
           updateDeathScoreLabel(serverId);
         }
         const stat = Array.isArray(payload.players) ? payload.players : [];
+        loadTopPlayerData2(S, stat, hooks);
         invalidateStatsRenderCaches(S);
         await fetchStats(S, stat);
-        if (typeof wHandle.refreshCenterTop === "function") wHandle.refreshCenterTop();
       } catch (error) {
         console.error("Ошибка загрузки данных о топ-1 игроке:", error);
       }
     };
-    setInterval(() => {
-      if (document.hidden) return;
-      wHandle.refreshCenterTop();
-    }, 60 * 1000);
     const deathPeriodSelect = document.getElementById("deathPeriodSelect");
     if (deathPeriodSelect) {
       deathPeriodSelect.addEventListener("change", () => {
