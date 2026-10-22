@@ -8463,7 +8463,11 @@ function applyPlayerNickToCells(S, playerId, name) {
   }
 
   function pushStatsSystemChat(S, hooks, text) {
-    if (!S || !Array.isArray(S.chatBoard) || !text) return;
+    if (!S || !Array.isArray(S.chatBoard) || !text) return false;
+    if (S.hideChat) return false;
+    const feed = document.getElementById("chatX_feed");
+    if (!feed) return false;
+    const before = S.chatRenderedCount || 0;
     S.chatBoard.push({
       pId: 0,
       playerXp: 0,
@@ -8474,12 +8478,13 @@ function applyPlayerNickToCells(S, playerId, name) {
       time: formatChatClock(new Date),
       isStatsRecord: true
     });
-    if (typeof hooks.drawChatBoard === "function") hooks.drawChatBoard();
-    else if (typeof drawChatBoard === "function") {
-      try {
-        drawChatBoard(S, hooks);
-      } catch (_) {}
-    }
+    try {
+      if (typeof hooks.drawChatBoard === "function") hooks.drawChatBoard();
+      else if (typeof drawChatBoard === "function") drawChatBoard(S, hooks);
+    } catch (_) {}
+    if ((S.chatRenderedCount || 0) > before) return true;
+    S.chatBoard.pop();
+    return false;
   }
 
   function startStatsRecordFeed(S, hooks) {
@@ -8491,9 +8496,38 @@ function applyPlayerNickToCells(S, playerId, name) {
       sinceId = localStorage.getItem(STATS_FEED_STORAGE_KEY) || "";
     } catch (_) {}
 
+    // Курсор двигается только после строки в чате и успешной записи localStorage.
+    function remember(id) {
+      if (!id) return false;
+      try {
+        localStorage.setItem(STATS_FEED_STORAGE_KEY, id);
+      } catch (_) {
+        return false;
+      }
+      sinceId = id;
+      return true;
+    }
+
+    function deliverRecord(msg, ev, currentServerId) {
+      if (!msg || !msg.text) return "skip";
+      const sid = String(msg.server || ev.server || "").toLowerCase();
+      if (sid.startsWith("pvp") || sid.startsWith("tournament")) return "skip";
+      if (msg.scope === "global") {
+        return pushStatsSystemChat(S, hooks, msg.text) ? "shown" : "pending";
+      }
+      if (msg.scope === "server") {
+        const cur = String(currentServerId || "").toLowerCase();
+        if (!currentServerId || cur.startsWith("pvp") || cur.startsWith("tournament")) return "skip";
+        if (msg.server && currentServerId === msg.server) {
+          return pushStatsSystemChat(S, hooks, msg.text) ? "shown" : "pending";
+        }
+      }
+      return "skip";
+    }
+
     async function tick() {
       try {
-        const url = STATS_RECORDS_FEED + (sinceId ? "?since=" + encodeURIComponent(sinceId) : "?since=");
+        const url = STATS_RECORDS_FEED + "?since=" + encodeURIComponent(sinceId || "");
         const res = await fetch(url, {
           cache: "no-store"
         });
@@ -8501,58 +8535,22 @@ function applyPlayerNickToCells(S, playerId, name) {
         const data = await res.json();
         const events = Array.isArray(data.events) ? data.events : [];
         if (!events.length) return;
-
         const currentServerId = resolveOfficialServerId(S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl || "");
-
         for (const ev of events) {
           const messages = Array.isArray(ev.messages) ? ev.messages : [];
+          let pending = false;
           for (const msg of messages) {
-            if (!msg || !msg.text) continue;
-            // PVP / tournament — не показываем рекорды дня (победы скачут)
-            if (msg.server) {
-              const sid = String(msg.server).toLowerCase();
-              if (sid.startsWith("pvp") || sid.startsWith("tournament")) continue;
-            }
-            if (msg.scope === "global") {
-              // Глобальные (год/alltime) с pvp/tournament тоже глушим
-              const evServer = String(ev.server || "").toLowerCase();
-              if (evServer.startsWith("pvp") || evServer.startsWith("tournament")) continue;
-              pushStatsSystemChat(S, hooks, msg.text);
-            } else if (msg.scope === "server") {
-              if (currentServerId && msg.server && currentServerId === msg.server) {
-                // На всякий случай: если сидим на pvp/tournament — молчим
-                const cur = String(currentServerId).toLowerCase();
-                if (cur.startsWith("pvp") || cur.startsWith("tournament")) continue;
-                pushStatsSystemChat(S, hooks, msg.text);
-              }
-            }
+            if (deliverRecord(msg, ev, currentServerId) === "pending") pending = true;
           }
-          if (ev.id) sinceId = ev.id;
+          // Чат ещё не готов или localStorage не записал — тот же рекорд придёт снова.
+          if (pending) return;
+          if (ev.id && !remember(ev.id)) return;
         }
-        try {
-          localStorage.setItem(STATS_FEED_STORAGE_KEY, sinceId);
-        } catch (_) {}
       } catch (_) {}
     }
 
-    // Первый запрос только запоминает курсор, без спама старыми событиями
-    (async () => {
-      try {
-        const res = await fetch(STATS_RECORDS_FEED, {
-          cache: "no-store"
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-        const events = Array.isArray(data.events) ? data.events : [];
-        if (events.length) {
-          sinceId = events[events.length - 1].id || sinceId;
-          try {
-            localStorage.setItem(STATS_FEED_STORAGE_KEY, sinceId);
-          } catch (_) {}
-        }
-      } catch (_) {}
-      setInterval(tick, STATS_FEED_POLL_MS);
-    })();
+    tick();
+    setInterval(tick, STATS_FEED_POLL_MS);
   }
   var FORBIDDEN_NICK_CHARS = [ "﷽", "𒐫", "𒈙", "⸻", "꧅", "ဪ", "௵", "௸", "‱", "ㅤ", "⁣", "‎ ", "​", "‌", "‍", "‎", "‏", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", "​", "\ufeff", "", " ", "⠀", "ﾠ", "卐", "卍" ];
   function getStarClass(level) {
