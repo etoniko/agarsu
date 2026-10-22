@@ -7817,7 +7817,7 @@ function applyPlayerNickToCells(S, playerId, name) {
   var STATS_CLAN_PROFILE_BASE = "https://agar.su/stats/clans/?id=";
   var STATS_RECORDS_FEED = STATS_API + "/api/records/feed";
   // feed раньше поллился каждые 10с на главной — лишний трафик; рекорды смотреть на /stats
-  var STATS_FEED_ENABLED = false;
+  var STATS_FEED_ENABLED = true;
   var STATS_FEED_POLL_MS = 10000;
   var STATS_FEED_STORAGE_KEY = "agar_stats_feed_since";
 
