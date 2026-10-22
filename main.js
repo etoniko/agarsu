@@ -9761,19 +9761,19 @@ function updateRegionOnlineTotals(totals) {
           cur.textContent = data.error || "Не удалось загрузить входы";
           return;
         }
-        const ip = data.session_ip ? ", IP " + data.session_ip : "";
-        const seen = data.session_seen ? ". На связи: " + formatSessionTime(data.session_seen) : "";
-        cur.textContent = data.active
-          ? "Сейчас открыта одна сессия" + ip + seen + "."
-          : "Активной сессии на сервере нет. Если кабинет открыт, подождите несколько секунд.";
-        const rows = Array.isArray(data.logins) ? data.logins.slice().reverse() : [];
-        if (!rows.length) {
-          list.innerHTML = '<div class="settings-session-empty">Входов пока нет. Строка появится после следующего входа.</div>';
+        const sessions = Array.isArray(data.sessions) ? data.sessions.slice() : [];
+        sessions.sort((a, b) => (b.current ? 1 : 0) - (a.current ? 1 : 0) || (Number(b.seen) || 0) - (Number(a.seen) || 0));
+        if (!sessions.length) {
+          cur.textContent = "Сейчас нет вкладок на связи. Если кабинет открыт, подождите несколько секунд.";
+          list.innerHTML = "";
           return;
         }
+        cur.textContent = "Сейчас на связи: " + sessions.length + ".";
         const esc = (value) => String(value || "—").replace(/[&<>]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[ch]));
-        list.innerHTML = rows.map((row) => {
-          return '<div class="settings-session-row"><span>' + esc(formatSessionTime(row.t) || "—") + '</span><span>' + esc(row.ip || "—") + '</span></div>';
+        list.innerHTML = sessions.map((row) => {
+          const label = row.current ? "Эта вкладка" : "Другой вход";
+          const when = formatSessionTime(row.seen) || "—";
+          return '<div class="settings-session-row"><span>' + esc(label + " · " + when) + '</span><span>' + esc(row.ip || "—") + '</span></div>';
         }).join("");
       } catch (_) {
         cur.textContent = "Ошибка сети";
