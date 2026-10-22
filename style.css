@@ -9299,3 +9299,11 @@ html, body {
     color: #9fb0c8;
     font-size: 13px;
 }
+.lk-sessions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.lk-sessions .restore-note {
+    margin: 0;
+}

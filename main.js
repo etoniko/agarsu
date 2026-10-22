@@ -7086,9 +7086,6 @@ function applyPlayerNickToCells(S, playerId, name) {
       try {
         localStorage.setItem("settings_active_panel", panelId);
       } catch (e) {}
-      if (panelId === "sessions" && typeof window.loadLkSessions === "function") {
-        window.loadLkSessions();
-      }
     }
     navItems.forEach(btn => {
       btn.addEventListener("click", () => showSettingsPanel(btn.dataset.panel));
@@ -9525,6 +9522,9 @@ function updateRegionOnlineTotals(totals) {
       try {
         window.AgarFriends.loadFriendsPanel();
       } catch (_) {}
+    }
+    if (which === "settings" && typeof window.loadLkSessions === "function") {
+      window.loadLkSessions();
     }
   }
   function wireTabsOnce(S) {

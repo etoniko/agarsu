@@ -16,9 +16,9 @@
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="canonical" href="https://agar.su">
     <link rel="stylesheet" href="/fonts/fonts.css?v=160">
-    <link rel="stylesheet" href="style.css?v=53">
+    <link rel="stylesheet" href="style.css?v=54">
     <script src="assets/scripts/friends.js?v=160" defer></script>
-    <script src="main.js?v=57" defer></script>
+    <script src="main.js?v=58" defer></script>
 	<script src="admin.js?v=163" defer></script>
 </head>
 <body>
@@ -168,9 +168,6 @@
               <button type="button" class="settings-nav-item" data-panel="system">
                 <i class="fas fa-sliders"></i><span data-en="Other" data-tr="Diğer" data-zh="其他" data-ar="أخرى" data-es="Otros" data-pl="Inne" data-de="Sonstiges" data-uk="Інше">Прочее</span>
               </button>
-              <button type="button" class="settings-nav-item" data-panel="sessions">
-                <i class="fas fa-user-shield"></i><span data-en="Sessions" data-tr="Oturumlar" data-zh="会话" data-ar="الجلسات" data-es="Sesiones" data-pl="Sesje" data-de="Sitzungen" data-uk="Сесії">Сессии</span>
-              </button>
               </div>
             </nav>
             <div class="settings-panels checkbox-container">
@@ -316,12 +313,6 @@
                 <div class="settings-field">
                   <button type="button" id="hud-editor-open" class="settings-action-btn" data-en="Customize HUD layout" data-tr="Arayüz düzenini özelleştir" data-zh="自定义界面布局" data-ar="تخصيص تخطيط الواجهة" data-es="Personalizar diseño de interfaz" data-pl="Dostosuj układ interfejsu" data-de="HUD-Layout anpassen" data-uk="Налаштувати розкладку інтерфейсу">Настроить расположение интерфейса</button>
                 </div>
-              </section>
-              <section class="settings-panel" data-panel="sessions">
-                <h3 class="settings-panel-title" data-en="Account sign-ins" data-tr="Hesap girişleri" data-zh="账号登录" data-ar="تسجيلات الدخول" data-es="Accesos a la cuenta" data-pl="Logowania do konta" data-de="Kontoanmeldungen" data-uk="Входи в акаунт">Входы в личный кабинет</h3>
-                <p class="settings-session-note" data-en="Only one tab can stay signed in. To sign in somewhere else, press Log out and close that tab." data-tr="Aynı anda yalnızca bir sekme açık kalabilir. Başka yerden girmek için çıkış yapın ve o sekmeyi kapatın." data-zh="同时只能有一个标签页保持登录。要在别处登录，请先退出并关闭该标签页。" data-ar="يمكن أن تبقى جلسة واحدة فقط. للدخول من مكان آخر، اخرج وأغلق ذلك التبويب." data-es="Solo una pestaña puede seguir dentro. Para entrar en otro sitio, sal y cierra esa pestaña." data-pl="Jednocześnie może być otwarta tylko jedna karta. Aby wejść gdzie indziej, wyloguj się i zamknij tę kartę." data-de="Nur ein Tab kann angemeldet bleiben. Zum Wechseln abmelden und den Tab schließen." data-uk="Одночасно може бути відкрита лише одна вкладка. Щоб увійти в іншому місці, вийдіть і закрийте ту вкладку.">Одновременно может быть открыта только одна вкладка. Чтобы войти с другого места, нажмите «Выйти» и закройте ту вкладку.</p>
-                <div id="session-current" class="settings-session-current">Войдите в личный кабинет, чтобы видеть входы.</div>
-                <div id="session-logins" class="settings-session-list"></div>
               </section>
             </div>
           </div>
@@ -527,6 +518,12 @@
                   <label class="lk-friends-opt"><input type="checkbox" id="optFriendMinimap" checked onchange="setFriendMinimap(this.checked);"><span>Друзья на миникарте</span></label>
                   <label class="lk-friends-opt"><input type="checkbox" id="optFriendShareCoords" checked onchange="setFriendShareCoords(this.checked);"><span>Передавать друзьям мои координаты</span></label>
                   <label class="lk-friends-opt"><input type="checkbox" id="optFriendSharePresence" checked onchange="setFriendSharePresence(this.checked);"><span>Показывать друзьям онлайн / сервер</span></label>
+                </div>
+                <div class="lk-sessions" id="lkSessions">
+                  <div class="restore-title">Сессии</div>
+                  <p class="restore-note">Одновременно может быть открыта только одна вкладка. Чтобы войти с другого места, нажмите «Выход» и закройте ту вкладку.</p>
+                  <div id="session-current" class="settings-session-current">Войдите в личный кабинет, чтобы видеть входы.</div>
+                  <div id="session-logins" class="settings-session-list"></div>
                 </div>
               </div>
             </div>
