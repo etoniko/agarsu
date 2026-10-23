@@ -18,7 +18,7 @@
     <link rel="stylesheet" href="/fonts/fonts.css?v=160">
     <link rel="stylesheet" href="style.css?v=54">
     <script src="assets/scripts/friends.js?v=160" defer></script>
-    <script src="main.js?v=61" defer></script>
+    <script src="main.js?v=63" defer></script>
 	<script src="admin.js?v=163" defer></script>
 </head>
 <body>
@@ -140,7 +140,7 @@
         </div>
         <p class="shop-pay-hint" data-en="Before payment, enter your email for the receipt" data-tr="Ödemeden önce fiş için e-postanızı yazın" data-zh="付款前请填写收据邮箱" data-ar="قبل الدفع أدخل بريدك للإيصال" data-es="Antes de pagar, indica tu email para el recibo" data-pl="Przed płatnością podaj email na paragon" data-de="Vor der Zahlung E-Mail für den Beleg angeben" data-uk="Перед оплатою вкажіть email для чека">Перед переходом на оплату укажите вашу почту</p>
         <label class="shop-pay-label" for="shopEmail" data-en="Email for receipt" data-tr="Fiş e-postası" data-zh="收据邮箱" data-ar="بريد الإيصال" data-es="Email del recibo" data-pl="Email na paragon" data-de="E-Mail für Beleg" data-uk="Email для чека">Email для чека</label>
-        <input type="email" id="shopEmail" name="email" class="shop-pay-email" data-en-placeholder="name@example.com" data-tr-placeholder="name@example.com" data-zh-placeholder="name@example.com" data-ar-placeholder="name@example.com" data-es-placeholder="name@example.com" data-pl-placeholder="name@example.com" data-de-placeholder="name@example.com" data-uk-placeholder="name@example.com" placeholder="name@example.com" maxlength="120" autocomplete="email" inputmode="email">
+        <input type="text" id="shopEmail" class="shop-pay-email" data-en-placeholder="name@example.com" data-tr-placeholder="name@example.com" data-zh-placeholder="name@example.com" data-ar-placeholder="name@example.com" data-es-placeholder="name@example.com" data-pl-placeholder="name@example.com" data-de-placeholder="name@example.com" data-uk-placeholder="name@example.com" placeholder="name@example.com" maxlength="120" inputmode="email" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
         <button type="button" id="payButton" class="shop-pay-btn" disabled data-en="PAY" data-tr="ÖDE" data-zh="支付" data-ar="ادفع" data-es="PAGAR" data-pl="ZAPŁAĆ" data-de="ZAHLEN" data-uk="СПЛАТИТИ">ОПЛАТИТЬ</button>
       </div>
     </div>
@@ -566,7 +566,7 @@
                 <div id="authRegStepEmail" class="lk-auth-form">
                   <label class="lk-auth-field">
                     <span>Email</span>
-                    <input class="lk-auth-input" id="authRegEmail" type="email" maxlength="190" placeholder="email@mail.ru" autocomplete="email">
+                    <input class="lk-auth-input" id="authRegEmail" type="text" inputmode="email" maxlength="190" placeholder="email@mail.ru" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
                   </label>
                   <p class="lk-auth-error" id="authRegError" hidden></p>
                   <button type="button" class="lk-auth-btn" id="authRegSendBtn">Далее</button>
@@ -634,7 +634,7 @@
                 <div id="authRecStepEmail" class="lk-auth-form" hidden>
                   <label class="lk-auth-field">
                     <span>Email аккаунта</span>
-                    <input class="lk-auth-input" id="authRecEmail" type="email" maxlength="190" placeholder="email@mail.ru" autocomplete="email">
+                    <input class="lk-auth-input" id="authRecEmail" type="text" inputmode="email" maxlength="190" placeholder="email@mail.ru" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
                   </label>
                   <p class="lk-auth-error" id="authRecErrorEmail" hidden></p>
                   <button type="button" class="lk-auth-btn" id="authRecSendBtn">Отправить код</button>
