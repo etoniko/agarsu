@@ -1094,12 +1094,16 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     email.className = "lk-auth-input";
     email.id = "authRecBindEmail";
     email.type = "text";
-    email.inputMode = "email";
+    email.name = "lk-recover-mail";
     email.maxLength = 190;
     email.placeholder = "Почта для привязки";
     email.autocomplete = "off";
     email.autocapitalize = "off";
     email.spellcheck = false;
+    email.setAttribute("data-lpignore", "true");
+    email.setAttribute("data-1p-ignore", "true");
+    email.setAttribute("data-bwignore", "true");
+    email.setAttribute("data-form-type", "other");
     const code = document.createElement("input");
     code.className = "lk-auth-input";
     code.id = "authRecBindCode";
@@ -1119,6 +1123,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       step.prepend(code);
       step.prepend(email);
     }
+    keepBrowserOffMailField(email);
   }
 
   function showPassField(show) {
@@ -1693,10 +1698,33 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     })();
   }
 
+  function keepBrowserOffMailField(input) {
+    if (!input || input.dataset.mailSafe === "1") return;
+    input.dataset.mailSafe = "1";
+    input.readOnly = true;
+    const unlock = () => {
+      input.readOnly = false;
+    };
+    input.addEventListener("pointerdown", unlock);
+    input.addEventListener("focus", unlock);
+    input.addEventListener("blur", () => {
+      input.readOnly = true;
+    });
+    input.addEventListener("keydown", (e) => {
+      e.stopPropagation();
+    });
+    input.addEventListener("keyup", (e) => {
+      e.stopPropagation();
+    });
+  }
+
   function pickRecoverMethod(method) {
     clearRecErr();
     if (method !== "email") return;
     showRecOnly("authRecStepEmail", "Email аккаунта");
+    const email = $("authRecEmail");
+    keepBrowserOffMailField(email);
+    if (email) email.focus();
   }
 
   function wire() {
@@ -1721,6 +1749,13 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     $("authRegResendBtn")?.addEventListener("click", () => regSend(true));
     $("authRegVerifyBtn")?.addEventListener("click", regVerify);
     $("authRegCreateBtn")?.addEventListener("click", regCreate);
+    keepBrowserOffMailField($("authRecEmail"));
+    $("authRecEmail")?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        recSend(false);
+      }
+    });
     $("authRecSendBtn")?.addEventListener("click", () => recSend(false));
     $("authRecResendBtn")?.addEventListener("click", () => recSend(true));
     $("authRecVerifyBtn")?.addEventListener("click", recVerify);
@@ -7336,6 +7371,10 @@ function applyPlayerNickToCells(S, playerId, name) {
       requestStickerSync();
     }
     wHandle.onkeydown = function(event2) {
+      const keyTarget = event2.target;
+      const keyTag = keyTarget && keyTarget.tagName;
+      const keyId = keyTarget && keyTarget.id || "";
+      if ((keyTag === "INPUT" || keyTag === "TEXTAREA" || keyTag === "SELECT" || keyTarget && keyTarget.isContentEditable) && keyId !== "chat_textbox" && keyId !== "ls") return;
       if (S.keybindCaptureAction) {
         event2.preventDefault();
         const code2 = event2.keyCode;
@@ -7456,6 +7495,10 @@ function applyPlayerNickToCells(S, playerId, name) {
       }
     };
     wHandle.onkeyup = function(event2) {
+      const keyTarget = event2.target;
+      const keyTag = keyTarget && keyTarget.tagName;
+      const keyId = keyTarget && keyTarget.id || "";
+      if ((keyTag === "INPUT" || keyTag === "TEXTAREA" || keyTag === "SELECT" || keyTarget && keyTarget.isContentEditable) && keyId !== "chat_textbox" && keyId !== "ls") return;
       const code = event2.keyCode;
       if (code === getBind(S, "freeze")) keyPressed.freeze = false;
       if (code === getBind(S, "split")) keyPressed.split = false;
@@ -7614,6 +7657,9 @@ function applyPlayerNickToCells(S, playerId, name) {
     });
     onReady(function() {
       document.addEventListener("keydown", function(event2) {
+        const keyTarget = event2.target;
+        const keyTag = keyTarget && keyTarget.tagName;
+        if (keyTag === "INPUT" || keyTag === "TEXTAREA" || keyTag === "SELECT" || keyTarget && keyTarget.isContentEditable) return;
         if (event2.keyCode === getBind(S, "menu")) {
           hideStatics();
           if (isOverlaysVisible()) {
