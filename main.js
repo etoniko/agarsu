@@ -1093,17 +1093,10 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     const email = document.createElement("input");
     email.className = "lk-auth-input";
     email.id = "authRecBindEmail";
-    email.type = "text";
-    email.name = "lk-recover-mail";
+    email.type = "email";
     email.maxLength = 190;
     email.placeholder = "Почта для привязки";
-    email.autocomplete = "off";
-    email.autocapitalize = "off";
-    email.spellcheck = false;
-    email.setAttribute("data-lpignore", "true");
-    email.setAttribute("data-1p-ignore", "true");
-    email.setAttribute("data-bwignore", "true");
-    email.setAttribute("data-form-type", "other");
+    email.autocomplete = "email";
     const code = document.createElement("input");
     code.className = "lk-auth-input";
     code.id = "authRecBindCode";
@@ -1123,7 +1116,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       step.prepend(code);
       step.prepend(email);
     }
-    keepBrowserOffMailField(email);
   }
 
   function showPassField(show) {
@@ -1272,20 +1264,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     finishLogin(pending.token);
   }
 
-  function showSessionLock(message) {
-    const text = message || "На этом аккаунте уже есть активная сессия. Выйдите из неё и закройте вкладку.";
-    const overlay = $("session-active-overlay");
-    const msg = $("session-active-text");
-    if (msg) msg.textContent = text;
-    if (overlay) overlay.hidden = false;
-    setErr($("authLoginError"), text);
-  }
-
-  function hideSessionLock() {
-    const overlay = $("session-active-overlay");
-    if (overlay) overlay.hidden = true;
-  }
-
   async function doLogin(ev) {
     if (ev) ev.preventDefault();
     const err = $("authLoginError");
@@ -1293,16 +1271,11 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     const ulogin = ($("authLoginId")?.value || "").trim();
     const pass = $("authLoginPass")?.value || "";
     setErr(err, "");
-    hideSessionLock();
     if (!/^\d{1,12}$/.test(ulogin)) return setErr(err, "Введите ID ЛК (число)");
     if (!pass) return setErr(err, "Введите пароль");
     if (btn) btn.disabled = true;
     try {
       const { res, data } = await api("/auth/login", { ulogin, pass });
-      if (data.code === "session_active" || res.status === 409) {
-        showSessionLock(data.error);
-        return;
-      }
       if (!res.ok || data.error || !data.token) {
         setErr(err, data.error || "Ошибка входа");
         return;
@@ -1698,33 +1671,33 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     })();
   }
 
-  function keepBrowserOffMailField(input) {
-    if (!input || input.dataset.mailSafe === "1") return;
-    input.dataset.mailSafe = "1";
-    input.readOnly = true;
-    const unlock = () => {
-      input.readOnly = false;
-    };
-    input.addEventListener("pointerdown", unlock);
-    input.addEventListener("focus", unlock);
-    input.addEventListener("blur", () => {
-      input.readOnly = true;
-    });
-    input.addEventListener("keydown", (e) => {
-      e.stopPropagation();
-    });
-    input.addEventListener("keyup", (e) => {
-      e.stopPropagation();
-    });
-  }
-
   function pickRecoverMethod(method) {
     clearRecErr();
-    if (method !== "email") return;
-    showRecOnly("authRecStepEmail", "Email аккаунта");
-    const email = $("authRecEmail");
-    keepBrowserOffMailField(email);
-    if (email) email.focus();
+    if (method === "email") {
+      showRecOnly("authRecStepEmail", "Email аккаунта");
+      return;
+    }
+    if (method === "google") {
+      startGoogleRecoverPopup();
+      return;
+    }
+    if (method === "vk") {
+      startVkRecover();
+      return;
+    }
+    if (method === "telegram") {
+      const hint = $("authRecHint");
+      if (hint) hint.textContent = "Откройте Telegram…";
+      hideAll([
+        "authRecPick",
+        "authRecStepEmail",
+        "authRecStepGoogle",
+        "authRecStepCode",
+        "authRecStepPass",
+      ]);
+      window._telegramRecoverMode = true;
+      window.open("/telegram/", "tgAuth", "width=420,height=520");
+    }
   }
 
   function wire() {
@@ -1743,19 +1716,11 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       });
     }
     $("authLoginForm")?.addEventListener("submit", doLogin);
-    $("session-active-ok")?.addEventListener("click", hideSessionLock);
     $("authDoneOkBtn")?.addEventListener("click", confirmDoneBanner);
     $("authRegSendBtn")?.addEventListener("click", () => regSend(false));
     $("authRegResendBtn")?.addEventListener("click", () => regSend(true));
     $("authRegVerifyBtn")?.addEventListener("click", regVerify);
     $("authRegCreateBtn")?.addEventListener("click", regCreate);
-    keepBrowserOffMailField($("authRecEmail"));
-    $("authRecEmail")?.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        recSend(false);
-      }
-    });
     $("authRecSendBtn")?.addEventListener("click", () => recSend(false));
     $("authRecResendBtn")?.addEventListener("click", () => recSend(true));
     $("authRecVerifyBtn")?.addEventListener("click", recVerify);
@@ -1803,6 +1768,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     document.addEventListener("lk-recover-ready", (ev) => {
       const token = ev.detail?.recoverToken;
       if (!token) return;
+      // НЕ вызывать showView("recover") — он делает resetRecover() и убивает токен
       openRecoverPassword(token, ev.detail?.needs_email !== false, !!ev.detail?.has_pass);
     });
   }
@@ -3518,11 +3484,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     const S = deps.S;
     if (!S) return;
     try {
-      if (!(stat == null ? void 0 : stat.length)) {
-        topPlayerNick = "";
-        topPlayerScore = "";
-        return;
-      }
+      if (!(stat == null ? void 0 : stat.length)) return;
       const topPlayer = stat[0];
       topPlayerNick = topPlayer.nick;
       topPlayerScore = topPlayer.score;
@@ -4379,6 +4341,8 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
   }
   function openGameSocket(wsUrl, {accountToken, connectToken} = {}) {
     const qs = new URLSearchParams;
+    // Security: unofficial game servers (agarz / delta / agarlive) must never
+    // receive the agar.su account token or PoW connect token.
     const official = !window.MultiProtocols || window.MultiProtocols.isOfficial(wsUrl);
     if (official) {
       if (accountToken) qs.set("accountToken", accountToken);
@@ -4578,6 +4542,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       (_a = hooks.clearWorld) == null ? void 0 : _a.call(hooks);
       try {
         let connectToken = null;
+        // PoW challenge (connectToken) is an agar.su-only flow — skip for unofficial
         // upstream servers to avoid a pointless 3.5s /challenge probe.
         const officialHost = !window.MultiProtocols || window.MultiProtocols.isOfficial(host);
         if (officialHost) {
@@ -4670,12 +4635,9 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       } catch (e) {}
     }
     function onWsOpen() {
-      var _a, _b;
+      var _a;
       setConnectVerifyText("Синхронизация с сервером…");
       S.gameHandshakeDone = false;
-      try {
-        (_b = hooks.sendSecretClient) == null ? void 0 : _b.call(hooks);
-      } catch (e) {}
       (_a = hooks.sendAccountToken) == null ? void 0 : _a.call(hooks);
       const [p, key] = encodeHandshake();
       wsSend(p);
@@ -4959,6 +4921,7 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
     function sendNickName() {
       if (!wsIsOpen() || S.userNickName == null) return;
       let nick = S.userNickName;
+      // Security: unofficial servers get only the bare nick (no #pass).
       if (window.MultiProtocols && !window.MultiProtocols.isOfficial(S.CONNECTION_URL)) {
         nick = window.MultiProtocols.sanitizeNickForHost(nick, S.CONNECTION_URL);
         if (!nick) return;
@@ -5003,33 +4966,8 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         msg.setUint16(offset, str.charCodeAt(i), true);
         offset += 2;
       }
+      // Security: unofficial game servers must not receive the agar.su token.
       if (window.MultiProtocols && !window.MultiProtocols.isOfficial(S.CONNECTION_URL)) return;
-      wsSend(msg);
-    }
-
-    function getSecretClient() {
-      const key = "secretclient";
-      try {
-        let id = localStorage.getItem(key) || "";
-        if (!/^[a-z0-9]{16}$/.test(id)) {
-          const alphabet = "abcdefghijklmnopqrstuvwxyz0123456789";
-          const bytes = new Uint8Array(16);
-          crypto.getRandomValues(bytes);
-          id = "";
-          for (let i = 0; i < bytes.length; i++) id += alphabet[bytes[i] % alphabet.length];
-          localStorage.setItem(key, id);
-        }
-        return id;
-      } catch (e) {
-        return "";
-      }
-    }
-    function sendSecretClient() {
-      const id = getSecretClient();
-      if (!wsIsOpen() || !id) return;
-      const msg = prepareData(1 + 2 * id.length);
-      msg.setUint8(0, 115);
-      for (let i = 0; i < id.length; ++i) msg.setUint16(1 + 2 * i, id.charCodeAt(i), true);
       wsSend(msg);
     }
     function sendAccountToken() {
@@ -5063,7 +5001,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
       sendSpectate,
       sendNickName,
       sendChat,
-      sendSecretClient,
       sendAccountToken,
       sendAdminPanel,
       sendSticker,
@@ -7371,10 +7308,6 @@ function applyPlayerNickToCells(S, playerId, name) {
       requestStickerSync();
     }
     wHandle.onkeydown = function(event2) {
-      const keyTarget = event2.target;
-      const keyTag = keyTarget && keyTarget.tagName;
-      const keyId = keyTarget && keyTarget.id || "";
-      if ((keyTag === "INPUT" || keyTag === "TEXTAREA" || keyTag === "SELECT" || keyTarget && keyTarget.isContentEditable) && keyId !== "chat_textbox" && keyId !== "ls") return;
       if (S.keybindCaptureAction) {
         event2.preventDefault();
         const code2 = event2.keyCode;
@@ -7495,10 +7428,6 @@ function applyPlayerNickToCells(S, playerId, name) {
       }
     };
     wHandle.onkeyup = function(event2) {
-      const keyTarget = event2.target;
-      const keyTag = keyTarget && keyTarget.tagName;
-      const keyId = keyTarget && keyTarget.id || "";
-      if ((keyTag === "INPUT" || keyTag === "TEXTAREA" || keyTag === "SELECT" || keyTarget && keyTarget.isContentEditable) && keyId !== "chat_textbox" && keyId !== "ls") return;
       const code = event2.keyCode;
       if (code === getBind(S, "freeze")) keyPressed.freeze = false;
       if (code === getBind(S, "split")) keyPressed.split = false;
@@ -7657,9 +7586,6 @@ function applyPlayerNickToCells(S, playerId, name) {
     });
     onReady(function() {
       document.addEventListener("keydown", function(event2) {
-        const keyTarget = event2.target;
-        const keyTag = keyTarget && keyTarget.tagName;
-        if (keyTag === "INPUT" || keyTag === "TEXTAREA" || keyTag === "SELECT" || keyTarget && keyTarget.isContentEditable) return;
         if (event2.keyCode === getBind(S, "menu")) {
           hideStatics();
           if (isOverlaysVisible()) {
@@ -8516,11 +8442,7 @@ function applyPlayerNickToCells(S, playerId, name) {
   }
 
   function pushStatsSystemChat(S, hooks, text) {
-    if (!S || !Array.isArray(S.chatBoard) || !text) return false;
-    if (S.hideChat) return false;
-    const feed = document.getElementById("chatX_feed");
-    if (!feed) return false;
-    const before = S.chatRenderedCount || 0;
+    if (!S || !Array.isArray(S.chatBoard) || !text) return;
     S.chatBoard.push({
       pId: 0,
       playerXp: 0,
@@ -8531,13 +8453,12 @@ function applyPlayerNickToCells(S, playerId, name) {
       time: formatChatClock(new Date),
       isStatsRecord: true
     });
-    try {
-      if (typeof hooks.drawChatBoard === "function") hooks.drawChatBoard();
-      else if (typeof drawChatBoard === "function") drawChatBoard(S, hooks);
-    } catch (_) {}
-    if ((S.chatRenderedCount || 0) > before) return true;
-    S.chatBoard.pop();
-    return false;
+    if (typeof hooks.drawChatBoard === "function") hooks.drawChatBoard();
+    else if (typeof drawChatBoard === "function") {
+      try {
+        drawChatBoard(S, hooks);
+      } catch (_) {}
+    }
   }
 
   function startStatsRecordFeed(S, hooks) {
@@ -8549,38 +8470,9 @@ function applyPlayerNickToCells(S, playerId, name) {
       sinceId = localStorage.getItem(STATS_FEED_STORAGE_KEY) || "";
     } catch (_) {}
 
-    // Курсор двигается только после строки в чате и успешной записи localStorage.
-    function remember(id) {
-      if (!id) return false;
-      try {
-        localStorage.setItem(STATS_FEED_STORAGE_KEY, id);
-      } catch (_) {
-        return false;
-      }
-      sinceId = id;
-      return true;
-    }
-
-    function deliverRecord(msg, ev, currentServerId) {
-      if (!msg || !msg.text) return "skip";
-      const sid = String(msg.server || ev.server || "").toLowerCase();
-      if (sid.startsWith("pvp") || sid.startsWith("tournament")) return "skip";
-      if (msg.scope === "global") {
-        return pushStatsSystemChat(S, hooks, msg.text) ? "shown" : "pending";
-      }
-      if (msg.scope === "server") {
-        const cur = String(currentServerId || "").toLowerCase();
-        if (!currentServerId || cur.startsWith("pvp") || cur.startsWith("tournament")) return "skip";
-        if (msg.server && currentServerId === msg.server) {
-          return pushStatsSystemChat(S, hooks, msg.text) ? "shown" : "pending";
-        }
-      }
-      return "skip";
-    }
-
     async function tick() {
       try {
-        const url = STATS_RECORDS_FEED + "?since=" + encodeURIComponent(sinceId || "");
+        const url = STATS_RECORDS_FEED + (sinceId ? "?since=" + encodeURIComponent(sinceId) : "?since=");
         const res = await fetch(url, {
           cache: "no-store"
         });
@@ -8588,22 +8480,58 @@ function applyPlayerNickToCells(S, playerId, name) {
         const data = await res.json();
         const events = Array.isArray(data.events) ? data.events : [];
         if (!events.length) return;
+
         const currentServerId = resolveOfficialServerId(S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl || "");
+
         for (const ev of events) {
           const messages = Array.isArray(ev.messages) ? ev.messages : [];
-          let pending = false;
           for (const msg of messages) {
-            if (deliverRecord(msg, ev, currentServerId) === "pending") pending = true;
+            if (!msg || !msg.text) continue;
+            // PVP / tournament — не показываем рекорды дня (победы скачут)
+            if (msg.server) {
+              const sid = String(msg.server).toLowerCase();
+              if (sid.startsWith("pvp") || sid.startsWith("tournament")) continue;
+            }
+            if (msg.scope === "global") {
+              // Глобальные (год/alltime) с pvp/tournament тоже глушим
+              const evServer = String(ev.server || "").toLowerCase();
+              if (evServer.startsWith("pvp") || evServer.startsWith("tournament")) continue;
+              pushStatsSystemChat(S, hooks, msg.text);
+            } else if (msg.scope === "server") {
+              if (currentServerId && msg.server && currentServerId === msg.server) {
+                // На всякий случай: если сидим на pvp/tournament — молчим
+                const cur = String(currentServerId).toLowerCase();
+                if (cur.startsWith("pvp") || cur.startsWith("tournament")) continue;
+                pushStatsSystemChat(S, hooks, msg.text);
+              }
+            }
           }
-          // Чат ещё не готов или localStorage не записал — тот же рекорд придёт снова.
-          if (pending) return;
-          if (ev.id && !remember(ev.id)) return;
+          if (ev.id) sinceId = ev.id;
         }
+        try {
+          localStorage.setItem(STATS_FEED_STORAGE_KEY, sinceId);
+        } catch (_) {}
       } catch (_) {}
     }
 
-    tick();
-    setInterval(tick, STATS_FEED_POLL_MS);
+    // Первый запрос только запоминает курсор, без спама старыми событиями
+    (async () => {
+      try {
+        const res = await fetch(STATS_RECORDS_FEED, {
+          cache: "no-store"
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const events = Array.isArray(data.events) ? data.events : [];
+        if (events.length) {
+          sinceId = events[events.length - 1].id || sinceId;
+          try {
+            localStorage.setItem(STATS_FEED_STORAGE_KEY, sinceId);
+          } catch (_) {}
+        }
+      } catch (_) {}
+      setInterval(tick, STATS_FEED_POLL_MS);
+    })();
   }
   var FORBIDDEN_NICK_CHARS = [ "﷽", "𒐫", "𒈙", "⸻", "꧅", "ဪ", "௵", "௸", "‱", "ㅤ", "⁣", "‎ ", "​", "‌", "‍", "‎", "‏", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", "​", "\ufeff", "", " ", "⠀", "ﾠ", "卐", "卍" ];
   function getStarClass(level) {
@@ -8693,12 +8621,6 @@ function applyPlayerNickToCells(S, playerId, name) {
   }
   function loadTopPlayerData2(S, stat, hooks) {
     try {
-      if (!stat || !stat.length) {
-        S.topPlayerNick = "";
-        S.topPlayerScore = "";
-        if (typeof (hooks == null ? void 0 : hooks.onClearCenter) === "function") hooks.onClearCenter();
-        return;
-      }
       if (stat.length > 0) {
         const topPlayer = stat[0];
         S.topPlayerNick = topPlayer.nick;
@@ -9119,11 +9041,9 @@ function updateRegionOnlineTotals(totals) {
           updateDeathScoreLabel(serverId);
         }
         const stat = Array.isArray(payload.players) ? payload.players : [];
+        loadTopPlayerData2(S, stat, hooks);
         invalidateStatsRenderCaches(S);
         await fetchStats(S, stat);
-        // Середина карты — только день «сегодня» с api, не выбранный период таблицы.
-        if (period === "today") loadTopPlayerData2(S, stat, hooks);
-        else if (typeof wHandle.refreshCenterTop === "function") wHandle.refreshCenterTop();
       } catch (error) {
         console.error("Ошибка загрузки данных о топ-1 игроке:", error);
       }
@@ -9456,9 +9376,9 @@ function updateRegionOnlineTotals(totals) {
       let clanCount = 0;
       if (Array.isArray(data == null ? void 0 : data.nicknames) && data.nicknames.length) {
         data.nicknames.forEach(row => {
+          var _a;
           const full = String(row.nickname || "");
-          const rawPass = row.password;
-          const pass = typeof rawPass === "string" ? rawPass.trim() : "";
+          const pass = ((_a = row.password) != null ? _a : "").trim();
           const finalNick = pass && !full.includes("#") ? `${full}#${pass}` : full;
           const parsed = parseFullNick(finalNick);
           const perks = getNickPerks(S, full, pass, lists);
@@ -9582,9 +9502,6 @@ function updateRegionOnlineTotals(totals) {
         window.AgarFriends.loadFriendsPanel();
       } catch (_) {}
     }
-    if (which === "settings" && typeof window.loadLkSessions === "function") {
-      window.loadLkSessions();
-    }
   }
   function wireTabsOnce(S) {
     const wrap = document.getElementById("myNickClanTabs");
@@ -9689,7 +9606,7 @@ function updateRegionOnlineTotals(totals) {
       const box = document.createElement("div");
       box.id = "lkEmailBind";
       box.setAttribute("style", "position:fixed;top:12px;right:12px;z-index:100000;width:280px;max-width:calc(100vw - 24px);background:#141824;color:#fff;border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:12px;box-shadow:0 10px 30px rgba(0,0,0,.35);font:13px/1.35 Arial,sans-serif");
-      box.innerHTML = '<div style="font-weight:700;margin-bottom:6px">Привяжите почту</div><div style="opacity:.8;margin-bottom:8px">VK, Telegram и Google больше не используются для входа. Сначала укажите почту, затем код из письма. Пароль аккаунта остаётся прежним.</div><input id="lkBindEmail" type="text" inputmode="email" maxlength="190" placeholder="email@mail.ru" autocomplete="off" autocapitalize="off" spellcheck="false" style="width:100%;box-sizing:border-box;margin:0 0 6px;padding:8px;border-radius:8px;border:1px solid #333;background:#0e1118;color:#fff"><input id="lkBindCode" type="text" inputmode="numeric" maxlength="5" placeholder="Код из письма" hidden style="width:100%;box-sizing:border-box;margin:0 0 6px;padding:8px;border-radius:8px;border:1px solid #333;background:#0e1118;color:#fff"><div id="lkBindErr" style="color:#ff8d8d;min-height:16px"></div><button id="lkBindSend" type="button" style="width:100%;padding:8px;border:0;border-radius:8px;background:#3d7eff;color:#fff;font-weight:700;cursor:pointer">Отправить код</button>';
+      box.innerHTML = '<div style="font-weight:700;margin-bottom:6px">Привяжите почту</div><div style="opacity:.8;margin-bottom:8px">VK, Telegram и Google больше не используются для входа. Сначала укажите почту, затем код из письма. Пароль аккаунта остаётся прежним.</div><input id="lkBindEmail" type="email" maxlength="190" placeholder="email@mail.ru" style="width:100%;box-sizing:border-box;margin:0 0 6px;padding:8px;border-radius:8px;border:1px solid #333;background:#0e1118;color:#fff"><input id="lkBindCode" type="text" inputmode="numeric" maxlength="5" placeholder="Код из письма" hidden style="width:100%;box-sizing:border-box;margin:0 0 6px;padding:8px;border-radius:8px;border:1px solid #333;background:#0e1118;color:#fff"><div id="lkBindErr" style="color:#ff8d8d;min-height:16px"></div><button id="lkBindSend" type="button" style="width:100%;padding:8px;border:0;border-radius:8px;background:#3d7eff;color:#fff;font-weight:700;cursor:pointer">Отправить код</button>';
       document.body.appendChild(box);
       try {
         const draft = sessionStorage.getItem("lkBindDraft") || "";
@@ -9768,78 +9685,7 @@ function updateRegionOnlineTotals(totals) {
       hideAuthButtons();
       showEmailBindNotice(data);
     };
-    let sessionPingTimer = null;
-    function stopSessionPing() {
-      if (sessionPingTimer) clearInterval(sessionPingTimer);
-      sessionPingTimer = null;
-    }
-    function formatSessionTime(ms) {
-      const n = Number(ms);
-      if (!n) return "";
-      try {
-        return new Date(n).toLocaleString("ru-RU");
-      } catch (_) {
-        return "";
-      }
-    }
-    async function pingSession() {
-      if (!getAccountToken()) return stopSessionPing();
-      try {
-        const res = await accountApiGet("me/session/ping", "POST", {});
-        if (res.status === 401) onLogout();
-      } catch (_) {}
-    }
-    function startSessionPing() {
-      stopSessionPing();
-      if (!getAccountToken()) return;
-      pingSession();
-      sessionPingTimer = setInterval(pingSession, 25000);
-    }
-    window.loadLkSessions = async function() {
-      const cur = document.getElementById("session-current");
-      const list = document.getElementById("session-logins");
-      if (!cur || !list) return;
-      if (!getAccountToken()) {
-        cur.textContent = "Войдите в личный кабинет, чтобы видеть входы.";
-        list.innerHTML = "";
-        return;
-      }
-      cur.textContent = "Загрузка…";
-      list.innerHTML = "";
-      try {
-        const res = await accountApiGet("me/sessions");
-        let data = {};
-        try {
-          data = await res.json();
-        } catch (_) {}
-        if (res.status === 401 || data.status === 401) {
-          cur.textContent = "Сессия недействительна. Войдите снова.";
-          return;
-        }
-        if (!res.ok || data.error) {
-          cur.textContent = data.error || "Не удалось загрузить входы";
-          return;
-        }
-        const sessions = Array.isArray(data.sessions) ? data.sessions.slice() : [];
-        sessions.sort((a, b) => (b.current ? 1 : 0) - (a.current ? 1 : 0) || (Number(b.seen) || 0) - (Number(a.seen) || 0));
-        if (!sessions.length) {
-          cur.textContent = "Сейчас нет вкладок на связи. Если кабинет открыт, подождите несколько секунд.";
-          list.innerHTML = "";
-          return;
-        }
-        cur.textContent = "Сейчас на связи: " + sessions.length + ".";
-        const esc = (value) => String(value || "—").replace(/[&<>]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[ch]));
-        list.innerHTML = sessions.map((row) => {
-          const label = row.current ? "Эта вкладка" : "Другой вход";
-          const when = formatSessionTime(row.seen) || "—";
-          return '<div class="settings-session-row"><span>' + esc(label + " · " + when) + '</span><span>' + esc(row.ip || "—") + '</span></div>';
-        }).join("");
-      } catch (_) {
-        cur.textContent = "Ошибка сети";
-      }
-    };
     const onLogout = () => {
-      stopSessionPing();
       emailBindDone = false;
       try { sessionStorage.removeItem("lkBindDraft"); } catch (e) {}
       const bindBox = document.getElementById("lkEmailBind");
@@ -9886,19 +9732,16 @@ function updateRegionOnlineTotals(totals) {
     };
     const loadAccountUserData = async () => {
       const res = await accountApiGet("me/login");
-      if (res.status === 401) {
-        onLogout();
-        return;
-      }
       if (res.ok) {
         const data = await res.json();
         if (data.error) {
-          if (401 == data.status) onLogout(); else alert(data.error);
+          if (401 == data.status) clearAccountToken(); else alert(data.error);
         } else setAccountData(data);
       }
     };
     async function handleLogin(tokenOrUser, provider) {
       if (provider !== "vk") return;
+      // Primary auth is ID+password. VK only for recovery (see AgarLkAuth).
       if (window._lkRecoverVkMode) return;
       alert("Вход по ID ЛК и паролю. Если пароля нет — нажмите «Восстановить» и войдите через VK / Google / Telegram / email.");
     }
@@ -9920,6 +9763,7 @@ function updateRegionOnlineTotals(totals) {
           codeVerifier = codeVerifier || sessionStorage.getItem("vk_code_verifier") || localStorage.getItem("vk_code_verifier");
           state = state || sessionStorage.getItem("vk_state") || localStorage.getItem("vk_state");
         } catch (_) {}
+        // Keep recover flag until API responds (redirect return needs it)
         fetch("https://api.agar.su/api/auth/recover/vk", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -10091,7 +9935,6 @@ function updateRegionOnlineTotals(totals) {
       loadAccountUserData();
       loadMyNicknames(S, nickHooks);
       hooks.sendAccountToken();
-      startSessionPing();
     };
     if (window.AgarLkAuth && typeof window.AgarLkAuth.init === "function") {
       window.AgarLkAuth.init({
@@ -10117,10 +9960,7 @@ function updateRegionOnlineTotals(totals) {
         displayAccountData();
       }
     };
-    if (getAccountToken()) {
-      loadAccountUserData();
-      startSessionPing();
-    }
+    if (getAccountToken()) loadAccountUserData();
     if (typeof window.updateAccountMenuLabel === "function") {
       window.updateAccountMenuLabel();
     }
@@ -10348,6 +10188,7 @@ function updateRegionOnlineTotals(totals) {
     }
     const cell = alive ? cells[0] : null;
     let name = cell && cell.name || S && S.userNickName || "Игрок";
+    // userNickName is often "nick#password" for pass auth — never show the password in chat
     name = String(name || "").split("#")[0].replace(/<[^>]*>/g, "").trim();
     return name || "Игрок";
   }
@@ -11679,15 +11520,13 @@ function initServers(S) {
       sendChat: t => outbound.sendChat(t),
       getSkinImageUrl,
       setImgSrc,
-      onTopPlayer: top => loadTopPlayerData([ top ]),
-      onClearCenter: () => loadTopPlayerData([])
+      onTopPlayer: top => loadTopPlayerData([ top ])
     });
     const connectionHooks = {
       onMessage: null,
       sendNickName: () => outbound.sendNickName(),
       sendSpectate: () => outbound.sendSpectate(),
       sendChat: t => outbound.sendChat(t),
-      sendSecretClient: () => outbound.sendSecretClient(),
       sendAccountToken: () => outbound.sendAccountToken(),
       clearWorld: () => {
         resetWorldContainers(S);
@@ -11837,15 +11676,6 @@ onReady(() => {
         wHandle.refreshCenterTop();
       }
     }, TTL_MS);
-    // Середина всегда с period=today, чаще чем общий кэш списков.
-    setInterval(() => {
-      const staticsEl = document.getElementById("statics");
-      const periodEl = document.getElementById("deathPeriodSelect");
-      const panelOpen = staticsEl && staticsEl.style.display === "flex";
-      const period = (periodEl && periodEl.value) || "today";
-      if (panelOpen && period === "today" && typeof wHandle.chekstats === "function") return;
-      if (typeof wHandle.refreshCenterTop === "function") wHandle.refreshCenterTop();
-    }, 6e4);
     wHandle.addEventListener("hashchange", () => initServers(S));
     attachAccountHooks(S, {
       sendAccountToken: () => outbound.sendAccountToken(),
@@ -13110,13 +12940,18 @@ onReady(() => {
       trySubmitEmail();
     }
   });
+  emailInput == null ? void 0 : emailInput.addEventListener("blur", () => {
+    if (!isPayStepOpen || isSubmittingPayment) return;
+    if (isShopEmailValid()) trySubmitEmail();
+  });
   shopPayBack == null ? void 0 : shopPayBack.addEventListener("mousedown", e => {
     e.preventDefault();
   });
   shopPayBack == null ? void 0 : shopPayBack.addEventListener("click", () => closePayStep());
   shopPayBackdrop == null ? void 0 : shopPayBackdrop.addEventListener("click", () => {
     if (isSubmittingPayment) return;
-    closePayStep();
+    if (isShopEmailValid()) trySubmitEmail();
+    else closePayStep();
   });
   payButton == null ? void 0 : payButton.addEventListener("mousedown", e => {
     e.preventDefault();
@@ -13230,175 +13065,26 @@ onReady(() => {
   var skinCanvas = document.getElementById("previewCanvas");
   var skinCtx = skinCanvas.getContext("2d");
   var gifPreview = document.getElementById("previewGif");
-  var skinJob = Promise.resolve();
-  var statsJob = Promise.resolve();
-  var skinPickId = 0;
-  var statsPickId = 0;
-  var skinStillReady = false;
-  var statsBgPngFile = null;
-  var photoPrepCount = 0;
-  var PHOTO_EXT = {
-    png: 1, jpg: 1, jpeg: 1, jpe: 1, jfif: 1, pjpeg: 1,
-    webp: 1, bmp: 1, dib: 1, tif: 1, tiff: 1, avif: 1,
-    heic: 1, heif: 1, heics: 1, heifs: 1, gif: 1
-  };
-  function fileExtOf(file) {
-    const name = String(file && file.name || "").toLowerCase();
-    const dot = name.lastIndexOf(".");
-    return dot >= 0 ? name.slice(dot + 1) : "";
-  }
-  function isGifFile(file) {
-    const type = String(file && file.type || "").toLowerCase();
-    return type === "image/gif" || fileExtOf(file) === "gif";
-  }
-  function isHeicFile(file) {
-    const type = String(file && file.type || "").toLowerCase();
-    const ext = fileExtOf(file);
-    return type.indexOf("heic") >= 0 || type.indexOf("heif") >= 0 || ext === "heic" || ext === "heif" || ext === "heics" || ext === "heifs";
-  }
-  function isPhotoFile(file) {
-    const type = String(file && file.type || "").toLowerCase();
-    if (PHOTO_EXT[fileExtOf(file)]) return true;
-    return type.indexOf("image/") === 0;
-  }
-  function beginPhotoPrep() {
-    photoPrepCount++;
-    const buyButton = document.getElementById("buyButton");
-    if (buyButton) buyButton.disabled = true;
-  }
-  function endPhotoPrep() {
-    photoPrepCount = Math.max(0, photoPrepCount - 1);
-  }
-  function withTimeout(promise, ms) {
-    return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error("timeout")), ms);
-      promise.then(value => {
-        clearTimeout(timer);
-        resolve(value);
-      }, err => {
-        clearTimeout(timer);
-        reject(err);
-      });
-    });
-  }
-  var heicLoader = null;
-  function loadHeic2Any() {
-    if (window.heic2any) return Promise.resolve(window.heic2any);
-    if (heicLoader) return heicLoader;
-    heicLoader = new Promise((resolve, reject) => {
-      const script = document.createElement("script");
-      script.src = "/vendor/heic2any.min.js?v=1";
-      script.async = true;
-      script.onload = () => window.heic2any ? resolve(window.heic2any) : reject(new Error("heic"));
-      script.onerror = () => reject(new Error("heic"));
-      document.head.appendChild(script);
-    });
-    return heicLoader;
-  }
-  async function bitmapFromPhoto(file) {
-    if (!isHeicFile(file)) return await createImageBitmap(file);
-    try {
-      return await withTimeout(createImageBitmap(file), 3000);
-    } catch (err) {
-      const convert = await loadHeic2Any();
-      const out = await convert({ blob: file, toType: "image/jpeg", quality: 0.92 });
-      const blob = Array.isArray(out) ? out[0] : out;
-      if (!blob) throw new Error("heic");
-      return await createImageBitmap(blob);
-    }
-  }
-  function drawSkinBitmap(bitmap) {
-    const w = skinCanvas.width;
-    const h = skinCanvas.height;
-    skinCtx.clearRect(0, 0, w, h);
-    skinCtx.save();
-    skinCtx.beginPath();
-    skinCtx.arc(w / 2, h / 2, w / 2, 0, Math.PI * 2);
-    skinCtx.closePath();
-    skinCtx.clip();
-    const scale = Math.max(w / bitmap.width, h / bitmap.height);
-    const dw = bitmap.width * scale;
-    const dh = bitmap.height * scale;
-    skinCtx.drawImage(bitmap, (w - dw) / 2, (h - dh) / 2, dw, dh);
-    skinCtx.restore();
-  }
-  async function bitmapToPngFile(bitmap, baseName) {
-    let side = 1600;
-    let blob = null;
-    const srcW = bitmap.width || 1;
-    const srcH = bitmap.height || 1;
-    while (side >= 320) {
-      const scale = Math.min(1, side / Math.max(srcW, srcH));
-      const w = Math.max(1, Math.round(srcW * scale));
-      const h = Math.max(1, Math.round(srcH * scale));
-      const canvas = document.createElement("canvas");
-      canvas.width = w;
-      canvas.height = h;
-      canvas.getContext("2d").drawImage(bitmap, 0, 0, w, h);
-      blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
-      if (blob && blob.size <= paymentRules.maxFileSize) break;
-      side = Math.round(side * 0.75);
-    }
-    if (bitmap.close) bitmap.close();
-    if (!blob) throw new Error("png");
-    const stem = String(baseName || "photo").replace(/\.[^.]+$/, "") || "photo";
-    return new File([blob], stem + ".png", { type: "image/png" });
-  }
   fileInput.addEventListener("change", e => {
     const file = e.target.files[0];
-    const pick = ++skinPickId;
-    skinStillReady = false;
     if (!file) return;
     if (file.size > paymentRules.maxFileSize) {
       fileInput.value = "";
       showError("fileError", "Файл слишком большой (макс. 5MB)");
       return;
     }
-    if (!isPhotoFile(file)) {
+    if (![ "image/png", "image/jpeg", "image/gif" ].includes(file.type)) {
       fileInput.value = "";
-      showError("fileError", "Выберите фото: HEIC, JPG, PNG, WEBP, BMP, TIFF, AVIF или GIF");
+      showError("fileError", "Неподдерживаемый формат. Только PNG, JPG, GIF");
       return;
     }
-    hideError("fileError");
-    if (isGifFile(file)) {
-      previewSkin(file);
-      previewContainer.classList.add("has-image");
-      calculateCost();
-      return;
-    }
-    gifPreview.style.display = "none";
-    skinCanvas.style.display = "block";
-    beginPhotoPrep();
-    showToast("Готовим PNG…", "info");
-    skinJob = (async () => {
-      try {
-        const bitmap = await bitmapFromPhoto(file);
-        if (pick !== skinPickId) {
-          if (bitmap.close) bitmap.close();
-          return;
-        }
-        drawSkinBitmap(bitmap);
-        if (bitmap.close) bitmap.close();
-        skinStillReady = true;
-        previewContainer.classList.add("has-image");
-        hideError("fileError");
-      } catch (err) {
-        console.error(err);
-        if (pick !== skinPickId) return;
-        fileInput.value = "";
-        skinStillReady = false;
-        skinCtx.clearRect(0, 0, skinCanvas.width, skinCanvas.height);
-        previewContainer.classList.remove("has-image");
-        showError("fileError", "Не удалось прочитать фото. Попробуйте другой файл.");
-      } finally {
-        endPhotoPrep();
-        if (pick === skinPickId) calculateCost();
-      }
-    })();
+    previewSkin(file);
+    previewContainer.classList.add("has-image");
+    calculateCost();
   });
   function previewSkin(file) {
     const url = URL.createObjectURL(file);
-    const isGif = isGifFile(file);
+    const isGif = file.type === "image/gif";
     if (isGif) {
       skinCanvas.style.display = "none";
       gifPreview.style.display = "block";
@@ -13434,62 +13120,13 @@ onReady(() => {
   function getMultiplier() {
     return document.getElementById("clan").checked ? 2 : 1;
   }
-  const DAY_SALE_UNTIL = Date.parse("2026-10-24T14:00:00.000Z");
-  const DAY_SALE_KEY = "agarsu-sale90-20261023";
-  function daySaleOn() {
-    return Date.now() < DAY_SALE_UNTIL;
-  }
-  function daySaleUntilLabel() {
-    const label = new Intl.DateTimeFormat("ru-RU", {
-      timeZone: "Europe/Moscow",
-      day: "numeric",
-      month: "long",
-      hour: "2-digit",
-      minute: "2-digit"
-    }).format(DAY_SALE_UNTIL);
-    return label + " МСК";
-  }
-  function setupDaySale() {
-    if (!daySaleOn()) return;
-    const until = daySaleUntilLabel();
-    const banner = document.getElementById("daySaleBanner");
-    const untilEl = document.getElementById("daySaleUntil");
-    if (banner) banner.hidden = false;
-    if (untilEl) untilEl.textContent = until;
-    const badge = document.getElementById("shopMenuBadge");
-    if (badge) badge.textContent = "−90%";
-    const notice = document.getElementById("daySaleNotice");
-    const noticeUntil = document.getElementById("daySaleNoticeUntil");
-    if (noticeUntil) noticeUntil.textContent = until;
-    if (!notice || localStorage.getItem(DAY_SALE_KEY)) return;
-    localStorage.setItem(DAY_SALE_KEY, "1");
-    notice.hidden = false;
-    const close = document.getElementById("daySaleClose");
-    const hide = () => {
-      notice.hidden = true;
-    };
-    if (close) close.addEventListener("click", hide);
-    notice.addEventListener("click", event => {
-      if (event.target === notice) hide();
-    });
-  }
-  function setPriceRow(rowId, label, amount, oldAmount) {
+  function setPriceRow(rowId, label, amount) {
     const row = document.getElementById(rowId);
     if (!row) return;
     const labelEl = row.querySelector("span");
     const amountEl = row.querySelector("strong");
     if (labelEl && label) labelEl.textContent = label;
-    if (!amountEl) return;
-    amountEl.textContent = "";
-    if (oldAmount) {
-      const old = document.createElement("s");
-      old.className = "shop-old-price";
-      old.textContent = oldAmount;
-      amountEl.appendChild(old);
-      amountEl.appendChild(document.createTextNode(" " + amount));
-      return;
-    }
-    amountEl.textContent = amount;
+    if (amountEl) amountEl.textContent = amount;
   }
   function setReceiptVisible(show) {
     const calculator = document.getElementById("calculator");
@@ -13512,27 +13149,21 @@ onReady(() => {
       if (isPayStepOpen) closePayStep();
       return;
     }
-    const sale = daySaleOn();
-    const passwordFull = 150;
-    const pngFull = 150;
-    const passwordCost = password ? sale ? 15 : passwordFull : 0;
+    const passwordCost = password ? 150 : 0;
     const invisibleCost = invisibleNickCheckbox.checked ? 500 : 0;
     const rotationCost = rotationNickCheckbox.checked ? 500 : 0;
     const statsBgCost = hasStatsBg ? 100 : 0;
     let skinCost = 0;
     let skinLabel = "Скин";
-    let skinFull = 0;
     if (file) {
-      const gif = isGifFile(file);
-      skinCost = gif ? 4500 : sale ? 15 : pngFull;
-      skinFull = gif ? 0 : pngFull;
-      skinLabel = gif ? "Скин GIF" : sale ? "Скин PNG −90%" : "Скин PNG";
+      skinCost = file.type === "image/gif" ? 4500 : 150;
+      skinLabel = file.type === "image/gif" ? "Скин GIF" : "Скин PNG";
     }
     const total = (passwordCost + skinCost + invisibleCost + rotationCost + statsBgCost) * multiplier;
     setReceiptVisible(true);
     document.getElementById("multiplierText").textContent = multiplier === 2 ? "2x" : "1x";
-    setPriceRow("passwordCost", sale && password ? "Пароль −90%" : "Пароль", password ? `${passwordCost * multiplier} ₽` : "0 ₽", sale && password ? `${passwordFull * multiplier} ₽` : "");
-    setPriceRow("skinCost", skinLabel, file ? `${skinCost * multiplier} ₽` : "0 ₽", sale && skinFull ? `${skinFull * multiplier} ₽` : "");
+    setPriceRow("passwordCost", "Пароль", password ? `${passwordCost * multiplier} ₽` : "0 ₽");
+    setPriceRow("skinCost", skinLabel, file ? `${skinCost * multiplier} ₽` : "0 ₽");
     const invisibleRow = document.getElementById("invisibleCost");
     if (invisibleNickCheckbox.checked) {
       setPriceRow("invisibleCost", "Невидимый ник", `${invisibleCost * multiplier} ₽`);
@@ -13558,7 +13189,7 @@ onReady(() => {
     }
     if (total > 0) {
       totalEl.textContent = `${total} ₽`;
-      buyButton.disabled = photoPrepCount > 0;
+      buyButton.disabled = false;
       if (isPayStepOpen && shopPayAmount) shopPayAmount.textContent = `${total} ₽`;
     } else {
       setReceiptVisible(false);
@@ -13573,7 +13204,6 @@ onReady(() => {
     });
   });
   updateNicknameDisplay();
-  setupDaySale();
   calculateCost();
   updateShopAuthNotice();
   document.getElementById("buyButton").addEventListener("click", () => {
@@ -13619,17 +13249,8 @@ onReady(() => {
     const nickname = rawNickname.toLowerCase();
     const password = passwordInput.value.trim().toLowerCase();
     const email = getShopEmail();
-    if (photoPrepCount > 0) {
-      showError("formError", "Фото ещё готовится в PNG");
-      return;
-    }
-    await skinJob;
-    await statsJob;
     const file = fileInput.files[0];
-    if (file && !isGifFile(file) && !skinStillReady) {
-      showError("formError", "Фото ещё готовится в PNG");
-      return;
-    }
+    const statsBgFile = statsBgInput && statsBgInput.files[0];
     const serviceType = ((_a = document.querySelector('input[name="serviceType"]:checked')) == null ? void 0 : _a.value) || "";
     if (!nickname) {
       showError("formError", "Введите ник/клан.");
@@ -13646,8 +13267,8 @@ onReady(() => {
       emailInput == null ? void 0 : emailInput.focus();
       return;
     }
-    const hasStatsBg = !!(statsBgNickCheckbox && statsBgNickCheckbox.checked && statsBgPngFile);
-    if (statsBgNickCheckbox && statsBgNickCheckbox.checked && !statsBgPngFile) {
+    const hasStatsBg = !!(statsBgNickCheckbox && statsBgNickCheckbox.checked && statsBgFile);
+    if (statsBgNickCheckbox && statsBgNickCheckbox.checked && !statsBgFile) {
       showError("formError", "Загрузите картинку фона статистики");
       closePayStep();
       return;
@@ -13659,7 +13280,7 @@ onReady(() => {
     }
     const multiplier = getMultiplier();
     const passwordCost = password ? 1 : 0;
-    const skinCost = file ? isGifFile(file) ? 2 : 1 : 0;
+    const skinCost = file ? file.type === "image/gif" ? 2 : 1 : 0;
     const amount = (passwordCost + skinCost) * multiplier;
     const formData = new FormData;
     formData.append("name", nickname);
@@ -13671,7 +13292,7 @@ onReady(() => {
     if (rotationNickCheckbox.checked) formData.append("rotation", "1");
     if (hasStatsBg) {
       formData.append("statsbg", "1");
-      formData.append("statsbgImage", statsBgPngFile, statsBgPngFile.name);
+      formData.append("statsbgImage", statsBgFile, statsBgFile.name);
     }
     const headers = {};
     if (getAccountToken()) {
@@ -13686,7 +13307,7 @@ onReady(() => {
     };
     try {
       if (file) {
-        if (isGifFile(file)) {
+        if (file.type === "image/gif") {
           formData.append("image", file, file.name);
           await sendForm(formData, headers);
         } else {
@@ -13793,65 +13414,12 @@ onReady(() => {
     box.style.setProperty("--shop-stats-bg", `url("${statsBgPreviewUrl}")`);
     box.classList.add("has-stats-bg-preview");
   }
-  function rejectStatsBg(message) {
-    statsPickId++;
-    statsBgPngFile = null;
-    if (statsBgInput) statsBgInput.value = "";
-    if (statsBgNickCheckbox) statsBgNickCheckbox.checked = false;
-    clearStatsBgPreview();
-    if (message) showError("fileError", message);
-    calculateCost();
-  }
-  function convertStatsBg(file) {
-    const pick = ++statsPickId;
-    statsBgPngFile = null;
-    if (!file) return;
-    if (file.size > paymentRules.maxFileSize) {
-      rejectStatsBg("Фон слишком большой (макс. 5MB)");
-      return;
-    }
-    if (!isPhotoFile(file)) {
-      rejectStatsBg("Фон: HEIC, JPG, PNG, WEBP, BMP, TIFF, AVIF или GIF");
-      return;
-    }
-    if (statsBgNickCheckbox) statsBgNickCheckbox.checked = true;
-    beginPhotoPrep();
-    showToast("Готовим PNG…", "info");
-    statsJob = (async () => {
-      try {
-        const bitmap = await bitmapFromPhoto(file);
-        if (pick !== statsPickId) {
-          if (bitmap.close) bitmap.close();
-          return;
-        }
-        const png = await bitmapToPngFile(bitmap, file.name || "stats-bg");
-        if (pick !== statsPickId) return;
-        statsBgPngFile = png;
-        setStatsBgPreview(png);
-        hideError("fileError");
-      } catch (err) {
-        console.error(err);
-        if (pick !== statsPickId) return;
-        statsBgPngFile = null;
-        if (statsBgInput) statsBgInput.value = "";
-        if (statsBgNickCheckbox) statsBgNickCheckbox.checked = false;
-        clearStatsBgPreview();
-        showError("fileError", "Не удалось прочитать фон. Попробуйте другой файл.");
-      } finally {
-        endPhotoPrep();
-        if (pick === statsPickId) calculateCost();
-      }
-    })();
-  }
   if (statsBgNickCheckbox) {
     statsBgNickCheckbox.addEventListener("change", () => {
       if (statsBgNickCheckbox.checked) {
         if (statsBgInput && !statsBgInput.files[0]) statsBgInput.click();
-        else if (statsBgPngFile) setStatsBgPreview(statsBgPngFile);
-        else if (statsBgInput && statsBgInput.files[0]) convertStatsBg(statsBgInput.files[0]);
+        else if (statsBgInput && statsBgInput.files[0]) setStatsBgPreview(statsBgInput.files[0]);
       } else if (statsBgInput) {
-        statsPickId++;
-        statsBgPngFile = null;
         statsBgInput.value = "";
         clearStatsBgPreview();
       }
@@ -13862,14 +13430,32 @@ onReady(() => {
     statsBgInput.addEventListener("change", () => {
       const file = statsBgInput.files[0];
       if (!file) {
-        statsPickId++;
-        statsBgPngFile = null;
         if (statsBgNickCheckbox) statsBgNickCheckbox.checked = false;
         clearStatsBgPreview();
         calculateCost();
         return;
       }
-      convertStatsBg(file);
+      if (file.size > paymentRules.maxFileSize) {
+        statsBgInput.value = "";
+        if (statsBgNickCheckbox) statsBgNickCheckbox.checked = false;
+        clearStatsBgPreview();
+        showError("fileError", "Фон слишком большой (макс. 5MB)");
+        calculateCost();
+        return;
+      }
+      const okTypes = ["image/png", "image/jpeg", "image/webp", "image/gif"];
+      if (!okTypes.includes(file.type)) {
+        statsBgInput.value = "";
+        if (statsBgNickCheckbox) statsBgNickCheckbox.checked = false;
+        clearStatsBgPreview();
+        showError("fileError", "Фон: только PNG, JPG, WEBP или GIF");
+        calculateCost();
+        return;
+      }
+      if (statsBgNickCheckbox) statsBgNickCheckbox.checked = true;
+      setStatsBgPreview(file);
+      hideError("fileError");
+      calculateCost();
     });
   }
   window.addEventListener("storage", event => {
@@ -13893,8 +13479,6 @@ onReady(() => {
     rotationNickCheckbox.checked = !!options.rotation;
     if (statsBgNickCheckbox) statsBgNickCheckbox.checked = !!options.statsBg;
     if (!options.statsBg) {
-      statsPickId++;
-      statsBgPngFile = null;
       if (statsBgInput) statsBgInput.value = "";
       clearStatsBgPreview();
     }
@@ -14403,6 +13987,7 @@ onReady(() => {
     bus.emit(Events.SHOW_CONTENT, {
       id: "home"
     });
+    // Returning from VK recover → open store auth UI
     try {
       if (sessionStorage.getItem("lk_recover_vk_mode") === "1" || window.__pendingVkAuthPayload) {
         if (typeof window.showContent === "function") window.showContent("store");
