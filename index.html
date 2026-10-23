@@ -16,9 +16,9 @@
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="canonical" href="https://agar.su">
     <link rel="stylesheet" href="/fonts/fonts.css?v=160">
-    <link rel="stylesheet" href="style.css?v=54">
+    <link rel="stylesheet" href="style.css?v=55">
     <script src="assets/scripts/friends.js?v=160" defer></script>
-    <script src="main.js?v=65" defer></script>
+    <script src="main.js?v=66" defer></script>
 	<script src="admin.js?v=163" defer></script>
 </head>
 <body>
@@ -31,7 +31,7 @@
         <div class="menu-item inl-1" onclick="showContent('shop')">
   <i class="fas fa-shop"></i>
   <span class="label" data-en="Shop" data-tr="Mağaza" data-zh="商店" data-ar="المتجر" data-es="Tienda" data-pl="Sklep" data-de="Shop" data-uk="Магазин">Магазин</span>
-  <span class="badge-text">NEW</span>
+  <span class="badge-text" id="shopMenuBadge">NEW</span>
 </div>
         <div class="menu-item" onclick="showContent('skinslist')"><i class="fas fa-image"></i><span class="label" data-en="Skins" data-tr="Skinler" data-zh="皮肤" data-ar="الجلود" data-es="Skins" data-pl="Skiny" data-de="Skins" data-uk="Скіни">Скины</span></div>
         <div class="menu-item active" onclick="showContent('home')"><i class="fas fa-home"></i><span class="label" data-en="Home" data-tr="Ana Sayfa" data-zh="主页" data-ar="الرئيسية" data-es="Inicio" data-pl="Strona główna" data-de="Start" data-uk="Головна">Главная</span></div>
@@ -49,6 +49,10 @@
     <div id="formError" class="shop-float-alert shop-float-alert--error"></div>
   </div>
   <div class="top-info"><div><span data-en="Personal shop" data-tr="Kişisel mağaza" data-zh="个人商店" data-ar="متجر شخصي" data-es="Tienda personal" data-pl="Sklep osobisty" data-de="Persönlicher Shop" data-uk="Магазин ніку">Магазин лички</span></div></div>
+  <div id="daySaleBanner" class="day-sale-banner" hidden>
+    <span class="day-sale-mark">−90%</span>
+    <span class="day-sale-copy">Скидка на PNG-скины и пароли. Один день, до <strong id="daySaleUntil"></strong>.</span>
+  </div>
   <div id="shopToastContainer" class="shop-toast-container" aria-live="polite"></div>
   <div class="shop-container">
     <div class="shop-grid">
@@ -982,6 +986,14 @@
         <button type="button" id="hud-editor-save" class="hud-editor-btn hud-editor-btn-primary" data-en="Save" data-tr="Kaydet" data-zh="保存" data-ar="حفظ" data-es="Guardar" data-pl="Zapisz" data-de="Speichern" data-uk="Зберегти">Сохранить</button>
         <button type="button" id="hud-editor-close" class="hud-editor-btn" data-en="Close" data-tr="Kapat" data-zh="关闭" data-ar="إغلاق" data-es="Cerrar" data-pl="Kapat" data-de="Schließen" data-uk="Закрити">Закрыть</button>
       </div>
+    </div>
+  </div>
+  <div id="daySaleNotice" class="day-sale-notice" hidden>
+    <div class="day-sale-card" role="dialog" aria-modal="true" aria-labelledby="daySaleTitle">
+      <p class="day-sale-kicker">Только один день</p>
+      <h2 id="daySaleTitle">Скидка 90%</h2>
+      <p>PNG-скины и пароли на ник стоят 15 ₽ вместо 150 ₽. До <strong id="daySaleNoticeUntil"></strong>.</p>
+      <button type="button" id="daySaleClose">Понятно</button>
     </div>
   </div>
 </body>

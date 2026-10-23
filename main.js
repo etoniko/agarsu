@@ -13434,13 +13434,62 @@ onReady(() => {
   function getMultiplier() {
     return document.getElementById("clan").checked ? 2 : 1;
   }
-  function setPriceRow(rowId, label, amount) {
+  const DAY_SALE_UNTIL = Date.parse("2026-10-24T14:00:00.000Z");
+  const DAY_SALE_KEY = "agarsu-sale90-20261023";
+  function daySaleOn() {
+    return Date.now() < DAY_SALE_UNTIL;
+  }
+  function daySaleUntilLabel() {
+    const label = new Intl.DateTimeFormat("ru-RU", {
+      timeZone: "Europe/Moscow",
+      day: "numeric",
+      month: "long",
+      hour: "2-digit",
+      minute: "2-digit"
+    }).format(DAY_SALE_UNTIL);
+    return label + " МСК";
+  }
+  function setupDaySale() {
+    if (!daySaleOn()) return;
+    const until = daySaleUntilLabel();
+    const banner = document.getElementById("daySaleBanner");
+    const untilEl = document.getElementById("daySaleUntil");
+    if (banner) banner.hidden = false;
+    if (untilEl) untilEl.textContent = until;
+    const badge = document.getElementById("shopMenuBadge");
+    if (badge) badge.textContent = "−90%";
+    const notice = document.getElementById("daySaleNotice");
+    const noticeUntil = document.getElementById("daySaleNoticeUntil");
+    if (noticeUntil) noticeUntil.textContent = until;
+    if (!notice || localStorage.getItem(DAY_SALE_KEY)) return;
+    localStorage.setItem(DAY_SALE_KEY, "1");
+    notice.hidden = false;
+    const close = document.getElementById("daySaleClose");
+    const hide = () => {
+      notice.hidden = true;
+    };
+    if (close) close.addEventListener("click", hide);
+    notice.addEventListener("click", event => {
+      if (event.target === notice) hide();
+    });
+  }
+  function setPriceRow(rowId, label, amount, oldAmount) {
     const row = document.getElementById(rowId);
     if (!row) return;
     const labelEl = row.querySelector("span");
     const amountEl = row.querySelector("strong");
     if (labelEl && label) labelEl.textContent = label;
-    if (amountEl) amountEl.textContent = amount;
+    if (!amountEl) return;
+    amountEl.textContent = "";
+    if (oldAmount) {
+      const old = document.createElement("s");
+      old.className = "shop-old-price";
+      old.textContent = oldAmount;
+      amountEl.appendChild(old);
+      amountEl.appendChild(document.createTextNode(" " + amount));
+      return;
+    }
+    amountEl.textContent = amount;
   }
   function setReceiptVisible(show) {
     const calculator = document.getElementById("calculator");
@@ -13463,21 +13512,27 @@ onReady(() => {
       if (isPayStepOpen) closePayStep();
       return;
     }
-    const passwordCost = password ? 150 : 0;
+    const sale = daySaleOn();
+    const passwordFull = 150;
+    const pngFull = 150;
+    const passwordCost = password ? sale ? 15 : passwordFull : 0;
     const invisibleCost = invisibleNickCheckbox.checked ? 500 : 0;
     const rotationCost = rotationNickCheckbox.checked ? 500 : 0;
     const statsBgCost = hasStatsBg ? 100 : 0;
     let skinCost = 0;
     let skinLabel = "Скин";
+    let skinFull = 0;
     if (file) {
-      skinCost = isGifFile(file) ? 4500 : 150;
-      skinLabel = isGifFile(file) ? "Скин GIF" : "Скин PNG";
+      const gif = isGifFile(file);
+      skinCost = gif ? 4500 : sale ? 15 : pngFull;
+      skinFull = gif ? 0 : pngFull;
+      skinLabel = gif ? "Скин GIF" : sale ? "Скин PNG −90%" : "Скин PNG";
     }
     const total = (passwordCost + skinCost + invisibleCost + rotationCost + statsBgCost) * multiplier;
     setReceiptVisible(true);
     document.getElementById("multiplierText").textContent = multiplier === 2 ? "2x" : "1x";
-    setPriceRow("passwordCost", "Пароль", password ? `${passwordCost * multiplier} ₽` : "0 ₽");
-    setPriceRow("skinCost", skinLabel, file ? `${skinCost * multiplier} ₽` : "0 ₽");
+    setPriceRow("passwordCost", sale && password ? "Пароль −90%" : "Пароль", password ? `${passwordCost * multiplier} ₽` : "0 ₽", sale && password ? `${passwordFull * multiplier} ₽` : "");
+    setPriceRow("skinCost", skinLabel, file ? `${skinCost * multiplier} ₽` : "0 ₽", sale && skinFull ? `${skinFull * multiplier} ₽` : "");
     const invisibleRow = document.getElementById("invisibleCost");
     if (invisibleNickCheckbox.checked) {
       setPriceRow("invisibleCost", "Невидимый ник", `${invisibleCost * multiplier} ₽`);
@@ -13518,6 +13573,7 @@ onReady(() => {
     });
   });
   updateNicknameDisplay();
+  setupDaySale();
   calculateCost();
   updateShopAuthNotice();
   document.getElementById("buyButton").addEventListener("click", () => {

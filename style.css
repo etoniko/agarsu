@@ -7527,6 +7527,105 @@ img.skin-strip-anim {
     background: linear-gradient(135deg, #ff0000, #ff6b6b);
 }
 
+#shop .day-sale-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 10px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    color: #fff8ea;
+    background: linear-gradient(135deg, #8a1c1c, #d45a12 55%, #f0b429);
+    box-shadow: 0 8px 20px rgba(212, 90, 18, 0.28);
+}
+
+#shop .day-sale-banner[hidden] {
+    display: none;
+}
+
+#shop .day-sale-mark {
+    flex: none;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: #fff;
+    color: #9a220f;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+}
+
+#shop .day-sale-copy {
+    font-size: 14px;
+    line-height: 1.35;
+    font-weight: 650;
+}
+
+#shop .shop-old-price {
+    margin-right: 6px;
+    color: rgba(255, 255, 255, 0.55);
+    font-weight: 500;
+    font-size: 0.86em;
+}
+
+.day-sale-notice {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    background: rgba(4, 8, 16, 0.72);
+}
+
+.day-sale-notice[hidden] {
+    display: none;
+}
+
+.day-sale-card {
+    width: min(420px, 100%);
+    padding: 22px 22px 18px;
+    border-radius: 18px;
+    color: #fff8ea;
+    text-align: center;
+    background: linear-gradient(160deg, #3a120c, #9a2a12 42%, #e07a16);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.4);
+}
+
+.day-sale-kicker {
+    margin: 0 0 6px;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: #ffe08a;
+}
+
+.day-sale-card h2 {
+    margin: 0 0 8px;
+    font-size: 34px;
+    line-height: 1;
+}
+
+.day-sale-card p {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.4;
+}
+
+.day-sale-card button {
+    margin-top: 16px;
+    width: 100%;
+    border: 0;
+    border-radius: 12px;
+    padding: 12px 16px;
+    background: #fff;
+    color: #8d220f;
+    font: inherit;
+    font-weight: 800;
+    cursor: pointer;
+}
+
 #online {
     font-size: 15px;
 }
