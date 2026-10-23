@@ -18,7 +18,7 @@
     <link rel="stylesheet" href="/fonts/fonts.css?v=160">
     <link rel="stylesheet" href="style.css?v=54">
     <script src="assets/scripts/friends.js?v=160" defer></script>
-    <script src="main.js?v=64" defer></script>
+    <script src="main.js?v=65" defer></script>
 	<script src="admin.js?v=163" defer></script>
 </head>
 <body>
@@ -57,11 +57,11 @@
           <div class="shop-form-stack">
             <div class="shop-form-main">
               <div class="shop-avatar-block">
-                <label id="previewContainer" for="fileInput" data-en-title="Upload PNG, JPG or GIF skin" data-tr-title="PNG, JPG veya GIF skin yükle" data-zh-title="上传 PNG、JPG 或 GIF 皮肤" data-ar-title="حمّل جلد PNG أو JPG أو GIF" data-es-title="Sube skin PNG, JPG o GIF" data-pl-title="Prześlij skin PNG, JPG lub GIF" data-de-title="PNG-, JPG- oder GIF-Skin hochladen" data-uk-title="Завантажити скін PNG, JPG або GIF" title="Загрузить скин PNG, JPG или GIF">
+                <label id="previewContainer" for="fileInput" data-en-title="Photo from iPhone and others: HEIC, JPG, PNG, WEBP, BMP, TIFF, AVIF, GIF. Still photos become PNG before payment" data-tr-title="iPhone ve diğer fotoğraflar: HEIC, JPG, PNG, WEBP, BMP, TIFF, AVIF, GIF. Ödemeden önce PNG" data-zh-title="iPhone 等照片：HEIC、JPG、PNG、WEBP、BMP、TIFF、AVIF、GIF。付款前转为 PNG" data-ar-title="صور الآيفون وغيرها: HEIC وJPG وPNG وWEBP وBMP وTIFF وAVIF وGIF. تُحفظ PNG قبل الدفع" data-es-title="Foto de iPhone y otras: HEIC, JPG, PNG, WEBP, BMP, TIFF, AVIF, GIF. Antes del pago queda en PNG" data-pl-title="Zdjęcie z iPhone i inne: HEIC, JPG, PNG, WEBP, BMP, TIFF, AVIF, GIF. Przed płatnością zapis jako PNG" data-de-title="Foto vom iPhone und andere: HEIC, JPG, PNG, WEBP, BMP, TIFF, AVIF, GIF. Vor der Zahlung als PNG" data-uk-title="Фото з iPhone та інші: HEIC, JPG, PNG, WEBP, BMP, TIFF, AVIF, GIF. Перед оплатою стане PNG" title="Фото с iPhone и другие: HEIC, JPG, PNG, WEBP, BMP, TIFF, AVIF, GIF. Перед покупкой фото станет PNG">
                   <canvas id="previewCanvas" width="512" height="512"></canvas>
                   <img id="previewGif" alt="GIF preview">
                 </label>
-                <input type="file" id="fileInput" accept=".png,.jpg,.gif" autocomplete="off">
+                <input type="file" id="fileInput" accept="image/*,.heic,.heif,.heics,.heifs,.avif,.bmp,.tif,.tiff,.jfif,.webp,.jpg,.jpeg,.png,.gif" autocomplete="off">
               </div>
               <div class="shop-form-fields">
                 <div class="shop-inputs">
@@ -98,7 +98,7 @@
                       <input type="checkbox" id="statsBgNick" autocomplete="off">
                       <span class="fas fa-image" aria-hidden="true"></span>
                     </label>
-                    <input type="file" id="statsBgInput" accept=".png,.jpg,.jpeg,.webp,.gif" autocomplete="off" hidden>
+                    <input type="file" id="statsBgInput" accept="image/*,.heic,.heif,.heics,.heifs,.avif,.bmp,.tif,.tiff,.jfif,.webp,.jpg,.jpeg,.png,.gif" autocomplete="off" hidden>
                   </div>
                 </div>
               </div>

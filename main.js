@@ -13230,26 +13230,175 @@ onReady(() => {
   var skinCanvas = document.getElementById("previewCanvas");
   var skinCtx = skinCanvas.getContext("2d");
   var gifPreview = document.getElementById("previewGif");
+  var skinJob = Promise.resolve();
+  var statsJob = Promise.resolve();
+  var skinPickId = 0;
+  var statsPickId = 0;
+  var skinStillReady = false;
+  var statsBgPngFile = null;
+  var photoPrepCount = 0;
+  var PHOTO_EXT = {
+    png: 1, jpg: 1, jpeg: 1, jpe: 1, jfif: 1, pjpeg: 1,
+    webp: 1, bmp: 1, dib: 1, tif: 1, tiff: 1, avif: 1,
+    heic: 1, heif: 1, heics: 1, heifs: 1, gif: 1
+  };
+  function fileExtOf(file) {
+    const name = String(file && file.name || "").toLowerCase();
+    const dot = name.lastIndexOf(".");
+    return dot >= 0 ? name.slice(dot + 1) : "";
+  }
+  function isGifFile(file) {
+    const type = String(file && file.type || "").toLowerCase();
+    return type === "image/gif" || fileExtOf(file) === "gif";
+  }
+  function isHeicFile(file) {
+    const type = String(file && file.type || "").toLowerCase();
+    const ext = fileExtOf(file);
+    return type.indexOf("heic") >= 0 || type.indexOf("heif") >= 0 || ext === "heic" || ext === "heif" || ext === "heics" || ext === "heifs";
+  }
+  function isPhotoFile(file) {
+    const type = String(file && file.type || "").toLowerCase();
+    if (PHOTO_EXT[fileExtOf(file)]) return true;
+    return type.indexOf("image/") === 0;
+  }
+  function beginPhotoPrep() {
+    photoPrepCount++;
+    const buyButton = document.getElementById("buyButton");
+    if (buyButton) buyButton.disabled = true;
+  }
+  function endPhotoPrep() {
+    photoPrepCount = Math.max(0, photoPrepCount - 1);
+  }
+  function withTimeout(promise, ms) {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error("timeout")), ms);
+      promise.then(value => {
+        clearTimeout(timer);
+        resolve(value);
+      }, err => {
+        clearTimeout(timer);
+        reject(err);
+      });
+    });
+  }
+  var heicLoader = null;
+  function loadHeic2Any() {
+    if (window.heic2any) return Promise.resolve(window.heic2any);
+    if (heicLoader) return heicLoader;
+    heicLoader = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = "/vendor/heic2any.min.js?v=1";
+      script.async = true;
+      script.onload = () => window.heic2any ? resolve(window.heic2any) : reject(new Error("heic"));
+      script.onerror = () => reject(new Error("heic"));
+      document.head.appendChild(script);
+    });
+    return heicLoader;
+  }
+  async function bitmapFromPhoto(file) {
+    if (!isHeicFile(file)) return await createImageBitmap(file);
+    try {
+      return await withTimeout(createImageBitmap(file), 3000);
+    } catch (err) {
+      const convert = await loadHeic2Any();
+      const out = await convert({ blob: file, toType: "image/jpeg", quality: 0.92 });
+      const blob = Array.isArray(out) ? out[0] : out;
+      if (!blob) throw new Error("heic");
+      return await createImageBitmap(blob);
+    }
+  }
+  function drawSkinBitmap(bitmap) {
+    const w = skinCanvas.width;
+    const h = skinCanvas.height;
+    skinCtx.clearRect(0, 0, w, h);
+    skinCtx.save();
+    skinCtx.beginPath();
+    skinCtx.arc(w / 2, h / 2, w / 2, 0, Math.PI * 2);
+    skinCtx.closePath();
+    skinCtx.clip();
+    const scale = Math.max(w / bitmap.width, h / bitmap.height);
+    const dw = bitmap.width * scale;
+    const dh = bitmap.height * scale;
+    skinCtx.drawImage(bitmap, (w - dw) / 2, (h - dh) / 2, dw, dh);
+    skinCtx.restore();
+  }
+  async function bitmapToPngFile(bitmap, baseName) {
+    let side = 1600;
+    let blob = null;
+    const srcW = bitmap.width || 1;
+    const srcH = bitmap.height || 1;
+    while (side >= 320) {
+      const scale = Math.min(1, side / Math.max(srcW, srcH));
+      const w = Math.max(1, Math.round(srcW * scale));
+      const h = Math.max(1, Math.round(srcH * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext("2d").drawImage(bitmap, 0, 0, w, h);
+      blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+      if (blob && blob.size <= paymentRules.maxFileSize) break;
+      side = Math.round(side * 0.75);
+    }
+    if (bitmap.close) bitmap.close();
+    if (!blob) throw new Error("png");
+    const stem = String(baseName || "photo").replace(/\.[^.]+$/, "") || "photo";
+    return new File([blob], stem + ".png", { type: "image/png" });
+  }
   fileInput.addEventListener("change", e => {
     const file = e.target.files[0];
+    const pick = ++skinPickId;
+    skinStillReady = false;
     if (!file) return;
     if (file.size > paymentRules.maxFileSize) {
       fileInput.value = "";
       showError("fileError", "Файл слишком большой (макс. 5MB)");
       return;
     }
-    if (![ "image/png", "image/jpeg", "image/gif" ].includes(file.type)) {
+    if (!isPhotoFile(file)) {
       fileInput.value = "";
-      showError("fileError", "Неподдерживаемый формат. Только PNG, JPG, GIF");
+      showError("fileError", "Выберите фото: HEIC, JPG, PNG, WEBP, BMP, TIFF, AVIF или GIF");
       return;
     }
-    previewSkin(file);
-    previewContainer.classList.add("has-image");
-    calculateCost();
+    hideError("fileError");
+    if (isGifFile(file)) {
+      previewSkin(file);
+      previewContainer.classList.add("has-image");
+      calculateCost();
+      return;
+    }
+    gifPreview.style.display = "none";
+    skinCanvas.style.display = "block";
+    beginPhotoPrep();
+    showToast("Готовим PNG…", "info");
+    skinJob = (async () => {
+      try {
+        const bitmap = await bitmapFromPhoto(file);
+        if (pick !== skinPickId) {
+          if (bitmap.close) bitmap.close();
+          return;
+        }
+        drawSkinBitmap(bitmap);
+        if (bitmap.close) bitmap.close();
+        skinStillReady = true;
+        previewContainer.classList.add("has-image");
+        hideError("fileError");
+      } catch (err) {
+        console.error(err);
+        if (pick !== skinPickId) return;
+        fileInput.value = "";
+        skinStillReady = false;
+        skinCtx.clearRect(0, 0, skinCanvas.width, skinCanvas.height);
+        previewContainer.classList.remove("has-image");
+        showError("fileError", "Не удалось прочитать фото. Попробуйте другой файл.");
+      } finally {
+        endPhotoPrep();
+        if (pick === skinPickId) calculateCost();
+      }
+    })();
   });
   function previewSkin(file) {
     const url = URL.createObjectURL(file);
-    const isGif = file.type === "image/gif";
+    const isGif = isGifFile(file);
     if (isGif) {
       skinCanvas.style.display = "none";
       gifPreview.style.display = "block";
@@ -13321,8 +13470,8 @@ onReady(() => {
     let skinCost = 0;
     let skinLabel = "Скин";
     if (file) {
-      skinCost = file.type === "image/gif" ? 4500 : 150;
-      skinLabel = file.type === "image/gif" ? "Скин GIF" : "Скин PNG";
+      skinCost = isGifFile(file) ? 4500 : 150;
+      skinLabel = isGifFile(file) ? "Скин GIF" : "Скин PNG";
     }
     const total = (passwordCost + skinCost + invisibleCost + rotationCost + statsBgCost) * multiplier;
     setReceiptVisible(true);
@@ -13354,7 +13503,7 @@ onReady(() => {
     }
     if (total > 0) {
       totalEl.textContent = `${total} ₽`;
-      buyButton.disabled = false;
+      buyButton.disabled = photoPrepCount > 0;
       if (isPayStepOpen && shopPayAmount) shopPayAmount.textContent = `${total} ₽`;
     } else {
       setReceiptVisible(false);
@@ -13414,8 +13563,17 @@ onReady(() => {
     const nickname = rawNickname.toLowerCase();
     const password = passwordInput.value.trim().toLowerCase();
     const email = getShopEmail();
+    if (photoPrepCount > 0) {
+      showError("formError", "Фото ещё готовится в PNG");
+      return;
+    }
+    await skinJob;
+    await statsJob;
     const file = fileInput.files[0];
-    const statsBgFile = statsBgInput && statsBgInput.files[0];
+    if (file && !isGifFile(file) && !skinStillReady) {
+      showError("formError", "Фото ещё готовится в PNG");
+      return;
+    }
     const serviceType = ((_a = document.querySelector('input[name="serviceType"]:checked')) == null ? void 0 : _a.value) || "";
     if (!nickname) {
       showError("formError", "Введите ник/клан.");
@@ -13432,8 +13590,8 @@ onReady(() => {
       emailInput == null ? void 0 : emailInput.focus();
       return;
     }
-    const hasStatsBg = !!(statsBgNickCheckbox && statsBgNickCheckbox.checked && statsBgFile);
-    if (statsBgNickCheckbox && statsBgNickCheckbox.checked && !statsBgFile) {
+    const hasStatsBg = !!(statsBgNickCheckbox && statsBgNickCheckbox.checked && statsBgPngFile);
+    if (statsBgNickCheckbox && statsBgNickCheckbox.checked && !statsBgPngFile) {
       showError("formError", "Загрузите картинку фона статистики");
       closePayStep();
       return;
@@ -13445,7 +13603,7 @@ onReady(() => {
     }
     const multiplier = getMultiplier();
     const passwordCost = password ? 1 : 0;
-    const skinCost = file ? file.type === "image/gif" ? 2 : 1 : 0;
+    const skinCost = file ? isGifFile(file) ? 2 : 1 : 0;
     const amount = (passwordCost + skinCost) * multiplier;
     const formData = new FormData;
     formData.append("name", nickname);
@@ -13457,7 +13615,7 @@ onReady(() => {
     if (rotationNickCheckbox.checked) formData.append("rotation", "1");
     if (hasStatsBg) {
       formData.append("statsbg", "1");
-      formData.append("statsbgImage", statsBgFile, statsBgFile.name);
+      formData.append("statsbgImage", statsBgPngFile, statsBgPngFile.name);
     }
     const headers = {};
     if (getAccountToken()) {
@@ -13472,7 +13630,7 @@ onReady(() => {
     };
     try {
       if (file) {
-        if (file.type === "image/gif") {
+        if (isGifFile(file)) {
           formData.append("image", file, file.name);
           await sendForm(formData, headers);
         } else {
@@ -13579,12 +13737,65 @@ onReady(() => {
     box.style.setProperty("--shop-stats-bg", `url("${statsBgPreviewUrl}")`);
     box.classList.add("has-stats-bg-preview");
   }
+  function rejectStatsBg(message) {
+    statsPickId++;
+    statsBgPngFile = null;
+    if (statsBgInput) statsBgInput.value = "";
+    if (statsBgNickCheckbox) statsBgNickCheckbox.checked = false;
+    clearStatsBgPreview();
+    if (message) showError("fileError", message);
+    calculateCost();
+  }
+  function convertStatsBg(file) {
+    const pick = ++statsPickId;
+    statsBgPngFile = null;
+    if (!file) return;
+    if (file.size > paymentRules.maxFileSize) {
+      rejectStatsBg("Фон слишком большой (макс. 5MB)");
+      return;
+    }
+    if (!isPhotoFile(file)) {
+      rejectStatsBg("Фон: HEIC, JPG, PNG, WEBP, BMP, TIFF, AVIF или GIF");
+      return;
+    }
+    if (statsBgNickCheckbox) statsBgNickCheckbox.checked = true;
+    beginPhotoPrep();
+    showToast("Готовим PNG…", "info");
+    statsJob = (async () => {
+      try {
+        const bitmap = await bitmapFromPhoto(file);
+        if (pick !== statsPickId) {
+          if (bitmap.close) bitmap.close();
+          return;
+        }
+        const png = await bitmapToPngFile(bitmap, file.name || "stats-bg");
+        if (pick !== statsPickId) return;
+        statsBgPngFile = png;
+        setStatsBgPreview(png);
+        hideError("fileError");
+      } catch (err) {
+        console.error(err);
+        if (pick !== statsPickId) return;
+        statsBgPngFile = null;
+        if (statsBgInput) statsBgInput.value = "";
+        if (statsBgNickCheckbox) statsBgNickCheckbox.checked = false;
+        clearStatsBgPreview();
+        showError("fileError", "Не удалось прочитать фон. Попробуйте другой файл.");
+      } finally {
+        endPhotoPrep();
+        if (pick === statsPickId) calculateCost();
+      }
+    })();
+  }
   if (statsBgNickCheckbox) {
     statsBgNickCheckbox.addEventListener("change", () => {
       if (statsBgNickCheckbox.checked) {
         if (statsBgInput && !statsBgInput.files[0]) statsBgInput.click();
-        else if (statsBgInput && statsBgInput.files[0]) setStatsBgPreview(statsBgInput.files[0]);
+        else if (statsBgPngFile) setStatsBgPreview(statsBgPngFile);
+        else if (statsBgInput && statsBgInput.files[0]) convertStatsBg(statsBgInput.files[0]);
       } else if (statsBgInput) {
+        statsPickId++;
+        statsBgPngFile = null;
         statsBgInput.value = "";
         clearStatsBgPreview();
       }
@@ -13595,32 +13806,14 @@ onReady(() => {
     statsBgInput.addEventListener("change", () => {
       const file = statsBgInput.files[0];
       if (!file) {
+        statsPickId++;
+        statsBgPngFile = null;
         if (statsBgNickCheckbox) statsBgNickCheckbox.checked = false;
         clearStatsBgPreview();
         calculateCost();
         return;
       }
-      if (file.size > paymentRules.maxFileSize) {
-        statsBgInput.value = "";
-        if (statsBgNickCheckbox) statsBgNickCheckbox.checked = false;
-        clearStatsBgPreview();
-        showError("fileError", "Фон слишком большой (макс. 5MB)");
-        calculateCost();
-        return;
-      }
-      const okTypes = ["image/png", "image/jpeg", "image/webp", "image/gif"];
-      if (!okTypes.includes(file.type)) {
-        statsBgInput.value = "";
-        if (statsBgNickCheckbox) statsBgNickCheckbox.checked = false;
-        clearStatsBgPreview();
-        showError("fileError", "Фон: только PNG, JPG, WEBP или GIF");
-        calculateCost();
-        return;
-      }
-      if (statsBgNickCheckbox) statsBgNickCheckbox.checked = true;
-      setStatsBgPreview(file);
-      hideError("fileError");
-      calculateCost();
+      convertStatsBg(file);
     });
   }
   window.addEventListener("storage", event => {
@@ -13644,6 +13837,8 @@ onReady(() => {
     rotationNickCheckbox.checked = !!options.rotation;
     if (statsBgNickCheckbox) statsBgNickCheckbox.checked = !!options.statsBg;
     if (!options.statsBg) {
+      statsPickId++;
+      statsBgPngFile = null;
       if (statsBgInput) statsBgInput.value = "";
       clearStatsBgPreview();
     }
