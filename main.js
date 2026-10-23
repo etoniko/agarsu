@@ -4932,7 +4932,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
         msg.setUint16(1 + 2 * i + 1, nick.charCodeAt(i), true);
       }
       wsSend(msg);
-      if (typeof claimPlayerName === "function") claimPlayerName(S);
     }
     function isIncompletePrivateChat(str) {
       const s = String(str || "").trim();
@@ -5186,83 +5185,6 @@ window.renderDeathBanner = window.renderDeathBanner || function () {};
    * Чужие: 00 обязательно гасит (иначе 2-я вкладка видит стикер после отпускания).
    */
   /** playerId → canonical nick (skin API still resolves by nick). */
-
-  function claimPlayerName(S) {
-    if (!S) return;
-    const server = resolveOfficialServerId(S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl || "");
-    const pid = S.ownerPlayerId >>> 0;
-    const token = S.pidNameToken || "";
-    const raw = String(S.userNickName || "");
-    const cut = raw.indexOf("#");
-    const nick = (cut >= 0 ? raw.slice(0, cut) : raw).trim();
-    const pass = cut >= 0 ? raw.slice(cut + 1) : "";
-    if (!server || !pid || !token || !nick) return;
-    fetch("https://api.agar.su/api/player/name", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ server, pid, token, nick, pass }),
-      cache: "no-store"
-    }).then(res => res.json()).then(data => {
-      if (!data || !data.ok || !data.name) return;
-      rememberPlayerNick(S, pid, data.name);
-      applyPlayerNickToCells(S, pid, data.name);
-    }).catch(() => {});
-  }
-  function pullPlayerNames(S) {
-    if (!S || !S.nodelist) return;
-    const server = resolveOfficialServerId(S.CONNECTION_URL || S.SELECTED_SERVER || S.wsUrl || "");
-    if (!server) return;
-    const ids = [];
-    const seen = Object.create(null);
-    for (let i = 0; i < S.nodelist.length && ids.length < 40; i++) {
-      const node = S.nodelist[i];
-      const pid = node && node.playerId >>> 0;
-      if (!pid || seen[pid]) continue;
-      seen[pid] = 1;
-      ids.push(pid);
-    }
-    if (!ids.length) return;
-    const url = "https://api.agar.su/api/player/names?server=" + encodeURIComponent(server) + "&pids=" + ids.join(",");
-    fetch(url, { cache: "no-store" }).then(res => res.json()).then(data => {
-      const names = data && data.names || {};
-      Object.keys(names).forEach(key => {
-        const row = names[key];
-        if (!row || !row.name) return;
-        const pid = Number(key) >>> 0;
-        rememberPlayerNick(S, pid, row.name);
-        applyPlayerNickToCells(S, pid, row.name);
-      });
-      if (Array.isArray(S.leaderBoard)) {
-        S.leaderBoard.forEach(row => {
-          const name = nickForPlayerId(S, row.id);
-          if (name) row.name = name;
-        });
-      }
-      if (Array.isArray(S.chatBoard)) {
-        let chat = false;
-        S.chatBoard.forEach(row => {
-          if (!row || row.isStatsRecord || !row.pId) return;
-          const name = nickForPlayerId(S, row.pId);
-          if (name && row.name !== name) {
-            row.name = name;
-            chat = true;
-          }
-        });
-        if (chat && typeof S.__drawChatBoard === "function") S.__drawChatBoard();
-      }
-    }).catch(() => {});
-  }
-  function startPidNames(S) {
-    if (!S || S.__pidNamesStarted) return;
-    S.__pidNamesStarted = true;
-    claimPlayerName(S);
-    pullPlayerNames(S);
-    setInterval(() => {
-      claimPlayerName(S);
-      pullPlayerNames(S);
-    }, 1500);
-  }
-
   function rememberPlayerNick(S, playerId, name) {
     if (!S || !playerId || !name) return false;
     if (!S.playerNicks) S.playerNicks = Object.create(null);
@@ -6049,7 +5971,7 @@ function applyPlayerNickToCells(S, playerId, name) {
           for (let i = 0; i < LBplayerNum; ++i) {
             const nodeId = msg.getUint32(offset, true);
             offset += 4;
-            const playerName = getString() || (typeof nickForPlayerId === "function" ? nickForPlayerId(S, nodeId) : "");
+            const playerName = getString();
             const playerXp = msg.getUint32(offset, true);
             offset += 4;
             S.leaderBoard.push({
@@ -6081,16 +6003,6 @@ function applyPlayerNickToCells(S, playerId, name) {
           S.foodMaxSize = Math.ceil(Math.sqrt(100 * S.foodMaxMass));
           S.ownerPlayerId = msg.getUint32(offset, true);
           offset += 4;
-          if (offset < msg.byteLength) {
-            let token = "";
-            while (offset < msg.byteLength) {
-              const code = msg.getUint8(offset++);
-              if (!code) break;
-              token += String.fromCharCode(code);
-            }
-            if (token) S.pidNameToken = token;
-          }
-          if (typeof startPidNames === "function") startPidNames(S);
           S.mapBoundsReady = true;
           repositionFoodNodes(S);
           S.mapWidth = (S.rightPos + S.leftPos) / 2;
@@ -10850,13 +10762,11 @@ function updateRegionOnlineTotals(totals) {
     const pId = view.getUint16(offset, true);
     offset += 2;
     color = "#" + color;
-    let chatName = getString();
-    if (!chatName && typeof nickForPlayerId === "function") chatName = nickForPlayerId(S, pId);
     S.chatBoard.push({
       pId,
       playerXp,
       playerLevel: playerXp ? getLevel(playerXp) : -1,
-      name: chatName,
+      name: getString(),
       color,
       message: getString(),
       time: formatTime(new Date)
