@@ -13097,6 +13097,35 @@ onReady(() => {
     const calculator = document.getElementById("calculator");
     if (calculator) calculator.hidden = !show;
   }
+  const STATS_BG_NEEDS_NICK_PASS = "Фон статистики можно купить, если на этот ник уже куплен пароль, или если пароль покупается в этом же заказе";
+  let shopPassNicks = null;
+  function refreshShopPassNicks() {
+    return loadPassData(true).then(data => {
+      const set = new Set;
+      if (data && data.passPlayerNickToId) {
+        for (const key of data.passPlayerNickToId.keys()) set.add(key);
+      }
+      if (data && data.passClanNickToId) {
+        for (const key of data.passClanNickToId.keys()) set.add(key);
+      }
+      shopPassNicks = set;
+      return set;
+    }).catch(() => {
+      shopPassNicks = shopPassNicks instanceof Set ? shopPassNicks : new Set;
+      return shopPassNicks;
+    });
+  }
+  function nickHasPurchasedPass(nickname) {
+    if (!(shopPassNicks instanceof Set)) return false;
+    const norm = normalizeNick(nickname);
+    return !!norm && shopPassNicks.has(norm);
+  }
+  function statsBgPurchaseBlockReason(nickname, password, hasStatsBg) {
+    if (!hasStatsBg || String(password || "").trim()) return "";
+    if (!(shopPassNicks instanceof Set)) return "Проверяем, куплен ли пароль на этот ник";
+    if (!nickHasPurchasedPass(nickname)) return STATS_BG_NEEDS_NICK_PASS;
+    return "";
+  }
   function calculateCost() {
     const nickname = nicknameInput.value.trim();
     const password = passwordInput.value.trim();
@@ -13114,14 +13143,23 @@ onReady(() => {
       if (isPayStepOpen) closePayStep();
       return;
     }
-    const passwordCost = password ? 150 : 0;
+    const statsBgBlock = statsBgPurchaseBlockReason(nickname, password, hasStatsBg);
+    if (statsBgBlock) {
+      showError("formError", statsBgBlock);
+      setReceiptVisible(false);
+      buyButton.disabled = true;
+      if (isPayStepOpen) closePayStep();
+      return;
+    }
+    hideError("formError");
+    const passwordCost = password ? 200 : 0;
     const invisibleCost = invisibleNickCheckbox.checked ? 500 : 0;
     const rotationCost = rotationNickCheckbox.checked ? 500 : 0;
     const statsBgCost = hasStatsBg ? 100 : 0;
     let skinCost = 0;
     let skinLabel = "Скин";
     if (file) {
-      skinCost = file.type === "image/gif" ? 4500 : 150;
+      skinCost = file.type === "image/gif" ? 4500 : 200;
       skinLabel = file.type === "image/gif" ? "Скин GIF" : "Скин PNG";
     }
     const total = (passwordCost + skinCost + invisibleCost + rotationCost + statsBgCost) * multiplier;
@@ -13171,6 +13209,7 @@ onReady(() => {
   updateNicknameDisplay();
   calculateCost();
   updateShopAuthNotice();
+  refreshShopPassNicks().then(() => calculateCost());
   document.getElementById("buyButton").addEventListener("click", () => {
     if (document.getElementById("buyButton").disabled) return;
     if (!getAccountToken()) {
@@ -13188,8 +13227,14 @@ onReady(() => {
       showError("formError", "Ник занят");
       return;
     }
-    if (!password && !file && !invisibleNickCheckbox.checked && !rotationNickCheckbox.checked && !(statsBgNickCheckbox && statsBgNickCheckbox.checked && statsBgInput && statsBgInput.files[0])) {
+    const buyingStatsBg = !!(statsBgNickCheckbox && statsBgNickCheckbox.checked && statsBgInput && statsBgInput.files[0]);
+    if (!password && !file && !invisibleNickCheckbox.checked && !rotationNickCheckbox.checked && !buyingStatsBg) {
       showError("formError", "Выберите хотя бы пароль, скин или фон статистики");
+      return;
+    }
+    const statsBgBlock = statsBgPurchaseBlockReason(nickname, password, buyingStatsBg);
+    if (statsBgBlock) {
+      showError("formError", statsBgBlock);
       return;
     }
     openPayStep();
@@ -13235,6 +13280,13 @@ onReady(() => {
     const hasStatsBg = !!(statsBgNickCheckbox && statsBgNickCheckbox.checked && statsBgFile);
     if (statsBgNickCheckbox && statsBgNickCheckbox.checked && !statsBgFile) {
       showError("formError", "Загрузите картинку фона статистики");
+      closePayStep();
+      return;
+    }
+    if (hasStatsBg && !password) await refreshShopPassNicks();
+    const statsBgBlock = statsBgPurchaseBlockReason(rawNickname, password, hasStatsBg);
+    if (statsBgBlock) {
+      showError("formError", statsBgBlock);
       closePayStep();
       return;
     }
@@ -13388,7 +13440,7 @@ onReady(() => {
         statsBgInput.value = "";
         clearStatsBgPreview();
       }
-      calculateCost();
+      refreshShopPassNicks().finally(() => calculateCost());
     });
   }
   if (statsBgInput) {
